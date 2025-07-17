@@ -18,7 +18,6 @@ package androidx.work.multiprocess;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Configuration;
@@ -28,6 +27,8 @@ import androidx.work.WorkManager;
 import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 import androidx.work.impl.utils.taskexecutor.WorkManagerTaskExecutor;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Can keep track of WorkManager configuration and schedulers without having to fully
@@ -52,8 +53,7 @@ public final class RemoteWorkManagerInfo {
      * @return an instance of {@link RemoteWorkManagerInfo} which tracks {@link WorkManager}
      * configuration without having to initialize {@link WorkManager}.
      */
-    @NonNull
-    public static RemoteWorkManagerInfo getInstance(@NonNull Context context) {
+    public static @NonNull RemoteWorkManagerInfo getInstance(@NonNull Context context) {
         if (sInstance == null) {
             synchronized (sLock) {
                 if (sInstance == null) {
@@ -102,8 +102,7 @@ public final class RemoteWorkManagerInfo {
      * @return The {@link Configuration} instance which can be used without having to initialize
      * {@link WorkManager}.
      */
-    @NonNull
-    public Configuration getConfiguration() {
+    public @NonNull Configuration getConfiguration() {
         return mConfiguration;
     }
 
@@ -111,8 +110,7 @@ public final class RemoteWorkManagerInfo {
      * @return The {@link TaskExecutor} instance that can be used without having to initialize
      * {@link WorkManager}.
      */
-    @NonNull
-    public TaskExecutor getTaskExecutor() {
+    public @NonNull TaskExecutor getTaskExecutor() {
         return mTaskExecutor;
     }
 
@@ -120,8 +118,7 @@ public final class RemoteWorkManagerInfo {
      * @return The {@link androidx.work.ProgressUpdater} instance that can be use without
      * having to initialize {@link WorkManager}.
      */
-    @NonNull
-    public ProgressUpdater getProgressUpdater() {
+    public @NonNull ProgressUpdater getProgressUpdater() {
         return mProgressUpdater;
     }
 
@@ -129,8 +126,7 @@ public final class RemoteWorkManagerInfo {
      * @return The {@link androidx.work.ForegroundUpdater} instance that can be use without
      * having to initialize {@link WorkManager}.
      */
-    @NonNull
-    public ForegroundUpdater getForegroundUpdater() {
+    public @NonNull ForegroundUpdater getForegroundUpdater() {
         return mForegroundUpdater;
     }
 }

@@ -15,9 +15,9 @@
  */
 package androidx.room.paging.rxjava2
 
-import android.database.Cursor
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
+import androidx.sqlite.SQLiteStatement
 
 abstract class LimitOffsetRxPagingSource<T : Any>(
     private val sourceQuery: RoomSQLiteQuery,
@@ -28,5 +28,5 @@ abstract class LimitOffsetRxPagingSource<T : Any>(
     db,
     *tables
 ) {
-    protected abstract override fun convertRows(cursor: Cursor): List<T>
+    protected override abstract fun convertRows(statement: SQLiteStatement): List<T>
 }

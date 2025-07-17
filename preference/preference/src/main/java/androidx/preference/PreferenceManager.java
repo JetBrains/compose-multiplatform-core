@@ -25,10 +25,11 @@ import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Used to help create {@link Preference} hierarchies from activities or XML.
@@ -54,20 +55,17 @@ public class PreferenceManager {
     /**
      * Cached shared preferences.
      */
-    @Nullable
-    private SharedPreferences mSharedPreferences;
+    private @Nullable SharedPreferences mSharedPreferences;
     /**
      * Data store to be used by the preferences or {@code null} if {@link SharedPreferences}
      * should be used.
      */
-    @Nullable
-    private PreferenceDataStore mPreferenceDataStore;
+    private @Nullable PreferenceDataStore mPreferenceDataStore;
     /**
      * If in no-commit mode, the shared editor to give out (which will be committed when exiting
      * no-commit mode).
      */
-    @Nullable
-    private SharedPreferences.Editor mEditor;
+    private SharedPreferences.@Nullable Editor mEditor;
     /**
      * Blocks commits from happening on the shared editor. This is used when inflating the
      * hierarchy. Do not set this directly, use {@link #setNoCommit(boolean)}.
@@ -205,8 +203,7 @@ public class PreferenceManager {
      * @return The root hierarchy (if one was not provided, the new hierarchy's root)
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @NonNull
-    public PreferenceScreen inflateFromResource(@NonNull Context context, int resId,
+    public @NonNull PreferenceScreen inflateFromResource(@NonNull Context context, int resId,
             @Nullable PreferenceScreen rootPreferences) {
         // Block commits
         setNoCommit(true);
@@ -221,8 +218,7 @@ public class PreferenceManager {
         return rootPreferences;
     }
 
-    @NonNull
-    public PreferenceScreen createPreferenceScreen(@NonNull Context context) {
+    public @NonNull PreferenceScreen createPreferenceScreen(@NonNull Context context) {
         final PreferenceScreen preferenceScreen = new PreferenceScreen(context, null);
         preferenceScreen.onAttachedToHierarchy(this);
         return preferenceScreen;
@@ -375,8 +371,7 @@ public class PreferenceManager {
      * @return The {@link PreferenceDataStore} associated with this manager or {@code null} if none
      * @see #setPreferenceDataStore(PreferenceDataStore)
      */
-    @Nullable
-    public PreferenceDataStore getPreferenceDataStore() {
+    public @Nullable PreferenceDataStore getPreferenceDataStore() {
         return mPreferenceDataStore;
     }
 
@@ -387,8 +382,7 @@ public class PreferenceManager {
      * preferences that are managed by this PreferenceManager. If
      * a {@link PreferenceDataStore} has been set, this method returns {@code null}.
      */
-    @Nullable
-    public SharedPreferences getSharedPreferences() {
+    public @Nullable SharedPreferences getSharedPreferences() {
         if (getPreferenceDataStore() != null) {
             return null;
         }
@@ -447,8 +441,7 @@ public class PreferenceManager {
      * @see PreferenceGroup#findPreference(CharSequence)
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    public <T extends Preference> T findPreference(@NonNull CharSequence key) {
+    public <T extends Preference> @Nullable T findPreference(@NonNull CharSequence key) {
         if (mPreferenceScreen == null) {
             return null;
         }
@@ -465,8 +458,7 @@ public class PreferenceManager {
      * been set, this method returns {@code null}.
      * @see #shouldCommit()
      */
-    @Nullable
-    SharedPreferences.Editor getEditor() {
+    SharedPreferences.@Nullable Editor getEditor() {
         if (mPreferenceDataStore != null) {
             return null;
         }
@@ -507,13 +499,11 @@ public class PreferenceManager {
      *
      * @return The {@link Context}
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
-    @Nullable
-    public PreferenceComparisonCallback getPreferenceComparisonCallback() {
+    public @Nullable PreferenceComparisonCallback getPreferenceComparisonCallback() {
         return mPreferenceComparisonCallback;
     }
 
@@ -522,8 +512,7 @@ public class PreferenceManager {
         mPreferenceComparisonCallback = preferenceComparisonCallback;
     }
 
-    @Nullable
-    public OnDisplayPreferenceDialogListener getOnDisplayPreferenceDialogListener() {
+    public @Nullable OnDisplayPreferenceDialogListener getOnDisplayPreferenceDialogListener() {
         return mOnDisplayPreferenceDialogListener;
     }
 
@@ -554,8 +543,7 @@ public class PreferenceManager {
         mOnPreferenceTreeClickListener = listener;
     }
 
-    @Nullable
-    public OnPreferenceTreeClickListener getOnPreferenceTreeClickListener() {
+    public @Nullable OnPreferenceTreeClickListener getOnPreferenceTreeClickListener() {
         return mOnPreferenceTreeClickListener;
     }
 
@@ -572,8 +560,7 @@ public class PreferenceManager {
     /**
      * Returns the {@link PreferenceManager.OnNavigateToScreenListener}, if one has been set.
      */
-    @Nullable
-    public OnNavigateToScreenListener getOnNavigateToScreenListener() {
+    public @Nullable OnNavigateToScreenListener getOnNavigateToScreenListener() {
         return mOnNavigateToScreenListener;
     }
 

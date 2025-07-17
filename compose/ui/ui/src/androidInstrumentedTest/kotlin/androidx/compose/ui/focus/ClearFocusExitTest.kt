@@ -17,9 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.focus.FocusRequester.Companion.Default
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,7 +28,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ClearFocusExitTest {
@@ -48,12 +45,7 @@ class ClearFocusExitTest {
             focusManager = LocalFocusManager.current
             Box(
                 Modifier.focusRequester(focusRequester)
-                    .focusProperties {
-                        exit = {
-                            clearTriggered = true
-                            Default
-                        }
-                    }
+                    .focusProperties { onExit = { clearTriggered = true } }
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             )
@@ -80,15 +72,7 @@ class ClearFocusExitTest {
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             ) {
-                Box(
-                    Modifier.focusProperties {
-                            exit = {
-                                clearTriggered = true
-                                Default
-                            }
-                        }
-                        .focusTarget()
-                )
+                Box(Modifier.focusProperties { onExit = { clearTriggered = true } }.focusTarget())
             }
         }
         rule.runOnIdle { focusRequester.requestFocus() }
@@ -108,15 +92,7 @@ class ClearFocusExitTest {
         // Arrange.
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(
-                Modifier.focusProperties {
-                        exit = {
-                            clearTriggered = true
-                            Default
-                        }
-                    }
-                    .focusTarget()
-            ) {
+            Box(Modifier.focusProperties { onExit = { clearTriggered = true } }.focusTarget()) {
                 Box(
                     Modifier.focusRequester(focusRequester)
                         .onFocusChanged { focusState = it }
@@ -147,7 +123,7 @@ class ClearFocusExitTest {
             focusManager = LocalFocusManager.current
             Box(
                 Modifier.focusProperties {
-                        exit = {
+                        onExit = {
                             clearTriggered = true
                             Default
                         }
@@ -182,7 +158,7 @@ class ClearFocusExitTest {
             focusManager = LocalFocusManager.current
             Box(
                 Modifier.focusRequester(focusRequester)
-                    .focusProperties { exit = { Cancel } }
+                    .focusProperties { onExit = { cancelFocusChange() } }
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             )
@@ -206,7 +182,7 @@ class ClearFocusExitTest {
                     .onFocusChanged { focusState = it }
                     .focusTarget()
             ) {
-                Box(Modifier.focusProperties { exit = { Cancel } })
+                Box(Modifier.focusProperties { onExit = { cancelFocusChange() } })
             }
         }
         rule.runOnIdle { focusRequester.requestFocus() }
@@ -223,7 +199,7 @@ class ClearFocusExitTest {
         // Arrange.
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(Modifier.focusProperties { exit = { Cancel } }.focusTarget()) {
+            Box(Modifier.focusProperties { onExit = { cancelFocusChange() } }.focusTarget()) {
                 Box(
                     Modifier.focusRequester(focusRequester)
                         .onFocusChanged { focusState = it }
@@ -245,7 +221,7 @@ class ClearFocusExitTest {
         // Arrange.
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(Modifier.focusProperties { exit = { Cancel } }.focusTarget()) {
+            Box(Modifier.focusProperties { onExit = { cancelFocusChange() } }.focusTarget()) {
                 Box {
                     Box(
                         Modifier.focusRequester(focusRequester)
@@ -270,7 +246,10 @@ class ClearFocusExitTest {
         val customDestination = FocusRequester()
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
-            Box(Modifier.focusProperties { exit = { customDestination } }.focusTarget()) {
+            Box(
+                Modifier.focusProperties { onExit = { customDestination.requestFocus() } }
+                    .focusTarget()
+            ) {
                 Box(Modifier.focusRequester(focusRequester).focusTarget())
                 Box(
                     Modifier.focusRequester(customDestination)
@@ -295,7 +274,7 @@ class ClearFocusExitTest {
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
             Box(
-                Modifier.focusProperties { exit = { customDestination } }
+                Modifier.focusProperties { onExit = { customDestination.requestFocus() } }
                     .focusRequester(customDestination)
                     .onFocusChanged { focusState = it }
                     .focusTarget()
@@ -319,7 +298,10 @@ class ClearFocusExitTest {
         rule.setFocusableContent {
             focusManager = LocalFocusManager.current
             Box {
-                Box(Modifier.focusProperties { exit = { customDestination } }.focusTarget()) {
+                Box(
+                    Modifier.focusProperties { onExit = { customDestination.requestFocus() } }
+                        .focusTarget()
+                ) {
                     Box(Modifier.focusRequester(focusRequester).focusTarget())
                 }
                 Box(

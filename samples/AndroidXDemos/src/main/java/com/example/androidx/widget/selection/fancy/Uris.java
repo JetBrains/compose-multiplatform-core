@@ -18,8 +18,9 @@ package com.example.androidx.widget.selection.fancy;
 
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 final class Uris {
 

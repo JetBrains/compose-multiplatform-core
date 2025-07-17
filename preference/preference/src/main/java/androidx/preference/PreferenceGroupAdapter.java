@@ -27,12 +27,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -324,8 +325,7 @@ public class PreferenceGroupAdapter extends RecyclerView.Adapter<PreferenceViewH
      * @return The corresponding {@link Preference}, or {@code null} if the given position is out
      * of bounds
      */
-    @Nullable
-    public Preference getItem(int position) {
+    public @Nullable Preference getItem(int position) {
         if (position < 0 || position >= getItemCount()) return null;
         return mVisiblePreferences.get(position);
     }
@@ -381,8 +381,8 @@ public class PreferenceGroupAdapter extends RecyclerView.Adapter<PreferenceViewH
     }
 
     @Override
-    @NonNull
-    public PreferenceViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public @NonNull PreferenceViewHolder onCreateViewHolder(@NonNull ViewGroup parent,
+            int viewType) {
         final PreferenceResourceDescriptor descriptor = mPreferenceResourceDescriptors.get(
                 viewType);
         final LayoutInflater inflater = LayoutInflater.from(parent.getContext());

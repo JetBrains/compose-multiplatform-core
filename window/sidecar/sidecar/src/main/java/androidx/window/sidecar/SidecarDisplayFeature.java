@@ -19,7 +19,8 @@ package androidx.window.sidecar;
 import android.graphics.Rect;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -34,8 +35,7 @@ public final class SidecarDisplayFeature {
      * The bounding rectangle of the feature within the application window in the window
      * coordinate space.
      */
-    @NonNull
-    private Rect mRect = new Rect();
+    private @NonNull Rect mRect = new Rect();
 
     /**
      * The physical type of the feature.
@@ -61,8 +61,7 @@ public final class SidecarDisplayFeature {
     @interface Type{}
 
     /** Gets the bounding rect of the display feature in window coordinate space. */
-    @NonNull
-    public Rect getRect() {
+    public @NonNull Rect getRect() {
         return mRect;
     }
 

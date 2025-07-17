@@ -26,6 +26,7 @@ import java.nio.file.Path
 import javax.annotation.processing.Filer
 import javax.tools.StandardLocation
 import kotlin.io.path.extension
+import kotlin.io.path.invariantSeparatorsPathString
 
 internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegate: Filer) : XFiler {
 
@@ -48,7 +49,7 @@ internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegat
         fileNameWithoutExtension: String,
         extension: String,
         originatingElements: List<XElement>,
-        mode: XFiler.Mode
+        mode: XFiler.Mode,
     ): OutputStream {
         require(extension == "java" || extension == "kt") {
             "Source file extension must be either 'java' or 'kt', but was: $extension"
@@ -71,7 +72,7 @@ internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegat
                         StandardLocation.SOURCE_OUTPUT,
                         packageName,
                         "$fileNameWithoutExtension.$extension",
-                        *javaOriginatingElements
+                        *javaOriginatingElements,
                     )
                     .openOutputStream()
             }
@@ -82,7 +83,7 @@ internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegat
     override fun writeResource(
         filePath: Path,
         originatingElements: List<XElement>,
-        mode: XFiler.Mode
+        mode: XFiler.Mode,
     ): OutputStream {
         require(filePath.extension != "java" && filePath.extension != "kt") {
             "Could not create resource file with a source type extension. File must not be " +
@@ -94,8 +95,8 @@ internal class JavacFiler(private val processingEnv: XProcessingEnv, val delegat
             delegate.createResource(
                 StandardLocation.CLASS_OUTPUT,
                 "",
-                filePath.toString(),
-                *javaOriginatingElements
+                filePath.invariantSeparatorsPathString,
+                *javaOriginatingElements,
             )
         return fileObject.openOutputStream()
     }

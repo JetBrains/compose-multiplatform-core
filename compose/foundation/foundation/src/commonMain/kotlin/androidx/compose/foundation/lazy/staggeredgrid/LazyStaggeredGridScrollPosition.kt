@@ -26,11 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.util.fastFirstOrNull
 
-@ExperimentalFoundationApi
 internal class LazyStaggeredGridScrollPosition(
     initialIndices: IntArray,
     initialOffsets: IntArray,
-    private val fillIndices: (targetIndex: Int, laneCount: Int) -> IntArray
+    private val fillIndices: (targetIndex: Int, laneCount: Int) -> IntArray,
 ) {
     var indices = initialIndices
         private set
@@ -76,7 +75,7 @@ internal class LazyStaggeredGridScrollPosition(
         LazyLayoutNearestRangeState(
             initialIndices.minOrNull() ?: 0,
             NearestItemsSlidingWindowSize,
-            NearestItemsExtraItemCount
+            NearestItemsExtraItemCount,
         )
 
     /** Updates the current scroll position based on the results of the last measurement. */
@@ -94,7 +93,7 @@ internal class LazyStaggeredGridScrollPosition(
             Snapshot.withoutReadObservation {
                 update(
                     measureResult.firstVisibleItemIndices,
-                    measureResult.firstVisibleItemScrollOffsets
+                    measureResult.firstVisibleItemScrollOffsets,
                 )
             }
         }
@@ -131,15 +130,15 @@ internal class LazyStaggeredGridScrollPosition(
      * were items added or removed before our current first visible item and keep this item as the
      * first visible one even given that its index has been changed.
      */
-    @ExperimentalFoundationApi
+    @OptIn(ExperimentalFoundationApi::class)
     fun updateScrollPositionIfTheFirstItemWasMoved(
         itemProvider: LazyLayoutItemProvider,
-        indices: IntArray
+        indices: IntArray,
     ): IntArray {
         val newIndex =
             itemProvider.findIndexByKey(
                 key = lastKnownFirstItemKey,
-                lastKnownIndex = indices.getOrNull(0) ?: 0
+                lastKnownIndex = indices.getOrNull(0) ?: 0,
             )
         return if (newIndex !in indices) {
             nearestRangeState.update(newIndex)

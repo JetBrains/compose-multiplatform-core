@@ -39,12 +39,12 @@ import android.view.Gravity;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
 import androidx.core.util.Predicate;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -75,15 +75,11 @@ final class DropAffordanceHighlighter {
 
     private final Set<View> mViewsWithDragFocus = new HashSet<>();
 
-    @Nullable
-    private Drawable mOriginalForeground;
+    private @Nullable Drawable mOriginalForeground;
     private int mOriginalForegroundGravity = DEFAULT_GRAVITY;
-    @Nullable
-    BlendMode mOriginalForegroundTintBlendMode;
-    @Nullable
-    private ColorStateList mOriginalForegroundTintList;
-    @Nullable
-    private Mode mOriginalForegroundTintMode;
+    @Nullable BlendMode mOriginalForegroundTintBlendMode;
+    private @Nullable ColorStateList mOriginalForegroundTintList;
+    private @Nullable Mode mOriginalForegroundTintMode;
 
     DropAffordanceHighlighter(
             View viewToHighlight,
@@ -110,7 +106,7 @@ final class DropAffordanceHighlighter {
     }
 
     /** Makes a new builder for highlighting the given view. */
-    static @NonNull DropAffordanceHighlighter.Builder forView(
+    static DropAffordanceHighlighter.@NonNull Builder forView(
             @NonNull View viewToHighlight,
             @NonNull Predicate<ClipDescription> eligibilityPredicate) {
         Preconditions.checkNotNull(viewToHighlight);
@@ -223,7 +219,6 @@ final class DropAffordanceHighlighter {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private static class Api29BackUpImpl {
-        @DoNotInline
         static void backUp(DropAffordanceHighlighter highlighter) {
             highlighter.mOriginalForegroundTintBlendMode =
                     highlighter.mViewToHighlight.getForegroundTintBlendMode();
@@ -233,7 +228,6 @@ final class DropAffordanceHighlighter {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private static class Api29RestoreImpl {
-        @DoNotInline
         static void restore(DropAffordanceHighlighter highlighter) {
             highlighter.mViewToHighlight.setForegroundTintBlendMode(
                     highlighter.mOriginalForegroundTintBlendMode);
@@ -277,8 +271,7 @@ final class DropAffordanceHighlighter {
          * be handled.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        Builder shouldAcceptDragsWithLocalState(boolean acceptDragsWithLocalState) {
+        @NonNull Builder shouldAcceptDragsWithLocalState(boolean acceptDragsWithLocalState) {
             this.mAcceptDragsWithLocalState = acceptDragsWithLocalState;
             return this;
         }

@@ -15,10 +15,15 @@
  */
 
 @file:Suppress("RedundantVisibilityModifier", "NOTHING_TO_INLINE")
+@file:OptIn(ExperimentalContracts::class)
 
 package androidx.collection
 
 import androidx.collection.internal.EMPTY_OBJECTS
+import androidx.collection.internal.requirePrecondition
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
 
@@ -53,12 +58,7 @@ public fun <V> longObjectMapOf(key1: Long, value1: V): LongObjectMap<V> =
  * Returns a new [LongObjectMap] with [key1], and [key2] associated with [value1], and [value2],
  * respectively.
  */
-public fun <V> longObjectMapOf(
-    key1: Long,
-    value1: V,
-    key2: Long,
-    value2: V,
-): LongObjectMap<V> =
+public fun <V> longObjectMapOf(key1: Long, value1: V, key2: Long, value2: V): LongObjectMap<V> =
     MutableLongObjectMap<V>().also { map ->
         map[key1] = value1
         map[key2] = value2
@@ -213,6 +213,40 @@ public fun <V> mutableLongObjectMapOf(
     }
 
 /**
+ * Builds a new [LongObjectMap] by populating a [MutableLongObjectMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableLongObjectMap] can be populated.
+ */
+public inline fun <V> buildLongObjectMap(
+    builderAction: MutableLongObjectMap<V>.() -> Unit
+): LongObjectMap<V> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongObjectMap<V>().apply(builderAction)
+}
+
+/**
+ * Builds a new [LongObjectMap] by populating a [MutableLongObjectMap] using the given
+ * [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of pairs added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableLongObjectMap] can be populated.
+ */
+public inline fun <V> buildLongObjectMap(
+    initialCapacity: Int,
+    builderAction: MutableLongObjectMap<V>.() -> Unit,
+): LongObjectMap<V> {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableLongObjectMap<V>(initialCapacity).apply(builderAction)
+}
+
+/**
  * [LongObjectMap] is a container with a [Map]-like interface for keys with [Long] primitives and
  * reference type values.
  *
@@ -283,7 +317,8 @@ public sealed class LongObjectMap<V> {
      */
     public operator fun get(key: Long): V? {
         val index = findKeyIndex(key)
-        @Suppress("UNCHECKED_CAST") return if (index >= 0) values[index] as V? else null
+        @Suppress("UNCHECKED_CAST")
+        return if (index >= 0) values[index] as V? else null
     }
 
     /**
@@ -293,7 +328,8 @@ public sealed class LongObjectMap<V> {
     public fun getOrDefault(key: Long, defaultValue: V): V {
         val index = findKeyIndex(key)
         if (index >= 0) {
-            @Suppress("UNCHECKED_CAST") return values[index] as V
+            @Suppress("UNCHECKED_CAST")
+            return values[index] as V
         }
         return defaultValue
     }
@@ -382,13 +418,13 @@ public sealed class LongObjectMap<V> {
         return count
     }
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
-    public operator fun contains(key: Long): Boolean = findKeyIndex(key) >= 0
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
+    public inline operator fun contains(key: Long): Boolean = containsKey(key)
 
-    /** Returns true if the specified [key] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [key] is present in this map, false otherwise. */
     public fun containsKey(key: Long): Boolean = findKeyIndex(key) >= 0
 
-    /** Returns true if the specified [value] is present in this hash map, false otherwise. */
+    /** Returns true if the specified [value] is present in this map, false otherwise. */
     public fun containsValue(value: V): Boolean {
         forEachValue { v -> if (value == v) return true }
         return false
@@ -411,19 +447,21 @@ public sealed class LongObjectMap<V> {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongObjectMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongObjectMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(key)
+                append('=')
+                append(value)
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(key)
-            append('=')
-            append(value)
-            index++
         }
         append(postfix)
     }
@@ -443,20 +481,22 @@ public sealed class LongObjectMap<V> {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (key: Long, value: V) -> CharSequence
+        crossinline transform: (key: Long, value: V) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        var index = 0
-        this@LongObjectMap.forEach { key, value ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            var index = 0
+            this@LongObjectMap.forEach { key, value ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(key, value))
+                index++
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(key, value))
-            index++
         }
         append(postfix)
     }
@@ -595,7 +635,7 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
     private var growthLimit = 0
 
     init {
-        require(initialCapacity >= 0) { "Capacity must be a positive value." }
+        requirePrecondition(initialCapacity >= 0) { "Capacity must be a positive value." }
         initializeStorage(unloadedCapacity(initialCapacity))
     }
 
@@ -665,7 +705,8 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
         keys[index] = key
         values[index] = value
 
-        @Suppress("UNCHECKED_CAST") return oldValue as V?
+        @Suppress("UNCHECKED_CAST")
+        return oldValue as V?
     }
 
     /** Puts all the key/value mappings in the [from] map into this map. */
@@ -741,11 +782,12 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
 
         // TODO: We could just mark the entry as empty if there's a group
         //       window around this entry that was already empty
-        writeMetadata(index, Deleted)
+        writeMetadata(metadata, _capacity, index, Deleted)
         val oldValue = values[index]
         values[index] = null
 
-        @Suppress("UNCHECKED_CAST") return oldValue as V?
+        @Suppress("UNCHECKED_CAST")
+        return oldValue as V?
     }
 
     /** Removes all mappings from this map. */
@@ -801,7 +843,7 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
 
         _size += 1
         growthLimit -= if (isEmpty(metadata, index)) 1 else 0
-        writeMetadata(index, hash2.toLong())
+        writeMetadata(metadata, _capacity, index, hash2.toLong())
 
         return index
     }
@@ -849,16 +891,107 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
      * place" occurs when the current size is <= 25/32 of the table capacity. The choice of 25/32 is
      * detailed in the implementation of abseil's `raw_hash_set`.
      */
-    private fun adjustStorage() {
+    internal fun adjustStorage() { // Internal to prevent inlining
         if (_capacity > GroupWidth && _size.toULong() * 32UL <= _capacity.toULong() * 25UL) {
-            // TODO: Avoid resize and drop deletes instead
-            resizeStorage(nextCapacity(_capacity))
+            dropDeletes()
         } else {
             resizeStorage(nextCapacity(_capacity))
         }
     }
 
-    private fun resizeStorage(newCapacity: Int) {
+    // Internal to prevent inlining
+    internal fun dropDeletes() {
+        val metadata = metadata
+        val capacity = _capacity
+        val keys = keys
+        val values = values
+
+        // Converts Sentinel and Deleted to Empty, and Full to Deleted
+        convertMetadataForCleanup(metadata, capacity)
+
+        var index = 0
+
+        // Drop deleted items and re-hashes surviving entries
+        while (index != capacity) {
+            var m = readRawMetadata(metadata, index)
+            // Formerly Deleted entry, we can use it as a swap spot
+            if (m == Empty) {
+                index++
+                continue
+            }
+
+            // Formerly Full entries are now marked Deleted. If we see an
+            // entry that's not marked Deleted, we can ignore it completely
+            if (m != Deleted) {
+                index++
+                continue
+            }
+
+            val hash = hash(keys[index])
+            val hash1 = h1(hash)
+            val targetIndex = findFirstAvailableSlot(hash1)
+
+            // Test if the current index (i) and the new index (targetIndex) fall
+            // within the same group based on the hash. If the group doesn't change,
+            // we don't move the entry
+            val probeOffset = hash1 and capacity
+            val newProbeIndex = ((targetIndex - probeOffset) and capacity) / GroupWidth
+            val oldProbeIndex = ((index - probeOffset) and capacity) / GroupWidth
+
+            if (newProbeIndex == oldProbeIndex) {
+                val hash2 = h2(hash)
+                writeRawMetadata(metadata, index, hash2.toLong())
+
+                // Copies the metadata into the clone area
+                metadata[metadata.lastIndex] =
+                    (Empty shl 56) or (metadata[0] and 0x00ffffff_ffffffffL)
+
+                index++
+                continue
+            }
+
+            m = readRawMetadata(metadata, targetIndex)
+            if (m == Empty) {
+                // The target is empty so we can transfer directly
+                val hash2 = h2(hash)
+                writeRawMetadata(metadata, targetIndex, hash2.toLong())
+                writeRawMetadata(metadata, index, Empty)
+
+                keys[targetIndex] = keys[index]
+                keys[index] = 0L
+
+                values[targetIndex] = values[index]
+                values[index] = null
+            } else /* m == Deleted */ {
+                // The target isn't empty so we use an empty slot denoted by
+                // swapIndex to perform the swap
+                val hash2 = h2(hash)
+                writeRawMetadata(metadata, targetIndex, hash2.toLong())
+
+                val oldKey = keys[targetIndex]
+                keys[targetIndex] = keys[index]
+                keys[index] = oldKey
+
+                val oldValue = values[targetIndex]
+                values[targetIndex] = values[index]
+                values[index] = oldValue
+
+                // Since we exchanged two slots we must repeat the process with
+                // element we just moved in the current location
+                index--
+            }
+
+            // Copies the metadata into the clone area
+            metadata[metadata.lastIndex] = (Empty shl 56) or (metadata[0] and 0x00ffffff_ffffffffL)
+
+            index++
+        }
+
+        initializeGrowth()
+    }
+
+    // Internal to prevent inlining
+    internal fun resizeStorage(newCapacity: Int) {
         val previousMetadata = metadata
         val previousKeys = keys
         val previousValues = values
@@ -866,8 +999,10 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
 
         initializeStorage(newCapacity)
 
+        val newMetadata = metadata
         val newKeys = keys
         val newValues = values
+        val capacity = _capacity
 
         for (i in 0 until previousCapacity) {
             if (isFull(previousMetadata, i)) {
@@ -875,25 +1010,10 @@ public class MutableLongObjectMap<V>(initialCapacity: Int = DefaultScatterCapaci
                 val hash = hash(previousKey)
                 val index = findFirstAvailableSlot(h1(hash))
 
-                writeMetadata(index, h2(hash).toLong())
+                writeMetadata(newMetadata, capacity, index, h2(hash).toLong())
                 newKeys[index] = previousKey
                 newValues[index] = previousValues[i]
             }
         }
-    }
-
-    /**
-     * Writes the "H2" part of an entry into the metadata array at the specified [index]. The index
-     * must be a valid index. This function ensures the metadata is also written in the clone area
-     * at the end.
-     */
-    private inline fun writeMetadata(index: Int, value: Long) {
-        val m = metadata
-        writeRawMetadata(m, index, value)
-
-        // Mirroring
-        val c = _capacity
-        val cloneIndex = ((index - ClonedMetadataCount) and c) + (ClonedMetadataCount and c)
-        writeRawMetadata(m, cloneIndex, value)
     }
 }

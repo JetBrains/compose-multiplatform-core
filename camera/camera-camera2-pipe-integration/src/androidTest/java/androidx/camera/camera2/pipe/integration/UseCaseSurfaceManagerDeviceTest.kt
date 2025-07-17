@@ -27,11 +27,12 @@ import android.os.HandlerThread
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraSurfaceManager
+import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.InactiveSurfaceCloserImpl
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
-import androidx.camera.camera2.pipe.testing.TestUseCaseCamera
+import androidx.camera.camera2.pipe.integration.testing.TestUseCaseCamera
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.DeferrableSurfaces
 import androidx.camera.core.impl.ImmediateSurface
@@ -195,24 +196,13 @@ class UseCaseSurfaceManagerDeviceTest {
             )
         assertThat(surfaceActiveCountDown.await(3, TimeUnit.SECONDS)).isTrue()
         val cameraOpenedUsageCount = testSessionParameters.deferrableSurface.useCount
-        val cameraDisconnectedUsageCount: Int
 
         // Act. Launch Camera2Activity to open the camera, it disconnects the CameraGraph.
         ActivityScenario.launch<Camera2TestActivity>(
                 Intent(ApplicationProvider.getApplicationContext(), Camera2TestActivity::class.java)
                     .apply { putExtra(Camera2TestActivity.EXTRA_CAMERA_ID, cameraId) }
             )
-            .use {
-                // TODO(b/268768235): Under some conditions, it is possible that the camera gets
-                //  disconnected for both the foreground and test activity, before the preview has a
-                //  chance to be ready. Fix it with follow-up changes to change this test by using a
-                //  CameraGraphSimulator rather than a real CameraGraph.
-                // lateinit var previewReady: IdlingResource
-                // it.onActivity { activity -> previewReady = activity.mPreviewReady!! }
-                // previewReady.waitForIdle()
-
-                cameraDisconnectedUsageCount = testSessionParameters.deferrableSurface.useCount
-            }
+            .close()
         // Close the CameraGraph to ensure the usage count does go back down.
         testUseCaseCamera.useCaseCameraGraphConfig.graph.close()
         testUseCaseCamera.useCaseSurfaceManager.stopAsync().awaitWithTimeout()
@@ -221,7 +211,6 @@ class UseCaseSurfaceManagerDeviceTest {
 
         // Assert, verify the usage count of the DeferrableSurface
         assertThat(cameraOpenedUsageCount).isEqualTo(2)
-        assertThat(cameraDisconnectedUsageCount).isEqualTo(2)
         assertThat(cameraClosedUsageCount).isEqualTo(1)
     }
 
@@ -250,7 +239,8 @@ class UseCaseSurfaceManagerDeviceTest {
                         useCaseThreads,
                         cameraPipe,
                         InactiveSurfaceCloserImpl(),
-                    )
+                        SessionConfigAdapter(useCases = useCases),
+                    ),
             )
 
         // Act.
@@ -264,7 +254,7 @@ class UseCaseSurfaceManagerDeviceTest {
     private fun createFakeUseCase() =
         object : FakeUseCase(FakeUseCaseConfig.Builder().setTargetName("UseCase").useCaseConfig) {
             fun setupSessionConfig(sessionConfig: SessionConfig) {
-                updateSessionConfig(sessionConfig)
+                updateSessionConfig(listOf(sessionConfig))
                 notifyActive()
             }
         }
@@ -289,7 +279,7 @@ class UseCaseSurfaceManagerDeviceTest {
             ImageReader.newInstance(640, 480, ImageFormat.YUV_420_888, 2).apply {
                 setOnImageAvailableListener(
                     onImageAvailableListener,
-                    HandlerCompat.createAsync(handlerThread.looper)
+                    HandlerCompat.createAsync(handlerThread.looper),
                 )
             }
 
@@ -312,11 +302,11 @@ class UseCaseSurfaceManagerDeviceTest {
                     camera2ConfigBuilder
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AF_MODE,
-                            CaptureRequest.CONTROL_AF_MODE_AUTO
+                            CaptureRequest.CONTROL_AF_MODE_AUTO,
                         )
                         .setCaptureRequestOption<Int>(
                             CaptureRequest.CONTROL_AE_MODE,
-                            CaptureRequest.CONTROL_AE_MODE_ON
+                            CaptureRequest.CONTROL_AE_MODE_ON,
                         )
                     addImplementationOptions(camera2ConfigBuilder.build())
                 }

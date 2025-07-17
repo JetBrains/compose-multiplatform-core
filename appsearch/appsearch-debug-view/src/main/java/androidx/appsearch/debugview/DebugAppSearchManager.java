@@ -19,8 +19,6 @@ package androidx.appsearch.debugview;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchResult;
@@ -42,6 +40,9 @@ import androidx.core.util.Preconditions;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -94,8 +95,7 @@ public class DebugAppSearchManager implements Closeable {
      * @throws AppSearchException if the storage type is invalid, or a R- device selects platform
      *                            storage as the storage type for debugging.
      */
-    @NonNull
-    public static ListenableFuture<DebugAppSearchManager> createAsync(
+    public static @NonNull ListenableFuture<DebugAppSearchManager> createAsync(
             @NonNull Context context,
             @NonNull ExecutorService executor, @NonNull String databaseName,
             @Nullable String targetPackageName,
@@ -160,12 +160,11 @@ public class DebugAppSearchManager implements Closeable {
      * @return the {@link SearchResults} instance for exploring pages of results. Call
      * {@link #getNextPage} to retrieve the {@link GenericDocument} objects for each page.
      */
-    @NonNull
-    public ListenableFuture<SearchResults> getAllDocumentsSearchResultsAsync() {
+    public @NonNull ListenableFuture<SearchResults> getAllDocumentsSearchResultsAsync() {
         SearchSpec.Builder searchSpecBuilder = new SearchSpec.Builder()
                 .setResultCountPerPage(PAGE_SIZE)
                 .setTermMatch(SearchSpec.TERM_MATCH_PREFIX)
-                .addProjection(SearchSpec.PROJECTION_SCHEMA_TYPE_WILDCARD, Collections.emptyList());
+                .addProjection(SearchSpec.SCHEMA_TYPE_WILDCARD, Collections.emptyList());
         String retrieveAllQueryString = "";
 
         if (mSearchType == AppSearchDebugActivity.SEARCH_TYPE_GLOBAL) {
@@ -188,8 +187,7 @@ public class DebugAppSearchManager implements Closeable {
      * @param results results to get next page for, and convert to a list of
      *                {@link GenericDocument} objects.
      */
-    @NonNull
-    public ListenableFuture<List<GenericDocument>> getNextPageAsync(
+    public @NonNull ListenableFuture<List<GenericDocument>> getNextPageAsync(
             @NonNull SearchResults results) {
         Preconditions.checkNotNull(results);
 
@@ -200,8 +198,7 @@ public class DebugAppSearchManager implements Closeable {
     /**
      * Gets a document from the AppSearch database by namespace and ID.
      */
-    @NonNull
-    public ListenableFuture<GenericDocument> getDocumentAsync(@NonNull String namespace,
+    public @NonNull ListenableFuture<GenericDocument> getDocumentAsync(@NonNull String namespace,
             @NonNull String id) {
         Preconditions.checkNotNull(id);
         Preconditions.checkNotNull(namespace);
@@ -231,8 +228,7 @@ public class DebugAppSearchManager implements Closeable {
     /**
      * Gets the schema of the AppSearch database.
      */
-    @NonNull
-    public ListenableFuture<GetSchemaResponse> getSchemaAsync() {
+    public @NonNull ListenableFuture<GetSchemaResponse> getSchemaAsync() {
         if (mSearchType == AppSearchDebugActivity.SEARCH_TYPE_GLOBAL) {
             return Futures.transformAsync(mGlobalSearchSessionFuture,
                     session -> {
@@ -267,8 +263,7 @@ public class DebugAppSearchManager implements Closeable {
         }
     }
 
-    @NonNull
-    private ListenableFuture<AppSearchSession> initializeLocalStorageAsync(
+    private @NonNull ListenableFuture<AppSearchSession> initializeLocalStorageAsync(
             @NonNull String databaseName) {
         mAppSearchSessionFuture.setFuture(LocalStorage.createSearchSessionAsync(
                 new LocalStorage.SearchContext.Builder(mContext, databaseName)
@@ -277,9 +272,8 @@ public class DebugAppSearchManager implements Closeable {
         return mAppSearchSessionFuture;
     }
 
-    @NonNull
     @RequiresApi(Build.VERSION_CODES.S)
-    private ListenableFuture<AppSearchSession> initializePlatformStorageAsync(
+    private @NonNull ListenableFuture<AppSearchSession> initializePlatformStorageAsync(
             @NonNull String databaseName) {
         mAppSearchSessionFuture.setFuture(PlatformStorage.createSearchSessionAsync(
                 new PlatformStorage.SearchContext.Builder(mContext, databaseName)
@@ -288,9 +282,8 @@ public class DebugAppSearchManager implements Closeable {
         return mAppSearchSessionFuture;
     }
 
-    @NonNull
     @RequiresApi(Build.VERSION_CODES.S)
-    private ListenableFuture<GlobalSearchSession> initializeGlobalSearchSessionAsync() {
+    private @NonNull ListenableFuture<GlobalSearchSession> initializeGlobalSearchSessionAsync() {
         mGlobalSearchSessionFuture.setFuture(PlatformStorage.createGlobalSearchSessionAsync(
                 new PlatformStorage.GlobalSearchContext.Builder(mContext).build())
         );

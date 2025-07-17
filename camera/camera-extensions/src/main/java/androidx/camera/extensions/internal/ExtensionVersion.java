@@ -16,11 +16,12 @@
 
 package androidx.camera.extensions.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Logger;
 import androidx.camera.extensions.impl.ExtensionVersionImpl;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides interfaces to check the extension version.
@@ -75,8 +76,7 @@ public abstract class ExtensionVersion {
      * <tt>null</tt> if the OEM library didn't implement the version checking method or the
      * version is not compatible with CameraX.
      */
-    @Nullable
-    public static Version getRuntimeVersion() {
+    public static @Nullable Version getRuntimeVersion() {
         return getInstance().getVersionObject();
     }
 

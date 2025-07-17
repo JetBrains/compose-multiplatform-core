@@ -16,4 +16,4 @@
 
 package androidx.compose.material3.adaptive.layout
 
-internal const val GOLDEN_MATERIAL3_ADAPTIVE = "compose/material3/adaptive"
+internal const val GOLDEN_MATERIAL3_ADAPTIVE = "compose/material3/adaptive/adaptive-layout"

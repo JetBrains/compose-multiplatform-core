@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+AddedField: androidx.car.app.mediaextensions.MetadataExtras#KEY_TINTABLE_INDICATOR_ICON_URI_LIST:
+    Added field androidx.car.app.mediaextensions.MetadataExtras.KEY_TINTABLE_INDICATOR_ICON_URI_LIST

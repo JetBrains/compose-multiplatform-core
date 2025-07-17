@@ -23,9 +23,10 @@ import static androidx.camera.core.processing.TargetUtils.checkSupportedTargets;
 import static androidx.camera.core.processing.TargetUtils.getHumanReadableName;
 import static androidx.core.util.Preconditions.checkArgument;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,18 +36,15 @@ import java.util.Locale;
 /**
  * Represents a collection of {@link UseCase}.
  *
- * When the {@link UseCaseGroup} is bound to {@link Lifecycle}, it binds all the
+ * <p>When the {@link UseCaseGroup} is bound to {@link Lifecycle}, it binds all the
  * {@link UseCase}s to the same {@link Lifecycle}. {@link UseCase}s inside of a
  * {@link UseCaseGroup} usually share some common properties like the FOV defined by
  * {@link ViewPort}.
  */
 public final class UseCaseGroup {
-    @Nullable
-    private final ViewPort mViewPort;
-    @NonNull
-    private final List<UseCase> mUseCases;
-    @NonNull
-    private final List<CameraEffect> mEffects;
+    private final @Nullable ViewPort mViewPort;
+    private final @NonNull List<UseCase> mUseCases;
+    private final @NonNull List<CameraEffect> mEffects;
 
     UseCaseGroup(@Nullable ViewPort viewPort, @NonNull List<UseCase> useCases,
             @NonNull List<CameraEffect> effects) {
@@ -58,24 +56,21 @@ public final class UseCaseGroup {
     /**
      * Gets the {@link ViewPort} shared by the {@link UseCase} collection.
      */
-    @Nullable
-    public ViewPort getViewPort() {
+    public @Nullable ViewPort getViewPort() {
         return mViewPort;
     }
 
     /**
      * Gets the {@link UseCase}s.
      */
-    @NonNull
-    public List<UseCase> getUseCases() {
+    public @NonNull List<UseCase> getUseCases() {
         return mUseCases;
     }
 
     /**
      * Gets the {@link CameraEffect}s.
      */
-    @NonNull
-    public List<CameraEffect> getEffects() {
+    public @NonNull List<CameraEffect> getEffects() {
         return mEffects;
     }
 
@@ -96,7 +91,6 @@ public final class UseCaseGroup {
         private final List<UseCase> mUseCases;
         private final List<CameraEffect> mEffects;
 
-
         public Builder() {
             mUseCases = new ArrayList<>();
             mEffects = new ArrayList<>();
@@ -105,8 +99,7 @@ public final class UseCaseGroup {
         /**
          * Sets {@link ViewPort} shared by the {@link UseCase}s.
          */
-        @NonNull
-        public Builder setViewPort(@NonNull ViewPort viewPort) {
+        public @NonNull Builder setViewPort(@NonNull ViewPort viewPort) {
             mViewPort = viewPort;
             return this;
         }
@@ -134,8 +127,7 @@ public final class UseCaseGroup {
          * <p>Once added, CameraX will use the {@link CameraEffect}s to process the outputs of
          * the {@link UseCase}s.
          */
-        @NonNull
-        public Builder addEffect(@NonNull CameraEffect cameraEffect) {
+        public @NonNull Builder addEffect(@NonNull CameraEffect cameraEffect) {
             mEffects.add(cameraEffect);
             return this;
         }
@@ -165,8 +157,7 @@ public final class UseCaseGroup {
         /**
          * Adds {@link UseCase} to the collection.
          */
-        @NonNull
-        public Builder addUseCase(@NonNull UseCase useCase) {
+        public @NonNull Builder addUseCase(@NonNull UseCase useCase) {
             mUseCases.add(useCase);
             return this;
         }
@@ -174,8 +165,7 @@ public final class UseCaseGroup {
         /**
          * Builds a {@link UseCaseGroup} from the current state.
          */
-        @NonNull
-        public UseCaseGroup build() {
+        public @NonNull UseCaseGroup build() {
             checkArgument(!mUseCases.isEmpty(), "UseCase must not be empty.");
             checkEffectTargets();
             return new UseCaseGroup(mViewPort, mUseCases, mEffects);

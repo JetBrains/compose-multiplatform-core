@@ -32,7 +32,7 @@ import kotlin.math.max
 internal class ComposeIdlingResource(
     private val composeRootRegistry: ComposeRootRegistry,
     private val clock: MainTestClockImpl,
-    private val mainRecomposer: Recomposer
+    private val mainRecomposer: Recomposer,
 ) : IdlingResource {
 
     private var hadAwaitersOnMainClock = false
@@ -67,6 +67,10 @@ internal class ComposeIdlingResource(
                     hadAwaitersOnMainClock || hadSnapshotChanges || hadRecomposerChanges
                 return clock.autoAdvance && needsRecompose
             }
+
+            // Apply any pending snapshot changes, so the recomposer can wake up if necessary
+            // If there are no pending snapshot changes, this call does nothing
+            Snapshot.sendApplyNotifications()
 
             var i = 0
             while (i < 100 && shouldPumpTime()) {

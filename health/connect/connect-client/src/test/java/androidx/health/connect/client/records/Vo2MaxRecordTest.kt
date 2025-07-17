@@ -16,13 +16,42 @@
 
 package androidx.health.connect.client.records
 
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
+import java.time.Instant
+import java.time.ZoneOffset
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
+@Config(minSdk = 28)
 @RunWith(AndroidJUnit4::class)
 class Vo2MaxRecordTest {
+
+    @Test
+    fun validRecord_equals() {
+        assertThat(
+                Vo2MaxRecord(
+                    time = Instant.ofEpochMilli(1678900000L),
+                    zoneOffset = ZoneOffset.UTC,
+                    metadata = Metadata.manualEntry(),
+                    vo2MillilitersPerMinuteKilogram = 45.5,
+                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_METABOLIC_CART,
+                )
+            )
+            .isEqualTo(
+                Vo2MaxRecord(
+                    time = Instant.ofEpochMilli(1678900000L),
+                    zoneOffset = ZoneOffset.UTC,
+                    metadata = Metadata.manualEntry(),
+                    vo2MillilitersPerMinuteKilogram = 45.5,
+                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_METABOLIC_CART,
+                )
+            )
+    }
+
     @Test
     fun measurementMethodEnums_existMapping() {
         val allEnums = getAllIntDefEnums<Vo2MaxRecord>("""MEASUREMENT_METHOD.*""")
@@ -31,5 +60,22 @@ class Vo2MaxRecordTest {
             .containsExactlyElementsIn(allEnums)
         Truth.assertThat(Vo2MaxRecord.MEASUREMENT_METHOD_INT_TO_STRING_MAP.keys)
             .containsExactlyElementsIn(allEnums)
+    }
+
+    @Test
+    fun toString_containsMembers() {
+        assertThat(
+                Vo2MaxRecord(
+                        time = Instant.ofEpochMilli(1234L),
+                        zoneOffset = null,
+                        vo2MillilitersPerMinuteKilogram = 95.0,
+                        measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_ROCKPORT_FITNESS_TEST,
+                        metadata = Metadata.unknownRecordingMethod(),
+                    )
+                    .toString()
+            )
+            .isEqualTo(
+                "Vo2MaxRecord(time=1970-01-01T00:00:01.234Z, zoneOffset=null, vo2MillilitersPerMinuteKilogram=95.0, measurementMethod=5, metadata=Metadata(id='', dataOrigin=DataOrigin(packageName=''), lastModifiedTime=1970-01-01T00:00:00Z, clientRecordId=null, clientRecordVersion=0, device=null, recordingMethod=0))"
+            )
     }
 }

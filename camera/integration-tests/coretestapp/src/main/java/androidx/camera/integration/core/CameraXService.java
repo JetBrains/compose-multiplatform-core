@@ -49,9 +49,6 @@ import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.ImageAnalysis;
@@ -74,6 +71,9 @@ import androidx.core.util.Consumer;
 import androidx.lifecycle.LifecycleService;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.text.Format;
@@ -125,10 +125,8 @@ public class CameraXService extends LifecycleService {
     //                          Members only accessed on main thread                              //
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private final Map<Class<?>, UseCase> mBoundUseCases = new HashMap<>();
-    @Nullable
-    private Recording mActiveRecording;
-    @Nullable
-    private NotificationCompat.Builder mNotificationBuilder;
+    private @Nullable Recording mActiveRecording;
+    private NotificationCompat.@Nullable Builder mNotificationBuilder;
     //--------------------------------------------------------------------------------------------//
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,14 +134,10 @@ public class CameraXService extends LifecycleService {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     private final Set<Uri> mSavedMediaUri = new HashSet<>();
 
-    @Nullable
-    private Consumer<Collection<UseCase>> mOnUseCaseBoundCallback;
-    @Nullable
-    private CountDownLatch mAnalysisFrameLatch;
-    @Nullable
-    private CountDownLatch mTakePictureLatch;
-    @Nullable
-    private CountDownLatch mRecordVideoLatch;
+    private @Nullable Consumer<Collection<UseCase>> mOnUseCaseBoundCallback;
+    private @Nullable CountDownLatch mAnalysisFrameLatch;
+    private @Nullable CountDownLatch mTakePictureLatch;
+    private @Nullable CountDownLatch mRecordVideoLatch;
     //--------------------------------------------------------------------------------------------//
 
     @Override
@@ -152,9 +146,8 @@ public class CameraXService extends LifecycleService {
         makeForeground();
     }
 
-    @Nullable
     @Override
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         super.onBind(intent);
         return mBinder;
     }
@@ -216,8 +209,7 @@ public class CameraXService extends LifecycleService {
         onUseCaseBound(boundUseCases);
     }
 
-    @Nullable
-    private UseCaseGroup resolveUseCaseGroup(@NonNull Intent intent) {
+    private @Nullable UseCaseGroup resolveUseCaseGroup(@NonNull Intent intent) {
         boolean hasUseCase = false;
         UseCaseGroup.Builder useCaseGroupBuilder = new UseCaseGroup.Builder();
 
@@ -267,8 +259,7 @@ public class CameraXService extends LifecycleService {
         }
     }
 
-    @NonNull
-    private NotificationManager getNotificationManager() {
+    private @NonNull NotificationManager getNotificationManager() {
         return checkNotNull(ContextCompat.getSystemService(this, NotificationManager.class));
     }
 
@@ -278,8 +269,7 @@ public class CameraXService extends LifecycleService {
         getNotificationManager().notify(NOTIFICATION_ID, builder.build());
     }
 
-    @NonNull
-    private RemoteViews getNotificationView() {
+    private @NonNull RemoteViews getNotificationView() {
         RemoteViews notificationView = new RemoteViews(getPackageName(),
                 R.layout.notification_service_collapsed);
 
@@ -340,19 +330,16 @@ public class CameraXService extends LifecycleService {
         return notificationView;
     }
 
-    @Nullable
-    private ImageCapture getImageCapture() {
+    private @Nullable ImageCapture getImageCapture() {
         return (ImageCapture) mBoundUseCases.get(ImageCapture.class);
     }
 
     @SuppressWarnings("unchecked")
-    @Nullable
-    private VideoCapture<Recorder> getVideoCapture() {
+    private @Nullable VideoCapture<Recorder> getVideoCapture() {
         return (VideoCapture<Recorder>) mBoundUseCases.get(VideoCapture.class);
     }
 
-    @Nullable
-    private ImageAnalysis getImageAnalysis() {
+    private @Nullable ImageAnalysis getImageAnalysis() {
         return (ImageAnalysis) mBoundUseCases.get(ImageAnalysis.class);
     }
 
@@ -380,7 +367,7 @@ public class CameraXService extends LifecycleService {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(
-                            @NonNull ImageCapture.OutputFileResults outputFileResults) {
+                            ImageCapture.@NonNull OutputFileResults outputFileResults) {
                         long durationMs = SystemClock.elapsedRealtime() - startTimeMs;
                         String msg = "Saved image " + outputFileResults.getSavedUri()
                                 + "  (" + durationMs + " ms)";
@@ -456,8 +443,7 @@ public class CameraXService extends LifecycleService {
         }
     }
 
-    @NonNull
-    private static String getHumanReadableName(@NonNull List<UseCase> useCases) {
+    private static @NonNull String getHumanReadableName(@NonNull List<UseCase> useCases) {
         List<String> useCaseNames = new ArrayList<>();
         for (UseCase useCase : useCases) {
             useCaseNames.add(useCase.getClass().getSimpleName());
@@ -537,14 +523,11 @@ public class CameraXService extends LifecycleService {
         }
 
         /** @noinspection SameParameterValue */
-        @DoNotInline
-        @NonNull
-        static NotificationChannel newNotificationChannel(@NonNull String id,
+        static @NonNull NotificationChannel newNotificationChannel(@NonNull String id,
                 @NonNull CharSequence name, int importance) {
             return new NotificationChannel(id, name, importance);
         }
 
-        @DoNotInline
         static void createNotificationChannel(@NonNull NotificationManager manager,
                 @NonNull NotificationChannel channel) {
             manager.createNotificationChannel(channel);
@@ -557,22 +540,19 @@ public class CameraXService extends LifecycleService {
     }
 
     @VisibleForTesting
-    @NonNull
-    CountDownLatch acquireAnalysisFrameCountDownLatch() {
+    @NonNull CountDownLatch acquireAnalysisFrameCountDownLatch() {
         mAnalysisFrameLatch = new CountDownLatch(3);
         return mAnalysisFrameLatch;
     }
 
     @VisibleForTesting
-    @NonNull
-    CountDownLatch acquireTakePictureCountDownLatch() {
+    @NonNull CountDownLatch acquireTakePictureCountDownLatch() {
         mTakePictureLatch = new CountDownLatch(1);
         return mTakePictureLatch;
     }
 
     @VisibleForTesting
-    @NonNull
-    CountDownLatch acquireRecordVideoCountDownLatch() {
+    @NonNull CountDownLatch acquireRecordVideoCountDownLatch() {
         mRecordVideoLatch = new CountDownLatch(1);
         return mRecordVideoLatch;
     }
@@ -593,8 +573,7 @@ public class CameraXService extends LifecycleService {
     }
 
     class CameraXServiceBinder extends Binder {
-        @NonNull
-        CameraXService getService() {
+        @NonNull CameraXService getService() {
             return CameraXService.this;
         }
     }

@@ -43,8 +43,6 @@ import static java.util.Objects.requireNonNull;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -62,6 +60,8 @@ import androidx.car.app.utils.LogTags;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -411,7 +411,6 @@ public class AutomotiveCarInfo implements CarInfo {
 
     @RequiresApi(31)
     private static class Api31Impl {
-        @DoNotInline
         static void addTollListener(Executor executor,
                 OnCarDataAvailableListener<TollCard> listener, PropertyManager propertyManager,
                 Map<OnCarDataAvailableListener<?>, OnCarPropertyResponseListener> listenerMap) {
@@ -421,7 +420,6 @@ public class AutomotiveCarInfo implements CarInfo {
             listenerMap.put(listener, tollListener);
         }
 
-        @DoNotInline
         static void removeTollListener(OnCarPropertyResponseListener listener,
                 PropertyManager propertyManager) {
             propertyManager.submitUnregisterListenerRequest(listener);
@@ -430,7 +428,6 @@ public class AutomotiveCarInfo implements CarInfo {
 
     @RequiresApi(30)
     private static class Api30Impl {
-        @DoNotInline
         static void populateExteriorDimensionsData(
                 @NonNull Executor executor,
                 OnCarDataAvailableListener<ExteriorDimensions> listener,

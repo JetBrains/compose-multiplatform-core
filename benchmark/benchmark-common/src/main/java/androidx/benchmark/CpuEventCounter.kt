@@ -20,6 +20,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import java.io.Closeable
+import java.util.Locale
 
 /**
  * Exposes CPU counters from perf_event_open based on libs/utils/src/Profiler.cpp from
@@ -29,7 +30,7 @@ import java.io.Closeable
  *
  * This counter must be closed to avoid leaking the associated native allocation.
  *
- * This class does not yet help callers with prerequisites to getting counter values on API 30+:
+ * This class does not yet help callers with prerequisites to getting counter values on API 23+:
  * - setenforce 0 (requires root)
  * - security.perf_harden 0
  */
@@ -37,14 +38,27 @@ import java.io.Closeable
 class CpuEventCounter : Closeable {
     private var profilerPtr = CpuCounterJni.newProfiler()
     private var hasReset = false
+    internal var currentEventFlags = 0
+        private set
+
+    /** updated in sync with currentEventFlags, tracks those that should never be zero */
+    private var validateFlags = 0
 
     fun resetEvents(events: List<Event>) {
         resetEvents(events.getFlags())
     }
 
     fun resetEvents(eventFlags: Int) {
+        if (currentEventFlags != eventFlags) {
+            // set up the flags
+            CpuCounterJni.resetEvents(profilerPtr, eventFlags)
+            currentEventFlags = eventFlags
+            validateFlags = currentEventFlags.and(Event.CpuCycles.flag.or(Event.Instructions.flag))
+        } else {
+            // fast path when re-using same flags
+            reset()
+        }
         hasReset = true
-        CpuCounterJni.resetEvents(profilerPtr, eventFlags)
     }
 
     override fun close() {
@@ -64,6 +78,20 @@ class CpuEventCounter : Closeable {
         check(profilerPtr != 0L) { "Error: attempted to read counters after close" }
         check(hasReset) { "Error: attempted to read counters without reset" }
         CpuCounterJni.read(profilerPtr, outValues.longArray)
+        if (validateFlags != 0) {
+            val hasInstructionError =
+                validateFlags.and(Event.Instructions.flag) != 0 &&
+                    outValues.getValue(Event.Instructions) == 0L
+            val hasCpuCyclesError =
+                validateFlags.and(Event.CpuCycles.flag) != 0 &&
+                    outValues.getValue(Event.CpuCycles) == 0L
+            check(!hasInstructionError && !hasCpuCyclesError) {
+                val events = Event.entries.filter { it.flag.and(currentEventFlags) != 0 }
+                "Observed 0 for instructions/cpuCycles, capture appeared to fail, values=[" +
+                    events.joinToString(",") { it.outputName + "=" + outValues.getValue(it) } +
+                    "]"
+            }
+        }
     }
 
     enum class Event(val id: Int) {
@@ -78,6 +106,8 @@ class CpuEventCounter : Closeable {
 
         val flag: Int
             inline get() = 1 shl id
+
+        val outputName = name.replaceFirstChar { it.lowercase(Locale.US) }
     }
 
     /**
@@ -106,6 +136,8 @@ class CpuEventCounter : Closeable {
     }
 
     companion object {
+        const val MIN_API_ROOT_REQUIRED = 23
+
         fun checkPerfEventSupport(): String? = CpuCounterJni.checkPerfEventSupport()
 
         /**
@@ -114,8 +146,8 @@ class CpuEventCounter : Closeable {
          * Reset still required if failure occurs partway through
          */
         fun forceEnable(): String? {
-            if (Build.VERSION.SDK_INT >= 29) {
-                Api29Enabler.forceEnable()?.let {
+            if (Build.VERSION.SDK_INT >= 23) {
+                Api23Enabler.forceEnable()?.let {
                     return it
                 }
             }
@@ -123,16 +155,19 @@ class CpuEventCounter : Closeable {
         }
 
         fun reset() {
-            if (Build.VERSION.SDK_INT >= 29) {
-                Api29Enabler.reset()
+            if (Build.VERSION.SDK_INT >= 23) {
+                Api23Enabler.reset()
             }
         }
 
         /**
-         * Enable setenforce 0 and setprop perf_harden to 0, only observed this required on API 29+
+         * Enable setenforce 0 and setprop perf_harden to 0, have observed this required on API 23+
+         *
+         * Lower APIs not tested, but selinux is documented to be enforced starting in Android 5
+         * (API 23).
          */
-        @RequiresApi(29)
-        object Api29Enabler {
+        @RequiresApi(23)
+        object Api23Enabler {
             private val perfHardenProp = PropOverride("security.perf_harden", "0")
             private var shouldResetEnforce1 = false
 

@@ -44,10 +44,10 @@ import android.util.ArraySet;
 import android.util.Log;
 import android.util.SparseArray;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import androidx.mediarouter.R;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController.DynamicRouteDescriptor;
 import androidx.mediarouter.media.MediaRouter.ControlRequestCallback;
@@ -68,6 +68,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 class MediaRoute2Provider extends MediaRouteProvider {
     static final String TAG = "MR2Provider";
     static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final String PACKAGE_NAME_SEPARATOR = "/";
 
     final MediaRouter2 mMediaRouter2;
     final Callback mCallback;
@@ -78,9 +79,11 @@ class MediaRoute2Provider extends MediaRouteProvider {
     private final MediaRouter2.ControllerCallback mControllerCallback = new ControllerCallback();
     private final Handler mHandler;
     private final Executor mHandlerExecutor;
-
+    private boolean mMediaTransferRestrictedToSelfProviders;
     private List<MediaRoute2Info> mRoutes = new ArrayList<>();
-    private Map<String, String> mRouteIdToOriginalRouteIdMap = new ArrayMap<>();
+    private final Map<String, String> mRouteIdToOriginalRouteIdMap = new ArrayMap<>();
+    @Nullable private String mPendingTransferRouteId;
+
     @SuppressWarnings({"SyntheticAccessor"})
     MediaRoute2Provider(@NonNull Context context, @NonNull Callback callback) {
         super(context);
@@ -139,9 +142,13 @@ class MediaRoute2Provider extends MediaRouteProvider {
     @Nullable
     @Override
     public DynamicGroupRouteController onCreateDynamicGroupRouteController(
-            @NonNull String initialMemberRouteId) {
-        for (Map.Entry<MediaRouter2.RoutingController, GroupRouteController> entry
-                : mControllerMap.entrySet()) {
+            @NonNull String initialMemberRouteId,
+            @NonNull RouteControllerOptions routeControllerOptions) {
+        // The parent implementation of onCreateDynamicGroupRouteController(String,
+        // RouteControllerOptions) calls onCreateDynamicGroupRouteController(String). We only need
+        // to override either one of the onCreateDynamicGroupRouteController methods.
+        for (Map.Entry<MediaRouter2.RoutingController, GroupRouteController> entry :
+                mControllerMap.entrySet()) {
             GroupRouteController controller = entry.getValue();
             if (TextUtils.equals(initialMemberRouteId, controller.mInitialMemberRouteId)) {
                 return controller;
@@ -150,17 +157,33 @@ class MediaRoute2Provider extends MediaRouteProvider {
         return null;
     }
 
+    /* package */ void setMediaTransferRestrictedToSelfProviders(
+            boolean mediaTransferRestrictedToSelfProviders) {
+        mMediaTransferRestrictedToSelfProviders = mediaTransferRestrictedToSelfProviders;
+        refreshRoutes();
+    }
+
+    @VisibleForTesting
+    /* package */ boolean isMediaTransferRestrictedToSelfProviders() {
+        return mMediaTransferRestrictedToSelfProviders;
+    }
+
     public void transferTo(@NonNull String routeId) {
         MediaRoute2Info route = getRouteById(routeId);
         if (route == null) {
             Log.w(TAG, "transferTo: Specified route not found. routeId=" + routeId);
             return;
         }
+        if (TextUtils.equals(mPendingTransferRouteId, routeId)) {
+            Log.w(TAG, "Ignoring attempt to transfer to pending transfer route: " + route);
+            return;
+        }
+        mPendingTransferRouteId = routeId;
         mMediaRouter2.transferTo(route);
     }
 
     protected void refreshRoutes() {
-        // Syetem routes should not be published by this provider.
+        // System routes should not be published by this provider.
         List<MediaRoute2Info> newRoutes = new ArrayList<>();
         Set<MediaRoute2Info> route2InfoSet = new ArraySet<>();
         for (MediaRoute2Info route : mMediaRouter2.getRoutes()) {
@@ -168,6 +191,17 @@ class MediaRoute2Provider extends MediaRouteProvider {
             if (route == null || route2InfoSet.contains(route) || route.isSystemRoute()) {
                 continue;
             }
+
+            if (mMediaTransferRestrictedToSelfProviders) {
+                // The routeId is created by Android framework with the provider's package name.
+                boolean isRoutePublishedBySelfProviders =
+                        route.getId()
+                                .startsWith(getContext().getPackageName() + PACKAGE_NAME_SEPARATOR);
+                if (!isRoutePublishedBySelfProviders) {
+                    continue;
+                }
+            }
+
             route2InfoSet.add(route);
 
             // Not using new ArrayList(route2InfoSet) here for preserving the order.
@@ -194,7 +228,7 @@ class MediaRoute2Provider extends MediaRouteProvider {
         List<MediaRouteDescriptor> routeDescriptors = new ArrayList<>();
         for (MediaRoute2Info route : mRoutes) {
             MediaRouteDescriptor descriptor = MediaRouter2Utils.toMediaRouteDescriptor(route);
-            if (route != null) {
+            if (descriptor != null) {
                 routeDescriptors.add(descriptor);
             }
         }
@@ -406,11 +440,11 @@ class MediaRoute2Provider extends MediaRouteProvider {
     }
 
     private class TransferCallback extends MediaRouter2.TransferCallback {
-        TransferCallback() {}
 
         @Override
         public void onTransfer(@NonNull MediaRouter2.RoutingController oldController,
                 @NonNull MediaRouter2.RoutingController newController) {
+            mPendingTransferRouteId = null;
             mControllerMap.remove(oldController);
             if (newController == mMediaRouter2.getSystemController()) {
                 mCallback.onSelectFallbackRoute(UNSELECT_REASON_ROUTE_CHANGED);
@@ -431,11 +465,13 @@ class MediaRoute2Provider extends MediaRouteProvider {
 
         @Override
         public void onTransferFailure(@NonNull MediaRoute2Info requestedRoute) {
+            mPendingTransferRouteId = null;
             Log.w(TAG, "Transfer failed. requestedRoute=" + requestedRoute);
         }
 
         @Override
         public void onStop(@NonNull MediaRouter2.RoutingController routingController) {
+            mPendingTransferRouteId = null;
             RouteController routeController = mControllerMap.remove(routingController);
             if (routeController != null) {
                 mCallback.onReleaseController(routeController);
@@ -727,7 +763,6 @@ class MediaRoute2Provider extends MediaRouteProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setPlatformRouteListingPreference(
                 @NonNull MediaRouter2 mediaRouter2,
                 @Nullable android.media.RouteListingPreference routeListingPreference) {

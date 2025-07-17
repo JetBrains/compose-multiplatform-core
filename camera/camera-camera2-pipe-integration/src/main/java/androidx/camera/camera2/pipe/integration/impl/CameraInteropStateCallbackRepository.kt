@@ -20,8 +20,9 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.os.Build
 import android.view.Surface
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.impl.SessionConfig
 import kotlinx.atomicfu.AtomicRef
@@ -33,10 +34,10 @@ import kotlinx.atomicfu.atomic
  * graph is created, CameraX updates these internal callbacks with Camera Interop callbacks so that
  * they may be triggered in camera-pipe.
  */
-class CameraInteropStateCallbackRepository {
+public class CameraInteropStateCallbackRepository {
 
-    private val _deviceStateCallback = CameraInteropDeviceStateCallback()
-    private val _sessionStateCallback = CameraInteropSessionStateCallback()
+    private val _deviceStateCallback = CameraDeviceStateCallbacks()
+    private val _sessionStateCallback = CaptureSessionStateCallbacks()
 
     /**
      * Called after merging all sessionConfigs from CameraX useCases and UseCases supplied by Camera
@@ -46,18 +47,18 @@ class CameraInteropStateCallbackRepository {
      *
      * @param sessionConfig the final merged sessionConfig used to create camera graph
      */
-    fun updateCallbacks(sessionConfig: SessionConfig) {
+    public fun updateCallbacks(sessionConfig: SessionConfig) {
         _deviceStateCallback.updateCallbacks(sessionConfig)
         _sessionStateCallback.updateCallbacks(sessionConfig)
     }
 
-    val deviceStateCallback
+    public val deviceStateCallback: CameraDeviceStateCallbacks
         get() = _deviceStateCallback
 
-    val sessionStateCallback
+    public val sessionStateCallback: CameraInterop.CaptureSessionListener
         get() = _sessionStateCallback
 
-    class CameraInteropDeviceStateCallback : CameraDevice.StateCallback() {
+    public class CameraDeviceStateCallbacks : CameraDevice.StateCallback() {
 
         private var callbacks: AtomicRef<List<CameraDevice.StateCallback>> = atomic(listOf())
 
@@ -90,7 +91,8 @@ class CameraInteropStateCallbackRepository {
         }
     }
 
-    class CameraInteropSessionStateCallback() : CameraCaptureSession.StateCallback() {
+    public class CaptureSessionStateCallbacks : CameraInterop.CaptureSessionListener {
+        private val placeholderSession = RejectOperationCameraCaptureSession()
 
         private var callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>> =
             atomic(listOf())
@@ -99,47 +101,69 @@ class CameraInteropStateCallbackRepository {
             callbacks.value = sessionConfig.sessionStateCallbacks.toList()
         }
 
-        override fun onConfigured(session: CameraCaptureSession) {
+        override fun onConfigured(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             for (callback in callbacks.value) {
-                callback.onConfigured(session)
+                callback.onConfigured(placeholderSession)
             }
         }
 
-        override fun onConfigureFailed(session: CameraCaptureSession) {
+        override fun onConfigureFailed(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             for (callback in callbacks.value) {
-                callback.onConfigureFailed(session)
+                callback.onConfigureFailed(placeholderSession)
             }
         }
 
-        override fun onReady(session: CameraCaptureSession) {
+        override fun onReady(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             for (callback in callbacks.value) {
-                callback.onReady(session)
+                callback.onReady(placeholderSession)
             }
         }
 
-        override fun onActive(session: CameraCaptureSession) {
+        override fun onActive(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             for (callback in callbacks.value) {
-                callback.onActive(session)
+                callback.onActive(placeholderSession)
             }
         }
 
-        override fun onCaptureQueueEmpty(session: CameraCaptureSession) {
+        override fun onCaptureQueueEmpty(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Api26CompatImpl.onCaptureQueueEmpty(session, callbacks)
+                Api26CompatImpl.onCaptureQueueEmpty(placeholderSession, callbacks)
             } else {
                 Log.error { "onCaptureQueueEmpty called for unsupported OS version." }
             }
         }
 
-        override fun onClosed(session: CameraCaptureSession) {
+        override fun onClosed(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+        ) {
             for (callback in callbacks.value) {
-                callback.onClosed(session)
+                callback.onClosed(placeholderSession)
             }
         }
 
-        override fun onSurfacePrepared(session: CameraCaptureSession, surface: Surface) {
+        override fun onSurfacePrepared(
+            cameraId: CameraId,
+            captureSessionId: CameraInterop.CameraCaptureSessionId,
+            surface: Surface,
+        ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Api23CompatImpl.onSurfacePrepared(session, surface, callbacks)
+                Api23CompatImpl.onSurfacePrepared(placeholderSession, surface, callbacks)
             } else {
                 Log.error { "onSurfacePrepared called for unsupported OS version." }
             }
@@ -147,12 +171,11 @@ class CameraInteropStateCallbackRepository {
 
         @RequiresApi(Build.VERSION_CODES.M)
         private object Api23CompatImpl {
-            @DoNotInline
             @JvmStatic
             fun onSurfacePrepared(
                 session: CameraCaptureSession,
                 surface: Surface,
-                callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>>
+                callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>>,
             ) {
                 for (callback in callbacks.value) {
                     callback.onSurfacePrepared(session, surface)
@@ -162,11 +185,10 @@ class CameraInteropStateCallbackRepository {
 
         @RequiresApi(Build.VERSION_CODES.O)
         private object Api26CompatImpl {
-            @DoNotInline
             @JvmStatic
             fun onCaptureQueueEmpty(
                 session: CameraCaptureSession,
-                callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>>
+                callbacks: AtomicRef<List<CameraCaptureSession.StateCallback>>,
             ) {
                 for (callback in callbacks.value) {
                     callback.onCaptureQueueEmpty(session)

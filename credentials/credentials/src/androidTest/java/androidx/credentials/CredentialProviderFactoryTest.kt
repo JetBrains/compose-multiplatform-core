@@ -16,6 +16,8 @@
 package androidx.credentials
 
 import android.os.Build
+import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
+import androidx.credentials.internal.FormFactorHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -29,6 +31,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class CredentialProviderFactoryTest {
+    companion object {
+        private const val TEST_USERNAME = "test-user-natcme@gmail.com"
+        private const val TEST_USER_DISPLAYNAME = "Test User"
+        private const val TEST_REQUEST_JSON =
+            "{\"rp\":{\"name\":true,\"id\":\"app-id\"}," +
+                "\"user\":{\"name\":\"$TEST_USERNAME\",\"id\":\"id-value\",\"displayName" +
+                "\":\"$TEST_USER_DISPLAYNAME\",\"icon\":true}, \"challenge\":true," +
+                "\"pubKeyCredParams\":true,\"excludeCredentials\":true," +
+                "\"attestation\":true}"
+    }
+
     private val context = InstrumentationRegistry.getInstrumentation().context
 
     private lateinit var credentialProviderFactory: CredentialProviderFactory
@@ -126,6 +139,35 @@ class CredentialProviderFactoryTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun getBestAvailableProvider_postU_restoreCredential_returnsPreU() {
+        if (Build.VERSION.SDK_INT <= 33) {
+            return
+        }
+        clearState()
+        val expectedProvider = FakeProvider(success = true)
+        credentialProviderFactory.testMode = true
+        credentialProviderFactory.testPreUProvider = expectedProvider
+
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetRestoreCredentialOption(TEST_REQUEST_JSON))
+        val request = GetCredentialRequest(credentialOptions)
+
+        assertThat(
+                credentialProviderFactory.getBestAvailableProvider(TYPE_CLEAR_RESTORE_CREDENTIAL)
+            )
+            .isEqualTo(expectedProvider)
+        assertThat(
+                credentialProviderFactory.getBestAvailableProvider(
+                    CreateRestoreCredentialRequest(TEST_REQUEST_JSON)
+                )
+            )
+            .isEqualTo(expectedProvider)
+        assertThat(credentialProviderFactory.getBestAvailableProvider(request))
+            .isEqualTo(expectedProvider)
+    }
+
+    @Test
     @SdkSuppress(maxSdkVersion = 33)
     fun getBestAvailableProvider_preU_success() {
         if (Build.VERSION.SDK_INT >= 34) {
@@ -168,5 +210,66 @@ class CredentialProviderFactoryTest {
         credentialProviderFactory.testPreUProvider = null
 
         assertNull(credentialProviderFactory.getBestAvailableProvider())
+    }
+
+    @Test
+    @SdkSuppress(maxSdkVersion = 33)
+    fun getBestAvailableProvider_preU_restoreCredential_returnsPreU() {
+        if (Build.VERSION.SDK_INT >= 34) {
+            return
+        }
+        clearState()
+        val expectedProvider = FakeProvider(success = true)
+        credentialProviderFactory.testMode = true
+        credentialProviderFactory.testPreUProvider = expectedProvider
+
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetRestoreCredentialOption(TEST_REQUEST_JSON))
+        val request = GetCredentialRequest(credentialOptions)
+
+        assertThat(
+                credentialProviderFactory.getBestAvailableProvider(TYPE_CLEAR_RESTORE_CREDENTIAL)
+            )
+            .isEqualTo(expectedProvider)
+        assertThat(
+                credentialProviderFactory.getBestAvailableProvider(
+                    CreateRestoreCredentialRequest(TEST_REQUEST_JSON)
+                )
+            )
+            .isEqualTo(expectedProvider)
+        assertThat(credentialProviderFactory.getBestAvailableProvider(request))
+            .isEqualTo(expectedProvider)
+    }
+
+    @Test
+    fun getBestAvailableProvider_onTV_preUSuccess() {
+        if (!FormFactorHelper.isTV(context)) {
+            return
+        }
+        clearState()
+        val expectedPreUProvider = FakeProvider(success = true)
+        credentialProviderFactory.testMode = true
+        credentialProviderFactory.testPreUProvider = expectedPreUProvider
+
+        val actualProvider = credentialProviderFactory.getBestAvailableProvider()
+
+        assertThat(actualProvider).isNotNull()
+        assertThat(actualProvider).isEqualTo(expectedPreUProvider)
+    }
+
+    @Test
+    fun getBestAvailableProvider_onAuto_preUSuccess() {
+        if (!FormFactorHelper.isAuto(context)) {
+            return
+        }
+        clearState()
+        val expectedPreUProvider = FakeProvider(success = true)
+        credentialProviderFactory.testMode = true
+        credentialProviderFactory.testPreUProvider = expectedPreUProvider
+
+        val actualProvider = credentialProviderFactory.getBestAvailableProvider()
+
+        assertThat(actualProvider).isNotNull()
+        assertThat(actualProvider).isEqualTo(expectedPreUProvider)
     }
 }

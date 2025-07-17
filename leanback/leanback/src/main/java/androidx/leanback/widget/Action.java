@@ -16,8 +16,8 @@ package androidx.leanback.widget;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -110,8 +110,7 @@ public class Action {
     /**
      * Returns the first line label for this Action.
      */
-    @Nullable
-    public final CharSequence getLabel1() {
+    public final @Nullable CharSequence getLabel1() {
         return mLabel1;
     }
 
@@ -125,8 +124,7 @@ public class Action {
     /**
      * Returns the second line label for this Action.
      */
-    @Nullable
-    public final CharSequence getLabel2() {
+    public final @Nullable CharSequence getLabel2() {
         return mLabel2;
     }
 
@@ -140,8 +138,7 @@ public class Action {
     /**
      * Returns the icon drawable for this Action.
      */
-    @Nullable
-    public final Drawable getIcon() {
+    public final @Nullable Drawable getIcon() {
         return mIcon;
     }
 
@@ -167,8 +164,7 @@ public class Action {
     }
 
     @Override
-    @NonNull
-    public String toString(){
+    public @NonNull String toString() {
         StringBuilder sb = new StringBuilder();
         if (!TextUtils.isEmpty(mLabel1)) {
             sb.append(mLabel1);

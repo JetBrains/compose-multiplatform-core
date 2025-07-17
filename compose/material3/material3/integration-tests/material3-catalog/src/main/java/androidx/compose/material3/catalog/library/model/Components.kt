@@ -36,8 +36,14 @@ data class Component(
     val guidelinesUrl: String,
     val docsUrl: String,
     val sourceUrl: String,
-    val examples: List<Example>
-)
+    val examples: List<Example>,
+) {
+    /** True if the component has expressive examples, false otherwise. */
+    val hasExpressiveExamples: Boolean
+        get() {
+            return examples.any { it.isExpressive }
+        }
+}
 
 private var nextId: Int = 1
 
@@ -57,7 +63,7 @@ private val Adaptive =
         guidelinesUrl = "$AdaptiveGuidelinesUrl/understanding-layout/overview",
         docsUrl = "$DocsUrl/adaptive",
         sourceUrl = "$AdaptiveSourceUrl/ThreePaneScaffold.kt",
-        examples = AdaptiveExamples
+        examples = AdaptiveExamples,
     )
 
 private val Badge =
@@ -72,7 +78,7 @@ private val Badge =
         guidelinesUrl = "$ComponentGuidelinesUrl/badge",
         docsUrl = "$DocsUrl#badge",
         sourceUrl = "$Material3SourceUrl/Badge.kt",
-        examples = BadgeExamples
+        examples = BadgeExamples,
     )
 
 private val BottomAppBars =
@@ -86,7 +92,7 @@ private val BottomAppBars =
         guidelinesUrl = "$ComponentGuidelinesUrl/bottom-app-bars",
         docsUrl = "$DocsUrl#bottomappbar",
         sourceUrl = "$Material3SourceUrl/AppBar.kt",
-        examples = BottomAppBarsExamples
+        examples = BottomAppBarsExamples,
     )
 
 private val BottomSheets =
@@ -100,7 +106,7 @@ private val BottomSheets =
         guidelinesUrl = "$ComponentGuidelinesUrl/bottom-sheets",
         docsUrl = "$DocsUrl#bottomsheet",
         sourceUrl = "$Material3SourceUrl/ModalBottomSheet.android.kt",
-        examples = BottomSheetExamples
+        examples = BottomSheetExamples,
     )
 
 private val Buttons =
@@ -117,6 +123,18 @@ private val Buttons =
         examples = ButtonsExamples,
     )
 
+private val ButtonGroups =
+    Component(
+        id = nextId(),
+        name = "Button Groups",
+        description =
+            "button groups is a container for material components that adds an animation on press",
+        guidelinesUrl = "$ComponentGuidelinesUrl/button-groups",
+        docsUrl = "$PackageSummaryUrl#buttongroups",
+        sourceUrl = "$Material3SourceUrl/ButtonGroup.kt",
+        examples = ButtonGroupsExamples,
+    )
+
 private val Card =
     Component(
         id = nextId(),
@@ -126,7 +144,7 @@ private val Card =
         guidelinesUrl = "$StyleGuidelinesUrl/cards",
         docsUrl = "$PackageSummaryUrl#card",
         sourceUrl = "$Material3SourceUrl/Card.kt",
-        examples = CardExamples
+        examples = CardExamples,
     )
 
 private val Carousel =
@@ -140,7 +158,7 @@ private val Carousel =
         guidelinesUrl = "$StyleGuidelinesUrl/carousel",
         docsUrl = "$PackageSummaryUrl#carousel",
         sourceUrl = "$Material3SourceUrl/Carousel.kt",
-        examples = CarouselExamples
+        examples = CarouselExamples,
     )
 
 private val Checkboxes =
@@ -154,7 +172,7 @@ private val Checkboxes =
         guidelinesUrl = "$ComponentGuidelinesUrl/checkboxes",
         docsUrl = "$DocsUrl#checkbox",
         sourceUrl = "$Material3SourceUrl/Checkbox.kt",
-        examples = CheckboxesExamples
+        examples = CheckboxesExamples,
     )
 
 private val Chips =
@@ -168,7 +186,7 @@ private val Chips =
         guidelinesUrl = "$ComponentGuidelinesUrl/chips",
         docsUrl = "$DocsUrl#chips",
         sourceUrl = "$Material3SourceUrl/Chip.kt",
-        examples = ChipsExamples
+        examples = ChipsExamples,
     )
 
 private val DatePickers =
@@ -180,7 +198,7 @@ private val DatePickers =
         guidelinesUrl = "$ComponentGuidelinesUrl/datepicker",
         docsUrl = "$PackageSummaryUrl#datepicker",
         sourceUrl = "$Material3SourceUrl/DatePicker.kt",
-        examples = DatePickerExamples
+        examples = DatePickerExamples,
     )
 
 private val Dialogs =
@@ -194,7 +212,7 @@ private val Dialogs =
         guidelinesUrl = "$ComponentGuidelinesUrl/dialogs",
         docsUrl = "$PackageSummaryUrl#alertdialog",
         sourceUrl = "$Material3SourceUrl/AlertDialog.kt",
-        examples = DialogExamples
+        examples = DialogExamples,
     )
 
 private val ExtendedFloatingActionButton =
@@ -225,6 +243,30 @@ private val FloatingActionButtons =
         examples = FloatingActionButtonsExamples,
     )
 
+private val FloatingActionButtonMenu =
+    Component(
+        id = nextId(),
+        name = "FAB Menu",
+        description = "The FAB Menu displays additional key actions on click of a FAB.",
+        // No FAB Menu icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/fab-menu",
+        docsUrl = "$PackageSummaryUrl#floatingactionbuttonmenu",
+        sourceUrl = "$Material3SourceUrl/FloatingActionButtonMenu.kt",
+        examples = FloatingActionButtonMenuExamples,
+    )
+
+private val FloatingToolbars =
+    Component(
+        id = nextId(),
+        name = "Floating Toolbar",
+        description = "A floating toolbar displays key actions above the content.",
+        // No floating app bar icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/floating-toolbars",
+        docsUrl = "$DocsUrl#floatingtoolbar",
+        sourceUrl = "$Material3SourceUrl/FloatingToolbar.kt",
+        examples = FloatingToolbarsExamples,
+    )
+
 private val IconButtons =
     Component(
         id = nextId(),
@@ -250,6 +292,22 @@ private val Lists =
         sourceUrl = "$Material3SourceUrl/ListItem.kt",
         examples = ListsExamples,
     )
+
+private val LoadingIndicators =
+    Component(
+        id = nextId(),
+        name = "Loading indicators",
+        description =
+            "Loading indicators express an unspecified wait time or display the length of " +
+                "a loading process.",
+        // No loading indicator icon
+        guidelinesUrl = "$ComponentGuidelinesUrl/loading-indicators",
+        tintIcon = true,
+        docsUrl = "$PackageSummaryUrl#loadingindicator",
+        sourceUrl = "$Material3SourceUrl/LoadingIndicator.kt",
+        examples = LoadingIndicatorsExamples,
+    )
+
 private val Menus =
     Component(
         id = nextId(),
@@ -259,7 +317,7 @@ private val Menus =
         guidelinesUrl = "$ComponentGuidelinesUrl/menus",
         docsUrl = "$PackageSummaryUrl#dropdownmenu",
         sourceUrl = "$Material3SourceUrl/Menu.kt",
-        examples = MenusExamples
+        examples = MenusExamples,
     )
 
 private val NavigationBar =
@@ -273,7 +331,7 @@ private val NavigationBar =
         guidelinesUrl = "$ComponentGuidelinesUrl/navigation-bar",
         docsUrl = "$PackageSummaryUrl#navigationbar",
         sourceUrl = "$Material3SourceUrl/NavigationBar.kt",
-        examples = NavigationBarExamples
+        examples = NavigationBarExamples,
     )
 
 private val NavigationDrawer =
@@ -285,7 +343,7 @@ private val NavigationDrawer =
         guidelinesUrl = "$ComponentGuidelinesUrl/navigation-drawer",
         docsUrl = "$PackageSummaryUrl#navigationdrawer",
         sourceUrl = "$Material3SourceUrl/NavigationDrawer.kt",
-        examples = NavigationDrawerExamples
+        examples = NavigationDrawerExamples,
     )
 
 private val NavigationRail =
@@ -299,7 +357,7 @@ private val NavigationRail =
         guidelinesUrl = "$ComponentGuidelinesUrl/navigation-rail",
         docsUrl = "$PackageSummaryUrl#navigationrail",
         sourceUrl = "$Material3SourceUrl/NavigationRail.kt",
-        examples = NavigationRailExamples
+        examples = NavigationRailExamples,
     )
 
 private val NavigationSuiteScaffold =
@@ -315,7 +373,7 @@ private val NavigationSuiteScaffold =
         guidelinesUrl = "", // TODO: Add guidelines url when available
         docsUrl = "", // TODO: Add docs url when available
         sourceUrl = "$AdaptiveNavigationSuiteMaterial3SourceUrl/NavigationSuiteScaffold.kt",
-        examples = NavigationSuiteScaffoldExamples
+        examples = NavigationSuiteScaffoldExamples,
     )
 
 private val ProgressIndicators =
@@ -329,7 +387,7 @@ private val ProgressIndicators =
         guidelinesUrl = "$ComponentGuidelinesUrl/progress-indicators",
         docsUrl = "$DocsUrl#circularprogressindicator",
         sourceUrl = "$Material3SourceUrl/ProgressIndicator.kt",
-        examples = ProgressIndicatorsExamples
+        examples = ProgressIndicatorsExamples,
     )
 
 private val PullToRefreshIndicators =
@@ -344,7 +402,7 @@ private val PullToRefreshIndicators =
         guidelinesUrl = "",
         docsUrl = "$DocsUrl#pulltorefreshcontainer",
         sourceUrl = "$Material3SourceUrl/PullToRefresh.kt",
-        examples = PullToRefreshExamples
+        examples = PullToRefreshExamples,
     )
 
 private val RadioButtons =
@@ -356,7 +414,7 @@ private val RadioButtons =
         guidelinesUrl = "$ComponentGuidelinesUrl/radio-buttons",
         docsUrl = "$DocsUrl#radiobutton",
         sourceUrl = "$Material3SourceUrl/RadioButton.kt",
-        examples = RadioButtonsExamples
+        examples = RadioButtonsExamples,
     )
 
 private val SearchBars =
@@ -370,7 +428,7 @@ private val SearchBars =
         guidelinesUrl = "", // No guidelines yet
         docsUrl = "", // No docs yet
         sourceUrl = "$Material3SourceUrl/SearchBar.kt",
-        examples = SearchBarExamples
+        examples = SearchBarExamples,
     )
 
 private val SegmentedButtons =
@@ -382,7 +440,18 @@ private val SegmentedButtons =
         guidelinesUrl = "", // No guidelines yet
         docsUrl = "", // No docs yet
         sourceUrl = "$Material3SourceUrl/SegmentedButton.kt",
-        examples = SegmentedButtonExamples
+        examples = SegmentedButtonExamples,
+    )
+
+private val ToggleButtons =
+    Component(
+        id = nextId(),
+        name = "ToggleButtons",
+        description = "Toggle buttons provide a selectable button that animates on press.",
+        guidelinesUrl = "", // No guidelines yet
+        docsUrl = "", // No docs yet
+        sourceUrl = "$Material3SourceUrl/ToggleButton.kt",
+        examples = ToggleButtonsExamples,
     )
 
 private val Sliders =
@@ -394,7 +463,7 @@ private val Sliders =
         guidelinesUrl = "", // No guidelines yet
         docsUrl = "", // No docs yet
         sourceUrl = "$Material3SourceUrl/Slider.kt",
-        examples = SlidersExamples
+        examples = SlidersExamples,
     )
 
 private val Snackbars =
@@ -408,7 +477,18 @@ private val Snackbars =
         guidelinesUrl = "$ComponentGuidelinesUrl/snackbars",
         docsUrl = "$DocsUrl#snackbar",
         sourceUrl = "$Material3SourceUrl/Snackbar.kt",
-        examples = SnackbarsExamples
+        examples = SnackbarsExamples,
+    )
+
+private val SplitButtons =
+    Component(
+        id = nextId(),
+        name = "Split Button",
+        description = "Split buttons let user perform additional actions besides the main action",
+        guidelinesUrl = "", // No guidelines yet
+        docsUrl = "", // No docs yet
+        sourceUrl = "$Material3SourceUrl/SplitButton.kt",
+        examples = SplitButtonExamples,
     )
 
 private val Switches =
@@ -421,7 +501,7 @@ private val Switches =
         guidelinesUrl = "",
         docsUrl = "",
         sourceUrl = "$Material3SourceUrl/Switch.kt",
-        examples = SwitchExamples
+        examples = SwitchExamples,
     )
 
 private val Tabs =
@@ -435,7 +515,7 @@ private val Tabs =
         guidelinesUrl = "$ComponentGuidelinesUrl/tabs",
         docsUrl = "$DocsUrl#tab",
         sourceUrl = "$Material3SourceUrl/Tab.kt",
-        examples = TabsExamples
+        examples = TabsExamples,
     )
 
 private val TextFields =
@@ -447,7 +527,7 @@ private val TextFields =
         guidelinesUrl = "$ComponentGuidelinesUrl/text-fields",
         docsUrl = "$DocsUrl#textfield",
         sourceUrl = "$Material3SourceUrl/TextField.kt",
-        examples = TextFieldsExamples
+        examples = TextFieldsExamples,
     )
 
 private val Tooltips =
@@ -459,7 +539,7 @@ private val Tooltips =
         guidelinesUrl = "$ComponentGuidelinesUrl/tooltips",
         docsUrl = "$PackageSummaryUrl#tooltip",
         sourceUrl = "$Material3SourceUrl/Tooltip.kt",
-        examples = TooltipsExamples
+        examples = TooltipsExamples,
     )
 
 private val TimePickers =
@@ -471,7 +551,7 @@ private val TimePickers =
         guidelinesUrl = "$ComponentGuidelinesUrl/time-picker",
         docsUrl = "$DocsUrl#time-pickers",
         sourceUrl = "$Material3SourceUrl/TimePicker.kt",
-        examples = TimePickerExamples
+        examples = TimePickerExamples,
     )
 
 private val TopAppBar =
@@ -483,7 +563,7 @@ private val TopAppBar =
         guidelinesUrl = "$ComponentGuidelinesUrl/top-app-bar",
         docsUrl = "$PackageSummaryUrl#smalltopappbar",
         sourceUrl = "$Material3SourceUrl/AppBar.kt",
-        examples = TopAppBarExamples
+        examples = TopAppBarExamples,
     )
 
 /** Components for the catalog, ordered alphabetically by name. */
@@ -494,6 +574,7 @@ val Components =
         BottomAppBars,
         BottomSheets,
         Buttons,
+        ButtonGroups,
         Card,
         Carousel,
         Checkboxes,
@@ -502,8 +583,11 @@ val Components =
         Dialogs,
         ExtendedFloatingActionButton,
         FloatingActionButtons,
+        FloatingActionButtonMenu,
+        FloatingToolbars,
         IconButtons,
         Lists,
+        LoadingIndicators,
         Menus,
         NavigationBar,
         NavigationDrawer,
@@ -516,10 +600,12 @@ val Components =
         SegmentedButtons,
         Sliders,
         Snackbars,
+        SplitButtons,
         Switches,
         Tabs,
         TextFields,
         TimePickers,
+        ToggleButtons,
         Tooltips,
-        TopAppBar
+        TopAppBar,
     )

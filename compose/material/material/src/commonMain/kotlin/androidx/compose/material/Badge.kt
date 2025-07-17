@@ -50,7 +50,6 @@ import androidx.compose.ui.util.fastFirst
  * A simple icon with badge example looks like:
  *
  * @sample androidx.compose.material.samples.BottomNavigationItemWithBadge
- *
  * @param badge the badge to be displayed - typically a [Badge]
  * @param modifier optional [Modifier] for this item
  * @param content the anchor to which this badge will be positioned
@@ -66,11 +65,11 @@ fun BadgedBox(
             Box(
                 modifier = Modifier.layoutId("anchor"),
                 contentAlignment = Alignment.Center,
-                content = content
+                content = content,
             )
             Box(modifier = Modifier.layoutId("badge"), content = badge)
         },
-        modifier = modifier
+        modifier = modifier,
     ) { measurables, constraints ->
         val badgePlaceable =
             measurables
@@ -94,7 +93,7 @@ fun BadgedBox(
             totalHeight,
             // Provide custom baselines based only on the anchor content to avoid default baseline
             // calculations from including by any badge content.
-            mapOf(FirstBaseline to firstBaseline, LastBaseline to lastBaseline)
+            mapOf(FirstBaseline to firstBaseline, LastBaseline to lastBaseline),
         ) {
             // Use the width of the badge to infer whether it has any content (based on radius used
             // in [Badge]) and determine its horizontal offset.
@@ -141,7 +140,7 @@ fun Badge(
                 .clip(shape)
                 .padding(horizontal = BadgeWithContentHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
     ) {
         if (content != null) {
             CompositionLocalProvider(LocalContentColor provides contentColor) {

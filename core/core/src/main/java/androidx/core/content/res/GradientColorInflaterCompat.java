@@ -34,11 +34,11 @@ import android.util.Xml;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -66,7 +66,7 @@ final class GradientColorInflaterCompat {
     }
 
     static Shader createFromXml(@NonNull Resources resources, @NonNull XmlPullParser parser,
-            @Nullable Resources.Theme theme) throws XmlPullParserException, IOException {
+            Resources.@Nullable Theme theme) throws XmlPullParserException, IOException {
         final AttributeSet attrs = Xml.asAttributeSet(parser);
 
         int type;
@@ -84,7 +84,7 @@ final class GradientColorInflaterCompat {
 
     static Shader createFromXmlInner(@NonNull Resources resources,
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
-            @Nullable Resources.Theme theme)
+            Resources.@Nullable Theme theme)
             throws IOException, XmlPullParserException {
         final String name = parser.getName();
         if (!name.equals("gradient")) {
@@ -144,7 +144,7 @@ final class GradientColorInflaterCompat {
 
     private static ColorStops inflateChildElements(@NonNull Resources resources,
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
-            @Nullable Resources.Theme theme)
+            Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
         final int innerDepth = parser.getDepth() + 1;
         int type;

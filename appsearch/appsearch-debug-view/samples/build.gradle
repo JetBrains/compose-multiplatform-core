@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,25 +29,22 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.appsearch.debugview.samples"
+    compileSdk = 36
+    namespace = "androidx.appsearch.debugview.samples"
 }
 
 dependencies {
-    annotationProcessor project(":appsearch:appsearch-compiler")
+    annotationProcessor(project(":appsearch:appsearch-compiler"))
 
-    api('androidx.annotation:annotation:1.1.0')
+    api("androidx.annotation:annotation:1.1.0")
 
-    implementation(libs.multidex)
-    implementation project(':appsearch:appsearch')
-    implementation project(':appsearch:appsearch-local-storage')
-    implementation project(':appsearch:appsearch-debug-view')
-    implementation('androidx.appcompat:appcompat:1.2.0')
-    implementation('androidx.concurrent:concurrent-futures:1.0.0')
-    implementation('com.google.android.material:material:1.0.0')
-    implementation('com.google.code.gson:gson:2.6.2')
+    implementation(project(":appsearch:appsearch"))
+    implementation(project(":appsearch:appsearch-local-storage"))
+    implementation(project(":appsearch:appsearch-debug-view"))
+    implementation("androidx.appcompat:appcompat:1.2.0")
+    implementation("androidx.concurrent:concurrent-futures:1.0.0")
+    implementation("com.google.android.material:material:1.0.0")
+    implementation("com.google.code.gson:gson:2.6.2")
     implementation(libs.constraintLayout)
     implementation(libs.guavaAndroid)
 }

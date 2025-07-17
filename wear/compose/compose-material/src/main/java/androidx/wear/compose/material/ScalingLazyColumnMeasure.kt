@@ -105,14 +105,14 @@ public interface ScalingParams {
      * of the viewport. A value between [0f,1f], so a value of 0.2f means to scale an item to 20% of
      * its normal size.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val edgeScale: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val edgeScale: Float
 
     /**
      * What fraction of the full transparency of the item to draw it with when closest to the edge
      * of the screen. A value between [0f,1f], so a value of 0.2f means to set the alpha of an item
      * to 20% of its normal value.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val edgeAlpha: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val edgeAlpha: Float
 
     /**
      * The maximum element height as a ratio of the viewport size to use for determining the
@@ -120,7 +120,7 @@ public interface ScalingParams {
      * will start to be transitioned. Items larger than [maxElementHeight] will be treated as if
      * [maxElementHeight]. Must be greater than or equal to [minElementHeight].
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val minElementHeight: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val minElementHeight: Float
 
     /**
      * The maximum element height as a ratio of the viewport size to use for determining the
@@ -128,7 +128,7 @@ public interface ScalingParams {
      * will start to be transitioned. Items larger than [maxElementHeight] will be treated as if
      * [maxElementHeight]. Must be greater than or equal to [minElementHeight].
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val maxElementHeight: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val maxElementHeight: Float
 
     /**
      * The lower bound of the transition line area, closest to the edge of the viewport. Defined as
@@ -144,7 +144,7 @@ public interface ScalingParams {
      * list items exist. Depending on the size of the list item the specific point in the area is
      * calculated.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val minTransitionArea: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val minTransitionArea: Float
 
     /**
      * The upper bound of the transition line area, closest to the center of the viewport. The
@@ -160,13 +160,13 @@ public interface ScalingParams {
      * list items exist. Depending on the size of the list item the specific point in the area is
      * calculated.
      */
-    @get:FloatRange(from = 0.0, to = 1.0) val maxTransitionArea: Float
+    @get:FloatRange(from = 0.0, to = 1.0) public val maxTransitionArea: Float
 
     /**
      * An interpolator to use to determine how to apply scaling as a item transitions across the
      * scaling transition area.
      */
-    val scaleInterpolator: Easing
+    public val scaleInterpolator: Easing
 
     /**
      * The additional padding to consider above and below the viewport of a [ScalingLazyColumn] when
@@ -292,7 +292,7 @@ internal fun calculateScaleAndAlpha(
             inverseLerp(
                 scalingParams.minElementHeight,
                 scalingParams.maxElementHeight,
-                heightAsFractionOfViewPort
+                heightAsFractionOfViewPort,
             )
 
         val scalingLineAsFractionOfViewPort =
@@ -341,7 +341,7 @@ internal fun calculateItemInfo(
     beforeContentPaddingPx: Int,
     anchorType: ScalingLazyListAnchorType,
     autoCentering: AutoCenteringParams?,
-    visible: Boolean
+    visible: Boolean,
 ): ScalingLazyListItemInfo {
     val adjustedItemStart = itemStart - verticalAdjustment
     val adjustedItemEnd = itemStart + item.size - verticalAdjustment
@@ -352,7 +352,7 @@ internal fun calculateItemInfo(
             viewPortEndPx = viewportHeightPx,
             itemTopPx = adjustedItemStart,
             itemBottomPx = adjustedItemEnd,
-            scalingParams = scalingParams
+            scalingParams = scalingParams,
         )
 
     val isAboveLine = (adjustedItemEnd + adjustedItemStart) < viewportHeightPx
@@ -370,7 +370,7 @@ internal fun calculateItemInfo(
             itemScrollOffset = scaledItemTop,
             viewportCenterLinePx = viewportCenterLinePx,
             beforeContentPaddingInPx = beforeContentPaddingPx,
-            itemSizeInPx = scaledHeight
+            itemSizeInPx = scaledHeight,
         )
     val unadjustedOffset =
         convertToCenterOffset(
@@ -378,7 +378,7 @@ internal fun calculateItemInfo(
             itemScrollOffset = item.offset,
             viewportCenterLinePx = viewportCenterLinePx,
             beforeContentPaddingInPx = beforeContentPaddingPx,
-            itemSizeInPx = item.size
+            itemSizeInPx = item.size,
         )
     return DefaultScalingLazyListItemInfo(
         // Adjust index to take into account the Spacer before the first list item
@@ -389,7 +389,7 @@ internal fun calculateItemInfo(
         size = scaledHeight,
         scale = scaleAndAlpha.scale,
         alpha = if (visible) scaleAndAlpha.alpha else 0f,
-        unadjustedSize = item.size
+        unadjustedSize = item.size,
     )
 }
 
@@ -429,7 +429,7 @@ internal class DefaultScalingLazyListItemInfo(
     override val size: Int,
     override val scale: Float,
     override val alpha: Float,
-    override val unadjustedSize: Int
+    override val unadjustedSize: Int,
 ) : ScalingLazyListItemInfo {
     override fun toString(): String {
         return "DefaultScalingLazyListItemInfo(index=$index, key=$key, " +
@@ -455,7 +455,7 @@ internal fun convertToCenterOffset(
     itemScrollOffset: Int,
     viewportCenterLinePx: Int,
     beforeContentPaddingInPx: Int,
-    itemSizeInPx: Int
+    itemSizeInPx: Int,
 ): Int {
     return itemScrollOffset - viewportCenterLinePx +
         beforeContentPaddingInPx +

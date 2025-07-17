@@ -30,10 +30,10 @@ import android.view.Gravity;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.test.filters.MediumTest;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.List;
@@ -220,9 +220,8 @@ public class TransitionInflaterTest extends BaseTest {
             super(context, attrs);
         }
 
-        @NonNull
         @Override
-        public Path getPath(float startX, float startY, float endX, float endY) {
+        public @NonNull Path getPath(float startX, float startY, float endX, float endY) {
             return null;
         }
     }

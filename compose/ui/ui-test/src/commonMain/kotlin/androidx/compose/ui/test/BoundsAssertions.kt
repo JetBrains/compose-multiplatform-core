@@ -18,7 +18,13 @@ package androidx.compose.ui.test
 
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpRect
@@ -27,6 +33,8 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.unit.width
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Asserts that the layout of this node has width equal to [expectedWidth].
@@ -100,7 +108,7 @@ fun SemanticsNodeInteraction.assertHeightIsAtLeast(
  */
 fun SemanticsNodeInteraction.assertPositionInRootIsEqualTo(
     expectedLeft: Dp,
-    expectedTop: Dp
+    expectedTop: Dp,
 ): SemanticsNodeInteraction {
     return withUnclippedBoundsInRoot {
         it.left.assertIsEqualTo(expectedLeft, "left")
@@ -169,6 +177,74 @@ fun SemanticsNodeInteraction.getAlignmentLinePosition(alignmentLine: AlignmentLi
             pos.toDp()
         }
     }
+}
+
+/**
+ * Returns the bounds of the first link matching the [predicate], or if that link spans multiple
+ * lines, returns the bounds of the first line of the link.
+ *
+ * A link in a Text composable is defined by a [LinkAnnotation] of the [AnnotatedString].
+ *
+ * The bounds are in the text node's coordinate system.
+ *
+ * You can pass an offset from within the bounds to injection methods to operate them on the link,
+ * for example [TouchInjectionScope.click] or [MouseInjectionScope.moveTo].
+ *
+ * @sample androidx.compose.ui.test.samples.hoverFirstLinkInText
+ * @see performFirstLinkClick
+ */
+fun SemanticsNodeInteraction.getFirstLinkBounds(
+    predicate: (AnnotatedString.Range<LinkAnnotation>) -> Boolean = { true }
+): Rect? = withDensity {
+    val errorMessage = "Failed to retrieve bounds of the link."
+    val node = fetchSemanticsNode(errorMessage)
+
+    val texts = node.config.getOrNull(SemanticsProperties.Text)
+    if (texts.isNullOrEmpty())
+        throw AssertionError("$errorMessage\n Reason: No text found on node.")
+
+    if (!(node.config.contains(SemanticsActions.GetTextLayoutResult)))
+        throw AssertionError(
+            "$errorMessage\n Reason: Node doesn't have GetTextLayoutResult action."
+        )
+    // This will contain only one element almost always. The only time when it could have more than
+    // one is if a developer overrides the getTextLayoutResult semantics and adds multiple elements
+    // into the list.
+    val textLayoutResults = mutableListOf<TextLayoutResult>()
+    node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(textLayoutResults)
+
+    val matchedTextLayoutResults = textLayoutResults.filter { texts.contains(it.layoutInput.text) }
+    if (matchedTextLayoutResults.isEmpty()) {
+        throw AssertionError(
+            "$errorMessage\n Reason: No matching TextLayoutResult found for the node's text. This " +
+                "usually indicates that either Text or GetTextLayoutResult semantics have been" +
+                "updated without a corresponding update to the other."
+        )
+    }
+
+    for (textLayoutResult in matchedTextLayoutResults) {
+        val text = textLayoutResult.layoutInput.text
+        val link = text.getLinkAnnotations(0, text.length).firstOrNull(predicate)
+
+        val boundsOfLink =
+            link?.let {
+                val firstCharIndex = it.start
+                val lineForLink = textLayoutResult.getLineForOffset(firstCharIndex)
+                val lastCharIndex = min(textLayoutResult.getLineEnd(lineForLink), it.end) - 1
+
+                val startBB = textLayoutResult.getBoundingBox(firstCharIndex)
+                val endBB = textLayoutResult.getBoundingBox(lastCharIndex)
+
+                Rect(
+                    min(startBB.left, endBB.left),
+                    startBB.top,
+                    max(startBB.right, endBB.right),
+                    startBB.bottom,
+                )
+            }
+        if (boundsOfLink != null) return@withDensity boundsOfLink
+    }
+    return@withDensity null
 }
 
 private fun <R> SemanticsNodeInteraction.withDensity(operation: Density.(SemanticsNode) -> R): R {

@@ -18,9 +18,10 @@ package androidx.camera.core.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -30,16 +31,19 @@ import java.util.Set;
 
 /**
  * <p>QuirkSummary
- *     Bug Id: 309005680
+ *     Bug Id: 309005680, 356428987
  *     Description: Quirk required to check whether the captured JPEG image has incorrect metadata.
  *                  For example, Samsung A24 device has the problem and result in the captured
- *                  image can't be parsed and saved successfully.
- *     Device(s): Samsung Galaxy A24 device.
+ *                  image can't be parsed and saved successfully. Samsung S10e and S10+ devices are
+ *                  also reported to have the similar issue.
+ *     Device(s): Samsung Galaxy A24, S10e, S10+ device.
  */
 public final class IncorrectJpegMetadataQuirk implements Quirk {
 
     private static final Set<String> SAMSUNG_DEVICES = new HashSet<>(Arrays.asList(
-            "A24" // Samsung Galaxy A24 series devices
+            "A24", // Samsung Galaxy A24 series devices
+            "BEYOND0", // Samsung Galaxy S10e series devices
+            "BEYOND2" // Samsung Galaxy S10+ series devices
     ));
 
     static boolean load() {
@@ -57,8 +61,7 @@ public final class IncorrectJpegMetadataQuirk implements Quirk {
      * <p>Some unexpected data exists in the head of the problematic JPEG images captured from
      * the Samsung A24 device. Removing those data can fix the JPEG images.
      */
-    @NonNull
-    public byte[] jpegImageToJpegByteArray(@NonNull ImageProxy imageProxy) {
+    public byte @NonNull [] jpegImageToJpegByteArray(@NonNull ImageProxy imageProxy) {
         ByteBuffer byteBuffer = imageProxy.getPlanes()[0].getBuffer();
         byte[] bytes = new byte[byteBuffer.capacity()];
         byteBuffer.rewind();
@@ -83,7 +86,7 @@ public final class IncorrectJpegMetadataQuirk implements Quirk {
     /**
      * Returns whether the JFIF SOS marker can be correctly parsed from the input JPEG byte data.
      */
-    private boolean canParseSosMarker(@NonNull byte[] bytes) {
+    private boolean canParseSosMarker(byte @NonNull [] bytes) {
         // Parses the JFIF segments from the start of the JPEG image data
         int markPosition = 0x2;
         while (true) {
@@ -107,7 +110,7 @@ public final class IncorrectJpegMetadataQuirk implements Quirk {
      * @param bytes the JPEG byte array data.
      * @return the second FFD8 position if it can be found. Otherwise, returns -1.
      */
-    private int findSecondFfd8Position(@NonNull byte[] bytes) {
+    private int findSecondFfd8Position(byte @NonNull [] bytes) {
         // Starts from the position 2 to skip the first FFD8
         int position = 2;
 

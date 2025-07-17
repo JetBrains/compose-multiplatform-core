@@ -17,15 +17,19 @@
 package androidx.wear.compose.integration.demos
 
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.SwipeToDismissBoxState
 import androidx.wear.compose.foundation.SwipeToDismissKeys
 import androidx.wear.compose.foundation.SwipeToDismissValue
@@ -53,8 +57,10 @@ fun DemoApp(
     onNavigateTo: (Demo) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    val swipeToDismissState = swipeDismissStateWithNavigation(onNavigateBack)
-    DisplayDemo(swipeToDismissState, currentDemo, parentDemo, onNavigateTo, onNavigateBack)
+    androidx.wear.compose.material3.AppScaffold(timeText = {}) {
+        val swipeToDismissState = swipeDismissStateWithNavigation(onNavigateBack)
+        DisplayDemo(swipeToDismissState, currentDemo, parentDemo, onNavigateTo, onNavigateBack)
+    }
 }
 
 @Composable
@@ -63,7 +69,7 @@ private fun DisplayDemo(
     currentDemo: Demo,
     parentDemo: Demo?,
     onNavigateTo: (Demo) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     SwipeToDismissBox(
         state = state,
@@ -80,7 +86,7 @@ private fun BoxScope.BoxDemo(
     state: SwipeToDismissBoxState,
     demo: Demo?,
     onNavigateTo: (Demo) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     when (demo) {
         is ActivityDemo<*> -> {
@@ -99,45 +105,67 @@ private fun BoxScope.BoxDemo(
 @Composable
 internal fun BoxScope.DisplayDemoList(category: DemoCategory, onNavigateTo: (Demo) -> Unit) {
     val state = category.getScrollStateOrInit { rememberScalingLazyListState() }
-
-    ScalingLazyColumn(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().testTag(DemoListTag),
-        state = state,
-        autoCentering = AutoCenteringParams(itemIndex = if (category.demos.size >= 2) 2 else 1),
-    ) {
-        item {
-            ListHeader {
-                Text(
-                    text = category.title,
-                    style = MaterialTheme.typography.caption1,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+    val scaffoldWrapper =
+        @Composable { it: @Composable () -> Unit ->
+            // Only material3 demos benefit from the Material3 ScreenScaffold
+            if (category.materialVersion == 3) {
+                val timeText = @Composable { androidx.wear.compose.material3.TimeText() }
+                androidx.wear.compose.material3.ScreenScaffold(
+                    scrollState = state,
+                    timeText = remember { timeText },
+                ) {
+                    it()
+                }
+            } else {
+                it()
             }
         }
-        category.demos.forEach { demo ->
+    scaffoldWrapper {
+        ScalingLazyColumn(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth().testTag(DemoListTag),
+            state = state,
+            autoCentering = AutoCenteringParams(itemIndex = if (category.demos.size >= 2) 2 else 1),
+            contentPadding =
+                PaddingValues(horizontal = LocalConfiguration.current.screenWidthDp.dp * 0.052f),
+        ) {
             item {
-                Chip(
-                    onClick = { onNavigateTo(demo) },
-                    colors = ChipDefaults.secondaryChipColors(),
-                    label = {
-                        Text(text = demo.title, modifier = Modifier.fillMaxWidth(), maxLines = 2)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                ListHeader {
+                    Text(
+                        text = category.title,
+                        style = MaterialTheme.typography.caption1,
+                        color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
-            demo.description?.let { description ->
+            category.demos.forEach { demo ->
                 item {
-                    CompositionLocalProvider(
-                        LocalTextStyle provides MaterialTheme.typography.caption3
-                    ) {
-                        Text(
-                            text = description,
-                            modifier = Modifier.fillMaxWidth().align(Alignment.Center),
-                            textAlign = TextAlign.Center
-                        )
+                    Chip(
+                        onClick = { onNavigateTo(demo) },
+                        colors = ChipDefaults.secondaryChipColors(),
+                        label = {
+                            Text(
+                                text = demo.title,
+                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 2,
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                demo.description?.let { description ->
+                    item {
+                        CompositionLocalProvider(
+                            LocalTextStyle provides MaterialTheme.typography.caption3
+                        ) {
+                            Text(
+                                text = description,
+                                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }

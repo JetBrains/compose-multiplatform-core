@@ -21,8 +21,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Abstract presenter class for rendering the header for a list of media items in a playlist.
@@ -105,7 +106,7 @@ public abstract class AbstractMediaListHeaderPresenter extends RowPresenter{
     }
 
     @Override
-    protected void onBindRowViewHolder(@NonNull RowPresenter.ViewHolder vh, @NonNull Object item) {
+    protected void onBindRowViewHolder(RowPresenter.@NonNull ViewHolder vh, @NonNull Object item) {
         super.onBindRowViewHolder(vh, item);
         onBindMediaListHeaderViewHolder((ViewHolder) vh, item);
     }

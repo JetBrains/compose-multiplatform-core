@@ -14,4 +14,5 @@
 # limitations under the License.
 
 ./gradlew webkit:integration-tests:instrumentation:connectedAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.webview-version=factory
+  -Pandroid.testInstrumentationRunnerArguments.webview-version=factory \
+  webkit:chips-enabled-integration-tests:instrumentation:connectedAndroidTest

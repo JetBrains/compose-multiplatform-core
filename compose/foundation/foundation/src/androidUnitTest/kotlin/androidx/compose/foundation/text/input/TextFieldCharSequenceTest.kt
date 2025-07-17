@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
@@ -24,7 +23,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class TextFieldCharSequenceTest {
     private val defaultSaverScope = SaverScope { true }
@@ -85,7 +83,7 @@ class TextFieldCharSequenceTest {
                 text = "a",
                 selection = TextRange(1),
                 composition = TextRange(2),
-                highlight = Pair(TextHighlightType.HandwritingSelectPreview, TextRange(0, 1))
+                highlight = Pair(TextHighlightType.HandwritingSelectPreview, TextRange(0, 1)),
             )
 
         assertThat(textFieldValue).isEqualTo(textFieldValue)
@@ -98,7 +96,7 @@ class TextFieldCharSequenceTest {
                 text = "a",
                 selection = TextRange(1),
                 composition = TextRange(2),
-                highlight = Pair(TextHighlightType.HandwritingSelectPreview, TextRange(0, 1))
+                highlight = Pair(TextHighlightType.HandwritingSelectPreview, TextRange(0, 1)),
             )
 
         assertThat(
@@ -106,7 +104,7 @@ class TextFieldCharSequenceTest {
                     textFieldValue,
                     textFieldValue.selection,
                     textFieldValue.composition,
-                    textFieldValue.highlight
+                    textFieldValue.highlight,
                 )
             )
             .isEqualTo(textFieldValue)

@@ -23,12 +23,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -151,7 +151,7 @@ public class NestedScrollingHelperIntegrationTest {
 
         @Override
         public void onNestedPreScroll(@NonNull View target, int dx, int dy,
-                 @NonNull int[] consumed) {
+                 int @NonNull [] consumed) {
             dispatchNestedPreScroll(dx, dy, consumed, null);
         }
 
@@ -198,14 +198,14 @@ public class NestedScrollingHelperIntegrationTest {
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow) {
             return mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
                     dxUnconsumed, dyUnconsumed, offsetInWindow);
         }
 
         @Override
-        public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-                @Nullable int[] offsetInWindow) {
+        public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+                int @Nullable [] offsetInWindow) {
             return mNestedScrollingChildHelper.dispatchNestedPreScroll(dx, dy, consumed,
                     offsetInWindow);
         }
@@ -253,8 +253,8 @@ public class NestedScrollingHelperIntegrationTest {
         }
 
         @Override
-        public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
-                int type) {
+        public void onNestedPreScroll(@NonNull View target, int dx, int dy,
+                int @NonNull [] consumed, int type) {
             dispatchNestedPreScroll(dx, dy, consumed, null);
         }
 
@@ -275,14 +275,14 @@ public class NestedScrollingHelperIntegrationTest {
 
         @Override
         public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type) {
             return mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
                     dxUnconsumed, dyUnconsumed, offsetInWindow, type);
         }
 
         @Override
-        public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-                @Nullable int[] offsetInWindow, int type) {
+        public boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+                int @Nullable [] offsetInWindow, int type) {
             return mNestedScrollingChildHelper.dispatchNestedPreScroll(dx, dy, consumed,
                     offsetInWindow, type);
         }
@@ -297,15 +297,15 @@ public class NestedScrollingHelperIntegrationTest {
 
         @Override
         public void onNestedScroll(@NonNull View target, int dxConsumed, int dyConsumed,
-                int dxUnconsumed, int dyUnconsumed, int type, @NonNull int[] consumed) {
+                int dxUnconsumed, int dyUnconsumed, int type, int @NonNull [] consumed) {
             dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed,
                     dyUnconsumed, null, type, consumed);
         }
 
         @Override
         public void dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed,
-                int dyUnconsumed, @Nullable int[] offsetInWindow, int type,
-                @NonNull int[] consumed) {
+                int dyUnconsumed, int @Nullable [] offsetInWindow, int type,
+                int @NonNull [] consumed) {
             mNestedScrollingChildHelper.dispatchNestedScroll(dxConsumed, dyConsumed,
                     dxUnconsumed, dyUnconsumed, offsetInWindow, type, consumed);
         }

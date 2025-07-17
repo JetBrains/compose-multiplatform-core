@@ -23,8 +23,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import androidx.annotation.NonNull;
-
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -239,8 +238,7 @@ public class DataTest {
         assertThat(caughtIllegalArgumentException, is(true));
     }
 
-    @NonNull
-    private Data createData() {
+    private @NonNull Data createData() {
         Map<String, Object> map = new HashMap<>();
         map.put("boolean", true);
         map.put("byte", (byte) 1);

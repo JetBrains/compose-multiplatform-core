@@ -20,18 +20,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import androidx.annotation.NonNull;
 import androidx.collection.ArraySet;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicDataBuilders;
-import androidx.wear.protolayout.expression.PlatformDataValues;
 import androidx.wear.protolayout.expression.PlatformDataKey;
+import androidx.wear.protolayout.expression.PlatformDataValues;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
 import androidx.wear.protolayout.expression.proto.FixedProto;
 
 import com.google.common.truth.Expect;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

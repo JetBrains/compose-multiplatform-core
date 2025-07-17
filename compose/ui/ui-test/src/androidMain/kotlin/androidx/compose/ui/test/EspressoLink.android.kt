@@ -22,8 +22,8 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.IdlingResource
 import androidx.test.espresso.IdlingResourceTimeoutException
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /**
  * Idling strategy for regular Android Instrumented tests, built on Espresso.
@@ -35,6 +35,13 @@ internal class EspressoLink(private val registry: IdlingResourceRegistry) :
     IdlingResource, IdlingStrategy {
 
     override val canSynchronizeOnUiThread: Boolean = false
+
+    /*
+     * In instrumented tests, Espresso.onIdle() needs to be called off the main thread, so anything
+     * other than Dispatchers.Main is OK. It's not IO work though, so let's take Default.
+     */
+    override val synchronizationContext: CoroutineContext
+        get() = Dispatchers.Default
 
     override fun getName(): String = "Compose-Espresso link"
 
@@ -48,7 +55,7 @@ internal class EspressoLink(private val registry: IdlingResourceRegistry) :
 
     fun getDiagnosticMessageIfBusy(): String? = registry.getDiagnosticMessageIfBusy()
 
-    override fun <R> withStrategy(block: () -> R): R {
+    override suspend fun <R> withStrategy(block: suspend () -> R): R {
         @Suppress("DEPRECATION") // See comment below
         try {
             // TODO(b/205550018): remove usage of deprecated API when b/205550018 is fixed
@@ -73,11 +80,6 @@ internal class EspressoLink(private val registry: IdlingResourceRegistry) :
                 "runOnIdle {}, runOnUiThread {} or setContent {}?"
         }
         runEspressoOnIdle()
-    }
-
-    override suspend fun awaitIdle() {
-        // Espresso.onIdle() must be called from a non-ui thread; so use Dispatchers.IO
-        withContext(Dispatchers.IO) { runUntilIdle() }
     }
 }
 
@@ -133,7 +135,7 @@ private fun rethrowWithMoreInfo(e: Throwable, wasGlobalTimeout: Boolean) {
                 diagnosticInfo +
                 "All registered idling resources: " +
                 listOfIdlingResources.joinToString(", "),
-            e
+            e,
         )
     }
     // No extra info, re-throw the original exception

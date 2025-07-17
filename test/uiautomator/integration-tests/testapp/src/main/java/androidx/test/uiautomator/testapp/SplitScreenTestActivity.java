@@ -21,12 +21,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.Nullable;
 
 /** {@link Activity} for testing multi-window (split screen) functionality. */
 @RequiresApi(32) // FLAG_ACTIVITY_LAUNCH_ADJACENT may not work below API 32.
-public class SplitScreenTestActivity extends Activity {
+public class SplitScreenTestActivity extends TestActivity {
 
     static final String WINDOW_ID = "WINDOW_ID";
 

@@ -65,11 +65,8 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.media.MediaSessionManager;
@@ -78,6 +75,9 @@ import androidx.media.VolumeProviderCompat;
 import androidx.media.session.MediaButtonReceiver;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,37 +91,39 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Allows interaction with media controllers, volume keys, media buttons, and
- * transport controls.
- * <p>
- * A MediaSession should be created when an app wants to publish media playback
- * information or handle media keys. In general an app only needs one session
- * for all playback, though multiple sessions can be created to provide finer
- * grain controls of media.
- * <p>
- * Once a session is created the owner of the session may pass its
- * {@link #getSessionToken() session token} to other processes to allow them to
- * create a {@link MediaControllerCompat} to interact with the session.
- * <p>
- * To receive commands, media keys, and other events a {@link Callback} must be
- * set with {@link #setCallback(Callback)}.
- * <p>
- * When an app is finished performing playback it must call {@link #release()}
- * to clean up the session and notify any controllers.
- * <p>
- * MediaSessionCompat objects are not thread safe and all calls should be made
- * from the same thread.
- * <p>
- * This is a helper for accessing features in
- * {@link android.media.session.MediaSession} introduced after API level 4 in a
- * backwards compatible fashion.
+ * Allows interaction with media controllers, volume keys, media buttons, and transport controls.
  *
- * <div class="special reference">
+ * <p>A MediaSession should be created when an app wants to publish media playback information or
+ * handle media keys. In general an app only needs one session for all playback, though multiple
+ * sessions can be created to provide finer grain controls of media.
+ *
+ * <p>Once a session is created the owner of the session may pass its {@link #getSessionToken()
+ * session token} to other processes to allow them to create a {@link MediaControllerCompat} to
+ * interact with the session.
+ *
+ * <p>To receive commands, media keys, and other events a {@link Callback} must be set with {@link
+ * #setCallback(Callback)}.
+ *
+ * <p>When an app is finished performing playback it must call {@link #release()} to clean up the
+ * session and notify any controllers.
+ *
+ * <p>MediaSessionCompat objects are not thread safe and all calls should be made from the same
+ * thread.
+ *
+ * <p>This is a helper for accessing features in {@link android.media.session.MediaSession}
+ * introduced after API level 4 in a backwards compatible fashion.
+ *
+ * <p><div class="special reference">
+ *
  * <h3>Developer Guides</h3>
- * <p>For information about building your media application, read the
- * <a href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide.</p>
- * </div>
+ *
+ * <p>For information about building your media application, read the <a
+ * href="{@docRoot}guide/topics/media-apps/index.html">Media Apps</a> developer guide. </div>
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 public class MediaSessionCompat {
     static final String TAG = "MediaSessionCompat";
 
@@ -948,8 +950,7 @@ public class MediaSessionCompat {
      * @see MediaSessionManager.RemoteUserInfo#LEGACY_CONTROLLER
      * @see MediaSessionManager#isTrustedForMediaControl(RemoteUserInfo)
      */
-    @NonNull
-    public final RemoteUserInfo getCurrentControllerInfo() {
+    public final @NonNull RemoteUserInfo getCurrentControllerInfo() {
         return mImpl.getCurrentControllerInfo();
     }
 
@@ -1041,8 +1042,7 @@ public class MediaSessionCompat {
      *
      */
     @RestrictTo(LIBRARY)
-    @Nullable
-    public static Bundle unparcelWithClassLoader(@Nullable Bundle bundle) {
+    public static @Nullable Bundle unparcelWithClassLoader(@Nullable Bundle bundle) {
         if (bundle == null) {
             return null;
         }
@@ -1092,12 +1092,16 @@ public class MediaSessionCompat {
     }
 
     /**
-     * Receives transport controls, media buttons, and commands from controllers
-     * and the system. The callback may be set using {@link #setCallback}.
-     * <p>
-     * Don't reuse the callback among the sessions. Callbacks keep internal reference to the
+     * Receives transport controls, media buttons, and commands from controllers and the system. The
+     * callback may be set using {@link #setCallback}.
+     *
+     * <p>Don't reuse the callback among the sessions. Callbacks keep internal reference to the
      * session when it's set, so it may misbehave.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public abstract static class Callback {
         final Object mLock = new Object();
         final MediaSession.Callback mCallbackFwk;
@@ -1905,10 +1909,13 @@ public class MediaSessionCompat {
     }
 
     /**
-     * Represents an ongoing session. This may be passed to apps by the session
-     * owner to allow them to create a {@link MediaControllerCompat} to communicate with
-     * the session.
+     * Represents an ongoing session. This may be passed to apps by the session owner to allow them
+     * to create a {@link MediaControllerCompat} to communicate with the session.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     @SuppressLint("BanParcelableUsage")
     public static final class Token implements Parcelable {
         private final Object mLock = new Object();
@@ -2122,9 +2129,13 @@ public class MediaSessionCompat {
     }
 
     /**
-     * A single item that is part of the play queue. It contains a description
-     * of the item and its id in the queue.
+     * A single item that is part of the play queue. It contains a description of the item and its
+     * id in the queue.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     @SuppressLint("BanParcelableUsage")
     public static final class QueueItem implements Parcelable {
         /**
@@ -2281,17 +2292,14 @@ public class MediaSessionCompat {
         private static class Api21Impl {
             private Api21Impl() {}
 
-            @DoNotInline
             static MediaSession.QueueItem createQueueItem(MediaDescription description, long id) {
                 return new MediaSession.QueueItem(description, id);
             }
 
-            @DoNotInline
             static MediaDescription getDescription(MediaSession.QueueItem queueItem) {
                 return queueItem.getDescription();
             }
 
-            @DoNotInline
             static long getQueueId(MediaSession.QueueItem queueItem) {
                 return queueItem.getQueueId();
             }
@@ -2339,6 +2347,11 @@ public class MediaSessionCompat {
         }
     }
 
+    /**
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
+     */
+    @Deprecated
     public interface OnActiveChangeListener {
         void onActiveChanged();
     }
@@ -4632,8 +4645,7 @@ public class MediaSessionCompat {
         }
 
         @Override
-        @NonNull
-        public final RemoteUserInfo getCurrentControllerInfo() {
+        public final @NonNull RemoteUserInfo getCurrentControllerInfo() {
             android.media.session.MediaSessionManager.RemoteUserInfo info =
                     ((MediaSession) mSessionFwk).getCurrentControllerInfo();
             return new RemoteUserInfo(info);

@@ -21,10 +21,12 @@ import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import android.view.ViewStructure
+import android.view.autofill.AutofillId
 import android.view.autofill.AutofillManager
 import android.view.autofill.AutofillValue
 import androidx.annotation.RequiresApi
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastRoundToInt
 
@@ -34,19 +36,24 @@ import androidx.compose.ui.util.fastRoundToInt
  * @param view The parent compose view.
  * @param autofillTree The autofill tree. This will be replaced by a semantic tree (b/138604305).
  */
-@ExperimentalComposeUiApi
 @RequiresApi(Build.VERSION_CODES.O)
-internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) : Autofill {
+internal class AndroidAutofill(
+    val view: View,
+    val autofillTree: @Suppress("Deprecation") AutofillTree,
+) : @Suppress("Deprecation") Autofill {
 
     val autofillManager =
         view.context.getSystemService(AutofillManager::class.java)
             ?: error("Autofill service could not be located.")
+    var rootAutofillId: AutofillId
 
     init {
         view.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+        rootAutofillId =
+            checkPreconditionNotNull(ViewCompatShims.getAutofillId(view)?.toAutofillId())
     }
 
-    override fun requestAutofillForNode(autofillNode: AutofillNode) {
+    override fun requestAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode) {
         val boundingBox =
             autofillNode.boundingBox ?: error("requestAutofill called before onChildPositioned()")
 
@@ -60,12 +67,12 @@ internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) :
                 boundingBox.left.fastRoundToInt(),
                 boundingBox.top.fastRoundToInt(),
                 boundingBox.right.fastRoundToInt(),
-                boundingBox.bottom.fastRoundToInt()
-            )
+                boundingBox.bottom.fastRoundToInt(),
+            ),
         )
     }
 
-    override fun cancelAutofillForNode(autofillNode: AutofillNode) {
+    override fun cancelAutofillForNode(autofillNode: @Suppress("Deprecation") AutofillNode) {
         autofillManager.notifyViewExited(view, autofillNode.id)
     }
 }
@@ -77,31 +84,31 @@ internal class AndroidAutofill(val view: View, val autofillTree: AutofillTree) :
  *
  * This function populates the view structure using the information in the { AutofillTree }.
  */
-@ExperimentalComposeUiApi
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun AndroidAutofill.populateViewStructure(root: ViewStructure) {
+    if (autofillTree.children.isEmpty()) return
 
     // Add child nodes. The function returns the index to the first item.
     var index = AutofillApi26Helper.addChildCount(root, autofillTree.children.count())
 
     for ((id, autofillNode) in autofillTree.children) {
-        AutofillApi26Helper.newChild(root, index)?.also { child ->
-            AutofillApi26Helper.setAutofillId(child, AutofillApi26Helper.getAutofillId(root)!!, id)
+        AutofillApi26Helper.newChild(root, index).also { child ->
+            AutofillApi26Helper.setAutofillId(child, rootAutofillId, id)
             AutofillApi26Helper.setId(child, id, view.context.packageName, null, null)
             AutofillApi26Helper.setAutofillType(child, ContentDataType.Text.dataType)
             AutofillApi26Helper.setAutofillHints(
                 child,
-                autofillNode.autofillTypes.fastMap { it.androidType }.toTypedArray()
+                autofillNode.autofillTypes.fastMap { it.androidType }.toTypedArray(),
             )
 
             val boundingBox = autofillNode.boundingBox
             if (boundingBox == null) {
-                // Do we need an exception here? warning? silently ignore? If the boundingbox is
+                // Do we need an exception here? warning? silently ignore? If the bounding box is
                 // null, the autofill overlay will not be shown.
                 Log.w(
                     "Autofill Warning",
                     """Bounding box not set.
-                        Did you call perform autofillTree before the component was positioned? """
+                        Did you call perform autofillTree before the component was positioned? """,
                 )
             } else {
                 val left = boundingBox.left.fastRoundToInt()
@@ -118,9 +125,10 @@ internal fun AndroidAutofill.populateViewStructure(root: ViewStructure) {
 }
 
 /** Triggers onFill() in response to a request from the autofill framework. */
-@ExperimentalComposeUiApi
 @RequiresApi(Build.VERSION_CODES.O)
 internal fun AndroidAutofill.performAutofill(values: SparseArray<AutofillValue>) {
+    if (autofillTree.children.isEmpty()) return
+
     for (index in 0 until values.size()) {
         val itemId = values.keyAt(index)
         val value = values[itemId]
@@ -128,7 +136,7 @@ internal fun AndroidAutofill.performAutofill(values: SparseArray<AutofillValue>)
             AutofillApi26Helper.isText(value) ->
                 autofillTree.performAutofill(
                     itemId,
-                    AutofillApi26Helper.textValue(value).toString()
+                    AutofillApi26Helper.textValue(value).toString(),
                 )
             AutofillApi26Helper.isDate(value) -> TODO("b/138604541: Add onFill() callback for date")
             AutofillApi26Helper.isList(value) -> TODO("b/138604541: Add onFill() callback for list")

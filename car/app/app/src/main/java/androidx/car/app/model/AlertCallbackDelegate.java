@@ -18,10 +18,11 @@ package androidx.car.app.model;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.OnDoneCallback;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.RequiresCarApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A host-side interface for reporting cancel events to clients.
@@ -33,6 +34,7 @@ public interface AlertCallbackDelegate {
     /**
      * Notifies that a cancel event happened with given {@code reason}.
      *
+     * @param reason the {@link AlertCallback.Reason} for which the alert was cancelled
      * @param callback the {@link OnDoneCallback} to trigger when the client finishes handling
      *                 the event
      */

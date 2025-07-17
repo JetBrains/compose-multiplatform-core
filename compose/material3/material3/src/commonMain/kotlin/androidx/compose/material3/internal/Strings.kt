@@ -19,6 +19,7 @@ package androidx.compose.material3.internal
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import kotlin.jvm.JvmInline
 
 @Immutable
 @JvmInline
@@ -26,6 +27,7 @@ internal expect value class Strings constructor(val value: Int) {
     companion object {
         val NavigationMenu: Strings
         val CloseDrawer: Strings
+        val CloseRail: Strings
         val CloseSheet: Strings
         val DefaultErrorMessage: Strings
         val ExposedDropdownMenu: Strings
@@ -36,6 +38,7 @@ internal expect value class Strings constructor(val value: Int) {
         val MenuCollapsed: Strings
         val ToggleDropdownMenu: Strings
         val SnackbarDismiss: Strings
+        val SnackbarPaneTitle: Strings
         val SearchBarSearch: Strings
         val SuggestionsAvailable: Strings
         val DatePickerTitle: Strings
@@ -69,6 +72,8 @@ internal expect value class Strings constructor(val value: Int) {
         val DateRangePickerDayInRange: Strings
         val DateRangeInputTitle: Strings
         val DateRangeInputInvalidRangeInput: Strings
+        val FloatingToolbarCollapse: Strings
+        val FloatingToolbarExpand: Strings
         val BottomSheetPaneTitle: Strings
         val BottomSheetDragHandleDescription: Strings
         val BottomSheetPartialExpandDescription: Strings
@@ -87,7 +92,12 @@ internal expect value class Strings constructor(val value: Int) {
         val TimePickerMinute: Strings
         val TimePickerHourTextField: Strings
         val TimePickerMinuteTextField: Strings
+        val TimePickerDialogTitle: Strings
+        val TimeInputDialogTitle: Strings
+        val TimePickerToggleKeyboard: Strings
+        val TimePickerToggleTouch: Strings
         val TooltipPaneDescription: Strings
+        val WideNavigationRailPaneTitle: Strings
     }
 }
 
@@ -96,3 +106,5 @@ internal expect value class Strings constructor(val value: Int) {
 @Composable
 @ReadOnlyComposable
 internal expect fun getString(string: Strings, vararg formatArgs: Any): String
+
+internal expect fun formatString(string: String, vararg formatArgs: Any?): String

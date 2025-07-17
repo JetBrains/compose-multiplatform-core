@@ -22,8 +22,9 @@ import android.graphics.Rect;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.TargetTracking;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,15 +117,13 @@ public class TrackingVisibility extends Visibility implements TargetTracking {
         return null;
     }
 
-    @NonNull
     @Override
-    public List<View> getEnteringTargets() {
+    public @NonNull List<View> getEnteringTargets() {
         return mEnteringTargets;
     }
 
-    @NonNull
     @Override
-    public List<View> getExitingTargets() {
+    public @NonNull List<View> getExitingTargets() {
         return mExitingTargets;
     }
 

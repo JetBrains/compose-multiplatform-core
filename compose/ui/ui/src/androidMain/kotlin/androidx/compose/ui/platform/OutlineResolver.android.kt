@@ -18,6 +18,8 @@ package androidx.compose.ui.platform
 
 import android.graphics.Outline as AndroidOutline
 import android.os.Build
+import androidx.annotation.DoNotInline
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -193,7 +195,7 @@ internal class OutlineResolver {
                             top = rectTopLeft.y,
                             right = rectTopLeft.x + rectSize.width,
                             bottom = rectTopLeft.y + rectSize.height,
-                            cornerRadius = CornerRadius(roundedCornerRadius)
+                            cornerRadius = CornerRadius(roundedCornerRadius),
                         )
                     if (roundRectClipPath == null) {
                         roundRectClipPath = Path()
@@ -250,7 +252,7 @@ internal class OutlineResolver {
             rect.left.fastRoundToInt(),
             rect.top.fastRoundToInt(),
             rect.right.fastRoundToInt(),
-            rect.bottom.fastRoundToInt()
+            rect.bottom.fastRoundToInt(),
         )
     }
 
@@ -264,7 +266,7 @@ internal class OutlineResolver {
                 roundRect.top.fastRoundToInt(),
                 roundRect.right.fastRoundToInt(),
                 roundRect.bottom.fastRoundToInt(),
-                radius
+                radius,
             )
             roundedCornerRadius = radius
         } else {
@@ -278,8 +280,11 @@ internal class OutlineResolver {
     @Suppress("deprecation")
     private fun updateCacheWithPath(composePath: Path) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P || composePath.isConvex) {
-            // TODO(mount): Use setPath() for R+ when available.
-            cachedOutline.setConvexPath(composePath.asAndroidPath())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                OutlineVerificationHelper.setPath(cachedOutline, composePath)
+            } else {
+                cachedOutline.setConvexPath(composePath.asAndroidPath())
+            }
             usePathForClip = !cachedOutline.canClip()
         } else {
             isSupportedOutline = false // Concave outlines are not supported on older API levels
@@ -303,5 +308,14 @@ internal class OutlineResolver {
             right == (offset.x + size.width) &&
             bottom == (offset.y + size.height) &&
             topLeftCornerRadius.x == radius
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.R)
+internal object OutlineVerificationHelper {
+
+    @DoNotInline
+    fun setPath(outline: AndroidOutline, path: Path) {
+        outline.setPath(path.asAndroidPath())
     }
 }

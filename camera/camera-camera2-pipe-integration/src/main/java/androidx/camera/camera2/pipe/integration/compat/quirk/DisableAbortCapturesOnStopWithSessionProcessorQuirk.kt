@@ -18,7 +18,8 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCaptureSession
-import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.impl.Quirk
 import androidx.camera.core.impl.SessionProcessor
 
@@ -36,10 +37,8 @@ import androidx.camera.core.impl.SessionProcessor
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class DisableAbortCapturesOnStopWithSessionProcessorQuirk : Quirk {
-    companion object {
-        fun isEnabled(): Boolean {
-            return Build.BRAND.equals("SAMSUNG", ignoreCase = true)
-        }
+public class DisableAbortCapturesOnStopWithSessionProcessorQuirk : Quirk {
+    public companion object {
+        public fun isEnabled(): Boolean = isSamsungDevice() || isXiaomiDevice()
     }
 }

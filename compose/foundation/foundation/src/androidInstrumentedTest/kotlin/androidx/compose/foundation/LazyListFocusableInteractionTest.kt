@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation
 
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.Orientation.Horizontal
 import androidx.compose.foundation.gestures.Orientation.Vertical
@@ -23,6 +26,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,21 +42,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
+import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LocalPinnableContainer
+import androidx.compose.ui.layout.PinnableContainer
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEqualTo
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -60,6 +74,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
@@ -73,22 +88,16 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /**
- * Copy of [ScrollableFocusableInteractionTest], modified for lazy lists. Any new tests added here
+ * Copy of [ScrollFocusableInteractionTest], modified for lazy lists. Any new tests added here
  * should probably be added there too.
  */
 @MediumTest
 @RunWith(Parameterized::class)
-class LazyListFocusableInteractionTest(
-    private val orientation: Orientation,
-) {
+class LazyListFocusableInteractionTest(private val orientation: Orientation) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters() =
-            arrayOf(
-                arrayOf(Vertical),
-                arrayOf(Horizontal),
-            )
+        fun initParameters() = arrayOf(arrayOf(Vertical), arrayOf(Horizontal))
     }
 
     @get:Rule val rule = createComposeRule()
@@ -132,6 +141,154 @@ class LazyListFocusableInteractionTest(
         rule
             .onNodeWithTag(focusableTag)
             .assertScrollAxisPositionInRootIsEqualTo(40.toDp())
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun scrollsFocusedAndroidViewIntoView_whenFullyInViewAndBecomesFullyHidden() {
+        var viewportSize by mutableStateOf(100.toDp())
+        lateinit var focusableView: View
+        lateinit var focusState: FocusState
+
+        rule.setContentForTest {
+            ScrollableRowOrColumn(size = viewportSize) {
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) {
+                    val pinnableContainer = LocalPinnableContainer.current
+                    AndroidView(
+                        factory = {
+                            View(it)
+                                .apply {
+                                    isFocusable = true
+                                    isFocusableInTouchMode = true
+                                    var pinnedHandle: PinnableContainer.PinnedHandle? = null
+                                    onFocusChangeListener =
+                                        View.OnFocusChangeListener { _, hasFocus ->
+                                            if (hasFocus) {
+                                                pinnedHandle = pinnableContainer?.pin()
+                                            } else {
+                                                pinnedHandle?.release()
+                                            }
+                                        }
+                                }
+                                .also { focusableView = it }
+                        },
+                        modifier =
+                            Modifier.testTag(focusableTag)
+                                .size(10.toDp())
+                                .border(1.dp, Color.White)
+                                .onFocusEvent { focusState = it },
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { focusableView.requestFocus() }
+        scrollToStart()
+
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertIsDisplayed()
+
+        assertThat(focusableView.isFocused).isTrue()
+        assertThat(focusState.hasFocus).isTrue()
+
+        // Act: Shrink the viewport.
+        viewportSize = 50.toDp()
+
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(40.toDp())
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun scrollsFocusedSubAndroidViewIntoView_whenFullyInViewAndBecomesFullyHidden() {
+        var viewportSize by mutableStateOf(100.toDp())
+        lateinit var focusableView: View
+
+        rule.setContentForTest {
+            ScrollableRowOrColumn(size = viewportSize) {
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 80.toDp()) {
+                    val pinnableContainer = LocalPinnableContainer.current
+                    AndroidView(
+                        factory = { context ->
+                            LinearLayout(context).apply {
+                                orientation =
+                                    if (
+                                        this@LazyListFocusableInteractionTest.orientation ==
+                                            Vertical
+                                    ) {
+                                        LinearLayout.VERTICAL
+                                    } else {
+                                        LinearLayout.HORIZONTAL
+                                    }
+                                layoutParams =
+                                    ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                    )
+                                // 5.toDp() size
+                                addView(
+                                    View(context)
+                                        .apply {
+                                            isFocusable = true
+                                            isFocusableInTouchMode = true
+                                            layoutParams =
+                                                LinearLayout.LayoutParams(
+                                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                                    1f,
+                                                )
+
+                                            var pinnedHandle: PinnableContainer.PinnedHandle? = null
+                                            onFocusChangeListener =
+                                                View.OnFocusChangeListener { _, hasFocus ->
+                                                    if (hasFocus) {
+                                                        pinnedHandle = pinnableContainer?.pin()
+                                                    } else {
+                                                        pinnedHandle?.release()
+                                                    }
+                                                }
+                                        }
+                                        .also { focusableView = it }
+                                )
+                                // 5.toDp() size
+                                addView(
+                                    View(context).apply {
+                                        layoutParams =
+                                            LinearLayout.LayoutParams(
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                                1f,
+                                            )
+                                    }
+                                )
+                            }
+                        },
+                        modifier =
+                            Modifier.testTag(focusableTag).size(20.toDp()).border(1.dp, Color.White),
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { focusableView.requestFocus() }
+        scrollToStart()
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(80.toDp())
+            .assertIsDisplayed()
+
+        // Act: Shrink the viewport.
+        viewportSize = 50.toDp()
+
+        rule
+            .onNodeWithTag(focusableTag)
+            // if the entire AndroidView was considered as a focus rect, this assertion value
+            // would have been 30. Because only the top half is considered focused, we get 40.
+            // spring is stronger in this test
+            .assertScrollAxisPositionInRootIsEqualTo(40.toDp(), tolerance = 1.dp)
             .assertIsDisplayed()
     }
 
@@ -482,6 +639,34 @@ class LazyListFocusableInteractionTest(
     }
 
     @Test
+    fun scrollsFocusedFocusableIntoView_whenViewportShrinksMultipleTimes() {
+        var viewportSize by mutableStateOf(100.toDp())
+
+        rule.setContent {
+            ScrollableRowOrColumn(size = viewportSize) {
+                // Put a focusable at the end of the viewport.
+                WithSpacerBefore(size = 90.toDp()) { TestFocusable(size = 10.toDp()) }
+            }
+        }
+        requestFocus()
+        rule
+            .onNodeWithTag(focusableTag)
+            .assertScrollAxisPositionInRootIsEqualTo(90.toDp())
+            .assertIsDisplayed()
+            .assertIsFocused()
+
+        // Act: Shrink the viewport continuously.
+        repeat(5) {
+            viewportSize -= 10.toDp()
+
+            rule
+                .onNodeWithTag(focusableTag)
+                .assertScrollAxisPositionInRootIsEqualTo((90 - ((it + 1) * 10)).toDp())
+                .assertIsDisplayed()
+        }
+    }
+
+    @Test
     fun focusingOnVisibleItemDoesNotScroll_whenMultipleFocusables() {
         // Arrange.
         val itemSize = with(rule.density) { 100.toDp() }
@@ -556,6 +741,75 @@ class LazyListFocusableInteractionTest(
         rule.runOnIdle { assertThat(scrollState.firstVisibleItemScrollOffset).isEqualTo(0) }
     }
 
+    @Test
+    fun moveOutFromBoundaryItem_nextItemStartsNewFocusTransactionUsingLaunchedEffect() {
+        // Arrange.
+        val itemSize = with(rule.density) { 100.toDp() }
+        rule.setContentForTest {
+            val finalFocusableRequester = remember { FocusRequester() }
+            Row {
+                ScrollableRowOrColumn(size = itemSize * 2) {
+                    item { TestFocusable(itemSize, tag = "1") }
+                    item { TestFocusable(itemSize, tag = "2") }
+                    item {
+                        TestFocusable(itemSize, tag = "3")
+                        LaunchedEffect(Unit) { finalFocusableRequester.requestFocus() }
+                    }
+                }
+                Box(
+                    Modifier.size(itemSize)
+                        .focusRequester(finalFocusableRequester)
+                        .testTag("finalFocusable")
+                        .focusable()
+                )
+            }
+        }
+        requestFocus("2")
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(Next) }
+
+        // Assert.
+        rule.onNodeWithTag("finalFocusable").assertIsFocused()
+    }
+
+    @Test
+    fun moveOutFromBoundaryItem_rightDownStartsNewFocusTransactionUsingLaunchedEffect() {
+        // Arrange.
+        val itemSize = with(rule.density) { 100.toDp() }
+        val direction =
+            when (orientation) {
+                Vertical -> Down
+                else -> Right
+            }
+        rule.setContentForTest {
+            val focusRequester = remember { FocusRequester() }
+            Row {
+                ScrollableRowOrColumn(size = itemSize * 2) {
+                    item { TestFocusable(itemSize, tag = "1") }
+                    item { TestFocusable(itemSize, tag = "2") }
+                    item {
+                        TestFocusable(itemSize, tag = "3")
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                    }
+                }
+                Box(
+                    Modifier.size(itemSize)
+                        .focusRequester(focusRequester)
+                        .testTag("finalFocusable")
+                        .focusable()
+                )
+            }
+        }
+        requestFocus("2")
+
+        // Act.
+        rule.runOnIdle { focusManager.moveFocus(direction) }
+
+        // Assert.
+        rule.onNodeWithTag("finalFocusable").assertIsFocused()
+    }
+
     private fun ComposeContentTestRule.setContentForTest(composable: @Composable () -> Unit) {
         setContent {
             scope = rememberCoroutineScope()
@@ -624,9 +878,21 @@ class LazyListFocusableInteractionTest(
         runBlocking { job.join() }
     }
 
-    private fun SemanticsNodeInteraction.assertScrollAxisPositionInRootIsEqualTo(expected: Dp) =
-        when (orientation) {
-            Vertical -> assertTopPositionInRootIsEqualTo(expected)
-            Horizontal -> assertLeftPositionInRootIsEqualTo(expected)
+    private fun SemanticsNodeInteraction.assertScrollAxisPositionInRootIsEqualTo(
+        expected: Dp,
+        tolerance: Dp? = null,
+    ) =
+        if (tolerance == null) {
+            when (orientation) {
+                Vertical -> assertTopPositionInRootIsEqualTo(expected)
+                Horizontal -> assertLeftPositionInRootIsEqualTo(expected)
+            }
+        } else {
+            val boundsInRoot = getUnclippedBoundsInRoot()
+            when (orientation) {
+                Vertical -> boundsInRoot.top.assertIsEqualTo(expected, "top", tolerance)
+                Horizontal -> boundsInRoot.left.assertIsEqualTo(expected, "top", tolerance)
+            }
+            this
         }
 }

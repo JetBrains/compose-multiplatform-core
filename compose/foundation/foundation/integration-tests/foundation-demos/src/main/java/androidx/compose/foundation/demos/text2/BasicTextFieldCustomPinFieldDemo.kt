@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package androidx.compose.foundation.demos.text2
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,7 +93,7 @@ private fun VerifyPinScreen(viewModel: VerifyPinViewModel) {
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxSize().wrapContentHeight()
+        modifier = Modifier.fillMaxSize().wrapContentHeight(),
     ) {
         PinField(
             viewModel.pinState,
@@ -110,7 +107,7 @@ private fun VerifyPinScreen(viewModel: VerifyPinViewModel) {
                     }
                     scaleX = scale
                     scaleY = scale
-                }
+                },
         )
         AnimatedVisibility(visible = viewModel.isLoading) {
             CircularProgressIndicator(Modifier.padding(top = 8.dp))
@@ -181,7 +178,7 @@ private fun PinField(state: PinState, modifier: Modifier = Modifier, enabled: Bo
                 // Ignore inner field, we'll draw it ourselves.
                 PinContents(state)
             }
-        }
+        },
     )
 }
 

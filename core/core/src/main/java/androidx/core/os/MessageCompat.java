@@ -22,9 +22,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.view.View;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link Message}.
@@ -120,12 +120,10 @@ public final class MessageCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isAsynchronous(Message message) {
             return message.isAsynchronous();
         }
 
-        @DoNotInline
         static void setAsynchronous(Message message, boolean async) {
             message.setAsynchronous(async);
         }

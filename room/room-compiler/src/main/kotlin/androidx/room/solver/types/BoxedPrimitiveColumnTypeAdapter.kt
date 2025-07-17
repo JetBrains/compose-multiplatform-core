@@ -22,7 +22,7 @@ import androidx.room.solver.CodeGenScope
 /** Adapters for all boxed primitives that has direct cursor mappings. */
 class BoxedPrimitiveColumnTypeAdapter(
     boxed: XType,
-    val primitiveAdapter: PrimitiveColumnTypeAdapter
+    val primitiveAdapter: PrimitiveColumnTypeAdapter,
 ) : ColumnTypeAdapter(boxed, primitiveAdapter.typeAffinity) {
 
     companion object {
@@ -39,7 +39,7 @@ class BoxedPrimitiveColumnTypeAdapter(
         stmtName: String,
         indexVarName: String,
         valueVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             beginControlFlow("if (%L == null)", valueVarName).apply {
@@ -52,18 +52,18 @@ class BoxedPrimitiveColumnTypeAdapter(
         }
     }
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
-            beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName).apply {
+            beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName).apply {
                 addStatement("%L = null", outVarName)
             }
             nextControlFlow("else").apply {
-                primitiveAdapter.readFromCursor(outVarName, cursorVarName, indexVarName, scope)
+                primitiveAdapter.readFromStatement(outVarName, stmtVarName, indexVarName, scope)
             }
             endControlFlow()
         }

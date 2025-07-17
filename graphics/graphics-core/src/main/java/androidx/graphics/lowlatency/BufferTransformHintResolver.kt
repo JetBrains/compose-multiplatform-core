@@ -57,7 +57,7 @@ internal class BufferTransformHintResolver {
 
     internal fun getBufferTransformHintFromInstallOrientation(
         orientation: String,
-        rotation: Int
+        rotation: Int,
     ): Int =
         when (orientation) {
             ORIENTATION_90 -> {
@@ -118,7 +118,7 @@ internal class BufferTransformHintResolver {
             matrix: Matrix,
             width: Float,
             height: Float,
-            @SurfaceControlCompat.Companion.BufferTransform transform: Int
+            @SurfaceControlCompat.Companion.BufferTransform transform: Int,
         ): Matrix =
             matrix.apply {
                 when (transform) {
@@ -151,7 +151,6 @@ internal class TransformHintHelper private constructor() {
 
     companion object {
         @RequiresApi(Build.VERSION_CODES.S_V2)
-        @androidx.annotation.DoNotInline
         fun resolveBufferTransformHint(view: View): Int =
             view.rootSurfaceControl?.bufferTransformHint ?: 0
     }

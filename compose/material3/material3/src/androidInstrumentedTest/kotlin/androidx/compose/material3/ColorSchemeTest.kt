@@ -28,6 +28,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class ColorSchemeTest {
 
     @get:Rule val rule = createComposeRule()
@@ -77,6 +78,153 @@ class ColorSchemeTest {
         }
     }
 
+    @Test
+    fun baselineContentContrast() {
+        val expectedContrastValue = 3 // Minimum 3:1 contrast ratio
+        val baselineSchemes =
+            listOf(lightColorScheme(), darkColorScheme(), expressiveLightColorScheme())
+
+        for (colorScheme in baselineSchemes) {
+            assertThat(calculateContrastRatio(colorScheme.onPrimary, colorScheme.primary))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onSecondary, colorScheme.secondary))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onTertiary, colorScheme.tertiary))
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onPrimaryContainer,
+                        colorScheme.primaryContainer,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSecondaryContainer,
+                        colorScheme.secondaryContainer,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onTertiaryContainer,
+                        colorScheme.tertiaryContainer,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onError, colorScheme.error))
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onErrorContainer, colorScheme.errorContainer)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onSurface, colorScheme.surface))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onSurface, colorScheme.surfaceContainer))
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onSurface, colorScheme.surfaceContainerHigh)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSurface,
+                        colorScheme.surfaceContainerHighest,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onSurface, colorScheme.surfaceContainerLow)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSurface,
+                        colorScheme.surfaceContainerLowest,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onSurface, colorScheme.surfaceDim))
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onSurface, colorScheme.surfaceBright))
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.inverseOnSurface, colorScheme.inverseSurface)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(calculateContrastRatio(colorScheme.onPrimaryFixed, colorScheme.primaryFixed))
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onPrimaryFixedVariant,
+                        colorScheme.primaryFixed,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onPrimaryFixed, colorScheme.primaryFixedDim)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onPrimaryFixedVariant,
+                        colorScheme.primaryFixedDim,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onSecondaryFixed, colorScheme.secondaryFixed)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSecondaryFixedVariant,
+                        colorScheme.secondaryFixed,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSecondaryFixed,
+                        colorScheme.secondaryFixedDim,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onSecondaryFixedVariant,
+                        colorScheme.secondaryFixedDim,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(colorScheme.onTertiaryFixed, colorScheme.tertiaryFixed)
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onTertiaryFixedVariant,
+                        colorScheme.tertiaryFixed,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onTertiaryFixed,
+                        colorScheme.tertiaryFixedDim,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+            assertThat(
+                    calculateContrastRatio(
+                        colorScheme.onTertiaryFixedVariant,
+                        colorScheme.tertiaryFixedDim,
+                    )
+                )
+                .isAtLeast(expectedContrastValue)
+        }
+    }
+
     @Composable
     private fun Button(onReadColorScheme: (ColorScheme) -> Unit) {
         val colorScheme = MaterialTheme.colorScheme
@@ -118,5 +266,26 @@ private fun ColorScheme.contentEquals(other: ColorScheme): Boolean {
     if (errorContainer != other.errorContainer) return false
     if (onErrorContainer != other.onErrorContainer) return false
     if (outline != other.outline) return false
+    if (outlineVariant != other.outlineVariant) return false
+    if (scrim != other.scrim) return false
+    if (surfaceBright != other.surfaceBright) return false
+    if (surfaceContainer != other.surfaceContainer) return false
+    if (surfaceContainerHigh != other.surfaceContainerHigh) return false
+    if (surfaceContainerHighest != other.surfaceContainerHighest) return false
+    if (surfaceContainerLow != other.surfaceContainerLow) return false
+    if (surfaceContainerLowest != other.surfaceContainerLowest) return false
+    if (surfaceDim != other.surfaceDim) return false
+    if (primaryFixed != other.primaryFixed) return false
+    if (primaryFixedDim != other.primaryFixedDim) return false
+    if (onPrimaryFixed != other.onPrimaryFixed) return false
+    if (onPrimaryFixedVariant != other.onPrimaryFixedVariant) return false
+    if (secondaryFixed != other.secondaryFixed) return false
+    if (secondaryFixedDim != other.secondaryFixedDim) return false
+    if (onSecondaryFixed != other.onSecondaryFixed) return false
+    if (onSecondaryFixedVariant != other.onSecondaryFixedVariant) return false
+    if (tertiaryFixed != other.tertiaryFixed) return false
+    if (tertiaryFixedDim != other.tertiaryFixedDim) return false
+    if (onTertiaryFixed != other.onTertiaryFixed) return false
+    if (onTertiaryFixedVariant != other.onTertiaryFixedVariant) return false
     return true
 }

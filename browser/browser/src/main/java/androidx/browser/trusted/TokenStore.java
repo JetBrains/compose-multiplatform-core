@@ -17,8 +17,9 @@
 package androidx.browser.trusted;
 
 import androidx.annotation.BinderThread;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Users should implement this interface to persist the given {@link Token} (across app
@@ -57,6 +58,5 @@ public interface TokenStore {
      * This method will be called on a binder thread by {@link TrustedWebActivityService}.
      */
     @BinderThread
-    @Nullable
-    Token load();
+    @Nullable Token load();
 }

@@ -27,13 +27,15 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
-import org.jetbrains.kotlin.analysis.api.KtAnalysisSession
+import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.calls.KtSimpleFunctionCall
-import org.jetbrains.kotlin.analysis.api.calls.singleFunctionCallOrNull
-import org.jetbrains.kotlin.analysis.api.types.KtFunctionalType
+import org.jetbrains.kotlin.analysis.api.resolution.KaSimpleFunctionCall
+import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
+import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.util.OperatorNameConventions
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
@@ -121,7 +123,7 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
             analyze(expressionSourcePsi) {
                 val functionType = dispatchReceiverType(expressionSourcePsi) ?: return
                 val argumentType = toLambdaFunctionalType(node) ?: return
-                if (!(functionType isSubTypeOf argumentType)) return
+                if (!(functionType.isSubtypeOf(argumentType))) return
             }
 
             val expectedComposable = node.isComposable
@@ -138,6 +140,18 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
                     // and back should give us the actual UVariable we are looking for.
                     ?.sourcePsi
                     .toUElement()
+
+            (resolvedLambdaSource?.sourcePsi as? KtParameter)?.let { parameter ->
+                val isFunctionInline =
+                    parameter.ownerFunction?.hasModifier(KtTokens.INLINE_KEYWORD) == true
+                val isParameterNoInline = parameter.hasModifier(KtTokens.NOINLINE_KEYWORD)
+                if (isFunctionInline && !isParameterNoInline) {
+                    // For inline functions with inlined lambdas, passing a reference is not
+                    // allowed. The lambda body will be copied by the compiler without allocating
+                    // a lambda anyway, so there is no issue.
+                    return
+                }
+            }
 
             val isComposable =
                 when (resolvedLambdaSource) {
@@ -167,7 +181,7 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
                 ISSUE,
                 node,
                 context.getNameLocation(expression as UElement),
-                "Creating an unnecessary lambda to emit a captured lambda"
+                "Creating an unnecessary lambda to emit a captured lambda",
             )
         }
     }
@@ -187,23 +201,21 @@ class UnnecessaryLambdaCreationDetector : Detector(), SourceCodeScanner {
                 Category.PERFORMANCE,
                 5,
                 Severity.ERROR,
-                Implementation(UnnecessaryLambdaCreationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                Implementation(UnnecessaryLambdaCreationDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
     }
 }
 
-private fun KtAnalysisSession.dispatchReceiverType(callElement: KtCallElement): KtFunctionalType? =
+private fun KaSession.dispatchReceiverType(callElement: KtCallElement): KaFunctionType? =
     callElement
-        .resolveCall()
+        .resolveToCall()
         ?.singleFunctionCallOrNull()
-        ?.takeIf { it is KtSimpleFunctionCall && it.isImplicitInvoke }
+        ?.takeIf { it is KaSimpleFunctionCall && it.isImplicitInvoke }
         ?.partiallyAppliedSymbol
         ?.dispatchReceiver
-        ?.type as? KtFunctionalType
+        ?.type as? KaFunctionType
 
-private fun KtAnalysisSession.toLambdaFunctionalType(
-    lambdaExpression: ULambdaExpression
-): KtFunctionalType? {
+private fun KaSession.toLambdaFunctionalType(lambdaExpression: ULambdaExpression): KaFunctionType? {
     val sourcePsi = lambdaExpression.sourcePsi as? KtLambdaExpression ?: return null
-    return sourcePsi.getKtType() as? KtFunctionalType
+    return sourcePsi.expressionType as? KaFunctionType
 }

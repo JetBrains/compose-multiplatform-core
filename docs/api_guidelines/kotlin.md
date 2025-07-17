@@ -145,6 +145,23 @@ See Jake Wharton's article on
 [Public API challenges in Kotlin](https://jakewharton.com/public-api-challenges-in-kotlin/)
 for more details.
 
+### Flow return type {#flow-return-type}
+
+Always prefer non-null for `Flow` objects, return a Flow that does not emit
+items as a default. One option is `emptyFlow()` which will complete. Another
+option is `flow { awaitCancellation() }` which will not emit and not complete.
+Choose the option that best suites the use-case.
+
+```kotlin
+fun myFlowFunction(): Flow<Data> {
+    return if (canCreateFlow()) {
+        createFlow()
+    } else {
+        emptyFlow()
+    }
+}
+```
+
 ### Exhaustive `when` and `sealed class`/`enum class` {#exhaustive-when}
 
 A key feature of Kotlin's `sealed class` and `enum class` declarations is that
@@ -233,7 +250,7 @@ libraries may also be used, but type checking of constants will only be
 performed by lint, and functions overloaded with parameters of different value
 class types are not supported. Prefer the `@JvmInline value class` solution for
 new code unless it would break local consistency with other API in the same
-module that already uses `@IntDef`.
+module that already uses `@IntDef` or compatibility with Java is required.
 
 #### Non-exhaustive alternatives to `sealed class`
 

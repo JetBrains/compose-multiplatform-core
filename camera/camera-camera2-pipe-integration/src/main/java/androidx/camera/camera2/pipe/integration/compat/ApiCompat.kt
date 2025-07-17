@@ -20,19 +20,17 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.view.Surface
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 
 @RequiresApi(Build.VERSION_CODES.N)
 internal object Api24Compat {
-    @DoNotInline
     @JvmStatic
     fun onCaptureBufferLost(
         callback: CameraCaptureSession.CaptureCallback,
         session: CameraCaptureSession,
         request: CaptureRequest,
         surface: Surface,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         callback.onCaptureBufferLost(session, request, surface, frameNumber)
     }
@@ -40,15 +38,28 @@ internal object Api24Compat {
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 internal object Api34Compat {
-    @DoNotInline
     @JvmStatic
     fun onReadoutStarted(
         callback: CameraCaptureSession.CaptureCallback,
         session: CameraCaptureSession,
         request: CaptureRequest,
         timestamp: Long,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         callback.onReadoutStarted(session, request, timestamp, frameNumber)
+    }
+
+    @JvmStatic
+    fun setSettingsOverrideZoom(parameters: MutableMap<CaptureRequest.Key<*>, Any>) {
+        parameters[CaptureRequest.CONTROL_SETTINGS_OVERRIDE] =
+            CaptureRequest.CONTROL_SETTINGS_OVERRIDE_ZOOM
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+internal object Api35Compat {
+    @JvmStatic
+    fun setFlashStrengthLevel(parameters: MutableMap<CaptureRequest.Key<*>, Any>, level: Int) {
+        parameters[CaptureRequest.FLASH_STRENGTH_LEVEL] = level
     }
 }

@@ -31,13 +31,14 @@ import android.view.WindowManager;
 import android.view.animation.Interpolator;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -151,10 +152,9 @@ public final class WindowInsetsControllerCompat {
      * {@link WindowInsetsControllerCompat}
      * @deprecated Use {@link WindowCompat#getInsetsController(Window, View)} instead
      */
-    @NonNull
     @RequiresApi(30)
     @Deprecated
-    public static WindowInsetsControllerCompat toWindowInsetsControllerCompat(
+    public static @NonNull WindowInsetsControllerCompat toWindowInsetsControllerCompat(
             @NonNull WindowInsetsController insetsController) {
         return new WindowInsetsControllerCompat(insetsController);
     }
@@ -340,7 +340,7 @@ public final class WindowInsetsControllerCompat {
      *WindowInsetsControllerCompat.OnControllableInsetsChangedListener)
      */
     public void addOnControllableInsetsChangedListener(
-            @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener listener) {
+            WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener listener) {
         mImpl.addOnControllableInsetsChangedListener(listener);
     }
 
@@ -354,7 +354,7 @@ public final class WindowInsetsControllerCompat {
      *WindowInsetsControllerCompat.OnControllableInsetsChangedListener)
      */
     public void removeOnControllableInsetsChangedListener(
-            @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+            WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                     listener) {
         mImpl.removeOnControllableInsetsChangedListener(listener);
     }
@@ -393,6 +393,8 @@ public final class WindowInsetsControllerCompat {
     }
 
     private static class Impl {
+        static final int KEY_BEHAVIOR = 356039078;
+
         Impl() {
             //private
         }
@@ -412,7 +414,7 @@ public final class WindowInsetsControllerCompat {
         }
 
         int getSystemBarsBehavior() {
-            return 0;
+            return BEHAVIOR_DEFAULT;
         }
 
         public boolean isAppearanceLightStatusBars() {
@@ -434,7 +436,7 @@ public final class WindowInsetsControllerCompat {
         }
 
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
         }
     }
@@ -442,11 +444,9 @@ public final class WindowInsetsControllerCompat {
     @RequiresApi(20)
     private static class Impl20 extends Impl {
 
-        @NonNull
-        protected final Window mWindow;
+        protected final @NonNull Window mWindow;
 
-        @NonNull
-        private final SoftwareKeyboardControllerCompat mSoftwareKeyboardControllerCompat;
+        private final @NonNull SoftwareKeyboardControllerCompat mSoftwareKeyboardControllerCompat;
 
         Impl20(@NonNull Window window,
                 @NonNull SoftwareKeyboardControllerCompat softwareKeyboardControllerCompat) {
@@ -533,6 +533,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void setSystemBarsBehavior(int behavior) {
+            mWindow.getDecorView().setTag(KEY_BEHAVIOR, behavior);
             switch (behavior) {
                 case BEHAVIOR_DEFAULT:
                     unsetSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
@@ -551,7 +552,8 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         int getSystemBarsBehavior() {
-            return 0;
+            final Object behaviorTag = mWindow.getDecorView().getTag(KEY_BEHAVIOR);
+            return behaviorTag != null ? (int) behaviorTag : BEHAVIOR_DEFAULT;
         }
 
         @Override
@@ -561,7 +563,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
         }
     }
@@ -734,7 +736,7 @@ public final class WindowInsetsControllerCompat {
         void controlWindowInsetsAnimation(@InsetsType int types, long durationMillis,
                 @Nullable Interpolator interpolator,
                 @Nullable CancellationSignal cancellationSignal,
-                @NonNull final WindowInsetsAnimationControlListenerCompat listener) {
+                final @NonNull WindowInsetsAnimationControlListenerCompat listener) {
 
             WindowInsetsAnimationControlListener fwListener =
                     new WindowInsetsAnimationControlListener() {
@@ -777,7 +779,28 @@ public final class WindowInsetsControllerCompat {
          */
         @Override
         void setSystemBarsBehavior(@Behavior int behavior) {
-            mInsetsController.setSystemBarsBehavior(behavior);
+            if (mWindow != null) {
+                // Use the legacy way to control the behavior as a workaround because API 30 has a
+                // bug that the behavior might be cleared unexpectedly after setting a LayoutParam
+                // to a window.
+                mWindow.getDecorView().setTag(KEY_BEHAVIOR, behavior);
+                switch (behavior) {
+                    case BEHAVIOR_DEFAULT:
+                        unsetSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        setSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE);
+                        break;
+                    case BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE:
+                        unsetSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE);
+                        setSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        break;
+                    case BEHAVIOR_SHOW_BARS_BY_TOUCH:
+                        unsetSystemUiFlag(View.SYSTEM_UI_FLAG_IMMERSIVE
+                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        break;
+                }
+            } else {
+                mInsetsController.setSystemBarsBehavior(behavior);
+            }
         }
 
         /**
@@ -790,12 +813,17 @@ public final class WindowInsetsControllerCompat {
         @Override
         @Behavior
         int getSystemBarsBehavior() {
-            return mInsetsController.getSystemBarsBehavior();
+            if (mWindow != null) {
+                final Object behaviorTag = mWindow.getDecorView().getTag(KEY_BEHAVIOR);
+                return behaviorTag != null ? (int) behaviorTag : BEHAVIOR_DEFAULT;
+            } else {
+                return mInsetsController.getSystemBarsBehavior();
+            }
         }
 
         @Override
         void addOnControllableInsetsChangedListener(
-                @NonNull final WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                final WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
 
             if (mListeners.containsKey(listener)) {
@@ -815,7 +843,7 @@ public final class WindowInsetsControllerCompat {
 
         @Override
         void removeOnControllableInsetsChangedListener(
-                @NonNull WindowInsetsControllerCompat.OnControllableInsetsChangedListener
+                WindowInsetsControllerCompat.@NonNull OnControllableInsetsChangedListener
                         listener) {
             WindowInsetsController.OnControllableInsetsChangedListener
                     fwListener = mListeners.remove(listener);
@@ -839,8 +867,48 @@ public final class WindowInsetsControllerCompat {
         }
     }
 
+    @RequiresApi(31)
+    private static class Impl31 extends Impl30 {
+
+        Impl31(@NonNull Window window,
+                @NonNull WindowInsetsControllerCompat compatController,
+                @NonNull SoftwareKeyboardControllerCompat softwareKeyboardControllerCompat) {
+            super(window, compatController, softwareKeyboardControllerCompat);
+        }
+
+        Impl31(@NonNull WindowInsetsController insetsController,
+                @NonNull WindowInsetsControllerCompat compatController,
+                @NonNull SoftwareKeyboardControllerCompat softwareKeyboardControllerCompat) {
+            super(insetsController, compatController, softwareKeyboardControllerCompat);
+        }
+
+        /**
+         * Controls the behavior of system bars.
+         *
+         * @param behavior Determines how the bars behave when being hidden by the application.
+         * @see #getSystemBarsBehavior
+         */
+        @Override
+        void setSystemBarsBehavior(@Behavior int behavior) {
+            mInsetsController.setSystemBarsBehavior(behavior);
+        }
+
+        /**
+         * Retrieves the requested behavior of system bars.
+         *
+         * @return the system bar behavior controlled by this window.
+         * @see #setSystemBarsBehavior(int)
+         */
+        @SuppressLint("WrongConstant")
+        @Override
+        @Behavior
+        int getSystemBarsBehavior() {
+            return mInsetsController.getSystemBarsBehavior();
+        }
+    }
+
     @RequiresApi(35)
-    private static class Impl35 extends Impl30 {
+    private static class Impl35 extends Impl31 {
 
         Impl35(@NonNull Window window,
                 @NonNull WindowInsetsControllerCompat compatController,

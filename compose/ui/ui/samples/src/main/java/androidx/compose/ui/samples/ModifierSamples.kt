@@ -66,7 +66,7 @@ fun ModifierUsageSample() {
         "Hello, World!",
         Modifier.padding(16.dp) // Outer padding; outside background
             .background(color = Color.Green) // Solid element background color
-            .padding(16.dp) // Inner padding; inside background, around text
+            .padding(16.dp), // Inner padding; inside background, around text
     )
 }
 
@@ -101,7 +101,7 @@ fun SubcomponentModifierSample() {
         onOk: () -> Unit,
         onCancel: () -> Unit,
         modifier: Modifier = Modifier,
-        buttonModifier: Modifier = Modifier
+        buttonModifier: Modifier = Modifier,
     ) {
         Row(modifier) {
             Button(onCancel, buttonModifier) { Text("Cancel") }
@@ -110,7 +110,6 @@ fun SubcomponentModifierSample() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun DelegatedNodeSampleExplicit() {
@@ -118,7 +117,7 @@ fun DelegatedNodeSampleExplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -140,7 +139,7 @@ fun DelegatedNodeSampleExplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             gesture.onPointerEvent(pointerEvent, pass, bounds)
         }
@@ -158,7 +157,6 @@ fun DelegatedNodeSampleExplicit() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun DelegatedNodeSampleImplicit() {
@@ -166,7 +164,7 @@ fun DelegatedNodeSampleImplicit() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -197,7 +195,6 @@ fun DelegatedNodeSampleImplicit() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun LazyDelegationExample() {
@@ -213,7 +210,7 @@ fun LazyDelegationExample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // wait until first pointer event to start listening to global
             // position
@@ -232,7 +229,7 @@ fun LazyDelegationExample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             // ...
         }
@@ -304,7 +301,6 @@ fun DelegateInAttachSample() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun ModifierNodeElementSample() {
@@ -329,7 +325,6 @@ fun ModifierNodeElementSample() {
 }
 
 @Suppress("LocalVariableName")
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun SemanticsModifierNodeSample() {
@@ -368,7 +363,7 @@ fun PointerInputModifierNodeSample() {
         override fun onPointerEvent(
             pointerEvent: PointerEvent,
             pass: PointerEventPass,
-            bounds: IntSize
+            bounds: IntSize,
         ) {
             if (pass == PointerEventPass.Initial) {
                 callback(pointerEvent)
@@ -398,7 +393,6 @@ fun PointerInputModifierNodeSample() {
         this then PointerInputElement(callback)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun LayoutAwareModifierNodeSample() {
@@ -424,7 +418,6 @@ fun LayoutAwareModifierNodeSample() {
     fun Modifier.logSize(id: String) = this then LogSizeElement(id)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun GlobalPositionAwareModifierNodeSample() {
@@ -459,7 +452,6 @@ fun GlobalPositionAwareModifierNodeSample() {
     fun Modifier.logPosition(id: String) = this then PositionLoggerElement(id)
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun JustReadingOrProvidingModifierLocalNodeSample() {

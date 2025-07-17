@@ -25,11 +25,13 @@ import android.view.ViewGroup;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -74,7 +76,7 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
     @Rule
     public final androidx.test.rule.ActivityTestRule<T> mActivityRule;
 
-    /** @noinspection deprecation*/
+    /** @noinspection deprecation */
     @SuppressWarnings("deprecation")
     public WebSettingsCompatDarkModeTestBase(@NonNull Class<T> activityClass) {
         mActivityRule = new androidx.test.rule.ActivityTestRule<>(activityClass);
@@ -94,13 +96,11 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
         }
     }
 
-    @NonNull
-    public WebViewOnUiThread getWebViewOnUiThread() {
+    public @NonNull WebViewOnUiThread getWebViewOnUiThread() {
         return mWebViewOnUiThread;
     }
 
-    @NonNull
-    public WebSettings getSettingsOnUiThread() {
+    public @NonNull WebSettings getSettingsOnUiThread() {
         return getWebViewOnUiThread().getSettings();
     }
 
@@ -132,8 +132,8 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
         double major = 1.0 * maxEntry.getValue() / (sideLength * sideLength);
         assertTrue(
                 "The majority color should be at least 85% of the pixels,"
-                + " the actual value " + major,
-                 major > 0.85);
+                        + " the actual value " + major,
+                major > 0.85);
         return maxEntry.getKey();
     }
 
@@ -164,8 +164,7 @@ public class WebSettingsCompatDarkModeTestBase<T extends WebViewTestActivity> {
     /**
      * Returns a matcher to check if a color int is mostly green.
      */
-    @NonNull
-    public static Matcher<Integer> isGreen() {
+    public static @NonNull Matcher<Integer> isGreen() {
         return new TypeSafeMatcher<Integer>() {
             private int mPageColor;
 

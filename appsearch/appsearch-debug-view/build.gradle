@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,33 +29,30 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.appsearch.debugview"
+    compileSdk = 36
+    namespace = "androidx.appsearch.debugview"
 }
 
 dependencies {
-    implementation project(':appsearch:appsearch')
-    implementation project(':appsearch:appsearch-local-storage')
-    implementation project(':appsearch:appsearch-platform-storage')
-    implementation('androidx.concurrent:concurrent-futures:1.0.0')
-    implementation('androidx.core:core:1.5.0')
-    implementation('androidx.fragment:fragment:1.3.0')
-    implementation('androidx.legacy:legacy-support-v4:1.0.0')
+    api(libs.jspecify)
+    implementation(project(":appsearch:appsearch"))
+    implementation(project(":appsearch:appsearch-local-storage"))
+    implementation(project(":appsearch:appsearch-platform-storage"))
+    implementation("androidx.concurrent:concurrent-futures:1.0.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.core:core:1.5.0")
+    implementation("androidx.fragment:fragment:1.3.0")
+    implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.lifecycle:lifecycle-livedata:2.0.0")
-    implementation('com.google.android.material:material:1.0.0')
-    implementation(libs.constraintLayout)
+    implementation("com.google.android.material:material:1.0.0")
     implementation(libs.guavaAndroid)
-    androidTestImplementation(libs.multidex)
 }
 
 androidx {
     name = "AppSearch Debug View"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "A support library for AndroidX AppSearch that contains activities and views " +
             "for debugging an application's integration with AppSearch."
     doNotDocumentReason = "No public API"
-    metalavaK2UastEnabled = true
 }

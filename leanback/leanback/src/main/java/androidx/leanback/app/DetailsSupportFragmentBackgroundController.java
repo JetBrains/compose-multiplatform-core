@@ -22,8 +22,6 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
 import androidx.leanback.graphics.FitWidthBitmapDrawable;
@@ -31,6 +29,9 @@ import androidx.leanback.media.PlaybackGlue;
 import androidx.leanback.media.PlaybackGlueHost;
 import androidx.leanback.widget.DetailsParallaxDrawable;
 import androidx.leanback.widget.ParallaxTarget;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Controller for DetailsSupportFragment parallax background and embedded video play.
@@ -184,7 +185,7 @@ public class DetailsSupportFragmentBackgroundController {
      * @throws IllegalStateException If {@link #setupVideoPlayback(PlaybackGlue)} was called.
      */
     public void enableParallax(@NonNull Drawable coverDrawable, @NonNull Drawable bottomDrawable,
-                               @Nullable ParallaxTarget.PropertyValuesHolderTarget
+                               ParallaxTarget.@Nullable PropertyValuesHolderTarget
                                        coverDrawableParallaxTarget) {
         if (mParallaxDrawable != null) {
             return;

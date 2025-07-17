@@ -22,6 +22,7 @@ import com.google.common.truth.Truth.assertThat
 import org.jetbrains.kotlin.library.abi.AbiClassKind
 import org.jetbrains.kotlin.library.abi.AbiModality
 import org.jetbrains.kotlin.library.abi.AbiPropertyKind
+import org.jetbrains.kotlin.library.abi.AbiTypeArgument
 import org.jetbrains.kotlin.library.abi.AbiTypeNullability
 import org.jetbrains.kotlin.library.abi.AbiValueParameter
 import org.jetbrains.kotlin.library.abi.AbiVariance
@@ -163,7 +164,7 @@ class KlibParsingCursorExtensionsTest {
         val inputs =
             listOf(
                 "final inline fun <set-indices>(): kotlin.ranges/IntRange",
-                "final inline fun <get-indices>(): kotlin.ranges/IntRange"
+                "final inline fun <get-indices>(): kotlin.ranges/IntRange",
             )
         inputs.forEach { input -> assertThat(Cursor(input).hasGetterOrSetter()).isTrue() }
     }
@@ -212,11 +213,11 @@ class KlibParsingCursorExtensionsTest {
 
     @Test
     fun parseQualifiedName() {
-        val input = "androidx.collection/MutableScatterMap something"
+        val input = "androidx.collection/MutableScatterMap { something"
         val cursor = Cursor(input)
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
-        assertThat(cursor.currentLine).isEqualTo("something")
+        assertThat(cursor.currentLine).isEqualTo("{ something")
     }
 
     @Test
@@ -225,10 +226,7 @@ class KlibParsingCursorExtensionsTest {
         val cursor = Cursor(input)
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("kotlin/Function2")
-        assertThat(cursor.currentLine)
-            .isEqualTo(
-                "<#A1, #A, #A1>",
-            )
+        assertThat(cursor.currentLine).isEqualTo("<#A1, #A, #A1>")
     }
 
     @Test
@@ -238,6 +236,23 @@ class KlibParsingCursorExtensionsTest {
         val qName = cursor.parseAbiQualifiedName()
         assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
         assertThat(cursor.currentLine).isEqualTo("? something")
+    }
+
+    @Test
+    fun parseQualifiedNameWithQualifiedReceiver() {
+        val input = "androidx.compose.ui.text/AnnotatedString.Builder.BulletScope {"
+        val cursor = Cursor(input)
+        val qName = cursor.parseAbiQualifiedName()
+        assertThat(qName.toString())
+            .isEqualTo("androidx.compose.ui.text/AnnotatedString.Builder.BulletScope")
+    }
+
+    @Test
+    fun parseQualifiedNameBeforeDefaultParameterSymbol() {
+        val input = "androidx.collection/MutableScatterMap =..."
+        val cursor = Cursor(input)
+        val qName = cursor.parseAbiQualifiedName()
+        assertThat(qName.toString()).isEqualTo("androidx.collection/MutableScatterMap")
     }
 
     @Test
@@ -327,6 +342,49 @@ class KlibParsingCursorExtensionsTest {
         val receiver = cursor.parseFunctionReceiver()
         assertThat(receiver?.className.toString()).isEqualTo("androidx.collection/LongSparseArray")
         assertThat(cursor.currentLine).isEqualTo("<get-size>(): kotlin/Int")
+    }
+
+    @Test
+    fun parseFunctionReceiverWithStarParams() {
+        val input = "(androidx.compose.animation.core/AnimationState<*, *>).<get-isFinished>()"
+        val cursor = Cursor(input)
+        val receiver = cursor.parseFunctionReceiver()
+        assertThat(receiver?.className.toString())
+            .isEqualTo("androidx.compose.animation.core/AnimationState")
+        assertThat(cursor.currentLine).isEqualTo("<get-isFinished>()")
+    }
+
+    @Test
+    fun parseFunctionReceiverWithNullableParam() {
+        val input = "(kotlin.collections/List<#A?>)."
+        val cursor = Cursor(input)
+        val receiver = cursor.parseFunctionReceiver()
+        assertThat(receiver?.className.toString()).isEqualTo("kotlin.collections/List")
+        val typeArg = receiver?.arguments?.single()?.type
+        assertThat(typeArg?.nullability).isEqualTo(AbiTypeNullability.MARKED_NULLABLE)
+        assertThat(typeArg?.tag).isEqualTo("A")
+    }
+
+    @Test
+    fun parseSimpleContextParams() {
+        val input = "context(kotlin/Int)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(1)
+        assertThat(contextParams?.single()?.type?.className.toString()).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseContextWithMultipleParams() {
+        val input = "context(kotlin/Int, kotlin.collections/List<kotlin/String>)"
+        val cursor = Cursor(input)
+        val contextParams = cursor.parseContextParams()
+        assertThat(contextParams).hasSize(2)
+        assertThat(contextParams?.first()?.type?.className.toString()).isEqualTo("kotlin/Int")
+        assertThat(contextParams?.last()?.type?.className.toString())
+            .isEqualTo("kotlin.collections/List")
+        assertThat(contextParams?.last()?.type?.arguments?.first()?.type?.className.toString())
+            .isEqualTo("kotlin/String")
     }
 
     @Test
@@ -431,6 +489,21 @@ class KlibParsingCursorExtensionsTest {
     }
 
     @Test
+    fun parseValueParamsWithStarTypeParam() {
+        val input = "(androidx.datastore.preferences.core/Preferences.Key<*>)"
+        val cursor = Cursor(input)
+        val valueParams = cursor.parseValueParameters()!!
+        assertThat(valueParams).hasSize(1)
+        val valueParam = valueParams.single()
+        val type = valueParam.type
+        assertThat(type.className.toString())
+            .isEqualTo("androidx.datastore.preferences.core/Preferences.Key")
+        assertThat(type.arguments).hasSize(1)
+        assertThat(type.arguments?.single())
+            .isInstanceOf(AbiTypeArgument.StarProjection::class.java)
+    }
+
+    @Test
     fun parseTypeParams() {
         val input = "<#A1: kotlin/Any?>"
         val cursor = Cursor(input)
@@ -470,6 +543,18 @@ class KlibParsingCursorExtensionsTest {
         assertThat(type1?.nullability).isEqualTo(AbiTypeNullability.MARKED_NULLABLE)
         assertThat(type2?.className?.toString()).isEqualTo("kotlin/Any")
         assertThat(type2?.nullability).isEqualTo(AbiTypeNullability.MARKED_NULLABLE)
+    }
+
+    @Test
+    fun parseTypeParamsWithMultipleUpperBounds() {
+        val input = "<#A: my.lib/A & my.lib/B>"
+        val cursor = Cursor(input)
+        val typeParams = cursor.parseTypeParams()
+        assertThat(typeParams).hasSize(1)
+        val upperBounds = typeParams?.single()!!.upperBounds
+        assertThat(upperBounds).hasSize(2)
+        assertThat(upperBounds.first().className.toString()).isEqualTo("my.lib/A")
+        assertThat(upperBounds.last().className.toString()).isEqualTo("my.lib/B")
     }
 
     @Test
@@ -538,6 +623,37 @@ class KlibParsingCursorExtensionsTest {
     }
 
     @Test
+    fun hasSignatureVersion() {
+        val input = "// - Signature version: 2"
+        val cursor = Cursor(input)
+        assertThat(cursor.hasSignatureVersion()).isTrue()
+        assertThat(cursor.currentLine).isEqualTo(input)
+    }
+
+    @Test
+    fun hasSignatureVersionFalsePositive() {
+        val input = "// - Show manifest properties: true"
+        val cursor = Cursor(input)
+        assertThat(cursor.hasSignatureVersion()).isFalse()
+    }
+
+    @Test
+    fun parseSignatureVersion() {
+        val input = "// - Signature version: 2"
+        val cursor = Cursor(input)
+        val signatureVersion = cursor.parseSignatureVersion()
+        assertThat(signatureVersion.toString()).isEqualTo("V2")
+    }
+
+    @Test
+    fun parseSignatureVersionFromTheFuture() {
+        val input = "// - Signature version: 101"
+        val cursor = Cursor(input)
+        val signatureVersion = cursor.parseSignatureVersion()
+        assertThat(signatureVersion.toString()).isEqualTo("Unsupported(versionNumber=101)")
+    }
+
+    @Test
     fun parseEnumEntryName() {
         val input = "SOME_ENUM something else"
         val cursor = Cursor(input)
@@ -561,5 +677,33 @@ class KlibParsingCursorExtensionsTest {
         val cursor = Cursor(input)
         assertThat(cursor.hasEnumEntry()).isTrue()
         assertThat(cursor.currentLine).isEqualTo(input)
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForFunctionName() {
+        val input = "myFun ()"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("myFun ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassName() {
+        val input = "MyClass  {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForClassWithSuper() {
+        val input = "MyClass = : my.lib/MyClass {"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass =")
+    }
+
+    @Test
+    fun parseValidIdentifierAndMaybeTrimForForValueParameter() {
+        val input = "MyClass ,"
+        val cursor = Cursor(input)
+        assertThat(cursor.parseValidIdentifierAndMaybeTrim()).isEqualTo("MyClass ")
     }
 }

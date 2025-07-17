@@ -24,8 +24,14 @@ package androidx.sqlite
  *
  * See also [Database Connection](https://www.sqlite.org/c3ref/sqlite3.html)
  */
-@Suppress("NotCloseable") // TODO(b/315461431): No common Closeable interface in KMP
-interface SQLiteConnection {
+@Suppress("NotCloseable")
+public interface SQLiteConnection : AutoCloseable {
+
+    /** Returns true if the connection has an active transaction, false otherwise. */
+    public fun inTransaction(): Boolean {
+        throw NotImplementedError("$this does not implement inTransaction().")
+    }
+
     /**
      * Prepares a new SQL statement.
      *
@@ -34,7 +40,7 @@ interface SQLiteConnection {
      * @param sql the SQL statement to prepare
      * @return the prepared statement.
      */
-    fun prepare(sql: String): SQLiteStatement
+    public fun prepare(sql: String): SQLiteStatement
 
     /**
      * Closes the database connection.
@@ -42,5 +48,5 @@ interface SQLiteConnection {
      * Once a connection is closed it should no longer be used. Calling this function on an already
      * closed database connection is a no-op.
      */
-    fun close()
+    public override fun close()
 }

@@ -69,7 +69,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)
@@ -87,10 +87,7 @@ class PullRefreshIndicatorTransformTest {
     fun indicatorPartiallyClippedWhenPartiallyDisplayed() {
         lateinit var state: PullRefreshState
         rule.setContent {
-            // Pull down by 100 pixels (the actual position delta is half of this because the state
-            // applies a multiplier)
-            state =
-                rememberPullRefreshState(refreshing = false, onRefresh = {}).apply { onPull(100f) }
+            state = rememberPullRefreshState(refreshing = false, onRefresh = {})
             Box(
                 Modifier.fillMaxSize()
                     .background(Color.White)
@@ -98,7 +95,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)
@@ -107,6 +104,11 @@ class PullRefreshIndicatorTransformTest {
                 )
             }
         }
+
+        // Pull down by 100 pixels (the actual position delta is half of this because the state
+        // applies a multiplier)
+        state.onPull(100f)
+
         // The indicator should be partially clipped
         rule.onNodeWithTag(BoxTag).captureToImage().run {
             val indicatorStart = with(rule.density) { width / 2 - IndicatorSize.toPx() / 2 }.toInt()
@@ -145,7 +147,7 @@ class PullRefreshIndicatorTransformTest {
                 rememberPullRefreshState(
                     refreshing = true,
                     onRefresh = {},
-                    refreshingOffset = IndicatorSize
+                    refreshingOffset = IndicatorSize,
                 )
             Box(
                 Modifier.fillMaxSize()
@@ -154,7 +156,7 @@ class PullRefreshIndicatorTransformTest {
                     // Set a larger size so that when offset the indicator will still appear
                     .size(ContainingBoxSize)
                     .testTag(BoxTag),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Box(
                     Modifier.pullRefreshIndicatorTransform(state)

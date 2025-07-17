@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param <T> The type of the live data
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-abstract class ComputableLiveData<T>
+public abstract class ComputableLiveData<T>
 @JvmOverloads
 /**
  * Creates a computable live data that computes values on the specified executor or the arch IO
@@ -50,7 +50,7 @@ constructor(internal val executor: Executor = ArchTaskExecutor.getIOThreadExecut
             }
         }
     /** The LiveData managed by this class. */
-    open val liveData: LiveData<T?> = _liveData
+    public open val liveData: LiveData<T?> = _liveData
     internal val invalid = AtomicBoolean(true)
     internal val computing = AtomicBoolean(false)
 
@@ -104,7 +104,7 @@ constructor(internal val executor: Executor = ArchTaskExecutor.getIOThreadExecut
      *
      * When there are active observers, this will trigger a call to [.compute].
      */
-    open fun invalidate() {
+    public open fun invalidate() {
         ArchTaskExecutor.getInstance().executeOnMainThread(invalidationRunnable)
     }
 

@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.test.injectionscope.mouse
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.draggable2D
 import androidx.compose.foundation.gestures.rememberDraggable2DState
@@ -69,7 +68,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTestApi::class)
 class ClickTest {
     companion object {
         private val T = InputDispatcher.eventPeriodMillis
@@ -99,7 +97,7 @@ class ClickTest {
                     { verifyMouseEvent(1 * T, Press, true, positionIn, PrimaryButton) },
                     { verifyMouseEvent(2 * T, Move, true, positionMove1, PrimaryButton) },
                     { verifyMouseEvent(2 * T, Release, false, positionMove1) },
-                )
+                ),
         )
 
     @Test
@@ -124,7 +122,7 @@ class ClickTest {
                     { verifyMouseEvent(2 * T, Exit, true, positionOut, PrimaryButton) },
                     { verifyMouseEvent(3 * T, Enter, true, positionMove1, PrimaryButton) },
                     { verifyMouseEvent(3 * T, Release, false, positionMove1) },
-                )
+                ),
         )
 
     @Test
@@ -146,7 +144,7 @@ class ClickTest {
                     { verifyMouseEvent(1 * T, Press, true, positionIn, PrimaryButton) },
                     { verifyMouseEvent(2 * T, Exit, true, positionOut, PrimaryButton) },
                     { verifyMouseEvent(2 * T, Release, false, positionOut) },
-                )
+                ),
         )
 
     @Test
@@ -180,7 +178,7 @@ class ClickTest {
                     //            { verifyMouseEvent(3 * T, Release, true, positionMove2,
                     // PrimaryButton) },
                     { verifyMouseEvent(3 * T, Release, false, positionMove2) },
-                )
+                ),
         )
 
     @Test
@@ -214,7 +212,7 @@ class ClickTest {
                     //            { verifyMouseEvent(3 * T, Release, true, positionMove2,
                     // SecondaryButton) },
                     { verifyMouseEvent(3 * T, Release, false, positionMove2) },
-                )
+                ),
         )
 
     @Test
@@ -238,7 +236,7 @@ class ClickTest {
                 arrayOf(
                     { verifyMouseEvent(1 * T, Enter, false, positionIn) },
                     { verifyMouseEvent(1 * T, Press, true, positionIn, PrimaryButton) },
-                )
+                ),
         )
 
     @Test
@@ -251,7 +249,7 @@ class ClickTest {
                     { verifyMouseEvent(0, Enter, false, positionCenter) },
                     { verifyMouseEvent(0, Press, true, positionCenter, PrimaryButton) },
                     { verifyMouseEvent(ClickDuration, Release, false, positionCenter) },
-                )
+                ),
         )
 
     @Test
@@ -264,7 +262,7 @@ class ClickTest {
                     { verifyMouseEvent(0, Enter, false, positionCenter) },
                     { verifyMouseEvent(0, Press, true, positionCenter, SecondaryButton) },
                     { verifyMouseEvent(ClickDuration, Release, false, positionCenter) },
-                )
+                ),
         )
 
     @Test
@@ -284,7 +282,7 @@ class ClickTest {
                     { verifyMouseEvent(release1, Release, false, positionCenter) },
                     { verifyMouseEvent(press2, Press, true, positionCenter, PrimaryButton) },
                     { verifyMouseEvent(release2, Release, false, positionCenter) },
-                )
+                ),
         )
     }
 
@@ -309,7 +307,7 @@ class ClickTest {
                     { verifyMouseEvent(release2, Release, false, positionCenter) },
                     { verifyMouseEvent(press3, Press, true, positionCenter, PrimaryButton) },
                     { verifyMouseEvent(release3, Release, false, positionCenter) },
-                )
+                ),
         )
     }
 
@@ -328,15 +326,16 @@ class ClickTest {
                             DefaultLongClickTimeMillis + 100,
                             Release,
                             false,
-                            positionCenter
+                            positionCenter,
                         )
                     },
-                )
+                ),
         )
 
     // Rather than checking the events sent on, for this more complex mouse gesture we
     // check if the events actually lead to the expected outcome.
     @Test
+    @OptIn(ExperimentalTestApi::class)
     fun dragAndDropTest() = runComposeUiTest {
         val sizeDp = 50.dp
         val sizePx = with(density) { sizeDp.toPx() }
@@ -346,7 +345,6 @@ class ClickTest {
         var yOffsetPx by mutableStateOf(0f)
 
         setContent {
-            @OptIn(ExperimentalFoundationApi::class)
             Box(Modifier.padding(16.dp).fillMaxSize()) {
                 Box(
                     Modifier.testTag("draggable-box")

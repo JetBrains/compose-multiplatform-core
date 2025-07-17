@@ -20,14 +20,14 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ExperimentalLensFacing;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 
@@ -166,7 +166,6 @@ public final class CameraValidator {
         private Api34Impl() {
         }
 
-        @DoNotInline
         static int getDeviceId(@NonNull Context context) {
             return context.getDeviceId();
         }

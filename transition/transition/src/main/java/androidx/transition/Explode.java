@@ -26,8 +26,8 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This transition tracks changes to the visibility of target views in the
@@ -84,9 +84,8 @@ public class Explode extends Visibility {
         return true;
     }
 
-    @Nullable
     @Override
-    public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (endValues == null) {
             return null;
@@ -102,9 +101,8 @@ public class Explode extends Visibility {
                 startX, startY, endX, endY, sDecelerate, this);
     }
 
-    @Nullable
     @Override
-    public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+    public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         if (startValues == null) {
             return null;

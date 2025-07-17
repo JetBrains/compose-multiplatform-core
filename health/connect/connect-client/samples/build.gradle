@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,22 +32,23 @@ plugins {
 dependencies {
     implementation(libs.kotlinStdlib)
 
-    compileOnly project(":annotation:annotation-sampled")
-    implementation project(":health:connect:connect-client")
+    compileOnly(project(":annotation:annotation-sampled"))
+    implementation(project(":health:connect:connect-client"))
     implementation ("androidx.appcompat:appcompat:1.6.0")
     implementation ("androidx.activity:activity:1.6.0")
 }
 
 androidx {
     name = "Health Connect Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
     description = "Contains the sample code for the Androidx Health Connect Library"
 }
 
 android {
-    namespace "androidx.health.connect.client.samples"
+    namespace = "androidx.health.connect.client.samples"
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
+    compileSdk = 36
 }

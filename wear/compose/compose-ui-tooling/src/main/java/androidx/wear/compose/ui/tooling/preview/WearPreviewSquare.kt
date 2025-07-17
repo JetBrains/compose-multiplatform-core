@@ -24,7 +24,6 @@ import androidx.wear.tooling.preview.devices.WearDevices
  * Wear screen ([WearDevices.SQUARE]).
  *
  * @sample androidx.wear.compose.material.samples.ButtonWithIconPreview
- *
  * @see [WearDevices.SQUARE]
  */
 @Preview(
@@ -32,6 +31,6 @@ import androidx.wear.tooling.preview.devices.WearDevices
     backgroundColor = 0xff000000,
     showBackground = true,
     group = "Devices - Small Square",
-    showSystemUi = true
+    showSystemUi = true,
 )
 public annotation class WearPreviewSquare()

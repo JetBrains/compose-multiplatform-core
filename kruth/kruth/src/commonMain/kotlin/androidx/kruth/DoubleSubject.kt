@@ -34,10 +34,8 @@ private fun checkTolerance(tolerance: Double) {
 
 /** Propositions for double subjects. */
 class DoubleSubject
-internal constructor(
-    actual: Double?,
-    metadata: FailureMetadata = FailureMetadata(),
-) : ComparableSubject<Double>(actual, metadata = metadata) {
+internal constructor(actual: Double?, metadata: FailureMetadata = FailureMetadata()) :
+    ComparableSubject<Double>(actual, metadata = metadata) {
 
     abstract class TolerantDoubleComparison internal constructor() {
         /**
@@ -53,6 +51,7 @@ internal constructor(
           you meant to compare doubles, use of(Double) instead.""",
             ReplaceWith("this.of(other)"),
         )
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun equals(other: Any?): Boolean {
             throw UnsupportedOperationException(
                 "If you meant to compare doubles, use of(Double) instead."
@@ -61,6 +60,7 @@ internal constructor(
 
         /** @throws UnsupportedOperationException always */
         @Deprecated("hashCode() is not supported on TolerantDoubleComparison")
+        @Suppress("POTENTIALLY_NON_REPORTED_ANNOTATION")
         override fun hashCode(): Int {
             throw UnsupportedOperationException("Subject.hashCode() is not supported.")
         }
@@ -69,11 +69,14 @@ internal constructor(
     fun isWithin(tolerance: Double): TolerantDoubleComparison {
         return object : TolerantDoubleComparison() {
             override fun of(expected: Double) {
-                requireNonNull(actual) { "Expected $actual, but was null" }
+                requireNonNull(actual) {
+                    "actual value cannot be null. tolerance=$tolerance expected=$expected"
+                }
                 checkTolerance(tolerance)
+
                 if (!equalWithinTolerance(actual, expected, tolerance)) {
                     failWithoutActual(
-                        fact("Expected", expected),
+                        fact("expected", expected),
                         fact("but was", actual),
                         fact("outside tolerance", tolerance),
                     )
@@ -85,11 +88,14 @@ internal constructor(
     fun isNotWithin(tolerance: Double): TolerantDoubleComparison {
         return object : TolerantDoubleComparison() {
             override fun of(expected: Double) {
-                requireNonNull(actual) { "Expected $actual, but was null" }
+                requireNonNull(actual) {
+                    "actual value cannot be null. tolerance=$tolerance expected=$expected"
+                }
                 checkTolerance(tolerance)
+
                 if (!notEqualWithinTolerance(actual, expected, tolerance)) {
                     failWithoutActual(
-                        fact("Expected not to be", expected),
+                        fact("expected not to be", expected),
                         fact("but was", actual),
                         fact("within tolerance", tolerance),
                     )

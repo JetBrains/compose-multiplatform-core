@@ -35,7 +35,6 @@ interface SnapPosition {
      * padding)
      *
      * @sample androidx.compose.foundation.samples.SnapFlingBehaviorSnapPosition
-     *
      * @param layoutSize The main axis layout size within which an item can be positioned.
      * @param itemSize The main axis size for the item being positioned within this snapping layout.
      * @param beforeContentPadding The content padding in pixels applied before this Layout's
@@ -52,7 +51,7 @@ interface SnapPosition {
         beforeContentPadding: Int,
         afterContentPadding: Int,
         itemIndex: Int,
-        itemCount: Int
+        itemCount: Int,
     ): Int
 
     /** Aligns the center of the item with the center of the containing layout. */
@@ -63,7 +62,7 @@ interface SnapPosition {
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int {
             val availableLayoutSpace = layoutSize - beforeContentPadding - afterContentPadding
             // we use availableLayoutSpace / 2 as the main anchor point and we discount half
@@ -84,7 +83,7 @@ interface SnapPosition {
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int = 0
 
         override fun toString(): String {
@@ -100,7 +99,7 @@ interface SnapPosition {
             beforeContentPadding: Int,
             afterContentPadding: Int,
             itemIndex: Int,
-            itemCount: Int
+            itemCount: Int,
         ): Int {
             val availableLayoutSpace = layoutSize - beforeContentPadding - afterContentPadding
             // the snap position for the item is the end of the layout, discounting the item
@@ -122,7 +121,7 @@ internal fun calculateDistanceToDesiredSnapPosition(
     itemOffset: Int,
     itemIndex: Int,
     snapPosition: SnapPosition,
-    itemCount: Int
+    itemCount: Int,
 ): Float {
     val desiredDistance =
         with(snapPosition) {
@@ -132,7 +131,7 @@ internal fun calculateDistanceToDesiredSnapPosition(
                     beforeContentPadding,
                     afterContentPadding,
                     itemIndex,
-                    itemCount
+                    itemCount,
                 )
             }
             .toFloat()

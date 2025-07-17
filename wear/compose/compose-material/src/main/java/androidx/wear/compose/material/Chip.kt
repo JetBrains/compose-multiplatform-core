@@ -60,6 +60,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.materialcore.ImageWithScrimPainter
 
 /**
  * Base level Wear Material [Chip] that offers a single slot to take any content.
@@ -104,7 +105,7 @@ import androidx.compose.ui.unit.dp
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.0." +
         "A newer overload is available with an additional border parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Chip(
@@ -117,7 +118,7 @@ public fun Chip(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     role: Role? = Role.Button,
     content: @Composable RowScope.() -> Unit,
-) =
+): Unit =
     Chip(
         onClick = onClick,
         colors = colors,
@@ -128,7 +129,7 @@ public fun Chip(
         shape = shape,
         interactionSource = interactionSource,
         role = role,
-        content = content
+        content = content,
     )
 
 /**
@@ -197,7 +198,7 @@ public fun Chip(
         shape = shape,
         interactionSource = interactionSource,
         role = role,
-        content = content
+        content = content,
     )
 }
 
@@ -260,7 +261,7 @@ public fun Chip(
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.0." +
         "A newer overload is available with an additional shape parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Chip(
@@ -273,7 +274,7 @@ public fun Chip(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     contentPadding: PaddingValues = ChipDefaults.ContentPadding,
-) =
+): Unit =
     Chip(
         label,
         onClick,
@@ -284,7 +285,7 @@ public fun Chip(
         enabled,
         interactionSource,
         contentPadding,
-        MaterialTheme.shapes.small
+        MaterialTheme.shapes.small,
     )
 
 /**
@@ -359,7 +360,7 @@ public fun Chip(
     interactionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ChipDefaults.ContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-    border: ChipBorder = ChipDefaults.chipBorder()
+    border: ChipBorder = ChipDefaults.chipBorder(),
 ) {
     ChipImpl(
         onClick = onClick,
@@ -374,7 +375,7 @@ public fun Chip(
         contentPadding = contentPadding,
         shape = shape,
         border = border,
-        defaultIconSpacing = ChipDefaults.IconSpacing
+        defaultIconSpacing = ChipDefaults.IconSpacing,
     )
 }
 
@@ -441,8 +442,8 @@ public fun OutlinedChip(
     interactionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ChipDefaults.ContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-    border: ChipBorder = ChipDefaults.outlinedChipBorder()
-) =
+    border: ChipBorder = ChipDefaults.outlinedChipBorder(),
+): Unit =
     Chip(
         label = label,
         onClick = onClick,
@@ -454,7 +455,7 @@ public fun OutlinedChip(
         interactionSource = interactionSource,
         contentPadding = contentPadding,
         shape = shape,
-        border = border
+        border = border,
     )
 
 /**
@@ -528,7 +529,7 @@ public fun OutlinedChip(
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.0." +
         "A newer overload is available with an additional shape parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun CompactChip(
@@ -540,7 +541,7 @@ public fun CompactChip(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     contentPadding: PaddingValues = ChipDefaults.CompactChipContentPadding,
-) =
+): Unit =
     CompactChip(
         onClick,
         modifier,
@@ -551,7 +552,7 @@ public fun CompactChip(
         interactionSource,
         contentPadding,
         MaterialTheme.shapes.small,
-        ChipDefaults.chipBorder()
+        ChipDefaults.chipBorder(),
     )
 
 /**
@@ -637,7 +638,7 @@ public fun CompactChip(
     interactionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ChipDefaults.CompactChipContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-    border: ChipBorder = ChipDefaults.chipBorder()
+    border: ChipBorder = ChipDefaults.chipBorder(),
 ) {
     if (label != null) {
         ChipImpl(
@@ -755,8 +756,8 @@ public fun OutlinedCompactChip(
     interactionSource: MutableInteractionSource? = null,
     contentPadding: PaddingValues = ChipDefaults.CompactChipContentPadding,
     shape: Shape = MaterialTheme.shapes.large,
-    border: ChipBorder = ChipDefaults.outlinedChipBorder()
-) =
+    border: ChipBorder = ChipDefaults.outlinedChipBorder(),
+): Unit =
     CompactChip(
         onClick = onClick,
         modifier = modifier,
@@ -767,7 +768,7 @@ public fun OutlinedCompactChip(
         interactionSource = interactionSource,
         contentPadding = contentPadding,
         shape = shape,
-        border = border
+        border = border,
     )
 
 /**
@@ -839,7 +840,7 @@ public object ChipDefaults {
         backgroundColor: Color = MaterialTheme.colors.primary,
         contentColor: Color = contentColorFor(backgroundColor),
         secondaryContentColor: Color = contentColor,
-        iconColor: Color = contentColor
+        iconColor: Color = contentColor,
     ): ChipColors {
         // For light background colors, the default disabled content colors do not provide
         // sufficient contrast. Instead, we default to using background for disabled content.
@@ -889,7 +890,7 @@ public object ChipDefaults {
         contentColor: Color = contentColorFor(endBackgroundColor),
         secondaryContentColor: Color = contentColor,
         iconColor: Color = contentColor,
-        gradientDirection: LayoutDirection = LocalLayoutDirection.current
+        gradientDirection: LayoutDirection = LocalLayoutDirection.current,
     ): ChipColors {
         val backgroundColors: List<Color>
         val disabledBackgroundColors: List<Color>
@@ -898,7 +899,7 @@ public object ChipDefaults {
             disabledBackgroundColors =
                 listOf(
                     startBackgroundColor.copy(alpha = ContentAlpha.disabled),
-                    endBackgroundColor.copy(alpha = ContentAlpha.disabled)
+                    endBackgroundColor.copy(alpha = ContentAlpha.disabled),
                 )
         } else {
             backgroundColors = listOf(endBackgroundColor, startBackgroundColor)
@@ -939,13 +940,13 @@ public object ChipDefaults {
         backgroundColor: Color = MaterialTheme.colors.surface,
         contentColor: Color = contentColorFor(backgroundColor),
         secondaryContentColor: Color = contentColor,
-        iconColor: Color = contentColor
+        iconColor: Color = contentColor,
     ): ChipColors {
         return chipColors(
             backgroundColor = backgroundColor,
             contentColor = contentColor,
             secondaryContentColor = secondaryContentColor,
-            iconColor = iconColor
+            iconColor = iconColor,
         )
     }
 
@@ -966,14 +967,14 @@ public object ChipDefaults {
     public fun childChipColors(
         contentColor: Color = MaterialTheme.colors.onSurface,
         secondaryContentColor: Color = contentColor,
-        iconColor: Color = contentColor
+        iconColor: Color = contentColor,
     ): ChipColors {
         return chipColors(
             backgroundColor = Color.Transparent,
             contentColor = contentColor,
             secondaryContentColor = secondaryContentColor,
             iconColor = iconColor,
-            disabledBackgroundColor = Color.Transparent
+            disabledBackgroundColor = Color.Transparent,
         )
     }
 
@@ -998,7 +999,7 @@ public object ChipDefaults {
                 colors =
                     listOf(
                         MaterialTheme.colors.surface.copy(alpha = 1.0f),
-                        MaterialTheme.colors.surface.copy(alpha = 0f)
+                        MaterialTheme.colors.surface.copy(alpha = 0f),
                     )
             ),
         contentColor: Color = MaterialTheme.colors.onBackground,
@@ -1009,7 +1010,7 @@ public object ChipDefaults {
             remember(backgroundImagePainter, backgroundImageScrimBrush) {
                 ImageWithScrimPainter(
                     imagePainter = backgroundImagePainter,
-                    brush = backgroundImageScrimBrush
+                    brush = backgroundImageScrimBrush,
                 )
             }
 
@@ -1071,11 +1072,11 @@ public object ChipDefaults {
     @Composable
     public fun chipBorder(
         borderStroke: BorderStroke? = null,
-        disabledBorderStroke: BorderStroke? = null
+        disabledBorderStroke: BorderStroke? = null,
     ): ChipBorder {
         return DefaultChipBorder(
             borderStroke = borderStroke,
-            disabledBorderStroke = disabledBorderStroke
+            disabledBorderStroke = disabledBorderStroke,
         )
     }
 
@@ -1091,16 +1092,16 @@ public object ChipDefaults {
     public fun outlinedChipBorder(
         borderColor: Color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.6f),
         disabledBorderColor: Color = borderColor.copy(alpha = ContentAlpha.disabled),
-        borderWidth: Dp = 1.dp
+        borderWidth: Dp = 1.dp,
     ): ChipBorder {
         return DefaultChipBorder(
             borderStroke = BorderStroke(borderWidth, borderColor),
-            disabledBorderStroke = BorderStroke(borderWidth, disabledBorderColor)
+            disabledBorderStroke = BorderStroke(borderWidth, disabledBorderColor),
         )
     }
 
-    public val ChipHorizontalPadding = 14.dp
-    public val ChipVerticalPadding = 6.dp
+    public val ChipHorizontalPadding: Dp = 14.dp
+    public val ChipVerticalPadding: Dp = 6.dp
 
     /** The default content padding used by [Chip] */
     public val ContentPadding: PaddingValues =
@@ -1108,11 +1109,11 @@ public object ChipDefaults {
             start = ChipHorizontalPadding,
             top = ChipVerticalPadding,
             end = ChipHorizontalPadding,
-            bottom = ChipVerticalPadding
+            bottom = ChipVerticalPadding,
         )
 
-    public val CompactChipHorizontalPadding = 12.dp
-    public val CompactChipVerticalPadding = 0.dp
+    public val CompactChipHorizontalPadding: Dp = 12.dp
+    public val CompactChipVerticalPadding: Dp = 0.dp
 
     /** The default content padding used by [CompactChip] */
     public val CompactChipContentPadding: PaddingValues =
@@ -1120,14 +1121,14 @@ public object ChipDefaults {
             start = CompactChipHorizontalPadding,
             top = CompactChipVerticalPadding,
             end = CompactChipHorizontalPadding,
-            bottom = CompactChipVerticalPadding
+            bottom = CompactChipVerticalPadding,
         )
 
     /**
      * The default height applied for the [Chip]. Note that you can override it by applying
      * Modifier.heightIn directly on [Chip].
      */
-    public val Height = 52.dp
+    public val Height: Dp = 52.dp
 
     /**
      * The height applied for the [CompactChip]. This includes a visible chip height of 32.dp and
@@ -1137,7 +1138,7 @@ public object ChipDefaults {
      * Note that you can override it by adjusting Modifier.height and Modifier.padding directly on
      * [CompactChip].
      */
-    public val CompactChipHeight = 48.dp
+    public val CompactChipHeight: Dp = 48.dp
 
     /**
      * The default padding to be provided around a [CompactChip] in order to ensure that its
@@ -1199,7 +1200,7 @@ public object ChipDefaults {
             disabledBackgroundColor = disabledBackgroundColor,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /**
@@ -1233,7 +1234,7 @@ public object ChipDefaults {
             disabledBackgroundPainter = disabledBackgroundPainter,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 }
 
@@ -1247,7 +1248,7 @@ internal class DefaultChipColors(
     private val disabledBackgroundPainter: Painter,
     private val disabledContentColor: Color,
     private val disabledSecondaryContentColor: Color,
-    private val disabledIconColor: Color
+    private val disabledIconColor: Color,
 ) : ChipColors {
 
     constructor(
@@ -1258,7 +1259,7 @@ internal class DefaultChipColors(
         disabledBackgroundColor: Color,
         disabledContentColor: Color,
         disabledSecondaryContentColor: Color,
-        disabledIconColor: Color
+        disabledIconColor: Color,
     ) : this(
         ColorPainter(backgroundColor),
         contentColor,
@@ -1267,7 +1268,7 @@ internal class DefaultChipColors(
         ColorPainter(disabledBackgroundColor),
         disabledContentColor,
         disabledSecondaryContentColor,
-        disabledIconColor
+        disabledIconColor,
     )
 
     @Composable
@@ -1328,7 +1329,7 @@ internal class DefaultChipColors(
 @Immutable
 private class DefaultChipBorder(
     private val borderStroke: BorderStroke? = null,
-    private val disabledBorderStroke: BorderStroke? = null
+    private val disabledBorderStroke: BorderStroke? = null,
 ) : ChipBorder {
     @Composable
     override fun borderStroke(enabled: Boolean): State<BorderStroke?> {
@@ -1388,7 +1389,7 @@ private fun ChipImpl(
                     enabled = enabled,
                     onClick = onClick,
                     role = role,
-                    indication = rippleOrFallbackImplementation(),
+                    indication = ripple(),
                     interactionSource = interactionSource,
                 )
                 .padding(contentPadding),
@@ -1396,8 +1397,8 @@ private fun ChipImpl(
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
                 MaterialTheme.typography.button,
-                content
-            )
+                content,
+            ),
     )
 }
 
@@ -1415,7 +1416,7 @@ private fun ChipImpl(
     contentPadding: PaddingValues,
     shape: Shape,
     border: ChipBorder?,
-    defaultIconSpacing: Dp
+    defaultIconSpacing: Dp,
 ) {
     ChipImpl(
         onClick = onClick,
@@ -1431,12 +1432,12 @@ private fun ChipImpl(
             verticalAlignment = Alignment.CenterVertically,
             // Fill the container height but not its width as chips have fixed size height but we
             // want them to be able to fit their content
-            modifier = Modifier.fillMaxHeight()
+            modifier = Modifier.fillMaxHeight(),
         ) {
             if (icon != null) {
                 Box(
                     modifier = Modifier.wrapContentSize(align = Alignment.Center),
-                    content = provideIcon(colors.iconColor(enabled), icon)
+                    content = provideIcon(colors.iconColor(enabled), icon),
                 )
                 Spacer(modifier = Modifier.size(defaultIconSpacing))
             }
@@ -1451,7 +1452,7 @@ private fun ChipImpl(
                             provideScopeContent(
                                 colors.secondaryContentColor(enabled),
                                 MaterialTheme.typography.caption2,
-                                secondaryLabel
+                                secondaryLabel,
                             )
                     )
                 }

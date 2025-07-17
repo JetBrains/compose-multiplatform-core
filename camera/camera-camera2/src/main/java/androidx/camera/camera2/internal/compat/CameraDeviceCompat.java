@@ -20,11 +20,12 @@ import android.hardware.camera2.CameraDevice;
 import android.os.Build;
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.internal.compat.params.SessionConfigurationCompat;
 import androidx.camera.core.impl.utils.MainThreadAsyncHandler;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -74,8 +75,7 @@ public final class CameraDeviceCompat {
      * @return wrapped class
      * @see #toCameraDeviceCompat(CameraDevice, Handler)
      */
-    @NonNull
-    public static CameraDeviceCompat toCameraDeviceCompat(
+    public static @NonNull CameraDeviceCompat toCameraDeviceCompat(
             @NonNull CameraDevice captureSession) {
         return CameraDeviceCompat.toCameraDeviceCompat(captureSession,
                 MainThreadAsyncHandler.getInstance());
@@ -91,8 +91,7 @@ public final class CameraDeviceCompat {
      * @param compatHandler {@link Handler} used for dispatching callbacks to executor APIs.
      * @return wrapped class
      */
-    @NonNull
-    public static CameraDeviceCompat toCameraDeviceCompat(
+    public static @NonNull CameraDeviceCompat toCameraDeviceCompat(
             @NonNull CameraDevice cameraDevice, @NonNull Handler compatHandler) {
         return new CameraDeviceCompat(cameraDevice, compatHandler);
     }
@@ -104,8 +103,7 @@ public final class CameraDeviceCompat {
      * @see #toCameraDeviceCompat(CameraDevice)
      * @see #toCameraDeviceCompat(CameraDevice, Handler)
      */
-    @NonNull
-    public CameraDevice toCameraDevice() {
+    public @NonNull CameraDevice toCameraDevice() {
         return mImpl.unwrap();
     }
 
@@ -129,8 +127,7 @@ public final class CameraDeviceCompat {
         void createCaptureSession(@NonNull SessionConfigurationCompat config)
                 throws CameraAccessExceptionCompat;
 
-        @NonNull
-        CameraDevice unwrap();
+        @NonNull CameraDevice unwrap();
     }
 
     static final class StateCallbackExecutorWrapper extends CameraDevice.StateCallback {
@@ -139,28 +136,28 @@ public final class CameraDeviceCompat {
         private final Executor mExecutor;
 
         StateCallbackExecutorWrapper(@NonNull Executor executor,
-                @NonNull CameraDevice.StateCallback wrappedCallback) {
+                CameraDevice.@NonNull StateCallback wrappedCallback) {
             mExecutor = executor;
             mWrappedCallback = wrappedCallback;
         }
 
         @Override
-        public void onOpened(@NonNull final CameraDevice camera) {
+        public void onOpened(final @NonNull CameraDevice camera) {
             mExecutor.execute(() -> mWrappedCallback.onOpened(camera));
         }
 
         @Override
-        public void onDisconnected(@NonNull final CameraDevice camera) {
+        public void onDisconnected(final @NonNull CameraDevice camera) {
             mExecutor.execute(() -> mWrappedCallback.onDisconnected(camera));
         }
 
         @Override
-        public void onError(@NonNull final CameraDevice camera, final int error) {
+        public void onError(final @NonNull CameraDevice camera, final int error) {
             mExecutor.execute(() -> mWrappedCallback.onError(camera, error));
         }
 
         @Override
-        public void onClosed(@NonNull final CameraDevice camera) {
+        public void onClosed(final @NonNull CameraDevice camera) {
             mExecutor.execute(() -> mWrappedCallback.onClosed(camera));
         }
     }

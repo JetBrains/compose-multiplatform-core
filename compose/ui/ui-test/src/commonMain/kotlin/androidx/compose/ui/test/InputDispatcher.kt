@@ -21,7 +21,7 @@ import androidx.compose.ui.node.RootForTest
 
 internal expect fun createInputDispatcher(
     testContext: TestContext,
-    root: RootForTest
+    root: RootForTest,
 ): InputDispatcher
 
 /**
@@ -62,10 +62,21 @@ internal expect fun createInputDispatcher(
  *
  * Chaining methods:
  * * [advanceEventTime]
+ *
+ * [exitHoverOnPress] and [moveOnScroll] allow controlling Android-specific behaviors that may not
+ * be appropriate on other platforms. While it is a quick and simple solution, if more significant
+ * differences are discovered, this problem may need to be revisited for a more robust solution.
+ *
+ * Note that the extra events sent due to [exitHoverOnPress] and [moveOnScroll] are in fact filtered
+ * out on Android before they reach any Compose elements. They nevertheless need to be sent for the
+ * benefit of any interop Android views inside Compose, which expect an Android-native model of the
+ * event stream.
  */
 internal abstract class InputDispatcher(
     private val testContext: TestContext,
-    private val root: RootForTest
+    private val root: RootForTest,
+    private val exitHoverOnPress: Boolean = true,
+    private val moveOnScroll: Boolean = true,
 ) {
     companion object {
         /**
@@ -146,7 +157,6 @@ internal abstract class InputDispatcher(
         }
     }
 
-    @OptIn(InternalTestApi::class)
     private val TestContext.currentTime
         get() = testOwner.mainClock.currentTime
 
@@ -273,7 +283,7 @@ internal abstract class InputDispatcher(
      */
     fun enqueueTouchMoves(
         relativeHistoricalTimes: List<Long>,
-        historicalCoordinates: List<List<Offset>>
+        historicalCoordinates: List<List<Offset>>,
     ) {
         val gesture =
             checkNotNull(partialGesture) { "Cannot send MOVE event, no gesture is in progress" }
@@ -392,9 +402,11 @@ internal abstract class InputDispatcher(
         }
         mouse.setButtonBit(buttonId)
 
-        // Exit hovering if necessary
-        if (mouse.isEntered) {
-            mouse.exitHover()
+        // Exit hovering if necessary (Android-specific behavior)
+        if (exitHoverOnPress) {
+            if (mouse.isEntered) {
+                mouse.exitHover()
+            }
         }
         // down/move + press
         mouse.enqueuePress(buttonId)
@@ -460,10 +472,12 @@ internal abstract class InputDispatcher(
         mouse.unsetButtonBit(buttonId)
         mouse.enqueueRelease(buttonId)
 
-        // When no buttons remaining, enter hover state immediately
-        if (mouse.hasNoButtonsPressed && isWithinRootBounds(currentMousePosition)) {
-            mouse.enterHover()
-            mouse.enqueueMove()
+        // When no buttons remaining, enter hover state immediately (Android-specific behavior)
+        if (exitHoverOnPress) {
+            if (mouse.hasNoButtonsPressed && isWithinRootBounds(currentMousePosition)) {
+                mouse.enterHover()
+                mouse.enqueueMove()
+            }
         }
     }
 
@@ -521,12 +535,13 @@ internal abstract class InputDispatcher(
      * a column, or at the end of a row), negative values correspond to scrolling backward (new
      * content appears at the top of a column, or at the start of a row).
      */
-    @OptIn(ExperimentalTestApi::class)
     fun enqueueMouseScroll(delta: Float, scrollWheel: ScrollWheel) {
         val mouse = mouseInputState
 
-        // A scroll is always preceded by a move(/hover) event
-        enqueueMouseMove(currentMousePosition)
+        if (moveOnScroll) {
+            // On Android a scroll is always preceded by a move(/hover) event
+            enqueueMouseMove(currentMousePosition)
+        }
         if (isWithinRootBounds(currentMousePosition)) {
             mouse.enqueueScroll(delta, scrollWheel)
         }
@@ -655,7 +670,7 @@ internal abstract class InputDispatcher(
 
     protected abstract fun PartialGesture.enqueueMoves(
         relativeHistoricalTimes: List<Long>,
-        historicalCoordinates: List<List<Offset>>
+        historicalCoordinates: List<List<Offset>>,
     )
 
     protected abstract fun PartialGesture.enqueueUp(pointerId: Int)
@@ -702,7 +717,6 @@ internal abstract class InputDispatcher(
     protected open val KeyInputState.scrollLockOn: Boolean
         get() = scrollLockState.isLockKeyOnIncludingOffPress
 
-    @OptIn(ExperimentalTestApi::class)
     protected abstract fun MouseInputState.enqueueScroll(delta: Float, scrollWheel: ScrollWheel)
 
     protected abstract fun RotaryInputState.enqueueRotaryScrollHorizontally(
@@ -889,5 +903,5 @@ internal class RotaryInputState
 internal data class InputDispatcherState(
     val partialGesture: PartialGesture?,
     val mouseInputState: MouseInputState,
-    val keyInputState: KeyInputState
+    val keyInputState: KeyInputState,
 )

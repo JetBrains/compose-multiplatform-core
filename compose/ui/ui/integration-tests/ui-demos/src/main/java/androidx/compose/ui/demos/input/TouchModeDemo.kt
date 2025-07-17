@@ -22,7 +22,6 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.graphics.Color.Companion.Red
@@ -31,7 +30,6 @@ import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.text.font.FontWeight
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun TouchModeDemo() {
     val inputManager = LocalInputModeManager.current
@@ -44,7 +42,7 @@ fun TouchModeDemo() {
             text = "Currently in ${inputManager.inputMode} mode.",
             color = if (inputManager.inputMode == Touch) Blue else Red,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
         Text(
             "If you don't have a physical keyboard, you can click this button to exit" +
@@ -52,7 +50,7 @@ fun TouchModeDemo() {
         )
         Button(
             onClick = { inputManager.requestInputMode(Keyboard) },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         ) {
             Text("Exit touch mode")
         }

@@ -37,11 +37,12 @@ import android.view.Window;
 import android.view.animation.Interpolator;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.ref.WeakReference;
 
@@ -209,9 +210,8 @@ public final class BackgroundManager {
             return mState;
         }
 
-        @NonNull
         @Override
-        public Drawable mutate() {
+        public @NonNull Drawable mutate() {
             if (!mMutated) {
                 mMutated = true;
                 mState = new ConstantState(mState);

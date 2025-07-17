@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -31,11 +31,7 @@ plugins {
 }
 
 dependencies {
-
     api(project(":activity:activity"))
-    api("androidx.core:core-ktx:1.13.0") {
-        because "Mirror activity dependency graph for -ktx artifacts"
-    }
     api("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1") {
         because 'Mirror activity dependency graph for -ktx artifacts'
     }
@@ -43,28 +39,16 @@ dependencies {
     api("androidx.savedstate:savedstate-ktx:1.2.1") {
         because 'Mirror activity dependency graph for -ktx artifacts'
     }
-    api(libs.kotlinStdlib)
-
-    androidTestImplementation(projectOrArtifact(":lifecycle:lifecycle-runtime-testing"))
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.activity", module: "activity"
-    })
 }
 
 androidx {
     name = "Activity Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Kotlin extensions for 'activity' artifact"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.activity.ktx"
+    compileSdk = 36
+    namespace = "androidx.activity.ktx"
 }

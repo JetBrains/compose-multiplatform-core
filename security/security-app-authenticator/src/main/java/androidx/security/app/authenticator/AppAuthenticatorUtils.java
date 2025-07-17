@@ -22,7 +22,7 @@ import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -90,7 +90,7 @@ class AppAuthenticatorUtils {
      * <p>The specified {@code digestAlgorithm} must be one supported from API level 1; use of
      * MD5 and SHA-1 are strongly discouraged.
      */
-    static String computeDigest(@NonNull String digestAlgorithm, @NonNull byte[] data) {
+    static String computeDigest(@NonNull String digestAlgorithm, byte @NonNull [] data) {
         MessageDigest messageDigest;
         try {
             messageDigest = MessageDigest.getInstance(digestAlgorithm);
@@ -106,7 +106,7 @@ class AppAuthenticatorUtils {
     /**
      * Returns a {@code String} representing the hex encoding of the provided {@code data}.
      */
-    static String toHexString(@NonNull byte[] data) {
+    static String toHexString(byte @NonNull [] data) {
         char[] result = new char[data.length * 2];
         for (int i = 0; i < data.length; i++) {
             int resultIndex = i * 2;

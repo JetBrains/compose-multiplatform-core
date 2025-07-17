@@ -37,19 +37,18 @@ import kotlin.time.toKotlinDuration
  * vibration is canceled.
  *
  * @sample androidx.core.haptics.samples.AmplitudeWaveform
- *
  * @sample androidx.core.haptics.samples.PatternThenRepeatAmplitudeWaveform
  */
-class WaveformSignal(
+public class WaveformSignal(
 
     /** The waveform signal atoms that describes the vibration parameters over time. */
-    val atoms: List<Atom>,
+    public val atoms: List<Atom>
 ) : FiniteSignal() {
     init {
         require(atoms.isNotEmpty()) { "Haptic signals cannot be empty" }
     }
 
-    companion object {
+    public companion object {
 
         /**
          * Returns a [WaveformSignal] created with given waveform atoms.
@@ -57,11 +56,10 @@ class WaveformSignal(
          * Use [on] and [off] to create atoms.
          *
          * @sample androidx.core.haptics.samples.AmplitudeWaveform
-         *
          * @param atoms The [WaveformSignal.Atom] instances that define the [WaveformSignal].
          */
         @JvmStatic
-        fun waveformOf(vararg atoms: Atom): WaveformSignal = WaveformSignal(atoms.toList())
+        public fun waveformOf(vararg atoms: Atom): WaveformSignal = WaveformSignal(atoms.toList())
 
         /**
          * Returns a [RepeatingWaveformSignal] created with given waveform atoms.
@@ -70,35 +68,32 @@ class WaveformSignal(
          * the atom list.
          *
          * @sample androidx.core.haptics.samples.RepeatingAmplitudeWaveform
-         *
          * @param atoms The [WaveformSignal.Atom] instances that define the
          *   [RepeatingWaveformSignal].
          */
         @JvmStatic
-        fun repeatingWaveformOf(vararg atoms: Atom): RepeatingWaveformSignal =
+        public fun repeatingWaveformOf(vararg atoms: Atom): RepeatingWaveformSignal =
             waveformOf(*atoms).repeat()
 
         /**
          * Returns a [WaveformSignal.Atom] that turns off the vibrator for the specified duration.
          *
          * @sample androidx.core.haptics.samples.PatternWaveform
-         *
          * @param duration The duration the vibrator should be turned off.
          */
         @RequiresApi(Build.VERSION_CODES.O)
         @JvmStatic
-        fun off(duration: java.time.Duration) =
+        public fun off(duration: java.time.Duration): ConstantVibrationAtom =
             ConstantVibrationAtom(duration.toKotlinDuration(), amplitude = 0f)
 
         /**
          * Returns a [WaveformSignal.Atom] that turns off the vibrator for the specified duration.
          *
          * @sample androidx.core.haptics.samples.PatternWaveform
-         *
          * @param durationMillis The duration the vibrator should be turned off, in milliseconds.
          */
         @JvmStatic
-        fun off(durationMillis: Long) =
+        public fun off(durationMillis: Long): ConstantVibrationAtom =
             ConstantVibrationAtom(durationMillis.milliseconds, amplitude = 0f)
 
         /**
@@ -106,12 +101,11 @@ class WaveformSignal(
          * a device-specific default amplitude.
          *
          * @sample androidx.core.haptics.samples.PatternWaveform
-         *
          * @param duration The duration for the vibration.
          */
         @RequiresApi(Build.VERSION_CODES.O)
         @JvmStatic
-        fun on(duration: java.time.Duration) =
+        public fun on(duration: java.time.Duration): ConstantVibrationAtom =
             ConstantVibrationAtom(duration.toKotlinDuration(), DEFAULT_AMPLITUDE)
 
         /**
@@ -119,11 +113,10 @@ class WaveformSignal(
          * a device-specific default amplitude.
          *
          * @sample androidx.core.haptics.samples.PatternWaveform
-         *
          * @param durationMillis The duration for the vibration, in milliseconds.
          */
         @JvmStatic
-        fun on(durationMillis: Long) =
+        public fun on(durationMillis: Long): ConstantVibrationAtom =
             ConstantVibrationAtom(durationMillis.milliseconds, DEFAULT_AMPLITUDE)
 
         /**
@@ -131,29 +124,31 @@ class WaveformSignal(
          * the specified amplitude.
          *
          * @sample androidx.core.haptics.samples.AmplitudeWaveform
-         *
          * @param duration The duration for the vibration.
          * @param amplitude The vibration strength, with 1 representing maximum amplitude, and 0
          *   representing off - equivalent to calling [off].
          */
         @RequiresApi(Build.VERSION_CODES.O)
         @JvmStatic
-        fun on(duration: java.time.Duration, @FloatRange(from = 0.0, to = 1.0) amplitude: Float) =
-            ConstantVibrationAtom(duration.toKotlinDuration(), amplitude)
+        public fun on(
+            duration: java.time.Duration,
+            @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
+        ): ConstantVibrationAtom = ConstantVibrationAtom(duration.toKotlinDuration(), amplitude)
 
         /**
          * Returns a [WaveformSignal.Atom] that turns on the vibrator for the specified duration at
          * the specified amplitude.
          *
          * @sample androidx.core.haptics.samples.AmplitudeWaveform
-         *
          * @param durationMillis The duration for the vibration, in milliseconds.
          * @param amplitude The vibration strength, with 1 representing maximum amplitude, and 0
          *   representing off - equivalent to calling [off].
          */
         @JvmStatic
-        fun on(durationMillis: Long, @FloatRange(from = 0.0, to = 1.0) amplitude: Float) =
-            ConstantVibrationAtom(durationMillis.milliseconds, amplitude)
+        public fun on(
+            durationMillis: Long,
+            @FloatRange(from = 0.0, to = 1.0) amplitude: Float,
+        ): ConstantVibrationAtom = ConstantVibrationAtom(durationMillis.milliseconds, amplitude)
     }
 
     /**
@@ -161,7 +156,7 @@ class WaveformSignal(
      *
      * @sample androidx.core.haptics.samples.PatternWaveformRepeat
      */
-    fun repeat(): RepeatingWaveformSignal =
+    public fun repeat(): RepeatingWaveformSignal =
         RepeatingWaveformSignal(initialWaveform = null, repeatingWaveform = this)
 
     /**
@@ -169,10 +164,9 @@ class WaveformSignal(
      * given waveform signal on repeat until the vibration is canceled.
      *
      * @sample androidx.core.haptics.samples.PatternThenRepeatExistingWaveform
-     *
      * @param waveformToRepeat The waveform to be played on repeat after this waveform.
      */
-    fun thenRepeat(waveformToRepeat: WaveformSignal): RepeatingWaveformSignal =
+    public fun thenRepeat(waveformToRepeat: WaveformSignal): RepeatingWaveformSignal =
         RepeatingWaveformSignal(initialWaveform = this, repeatingWaveform = waveformToRepeat)
 
     /**
@@ -180,11 +174,11 @@ class WaveformSignal(
      * given waveform atoms on repeat until the vibration is canceled.
      *
      * @sample androidx.core.haptics.samples.PatternThenRepeatAmplitudeWaveform
-     *
      * @param atoms The [WaveformSignal.Atom] instances that define the repeating [WaveformSignal]
      *   to be played after this waveform.
      */
-    fun thenRepeat(vararg atoms: Atom): RepeatingWaveformSignal = thenRepeat(waveformOf(*atoms))
+    public fun thenRepeat(vararg atoms: Atom): RepeatingWaveformSignal =
+        thenRepeat(waveformOf(*atoms))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -215,10 +209,9 @@ class WaveformSignal(
      * step waveform. They can also be used to describe simpler on-off vibration patterns.
      *
      * @sample androidx.core.haptics.samples.PatternWaveform
-     *
      * @sample androidx.core.haptics.samples.AmplitudeWaveform
      */
-    abstract class Atom internal constructor() {
+    public abstract class Atom internal constructor() {
 
         /** Returns true if the device vibrator can play this atom as intended, false otherwise. */
         internal abstract fun isSupportedBy(deviceProfile: HapticDeviceProfile): Boolean
@@ -235,10 +228,9 @@ class WaveformSignal(
      * vibration strength.
      *
      * @sample androidx.core.haptics.samples.PatternWaveform
-     *
      * @sample androidx.core.haptics.samples.AmplitudeWaveform
      */
-    class ConstantVibrationAtom
+    public class ConstantVibrationAtom
     internal constructor(
         duration: Duration,
 
@@ -248,10 +240,10 @@ class WaveformSignal(
          * Zero amplitude turns the vibrator off for the specified duration, and [DEFAULT_AMPLITUDE]
          * uses a hardware-specific default vibration strength.
          */
-        val amplitude: Float,
+        public val amplitude: Float,
     ) : Atom() {
         /** The duration to sustain the constant vibration, in milliseconds. */
-        val durationMillis: Long
+        public val durationMillis: Long
 
         init {
             require(duration.isFinite() && !duration.isNegative()) {
@@ -263,11 +255,11 @@ class WaveformSignal(
             durationMillis = duration.inWholeMilliseconds
         }
 
-        companion object {
+        public companion object {
             /**
              * The [amplitude] value that represents a hardware-specific default vibration strength.
              */
-            const val DEFAULT_AMPLITUDE: Float = -1f
+            public const val DEFAULT_AMPLITUDE: Float = -1f
         }
 
         override fun equals(other: Any?): Boolean {
@@ -305,14 +297,14 @@ class WaveformSignal(
  *
  * @sample androidx.core.haptics.samples.RepeatingAmplitudeWaveform
  */
-class RepeatingWaveformSignal
+public class RepeatingWaveformSignal
 internal constructor(
 
     /** The optional initial waveform signal to be played once at the beginning of the vibration. */
-    val initialWaveform: WaveformSignal?,
+    public val initialWaveform: WaveformSignal?,
 
     /** The waveform signal to be repeated after the initial waveform. */
-    val repeatingWaveform: WaveformSignal,
+    public val repeatingWaveform: WaveformSignal,
 ) : InfiniteSignal() {
 
     override fun equals(other: Any?): Boolean {

@@ -29,6 +29,7 @@ import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
+import androidx.room.compiler.codegen.compat.XConverters.toString
 import androidx.room.compiler.processing.util.CompilationResultSubject
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.runProcessorTest
@@ -42,15 +43,16 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class CustomTypeConverterResolutionTest {
-    fun XTypeSpec.toSource(): Source {
-        return Source.java(this.className.canonicalName, "package foo.bar;\n" + toString())
-    }
+    private fun XTypeSpec.toSource() =
+        Source.java(
+            "foo.bar.${name!!.toString(CodeLanguage.JAVA)}",
+            "package foo.bar;\n" + toString(CodeLanguage.JAVA),
+        )
 
     companion object {
         val ENTITY = XClassName.get("foo.bar", "MyEntity")
         val DB = XClassName.get("foo.bar", "MyDb")
         val DAO = XClassName.get("foo.bar", "MyDao")
-
         val CUSTOM_TYPE = XClassName.get("foo.bar", "CustomType")
         val CUSTOM_TYPE_JFO =
             Source.java(
@@ -60,7 +62,7 @@ class CustomTypeConverterResolutionTest {
                 public class ${CUSTOM_TYPE.simpleNames.first()} {
                     public int value;
                 }
-                """
+                """,
             )
         val CUSTOM_TYPE_CONVERTER = XClassName.get("foo.bar", "MyConverter")
         val CUSTOM_TYPE_CONVERTER_JFO =
@@ -78,7 +80,7 @@ class CustomTypeConverterResolutionTest {
                         return 0;
                     }
                 }
-                """
+                """,
             )
         val CUSTOM_TYPE_SET = CommonTypeNames.SET.parametrizedBy(CUSTOM_TYPE)
         val CUSTOM_TYPE_SET_CONVERTER = XClassName.get("foo.bar", "MySetConverter")
@@ -99,7 +101,7 @@ class CustomTypeConverterResolutionTest {
                         return 0;
                     }
                 }
-                """
+                """,
             )
     }
 
@@ -151,7 +153,7 @@ class CustomTypeConverterResolutionTest {
             createDao(
                 hasConverters = true,
                 hasQueryReturningEntity = true,
-                hasQueryWithCustomParam = true
+                hasQueryWithCustomParam = true,
             )
         runTest(sources = listOf(entity.toSource(), dao.toSource(), database.toSource()))
     }
@@ -210,7 +212,7 @@ class CustomTypeConverterResolutionTest {
 
     private fun runTest(
         sources: List<Source>,
-        onCompilationResult: (CompilationResultSubject) -> Unit = { it.hasErrorCount(0) }
+        onCompilationResult: (CompilationResultSubject) -> Unit = { it.hasErrorCount(0) },
     ) {
         runProcessorTest(
             sources =
@@ -219,7 +221,7 @@ class CustomTypeConverterResolutionTest {
                     CUSTOM_TYPE_CONVERTER_JFO +
                     CUSTOM_TYPE_SET_CONVERTER_JFO,
             createProcessingSteps = { listOf(DatabaseProcessingStep()) },
-            onCompilationResult = onCompilationResult
+            onCompilationResult = onCompilationResult,
         )
     }
 
@@ -227,7 +229,7 @@ class CustomTypeConverterResolutionTest {
         hasCustomField: Boolean = false,
         hasConverters: Boolean = false,
         hasConverterOnField: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
         if (hasConverterOnField && hasConverters) {
             throw IllegalArgumentException("cannot have both converters")
@@ -238,21 +240,17 @@ class CustomTypeConverterResolutionTest {
             } else {
                 CUSTOM_TYPE
             }
-        return XTypeSpec.classBuilder(CodeLanguage.JAVA, ENTITY)
+        return XTypeSpec.classBuilder(ENTITY)
             .apply {
-                addAnnotation(
-                    XAnnotationSpec.builder(CodeLanguage.JAVA, RoomAnnotationTypeNames.ENTITY)
-                        .build()
-                )
+                addAnnotation(XAnnotationSpec.builder(RoomAnnotationTypeNames.ENTITY).build())
                 setVisibility(VisibilityModifier.PUBLIC)
                 if (hasCustomField) {
                     addProperty(
                         XPropertySpec.builder(
-                                CodeLanguage.JAVA,
                                 "myCustomField",
                                 type,
                                 VisibilityModifier.PUBLIC,
-                                isMutable = true
+                                isMutable = true,
                             )
                             .apply {
                                 if (hasConverterOnField) {
@@ -267,18 +265,13 @@ class CustomTypeConverterResolutionTest {
                 }
                 addProperty(
                     XPropertySpec.builder(
-                            language = CodeLanguage.JAVA,
                             name = "id",
                             typeName = XTypeName.PRIMITIVE_INT,
                             visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true
+                            isMutable = true,
                         )
                         .addAnnotation(
-                            XAnnotationSpec.builder(
-                                    CodeLanguage.JAVA,
-                                    RoomAnnotationTypeNames.PRIMARY_KEY
-                                )
-                                .build()
+                            XAnnotationSpec.builder(RoomAnnotationTypeNames.PRIMARY_KEY).build()
                         )
                         .build()
                 )
@@ -289,9 +282,9 @@ class CustomTypeConverterResolutionTest {
     private fun createDatabase(
         hasConverters: Boolean = false,
         hasDao: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
-        return XTypeSpec.classBuilder(CodeLanguage.JAVA, DB, isOpen = true)
+        return XTypeSpec.classBuilder(DB, isOpen = true)
             .apply {
                 addAbstractModifier()
                 setVisibility(VisibilityModifier.PUBLIC)
@@ -301,28 +294,19 @@ class CustomTypeConverterResolutionTest {
                 }
                 addProperty(
                     XPropertySpec.builder(
-                            language = CodeLanguage.JAVA,
                             name = "id",
                             typeName = XTypeName.PRIMITIVE_INT,
                             visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true
+                            isMutable = true,
                         )
                         .addAnnotation(
-                            XAnnotationSpec.builder(
-                                    CodeLanguage.JAVA,
-                                    RoomAnnotationTypeNames.PRIMARY_KEY
-                                )
-                                .build()
+                            XAnnotationSpec.builder(RoomAnnotationTypeNames.PRIMARY_KEY).build()
                         )
                         .build()
                 )
                 if (hasDao) {
                     addFunction(
-                        XFunSpec.builder(
-                                language = CodeLanguage.JAVA,
-                                "getDao",
-                                VisibilityModifier.PUBLIC
-                            )
+                        XFunSpec.builder("getDao", VisibilityModifier.PUBLIC)
                             .apply {
                                 addAbstractModifier()
                                 returns(DAO)
@@ -331,11 +315,11 @@ class CustomTypeConverterResolutionTest {
                     )
                 }
                 addAnnotation(
-                    XAnnotationSpec.builder(CodeLanguage.JAVA, RoomAnnotationTypeNames.DATABASE)
+                    XAnnotationSpec.builder(RoomAnnotationTypeNames.DATABASE)
                         .apply {
-                            addMember("entities", XCodeBlock.of(language, "{%T.class}", ENTITY))
-                            addMember("version", XCodeBlock.of(language, "42"))
-                            addMember("exportSchema", XCodeBlock.of(language, "false"))
+                            addMember("entities", XCodeBlock.of("{%T.class}", ENTITY))
+                            addMember("version", XCodeBlock.of("42"))
+                            addMember("exportSchema", XCodeBlock.of("false"))
                         }
                         .build()
                 )
@@ -349,7 +333,7 @@ class CustomTypeConverterResolutionTest {
         hasQueryWithCustomParam: Boolean = false,
         hasMethodConverters: Boolean = false,
         hasParameterConverters: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
         val annotationCount =
             listOf(hasMethodConverters, hasConverters, hasParameterConverters)
@@ -361,33 +345,27 @@ class CustomTypeConverterResolutionTest {
         if (hasParameterConverters && !hasQueryWithCustomParam) {
             throw IllegalArgumentException("inconsistent")
         }
-        return XTypeSpec.classBuilder(CodeLanguage.JAVA, DAO, isOpen = true)
+        return XTypeSpec.classBuilder(DAO, isOpen = true)
             .apply {
                 addAbstractModifier()
-                addAnnotation(
-                    XAnnotationSpec.builder(CodeLanguage.JAVA, RoomAnnotationTypeNames.DAO).build()
-                )
+                addAnnotation(XAnnotationSpec.builder(RoomAnnotationTypeNames.DAO).build())
                 setVisibility(VisibilityModifier.PUBLIC)
                 if (hasConverters) {
                     addAnnotation(createConvertersAnnotation(useCollection = useCollection))
                 }
                 if (hasQueryReturningEntity) {
                     addFunction(
-                        XFunSpec.builder(CodeLanguage.JAVA, "loadAll", VisibilityModifier.PUBLIC)
+                        XFunSpec.builder("loadAll", VisibilityModifier.PUBLIC)
                             .apply {
                                 addAbstractModifier()
                                 addAnnotation(
-                                    XAnnotationSpec.builder(
-                                            CodeLanguage.JAVA,
-                                            RoomAnnotationTypeNames.QUERY
-                                        )
+                                    XAnnotationSpec.builder(RoomAnnotationTypeNames.QUERY)
                                         .addMember(
                                             "value",
                                             XCodeBlock.of(
-                                                CodeLanguage.JAVA,
                                                 "%S",
-                                                "SELECT * FROM ${ENTITY.simpleNames.first()} LIMIT 1"
-                                            )
+                                                "SELECT * FROM ${ENTITY.simpleNames.first()} LIMIT 1",
+                                            ),
                                         )
                                         .build()
                                 )
@@ -404,26 +382,18 @@ class CustomTypeConverterResolutionTest {
                     }
                 if (hasQueryWithCustomParam) {
                     addFunction(
-                        XFunSpec.builder(
-                                CodeLanguage.JAVA,
-                                "queryWithCustom",
-                                VisibilityModifier.PUBLIC
-                            )
+                        XFunSpec.builder("queryWithCustom", VisibilityModifier.PUBLIC)
                             .apply {
                                 addAbstractModifier()
                                 addAnnotation(
-                                    XAnnotationSpec.builder(
-                                            CodeLanguage.JAVA,
-                                            RoomAnnotationTypeNames.QUERY
-                                        )
+                                    XAnnotationSpec.builder(RoomAnnotationTypeNames.QUERY)
                                         .addMember(
                                             "value",
                                             XCodeBlock.of(
-                                                CodeLanguage.JAVA,
                                                 "%S",
                                                 "SELECT COUNT(*) FROM ${ENTITY.simpleNames.first()} where" +
-                                                    " id = :custom"
-                                            )
+                                                    " id = :custom",
+                                            ),
                                         )
                                         .build()
                                 )
@@ -432,7 +402,7 @@ class CustomTypeConverterResolutionTest {
                                         createConvertersAnnotation(useCollection = useCollection)
                                     )
                                 }
-                                addParameter(customType, "custom")
+                                addParameter("custom", customType)
                                     .apply {
                                         if (hasParameterConverters) {
                                             addAnnotation(
@@ -459,8 +429,8 @@ class CustomTypeConverterResolutionTest {
             } else {
                 CUSTOM_TYPE_CONVERTER
             }
-        return XAnnotationSpec.builder(CodeLanguage.JAVA, RoomAnnotationTypeNames.TYPE_CONVERTERS)
-            .addMember("value", XCodeBlock.of(CodeLanguage.JAVA, "%T.class", converter))
+        return XAnnotationSpec.builder(RoomAnnotationTypeNames.TYPE_CONVERTERS)
+            .addMember("value", XCodeBlock.of("%T.class", converter))
             .build()
     }
 }

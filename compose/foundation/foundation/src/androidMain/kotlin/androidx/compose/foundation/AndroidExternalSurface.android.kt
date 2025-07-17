@@ -62,10 +62,9 @@ interface SurfaceScope {
  * scope that also provides access to a [SurfaceScope] environment which can itself be used to
  * handle other [Surface] lifecycle events.
  *
+ * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  * @see SurfaceScope
  * @see AndroidExternalSurfaceScope
- *
- * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  */
 interface SurfaceCoroutineScope : SurfaceScope, CoroutineScope
 
@@ -154,7 +153,6 @@ private abstract class BaseAndroidExternalSurfaceState(val scope: CoroutineScope
     fun dispatchSurfaceDestroyed(surface: Surface) {
         onSurfaceDestroyed?.invoke(surface)
         job?.cancel()
-        job = null
     }
 }
 
@@ -264,7 +262,6 @@ value class AndroidExternalSurfaceZOrder private constructor(val zOrder: Int) {
  * @param onInit Lambda invoked on first composition. This lambda can be used to declare a
  *   [AndroidExternalSurfaceScope.onSurface] callback that will be invoked when a surface is
  *   available.
- *
  * @sample androidx.compose.foundation.samples.AndroidExternalSurfaceColors
  */
 @Composable
@@ -274,7 +271,7 @@ fun AndroidExternalSurface(
     surfaceSize: IntSize = IntSize.Zero,
     zOrder: AndroidExternalSurfaceZOrder = AndroidExternalSurfaceZOrder.Behind,
     isSecure: Boolean = false,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    onInit: AndroidExternalSurfaceScope.() -> Unit,
 ) {
     val state = rememberAndroidExternalSurfaceState()
 
@@ -309,7 +306,7 @@ fun AndroidExternalSurface(
             }
 
             view.setSecure(isSecure)
-        }
+        },
     )
 }
 
@@ -324,7 +321,7 @@ private class AndroidEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     override fun onSurfaceTextureAvailable(
         surfaceTexture: SurfaceTexture,
         width: Int,
-        height: Int
+        height: Int,
     ) {
         var w = width
         var h = height
@@ -344,7 +341,7 @@ private class AndroidEmbeddedExternalSurfaceState(scope: CoroutineScope) :
     override fun onSurfaceTextureSizeChanged(
         surfaceTexture: SurfaceTexture,
         width: Int,
-        height: Int
+        height: Int,
     ) {
         var w = width
         var h = height
@@ -424,7 +421,6 @@ private fun rememberAndroidEmbeddedExternalSurfaceState(): AndroidEmbeddedExtern
  * @param onInit Lambda invoked on first composition. This lambda can be used to declare a
  *   [AndroidExternalSurfaceScope.onSurface] callback that will be invoked when a surface is
  *   available.
- *
  * @sample androidx.compose.foundation.samples.AndroidEmbeddedExternalSurfaceColors
  */
 @Composable
@@ -433,18 +429,12 @@ fun AndroidEmbeddedExternalSurface(
     isOpaque: Boolean = true,
     surfaceSize: IntSize = IntSize.Zero,
     transform: Matrix? = null,
-    onInit: AndroidExternalSurfaceScope.() -> Unit
+    onInit: AndroidExternalSurfaceScope.() -> Unit,
 ) {
     val state = rememberAndroidEmbeddedExternalSurfaceState()
 
     AndroidView(
-        factory = { context ->
-            TextureView(context).apply {
-                state.surfaceSize = surfaceSize
-                state.onInit()
-                surfaceTextureListener = state
-            }
-        },
+        factory = { TextureView(it) },
         modifier = modifier,
         onReset = {},
         update = { view ->
@@ -452,10 +442,14 @@ fun AndroidEmbeddedExternalSurface(
                 view.surfaceTexture?.setDefaultBufferSize(surfaceSize.width, surfaceSize.height)
             }
             state.surfaceSize = surfaceSize
+            if (view.surfaceTextureListener !== state) {
+                state.onInit()
+                view.surfaceTextureListener = state
+            }
             view.isOpaque = isOpaque
             // If transform is null, we'll call setTransform(null) which sets the
             // identity transform on the TextureView
             view.setTransform(transform?.let { state.matrix.apply { setFrom(transform) } })
-        }
+        },
     )
 }

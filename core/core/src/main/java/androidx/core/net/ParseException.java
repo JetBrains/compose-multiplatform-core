@@ -16,14 +16,13 @@
 
 package androidx.core.net;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Thrown when parsing a mailto URI has failed.
  */
 public class ParseException extends RuntimeException {
-    @NonNull
-    public final String response;
+    public final @NonNull String response;
 
     ParseException(@NonNull String response) {
         super(response);

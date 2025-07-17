@@ -33,7 +33,7 @@ import javax.inject.Inject
  * for desired 3A state changes.
  */
 @CameraGraphScope
-internal class Listener3A @Inject constructor() : Request.Listener {
+internal class Listener3A @Inject constructor() : Request.Listener, GraphLoop.Listener {
     private val listeners: CopyOnWriteArrayList<Result3AStateListener> = CopyOnWriteArrayList()
 
     override fun onRequestSequenceCreated(requestMetadata: RequestMetadata) {
@@ -45,7 +45,7 @@ internal class Listener3A @Inject constructor() : Request.Listener {
     override fun onPartialCaptureResult(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        captureResult: FrameMetadata
+        captureResult: FrameMetadata,
     ) {
         updateListeners(requestMetadata.requestNumber, captureResult)
     }
@@ -53,7 +53,7 @@ internal class Listener3A @Inject constructor() : Request.Listener {
     override fun onTotalCaptureResult(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        totalCaptureResult: FrameInfo
+        totalCaptureResult: FrameInfo,
     ) {
         updateListeners(requestMetadata.requestNumber, totalCaptureResult.metadata)
     }
@@ -66,17 +66,29 @@ internal class Listener3A @Inject constructor() : Request.Listener {
         listeners.remove(listener)
     }
 
-    internal fun onStopRepeating() {
-        for (listener in listeners) {
-            listener.onRequestSequenceStopped()
-        }
-    }
-
     private fun updateListeners(requestNumber: RequestNumber, metadata: FrameMetadata) {
         for (listener in listeners) {
             if (listener.update(requestNumber, metadata)) {
                 listeners.remove(listener)
             }
+        }
+    }
+
+    override fun onStopRepeating() {
+        for (listener in listeners) {
+            listener.onStopRepeating()
+        }
+    }
+
+    override fun onGraphStopped() {
+        for (listener in listeners) {
+            listener.onStopRepeating()
+        }
+    }
+
+    override fun onGraphShutdown() {
+        for (listener in listeners) {
+            listener.onStopRepeating()
         }
     }
 }

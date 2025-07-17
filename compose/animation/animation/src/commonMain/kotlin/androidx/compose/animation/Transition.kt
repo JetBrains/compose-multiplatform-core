@@ -52,20 +52,18 @@ import androidx.compose.ui.graphics.Color
  * [label] is used to differentiate from other animations in the same transition in Android Studio.
  *
  * @return A [State] object, the value of which is updated by animation
- *
  * @sample androidx.compose.animation.samples.GestureAnimationSample
- *
  * @see Transition.animateValue
  * @see androidx.compose.animation.core.Transition
  * @see androidx.compose.animation.core.updateTransition
  */
 @Composable
-inline fun <S> Transition<S>.animateColor(
+public inline fun <S> Transition<S>.animateColor(
     noinline transitionSpec: @Composable Transition.Segment<S>.() -> FiniteAnimationSpec<Color> = {
         spring()
     },
     label: String = "ColorAnimation",
-    targetValueByState: @Composable() (state: S) -> Color
+    targetValueByState: @Composable() (state: S) -> Color,
 ): State<Color> {
     val colorSpace = targetValueByState(targetState).colorSpace
     val typeConverter = remember(colorSpace) { Color.VectorConverter(colorSpace) }
@@ -88,16 +86,15 @@ inline fun <S> Transition<S>.animateColor(
  * A [label] for differentiating this animation from others in android studio.
  *
  * @sample androidx.compose.animation.samples.InfiniteTransitionSample
- *
  * @see InfiniteTransition.animateValue
  * @see InfiniteRepeatableSpec
  */
 @Composable
-fun InfiniteTransition.animateColor(
+public fun InfiniteTransition.animateColor(
     initialValue: Color,
     targetValue: Color,
     animationSpec: InfiniteRepeatableSpec<Color>,
-    label: String = "ColorAnimation"
+    label: String = "ColorAnimation",
 ): State<Color> {
     val converter = remember { (Color.VectorConverter)(targetValue.colorSpace) }
     return animateValue(initialValue, targetValue, converter, animationSpec, label)
@@ -105,17 +102,17 @@ fun InfiniteTransition.animateColor(
 
 @Deprecated(
     "animateColor APIs now have a new label parameter added.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun InfiniteTransition.animateColor(
+public fun InfiniteTransition.animateColor(
     initialValue: Color,
     targetValue: Color,
-    animationSpec: InfiniteRepeatableSpec<Color>
+    animationSpec: InfiniteRepeatableSpec<Color>,
 ): State<Color> =
     this.animateColor(
         initialValue = initialValue,
         targetValue = targetValue,
         animationSpec = animationSpec,
-        label = "ColorAnimation"
+        label = "ColorAnimation",
     )

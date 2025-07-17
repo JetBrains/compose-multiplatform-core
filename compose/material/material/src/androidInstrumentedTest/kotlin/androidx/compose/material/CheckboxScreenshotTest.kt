@@ -15,14 +15,12 @@
  */
 package androidx.compose.material
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -31,7 +29,6 @@ import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -44,14 +41,14 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import org.junit.After
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CheckboxScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -90,6 +87,7 @@ class CheckboxScreenshotTest {
     }
 
     @Test
+    @Ignore("b/355413615")
     fun checkBoxTest_pressed() {
         rule.setMaterialContent {
             Box(wrap.testTag(wrapperTestTag)) {
@@ -113,7 +111,7 @@ class CheckboxScreenshotTest {
                 TriStateCheckbox(
                     state = ToggleableState.Indeterminate,
                     modifier = wrap,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -148,7 +146,7 @@ class CheckboxScreenshotTest {
                     state = ToggleableState.Indeterminate,
                     enabled = false,
                     modifier = wrap,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -163,7 +161,7 @@ class CheckboxScreenshotTest {
                 Checkbox(
                     modifier = wrap,
                     checked = isChecked.value,
-                    onCheckedChange = { isChecked.value = it }
+                    onCheckedChange = { isChecked.value = it },
                 )
             }
         }
@@ -190,7 +188,7 @@ class CheckboxScreenshotTest {
                 Checkbox(
                     modifier = wrap,
                     checked = isChecked.value,
-                    onCheckedChange = { isChecked.value = it }
+                    onCheckedChange = { isChecked.value = it },
                 )
             }
         }
@@ -235,13 +233,12 @@ class CheckboxScreenshotTest {
                 Checkbox(
                     modifier = wrap.focusRequester(focusRequester),
                     checked = true,
-                    onCheckedChange = {}
+                    onCheckedChange = {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
             localInputModeManager!!.requestInputMode(InputMode.Keyboard)
             focusRequester.requestFocus()
         }

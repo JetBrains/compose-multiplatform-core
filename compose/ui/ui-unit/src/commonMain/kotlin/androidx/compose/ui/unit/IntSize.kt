@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 
 package androidx.compose.ui.unit
 
@@ -27,20 +27,35 @@ import androidx.compose.ui.util.unpackInt1
 import androidx.compose.ui.util.unpackInt2
 
 /** Constructs an [IntSize] from width and height [Int] values. */
-@Stable fun IntSize(width: Int, height: Int): IntSize = IntSize(packInts(width, height))
+@Stable inline fun IntSize(width: Int, height: Int): IntSize = IntSize(packInts(width, height))
 
-/** A two-dimensional size class used for measuring in [Int] pixels. */
+/**
+ * A two-dimensional size class used for measuring in [Int] pixels.
+ *
+ * To create an [IntSize], call the top-level function that accepts a width/height pair of
+ * dimensions:
+ * ```
+ * val size = IntSize(width, height)
+ * ```
+ *
+ * The primary constructor of [IntSize] is intended to be used with the [packedValue] property to
+ * allow storing sizes in arrays or collections of primitives without boxing.
+ *
+ * @param packedValue [Long] value encoding the [width] and [height] components of the [IntSize].
+ *   Encoded values can be obtained by using the [packedValue] property of existing [IntSize]
+ *   instances.
+ */
 @Immutable
 @kotlin.jvm.JvmInline
-value class IntSize internal constructor(@PublishedApi internal val packedValue: Long) {
+value class IntSize @PublishedApi internal constructor(val packedValue: Long) {
     /** The horizontal aspect of the size in [Int] pixels. */
     @Stable
-    val width: Int
+    inline val width: Int
         get() = unpackInt1(packedValue)
 
     /** The vertical aspect of the size in [Int] pixels. */
     @Stable
-    val height: Int
+    inline val height: Int
         get() = unpackInt2(packedValue)
 
     @Stable inline operator fun component1(): Int = width

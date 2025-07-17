@@ -19,8 +19,9 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+
+import org.jspecify.annotations.NonNull;
 
 public class CustomTextView2 extends TextView implements
         CoordinatorLayout.AttachedBehavior {
@@ -37,8 +38,7 @@ public class CustomTextView2 extends TextView implements
     }
 
     @Override
-    @NonNull
-    public CoordinatorLayout.Behavior getBehavior() {
+    public CoordinatorLayout.@NonNull Behavior getBehavior() {
         return new TestFloatingBehavior();
     }
 }

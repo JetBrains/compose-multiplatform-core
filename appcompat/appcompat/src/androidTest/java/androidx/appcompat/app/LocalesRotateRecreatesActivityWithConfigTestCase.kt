@@ -30,7 +30,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import androidx.testutils.LifecycleOwnerUtils
+import androidx.testutils.lifecycle.LifecycleOwnerUtils
 import org.junit.After
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
@@ -51,7 +51,7 @@ class LocalesRotateRecreatesActivityWithConfigTestCase() {
             LocalesUpdateActivity::class.java,
             initialTouchMode = false,
             // Let the test method launch its own activity so that we can ensure it's RESUMED.
-            launchActivity = false
+            launchActivity = false,
         )
 
     @After
@@ -86,7 +86,7 @@ class LocalesRotateRecreatesActivityWithConfigTestCase() {
         // Assert that the current Activity has the expected locales.
         assertConfigurationLocalesEquals(
             LocalesUpdateActivity.overlayCustomAndSystemLocales(CUSTOM_LOCALE_LIST, systemLocales),
-            config
+            config,
         )
 
         // Now rotate the device. This should result in an onDestroy lifecycle event.
@@ -101,9 +101,9 @@ class LocalesRotateRecreatesActivityWithConfigTestCase() {
             assertConfigurationLocalesEquals(
                 LocalesUpdateActivity.overlayCustomAndSystemLocales(
                     CUSTOM_LOCALE_LIST,
-                    systemLocales
+                    systemLocales,
                 ),
-                rotatedConfig
+                rotatedConfig,
             )
 
             // On API level 26 and below, the configuration object is going to be identical
@@ -117,7 +117,7 @@ class LocalesRotateRecreatesActivityWithConfigTestCase() {
             Instrumentation.ActivityMonitor(
                 activity::class.java.name,
                 /* result= */ null,
-                /* block= */ false
+                /* block= */ false,
             )
         instrumentation.addMonitor(monitor)
 

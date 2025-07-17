@@ -23,7 +23,8 @@
  */
 
 import androidx.build.BuildOnServerKt
-import androidx.build.LibraryType
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -60,8 +61,8 @@ dependencies {
     implementation(libs.autoCommon)
     implementation(libs.autoValueAnnotations)
     implementation(libs.javapoet)
-    implementation(libs.kotlinPoet)
-    implementation(libs.kotlinPoetJavaPoet)
+    implementation("com.squareup:kotlinpoet:2.0.0")
+    implementation("com.squareup:kotlinpoet-javapoet:2.0.0")
     implementation(libs.kspApi)
     // Must be compileOnly to not bring in antlr4 in runtime
     // Repackaged antlr4 brought in by
@@ -81,13 +82,12 @@ dependencies {
     testImplementation(libs.autoValue) // to access the processor in tests
     testImplementation(libs.autoServiceAnnotations)
     testImplementation(libs.autoService) // to access the processor in tests
-    testImplementation(projectOrArtifact(":paging:paging-common"))
+    testImplementation(project(":paging:paging-common"))
     testImplementation(project(":room:room-compiler-processing-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.jsr250)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.antlr4)
-    testImplementation(libs.kotlinCompilerEmbeddable)
     testImplementation(SdkHelperKt.getSdkDependency(project))
     testImplementationAarAsJar(project(":room:room-runtime"))
     testImplementationAarAsJar(project(":sqlite:sqlite"))
@@ -125,8 +125,8 @@ abstract class GenerateAntlrGrammar extends DefaultTask {
 
     @Inject
     public GenerateAntlrGrammar() {
-        description("Generates ANTLR Grammar used by Room")
-        group("build")
+        description = "Generates ANTLR Grammar used by Room"
+        group = "build"
     }
 
     @TaskAction
@@ -229,16 +229,17 @@ tasks.withType(KotlinCompile).configureEach {
 
 tasks.withType(Test).configureEach {
     it.systemProperty("androidx.room.compiler.processing.strict", "true")
-    it.maxParallelForks(8)
+    it.maxParallelForks = 8
     if (project.providers.environmentVariable("GITHUB_ACTIONS").present) {
         // limit memory usage to avoid running out of memory in the docker container.
-        it.maxHeapSize("512m")
+        it.maxHeapSize = "512m"
     }
 }
 
 androidx {
     name = "Room Compiler"
-    type = LibraryType.ANNOTATION_PROCESSOR
+    type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2017"
     description = "Android Room annotation processor"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

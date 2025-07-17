@@ -17,7 +17,7 @@
 package androidx.camera.camera2.internal;
 
 import androidx.camera.core.ZoomState;
-import androidx.core.math.MathUtils;
+import androidx.camera.core.impl.AdapterCameraInfo;
 
 /** An implementation of {@link ZoomState} where the values can be set. */
 class ZoomStateImpl implements ZoomState {
@@ -40,7 +40,8 @@ class ZoomStateImpl implements ZoomState {
             throw new IllegalArgumentException(outOfRangeDesc);
         }
         mZoomRatio = zoomRatio;
-        mLinearZoom = getPercentageByRatio(mZoomRatio);
+        mLinearZoom = AdapterCameraInfo.getPercentageByRatio(
+                mZoomRatio, mMinZoomRatio, mMaxZoomRatio);
     }
 
     void setLinearZoom(float linearZoom) throws IllegalArgumentException {
@@ -50,7 +51,8 @@ class ZoomStateImpl implements ZoomState {
             throw new IllegalArgumentException(outOfRangeDesc);
         }
         mLinearZoom = linearZoom;
-        mZoomRatio = getRatioByPercentage(mLinearZoom);
+        mZoomRatio = AdapterCameraInfo.getZoomRatioByPercentage(
+                mLinearZoom, mMinZoomRatio, mMaxZoomRatio);
     }
 
     @Override
@@ -71,47 +73,5 @@ class ZoomStateImpl implements ZoomState {
     @Override
     public float getLinearZoom() {
         return mLinearZoom;
-    }
-
-    private float getRatioByPercentage(float percentage) {
-        // Make sure 1.0f and 0.0 return exactly the same max/min ratio.
-        if (percentage == 1.0f) {
-            return mMaxZoomRatio;
-        } else if (percentage == 0f) {
-            return mMinZoomRatio;
-        }
-        // This crop width is proportional to the real crop width.
-        // The real crop with = sensorWidth/ zoomRatio,  but we need the ratio only so we can
-        // assume sensorWidth as 1.0f.
-        double cropWidthInMaxZoom = 1.0f / mMaxZoomRatio;
-        double cropWidthInMinZoom = 1.0f / mMinZoomRatio;
-
-        double cropWidth = cropWidthInMinZoom + (cropWidthInMaxZoom - cropWidthInMinZoom)
-                * percentage;
-
-        double ratio = 1.0 / cropWidth;
-
-        return (float) MathUtils.clamp(ratio, mMinZoomRatio, mMaxZoomRatio);
-    }
-
-    private float getPercentageByRatio(float ratio) {
-        // if zoom is not supported, return 0
-        if (mMaxZoomRatio == mMinZoomRatio) {
-            return 0f;
-        }
-
-        // To make the min/max same value when doing conversion between ratio / percentage.
-        // We return the max/min value directly.
-        if (ratio == mMaxZoomRatio) {
-            return 1f;
-        } else if (ratio == mMinZoomRatio) {
-            return 0f;
-        }
-
-        float cropWidth = 1.0f / ratio;
-        float cropWidthInMaxZoom = 1.0f / mMaxZoomRatio;
-        float cropWidthInMinZoom = 1.0f / mMinZoomRatio;
-
-        return (cropWidth - cropWidthInMinZoom) / (cropWidthInMaxZoom - cropWidthInMinZoom);
     }
 }

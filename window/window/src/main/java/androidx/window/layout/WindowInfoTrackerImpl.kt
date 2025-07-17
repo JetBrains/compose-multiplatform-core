@@ -20,6 +20,7 @@ import android.app.Activity
 import android.content.Context
 import androidx.annotation.UiContext
 import androidx.core.util.Consumer
+import androidx.window.WindowSdkExtensions
 import androidx.window.layout.adapter.WindowBackend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -36,12 +37,13 @@ import kotlinx.coroutines.flow.flowOn
  */
 internal class WindowInfoTrackerImpl(
     private val windowMetricsCalculator: WindowMetricsCalculator,
-    private val windowBackend: WindowBackend
+    private val windowBackend: WindowBackend,
+    private val windowSdkExtensions: WindowSdkExtensions,
 ) : WindowInfoTracker {
 
     /**
      * A [Flow] of window layout changes in the current visual [UiContext]. A context has to be
-     * either an [Activity] or created with [Context#createWindowContext].
+     * either an [Activity] or created with [Context.createWindowContext].
      */
     override fun windowLayoutInfo(@UiContext context: Context): Flow<WindowLayoutInfo> {
         return callbackFlow {
@@ -60,5 +62,16 @@ internal class WindowInfoTrackerImpl(
                 awaitClose { windowBackend.unregisterLayoutChangeCallback(listener) }
             }
             .flowOn(Dispatchers.Main)
+    }
+
+    override val supportedPostures: List<SupportedPosture>
+        get() {
+            windowSdkExtensions.requireExtensionVersion(6)
+            return windowBackend.supportedPostures
+        }
+
+    override fun getCurrentWindowLayoutInfo(@UiContext context: Context): WindowLayoutInfo {
+        windowSdkExtensions.requireExtensionVersion(9)
+        return windowBackend.getCurrentWindowLayoutInfo(context)
     }
 }

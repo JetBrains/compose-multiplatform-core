@@ -23,7 +23,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.ScaleToBounds
+import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.samples.R
 import androidx.compose.animation.samples.SharedElementInAnimatedContentSample
 import androidx.compose.animation.samples.SharedElementWithFABInOverlaySample
@@ -69,6 +69,10 @@ fun SharedElementDemos() {
             "AnimatedContent" to { SharedElementInAnimatedContentSample() },
             "Text transform" to { TextSharedBoundsExperiments() },
             "Nav Shared Tool Bar" to { NavigationWithSharedToolBarDemo() },
+            "Shared Element with Movable Content" to { SharedElementWithMovableContent() },
+            "Shared Element in Pager" to { SharedElementInPagerDemo() },
+            "Shared Element in LazyStaggeredGrid" to { SharedElementInLazyStaggeredGridDemo() },
+            "Shared Element in LazyGrid" to { LazyGridSharedElementDemo() },
         )
 
     Column {
@@ -77,7 +81,7 @@ fun SharedElementDemos() {
                 Tab(
                     index == selectedTab,
                     { selectedTab = index },
-                    modifier = Modifier.padding(5.dp)
+                    modifier = Modifier.padding(5.dp),
                 ) {
                     Text(text)
                 }
@@ -145,8 +149,8 @@ fun ScaleContentTransition() {
                                 this,
                                 EnterTransition.None,
                                 ExitTransition.None,
-                                resizeMode = ScaleToBounds(contentScale = ContentScale.Crop),
-                            )
+                                resizeMode = scaleToBounds(contentScale = ContentScale.Crop),
+                            ),
                 )
             } else {
                 Image(
@@ -159,10 +163,10 @@ fun ScaleContentTransition() {
                                 this,
                                 EnterTransition.None,
                                 ExitTransition.None,
-                                resizeMode = ScaleToBounds(contentScale = ContentScale.Crop),
+                                resizeMode = scaleToBounds(contentScale = ContentScale.Crop),
                             )
                             .requiredSize(200.dp)
-                            .clip(shape = RoundedCornerShape(10))
+                            .clip(shape = RoundedCornerShape(10)),
                 )
             }
         }

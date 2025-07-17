@@ -30,7 +30,6 @@ import android.view.MotionEvent;
 import androidx.pdf.util.GestureTracker.Gesture;
 import androidx.pdf.util.GestureTracker.GestureHandler;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -44,11 +43,9 @@ import org.robolectric.RobolectricTestRunner;
 import java.util.AbstractList;
 import java.util.List;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class GestureTrackerTest {
 
-    private static final String TAG = "GestureTrackerTest";
     private static final int TAP_TIMEOUT = 200;
 
     private GestureTracker mGestureTracker;
@@ -61,7 +58,7 @@ public class GestureTrackerTest {
     public void setUp() {
         mOpenMocks = MockitoAnnotations.openMocks(this);
         mGestureTracker =
-                new GestureTracker("GesturesTest", ApplicationProvider.getApplicationContext());
+                new GestureTracker(ApplicationProvider.getApplicationContext());
         mGestureTracker.setDelegateHandler(mGestureHandler);
     }
 

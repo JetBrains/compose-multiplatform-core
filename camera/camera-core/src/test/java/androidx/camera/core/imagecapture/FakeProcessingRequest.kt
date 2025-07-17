@@ -20,33 +20,39 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.imagecapture.Utils.CROP_RECT
+import androidx.camera.core.imagecapture.Utils.createTakePictureRequest
 import androidx.camera.core.impl.CaptureBundle
+import androidx.concurrent.futures.CallbackToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Fake [ProcessingRequest]. */
 internal class FakeProcessingRequest(
     outputFileOptions: ImageCapture.OutputFileOptions?,
+    secondaryOutputFileOptions: ImageCapture.OutputFileOptions?,
     captureBundle: CaptureBundle,
     cropRect: Rect,
     rotationDegrees: Int,
     jpegQuality: Int,
     sensorToBufferTransform: Matrix,
     callback: TakePictureCallback,
-    captureFuture: ListenableFuture<Void>
+    captureFuture: ListenableFuture<Void>,
 ) :
     ProcessingRequest(
         captureBundle,
-        outputFileOptions,
-        cropRect,
-        rotationDegrees,
-        jpegQuality,
-        sensorToBufferTransform,
+        createTakePictureRequest(
+            outputFileOptions,
+            secondaryOutputFileOptions,
+            cropRect,
+            sensorToBufferTransform,
+            rotationDegrees,
+            jpegQuality,
+        ),
         callback,
-        captureFuture
+        captureFuture,
     ) {
     constructor(
         captureBundle: CaptureBundle,
         callback: TakePictureCallback,
-        captureFuture: ListenableFuture<Void>
-    ) : this(null, captureBundle, CROP_RECT, 0, 100, Matrix(), callback, captureFuture)
+        captureFuture: ListenableFuture<Void> = CallbackToFutureAdapter.getFuture { "test" },
+    ) : this(null, null, captureBundle, CROP_RECT, 0, 100, Matrix(), callback, captureFuture)
 }

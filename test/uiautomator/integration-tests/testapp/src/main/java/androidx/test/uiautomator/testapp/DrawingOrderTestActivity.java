@@ -16,20 +16,19 @@
 
 package androidx.test.uiautomator.testapp;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.AttributeSet;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 /** Contains three partially overlapping sibling views for testing drawing order (z-index). */
-public class DrawingOrderTestActivity extends Activity {
+public class DrawingOrderTestActivity extends TestActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

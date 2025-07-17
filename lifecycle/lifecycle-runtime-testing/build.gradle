@@ -21,41 +21,151 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+}
+
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.lifecycle.testing"
+    }
+    desktop()
+    mac()
+    linux()
+    ios()
+    watchos()
+    tvos()
+    mingwX64()
+    js()
+    wasmJs()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(libs.kotlinStdlib)
+                api(project(":lifecycle:lifecycle-runtime"))
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        jvmMain {
+            dependsOn(commonMain)
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
+        androidMain {
+            dependsOn(jvmMain)
+        }
+
+        androidUnitTest {
+            dependsOn(jvmTest)
+        }
+
+        androidInstrumentedTest {
+            dependsOn(jvmTest)
+            dependencies {
+                implementation(libs.truth)
+                implementation(libs.testExtJunit)
+                implementation(libs.testCore)
+                implementation(libs.testRunner)
+                implementation(libs.kotlinCoroutinesTest)
+            }
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+        }
+
+        nativeMain {
+            dependsOn(commonMain)
+        }
+
+        nativeTest {
+            dependsOn(commonTest)
+        }
+
+        webMain {
+            dependsOn(commonMain)
+        }
+
+        webTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        wasmJsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+                implementation(libs.kotlinTestForWasmTests)
+            }
+        }
+
+        jsMain {
+            dependsOn(webMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        jsTest {
+            dependsOn(webTest)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+                implementation(libs.kotlinTestJs)
+            }
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
+        }
+    }
 }
 
 dependencies {
-    api(project(":lifecycle:lifecycle-runtime-ktx"))
-    api(libs.kotlinStdlib)
-    api(libs.kotlinCoroutinesAndroid)
-
-    testImplementation(libs.truth)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlinCoroutinesTest)
-
-    androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-
     lintPublish(project(":lifecycle:lifecycle-runtime-testing-lint"))
 }
 
 androidx {
     name = "Lifecycle Runtime Testing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Testing utilities for 'lifecycle' artifact"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    namespace "androidx.lifecycle.testing"
 }

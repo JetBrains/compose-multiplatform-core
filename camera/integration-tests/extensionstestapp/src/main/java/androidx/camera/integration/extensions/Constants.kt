@@ -25,8 +25,14 @@ const val EXTENSION_MODE_NONE = -1
 /** Invalid lens facing */
 const val INVALID_LENS_FACING = -1
 
+/** Permissions request code */
+const val PERMISSIONS_REQUEST_CODE = 42
+
 /** Intent extra keys to pass necessary information between the caller and callee activities. */
 object IntentExtraKey {
+    /** Launches the activity with the specified CameraX implementation. */
+    const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
+
     /**
      * Launches the activity with the specified direction of camera.
      *
@@ -48,6 +54,9 @@ object IntentExtraKey {
     /** Launches the activity with the specified extension mode. */
     const val INTENT_EXTRA_KEY_EXTENSION_MODE = "extension_mode"
 
+    /** Takes the still image with the specified output format. */
+    const val INTENT_EXTRA_KEY_OUTPUT_FORMAT = "still_image_output_format"
+
     /**
      * The captured image will be deleted automatically if the intent used to launch the activity
      * includes the setting as true.
@@ -65,16 +74,33 @@ object IntentExtraKey {
     const val INTENT_EXTRA_KEY_IMAGE_URI = "ImageUri"
 
     /**
-     * Used to pass the rotation degrees fo the captured image to the caller activity to show the
+     * Used to pass the rotation degrees of the captured image to the caller activity to show the
      * image in correct orientation.
      */
     const val INTENT_EXTRA_KEY_IMAGE_ROTATION_DEGREES = "ImageRotationDegrees"
+
+    /** Used to pass the info that whether VideoCapture should be enabled. */
+    const val INTENT_EXTRA_KEY_VIDEO_CAPTURE_ENABLED = "VideoCaptureEnabled"
 
     /** Used to pass the request code to the callee activity. */
     const val INTENT_EXTRA_KEY_REQUEST_CODE = "RequestCode"
 
     /** Used to pass the error code to the caller activity. */
     const val INTENT_EXTRA_KEY_ERROR_CODE = "ErrorCode"
+
+    /** Used to pass the running mode to check. The valid values are debug and release. */
+    const val INTENT_EXTRA_RUNNING_MODE_CHECK = "running_mode_check"
+
+    /** Used to pass the result error message. */
+    const val INTENT_EXTRA_RESULT_ERROR_MESSAGE = "result_error_message"
+}
+
+/** Implementation options */
+object ImplementationOption {
+    /** CameraX implementation option */
+    const val CAMERA2_IMPLEMENTATION_OPTION: String = "camera2"
+    /** Camera-pipe implementation option */
+    const val CAMERA_PIPE_IMPLEMENTATION_OPTION: String = "camera_pipe"
 }
 
 /** Camera directions */
@@ -128,4 +154,22 @@ object TestResultType {
 
     /** All tests have been run and some items are failed */
     const val TEST_RESULT_FAILED = 3
+}
+
+/** Request result error codes for release apk test. */
+object RequestResultErrorCode {
+    /** None error happens. */
+    const val RESULT_SUCCESS = 0
+    /** Running mode (debug or release) incorrect. */
+    const val RESULT_ERROR_RUNNING_MODE_INCORRECT = 1
+    /** Permission requirements are not satisfied. */
+    const val RESULT_ERROR_PERMISSION_NOT_SATISFIED = 2
+    /** Failed to retrieve ExtensionsManager. */
+    const val RESULT_ERROR_FAILED_TO_RETRIEVE_EXTENSIONS_MANAGER = 3
+    /** Target testing extension mode is not supported on the target camera device. */
+    const val RESULT_ERROR_EXTENSION_MOD_NOT_SUPPORTED = 4
+    /** Incorrect camera implementation. */
+    const val RESULT_ERROR_INCORRECT_CAMERA_IMPLEMENTATION = 5
+    /** Failed to take a picture. */
+    const val RESULT_ERROR_TAKE_PICTURE_FAILED = 6
 }

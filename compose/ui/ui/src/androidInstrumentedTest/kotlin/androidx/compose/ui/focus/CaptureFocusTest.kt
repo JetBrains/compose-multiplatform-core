@@ -33,6 +33,19 @@ class CaptureFocusTest {
     @get:Rule val rule = createComposeRule()
 
     @Test
+    fun focusRequesterModifierNotUsed() {
+        // Arrange.
+        val focusRequester = FocusRequester()
+        rule.setFocusableContent { Box {} }
+
+        // Act.
+        val result = rule.runOnIdle { focusRequester.captureFocus() }
+
+        // Assert.
+        assertThat(result).isFalse()
+    }
+
+    @Test
     fun active_captureFocus_changesStateToCaptured() {
         // Arrange.
         lateinit var focusState: FocusState
@@ -114,6 +127,44 @@ class CaptureFocusTest {
         rule.runOnIdle {
             assertThat(success).isTrue()
             assertThat(focusState.isCaptured).isTrue()
+        }
+    }
+
+    @Test
+    fun captured_requestFocusForAnotherNode_retainsStateAsCaptured() {
+        // Arrange.
+        lateinit var focusState1: FocusState
+        lateinit var focusState2: FocusState
+        val focusRequester1 = FocusRequester()
+        val focusRequester2 = FocusRequester()
+        rule.setFocusableContent {
+            Box(
+                Modifier.onFocusChanged { focusState1 = it }
+                    .focusRequester(focusRequester1)
+                    .focusTarget()
+            )
+            Box(
+                Modifier.onFocusChanged { focusState2 = it }
+                    .focusRequester(focusRequester2)
+                    .focusTarget()
+            )
+        }
+        rule.runOnIdle {
+            focusRequester1.requestFocus()
+            focusRequester1.captureFocus()
+            assertThat(focusState1.isFocused).isTrue()
+            assertThat(focusState1.isCaptured).isTrue()
+        }
+
+        // Act.
+        val result = rule.runOnIdle { focusRequester2.requestFocus() }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(result).isFalse()
+            assertThat(focusState1.isFocused).isTrue()
+            assertThat(focusState1.isCaptured).isTrue()
+            assertThat(focusState2.isFocused).isFalse()
         }
     }
 

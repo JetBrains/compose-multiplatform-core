@@ -39,7 +39,7 @@ dependencies {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk = 26
     }
-    namespace "androidx.sqlite.inspection.roomtestapp"
+    namespace = "androidx.sqlite.inspection.roomtestapp"
 }

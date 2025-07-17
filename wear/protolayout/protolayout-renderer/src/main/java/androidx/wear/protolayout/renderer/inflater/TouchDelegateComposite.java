@@ -20,7 +20,6 @@ import static androidx.core.util.Preconditions.checkNotNull;
 
 import static java.lang.Math.max;
 
-import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Build.VERSION;
@@ -32,8 +31,9 @@ import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeInfo.TouchDelegateInfo;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -50,7 +50,7 @@ import java.util.WeakHashMap;
  */
 class TouchDelegateComposite extends TouchDelegate {
 
-    @NonNull private final WeakHashMap<View, DelegateInfo> mDelegates = new WeakHashMap<>();
+    private final @NonNull WeakHashMap<View, DelegateInfo> mDelegates = new WeakHashMap<>();
 
     /**
      * Constructor
@@ -125,10 +125,8 @@ class TouchDelegateComposite extends TouchDelegate {
         return eventForwarded;
     }
 
-    @SuppressLint("ClassVerificationFailure")
     @Override
-    @NonNull
-    public AccessibilityNodeInfo.TouchDelegateInfo getTouchDelegateInfo() {
+    public AccessibilityNodeInfo.@NonNull TouchDelegateInfo getTouchDelegateInfo() {
         if (VERSION.SDK_INT >= VERSION_CODES.Q && !mDelegates.isEmpty()) {
             Map<Region, View> targetMap = new ArrayMap<>(mDelegates.size());
             for (Map.Entry<View, DelegateInfo> entry : mDelegates.entrySet()) {
@@ -152,9 +150,9 @@ class TouchDelegateComposite extends TouchDelegate {
     }
 
     private static final class DelegateInfo {
-        @NonNull final Rect mActualBounds;
-        @NonNull final Rect mExtendedBounds;
-        @NonNull final TouchDelegate mTouchDelegate;
+        final @NonNull Rect mActualBounds;
+        final @NonNull Rect mExtendedBounds;
+        final @NonNull TouchDelegate mTouchDelegate;
 
         DelegateInfo(
                 @NonNull View delegateView,

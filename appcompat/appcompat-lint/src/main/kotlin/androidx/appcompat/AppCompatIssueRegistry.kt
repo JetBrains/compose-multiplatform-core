@@ -28,11 +28,12 @@ import androidx.appcompat.widget.TextViewCompoundDrawablesApiDetector
 import androidx.appcompat.widget.TextViewCompoundDrawablesXmlDetector
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.Vendor
+import com.android.tools.lint.detector.api.CURRENT_API
 
 @Suppress("UnstableApiUsage")
 class AppCompatIssueRegistry : IssueRegistry() {
-    override val minApi = 10 // Only compatible with the latest lint
-    override val api = 14
+    override val minApi = CURRENT_API
+    override val api = 16
     override val issues
         get() =
             listOf(
@@ -45,7 +46,7 @@ class AppCompatIssueRegistry : IssueRegistry() {
                 SwitchUsageXmlDetector.USING_CORE_SWITCH_XML,
                 TextViewCompoundDrawablesApiDetector.NOT_USING_COMPAT_TEXT_VIEW_DRAWABLE_APIS,
                 TextViewCompoundDrawablesXmlDetector.NOT_USING_COMPAT_TEXT_VIEW_DRAWABLE_ATTRS,
-                OnClickXmlDetector.USING_ON_CLICK_IN_XML
+                OnClickXmlDetector.USING_ON_CLICK_IN_XML,
             )
 
     override val vendor =

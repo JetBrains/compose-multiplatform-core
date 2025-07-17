@@ -334,7 +334,7 @@ class WindowContentChangeTest {
                         actual.parcelableData == expected.parcelableData &&
                         actual.recordCount == expected.recordCount
                 },
-                "has same properties as"
+                "has same properties as",
             )
     }
 
@@ -351,7 +351,7 @@ class WindowContentChangeTest {
                 @Suppress("DEPRECATION") AccessibilityEvent.obtain()
             }
             .apply {
-                packageName = "androidx.compose.ui.test"
+                packageName = "androidx.compose.ui.tests"
                 className = "android.view.View"
                 isEnabled = true
             }

@@ -20,8 +20,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
 import androidx.work.Clock;
@@ -34,6 +32,9 @@ import androidx.work.impl.WorkManagerImpl;
 import androidx.work.impl.model.WorkGenerationalId;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -362,7 +363,7 @@ public class CommandHandler implements ExecutionListener {
     }
 
     @SuppressWarnings("deprecation")
-    private static boolean hasKeys(@Nullable Bundle bundle, @NonNull String... keys) {
+    private static boolean hasKeys(@Nullable Bundle bundle, String @NonNull ... keys) {
         if (bundle == null || bundle.isEmpty()) {
             return false;
         } else {

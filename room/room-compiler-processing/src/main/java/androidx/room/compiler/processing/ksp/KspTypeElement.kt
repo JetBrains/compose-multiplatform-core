@@ -59,7 +59,7 @@ import com.squareup.kotlinpoet.javapoet.KClassName
 
 internal sealed class KspTypeElement(
     env: KspProcessingEnv,
-    override val declaration: KSClassDeclaration
+    override val declaration: KSClassDeclaration,
 ) :
     KspElement(env, declaration),
     XTypeElement,
@@ -87,9 +87,7 @@ internal sealed class KspTypeElement(
         declaration.typeParameters.map { KspTypeParameterElement(env, it) }
     }
 
-    override val qualifiedName: String by lazy {
-        (declaration.qualifiedName ?: declaration.simpleName).asString()
-    }
+    override val qualifiedName: String by lazy { asClassName().kotlin.canonicalName }
 
     override val type: KspType by lazy {
         env.wrap(ksType = declaration.asType(emptyList()), allowPrimitives = false)
@@ -104,9 +102,14 @@ internal sealed class KspTypeElement(
             null
         } else {
             declaration.superTypes
-                .singleOrNull {
-                    val declaration = it.resolve().declaration.replaceTypeAliases()
-                    declaration is KSClassDeclaration && declaration.classKind == ClassKind.CLASS
+                .firstOrNull {
+                    val type = it.resolve()
+                    val declaration = type.declaration.replaceTypeAliases()
+                    declaration is KSClassDeclaration &&
+                        (declaration.classKind == ClassKind.CLASS &&
+                            // Filter out error class declarations, for consistency with KAPT these
+                            // are exposed as super interfaces.
+                            (isFromJava() || !type.isError))
                 }
                 ?.let { env.wrap(it).makeNonNullable() } ?: anyTypeElement.type
         }
@@ -115,8 +118,13 @@ internal sealed class KspTypeElement(
     override val superInterfaces by lazy {
         declaration.superTypes
             .filter {
-                val declaration = it.resolve().declaration.replaceTypeAliases()
-                declaration is KSClassDeclaration && declaration.classKind == ClassKind.INTERFACE
+                val type = it.resolve()
+                val declaration = type.declaration.replaceTypeAliases()
+                declaration is KSClassDeclaration &&
+                    (declaration.classKind == ClassKind.INTERFACE ||
+                        // Workaround https://github.com/google/ksp/issues/1443 by exposing
+                        // error class declarations as super interfaces.
+                        (isFromKotlin() && type.isError))
             }
             .mapTo(mutableListOf()) { env.wrap(it).makeNonNullable() }
     }
@@ -124,7 +132,7 @@ internal sealed class KspTypeElement(
     @Deprecated(
         "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
         replaceWith =
-            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet")
+            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet"),
     )
     override val className: ClassName by lazy { xClassName.java }
 
@@ -190,7 +198,7 @@ internal sealed class KspTypeElement(
                                 KspSyntheticConstructorElement(
                                     env = env,
                                     declaration = it,
-                                    valueParameters = emptyList()
+                                    valueParameters = emptyList(),
                                 )
                             )
                         }
@@ -221,7 +229,7 @@ internal sealed class KspTypeElement(
                     env,
                     field,
                     element.accessor,
-                    isSyntheticStatic = true
+                    isSyntheticStatic = true,
                 )
             }
         }
@@ -272,9 +280,10 @@ internal sealed class KspTypeElement(
     }
 
     override fun isRecordClass(): Boolean {
+        val recordType = env.findType("java.lang.Record") ?: return false
         // Need to also check super type since @JvmRecord is @Retention(SOURCE)
         return hasAnnotation(JvmRecord::class) ||
-            superClass?.isTypeOf(java.lang.Record::class) == true
+            superClass?.let { recordType.isAssignableFrom(it) } == true
     }
 
     override fun getDeclaredFields(): List<XFieldElement> {
@@ -313,7 +322,7 @@ internal sealed class KspTypeElement(
                             KspMethodElement.create(
                                 env = env,
                                 declaration = it,
-                                isSyntheticStatic = true
+                                isSyntheticStatic = true,
                             )
                         )
                     } else if (it is KSPropertyDeclaration) {

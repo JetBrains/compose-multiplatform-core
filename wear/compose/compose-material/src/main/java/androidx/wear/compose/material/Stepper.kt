@@ -38,11 +38,8 @@ import kotlin.math.roundToInt
  * [onValueChange] in this case will not be triggered.
  *
  * @sample androidx.wear.compose.material.samples.StepperSample
- *
  * @sample androidx.wear.compose.material.samples.StepperWithoutRangeSemanticsSample
- *
  * @sample androidx.wear.compose.material.samples.StepperWithCustomSemanticsSample
- *
  * @param value Current value of the Stepper. If outside of [valueRange] provided, value will be
  *   coerced to this range.
  * @param onValueChange Lambda in which value should be updated
@@ -64,7 +61,7 @@ import kotlin.math.roundToInt
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Float,
     onValueChange: (Float) -> Unit,
     steps: Int,
@@ -76,7 +73,7 @@ fun Stepper(
     contentColor: Color = contentColorFor(backgroundColor),
     iconColor: Color = contentColor,
     enableRangeSemantics: Boolean = true,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     androidx.wear.compose.materialcore.Stepper(
         value = value,
@@ -95,14 +92,14 @@ fun Stepper(
         enabledButtonProviderValues =
             arrayOf(
                 LocalContentColor provides iconColor,
-                LocalContentAlpha provides iconColor.alpha
+                LocalContentAlpha provides iconColor.alpha,
             ),
         disabledButtonProviderValues =
             arrayOf(
                 LocalContentColor provides iconColor.copy(alpha = ContentAlpha.disabled),
-                LocalContentAlpha provides iconColor.copy(alpha = ContentAlpha.disabled).alpha
+                LocalContentAlpha provides iconColor.copy(alpha = ContentAlpha.disabled).alpha,
             ),
-        buttonRipple = rippleOrFallbackImplementation(bounded = false)
+        buttonRipple = ripple(bounded = false),
     ) {
         CompositionLocalProvider(LocalContentColor provides contentColor) { content() }
     }
@@ -149,7 +146,7 @@ fun Stepper(
  * @param content Content body for the Stepper.
  */
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -160,7 +157,7 @@ fun Stepper(
     contentColor: Color = contentColorFor(backgroundColor),
     iconColor: Color = contentColor,
     enableRangeSemantics: Boolean = true,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Stepper(
         value = value.toFloat(),
@@ -174,7 +171,7 @@ fun Stepper(
         contentColor = contentColor,
         iconColor = iconColor,
         enableRangeSemantics = enableRangeSemantics,
-        content = content
+        content = content,
     )
 }
 
@@ -188,7 +185,6 @@ fun Stepper(
  * [PositionIndicator] if required.
  *
  * @sample androidx.wear.compose.material.samples.StepperSample
- *
  * @param value Current value of the Stepper. If outside of [valueRange] provided, value will be
  *   coerced to this range.
  * @param onValueChange Lambda in which value should be updated
@@ -208,7 +204,7 @@ fun Stepper(
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1. " +
         "A newer overload is available with an additional enableDefaultSemantics parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Stepper(
@@ -222,8 +218,8 @@ public fun Stepper(
     backgroundColor: Color = MaterialTheme.colors.background,
     contentColor: Color = contentColorFor(backgroundColor),
     iconColor: Color = contentColor,
-    content: @Composable BoxScope.() -> Unit
-) =
+    content: @Composable BoxScope.() -> Unit,
+): Unit =
     Stepper(
         value = value,
         onValueChange = onValueChange,
@@ -236,7 +232,7 @@ public fun Stepper(
         contentColor = contentColor,
         iconColor = iconColor,
         enableRangeSemantics = true,
-        content = content
+        content = content,
     )
 
 /**
@@ -274,10 +270,10 @@ public fun Stepper(
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1. " +
         "A newer overload is available with an additional enableDefaultSemantics parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun Stepper(
+public fun Stepper(
     value: Int,
     onValueChange: (Int) -> Unit,
     valueProgression: IntProgression,
@@ -287,7 +283,7 @@ fun Stepper(
     backgroundColor: Color = MaterialTheme.colors.background,
     contentColor: Color = contentColorFor(backgroundColor),
     iconColor: Color = contentColor,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Stepper(
         value = value,
@@ -300,15 +296,15 @@ fun Stepper(
         contentColor = contentColor,
         iconColor = iconColor,
         enableRangeSemantics = true,
-        content = content
+        content = content,
     )
 }
 
 /** Defaults used by stepper */
 public object StepperDefaults {
     /** Decrease [ImageVector] */
-    public val Decrease = androidx.wear.compose.materialcore.RangeIcons.Minus
+    public val Decrease: ImageVector = androidx.wear.compose.materialcore.RangeIcons.Minus
 
     /** Increase [ImageVector] */
-    public val Increase = Icons.Filled.Add
+    public val Increase: ImageVector = Icons.Filled.Add
 }

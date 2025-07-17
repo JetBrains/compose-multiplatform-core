@@ -19,6 +19,8 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
+import android.hardware.camera2.CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
 import android.util.Size
@@ -62,7 +64,7 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
 
@@ -77,6 +79,7 @@ class ZslControlImplTest {
         assertThat(zslControlImpl.reprocessingImageReader!!.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControlImpl.zslRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     @Test
@@ -87,13 +90,14 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
 
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -104,13 +108,14 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = false
+                    isJpegValidOutputFormat = false,
                 )
             )
 
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -121,13 +126,14 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = false
+                    isJpegValidOutputFormat = false,
                 )
             )
 
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -138,7 +144,7 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
         zslControlImpl.setZslDisabledByUserCaseConfig(true)
@@ -146,6 +152,7 @@ class ZslControlImplTest {
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -156,7 +163,7 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
         zslControlImpl.setZslDisabledByFlashMode(true)
@@ -172,6 +179,7 @@ class ZslControlImplTest {
         assertThat(zslControlImpl.reprocessingImageReader!!.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControlImpl.zslRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     @Test
@@ -182,7 +190,7 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
 
@@ -192,6 +200,7 @@ class ZslControlImplTest {
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -205,13 +214,14 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
 
         zslControlImpl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControlImpl.reprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -225,7 +235,7 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
+                    isJpegValidOutputFormat = true,
                 )
             )
 
@@ -240,13 +250,14 @@ class ZslControlImplTest {
         assertThat(zslControlImpl.reprocessingImageReader!!.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControlImpl.zslRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     private fun createCameraProperties(
         hasCapabilities: Boolean,
         isYuvReprocessingSupported: Boolean,
         isPrivateReprocessingSupported: Boolean,
-        isJpegValidOutputFormat: Boolean
+        isJpegValidOutputFormat: Boolean,
     ): CameraProperties {
         val characteristicsMap = mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
         val capabilities = arrayListOf<Int>()
@@ -302,10 +313,7 @@ class ZslControlImplTest {
         }
         val cameraMetadata = FakeCameraMetadata(characteristics = characteristicsMap)
 
-        return FakeCameraProperties(
-            cameraMetadata,
-            CameraId("0"),
-        )
+        return FakeCameraProperties(cameraMetadata, CameraId("0"))
     }
 
     companion object {

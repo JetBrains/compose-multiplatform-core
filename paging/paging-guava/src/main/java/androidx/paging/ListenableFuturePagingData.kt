@@ -36,7 +36,7 @@ import kotlinx.coroutines.withContext
 @CheckResult
 fun <T : Any, R : Any> PagingData<T>.mapAsync(
     transform: AsyncFunction<T, R>,
-    executor: Executor
+    executor: Executor,
 ): PagingData<R> = map {
     withContext(executor.asCoroutineDispatcher()) { transform.apply(it).await() }
 }
@@ -52,7 +52,7 @@ fun <T : Any, R : Any> PagingData<T>.mapAsync(
 @CheckResult
 fun <T : Any, R : Any> PagingData<T>.flatMapAsync(
     transform: AsyncFunction<T, Iterable<R>>,
-    executor: Executor
+    executor: Executor,
 ): PagingData<R> = flatMap {
     withContext(executor.asCoroutineDispatcher()) { transform.apply(it).await() }
 }
@@ -67,7 +67,7 @@ fun <T : Any, R : Any> PagingData<T>.flatMapAsync(
 @CheckResult
 fun <T : Any> PagingData<T>.filterAsync(
     predicate: AsyncFunction<T, Boolean>,
-    executor: Executor
+    executor: Executor,
 ): PagingData<T> = filter {
     withContext(executor.asCoroutineDispatcher()) { predicate.apply(it).await() }
 }
@@ -82,16 +82,14 @@ fun <T : Any> PagingData<T>.filterAsync(
  * @param generator [AsyncFunction] used to generate separator between two [AdjacentItems] or the
  *   header or footer if either [AdjacentItems.before] or [AdjacentItems.after] is `null`.
  * @param executor [Executor] to run the [AsyncFunction] in.
- *
  * @sample androidx.paging.samples.insertSeparatorsFutureSample
- *
  * @sample androidx.paging.samples.insertSeparatorsUiModelFutureSample
  */
 @JvmName("insertSeparators")
 @CheckResult
 fun <T : R, R : Any> PagingData<T>.insertSeparatorsAsync(
     generator: AsyncFunction<AdjacentItems<T>, R?>,
-    executor: Executor
+    executor: Executor,
 ): PagingData<R> = insertSeparators { before, after ->
     withContext(executor.asCoroutineDispatcher()) {
         generator.apply(AdjacentItems(before, after)).await()
@@ -99,4 +97,4 @@ fun <T : R, R : Any> PagingData<T>.insertSeparatorsAsync(
 }
 
 /** Represents a pair of adjacent items, null values are used to signal boundary conditions. */
-data class AdjacentItems<T>(val before: T?, val after: T?)
+@Suppress("DataClassDefinition") data class AdjacentItems<T>(val before: T?, val after: T?)

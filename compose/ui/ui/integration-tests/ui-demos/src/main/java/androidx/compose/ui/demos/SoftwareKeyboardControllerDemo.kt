@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -36,7 +35,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SoftwareKeyboardControllerDemo() {
     Column(Modifier.padding(16.dp)) {
@@ -55,7 +53,7 @@ fun SoftwareKeyboardControllerDemo() {
             value = text,
             onValueChange = {},
             textStyle = TextStyle.Default.copy(fontSize = 18.sp),
-            modifier = Modifier.focusRequester(focusRequester).height(200.dp)
+            modifier = Modifier.focusRequester(focusRequester).height(200.dp),
         )
 
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -65,7 +63,7 @@ fun SoftwareKeyboardControllerDemo() {
                 keyboardController?.hide()
             },
             enabled = !isHidden,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp),
         ) {
             Text("hideSoftwareKeyboard()")
         }
@@ -75,7 +73,7 @@ fun SoftwareKeyboardControllerDemo() {
                 focusRequester.requestFocus()
                 keyboardController?.show()
             },
-            enabled = isHidden
+            enabled = isHidden,
         ) {
             Text("showSoftwareKeyboard()")
         }

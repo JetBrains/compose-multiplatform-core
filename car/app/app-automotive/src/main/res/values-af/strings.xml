@@ -17,7 +17,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="error_action_finish" msgid="7621130025103996211">"Maak program toe"</string>
+    <string name="error_action_finish" msgid="7621130025103996211">"Maak app toe"</string>
     <string name="error_action_update_host" msgid="4802951804749609593">"Kyk vir opdaterings"</string>
     <string name="error_action_retry" msgid="985347670495166517">"Herprobeer"</string>
     <string name="error_message_client_side_error" msgid="3323186720368387787">"Programfout. Gee asseblief hierdie fout by die programontwikkelaar aan"</string>

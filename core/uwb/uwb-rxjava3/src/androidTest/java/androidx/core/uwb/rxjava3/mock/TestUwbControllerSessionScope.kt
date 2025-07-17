@@ -17,6 +17,7 @@
 package androidx.core.uwb.rxjava3.mock
 
 import androidx.core.uwb.RangingCapabilities
+import androidx.core.uwb.RangingControleeParameters
 import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.RangingResult
 import androidx.core.uwb.UwbAddress
@@ -28,7 +29,7 @@ class TestUwbControllerSessionScope(
     private val uwbClient: TestUwbClient,
     override val rangingCapabilities: RangingCapabilities,
     override val localAddress: UwbAddress,
-    override val uwbComplexChannel: UwbComplexChannel
+    override val uwbComplexChannel: UwbComplexChannel,
 ) : UwbControllerSessionScope {
     private val uwbClientSessionScope =
         TestUwbClientSessionScope(uwbClient, rangingCapabilities, localAddress)
@@ -51,15 +52,19 @@ class TestUwbControllerSessionScope(
         TODO("Not yet implemented")
     }
 
+    override suspend fun addControlee(address: UwbAddress, parameters: RangingControleeParameters) {
+        TODO("Not yet implemented")
+    }
+
     override suspend fun reconfigureRangeDataNtf(
         configType: Int,
         proximityNear: Int,
-        proximityFar: Int
+        proximityFar: Int,
     ) {
         return uwbClientSessionScope.reconfigureRangeDataNtf(
             configType,
             proximityNear,
-            proximityFar
+            proximityFar,
         )
     }
 }

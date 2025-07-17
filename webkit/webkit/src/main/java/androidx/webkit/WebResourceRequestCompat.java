@@ -18,13 +18,14 @@ package androidx.webkit;
 
 import android.webkit.WebResourceRequest;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.webkit.internal.ApiFeature;
 import androidx.webkit.internal.ApiHelperForN;
 import androidx.webkit.internal.WebResourceRequestAdapter;
 import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Compatibility version of {@link WebResourceRequest}.

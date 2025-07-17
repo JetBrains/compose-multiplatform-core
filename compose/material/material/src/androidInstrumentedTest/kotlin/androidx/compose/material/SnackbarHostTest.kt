@@ -167,10 +167,12 @@ class SnackbarHostTest {
     @Test
     fun snackbarHost_semantics() {
         val hostState = SnackbarHostState()
+        lateinit var paneTitle: String
         lateinit var scope: CoroutineScope
         rule.setContent {
             scope = rememberCoroutineScope()
             SnackbarHost(hostState) { data -> Snackbar(data) }
+            paneTitle = getString(Strings.SnackbarPaneTitle)
         }
         val job1 =
             scope.launch {
@@ -184,6 +186,7 @@ class SnackbarHostTest {
             .assert(
                 SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
             )
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, paneTitle))
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss))
             .performSemanticsAction(SemanticsActions.Dismiss)
 
@@ -207,27 +210,27 @@ class SnackbarHostTest {
         }
         assertEquals(
             Long.MAX_VALUE,
-            SnackbarDuration.Indefinite.toMillis(true, accessibilityManager)
+            SnackbarDuration.Indefinite.toMillis(true, accessibilityManager),
         )
         assertEquals(
             Long.MAX_VALUE,
-            SnackbarDuration.Indefinite.toMillis(false, accessibilityManager)
+            SnackbarDuration.Indefinite.toMillis(false, accessibilityManager),
         )
         assertEquals(
             mockDurationControl,
-            SnackbarDuration.Long.toMillis(true, accessibilityManager)
+            SnackbarDuration.Long.toMillis(true, accessibilityManager),
         )
         assertEquals(
             mockDurationNonControl,
-            SnackbarDuration.Long.toMillis(false, accessibilityManager)
+            SnackbarDuration.Long.toMillis(false, accessibilityManager),
         )
         assertEquals(
             mockDurationControl,
-            SnackbarDuration.Short.toMillis(true, accessibilityManager)
+            SnackbarDuration.Short.toMillis(true, accessibilityManager),
         )
         assertEquals(
             mockDurationNonControl,
-            SnackbarDuration.Short.toMillis(false, accessibilityManager)
+            SnackbarDuration.Short.toMillis(false, accessibilityManager),
         )
     }
 

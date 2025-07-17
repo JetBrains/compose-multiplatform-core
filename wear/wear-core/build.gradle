@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,11 +30,11 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
 
     api(libs.kotlinStdlib)
 
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.mockitoCore4)
 
@@ -42,14 +42,15 @@ dependencies {
 }
 
 android {
-    namespace "androidx.wear.core"
+    namespace = "androidx.wear.core"
 }
 
 androidx {
     name = "Android Wear Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_CORE
     inceptionYear = "2024"
     description = "Low-level utilities for building apps and libraries for Wear OS."
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

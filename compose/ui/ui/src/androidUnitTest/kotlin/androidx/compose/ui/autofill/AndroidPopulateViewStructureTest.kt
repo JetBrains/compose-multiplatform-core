@@ -20,7 +20,6 @@ import android.app.Activity
 import android.view.View
 import android.view.ViewStructure
 import androidx.autofill.HintConstants.AUTOFILL_HINT_PERSON_NAME
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
@@ -30,11 +29,10 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, minSdk = 26)
 class AndroidPopulateViewStructureTest {
-    private val autofillTree = AutofillTree()
+    private val autofillTree = @Suppress("Deprecation") AutofillTree()
     private lateinit var androidAutofill: AndroidAutofill
     private lateinit var currentPackage: String
 
@@ -64,10 +62,11 @@ class AndroidPopulateViewStructureTest {
     fun populateViewStructure_oneChild() {
         // Arrange.
         val autofillNode =
+            @Suppress("Deprecation")
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += autofillNode
 
@@ -96,18 +95,20 @@ class AndroidPopulateViewStructureTest {
     fun populateViewStructure_twoChildren() {
         // Arrange.
         val nameAutofillNode =
+            @Suppress("Deprecation")
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.PersonFullName),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += nameAutofillNode
 
         val emailAutofillNode =
+            @Suppress("Deprecation")
             AutofillNode(
                 onFill = {},
                 autofillTypes = listOf(AutofillType.EmailAddress),
-                boundingBox = Rect(0f, 0f, 0f, 0f)
+                boundingBox = Rect(0f, 0f, 0f, 0f),
             )
         autofillTree += emailAutofillNode
 

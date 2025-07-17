@@ -26,7 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 /** Receiver scope for use with [produceState]. */
-interface ProduceStateScope<T> : MutableState<T>, CoroutineScope {
+public interface ProduceStateScope<T> : MutableState<T>, CoroutineScope {
     /**
      * Await the disposal of this producer whether it left the composition, the source changed, or
      * an error occurred. Always runs [onDispose] before resuming.
@@ -36,12 +36,12 @@ interface ProduceStateScope<T> : MutableState<T>, CoroutineScope {
      *
      * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
      */
-    suspend fun awaitDispose(onDispose: () -> Unit): Nothing
+    public suspend fun awaitDispose(onDispose: () -> Unit): Nothing
 }
 
 private class ProduceStateScopeImpl<T>(
     state: MutableState<T>,
-    override val coroutineContext: CoroutineContext
+    override val coroutineContext: CoroutineContext,
 ) : ProduceStateScope<T>, MutableState<T> by state {
 
     override suspend fun awaitDispose(onDispose: () -> Unit): Nothing {
@@ -69,11 +69,13 @@ private class ProduceStateScopeImpl<T>(
  * data, for example:
  *
  * @sample androidx.compose.runtime.samples.ProduceState
- *
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-fun <T> produceState(initialValue: T, producer: suspend ProduceStateScope<T>.() -> Unit): State<T> {
+public fun <T> produceState(
+    initialValue: T,
+    producer: suspend ProduceStateScope<T>.() -> Unit,
+): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(Unit) { ProduceStateScopeImpl(result, coroutineContext).producer() }
     return result
@@ -96,14 +98,13 @@ fun <T> produceState(initialValue: T, producer: suspend ProduceStateScope<T>.() 
  * data, for example:
  *
  * @sample androidx.compose.runtime.samples.ProduceState
- *
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-fun <T> produceState(
+public fun <T> produceState(
     initialValue: T,
     key1: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -127,15 +128,14 @@ fun <T> produceState(
  * data, for example:
  *
  * @sample androidx.compose.runtime.samples.ProduceState
- *
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-fun <T> produceState(
+public fun <T> produceState(
     initialValue: T,
     key1: Any?,
     key2: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1, key2) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -159,16 +159,15 @@ fun <T> produceState(
  * data, for example:
  *
  * @sample androidx.compose.runtime.samples.ProduceState
- *
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-fun <T> produceState(
+public fun <T> produceState(
     initialValue: T,
     key1: Any?,
     key2: Any?,
     key3: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     LaunchedEffect(key1, key2, key3) { ProduceStateScopeImpl(result, coroutineContext).producer() }
@@ -192,14 +191,13 @@ fun <T> produceState(
  * data, for example:
  *
  * @sample androidx.compose.runtime.samples.ProduceState
- *
  * @sample androidx.compose.runtime.samples.ProduceStateAwaitDispose
  */
 @Composable
-fun <T> produceState(
+public fun <T> produceState(
     initialValue: T,
     vararg keys: Any?,
-    producer: suspend ProduceStateScope<T>.() -> Unit
+    producer: suspend ProduceStateScope<T>.() -> Unit,
 ): State<T> {
     val result = remember { mutableStateOf(initialValue) }
     @Suppress("CHANGING_ARGUMENTS_EXECUTION_ORDER_FOR_NAMED_VARARGS")

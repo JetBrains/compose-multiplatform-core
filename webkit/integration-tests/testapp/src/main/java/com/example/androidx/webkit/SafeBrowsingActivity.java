@@ -19,55 +19,20 @@ package com.example.androidx.webkit;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.webkit.WebViewCompat;
-import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to exercise Safe Browsing functionality.
  */
 public class SafeBrowsingActivity extends AppCompatActivity {
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.START_SAFE_BROWSING)) {
-            WebViewCompat.startSafeBrowsing(this.getApplicationContext(),
-                    value -> {
-                        if (value) {
-                            setupLayout();
-                        } else {
-                            TextView t = WebkitHelpers.showMessageInActivity(
-                                    SafeBrowsingActivity.this,
-                                    R.string.cannot_start_safe_browsing);
-                            t.setOnClickListener(v -> showSafeBrowsingRequirementsInBrowser());
-                        }
-                    });
-        } else {
-            WebkitHelpers.showMessageInActivity(SafeBrowsingActivity.this,
-                    R.string.webkit_api_not_available);
-        }
-    }
-
-    private void showSafeBrowsingRequirementsInBrowser() {
-        // Open documentation for WebView Safe Browsing to help the user
-        // debug what's wrong.
-        Uri safeBrowsingRequirementsUri = new Uri.Builder()
-                .scheme("https")
-                .authority("chromium.googlesource.com")
-                .path("/chromium/src/+/main/android_webview/browser/safe_browsing/README.md")
-                .encodedFragment("opt_in_consent_requirements")
-                .build();
-
-        Intent i = new Intent(Intent.ACTION_VIEW);
-        i.setData(safeBrowsingRequirementsUri);
-        startActivity(i);
+        setupLayout();
     }
 
     private void setupLayout() {
@@ -80,7 +45,9 @@ public class SafeBrowsingActivity extends AppCompatActivity {
         MenuListView.MenuItem[] menuItems = new MenuListView.MenuItem[] {
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.small_interstitial_activity_title),
-                        new Intent(activityContext, SmallInterstitialActivity.class)),
+                        new Intent(activityContext, SmallInterstitialActivity.class)
+                                .putExtra(SmallInterstitialActivity.CONTENT_TYPE,
+                                        ContentType.MALICIOUS_CONTENT)),
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.medium_wide_interstitial_activity_title),
                         new Intent(activityContext, MediumInterstitialActivity.class)
@@ -91,7 +58,9 @@ public class SafeBrowsingActivity extends AppCompatActivity {
                                 .putExtra(MediumInterstitialActivity.LAYOUT_HORIZONTAL, true)),
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.loud_interstitial_activity_title),
-                        new Intent(activityContext, LoudInterstitialActivity.class)),
+                        new Intent(activityContext, FullPageInterstitialActivity.class)
+                                .putExtra(FullPageInterstitialActivity.CONTENT_TYPE,
+                                        ContentType.MALICIOUS_CONTENT)),
                 new MenuListView.MenuItem(
                         getResources().getString(R.string.giant_interstitial_activity_title),
                         new Intent(activityContext, GiantInterstitialActivity.class)),

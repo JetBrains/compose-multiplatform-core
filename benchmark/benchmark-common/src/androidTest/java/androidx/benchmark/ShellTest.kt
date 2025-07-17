@@ -24,10 +24,12 @@ import androidx.test.filters.SmallTest
 import java.io.File
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
@@ -38,42 +40,14 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ShellTest {
+
     @Before
     @After
     fun setup() {
         if (Build.VERSION.SDK_INT >= 23) {
             // ensure we don't leak background processes
-            Shell.terminateProcessesAndWait(
-                KILL_WAIT_POLL_PERIOD_MS,
-                KILL_WAIT_POLL_MAX_COUNT,
-                BACKGROUND_SPINNING_PROCESS_NAME
-            )
+            Shell.killProcessesAndWait(BACKGROUND_SPINNING_PROCESS_NAME)
         }
-    }
-
-    @Test
-    fun optionalCommand_ls() {
-        // command isn't important, it's just something that's not `echo`, and guaranteed to print
-        val output = Shell.optionalCommand("ls /sys/devices/system/cpu")
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            assertNotNull(output)
-        } else {
-            assertNull(output)
-        }
-    }
-
-    @Test
-    fun optionalCommand_echo() {
-        val output = Shell.optionalCommand("echo foo")
-
-        val expected =
-            when {
-                Build.VERSION.SDK_INT >= 21 -> "foo\n"
-                else -> null
-            }
-
-        assertEquals(expected, output)
     }
 
     private fun CpuInfo.CoreDir.scalingMinFreqPath() = "$path/cpufreq/scaling_min_freq"
@@ -85,7 +59,7 @@ class ShellTest {
         // skip test on devices that can't read scaling_min_freq, like emulators
         assumeTrue(
             "cpufreq dirs don't have scaling_min_freq, bypassing test",
-            onlineCores.all { File(it.scalingMinFreqPath()).exists() }
+            onlineCores.all { File(it.scalingMinFreqPath()).exists() },
         )
 
         onlineCores.forEach {
@@ -95,11 +69,7 @@ class ShellTest {
             val output = Shell.catProcFileLong(it.scalingMinFreqPath())
 
             // if the path exists, it should be readable by shell for every online core
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                assertNotNull(output)
-            } else {
-                assertNull(output)
-            }
+            assertNotNull(output)
         }
     }
 
@@ -114,7 +84,7 @@ class ShellTest {
     fun executeScriptCaptureStdoutStderr_trivial() {
         Assert.assertEquals(
             Shell.Output("foo\n", ""),
-            Shell.executeScriptCaptureStdoutStderr("echo foo")
+            Shell.executeScriptCaptureStdoutStderr("echo foo"),
         )
     }
 
@@ -129,7 +99,7 @@ class ShellTest {
                 echo bar
                 """
                     .trimIndent()
-            )
+            ),
         )
     }
 
@@ -147,7 +117,7 @@ class ShellTest {
         // API 30: "invalidCommand: inaccessible or not found"
         Assert.assertTrue(
             "unexpected stderr \"$stderr\"",
-            stderr.contains("invalidCommand") && stderr.contains("not found")
+            stderr.contains("invalidCommand") && stderr.contains("not found"),
         )
     }
 
@@ -164,7 +134,7 @@ class ShellTest {
         // validate piping works
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("echo foo | echo $(</dev/stdin)")
+            Shell.executeScriptCaptureStdout("echo foo | echo $(</dev/stdin)"),
         )
     }
 
@@ -174,7 +144,7 @@ class ShellTest {
         // validate stdin to first command in script
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("xargs echo $1", stdin = "foo")
+            Shell.executeScriptCaptureStdout("xargs echo $1", stdin = "foo"),
         )
     }
 
@@ -184,7 +154,7 @@ class ShellTest {
         // validate stdin to first command in script
         Assert.assertEquals(
             "foo\n",
-            Shell.executeScriptCaptureStdout("echo $(</dev/stdin)", stdin = "foo")
+            Shell.executeScriptCaptureStdout("echo $(</dev/stdin)", stdin = "foo"),
         )
     }
 
@@ -199,7 +169,7 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent()
-            )
+            ),
         )
     }
 
@@ -214,8 +184,8 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
-                stdin = "foo"
-            )
+                stdin = "foo",
+            ),
         )
     }
 
@@ -230,8 +200,8 @@ class ShellTest {
                     cat /data/local/tmp/foofile
                 """
                     .trimIndent(),
-                stdin = "foo"
-            )
+                stdin = "foo",
+            ),
         )
     }
 
@@ -241,7 +211,7 @@ class ShellTest {
         val path =
             Shell.createRunnableExecutable(
                 name = "myScript.sh",
-                inputStream = "echo foo".byteInputStream()
+                inputStream = "echo foo".byteInputStream(),
             )
         try {
             Assert.assertEquals("foo\n", Shell.executeScriptCaptureStdout(path))
@@ -280,42 +250,63 @@ class ShellTest {
 
     @SdkSuppress(minSdkVersion = 23)
     @Test
-    fun killTermProcessesAndWait() {
+    fun killProcessesAndWait() {
         // validate that killTermProcessesAndWait kills bg process
         val backgroundProcess = getBackgroundSpinningProcess()
         assertTrue(backgroundProcess.isAlive())
-        Shell.terminateProcessesAndWait(
-            KILL_WAIT_POLL_PERIOD_MS,
-            KILL_WAIT_POLL_MAX_COUNT,
-            backgroundProcess
-        )
+        Shell.killProcessesAndWait(listOf(backgroundProcess))
         assertFalse(backgroundProcess.isAlive())
     }
 
     @SdkSuppress(minSdkVersion = 23)
     @Test
-    fun killTermProcessesAndWait_allowBackground() {
+    fun killProcessesAndWait_nonExistentProcess() {
+        Shell.killProcessesAndWait(
+            processName = Packages.FAKE,
+            processKiller = { fail("shouldn't execute process killer, no process of this name") },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = 23)
+    @Test
+    fun killProcessesAndWait_failure() {
+        // validate that killTermProcessesAndWait kills bg process
+        val backgroundProcess = getBackgroundSpinningProcess()
+        assertTrue(backgroundProcess.isAlive())
+        assertFailsWith<IllegalStateException> {
+            Shell.killProcessesAndWait(listOf(backgroundProcess), waitPollMaxCount = 5) {
+                // noop, process not killed!
+            }
+        }
+
+        var failureMessage = ""
+        Shell.killProcessesAndWait(
+            listOf(backgroundProcess),
+            waitPollMaxCount = 5,
+            onFailure = { error -> failureMessage = error },
+        ) {
+            // noop, process not killed!
+        }
+        assertTrue(failureMessage.startsWith("Failed to stop "))
+        assertTrue(backgroundProcess.isAlive())
+    }
+
+    @SdkSuppress(minSdkVersion = 23)
+    @Test
+    fun killProcessesAndWait_allowBackground() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
         val backgroundProcess2 = getBackgroundSpinningProcess()
 
         assertTrue(backgroundProcess1.isAlive())
         assertTrue(backgroundProcess2.isAlive())
 
-        Shell.terminateProcessesAndWait(
-            KILL_WAIT_POLL_PERIOD_MS,
-            KILL_WAIT_POLL_MAX_COUNT,
-            backgroundProcess1
-        )
+        Shell.killProcessesAndWait(listOf(backgroundProcess1))
 
         // Only process 1 should be killed
         assertFalse(backgroundProcess1.isAlive())
         assertTrue(backgroundProcess2.isAlive())
 
-        Shell.terminateProcessesAndWait(
-            KILL_WAIT_POLL_PERIOD_MS,
-            KILL_WAIT_POLL_MAX_COUNT,
-            backgroundProcess2
-        )
+        Shell.killProcessesAndWait(listOf(backgroundProcess2))
 
         // Now both are killed
         assertFalse(backgroundProcess1.isAlive())
@@ -324,19 +315,14 @@ class ShellTest {
 
     @SdkSuppress(minSdkVersion = 23)
     @Test
-    fun killTermProcessesAndWait_multi() {
+    fun killProcessesAndWait_multi() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
         val backgroundProcess2 = getBackgroundSpinningProcess()
 
         assertTrue(backgroundProcess1.isAlive())
         assertTrue(backgroundProcess2.isAlive())
 
-        Shell.terminateProcessesAndWait(
-            KILL_WAIT_POLL_PERIOD_MS,
-            KILL_WAIT_POLL_MAX_COUNT,
-            backgroundProcess1,
-            backgroundProcess2
-        )
+        Shell.killProcessesAndWait(listOf(backgroundProcess1, backgroundProcess2))
 
         // both processes should be killed
         assertFalse(backgroundProcess1.isAlive())
@@ -345,18 +331,14 @@ class ShellTest {
 
     @SdkSuppress(minSdkVersion = 23)
     @Test
-    fun killTermAllAndWait() {
+    fun killProcessesAndWait_processName() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
         val backgroundProcess2 = getBackgroundSpinningProcess()
 
         assertTrue(backgroundProcess1.isAlive())
         assertTrue(backgroundProcess2.isAlive())
 
-        Shell.terminateProcessesAndWait(
-            KILL_WAIT_POLL_PERIOD_MS,
-            KILL_WAIT_POLL_MAX_COUNT,
-            BACKGROUND_SPINNING_PROCESS_NAME
-        )
+        Shell.killProcessesAndWait(BACKGROUND_SPINNING_PROCESS_NAME)
 
         assertFalse(backgroundProcess1.isAlive())
         assertFalse(backgroundProcess2.isAlive())
@@ -377,7 +359,7 @@ class ShellTest {
         } else {
             assertFalse(
                 Shell.executeScriptCaptureStdout("id").contains("uid=0(root)"),
-                "Shell.isSessionRooted() is false so user should not be root"
+                "Shell.isSessionRooted() is false so user should not be root",
             )
         }
     }
@@ -433,20 +415,169 @@ class ShellTest {
                         // Api 26-27
                         "quicken",
                         // Api 28 and above
-                        "run-from-apk"
+                        "run-from-apk",
                     ),
             message = "Unexpected status value: $status",
         )
     }
 
-    @RequiresApi(21)
+    @Test
+    fun parseCompilationMode() {
+        // Captured on API 26 emulator
+        assertEquals(
+            expected = "quicken",
+            actual =
+                Shell.parseCompilationMode(
+                    26,
+                    """
+                      Dexopt state:
+                          [androidx.benchmark.test]
+                            Instruction Set: x86
+                              path: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/base.apk
+                              status: /data/app/androidx.benchmark.test-C3VDUG1iLystEGyQTxcspA==/oat/x86/base.odex[status=kOatUpToDate, compilat
+                              ion_filter=quicken]
+        """
+                        .trimIndent(),
+                ),
+        )
+
+        // Captured on API 26 sailfish
+        assertEquals(
+            expected = "speed",
+            actual =
+                Shell.parseCompilationMode(
+                    26,
+                    """
+                    Dexopt state:
+                      [androidx.compose.foundation.layout.benchmark.test]
+                        path: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/base.apk
+                          arm64: /data/app/androidx.compose.foundation.layout.benchmark.test-pBhSh_spHfjDL-5jgzu_Jg==/oat/arm64/base.odex[status=kOatUpToDate, compilation_filter=speed]
+        """
+                        .trimIndent(),
+                ),
+        )
+
+        // Captured on API 28 or higher device, duplicated from comment, specifics not known
+        assertEquals(
+            expected = "verify",
+            actual =
+                Shell.parseCompilationMode(
+                    29,
+                    """
+                Dexopt state:
+                 [com.android.settings]
+                   path: .../SettingsGoogle.apk
+                     arm64: [status=verify] [reason=vdex] [primary-abi]
+                       [location is .../SettingsGoogle.vdex]
+
+                ## These lines added for test purposes
+                ## status=0 []
+        """
+                        .trimIndent(),
+                ),
+        )
+
+        // Captured on API 32 emulator
+        assertEquals(
+            expected = "run-from-apk",
+            actual =
+                Shell.parseCompilationMode(
+                    32,
+                    """
+                Dexopt state:
+                  [androidx.benchmark.test]
+                    path: /data/app/~~coMYW_NCkevOuZyH32n5Ag==/androidx.benchmark.test-kcNBMDGJ58lezaNWmNyTzQ==/base.apk
+                      x86_64: [status=run-from-apk] [reason=unknown]
+                """
+                        .trimIndent(),
+                ),
+        )
+    }
+
+    @Test
+    fun psLineContainsProcess() {
+        // shell executables
+        "root      10065 10061 14848  3932  poll_sched 7bcaf1fc8c S /data/local/tmp/tracebox"
+            .apply {
+                assertTrue(Shell.psLineContainsProcess(this, "tracebox"))
+                assertFalse(Shell.psLineContainsProcess(this, "tracebo"))
+            }
+
+        "root      10109 1     11552  1140  poll_sched 78c86eac8c S ./tracebox"
+            .apply {
+                assertTrue(Shell.psLineContainsProcess(this, "tracebox"))
+                assertFalse(Shell.psLineContainsProcess(this, "tracebo"))
+            }
+
+        // app
+        "u0_a140       9253  9778   15120128 139856 do_epoll_wait       0 S example.app"
+            .apply {
+                assertTrue(Shell.psLineContainsProcess(this, "example.app"))
+                assertFalse(Shell.psLineContainsProcess(this, "example.ap"))
+            }
+        // app subprocess
+        "u0_a140       9253  9778   15120128 139856 do_epoll_wait       0 S example.app:ui"
+            .apply {
+                assertTrue(Shell.psLineContainsProcess(this, "example.app:ui"))
+                assertTrue(Shell.psLineContainsProcess(this, "example.app"))
+                assertFalse(Shell.psLineContainsProcess(this, "example.ap"))
+            }
+    }
+
+    @Test
+    fun fullProcessNameMatchesProcess() {
+        // shell executables
+        assertTrue(Shell.fullProcessNameMatchesProcess("/data/local/tmp/tracebox", "tracebox"))
+        assertFalse(Shell.fullProcessNameMatchesProcess("/data/local/tmp/tracebox", "tracebo"))
+
+        assertTrue(Shell.fullProcessNameMatchesProcess("./tracebox", "tracebox"))
+        assertFalse(Shell.fullProcessNameMatchesProcess("./tracebox", "tracebo"))
+
+        // app
+        assertTrue(Shell.fullProcessNameMatchesProcess("example.app", "example.app"))
+        assertFalse(Shell.fullProcessNameMatchesProcess("example.app", "example.ap"))
+
+        // app subprocess
+        assertTrue(Shell.fullProcessNameMatchesProcess("example.app:ui", "example.app:ui"))
+        assertTrue(Shell.fullProcessNameMatchesProcess("example.app:ui", "example.app"))
+        assertFalse(Shell.fullProcessNameMatchesProcess("example.app:ui", "example.ap"))
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 36)
+    fun pgrepLF() {
+        val processPids = Shell.pgrepLF(Packages.TEST)
+        assertTrue(
+            processPids.any { it.processName == Packages.TEST },
+            "expected package name to be contained in output:\n${processPids.joinToString("\n")}",
+        )
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 35)
+    fun pgrepLFBelowApi36() {
+        val processPids = Shell.pgrepLF(Packages.TEST)
+        assertTrue(
+            processPids.any { it.processName == Packages.TEST },
+            "expected package name to be contained in output:\n${processPids.joinToString("\n")}",
+        )
+    }
+
+    @Test
+    fun enablePackages() {
+        Shell.enablePackages(listOf(Packages.FAKE, Packages.FAKE + "1"))
+    }
+
+    @Test
+    fun disablePackages() {
+        Shell.disablePackages(listOf(Packages.FAKE, Packages.FAKE + "1"))
+    }
+
     private fun pidof(packageName: String): Int? {
         return Shell.getPidsForProcess(packageName).firstOrNull()
     }
 
     companion object {
-        const val KILL_WAIT_POLL_PERIOD_MS = 50L
-        const val KILL_WAIT_POLL_MAX_COUNT = 50
 
         /**
          * Run the shell command "yes" as a background process to enable testing process killing /

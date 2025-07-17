@@ -23,10 +23,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -363,8 +364,7 @@ public class TransitionManager {
      * @throws IllegalArgumentException if {@code transition} returns {@code false} from
      *                                  {@link Transition#isSeekingSupported()}.
      */
-    @Nullable
-    public static TransitionSeekController createSeekController(
+    public static @Nullable TransitionSeekController createSeekController(
             @NonNull Scene scene,
             @NonNull Transition transition
     ) {
@@ -428,7 +428,7 @@ public class TransitionManager {
      *
      * @param sceneRoot The root of the View hierarchy to run the transition on.
      */
-    public static void beginDelayedTransition(@NonNull final ViewGroup sceneRoot) {
+    public static void beginDelayedTransition(final @NonNull ViewGroup sceneRoot) {
         beginDelayedTransition(sceneRoot, null);
     }
 
@@ -455,7 +455,7 @@ public class TransitionManager {
      * @param transition The transition to use for this change. A
      *                   value of null causes the TransitionManager to use the default transition.
      */
-    public static void beginDelayedTransition(@NonNull final ViewGroup sceneRoot,
+    public static void beginDelayedTransition(final @NonNull ViewGroup sceneRoot,
             @Nullable Transition transition) {
         if (!sPendingTransitions.contains(sceneRoot) && sceneRoot.isLaidOut()) {
             if (Transition.DBG) {
@@ -499,9 +499,8 @@ public class TransitionManager {
      * @throws IllegalArgumentException if {@code transition} returns {@code false} from
      *                                  {@link Transition#isSeekingSupported()}.
      */
-    @Nullable
-    public static TransitionSeekController controlDelayedTransition(
-            @NonNull final ViewGroup sceneRoot,
+    public static @Nullable TransitionSeekController controlDelayedTransition(
+            final @NonNull ViewGroup sceneRoot,
             @NonNull Transition transition
     ) {
         if (sPendingTransitions.contains(sceneRoot) || !sceneRoot.isLaidOut()

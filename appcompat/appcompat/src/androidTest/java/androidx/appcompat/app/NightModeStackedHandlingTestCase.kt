@@ -32,7 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import junit.framework.Assert.assertNotNull
 import junit.framework.Assert.assertNotSame
 import org.junit.Test
@@ -124,7 +124,7 @@ public class NightModeStackedHandlingTestCase {
                 NightModeUtils.assertConfigurationNightModeEquals(
                     "Activity ${activity.title}'s effective configuration has night mode set",
                     Configuration.UI_MODE_NIGHT_YES,
-                    activityC.effectiveConfiguration!!
+                    activityC.effectiveConfiguration!!,
                 )
             }
         }
@@ -222,7 +222,7 @@ public class NightModeStackedHandlingTestCase {
                 NightModeUtils.assertConfigurationNightModeEquals(
                     "Activity ${activity.title}'s effective configuration has night mode set",
                     Configuration.UI_MODE_NIGHT_YES,
-                    activity.effectiveConfiguration!!
+                    activity.effectiveConfiguration!!,
                 )
             }
         }
@@ -286,7 +286,7 @@ public class NightModeStackedHandlingTestCase {
                 NightModeUtils.assertConfigurationNightModeEquals(
                     "Activity ${activity.title}'s effective configuration has night mode set",
                     Configuration.UI_MODE_NIGHT_NO,
-                    activity.effectiveConfiguration!!
+                    activity.effectiveConfiguration!!,
                 )
             }
         }

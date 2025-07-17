@@ -18,17 +18,32 @@ package androidx.compose.ui.text.input
 
 import android.view.View
 import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.ExtractedText
 import android.view.inputmethod.InputConnection
+import android.widget.EditText
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusEventModifierNode
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.input.pointer.MatrixPositionCalculator
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.PlatformTextInputModifierNode
 import androidx.compose.ui.platform.establishTextInputSession
+import androidx.compose.ui.platform.platformTextInputServiceInterceptor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -152,7 +167,7 @@ class PlatformTextInputViewIntegrationTest {
                     object : TestInputMethodRequest(view) {
                         override fun commitText(
                             text: CharSequence?,
-                            newCursorPosition: Int
+                            newCursorPosition: Int,
                         ): Boolean {
                             request1Texts += text.toString()
                             return true
@@ -177,7 +192,7 @@ class PlatformTextInputViewIntegrationTest {
                         object : TestInputMethodRequest(view) {
                             override fun commitText(
                                 text: CharSequence?,
-                                newCursorPosition: Int
+                                newCursorPosition: Int,
                             ): Boolean {
                                 request2Texts += text.toString()
                                 return true
@@ -247,6 +262,8 @@ class PlatformTextInputViewIntegrationTest {
     @Test
     fun connectionClosed_whenOuterSessionCanceled() {
         setupContent()
+        // keep a strong reference to created InputConnection so it's not collected by GC
+        var ic: InputConnection?
         val sessionJob =
             coroutineScope.launch {
                 try {
@@ -271,7 +288,10 @@ class PlatformTextInputViewIntegrationTest {
             }
         expect(0)
 
-        rule.runOnIdle { assertThat(hostView.onCreateInputConnection(EditorInfo())).isNotNull() }
+        rule.runOnIdle {
+            ic = hostView.onCreateInputConnection(EditorInfo())
+            assertThat(ic).isNotNull()
+        }
 
         rule.runOnIdle {
             sessionJob.cancel()
@@ -374,6 +394,8 @@ class PlatformTextInputViewIntegrationTest {
     fun connectionClosed_whenInnerSessionCanceled() {
         setupContent()
         lateinit var sessionJob: Job
+        // keep a strong reference to created InputConnection so it's not collected by GC
+        var ic: InputConnection?
         coroutineScope.launch {
             node1.establishTextInputSession {
                 sessionJob = launch {
@@ -395,7 +417,10 @@ class PlatformTextInputViewIntegrationTest {
         }
         expect(0)
 
-        rule.runOnIdle { assertThat(hostView.onCreateInputConnection(EditorInfo())).isNotNull() }
+        rule.runOnIdle {
+            ic = hostView.onCreateInputConnection(EditorInfo())
+            assertThat(ic).isNotNull()
+        }
 
         rule.runOnIdle {
             sessionJob.cancel()
@@ -452,7 +477,7 @@ class PlatformTextInputViewIntegrationTest {
     // closeConnection is only supported on API 24+
     @SdkSuppress(minSdkVersion = 24)
     @Test
-    fun connectionClosed_whenCreateConnectionCalledAgain() {
+    fun connectionNotClosed_whenCreateConnectionCalledAgain() {
         class TestConnection(view: View) : BaseInputConnection(view, true) {
             var closeCalls = 0
 
@@ -484,15 +509,15 @@ class PlatformTextInputViewIntegrationTest {
 
             assertThat(connections).hasSize(2)
             val connection2 = connections.last()
-            assertThat(connection1.closeCalls).isEqualTo(1)
+            assertThat(connection1.closeCalls).isEqualTo(0)
             assertThat(connection2.closeCalls).isEqualTo(0)
 
             hostView.onCreateInputConnection(EditorInfo())
 
             assertThat(connections).hasSize(3)
             val connection3 = connections.last()
-            assertThat(connection1.closeCalls).isEqualTo(1)
-            assertThat(connection2.closeCalls).isEqualTo(1)
+            assertThat(connection1.closeCalls).isEqualTo(0)
+            assertThat(connection2.closeCalls).isEqualTo(0)
             assertThat(connection3.closeCalls).isEqualTo(0)
         }
 
@@ -501,7 +526,7 @@ class PlatformTextInputViewIntegrationTest {
 
     @SdkSuppress(minSdkVersion = 24)
     @Test
-    fun innerSessionCanceled_whenIsolatedFromOuterSession_whenConnectionClosed() {
+    fun innerSessionNotCanceled_whenIsolatedFromOuterSession_whenConnectionClosed() {
         setupContent()
         lateinit var innerJob: Job
         val outerJob =
@@ -520,15 +545,14 @@ class PlatformTextInputViewIntegrationTest {
         }
 
         rule.runOnIdle {
-            // Outer job isn't canceled, only the inner one.
             assertThat(outerJob.isActive).isTrue()
-            assertThat(innerJob.isActive).isFalse()
+            assertThat(innerJob.isActive).isTrue()
         }
     }
 
     @SdkSuppress(minSdkVersion = 24)
     @Test
-    fun cancellationPropagates_whenConnectionClosed() {
+    fun cancellationDoesNotPropagate_whenConnectionClosed() {
         setupContent()
         val sessionJob =
             coroutineScope.launch {
@@ -541,7 +565,7 @@ class PlatformTextInputViewIntegrationTest {
             connection.closeConnection()
         }
 
-        rule.runOnIdle { assertThat(sessionJob.isActive).isFalse() }
+        rule.runOnIdle { assertThat(sessionJob.isActive).isTrue() }
     }
 
     @Test
@@ -614,6 +638,79 @@ class PlatformTextInputViewIntegrationTest {
         }
     }
 
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusSwitchToAndroidViewNonEditor_hidesKeyboard() {
+        lateinit var button: android.widget.Button
+        val inputMethodManager = TestInputMethodManager()
+        platformTextInputServiceInterceptor = { original ->
+            TextInputServiceAndroid(
+                view = (original as TextInputServiceAndroid).view,
+                rootPositionCalculator = FakeMatrixPositionCalculator,
+                inputMethodManager = inputMethodManager,
+            )
+        }
+        rule.setContent {
+            Column {
+                Box(TestElement { node1 = it }.focusable().testTag("tag"))
+                AndroidView(
+                    factory = { context ->
+                        android.widget.Button(context).also {
+                            it.isFocusableInTouchMode = true
+                            button = it
+                        }
+                    }
+                )
+            }
+        }
+
+        rule.onNodeWithTag("tag").requestFocus()
+        rule.waitForIdle()
+
+        inputMethodManager.reset()
+
+        // fake TextField is active, a session is started. Now let's request focus on Button
+        rule.runOnUiThread { button.requestFocus() }
+
+        rule.runOnIdle {
+            assertThat(inputMethodManager.restartCalls).isEqualTo(1)
+            assertThat(inputMethodManager.hideKeyboardCalls).isEqualTo(1)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    @Test
+    fun focusSwitchToAndroidViewEditor_doesNotHideKeyboard() {
+        lateinit var editText: EditText
+        val inputMethodManager = TestInputMethodManager()
+        platformTextInputServiceInterceptor = { original ->
+            TextInputServiceAndroid(
+                view = (original as TextInputServiceAndroid).view,
+                rootPositionCalculator = FakeMatrixPositionCalculator,
+                inputMethodManager = inputMethodManager,
+            )
+        }
+        rule.setContent {
+            Column {
+                Box(TestElement { node1 = it }.focusable().testTag("tag"))
+                AndroidView(factory = { EditText(it).also { editText = it } })
+            }
+        }
+
+        rule.onNodeWithTag("tag").requestFocus()
+
+        rule.waitForIdle()
+        inputMethodManager.reset()
+
+        // fake TextField is active, a session is started. Now let's request focus on EditText
+        rule.runOnUiThread { editText.requestFocus() }
+
+        rule.runOnIdle {
+            assertThat(inputMethodManager.restartCalls).isEqualTo(0)
+            assertThat(inputMethodManager.hideKeyboardCalls).isEqualTo(0)
+        }
+    }
+
     private fun setupContent() {
         rule.setContent {
             hostView = LocalView.current as AndroidComposeView
@@ -634,10 +731,89 @@ class PlatformTextInputViewIntegrationTest {
     }
 
     private class TestNode(var onNode: (PlatformTextInputModifierNode) -> Unit) :
-        Modifier.Node(), PlatformTextInputModifierNode {
+        Modifier.Node(), PlatformTextInputModifierNode, FocusEventModifierNode {
+
+        private var inputSessionJob: Job? = null
+
+        private fun startInputSession() {
+            inputSessionJob =
+                coroutineScope.launch {
+                    establishTextInputSession {
+                        launch {
+                            startInputMethod(
+                                object : TestInputMethodRequest(view) {
+                                    override fun createInputConnection(
+                                        outAttributes: EditorInfo
+                                    ): InputConnection = BaseInputConnection(view, true)
+                                }
+                            )
+                        }
+                        awaitCancellation()
+                    }
+                }
+        }
+
+        private fun disposeInputSession() {
+            inputSessionJob?.cancel()
+            inputSessionJob = null
+        }
 
         override fun onAttach() {
             onNode(this)
         }
+
+        override fun onFocusEvent(focusState: FocusState) {
+            if (focusState.isFocused) {
+                startInputSession()
+            } else {
+                disposeInputSession()
+            }
+        }
     }
+}
+
+private object FakeMatrixPositionCalculator : MatrixPositionCalculator {
+    override fun localToScreen(localTransform: Matrix) = Unit
+
+    override fun localToScreen(localPosition: Offset) = localPosition
+
+    override fun screenToLocal(positionOnScreen: Offset) = positionOnScreen
+}
+
+@Suppress("DEPRECATION")
+private class TestInputMethodManager : InputMethodManager {
+    var restartCalls = 0
+    var showKeyboardCalls = 0
+    var hideKeyboardCalls = 0
+
+    fun reset() {
+        restartCalls = 0
+        showKeyboardCalls = 0
+        hideKeyboardCalls = 0
+    }
+
+    override fun isActive(): Boolean = true
+
+    override fun restartInput() {
+        restartCalls++
+    }
+
+    override fun showSoftInput() {
+        showKeyboardCalls++
+    }
+
+    override fun hideSoftInput() {
+        hideKeyboardCalls++
+    }
+
+    override fun updateExtractedText(token: Int, extractedText: ExtractedText) {}
+
+    override fun updateSelection(
+        selectionStart: Int,
+        selectionEnd: Int,
+        compositionStart: Int,
+        compositionEnd: Int,
+    ) {}
+
+    override fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo) {}
 }

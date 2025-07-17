@@ -16,10 +16,11 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -38,13 +39,11 @@ public interface ImageProxyBundle {
      * @return If the id does not exist for the bundle, then the ListenableFuture will contain an
      * {@link IllegalArgumentException}.
      */
-    @NonNull
-    ListenableFuture<ImageProxy> getImageProxy(int captureId);
+    @NonNull ListenableFuture<ImageProxy> getImageProxy(int captureId);
 
     /**
      * Returns the list of identifiers for the capture that produced the data in
      * this bundle.
      */
-    @NonNull
-    List<Integer> getCaptureIds();
+    @NonNull List<Integer> getCaptureIds();
 }

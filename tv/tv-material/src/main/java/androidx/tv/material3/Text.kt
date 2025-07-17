@@ -24,6 +24,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Paragraph
@@ -106,14 +108,14 @@ fun Text(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
 
     val textColor = color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }
 
     BasicText(
         text,
-        modifier,
+        modifier.graphicsLayer { this.compositingStrategy = CompositingStrategy.Offscreen },
         style.merge(
             color = textColor,
             fontSize = fontSize,
@@ -123,13 +125,13 @@ fun Text(
             fontFamily = fontFamily,
             textDecoration = textDecoration,
             fontStyle = fontStyle,
-            letterSpacing = letterSpacing
+            letterSpacing = letterSpacing,
         ),
         onTextLayout,
         overflow,
         softWrap,
         maxLines,
-        minLines
+        minLines,
     )
 }
 
@@ -204,13 +206,14 @@ fun Text(
     minLines: Int = 1,
     inlineContent: Map<String, InlineTextContent> = mapOf(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     val textColor = color.takeOrElse { style.color.takeOrElse { LocalContentColor.current } }
 
     BasicText(
         text = text,
-        modifier = modifier,
+        modifier =
+            modifier.graphicsLayer { this.compositingStrategy = CompositingStrategy.Offscreen },
         style =
             style.merge(
                 color = textColor,
@@ -221,14 +224,14 @@ fun Text(
                 fontFamily = fontFamily,
                 textDecoration = textDecoration,
                 fontStyle = fontStyle,
-                letterSpacing = letterSpacing
+                letterSpacing = letterSpacing,
             ),
         onTextLayout = onTextLayout,
         overflow = overflow,
         softWrap = softWrap,
         maxLines = maxLines,
         minLines = minLines,
-        inlineContent = inlineContent
+        inlineContent = inlineContent,
     )
 }
 

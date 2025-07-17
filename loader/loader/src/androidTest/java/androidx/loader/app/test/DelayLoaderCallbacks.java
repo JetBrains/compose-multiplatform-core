@@ -19,9 +19,10 @@ package androidx.loader.app.test;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -38,9 +39,8 @@ public class DelayLoaderCallbacks implements LoaderManager.LoaderCallbacks<Boole
         mDeliverResultLatch = deliverResultLatch;
     }
 
-    @NonNull
     @Override
-    public Loader<Boolean> onCreateLoader(int id, Bundle args) {
+    public @NonNull Loader<Boolean> onCreateLoader(int id, Bundle args) {
         mLoader = new DelayLoader(mContext, mDeliverResultLatch);
         return mLoader;
     }

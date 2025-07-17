@@ -21,8 +21,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} which lists features that make use of

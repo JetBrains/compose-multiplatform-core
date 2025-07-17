@@ -42,7 +42,6 @@ import androidx.compose.ui.semantics.semantics
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @sample androidx.tv.material3.samples.IconButtonSample
- *
  * @param onClick called when this button is clicked.
  * @param modifier the [Modifier] to be applied to this button.
  * @param onLongClick called when this button is long clicked (long-pressed).
@@ -73,7 +72,7 @@ fun IconButton(
     colors: ButtonColors = IconButtonDefaults.colors(),
     border: ButtonBorder = IconButtonDefaults.border(),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Surface(
         modifier =
@@ -86,12 +85,12 @@ fun IconButton(
         scale = scale.toClickableSurfaceScale(),
         border = border.toClickableSurfaceBorder(),
         glow = glow.toClickableSurfaceGlow(),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
     }
 }
@@ -109,7 +108,6 @@ fun IconButton(
  * The default text style for internal [Text] components will be set to [Typography.labelLarge].
  *
  * @sample androidx.tv.material3.samples.OutlinedIconButtonSample
- *
  * @param onClick called when this button is clicked.
  * @param modifier the [Modifier] to be applied to this button.
  * @param onLongClick called when this card is long clicked (long-pressed).
@@ -140,7 +138,7 @@ fun OutlinedIconButton(
     colors: ButtonColors = OutlinedIconButtonDefaults.colors(),
     border: ButtonBorder = OutlinedIconButtonDefaults.border(),
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Surface(
         modifier =
@@ -155,12 +153,12 @@ fun OutlinedIconButton(
         scale = scale.toClickableSurfaceScale(),
         border = border.toClickableSurfaceBorder(),
         glow = glow.toClickableSurfaceGlow(),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
     }
 }

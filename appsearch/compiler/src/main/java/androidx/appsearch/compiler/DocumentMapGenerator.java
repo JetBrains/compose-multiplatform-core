@@ -19,8 +19,6 @@ package androidx.appsearch.compiler;
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_ANNOTATION_CLASS;
 import static androidx.appsearch.compiler.IntrospectionHelper.RESTRICT_TO_SCOPE_CLASS;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.common.GeneratedAnnotationSpecs;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.AnnotationSpec;
@@ -31,6 +29,8 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -59,8 +59,7 @@ public class DocumentMapGenerator {
      * @param restrictGeneratedCodeToLib Whether to annotate the generated class with
      *                                   {@code RestrictTo(LIBRARY)}.
      */
-    @NonNull
-    public static JavaFile generate(
+    public static @NonNull JavaFile generate(
             @NonNull ProcessingEnvironment processingEnv,
             @NonNull String packageName,
             @NonNull String classSuffix,
@@ -114,12 +113,16 @@ public class DocumentMapGenerator {
     private static CodeBlock getMapConstructionCode(
             @NonNull Map<String, List<String>> documentClassMap) {
         CodeBlock.Builder mapContentBuilder = CodeBlock.builder();
-        for (Map.Entry<String, List<String>> entry : documentClassMap.entrySet()) {
-            String valueString = entry.getValue().stream().map(
-                    value -> "\"" + value + "\"").collect(Collectors.joining(", "));
-            mapContentBuilder.addStatement("result.put($S, $T.asList($L))", entry.getKey(),
-                    ClassName.get(Arrays.class), valueString);
-        }
+
+        documentClassMap.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEachOrdered(entry -> {
+                    String valueString = entry.getValue().stream().map(
+                            value -> "\"" + value + "\"").collect(Collectors.joining(", "));
+                    mapContentBuilder.addStatement("result.put($S, $T.asList($L))", entry.getKey(),
+                            ClassName.get(Arrays.class), valueString);
+                });
         return mapContentBuilder.build();
     }
 

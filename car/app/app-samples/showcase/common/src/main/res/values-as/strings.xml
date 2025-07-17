@@ -231,6 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"বাৰ্তাৰ টেম্পলে’টৰ ডেম’"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"ইয়াত বাৰ্তা ওলাব।\nদ্বিতীয় শাৰীত অধিক পাঠ।"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"চুটি বাৰ্তাৰ টেমপ্লে’টৰ ডেম’"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"শাখা হিচাপে ৰখা বস্তুৰ টেম্পলে’টৰ ডেম’"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"ৰেডিঅ’ বুটামৰ শাখা"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"ট’গলৰ শাখা"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"বহুত বেছি শাৰীৰ শাখা"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"গ্ৰিডৰ বস্তুৰ বাছনি"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"পে’নৰ টেম্পলে’টৰ ডেম’"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"ঠাইৰ সূচীৰ টেম্পলে’টৰ ডেম’"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"ঠাইসমূহ ব্ৰাউজ কৰক"</string>
@@ -321,6 +326,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"কেৱল গৌণ কাৰ্যটোও বাছনি কৰিব পৰা যায়"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"সজোৱা কাৰ্য"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"গৌণ কাৰ্য আৰু সজোৱা কাৰ্য"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"এটা সঁচাকৈয়ে দীঘল শিৰোনামৰ সৈতে গৌণ কাৰ্য আৰু সজোৱা কাৰ্যসমূহ থকা শাৰী"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"শাৰীটোও বাছনি কৰিব পৰা যায়"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"গৌণ কাৰ্য বাছনি কৰা হৈছে"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"শাৰীৰ প্ৰাথমিক কাৰ্য বাছনি কৰা হৈছে"</string>
@@ -334,7 +340,7 @@
     <string name="showcase_demos_title" msgid="1542092687878113304">"ডেম’ দেখুৱাওক"</string>
     <string name="template_layouts_demo_title" msgid="788249269446087847">"টেমপ্লে’ট লে’আউটৰ ডেম’"</string>
     <string name="grid_template_menu_demo_title" msgid="7096285873490705119">"গ্ৰিড টেমপ্লে’টৰ ডেম’"</string>
-    <string name="voice_access_demo_title" msgid="3825223890895361496">"কণ্ঠধ্বনিৰে এক্সেছ কৰাৰ ডেম’ৰ স্ক্ৰীন"</string>
+    <string name="voice_access_demo_title" msgid="3825223890895361496">"ভইচেৰে এক্সেছ কৰাৰ ডেম’ৰ স্ক্ৰীন"</string>
     <string name="user_interactions_demo_title" msgid="1356952319161314986">"ব্যৱহাৰকাৰীৰ ভাব-বিনিময়"</string>
     <string name="request_permission_menu_demo_title" msgid="4796486779527427017">"অনুমতিৰ অনুৰোধৰ ডেম’"</string>
     <string name="application_overflow_title" msgid="396427940886169325">"এপ্লিকেশ্বন অভাৰফ্ল’ৰ মান্যতা প্ৰদানকাৰী"</string>

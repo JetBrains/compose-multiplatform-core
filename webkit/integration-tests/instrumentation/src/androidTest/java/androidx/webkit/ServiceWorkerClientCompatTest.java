@@ -24,11 +24,14 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.webkit.test.common.PollingCheck;
+import androidx.webkit.test.common.WebViewOnUiThread;
+import androidx.webkit.test.common.WebkitUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
@@ -36,7 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -101,12 +104,10 @@ public class ServiceWorkerClientCompatTest {
         public WebResourceResponse shouldInterceptRequest(WebView view,
                 WebResourceRequest request) {
             // Only return content for INDEX_URL, deny all other requests.
-            try {
-                if (request.getUrl().toString().equals(INDEX_URL)) {
-                    return new WebResourceResponse("text/html", "utf-8",
-                            new ByteArrayInputStream(INDEX_RAW_HTML.getBytes("UTF-8")));
-                }
-            } catch (UnsupportedEncodingException e) { }
+            if (request.getUrl().toString().equals(INDEX_URL)) {
+                return new WebResourceResponse("text/html", "utf-8",
+                        new ByteArrayInputStream(INDEX_RAW_HTML.getBytes(StandardCharsets.UTF_8)));
+            }
             return new WebResourceResponse("text/html", "UTF-8", null);
         }
     }
@@ -114,17 +115,15 @@ public class ServiceWorkerClientCompatTest {
     public static class InterceptServiceWorkerClient extends ServiceWorkerClientCompat {
         private final List<WebResourceRequest> mInterceptedRequests = new ArrayList<>();
 
-        @Nullable
         @Override
-        public WebResourceResponse shouldInterceptRequest(@NonNull WebResourceRequest request) {
+        public @Nullable WebResourceResponse shouldInterceptRequest(
+                @NonNull WebResourceRequest request) {
             // Records intercepted requests and only return content for SW_URL.
             mInterceptedRequests.add(request);
-            try {
-                if (request.getUrl().toString().equals(SW_URL)) {
-                    return new WebResourceResponse("application/javascript", "utf-8",
-                            new ByteArrayInputStream(SW_RAW_HTML.getBytes("UTF-8")));
-                }
-            } catch (java.io.UnsupportedEncodingException e) { }
+            if (request.getUrl().toString().equals(SW_URL)) {
+                return new WebResourceResponse("application/javascript", "utf-8",
+                        new ByteArrayInputStream(SW_RAW_HTML.getBytes(StandardCharsets.UTF_8)));
+            }
             return new WebResourceResponse("text/html", "UTF-8", null);
         }
 

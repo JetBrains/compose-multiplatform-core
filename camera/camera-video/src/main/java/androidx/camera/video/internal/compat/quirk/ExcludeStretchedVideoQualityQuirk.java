@@ -18,9 +18,10 @@ package androidx.camera.video.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.video.Quality;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary

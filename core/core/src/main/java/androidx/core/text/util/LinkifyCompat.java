@@ -31,13 +31,13 @@ import android.text.util.Linkify.TransformFilter;
 import android.webkit.WebView;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.PatternsCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Retention;
@@ -243,7 +243,7 @@ public final class LinkifyCompat {
      *  @param transformFilter Filter to allow the client code to update the link found.
      */
     public static void addLinks(@NonNull TextView text, @NonNull Pattern pattern,
-            @Nullable String defaultScheme, @Nullable String[] schemes,
+            @Nullable String defaultScheme, String @Nullable [] schemes,
             @Nullable MatchFilter matchFilter, @Nullable TransformFilter transformFilter) {
         if (shouldAddLinksFallbackToFramework()) {
             Api24Impl.addLinks(text, pattern, defaultScheme, schemes, matchFilter, transformFilter);
@@ -318,7 +318,7 @@ public final class LinkifyCompat {
      * @return True if at least one link is found and applied.
      */
     public static boolean addLinks(@NonNull Spannable spannable, @NonNull Pattern pattern,
-            @Nullable  String defaultScheme, @Nullable String[] schemes,
+             @Nullable String defaultScheme, String @Nullable [] schemes,
             @Nullable MatchFilter matchFilter, @Nullable TransformFilter transformFilter) {
         if (shouldAddLinksFallbackToFramework()) {
             return Api24Impl.addLinks(spannable, pattern, defaultScheme, schemes, matchFilter,
@@ -375,7 +375,7 @@ public final class LinkifyCompat {
         }
     }
 
-    private static String makeUrl(@NonNull String url, @NonNull String[] prefixes,
+    private static String makeUrl(@NonNull String url, String @NonNull [] prefixes,
             Matcher matcher, @Nullable TransformFilter filter) {
         if (filter != null) {
             url = filter.transformUrl(matcher, url);
@@ -546,13 +546,11 @@ public final class LinkifyCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void addLinks(TextView text, Pattern pattern, String defaultScheme, String[] schemes,
                 MatchFilter matchFilter, TransformFilter transformFilter) {
             Linkify.addLinks(text, pattern, defaultScheme, schemes, matchFilter, transformFilter);
         }
 
-        @DoNotInline
         static boolean addLinks(Spannable spannable, Pattern pattern, String defaultScheme,
                 String[] schemes, MatchFilter matchFilter, TransformFilter transformFilter) {
             return Linkify.addLinks(spannable, pattern, defaultScheme, schemes, matchFilter,

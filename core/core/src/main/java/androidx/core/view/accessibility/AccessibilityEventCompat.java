@@ -25,11 +25,11 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityRecord;
 import android.widget.EditText;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -582,12 +582,10 @@ public final class AccessibilityEventCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isAccessibilityDataSensitive(AccessibilityEvent event) {
             return event.isAccessibilityDataSensitive();
         }
 
-        @DoNotInline
         static void setAccessibilityDataSensitive(AccessibilityEvent event,
                 boolean accessibilityDataSensitive) {
             event.setAccessibilityDataSensitive(accessibilityDataSensitive);

@@ -39,6 +39,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.isOneOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -48,8 +49,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -102,6 +101,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import kotlinx.coroutines.Dispatchers;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -119,7 +120,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 
 @RunWith(AndroidJUnit4.class)
 public class WorkerWrapperTest extends DatabaseTest {
@@ -142,6 +142,8 @@ public class WorkerWrapperTest extends DatabaseTest {
     public void setUp() {
         mContext = ApplicationProvider.getApplicationContext();
         mTracer = mock(Tracer.class);
+        // Turn on tracing so we can ensure trace sections are correctly emitted.
+        when(mTracer.isEnabled()).thenReturn(true);
         mWorkerExceptionHandler = new TestWorkerExceptionHandler();
         mConfiguration = new Configuration.Builder()
                 .setExecutor(new SynchronousExecutor())
@@ -1001,8 +1003,7 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertBeginEndTraceSpans(periodicWork.getWorkSpec());
     }
 
-    @NonNull
-    private FutureListener runWorker(PeriodicWorkRequest periodicWork, Worker worker) {
+    private @NonNull FutureListener runWorker(PeriodicWorkRequest periodicWork, Worker worker) {
         WorkerWrapper workerWrapper =
                 createBuilder(periodicWork.getStringId()).withWorker(worker).build();
         FutureListener listener = createAndAddFutureListener(workerWrapper);
@@ -1279,9 +1280,8 @@ public class WorkerWrapperTest extends DatabaseTest {
                         .setInputData(new Data.Builder().putString("foo", "bar").build()).build();
         insertWork(work);
         WorkerFactory factory = new WorkerFactory() {
-            @Nullable
             @Override
-            public ListenableWorker createWorker(@NonNull Context appContext,
+            public @Nullable ListenableWorker createWorker(@NonNull Context appContext,
                     @NonNull String workerClassName, @NonNull WorkerParameters workerParameters) {
                 throw new IllegalStateException("Thrown in WorkerFactory Exception");
             }
@@ -1385,6 +1385,18 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(mWorkSpecDao.getState(work.getStringId()), is(FAILED));
     }
 
+    @Test
+    @SmallTest
+    public void testWorkRequest_truncatedTraceTag() {
+        char[] aLongTag = new char[256];
+        Arrays.fill(aLongTag, 'W');
+        OneTimeWorkRequest work =
+                new OneTimeWorkRequest.Builder(TestWorker.class)
+                        .setTraceTag(new String(aLongTag))
+                        .build();
+        assertThat(work.getWorkSpec().getTraceTag().length(), is(127));
+    }
+
     private WorkerWrapper.Builder createBuilder(String workSpecId) {
         return new WorkerWrapper.Builder(
                 mContext,
@@ -1397,8 +1409,8 @@ public class WorkerWrapperTest extends DatabaseTest {
         );
     }
 
-    @Nullable
-    private LatchWorker getLatchWorker(WorkRequest work, ExecutorService executorService) {
+    private @Nullable LatchWorker getLatchWorker(WorkRequest work,
+            ExecutorService executorService) {
         return (LatchWorker) mConfiguration.getWorkerFactory().createWorkerWithDefaultFallback(
                 mContext.getApplicationContext(),
                 LatchWorker.class.getName(),

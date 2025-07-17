@@ -28,12 +28,12 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -41,10 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Playback state for a {@link MediaSessionCompat}. This includes a state like
- * {@link PlaybackStateCompat#STATE_PLAYING}, the current playback position,
- * and the current control capabilities.
+ * Playback state for a {@link MediaSessionCompat}. This includes a state like {@link
+ * PlaybackStateCompat#STATE_PLAYING}, the current playback position, and the current control
+ * capabilities.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class PlaybackStateCompat implements Parcelable {
 
@@ -879,10 +883,14 @@ public final class PlaybackStateCompat implements Parcelable {
     };
 
     /**
-     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to
-     * extend the capabilities of the standard transport controls by exposing
-     * app specific actions to {@link MediaControllerCompat Controllers}.
+     * {@link PlaybackStateCompat.CustomAction CustomActions} can be used to extend the capabilities
+     * of the standard transport controls by exposing app specific actions to {@link
+     * MediaControllerCompat Controllers}.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class CustomAction implements Parcelable {
         private final String mAction;
         private final CharSequence mName;
@@ -1103,7 +1111,11 @@ public final class PlaybackStateCompat implements Parcelable {
 
     /**
      * Builder for {@link PlaybackStateCompat} objects.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private final List<PlaybackStateCompat.CustomAction> mCustomActions = new ArrayList<>();
 
@@ -1379,125 +1391,101 @@ public final class PlaybackStateCompat implements Parcelable {
     private static class Api21Impl {
         private Api21Impl() {}
 
-        @DoNotInline
         static PlaybackState.Builder createBuilder() {
             return new PlaybackState.Builder();
         }
 
-        @DoNotInline
         static void setState(PlaybackState.Builder builder, int state, long position,
                 float playbackSpeed, long updateTime) {
             builder.setState(state, position, playbackSpeed, updateTime);
         }
 
-        @DoNotInline
         static void setBufferedPosition(PlaybackState.Builder builder, long bufferedPosition) {
             builder.setBufferedPosition(bufferedPosition);
         }
 
-        @DoNotInline
         static void setActions(PlaybackState.Builder builder, long actions) {
             builder.setActions(actions);
         }
 
-        @DoNotInline
         static void setErrorMessage(PlaybackState.Builder builder, CharSequence error) {
             builder.setErrorMessage(error);
         }
 
-        @DoNotInline
         static void addCustomAction(PlaybackState.Builder builder,
                 PlaybackState.CustomAction customAction) {
             builder.addCustomAction(customAction);
         }
 
-        @DoNotInline
         static void setActiveQueueItemId(PlaybackState.Builder builder, long id) {
             builder.setActiveQueueItemId(id);
         }
 
-        @DoNotInline
         static List<PlaybackState.CustomAction> getCustomActions(PlaybackState state) {
             return state.getCustomActions();
         }
 
-        @DoNotInline
         static PlaybackState build(PlaybackState.Builder builder) {
             return builder.build();
         }
 
-        @DoNotInline
         static int getState(PlaybackState state) {
             return state.getState();
         }
 
-        @DoNotInline
         static long getPosition(PlaybackState state) {
             return state.getPosition();
         }
 
-        @DoNotInline
         static long getBufferedPosition(PlaybackState state) {
             return state.getBufferedPosition();
         }
 
-        @DoNotInline
         static float getPlaybackSpeed(PlaybackState state) {
             return state.getPlaybackSpeed();
         }
 
-        @DoNotInline
         static long getActions(PlaybackState state) {
             return state.getActions();
         }
 
-        @DoNotInline
         static CharSequence getErrorMessage(PlaybackState state) {
             return state.getErrorMessage();
         }
 
-        @DoNotInline
         static long getLastPositionUpdateTime(PlaybackState state) {
             return state.getLastPositionUpdateTime();
         }
 
-        @DoNotInline
         static long getActiveQueueItemId(PlaybackState state) {
             return state.getActiveQueueItemId();
         }
 
-        @DoNotInline
         static PlaybackState.CustomAction.Builder createCustomActionBuilder(String action,
                 CharSequence name, int icon) {
             return new PlaybackState.CustomAction.Builder(action, name, icon);
         }
 
-        @DoNotInline
         static void setExtras(PlaybackState.CustomAction.Builder builder, Bundle extras) {
             builder.setExtras(extras);
         }
 
-        @DoNotInline
         static PlaybackState.CustomAction build(PlaybackState.CustomAction.Builder builder) {
             return builder.build();
         }
 
-        @DoNotInline
         static Bundle getExtras(PlaybackState.CustomAction customAction) {
             return customAction.getExtras();
         }
 
-        @DoNotInline
         static String getAction(PlaybackState.CustomAction customAction) {
             return customAction.getAction();
         }
 
-        @DoNotInline
         static CharSequence getName(PlaybackState.CustomAction customAction) {
             return customAction.getName();
         }
 
-        @DoNotInline
         static int getIcon(PlaybackState.CustomAction customAction) {
             return customAction.getIcon();
         }
@@ -1507,12 +1495,10 @@ public final class PlaybackStateCompat implements Parcelable {
     private static class Api22Impl {
         private Api22Impl() {}
 
-        @DoNotInline
         static void setExtras(PlaybackState.Builder builder, Bundle extras) {
             builder.setExtras(extras);
         }
 
-        @DoNotInline
         static Bundle getExtras(PlaybackState state) {
             return state.getExtras();
         }

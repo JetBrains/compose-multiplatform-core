@@ -17,9 +17,8 @@
 package androidx.room.compiler.processing
 
 import androidx.room.compiler.codegen.CodeLanguage
+import androidx.room.compiler.codegen.XFileSpec
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.java.JavaTypeSpec
-import androidx.room.compiler.codegen.kotlin.KotlinTypeSpec
 import com.squareup.javapoet.JavaFile
 import com.squareup.kotlinpoet.FileSpec
 import java.io.OutputStream
@@ -45,7 +44,7 @@ interface XFiler {
         fileNameWithoutExtension: String,
         extension: String,
         originatingElements: List<XElement>,
-        mode: Mode = Mode.Isolating
+        mode: Mode = Mode.Isolating,
     ): OutputStream
 
     /**
@@ -59,7 +58,7 @@ interface XFiler {
     fun writeResource(
         filePath: Path,
         originatingElements: List<XElement>,
-        mode: Mode = Mode.Isolating
+        mode: Mode = Mode.Isolating,
     ): OutputStream
 
     /**
@@ -70,7 +69,7 @@ interface XFiler {
      */
     enum class Mode {
         Aggregating,
-        Isolating
+        Isolating,
     }
 }
 
@@ -82,21 +81,9 @@ fun FileSpec.writeTo(generator: XFiler, mode: XFiler.Mode = XFiler.Mode.Isolatin
     generator.write(this, mode)
 }
 
-fun XTypeSpec.writeTo(generator: XFiler, mode: XFiler.Mode = XFiler.Mode.Isolating) {
-    require(this.className.simpleNames.size == 1) { "XTypeSpec must be a top-level class." }
-    when (this.language) {
-        CodeLanguage.JAVA -> {
-            check(this is JavaTypeSpec)
-            JavaFile.builder(this.className.packageName, this.actual)
-                .build()
-                .writeTo(generator, mode)
-        }
-        CodeLanguage.KOTLIN -> {
-            check(this is KotlinTypeSpec)
-            FileSpec.builder(this.className.packageName, this.className.simpleNames.single())
-                .addType(this.actual)
-                .build()
-                .writeTo(generator, mode)
-        }
-    }
-}
+fun XTypeSpec.writeTo(
+    language: CodeLanguage,
+    packageName: String,
+    generator: XFiler,
+    mode: XFiler.Mode = XFiler.Mode.Isolating,
+) = XFileSpec.of(packageName, this).writeTo(language, generator, mode)

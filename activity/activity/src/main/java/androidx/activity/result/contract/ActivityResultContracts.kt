@@ -22,6 +22,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
+import android.media.ApplicationMediaCapabilities
+import android.media.MediaFeature.HdrType.DOLBY_VISION
+import android.media.MediaFeature.HdrType.HDR10
+import android.media.MediaFeature.HdrType.HDR10_PLUS
+import android.media.MediaFeature.HdrType.HLG
+import android.media.MediaFormat
 import android.net.Uri
 import android.os.Build
 import android.os.ext.SdkExtensions.getExtensionVersion
@@ -33,16 +39,19 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.GetMultipleContents.Companion.getClipDataUris
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.ACTION_SYSTEM_FALLBACK_PICK_IMAGES
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.GMS_ACTION_PICK_IMAGES
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.GMS_EXTRA_PICK_IMAGES_MAX
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.getGmsPicker
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.Companion.getSystemFallbackPicker
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.annotation.CallSuper
+import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
+import kotlin.math.min
 
 /** A collection of some standard activity call contracts, as provided by android. */
 class ActivityResultContracts private constructor() {
@@ -170,7 +179,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Map<String, Boolean>>? {
             if (input.isEmpty()) {
                 return SynchronousResult(emptyMap())
@@ -214,7 +223,7 @@ class ActivityResultContracts private constructor() {
 
         override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Boolean>? {
             val granted =
                 ContextCompat.checkSelfPermission(context, input) ==
@@ -243,7 +252,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Void?
+            input: Void?,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -269,7 +278,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -299,7 +308,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Bitmap?>? = null
 
         @Suppress("DEPRECATION")
@@ -325,7 +334,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri
+            input: Uri,
         ): SynchronousResult<Boolean>? = null
 
         @Suppress("AutoBoxing")
@@ -372,7 +381,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -403,7 +412,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -454,7 +463,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -485,7 +494,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Array<String>
+            input: Array<String>,
         ): SynchronousResult<List<Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -520,7 +529,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: Uri?
+            input: Uri?,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -545,7 +554,7 @@ class ActivityResultContracts private constructor() {
                 "the automatic handling of file extensions. Instead, specify the mime type by " +
                 "using the constructor that takes an concrete mime type (e.g.., " +
                 "CreateDocument(\"image/png\")).",
-            ReplaceWith("CreateDocument(\"todo/todo\")")
+            ReplaceWith("CreateDocument(\"todo/todo\")"),
         )
         constructor() : this("*/*")
 
@@ -558,7 +567,7 @@ class ActivityResultContracts private constructor() {
 
         final override fun getSynchronousResult(
             context: Context,
-            input: String
+            input: String,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
@@ -600,12 +609,12 @@ class ActivityResultContracts private constructor() {
              * Note that this does not check for any Intent handled by
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @Deprecated(
                 message =
                     "This method is deprecated in favor of isPhotoPickerAvailable(context) " +
                         "to support the picker provided by updatable system apps",
-                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)")
+                replaceWith = ReplaceWith("isPhotoPickerAvailable(context)"),
             )
             @JvmStatic
             fun isPhotoPickerAvailable(): Boolean {
@@ -628,6 +637,11 @@ class ActivityResultContracts private constructor() {
             const val ACTION_SYSTEM_FALLBACK_PICK_IMAGES =
                 "androidx.activity.result.contract.action.PICK_IMAGES"
 
+            internal const val GMS_ACTION_PICK_IMAGES =
+                "com.google.android.gms.provider.action.PICK_IMAGES"
+            internal const val GMS_EXTRA_PICK_IMAGES_MAX =
+                "com.google.android.gms.provider.extra.PICK_IMAGES_MAX"
+
             /**
              * Extra that will be sent by [PickMultipleVisualMedia] to an Activity that handles
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates that maximum number of photos the
@@ -642,22 +656,49 @@ class ActivityResultContracts private constructor() {
             const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_MAX"
 
-            internal const val GMS_ACTION_PICK_IMAGES =
-                "com.google.android.gms.provider.action.PICK_IMAGES"
-            internal const val GMS_EXTRA_PICK_IMAGES_MAX =
-                "com.google.android.gms.provider.extra.PICK_IMAGES_MAX"
+            /**
+             * Extra that will be sent by [PickVisualMedia] and [PickMultipleVisualMedia] to an
+             * Activity that handles [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates the
+             * preferred default tab of the picker.
+             *
+             * If this extra is not present, the default tab of the picker will be used.
+             */
+            @Suppress("ActionValue")
+            /* Don't include SYSTEM_FALLBACK in the extra */
+            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB =
+                "androidx.activity.result.contract.extra.PICK_IMAGES_LAUNCH_TAB"
+
+            /**
+             * Extra that will be sent by [PickMultipleVisualMedia] to an Activity that handles
+             * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates allowing the user to control the
+             * order in which images are returned to the calling app.
+             */
+            @Suppress("ActionValue")
+            /* Don't include SYSTEM_FALLBACK in the extra */
+            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER =
+                "androidx.activity.result.contract.extra.PICK_IMAGES_IN_ORDER"
+
+            /**
+             * Extra that will be sent by [PickVisualMedia] and [PickMultipleVisualMedia] to an
+             * Activity that handles [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates the
+             * preferred accent color of the picker.
+             *
+             * If this extra is not present, the default accent color of the picker will be used.
+             */
+            @Suppress("ActionValue")
+            /* Don't include SYSTEM_FALLBACK in the extra */
+            const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR =
+                "androidx.activity.result.contract.extra.PICK_IMAGES_ACCENT_COLOR"
 
             /**
              * Check if the current device has support for the photo picker by checking the running
              * Android version, the SDK extension version or the picker provided by a system app
              * implementing [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @JvmStatic
             fun isPhotoPickerAvailable(context: Context): Boolean {
-                return isSystemPickerAvailable() ||
-                    isSystemFallbackPickerAvailable(context) ||
-                    isGmsPickerAvailable(context)
+                return isSystemPickerAvailable() || isSystemFallbackPickerAvailable(context)
             }
 
             /**
@@ -667,7 +708,7 @@ class ActivityResultContracts private constructor() {
              * Note that this does not check for any Intent handled by
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES].
              */
-            @SuppressLint("ClassVerificationFailure", "NewApi")
+            @SuppressLint("NewApi")
             @JvmStatic
             internal fun isSystemPickerAvailable(): Boolean {
                 return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -691,21 +732,7 @@ class ActivityResultContracts private constructor() {
             internal fun getSystemFallbackPicker(context: Context): ResolveInfo? {
                 return context.packageManager.resolveActivity(
                     Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES),
-                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
-                )
-            }
-
-            @JvmStatic
-            internal fun isGmsPickerAvailable(context: Context): Boolean {
-                return getGmsPicker(context) != null
-            }
-
-            @Suppress("DEPRECATION")
-            @JvmStatic
-            internal fun getGmsPicker(context: Context): ResolveInfo? {
-                return context.packageManager.resolveActivity(
-                    Intent(GMS_ACTION_PICK_IMAGES),
-                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY
+                    PackageManager.MATCH_DEFAULT_ONLY or PackageManager.MATCH_SYSTEM_ONLY,
                 )
             }
 
@@ -737,24 +764,138 @@ class ActivityResultContracts private constructor() {
          */
         class SingleMimeType(val mimeType: String) : VisualMediaType
 
+        /**
+         * Represents the media capabilities of an application.
+         *
+         * This class allows you to specify the media capabilities that your application can handle,
+         * such as the HDR type of the media. By providing this information to
+         * [PickVisualMediaRequest], the photo picker can provide a more appropriate media format
+         * when possible.
+         *
+         * @see PickVisualMediaRequest.Builder.setMediaCapabilitiesForTranscoding
+         */
+        class MediaCapabilities internal constructor() {
+
+            companion object {
+                /** Defines the type of HDR (high dynamic range). */
+                @Retention(AnnotationRetention.SOURCE)
+                @IntDef(TYPE_HLG10, TYPE_HDR10, TYPE_HDR10_PLUS, TYPE_DOLBY_VISION)
+                @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+                @Target(
+                    AnnotationTarget.TYPE,
+                    AnnotationTarget.PROPERTY,
+                    AnnotationTarget.VALUE_PARAMETER,
+                )
+                annotation class HdrType
+
+                /** HDR type for HLG10. */
+                const val TYPE_HLG10 = 0
+                /** HDR type for HDR10. */
+                const val TYPE_HDR10 = 1
+                /** HDR type for HDR10+. */
+                const val TYPE_HDR10_PLUS = 2
+                /** HDR type for Dolby-Vision. */
+                const val TYPE_DOLBY_VISION = 3
+            }
+
+            var supportedHdrTypes: Set<@HdrType Int> = emptySet()
+                internal set
+
+            @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+            internal fun toApplicationMediaCapabilities(): ApplicationMediaCapabilities {
+                return ApplicationMediaCapabilities.Builder()
+                    .apply {
+                        addSupportedVideoMimeType(MediaFormat.MIMETYPE_VIDEO_HEVC)
+                        supportedHdrTypes.forEach {
+                            when (it) {
+                                TYPE_HLG10 -> addSupportedHdrType(HLG)
+                                TYPE_HDR10 -> addSupportedHdrType(HDR10)
+                                TYPE_HDR10_PLUS -> addSupportedHdrType(HDR10_PLUS)
+                                TYPE_DOLBY_VISION -> addSupportedHdrType(DOLBY_VISION)
+                            }
+                        }
+                    }
+                    .build()
+            }
+
+            /** A builder for constructing [MediaCapabilities] instances. */
+            class Builder {
+
+                private var supportedHdrTypes: MutableSet<@HdrType Int> = mutableSetOf()
+
+                /**
+                 * Adds the supported HDR (High Dynamic Range) types for media capabilities.
+                 *
+                 * @param hdrType A supported HDR type from the [HdrType].
+                 * @return This Builder.
+                 * @throws IllegalArgumentException if an invalid hdrType is provided.
+                 */
+                fun addSupportedHdrType(hdrType: @HdrType Int): Builder {
+                    this.supportedHdrTypes.add(hdrType)
+                    return this
+                }
+
+                /**
+                 * Build the MediaCapabilities specified by this builder.
+                 *
+                 * @return the newly constructed MediaCapabilities.
+                 */
+                fun build(): MediaCapabilities =
+                    MediaCapabilities().apply {
+                        this.supportedHdrTypes = this@Builder.supportedHdrTypes
+                    }
+            }
+        }
+
+        /** Represents filter input type accepted by the photo picker. */
+        abstract class DefaultTab private constructor() {
+            abstract val value: Int
+
+            /**
+             * [DefaultTab] object used to open the picker in Photos tab (also the default if no
+             * value is provided).
+             */
+            object PhotosTab : DefaultTab() {
+                override val value = MediaStore.PICK_IMAGES_TAB_IMAGES
+            }
+
+            /** [DefaultTab] object used to open the picker in Albums tab. */
+            object AlbumsTab : DefaultTab() {
+                override val value = MediaStore.PICK_IMAGES_TAB_ALBUMS
+            }
+        }
+
         @CallSuper
         override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
             // Check if Photo Picker is available on the device
             return if (isSystemPickerAvailable()) {
                 Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                     type = getVisualMimeType(input.mediaType)
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+
+                    if (input.isCustomAccentColorApplied) {
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        input.mediaCapabilitiesForTranscoding?.let { capabilities ->
+                            putExtra(
+                                MediaStore.EXTRA_MEDIA_CAPABILITIES,
+                                capabilities.toApplicationMediaCapabilities(),
+                            )
+                        }
+                    }
                 }
             } else if (isSystemFallbackPickerAvailable(context)) {
                 val fallbackPicker = checkNotNull(getSystemFallbackPicker(context)).activityInfo
                 Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES).apply {
                     setClassName(fallbackPicker.applicationInfo.packageName, fallbackPicker.name)
                     type = getVisualMimeType(input.mediaType)
-                }
-            } else if (isGmsPickerAvailable(context)) {
-                val gmsPicker = checkNotNull(getGmsPicker(context)).activityInfo
-                Intent(GMS_ACTION_PICK_IMAGES).apply {
-                    setClassName(gmsPicker.applicationInfo.packageName, gmsPicker.name)
-                    type = getVisualMimeType(input.mediaType)
+                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+
+                    if (input.isCustomAccentColorApplied) {
+                        putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
                 }
             } else {
                 // For older devices running KitKat and higher and devices running Android 12
@@ -776,15 +917,15 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<Uri?>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
             return intent
                 .takeIf { resultCode == Activity.RESULT_OK }
                 ?.run {
-                    // Check both the data URI and ClipData since the GMS picker
-                    // only returns results through getClipDataUris()
+                    // Check both the data URI and ClipData since the fallback picker
+                    // may only return results through getClipDataUris()
                     data ?: getClipDataUris().firstOrNull()
                 }
         }
@@ -793,7 +934,7 @@ class ActivityResultContracts private constructor() {
     /**
      * An [ActivityResultContract] to use the
      * [Photo Picker](https://developer.android.com/training/data-storage/shared/photopicker) to
-     * select a single image, video, or other type of visual media.
+     * select multiple images, videos, or other types of visual media.
      *
      * This contract always prefers the system framework provided Photo Picker available via
      * [MediaStore.ACTION_PICK_IMAGES] when it is available, but will also provide a fallback on
@@ -811,7 +952,8 @@ class ActivityResultContracts private constructor() {
      *   devices. This Intent does not allow limiting the max items the user selects.
      *
      * The constructor accepts one parameter [maxItems] to limit the number of selectable items when
-     * using the photo picker to return.
+     * using the photo picker to return. When launching the activity, the minimum of [maxItems] and
+     * input [PickVisualMediaRequest.maxItems] is set as the limit.
      *
      * The input is a [PickVisualMediaRequest].
      *
@@ -829,30 +971,54 @@ class ActivityResultContracts private constructor() {
         }
 
         @CallSuper
-        @SuppressLint("NewApi", "ClassVerificationFailure")
+        @SuppressLint("NewApi")
         override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
             // Check to see if the photo picker is available
             return if (PickVisualMedia.isSystemPickerAvailable()) {
                 Intent(MediaStore.ACTION_PICK_IMAGES).apply {
                     type = PickVisualMedia.getVisualMimeType(input.mediaType)
-                    require(maxItems <= MediaStore.getPickImagesMaxLimit()) {
-                        "Max items must be less or equals MediaStore.getPickImagesMaxLimit()"
+                    val currentMaxItems = min(maxItems, input.maxItems)
+
+                    require(
+                        currentMaxItems > 1 && currentMaxItems <= MediaStore.getPickImagesMaxLimit()
+                    ) {
+                        "Max items must be greater than 1 and lesser than or equal to " +
+                            "MediaStore.getPickImagesMaxLimit()"
                     }
 
-                    putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, maxItems)
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, currentMaxItems)
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+                    putExtra(MediaStore.EXTRA_PICK_IMAGES_IN_ORDER, input.isOrderedSelection)
+
+                    if (input.isCustomAccentColorApplied) {
+                        putExtra(MediaStore.EXTRA_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        input.mediaCapabilitiesForTranscoding?.let { capabilities ->
+                            putExtra(
+                                MediaStore.EXTRA_MEDIA_CAPABILITIES,
+                                capabilities.toApplicationMediaCapabilities(),
+                            )
+                        }
+                    }
                 }
             } else if (PickVisualMedia.isSystemFallbackPickerAvailable(context)) {
                 val fallbackPicker = checkNotNull(getSystemFallbackPicker(context)).activityInfo
                 Intent(ACTION_SYSTEM_FALLBACK_PICK_IMAGES).apply {
                     setClassName(fallbackPicker.applicationInfo.packageName, fallbackPicker.name)
                     type = PickVisualMedia.getVisualMimeType(input.mediaType)
-                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX, maxItems)
-                }
-            } else if (PickVisualMedia.isGmsPickerAvailable(context)) {
-                val gmsPicker = checkNotNull(getGmsPicker(context)).activityInfo
-                Intent(GMS_ACTION_PICK_IMAGES).apply {
-                    setClassName(gmsPicker.applicationInfo.packageName, gmsPicker.name)
-                    putExtra(GMS_EXTRA_PICK_IMAGES_MAX, maxItems)
+
+                    val currentMaxItems = min(maxItems, input.maxItems)
+                    require(currentMaxItems > 1) { "Max items must be greater than 1" }
+
+                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX, currentMaxItems)
+                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB, input.defaultTab.value)
+                    putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER, input.isOrderedSelection)
+
+                    if (input.isCustomAccentColorApplied) {
+                        putExtra(EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR, input.accentColor)
+                    }
                 }
             } else {
                 // For older devices running KitKat and higher and devices running Android 12
@@ -875,7 +1041,7 @@ class ActivityResultContracts private constructor() {
         @Suppress("InvalidNullabilityOverride")
         final override fun getSynchronousResult(
             context: Context,
-            input: PickVisualMediaRequest
+            input: PickVisualMediaRequest,
         ): SynchronousResult<List<@JvmSuppressWildcards Uri>>? = null
 
         final override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> {
@@ -892,7 +1058,7 @@ class ActivityResultContracts private constructor() {
              *
              * @see MediaStore.EXTRA_PICK_IMAGES_MAX
              */
-            @SuppressLint("NewApi", "ClassVerificationFailure")
+            @SuppressLint("NewApi")
             internal fun getMaxItems() =
                 if (PickVisualMedia.isSystemPickerAvailable()) {
                     MediaStore.getPickImagesMaxLimit()

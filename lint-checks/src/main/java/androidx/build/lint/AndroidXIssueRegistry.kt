@@ -25,7 +25,7 @@ import com.android.tools.lint.detector.api.Issue
 
 class AndroidXIssueRegistry : IssueRegistry() {
     override val minApi = CURRENT_API
-    override val api = 14
+    override val api = 16
     override val issues
         get(): List<Issue> {
             return Issues
@@ -61,19 +61,14 @@ class AndroidXIssueRegistry : IssueRegistry() {
                     SampledAnnotationDetector.UNRESOLVED_SAMPLE_LINK,
                     SampledAnnotationDetector.MULTIPLE_FUNCTIONS_FOUND,
                     SampledAnnotationDetector.INVALID_SAMPLES_LOCATION,
-                    TestSizeAnnotationEnforcer.MISSING_TEST_SIZE_ANNOTATION,
                     TestSizeAnnotationEnforcer.UNEXPECTED_TEST_SIZE_ANNOTATION,
-                    TestSizeAnnotationEnforcer.UNSUPPORTED_TEST_RUNNER,
                     BanUncheckedReflection.ISSUE,
                     ObsoleteBuildCompatUsageDetector.ISSUE,
                     BanSynchronizedMethods.ISSUE,
                     MetadataTagInsideApplicationTagDetector.ISSUE,
                     PrivateConstructorForUtilityClassDetector.ISSUE,
-                    ClassVerificationFailureDetector.METHOD_CALL_ISSUE,
-                    ClassVerificationFailureDetector.IMPLICIT_CAST_ISSUE,
                     IdeaSuppressionDetector.ISSUE,
                     CameraXQuirksClassDetector.ISSUE,
-                    NullabilityAnnotationsDetector.ISSUE,
                     IgnoreClassLevelDetector.ISSUE,
                     ExperimentalPropertyAnnotationDetector.ISSUE,
                     BanRestrictToTestsScope.ISSUE,
@@ -85,6 +80,15 @@ class AndroidXIssueRegistry : IssueRegistry() {
                     RestrictToDetector.RESTRICTED,
                     ObsoleteCompatDetector.ISSUE,
                     ReplaceWithDetector.ISSUE,
+                    // This issue is only enabled when `-Pandroidx.useJSpecifyAnnotations=true`.
+                    JSpecifyNullnessMigration.ISSUE,
+                    TypeMirrorToString.ISSUE,
+                    BanNullMarked.ISSUE,
+                    AutoValueNullnessOverride.ISSUE,
+                    FlaggedApiDetector.ISSUE,
+                    ClassVerificationFailureDetector.METHOD_CALL_ISSUE,
+                    ClassVerificationFailureDetector.IMPLICIT_CAST_ISSUE,
+                    ScreenshotTestSdkSuppressAnnotationEnforcer.ISSUE,
                 )
             }
     }

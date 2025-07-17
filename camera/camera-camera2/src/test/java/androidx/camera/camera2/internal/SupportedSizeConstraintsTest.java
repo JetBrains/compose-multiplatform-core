@@ -16,6 +16,8 @@
 
 package androidx.camera.camera2.internal;
 
+import static androidx.camera.core.featuregroup.impl.FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -33,7 +35,6 @@ import android.media.CamcorderProfile;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -50,6 +51,7 @@ import androidx.camera.testing.impl.fakes.FakeCameraFactory;
 import androidx.test.core.app.ApplicationProvider;
 
 import org.codehaus.plexus.util.ReflectionUtils;
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -143,7 +145,7 @@ public class SupportedSizeConstraintsTest {
 
         final SupportedSurfaceCombination supportedSurfaceCombination =
                 new SupportedSurfaceCombination(mContext, BACK_CAMERA_ID, mCameraManagerCompat,
-                        mMockCamcorderProfileHelper);
+                        mMockCamcorderProfileHelper, NO_OP_FEATURE_COMBINATION_QUERY);
 
         List<Size> excludedSizes = Arrays.asList(
                 new Size[]{new Size(4160, 3120), new Size(4000, 3000)});
@@ -219,9 +221,11 @@ public class SupportedSizeConstraintsTest {
                 };
 
         CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
-                Camera2Config.defaultConfig())
+                        Camera2Config.defaultConfig())
                 .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
-                .setCameraFactoryProvider((ignored0, ignored1, ignored2, ignored3) -> cameraFactory)
+                .setCameraFactoryProvider(
+                        (ignored0, ignored1, ignored2, ignored3, ignored4, ignored5)
+                                -> cameraFactory)
                 .build();
         CameraXUtil.initialize(mContext, cameraXConfig);
     }

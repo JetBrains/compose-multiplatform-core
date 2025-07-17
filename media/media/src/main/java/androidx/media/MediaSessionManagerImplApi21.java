@@ -19,8 +19,9 @@ package androidx.media;
 import android.content.Context;
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 @RequiresApi(21)
 class MediaSessionManagerImplApi21 extends MediaSessionManagerImplBase {
@@ -31,7 +32,7 @@ class MediaSessionManagerImplApi21 extends MediaSessionManagerImplBase {
 
     @Override
     public boolean isTrustedForMediaControl(
-            @NonNull MediaSessionManager.RemoteUserInfoImpl userInfo) {
+            MediaSessionManager.@NonNull RemoteUserInfoImpl userInfo) {
 
         return hasMediaControlPermission(userInfo) || super.isTrustedForMediaControl(userInfo);
     }
@@ -40,7 +41,7 @@ class MediaSessionManagerImplApi21 extends MediaSessionManagerImplBase {
      * Checks the caller has android.Manifest.permission.MEDIA_CONTENT_CONTROL permission.
      */
     private boolean hasMediaControlPermission(
-            @NonNull MediaSessionManager.RemoteUserInfoImpl userInfo) {
+            MediaSessionManager.@NonNull RemoteUserInfoImpl userInfo) {
         return getContext().checkPermission(
                 android.Manifest.permission.MEDIA_CONTENT_CONTROL,
                 userInfo.getPid(), userInfo.getUid()) == PackageManager.PERMISSION_GRANTED;

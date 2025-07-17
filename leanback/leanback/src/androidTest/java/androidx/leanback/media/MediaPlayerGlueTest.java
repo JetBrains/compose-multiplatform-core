@@ -26,13 +26,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.testutils.PollingCheck;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;

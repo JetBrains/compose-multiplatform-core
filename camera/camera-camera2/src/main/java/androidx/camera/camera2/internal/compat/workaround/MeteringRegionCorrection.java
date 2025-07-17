@@ -18,11 +18,12 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.graphics.PointF;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.AfRegionFlipHorizontallyQuirk;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Correct the metering point if necessary. For some devices, Af region coordinates are flipped
@@ -37,8 +38,7 @@ public class MeteringRegionCorrection {
     /**
      * Return corrected normalized point by given MeteringPoint and MeteringMode.
      */
-    @NonNull
-    public PointF getCorrectedPoint(@NonNull MeteringPoint meteringPoint,
+    public @NonNull PointF getCorrectedPoint(@NonNull MeteringPoint meteringPoint,
             @FocusMeteringAction.MeteringMode int meteringMode) {
         if (meteringMode == FocusMeteringAction.FLAG_AF
                 && mCameraQuirks.contains(AfRegionFlipHorizontallyQuirk.class)) {

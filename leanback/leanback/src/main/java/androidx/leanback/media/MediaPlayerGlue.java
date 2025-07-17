@@ -26,7 +26,6 @@ import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.ArrayObjectAdapter;
@@ -35,6 +34,8 @@ import androidx.leanback.widget.PlaybackControlsRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.Row;
 import androidx.leanback.widget.RowPresenter;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.List;

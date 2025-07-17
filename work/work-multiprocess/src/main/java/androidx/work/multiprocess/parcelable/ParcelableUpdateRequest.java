@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -63,13 +64,11 @@ public class ParcelableUpdateRequest implements Parcelable {
                 }
             };
 
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
-    @NonNull
-    public Data getData() {
+    public @NonNull Data getData() {
         return mParcelableData.getData();
     }
 

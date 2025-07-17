@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -91,7 +90,7 @@ fun NewMotionMessagePreviewWithDslOptimized() {
     NewMotionMessageWithControls(useDsl = true, optimize = true)
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalMotionApi::class)
+@OptIn(ExperimentalMotionApi::class)
 @Composable
 fun NewMotionMessageWithControls(useDsl: Boolean, optimize: Boolean) {
     val initialLayout = NewMessageLayout.Full
@@ -494,7 +493,7 @@ internal fun MotionLayoutScope.MotionMessageContent(state: NewMessageState) {
         modifier = Modifier.layoutId("box"),
         color = customColor(id = "box", name = "background"),
         elevation = 4.dp,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
     ) {}
     ColorableIconButton(
         modifier = Modifier.layoutId("editClose"),
@@ -504,7 +503,7 @@ internal fun MotionLayoutScope.MotionMessageContent(state: NewMessageState) {
                 else -> Icons.Default.Close
             },
         color = customColor("editClose", "content"),
-        enabled = true
+        enabled = true,
     ) {
         when (currentState) {
             NewMessageLayout.Fab -> state.setToFull()
@@ -515,7 +514,7 @@ internal fun MotionLayoutScope.MotionMessageContent(state: NewMessageState) {
         modifier = Modifier.layoutId("minIcon"),
         imageVector = Icons.Default.KeyboardArrowDown,
         color = customColor("minIcon", "content"),
-        enabled = true
+        enabled = true,
     ) {
         when (currentState) {
             NewMessageLayout.Full -> state.setToMini()
@@ -526,14 +525,14 @@ internal fun MotionLayoutScope.MotionMessageContent(state: NewMessageState) {
         text = dialogName,
         modifier = Modifier.layoutId("title"),
         color = customColor("title", "content"),
-        style = MaterialTheme.typography.h6
+        style = MaterialTheme.typography.h6,
     )
     MessageWidget(
         modifier = Modifier.layoutId("content"),
         onDelete = {
             focusManager.clearFocus()
             state.setToFab()
-        }
+        },
     )
     //            MessageWidgetCol(
     //                modifier = Modifier
@@ -555,7 +554,7 @@ private fun NewMessageButton(
         animationSpec = tween(700),
         constraintSetName = currentStateName,
         modifier = modifier,
-        invalidationStrategy = invalidationStrategy
+        invalidationStrategy = invalidationStrategy,
     ) {
         MotionMessageContent(state = state)
     }
@@ -568,19 +567,19 @@ internal fun ColorableIconButton(
     imageVector: ImageVector,
     color: Color,
     enabled: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
         modifier = modifier,
         color = Color.Transparent,
         contentColor = color,
         onClick = onClick,
-        enabled = enabled
+        enabled = enabled,
     ) {
         Icon(
             imageVector = imageVector,
             contentDescription = null,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
@@ -591,30 +590,27 @@ internal fun MessageWidgetCol(modifier: Modifier) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = "",
             onValueChange = {},
-            placeholder = { Text("Recipients") }
+            placeholder = { Text("Recipients") },
         )
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = "",
             onValueChange = {},
-            placeholder = { Text("Subject") }
+            placeholder = { Text("Subject") },
         )
         TextField(
             modifier = Modifier.fillMaxWidth().weight(weight = 2.0f, fill = true),
             value = "",
             onValueChange = {},
-            placeholder = { Text("Message") }
+            placeholder = { Text("Message") },
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Button(onClick = { /*TODO*/ }) {
                 Row {
                     Text(text = "Send")
@@ -626,10 +622,7 @@ internal fun MessageWidgetCol(modifier: Modifier) {
                 }
             }
             Button(onClick = { /*TODO*/ }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Draft",
-                )
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Draft")
             }
         }
     }
@@ -685,29 +678,29 @@ internal fun MessageWidget(modifier: Modifier, onDelete: () -> Unit = {}) {
     }
     ConstraintLayout(
         modifier = modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp, bottom = 0.dp),
-        constraintSet = constraintSet
+        constraintSet = constraintSet,
     ) {
         OutlinedTextField(
             modifier = Modifier.layoutId("recipient"),
             value = "",
             onValueChange = {},
-            label = { CheapText("To") }
+            label = { CheapText("To") },
         )
         OutlinedTextField(
             modifier = Modifier.layoutId("subject"),
             value = "",
             onValueChange = {},
-            label = { CheapText("Subject") }
+            label = { CheapText("Subject") },
         )
         OutlinedTextField(
             modifier = Modifier.layoutId("message").fillMaxHeight(),
             value = "",
             onValueChange = {},
-            label = { CheapText("Message") }
+            label = { CheapText("Message") },
         )
         Button(
             modifier = Modifier.layoutId("send"),
-            onClick = onDelete // TODO: Do something different for Send onClick
+            onClick = onDelete, // TODO: Do something different for Send onClick
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CheapText(text = "Send")
@@ -718,10 +711,7 @@ internal fun MessageWidget(modifier: Modifier, onDelete: () -> Unit = {}) {
             }
         }
         Button(modifier = Modifier.layoutId("delete"), onClick = onDelete) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete Draft",
-            )
+            Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Draft")
         }
     }
 }
@@ -733,7 +723,7 @@ private fun CheapText(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
     style: TextStyle = LocalTextStyle.current,
-    overflow: TextOverflow = TextOverflow.Clip
+    overflow: TextOverflow = TextOverflow.Clip,
 ) {
     Text(
         text = text,

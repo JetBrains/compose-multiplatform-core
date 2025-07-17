@@ -35,8 +35,6 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.NestedScrollingParent;
 import androidx.core.view.NestedScrollingParentHelper;
@@ -44,6 +42,9 @@ import androidx.customview.widget.ViewDragHelper;
 import androidx.wear.widget.drawer.FlingWatcherFactory.FlingListener;
 import androidx.wear.widget.drawer.FlingWatcherFactory.FlingWatcher;
 import androidx.wear.widget.drawer.WearableDrawerView.DrawerState;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Top-level container that allows interactive drawers to be pulled from the top and bottom edge of
@@ -683,7 +684,7 @@ public class WearableDrawerLayout extends FrameLayout
     }
 
     @Override // NestedScrollingParent
-    public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed) {
+    public void onNestedPreScroll(@NonNull View target, int dx, int dy, int @NonNull [] consumed) {
         maybeUpdateScrollingContentView(target);
     }
 
@@ -839,8 +840,7 @@ public class WearableDrawerLayout extends FrameLayout
      * @param gravity the gravity of the child to return.
      * @return the drawer with the specified gravity
      */
-    @Nullable
-    WearableDrawerView findDrawerWithGravity(int gravity) {
+    @Nullable WearableDrawerView findDrawerWithGravity(int gravity) {
         switch (gravity) {
             case Gravity.TOP:
                 return mTopDrawerView;

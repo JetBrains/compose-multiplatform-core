@@ -16,7 +16,6 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchResult;
@@ -24,6 +23,8 @@ import androidx.appsearch.exceptions.AppSearchException;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.util.Function;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 
@@ -41,10 +42,9 @@ public final class AppSearchResultToGmsConverter {
      * Converts an {@link com.google.android.gms.appsearch.AppSearchResult} into a jetpack
      * {@link androidx.appsearch.app.AppSearchResult}.
      */
-    @NonNull
-    public static <GmsType, JetpackType> AppSearchResult<JetpackType>
+    public static <GmsType, JetpackType> @NonNull AppSearchResult<JetpackType>
             gmsAppSearchResultToJetpack(
-            @NonNull com.google.android.gms.appsearch.AppSearchResult<GmsType> gmsResult,
+            com.google.android.gms.appsearch.@NonNull AppSearchResult<GmsType> gmsResult,
             @NonNull Function<GmsType, JetpackType> valueMapper) {
         Preconditions.checkNotNull(gmsResult);
         if (gmsResult.isSuccess()) {
@@ -66,7 +66,7 @@ public final class AppSearchResultToGmsConverter {
      */
     public static <GmsType, JetpackType> void
             gmsAppSearchResultToFuture(
-            @NonNull com.google.android.gms.appsearch.AppSearchResult<GmsType>
+            com.google.android.gms.appsearch.@NonNull AppSearchResult<GmsType>
                     gmsResult,
             @NonNull ResolvableFuture<JetpackType> future,
             @NonNull Function<GmsType, JetpackType> valueMapper) {
@@ -90,7 +90,7 @@ public final class AppSearchResultToGmsConverter {
      * to populate the given {@link ResolvableFuture}.
      */
     public static <T> void gmsAppSearchResultToFuture(
-            @NonNull com.google.android.gms.appsearch.AppSearchResult<T> gmsResult,
+            com.google.android.gms.appsearch.@NonNull AppSearchResult<T> gmsResult,
             @NonNull ResolvableFuture<T> future) {
         gmsAppSearchResultToFuture(gmsResult,
                 future,
@@ -104,10 +104,9 @@ public final class AppSearchResultToGmsConverter {
      *
      * <p>Each value is translated using the provided {@code valueMapper} function.
      */
-    @NonNull
-    public static <K, GmsValue, JetpackValue> AppSearchBatchResult<K,
+    public static <K, GmsValue, JetpackValue> @NonNull AppSearchBatchResult<K,
             JetpackValue> gmsAppSearchBatchResultToJetpack(
-            @NonNull com.google.android.gms.appsearch.AppSearchBatchResult<K,
+            com.google.android.gms.appsearch.@NonNull AppSearchBatchResult<K,
                     GmsValue> gmsResult,
             @NonNull Function<GmsValue, JetpackValue> valueMapper) {
         Preconditions.checkNotNull(gmsResult);

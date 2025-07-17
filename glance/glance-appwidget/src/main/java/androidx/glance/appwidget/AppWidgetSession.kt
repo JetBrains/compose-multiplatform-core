@@ -21,6 +21,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
+import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.util.fastForEach
 import androidx.glance.EmittableWithChildren
 import androidx.glance.GlanceComposable
 import androidx.glance.LocalContext
@@ -70,9 +72,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
  *   [android.appwidget.AppWidgetManager.updateAppWidget]. The [id] must be valid
  *   ([AppWidgetId.isRealId]) in that case.
  */
-internal class AppWidgetSession(
-    private val widget: GlanceAppWidget,
-    private val id: AppWidgetId,
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public open class AppWidgetSession(
+    internal val widget: GlanceAppWidget,
+    internal val id: AppWidgetId,
     initialOptions: Bundle? = null,
     private val configManager: ConfigManager = GlanceState,
     private val lambdaReceiver: ComponentName? = null,
@@ -99,13 +102,13 @@ internal class AppWidgetSession(
     }
 
     private var glanceState by mutableStateOf(initialGlanceState, neverEqualPolicy())
-    private var options by mutableStateOf(initialOptions, neverEqualPolicy())
+    @VisibleForTesting internal var options by mutableStateOf(initialOptions, neverEqualPolicy())
     private var lambdas = mapOf<String, List<LambdaAction>>()
     private val parentJob = Job()
 
     internal val lastRemoteViews = MutableStateFlow<RemoteViews?>(null)
 
-    override fun createRootEmittable() = RemoteViewsRoot(MaxComposeTreeDepth)
+    override fun createRootEmittable(): RemoteViewsRoot = RemoteViewsRoot(MaxComposeTreeDepth)
 
     override fun provideGlance(context: Context): @Composable @GlanceComposable () -> Unit = {
         CompositionLocalProvider(
@@ -135,7 +138,7 @@ internal class AppWidgetSession(
                                 appWidgetMinSize(
                                     context.resources.displayMetrics,
                                     manager,
-                                    id.appWidgetId
+                                    id.appWidgetId,
                                 )
                             if (options == null) {
                                 options = manager.getAppWidgetOptions(id.appWidgetId)
@@ -161,7 +164,7 @@ internal class AppWidgetSession(
 
     override suspend fun processEmittableTree(
         context: Context,
-        root: EmittableWithChildren
+        root: EmittableWithChildren,
     ): Boolean {
         if (root.shouldIgnoreResult()) return false
         root as RemoteViewsRoot
@@ -184,7 +187,8 @@ internal class AppWidgetSession(
                     layoutConfig,
                     layoutConfig.addLayout(root),
                     DpSize.Unspecified,
-                    receiver
+                    receiver,
+                    widget.getComponents(context) ?: GlanceComponents.getDefault(context),
                 )
             if (shouldPublish) {
                 appWidgetManager.updateAppWidget(id.appWidgetId, rv)
@@ -218,7 +222,7 @@ internal class AppWidgetSession(
                     Log.i(
                         TAG,
                         "Received UpdateAppWidgetOptions(${event.newOptions}) event" +
-                            "for session($key)"
+                            "for session($key)",
                     )
                 }
                 Snapshot.withMutableSnapshot { options = event.newOptions }
@@ -249,15 +253,28 @@ internal class AppWidgetSession(
         parentJob.cancel()
     }
 
-    suspend fun updateGlance() {
+    override suspend fun recreateWithEvents(events: List<Any>): AppWidgetSession {
+        // We can skip the UpdateGlanceState events because the new session will pull the state
+        // when it starts. We can also skip WaitForReady because any waiters will be cancelled
+        // when this session is closed. We will check for any UpdateAppWidgetOptions and pass
+        // them to the new session as initial options.
+        val eventsToResend = events.filterIsInstance<RunLambda>()
+        val initialOptions =
+            events.filterIsInstance<UpdateAppWidgetOptions>().lastOrNull()?.newOptions
+        return AppWidgetSession(widget, id, initialOptions).also { newSession ->
+            eventsToResend.fastForEach { newSession.sendEvent(it) }
+        }
+    }
+
+    public suspend fun updateGlance() {
         sendEvent(UpdateGlanceState)
     }
 
-    suspend fun updateAppWidgetOptions(newOptions: Bundle) {
+    public suspend fun updateAppWidgetOptions(newOptions: Bundle) {
         sendEvent(UpdateAppWidgetOptions(newOptions))
     }
 
-    suspend fun runLambda(key: String) {
+    public suspend fun runLambda(key: String) {
         sendEvent(RunLambda(key))
     }
 
@@ -268,7 +285,7 @@ internal class AppWidgetSession(
      * join will resume successfully (Job is completed). If the session is closed before it is
      * ready, we call [Job.cancel] and the call to join resumes with [CancellationException].
      */
-    suspend fun waitForReady(): Job {
+    public suspend fun waitForReady(): Job {
         val event = WaitForReady(Job(parentJob))
         sendEvent(event)
         return event.job
@@ -281,7 +298,7 @@ internal class AppWidgetSession(
                 context,
                 glanceId = id,
                 appWidgetId = id.appWidgetId,
-                throwable = throwable
+                throwable = throwable,
             )
         } else {
             throw throwable // rethrow the error if we can't display it
@@ -293,7 +310,13 @@ internal class AppWidgetSession(
 
     @VisibleForTesting internal class UpdateAppWidgetOptions(val newOptions: Bundle)
 
-    @VisibleForTesting internal class RunLambda(val key: String)
-
     @VisibleForTesting internal class WaitForReady(val job: CompletableJob)
+
+    @VisibleForTesting
+    internal class RunLambda(val key: String) {
+        // Add equals to allow testing structural equality in tests.
+        override fun equals(other: Any?): Boolean {
+            return super.equals(other) || other is RunLambda && other.key == key
+        }
+    }
 }

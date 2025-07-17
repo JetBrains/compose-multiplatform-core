@@ -18,8 +18,15 @@ package androidx.credentials.provider
 
 import android.os.Build
 import android.os.Bundle
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
+import androidx.credentials.provider.Action.Companion.marshall
+import androidx.credentials.provider.Action.Companion.unmarshallActionList
+import androidx.credentials.provider.AuthenticationAction.Companion.marshall
+import androidx.credentials.provider.AuthenticationAction.Companion.unmarshallAuthActionList
+import androidx.credentials.provider.CredentialEntry.Companion.marshall
+import androidx.credentials.provider.CredentialEntry.Companion.unmarshallCredentialEntries
+import androidx.credentials.provider.RemoteEntry.Companion.marshall
+import androidx.credentials.provider.RemoteEntry.Companion.unmarshallRemoteEntry
 import androidx.credentials.provider.utils.BeginGetCredentialUtil
 
 /**
@@ -44,7 +51,7 @@ constructor(
     val credentialEntries: List<CredentialEntry> = listOf(),
     val actions: List<Action> = listOf(),
     val authenticationActions: List<AuthenticationAction> = listOf(),
-    val remoteEntry: RemoteEntry? = null
+    val remoteEntry: RemoteEntry? = null,
 ) {
     /** Builder for [BeginGetCredentialResponse]. */
     class Builder {
@@ -143,7 +150,7 @@ constructor(
                 credentialEntries.toList(),
                 actions.toList(),
                 authenticationActions.toList(),
-                remoteEntry
+                remoteEntry,
             )
         }
     }
@@ -153,26 +160,57 @@ constructor(
         private const val REQUEST_KEY = "androidx.credentials.provider.BeginGetCredentialResponse"
 
         @JvmStatic
-        @DoNotInline
         fun asBundle(bundle: Bundle, response: BeginGetCredentialResponse) {
             bundle.putParcelable(
                 REQUEST_KEY,
-                BeginGetCredentialUtil.convertToFrameworkResponse(response)
+                BeginGetCredentialUtil.convertToFrameworkResponse(response),
             )
         }
 
         @JvmStatic
-        @DoNotInline
         fun fromBundle(bundle: Bundle): BeginGetCredentialResponse? {
             val frameworkResponse =
                 bundle.getParcelable(
                     REQUEST_KEY,
-                    android.service.credentials.BeginGetCredentialResponse::class.java
+                    android.service.credentials.BeginGetCredentialResponse::class.java,
                 )
             if (frameworkResponse != null) {
                 return BeginGetCredentialUtil.convertToJetpackResponse(frameworkResponse)
             }
             return null
+        }
+    }
+
+    @RequiresApi(23)
+    private object Api23Impl {
+        @JvmStatic
+        fun asBundle(bundle: Bundle, response: BeginGetCredentialResponse) {
+            response.credentialEntries.marshall(bundle)
+            response.actions.marshall(bundle)
+            response.authenticationActions.marshall(bundle)
+            response.remoteEntry?.marshall(bundle)
+        }
+
+        @JvmStatic
+        fun fromBundle(bundle: Bundle): BeginGetCredentialResponse? {
+            val credentialEntries = bundle.unmarshallCredentialEntries()
+            val actions = bundle.unmarshallActionList()
+            val authenticationActions = bundle.unmarshallAuthActionList()
+            val remoteEntry = bundle.unmarshallRemoteEntry()
+            if (
+                credentialEntries.isEmpty() &&
+                    actions.isEmpty() &&
+                    authenticationActions.isEmpty() &&
+                    remoteEntry == null
+            ) {
+                return null
+            }
+            return BeginGetCredentialResponse(
+                credentialEntries,
+                actions,
+                authenticationActions,
+                remoteEntry,
+            )
         }
     }
 
@@ -187,6 +225,8 @@ constructor(
             val bundle = Bundle()
             if (Build.VERSION.SDK_INT >= 34) { // Android U
                 Api34Impl.asBundle(bundle, response)
+            } else if (Build.VERSION.SDK_INT >= 23) {
+                Api23Impl.asBundle(bundle, response)
             }
             return bundle
         }
@@ -197,10 +237,11 @@ constructor(
          */
         @JvmStatic
         fun fromBundle(bundle: Bundle): BeginGetCredentialResponse? {
-            if (Build.VERSION.SDK_INT >= 34) { // Android U
-                return Api34Impl.fromBundle(bundle)
-            }
-            return null
+            return if (Build.VERSION.SDK_INT >= 34) { // Android U
+                Api34Impl.fromBundle(bundle)
+            } else if (Build.VERSION.SDK_INT >= 23) {
+                Api23Impl.fromBundle(bundle)
+            } else null
         }
     }
 }

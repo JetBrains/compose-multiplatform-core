@@ -22,63 +22,73 @@
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.ui.util"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.collection:collection:1.4.3")
             }
         }
 
         commonTest {
             dependencies {
-                implementation(kotlin("test-junit"))
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
-        }
-
-
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.annotation:annotation-experimental:1.4.0")
-            }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
         }
 
         jvmTest {
             dependsOn(commonTest)
+        }
+
+        androidMain {
+            dependsOn(jvmMain)
             dependencies {
+                api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
 
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
+        }
+
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
+                implementation(libs.testRunner)
             }
         }
 
@@ -88,16 +98,12 @@ androidXMultiplatform {
                 implementation(libs.truth)
             }
         }
-
-        desktopTest {
-            dependsOn(jvmTest)
-        }
     }
 }
 
 androidx {
     name = "Compose Util"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Internal Compose utilities used by other modules"
     legacyDisableKotlinStrictApiMode = true
@@ -105,8 +111,4 @@ androidx {
 
 androidxCompose {
     composeCompilerPluginEnabled = false
-}
-
-android {
-    namespace "androidx.compose.ui.util"
 }

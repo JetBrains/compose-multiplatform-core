@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerInputFilter
 import androidx.compose.ui.input.pointer.PointerInputModifier
 import androidx.compose.ui.input.pointer.changedToUp
-import androidx.compose.ui.test.ActivityWithActionBar
+import androidx.compose.ui.test.CustomComposeHostActivity
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -55,11 +55,11 @@ class SendClickTest(private val config: TestConfig) {
                 for (x in listOf(0.0f, squareSize - 1.0f)) {
                     for (y in listOf(0.0f, squareSize - 1.0f)) {
                         add(TestConfig(Offset(x, y), ComponentActivity::class.java))
-                        add(TestConfig(Offset(x, y), ActivityWithActionBar::class.java))
+                        add(TestConfig(Offset(x, y), CustomComposeHostActivity::class.java))
                     }
                 }
                 add(TestConfig(null, ComponentActivity::class.java))
-                add(TestConfig(null, ActivityWithActionBar::class.java))
+                add(TestConfig(null, CustomComposeHostActivity::class.java))
             }
         }
     }
@@ -68,7 +68,7 @@ class SendClickTest(private val config: TestConfig) {
 
     private class ClickRecorder(
         private val componentIndex: Int,
-        private val recordedClicks: MutableList<ClickData>
+        private val recordedClicks: MutableList<ClickData>,
     ) : PointerInputModifier {
         override val pointerInputFilter: PointerInputFilter = RecordingFilter { event ->
             event.changes.forEach {
@@ -89,7 +89,7 @@ class SendClickTest(private val config: TestConfig) {
         // Given a column of 5 small components
         var contentSet = false
         rule.activityRule.scenario.onActivity {
-            if (it is ActivityWithActionBar) {
+            if (it is CustomComposeHostActivity) {
                 it.setContent { ColumnOfSquares(5) }
                 contentSet = true
             }
@@ -132,7 +132,7 @@ class SendClickTest(private val config: TestConfig) {
                     width = squareSize,
                     height = squareSize,
                     color = colors[i],
-                    tag = "square$i"
+                    tag = "square$i",
                 )
             }
         }

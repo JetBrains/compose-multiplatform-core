@@ -26,45 +26,44 @@ import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
  * maintain a tree of a novel type.
  *
  * @sample androidx.compose.runtime.samples.CustomTreeComposition
- *
  * @see AbstractApplier
  * @see Composition
  * @see Composer
  * @see ComposeNode
  */
 @JvmDefaultWithCompatibility
-interface Applier<N> {
+public interface Applier<N> {
     /**
      * The node that operations will be applied on at any given time. It is expected that the value
      * of this property will change as [down] and [up] are called.
      */
-    val current: N
+    public val current: N
 
     /**
      * Called when the [Composer] is about to begin applying changes using this applier.
      * [onEndChanges] will be called when changes are complete.
      */
-    fun onBeginChanges() {}
+    public fun onBeginChanges() {}
 
     /**
      * Called when the [Composer] is finished applying changes using this applier. A call to
      * [onBeginChanges] will always precede a call to [onEndChanges].
      */
-    fun onEndChanges() {}
+    public fun onEndChanges() {}
 
     /**
      * Indicates that the applier is getting traversed "down" the tree. When this gets called,
      * [node] is expected to be a child of [current], and after this operation, [node] is expected
      * to be the new [current].
      */
-    fun down(node: N)
+    public fun down(node: N)
 
     /**
      * Indicates that the applier is getting traversed "up" the tree. After this operation
      * completes, the [current] should return the "parent" of the [current] node at the beginning of
      * this operation.
      */
-    fun up()
+    public fun up()
 
     /**
      * Indicates that [instance] should be inserted as a child to [current] at [index]. An applier
@@ -145,7 +144,7 @@ interface Applier<N> {
      *
      *    which exponential to the number of nodes inserted.
      */
-    fun insertTopDown(index: Int, instance: N)
+    public fun insertTopDown(index: Int, instance: N)
 
     /**
      * Indicates that [instance] should be inserted as a child of [current] at [index]. An applier
@@ -153,12 +152,12 @@ interface Applier<N> {
      * See the description of [insertTopDown] to which describes when to implement [insertTopDown]
      * and when to use [insertBottomUp].
      */
-    fun insertBottomUp(index: Int, instance: N)
+    public fun insertBottomUp(index: Int, instance: N)
 
     /**
      * Indicates that the children of [current] from [index] to [index] + [count] should be removed.
      */
-    fun remove(index: Int, count: Int)
+    public fun remove(index: Int, count: Int)
 
     /**
      * Indicates that [count] children of [current] should be moved from index [from] to index [to].
@@ -168,38 +167,47 @@ interface Applier<N> {
      * should be `3`. If the elements were A B C D E, calling `move(1, 3, 1)` would result in the
      * elements being reordered to A C B D E.
      */
-    fun move(from: Int, to: Int, count: Int)
+    public fun move(from: Int, to: Int, count: Int)
 
     /**
      * Move to the root and remove all nodes from the root, preparing both this [Applier] and its
      * root to be used as the target of a new composition in the future.
      */
-    fun clear()
+    public fun clear()
+
+    /** Apply a change to the current node. */
+    public fun apply(block: N.(Any?) -> Unit, value: Any?) {
+        current.block(value)
+    }
+
+    /** Notify [current] is is being reused in reusable content. */
+    public fun reuse() {
+        (current as? ComposeNodeLifecycleCallback)?.onReuse()
+    }
 }
 
 /**
  * An abstract [Applier] implementation.
  *
  * @sample androidx.compose.runtime.samples.CustomTreeComposition
- *
  * @see Applier
  * @see Composition
  * @see Composer
  * @see ComposeNode
  */
-abstract class AbstractApplier<T>(val root: T) : Applier<T> {
-    private val stack = mutableListOf<T>()
+public abstract class AbstractApplier<T>(public val root: T) : Applier<T> {
+    private val stack = Stack<T>()
+
     override var current: T = root
         protected set
 
     override fun down(node: T) {
-        stack.add(current)
+        stack.push(current)
         current = node
     }
 
     override fun up() {
-        checkPrecondition(stack.isNotEmpty()) { "empty stack" }
-        current = stack.removeAt(stack.size - 1)
+        current = stack.pop()
     }
 
     final override fun clear() {
@@ -275,6 +283,14 @@ internal class OffsetApplier<N>(private val applier: Applier<N>, private val off
     }
 
     override fun clear() {
-        runtimeCheck(false) { "Clear is not valid on OffsetApplier" }
+        composeImmediateRuntimeError("Clear is not valid on OffsetApplier")
+    }
+
+    override fun apply(block: N.(Any?) -> Unit, value: Any?) {
+        applier.apply(block, value)
+    }
+
+    override fun reuse() {
+        applier.reuse()
     }
 }

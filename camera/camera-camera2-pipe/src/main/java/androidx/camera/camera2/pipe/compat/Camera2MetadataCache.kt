@@ -56,7 +56,7 @@ constructor(
     private val threads: Threads,
     private val permissions: Permissions,
     private val cameraMetadataConfig: CameraPipe.CameraMetadataConfig,
-    private val timeSource: TimeSource
+    private val timeSource: TimeSource,
 ) : Camera2MetadataProvider {
 
     @GuardedBy("cache") private val cache = ArrayMap<String, CameraMetadata>()
@@ -81,7 +81,7 @@ constructor(
 
     override suspend fun getCameraExtensionMetadata(
         cameraId: CameraId,
-        extension: Int
+        extension: Int,
     ): CameraExtensionMetadata {
         synchronized(extensionCache) {
             val existing = extensionCache[cameraId.value]
@@ -114,7 +114,7 @@ constructor(
 
     override fun awaitCameraExtensionMetadata(
         cameraId: CameraId,
-        extension: Int
+        extension: Int,
     ): CameraExtensionMetadata {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return Debug.trace("$cameraId#awaitExtensionMetadata") {
@@ -136,6 +136,14 @@ constructor(
                     "Device SDK is ${Build.VERSION.SDK_INT}"
             )
         }
+    }
+
+    override fun getSupportedCameraExtensions(cameraId: CameraId): Set<Int> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val extensionCharacteristics = getCameraExtensionCharacteristics(cameraId)
+            return Api31Compat.getSupportedExtensions(extensionCharacteristics).toSet()
+        }
+        return emptySet()
     }
 
     private fun createCameraMetadata(cameraId: CameraId, redacted: Boolean): Camera2CameraMetadata {
@@ -178,7 +186,7 @@ constructor(
                         characteristics,
                         this,
                         emptyMap(),
-                        cacheBlocklist
+                        cacheBlocklist,
                     )
 
                 Log.info {
@@ -203,11 +211,11 @@ constructor(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
+    @RequiresApi(31)
     private fun createCameraExtensionMetadata(
         cameraId: CameraId,
         redacted: Boolean,
-        extension: Int
+        extension: Int,
     ): Camera2CameraExtensionMetadata {
         val start = Timestamps.now(timeSource)
 
@@ -223,7 +231,7 @@ constructor(
                         redacted,
                         extension,
                         extensionCharacteristics,
-                        emptyMap()
+                        emptyMap(),
                     )
 
                 Log.info {
@@ -240,15 +248,15 @@ constructor(
                 return@trace extensionMetadata
             } catch (throwable: Throwable) {
                 throw IllegalStateException(
-                    "Failed to load extension metadata " + "for $cameraId!",
-                    throwable
+                    "Failed to load extension metadata for $cameraId!",
+                    throwable,
                 )
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
-    override fun getCameraExtensionCharacteristics(
+    @RequiresApi(31)
+    private fun getCameraExtensionCharacteristics(
         cameraId: CameraId
     ): CameraExtensionCharacteristics {
         synchronized(extensionCharacteristicsCache) {

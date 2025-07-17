@@ -17,12 +17,20 @@
 package androidx.compose.foundation.text.input.internal
 
 import android.content.ClipData
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
 import android.os.Handler
 import android.os.Parcelable
+import android.text.Spanned
 import android.text.TextUtils
+import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
+import android.text.style.UnderlineSpan
 import android.util.Log
 import android.view.KeyEvent
 import android.view.inputmethod.CompletionInfo
@@ -35,20 +43,27 @@ import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputConnectionWrapper
 import android.view.inputmethod.InputContentInfo
 import android.view.inputmethod.PreviewableHandwritingGesture
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.PlatformTransferableContent
 import androidx.compose.foundation.content.TransferableContent
+import androidx.compose.foundation.text.input.PlacedAnnotation
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.getSelectedText
 import androidx.compose.foundation.text.input.getTextAfterSelection
 import androidx.compose.foundation.text.input.getTextBeforeSelection
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.toClipMetadata
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
@@ -74,7 +89,7 @@ private const val EXTRA_INPUT_CONTENT_INFO = "EXTRA_INPUT_CONTENT_INFO"
 @OptIn(ExperimentalFoundationApi::class)
 internal class StatelessInputConnection(
     private val session: TextInputSession,
-    editorInfo: EditorInfo
+    editorInfo: EditorInfo,
 ) : InputConnection {
     /**
      * The depth of the batch session. 0 means no session.
@@ -94,7 +109,7 @@ internal class StatelessInputConnection(
         get() = session.text
 
     /** Recording of editing operations for batch editing */
-    private val editCommands = mutableVectorOf<EditingBuffer.() -> Unit>()
+    private val editCommands = mutableVectorOf<ImeEditCommandScope.() -> Unit>()
 
     /**
      * Wraps this StatelessInputConnection to halt a possible infinite loop in [commitContent]
@@ -122,7 +137,7 @@ internal class StatelessInputConnection(
             override fun commitContent(
                 inputContentInfo: InputContentInfo,
                 flags: Int,
-                opts: Bundle?
+                opts: Bundle?,
             ): Boolean {
                 return false
             }
@@ -158,7 +173,7 @@ internal class StatelessInputConnection(
                 override fun onCommitContent(
                     inputContentInfo: InputContentInfoCompat,
                     flags: Int,
-                    opts: Bundle?
+                    opts: Bundle?,
                 ): Boolean {
                     // The below code is mostly copied from `InputConnectionCompat.java`
                     var extras: Bundle? = opts
@@ -187,23 +202,8 @@ internal class StatelessInputConnection(
                     }
                     return session.onCommitContent(inputContentInfo.toTransferableContent(extras))
                 }
-            }
+            },
         )
-
-    /**
-     * Add edit op to internal list with wrapping batch edit. It's not guaranteed by IME that batch
-     * editing will be used for every operation. Instead, [StatelessInputConnection] creates its own
-     * mini batches for every edit op. These batches are only applied when batch depth reaches 0,
-     * meaning that artificial batches won't be applied until the real batches are completed.
-     */
-    private fun addEditCommandWithBatch(editCommand: EditingBuffer.() -> Unit) {
-        beginBatchEditInternal()
-        try {
-            editCommands.add(editCommand)
-        } finally {
-            endBatchEditInternal()
-        }
-    }
 
     // region Methods for batch editing and session control
     override fun beginBatchEdit(): Boolean {
@@ -211,25 +211,14 @@ internal class StatelessInputConnection(
         return beginBatchEditInternal()
     }
 
-    private fun beginBatchEditInternal(): Boolean {
-        batchDepth++
-        return true
-    }
+    private fun beginBatchEditInternal() = session.beginBatchEdit()
 
     override fun endBatchEdit(): Boolean {
         logDebug("endBatchEdit()")
         return endBatchEditInternal()
     }
 
-    private fun endBatchEditInternal(): Boolean {
-        batchDepth--
-        if (batchDepth == 0 && editCommands.isNotEmpty()) {
-            // apply the changes to active input session in order.
-            session.requestEdit { editCommands.forEach { it.invoke(this) } }
-            editCommands.clear()
-        }
-        return batchDepth > 0
-    }
+    private fun endBatchEditInternal() = session.endBatchEdit()
 
     override fun closeConnection() {
         logDebug("closeConnection()")
@@ -243,43 +232,49 @@ internal class StatelessInputConnection(
 
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
         logDebug("commitText(\"$text\", $newCursorPosition)")
-        addEditCommandWithBatch { commitText(text.toString(), newCursorPosition) }
+        if (text == null) return true
+        session.commitText(text.toString(), newCursorPosition)
         return true
     }
 
     override fun setComposingRegion(start: Int, end: Int): Boolean {
         logDebug("setComposingRegion($start, $end)")
-        addEditCommandWithBatch { setComposingRegion(start, end) }
+        session.setComposingRegion(start, end)
         return true
     }
 
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
         logDebug("setComposingText(\"$text\", $newCursorPosition)")
-        addEditCommandWithBatch { setComposingText(text.toString(), newCursorPosition) }
+        if (text == null) return true
+        session.setComposingText(
+            text = text.toString(),
+            newCursorPosition = newCursorPosition,
+            annotations = (text as? Spanned)?.toAnnotationList(),
+        )
         return true
     }
 
     override fun deleteSurroundingTextInCodePoints(beforeLength: Int, afterLength: Int): Boolean {
         logDebug("deleteSurroundingTextInCodePoints($beforeLength, $afterLength)")
-        addEditCommandWithBatch { deleteSurroundingTextInCodePoints(beforeLength, afterLength) }
+        session.deleteSurroundingTextInCodePoints(beforeLength, afterLength)
         return true
     }
 
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
         logDebug("deleteSurroundingText($beforeLength, $afterLength)")
-        addEditCommandWithBatch { deleteSurroundingText(beforeLength, afterLength) }
+        session.deleteSurroundingText(beforeLength, afterLength)
         return true
     }
 
     override fun setSelection(start: Int, end: Int): Boolean {
         logDebug("setSelection($start, $end)")
-        addEditCommandWithBatch { setSelection(start, end) }
+        session.setSelection(start, end)
         return true
     }
 
     override fun finishComposingText(): Boolean {
         logDebug("finishComposingText()")
-        addEditCommandWithBatch { finishComposingText() }
+        session.finishComposingText()
         return true
     }
 
@@ -329,7 +324,7 @@ internal class StatelessInputConnection(
     override fun performHandwritingGesture(
         gesture: HandwritingGesture,
         executor: Executor?,
-        consumer: IntConsumer?
+        consumer: IntConsumer?,
     ) {
         logDebug("performHandwritingGesture($gesture, $executor, $consumer)")
         // This InputConnection#performHandwritingGesture is added on Api 34. No need to support
@@ -341,13 +336,13 @@ internal class StatelessInputConnection(
             session,
             gesture,
             executor,
-            consumer
+            consumer,
         )
     }
 
     override fun previewHandwritingGesture(
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         logDebug("previewHandwritingGesture($gesture, $cancellationSignal)")
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return false
@@ -355,7 +350,7 @@ internal class StatelessInputConnection(
         return Api34PerformHandwritingGestureImpl.previewHandwritingGesture(
             session,
             gesture,
-            cancellationSignal
+            cancellationSignal,
         )
     }
 
@@ -383,9 +378,7 @@ internal class StatelessInputConnection(
     override fun performContextMenuAction(id: Int): Boolean {
         logDebug("performContextMenuAction($id)")
         when (id) {
-            android.R.id.selectAll -> {
-                addEditCommandWithBatch { setSelection(0, text.length) }
-            }
+            android.R.id.selectAll -> session.setSelection(0, text.length)
             // TODO(siyamed): Need proper connection to cut/copy/paste
             android.R.id.cut -> sendSynthesizedKeyEvent(KeyEvent.KEYCODE_CUT)
             android.R.id.copy -> sendSynthesizedKeyEvent(KeyEvent.KEYCODE_COPY)
@@ -480,7 +473,7 @@ internal class StatelessInputConnection(
     override fun commitContent(
         inputContentInfo: InputContentInfo,
         flags: Int,
-        opts: Bundle?
+        opts: Bundle?,
     ): Boolean {
         logDebug("commitContent($inputContentInfo, $flags, $opts)")
         return if (Build.VERSION.SDK_INT >= 25) {
@@ -488,7 +481,7 @@ internal class StatelessInputConnection(
                 inputConnection = commitContentDelegateInputConnection,
                 inputContentInfo = inputContentInfo,
                 flags = flags,
-                opts = opts
+                opts = opts,
             )
         } else {
             // This should never happen. Platform does not know about `commitContent` below API 25
@@ -509,12 +502,11 @@ internal class StatelessInputConnection(
 @RequiresApi(25)
 private object Api25CommitContentImpl {
 
-    @DoNotInline
     fun commitContent(
         inputConnection: InputConnection,
         inputContentInfo: InputContentInfo,
         flags: Int,
-        opts: Bundle?
+        opts: Bundle?,
     ): Boolean {
         return inputConnection.commitContent(inputContentInfo, flags, opts)
     }
@@ -522,12 +514,11 @@ private object Api25CommitContentImpl {
 
 @RequiresApi(34)
 private object Api34PerformHandwritingGestureImpl {
-    @DoNotInline
     fun performHandwritingGesture(
         session: TextInputSession,
         gesture: HandwritingGesture,
         executor: Executor?,
-        intConsumer: IntConsumer?
+        intConsumer: IntConsumer?,
     ) {
         val result = session.performHandwritingGesture(gesture)
         if (intConsumer == null) return
@@ -539,11 +530,10 @@ private object Api34PerformHandwritingGestureImpl {
         }
     }
 
-    @DoNotInline
     fun previewHandwritingGesture(
         session: TextInputSession,
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         return session.previewHandwritingGesture(gesture, cancellationSignal)
     }
@@ -569,6 +559,101 @@ internal fun InputContentInfoCompat.toTransferableContent(extras: Bundle?): Tran
         source = TransferableContent.Source.Keyboard,
         clipMetadata = description.toClipMetadata(),
         platformTransferableContent =
-            PlatformTransferableContent(linkUri = linkUri, extras = extras ?: Bundle.EMPTY)
+            PlatformTransferableContent(linkUri = linkUri, extras = extras ?: Bundle.EMPTY),
     )
+}
+
+@VisibleForTesting
+internal fun Spanned.toAnnotationList(): List<PlacedAnnotation>? {
+    var mutableAnnotationList: MutableList<PlacedAnnotation>? = null
+    val spans = getSpans(0, length, Any::class.java)
+    spans.forEach { span ->
+        span.toAnnotation()?.let { annotation ->
+            if (mutableAnnotationList == null) {
+                mutableAnnotationList = mutableListOf()
+            }
+            mutableAnnotationList?.add(
+                AnnotatedString.Range(
+                    item = annotation,
+                    start = getSpanStart(span),
+                    end = getSpanEnd(span),
+                )
+            )
+        }
+    }
+    return mutableAnnotationList
+}
+
+// The following functions were borrowed from ui-text module where they are currently private.
+private fun Any.toAnnotation(): AnnotatedString.Annotation? {
+    return when (this) {
+        is BackgroundColorSpan -> {
+            SpanStyle(background = Color(this.backgroundColor))
+        }
+        is ForegroundColorSpan -> {
+            SpanStyle(color = Color(this.foregroundColor))
+        }
+        is StrikethroughSpan -> {
+            SpanStyle(textDecoration = TextDecoration.LineThrough)
+        }
+        is StyleSpan -> {
+            this.toSpanStyle()
+        }
+        is TypefaceSpan -> {
+            this.toSpanStyle()
+        }
+        is UnderlineSpan -> {
+            SpanStyle(textDecoration = TextDecoration.Underline)
+        }
+        else -> null
+    }
+}
+
+private fun StyleSpan.toSpanStyle(): SpanStyle? {
+    /**
+     * StyleSpan doc: styles are cumulative -- if both bold and italic are set in separate spans, or
+     * if the base style is bold and a span calls for italic, you get bold italic. You can't turn
+     * off a style from the base style.
+     */
+    return when (style) {
+        Typeface.BOLD -> {
+            SpanStyle(fontWeight = FontWeight.Bold)
+        }
+        Typeface.ITALIC -> {
+            SpanStyle(fontStyle = FontStyle.Italic)
+        }
+        Typeface.BOLD_ITALIC -> {
+            SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+        }
+        else -> null
+    }
+}
+
+private fun TypefaceSpan.toSpanStyle(): SpanStyle {
+    val fontFamily =
+        when (family) {
+            FontFamily.Cursive.name -> FontFamily.Cursive
+            FontFamily.Monospace.name -> FontFamily.Monospace
+            FontFamily.SansSerif.name -> FontFamily.SansSerif
+            FontFamily.Serif.name -> FontFamily.Serif
+            else -> {
+                optionalFontFamilyFromName(family)
+            }
+        }
+    return SpanStyle(fontFamily = fontFamily)
+}
+
+/**
+ * Mirrors [androidx.compose.ui.text.font.PlatformTypefaces.optionalOnDeviceFontFamilyByName]
+ * behavior with both font weight and font style being Normal in this case
+ */
+private fun optionalFontFamilyFromName(familyName: String?): FontFamily? {
+    if (familyName.isNullOrEmpty()) return null
+    val typeface = Typeface.create(familyName, Typeface.NORMAL)
+    return typeface
+        .takeIf {
+            typeface != Typeface.DEFAULT &&
+                typeface != Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+        ?.let { FontFamily(it) }
 }

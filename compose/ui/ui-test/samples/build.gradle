@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -36,20 +37,25 @@ dependencies {
 
     compileOnly(project(":annotation:annotation-sampled"))
 
+    implementation(project(":compose:foundation:foundation"))
+    implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:ui:ui-test"))
     implementation(project(":compose:ui:ui-test-junit4"))
 
     implementation("androidx.compose.animation:animation:1.2.1")
     implementation("androidx.compose.material:material:1.2.1")
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation(libs.espressoAccessibility)
 }
 
 androidx {
     name = "Compose Testing Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
     description = "Contains samples for AndroidX Compose Testing."
 }
 
 android {
-    namespace "androidx.compose.ui.test.samples"
+    compileSdk = 35
+    namespace = "androidx.compose.ui.test.samples"
 }

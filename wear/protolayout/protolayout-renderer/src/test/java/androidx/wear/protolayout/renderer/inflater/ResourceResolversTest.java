@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
 
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.proto.DynamicProto.DynamicFloat;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedFloat;
@@ -52,6 +51,7 @@ import androidx.wear.protolayout.renderer.test.R;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

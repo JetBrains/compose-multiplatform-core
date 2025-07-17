@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,13 +29,14 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     annotationProcessor(libs.nullaway)
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
 
-    implementation("androidx.collection:collection:1.2.0")
+    implementation("androidx.collection:collection:1.4.2")
     implementation("androidx.core:core:1.7.0")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation(project(":wear:protolayout:protolayout-proto"))
     implementation(project(":wear:protolayout:protolayout-expression"))
 
@@ -43,22 +44,21 @@ dependencies {
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 }
 
 android {
-    namespace "androidx.wear.protolayout.expression.pipeline"
+    namespace = "androidx.wear.protolayout.expression.pipeline"
 
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
 }
 
 androidx {
     name = "ProtoLayout Expression Pipeline"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Evaluate dynamic expressions."
-    metalavaK2UastEnabled = true
+    enableRobolectric()
 }

@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 
 /** Empty Implementation for devices that do not support the [WindowAreaController] functionality */
 @ExperimentalWindowApi
-internal class EmptyWindowAreaControllerImpl : WindowAreaController {
+internal class EmptyWindowAreaControllerImpl : WindowAreaController() {
 
     override val windowAreaInfos: Flow<List<WindowAreaInfo>>
         get() = flowOf(listOf())
@@ -34,7 +34,7 @@ internal class EmptyWindowAreaControllerImpl : WindowAreaController {
         token: Binder,
         activity: Activity,
         executor: Executor,
-        windowAreaSessionCallback: WindowAreaSessionCallback
+        windowAreaSessionCallback: WindowAreaSessionCallback,
     ) {
         windowAreaSessionCallback.onSessionEnded(IllegalStateException("There are no WindowAreas"))
     }
@@ -43,7 +43,7 @@ internal class EmptyWindowAreaControllerImpl : WindowAreaController {
         token: Binder,
         activity: Activity,
         executor: Executor,
-        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback
+        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
     ) {
         windowAreaPresentationSessionCallback.onSessionEnded(
             IllegalStateException("There are no WindowAreas")

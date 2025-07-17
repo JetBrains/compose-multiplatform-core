@@ -22,8 +22,6 @@ import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.PathInterpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Pair;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.AnimationParameters;
@@ -32,6 +30,9 @@ import androidx.wear.protolayout.expression.proto.AnimationParameterProto.CubicB
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.Easing;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.RepeatMode;
 import androidx.wear.protolayout.expression.proto.AnimationParameterProto.Repeatable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.EnumMap;
@@ -64,8 +65,7 @@ public class AnimationsHelper {
     /** Returns the main duration from the given {@link AnimationSpec} or default value if not
      * set. */
     @SuppressWarnings("deprecation") // Make sure the deprecated method is valid for compatibility
-    @NonNull
-    public static Duration getMainDurationOrDefault(@NonNull AnimationSpec spec) {
+    public static @NonNull Duration getMainDurationOrDefault(@NonNull AnimationSpec spec) {
         return spec.hasAnimationParameters()
                 && spec.getAnimationParameters().getDurationMillis() > 0
                 ? Duration.ofMillis(spec.getAnimationParameters().getDurationMillis())
@@ -76,8 +76,7 @@ public class AnimationsHelper {
 
     /** Returns the main delay from the given {@link AnimationSpec} or default value if not set. */
     @SuppressWarnings("deprecation") // Make sure the deprecated method is valid for compatibility
-    @NonNull
-    public static Duration getMainDelayOrDefault(@NonNull AnimationSpec spec) {
+    public static @NonNull Duration getMainDelayOrDefault(@NonNull AnimationSpec spec) {
         return spec.getAnimationParameters().hasDelayMillis()
                 ? Duration.ofMillis(spec.getAnimationParameters().getDelayMillis())
                 : spec.getStartDelayMillis() > 0
@@ -90,8 +89,7 @@ public class AnimationsHelper {
      * default value if not set.
      */
     @SuppressWarnings("deprecation") // Make sure the deprecated method is valid for compatibility
-    @NonNull
-    public static Interpolator getMainInterpolatorOrDefault(@NonNull AnimationSpec spec) {
+    public static @NonNull Interpolator getMainInterpolatorOrDefault(@NonNull AnimationSpec spec) {
         Interpolator interpolator = DEFAULT_ANIM_INTERPOLATOR;
 
         Easing easing = null;
@@ -154,8 +152,8 @@ public class AnimationsHelper {
 
     // public static Duration getOverrideForwardDurationOrDefault(@NonNull AnimationSpec spec) {...}
 
-    @NonNull
-    public static Duration getOverrideReverseDurationOrDefault(@NonNull AnimationSpec spec) {
+    public static @NonNull Duration getOverrideReverseDurationOrDefault(
+            @NonNull AnimationSpec spec) {
         if (spec.hasRepeatable()) {
             Repeatable repeatable = spec.getRepeatable();
             if (repeatable.hasReverseRepeatOverride()) {
@@ -223,8 +221,7 @@ public class AnimationsHelper {
      * main and aux animators which are played alternately. For other cases, null is returned as no
      * split would happen.
      */
-    @Nullable
-    static Pair<AnimationSpec, AnimationSpec> maybeSplitToMainAndAuxAnimationSpec(
+    static @Nullable Pair<AnimationSpec, AnimationSpec> maybeSplitToMainAndAuxAnimationSpec(
             @NonNull AnimationSpec spec) {
         if (!hasCustomReverseDuration(spec)) {
             return null;

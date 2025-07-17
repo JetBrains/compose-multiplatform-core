@@ -18,7 +18,7 @@ package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
 import androidx.compose.animation.core.animate
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +29,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.layout.LazyLayoutScrollScope
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.LazyLayoutScrollScope
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
@@ -53,6 +55,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -65,14 +68,11 @@ import kotlinx.coroutines.launch
 fun SimpleHorizontalPagerSample() {
     // Creates a 1-pager/viewport horizontal pager with single page snapping
     val state = rememberPagerState { 10 }
-    HorizontalPager(
-        state = state,
-        modifier = Modifier.fillMaxSize(),
-    ) { page ->
+    HorizontalPager(state = state, modifier = Modifier.fillMaxSize()) { page ->
         Box(
             modifier =
                 Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(text = page.toString(), fontSize = 32.sp)
         }
@@ -88,7 +88,7 @@ fun SimpleVerticalPagerSample() {
         Box(
             modifier =
                 Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(text = page.toString(), fontSize = 32.sp)
         }
@@ -104,14 +104,13 @@ fun PagerWithStateSample() {
         Box(
             modifier =
                 Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(text = page.toString(), fontSize = 32.sp)
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun PagerCustomAnimateScrollToPage() {
@@ -131,10 +130,7 @@ fun PagerCustomAnimateScrollToPage() {
             val targetPageDiff = page - currentPage
             val distance = targetPageDiff * layoutInfo.pageSize.toFloat()
             var previousValue = 0.0f
-            animate(
-                0f,
-                distance,
-            ) { currentValue, _ ->
+            animate(0f, distance) { currentValue, _ ->
                 previousValue += scrollBy(currentValue - previousValue)
             }
         }
@@ -148,7 +144,7 @@ fun PagerCustomAnimateScrollToPage() {
             Box(
                 modifier =
                     Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = page.toString(), fontSize = 32.sp)
             }
@@ -170,7 +166,7 @@ fun CustomPageSizeSample() {
         object : PageSize {
             override fun Density.calculateMainAxisPageSize(
                 availableSpace: Int,
-                pageSpacing: Int
+                pageSpacing: Int,
             ): Int {
                 // [availableSpace] represents the whole Pager width (in this case), we'd like to
                 // have
@@ -186,7 +182,7 @@ fun CustomPageSizeSample() {
         Box(
             modifier =
                 Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(text = page.toString(), fontSize = 32.sp)
         }
@@ -202,13 +198,14 @@ fun ObservingStateChangesInPagerStateSample() {
             Box(
                 modifier =
                     Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = page.toString(), fontSize = 32.sp)
             }
         }
         Column(modifier = Modifier.weight(0.1f).fillMaxWidth()) {
             Text(text = "Current Page: ${pagerState.currentPage}")
+            Text(text = "Current Page Offset Fraction: ${pagerState.currentPageOffsetFraction}")
             Text(text = "Target Page: ${pagerState.targetPage}")
             Text(text = "Settled Page Offset: ${pagerState.settledPage}")
         }
@@ -225,7 +222,7 @@ fun AnimateScrollPageSample() {
             Box(
                 modifier =
                     Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = page.toString(), fontSize = 32.sp)
             }
@@ -253,7 +250,7 @@ fun ScrollToPageSample() {
             Box(
                 modifier =
                     Modifier.padding(10.dp).background(Color.Blue).fillMaxWidth().aspectRatio(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(text = page.toString(), fontSize = 32.sp)
             }
@@ -298,7 +295,7 @@ fun HorizontalPagerWithScrollableContent() {
                 Modifier.height(toolbarHeight).offset {
                     IntOffset(x = 0, y = toolbarOffsetHeightPx.value.roundToInt())
                 },
-            title = { Text("Toolbar offset is ${toolbarOffsetHeightPx.value}") }
+            title = { Text("Toolbar offset is ${toolbarOffsetHeightPx.value}") },
         )
 
         val paddingOffset =
@@ -307,7 +304,7 @@ fun HorizontalPagerWithScrollableContent() {
         HorizontalPager(
             modifier = Modifier.fillMaxSize(),
             state = pagerState,
-            contentPadding = PaddingValues(top = paddingOffset)
+            contentPadding = PaddingValues(top = paddingOffset),
         ) {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 repeat(20) {
@@ -317,11 +314,11 @@ fun HorizontalPagerWithScrollableContent() {
                                 .height(64.dp)
                                 .padding(4.dp)
                                 .background(if (it % 2 == 0) Color.Black else Color.Yellow),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = it.toString(),
-                            color = if (it % 2 != 0) Color.Black else Color.Yellow
+                            color = if (it % 2 != 0) Color.Black else Color.Yellow,
                         )
                     }
                 }
@@ -339,5 +336,47 @@ fun UsingPagerLayoutInfoForSideEffectSample() {
             .collect {
                 // use the new first visible page info
             }
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun PagerCustomScrollUsingLazyLayoutScrollScopeSample() {
+    suspend fun PagerState.customScroll(block: suspend LazyLayoutScrollScope.() -> Unit) = scroll {
+        block.invoke(LazyLayoutScrollScope(this@customScroll, this))
+    }
+
+    val itemsList = (0..100).toList()
+    val state = rememberPagerState { itemsList.size }
+    val scope = rememberCoroutineScope()
+
+    Column(Modifier.verticalScroll(rememberScrollState())) {
+        Button(
+            onClick = {
+                scope.launch {
+                    state.customScroll {
+                        snapToItem(40, 0) // teleport to item 40
+                        val distance = calculateDistanceTo(50).toFloat()
+                        var previousValue = 0f
+                        androidx.compose.animation.core.animate(
+                            0f,
+                            distance,
+                            animationSpec = tween(5_000),
+                        ) { currentValue, _ ->
+                            previousValue += scrollBy(currentValue - previousValue)
+                        }
+                    }
+                }
+            }
+        ) {
+            Text("Scroll To Item 50")
+        }
+
+        HorizontalPager(state) {
+            Box(Modifier.padding(2.dp).background(Color.Red).height(600.dp).fillMaxWidth()) {
+                Text(itemsList[it].toString())
+            }
+        }
     }
 }

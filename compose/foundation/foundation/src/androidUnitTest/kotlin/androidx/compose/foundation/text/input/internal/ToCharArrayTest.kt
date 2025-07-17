@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFails
@@ -24,16 +23,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class ToCharArrayTest {
 
     private val sources =
-        listOf(
-            "hello",
-            TextFieldCharSequence("hello"),
-            CustomCharSequence("hello"),
-        )
+        listOf("hello", TextFieldCharSequence("hello"), CustomCharSequence("hello"))
 
     private val dest = CharArray(10)
 
@@ -78,7 +72,7 @@ class ToCharArrayTest {
                     Char(0),
                     Char(0),
                     Char(0),
-                    Char(0)
+                    Char(0),
                 )
                 .inOrder()
         }
@@ -101,7 +95,7 @@ class ToCharArrayTest {
                     'e',
                     'l',
                     'l',
-                    'o'
+                    'o',
                 )
                 .inOrder()
         }

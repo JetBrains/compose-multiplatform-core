@@ -16,14 +16,12 @@
 
 package androidx.compose.ui.res
 
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.ConfigChangeActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.tests.R
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -33,16 +31,26 @@ import org.junit.runner.RunWith
 @SmallTest
 class ColorResourcesTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createAndroidComposeRule<ConfigChangeActivity>()
 
     @Test
     fun colorResourceTest() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-
         rule.setContent {
-            CompositionLocalProvider(LocalContext provides context) {
-                assertThat(colorResource(R.color.color_resource)).isEqualTo(Color(0x12345678))
-            }
+            assertThat(colorResource(R.color.color_resource)).isEqualTo(Color(0x12345678))
         }
+    }
+
+    @Test
+    fun colorResource_observesConfigChanges() {
+        var color = Color.Unspecified
+
+        rule.activity.setDarkMode(false)
+        rule.setContent { color = colorResource(R.color.day_night_color) }
+
+        assertThat(color).isEqualTo(Color(0x11223344))
+
+        rule.activity.setDarkMode(true)
+        rule.waitForIdle()
+        assertThat(color).isEqualTo(Color(0x44332211))
     }
 }

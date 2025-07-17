@@ -32,18 +32,21 @@ import java.text.DateFormat
     /** LONG is longer, such as January 12, 1952 or 3:30:32pm. */
     DateFormat.LONG,
     /** FULL is pretty completely specified, such as Tuesday, April 12, 1952 AD or 3:30:42pm PST. */
-    DateFormat.FULL
+    DateFormat.FULL,
 )
-annotation class DateTimeStyle
+public annotation class DateTimeStyle
 
 /**
  * This class provides functionality similar to the one in [java.text.DateFormat].
  *
  * Although not very flexible, it makes migration easier.
  */
-class DateTimeFormatterJdkStyleOptions
-private constructor(val dateStyle: @DateTimeStyle Int, val timeStyle: @DateTimeStyle Int) {
-    companion object {
+public class DateTimeFormatterJdkStyleOptions
+private constructor(
+    public val dateStyle: @DateTimeStyle Int,
+    public val timeStyle: @DateTimeStyle Int,
+) {
+    public companion object {
         /**
          * Gets the date formatter with the given formatting style for the default locale.
          *
@@ -52,7 +55,7 @@ private constructor(val dateStyle: @DateTimeStyle Int, val timeStyle: @DateTimeS
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createDateInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
+        public fun createDateInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
             return DateTimeFormatterJdkStyleOptions(style, -1)
         }
 
@@ -64,7 +67,7 @@ private constructor(val dateStyle: @DateTimeStyle Int, val timeStyle: @DateTimeS
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createTimeInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
+        public fun createTimeInstance(style: @DateTimeStyle Int): DateTimeFormatterJdkStyleOptions {
             return DateTimeFormatterJdkStyleOptions(-1, style)
         }
 
@@ -78,9 +81,9 @@ private constructor(val dateStyle: @DateTimeStyle Int, val timeStyle: @DateTimeS
          * @return the formatting options to use with [androidx.core.i18n.DateTimeFormatter].
          */
         @JvmStatic
-        fun createDateTimeInstance(
+        public fun createDateTimeInstance(
             dateStyle: @DateTimeStyle Int,
-            timeStyle: @DateTimeStyle Int
+            timeStyle: @DateTimeStyle Int,
         ): DateTimeFormatterJdkStyleOptions {
             return DateTimeFormatterJdkStyleOptions(dateStyle, timeStyle)
         }

@@ -19,7 +19,7 @@ package androidx.autofill.inline;
 import android.app.Activity;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class InlineUiActivity extends Activity {
     @Override

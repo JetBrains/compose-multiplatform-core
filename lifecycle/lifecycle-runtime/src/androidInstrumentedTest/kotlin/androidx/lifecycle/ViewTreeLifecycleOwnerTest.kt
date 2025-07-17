@@ -17,6 +17,7 @@ package androidx.lifecycle
 
 import android.view.View
 import android.widget.FrameLayout
+import androidx.core.viewtree.setViewTreeDisjointParent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
@@ -38,7 +39,7 @@ class ViewTreeLifecycleOwnerTest {
         assertEquals(
             "get the LifecycleOwner set directly",
             fakeOwner,
-            v.findViewTreeLifecycleOwner()
+            v.findViewTreeLifecycleOwner(),
         )
     }
 
@@ -83,9 +84,52 @@ class ViewTreeLifecycleOwnerTest {
         assertEquals(
             "direct child sees owner",
             parentFakeOwner,
-            parent.findViewTreeLifecycleOwner()
+            parent.findViewTreeLifecycleOwner(),
         )
         assertEquals("grandchild sees owner", parentFakeOwner, child.findViewTreeLifecycleOwner())
+    }
+
+    @Test
+    fun disjointParentOwner() {
+        val context = getInstrumentation().context
+        val root = FrameLayout(context)
+        val disjointParent = FrameLayout(context)
+        val parent = FrameLayout(context)
+        val child = View(context)
+
+        root.addView(disjointParent)
+        parent.addView(child)
+        parent.setViewTreeDisjointParent(disjointParent)
+
+        val rootFakeOwner = FakeLifecycleOwner()
+        root.setViewTreeLifecycleOwner(rootFakeOwner)
+
+        assertEquals(
+            "disjoint parent sees owner",
+            rootFakeOwner,
+            parent.findViewTreeLifecycleOwner(),
+        )
+        assertEquals("disjoint child sees owner", rootFakeOwner, child.findViewTreeLifecycleOwner())
+    }
+
+    @Test
+    fun shadowedDisjointParentOwner() {
+        val context = getInstrumentation().context
+        val root = FrameLayout(context)
+        val disjointParent = FrameLayout(context)
+        val parent = FrameLayout(context)
+        val child = View(context)
+
+        root.addView(disjointParent)
+        parent.addView(child)
+        parent.setViewTreeDisjointParent(disjointParent)
+
+        val rootFakeOwner = FakeLifecycleOwner()
+        val parentFakeOwner = FakeLifecycleOwner()
+        root.setViewTreeLifecycleOwner(rootFakeOwner)
+        parent.setViewTreeLifecycleOwner(parentFakeOwner)
+
+        assertEquals("child sees owner", parentFakeOwner, child.findViewTreeLifecycleOwner())
     }
 
     internal class FakeLifecycleOwner : LifecycleOwner {

@@ -18,14 +18,16 @@ package androidx.credentials
 
 import android.content.ComponentName
 import androidx.credentials.GetCredentialRequest.Companion.createFrom
-import androidx.credentials.GetCredentialRequest.Companion.toRequestDataBundle
+import androidx.credentials.GetCredentialRequest.Companion.getRequestMetadataBundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalDigitalCredentialApi::class)
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class GetCredentialRequestTest {
@@ -36,6 +38,41 @@ class GetCredentialRequestTest {
     @Test
     fun constructor_emptyCredentialOptions_throws() {
         assertThrows(IllegalArgumentException::class.java) { GetCredentialRequest(ArrayList()) }
+    }
+
+    @Test
+    fun constructor_mixedUseOfGetRestoreCredentialOption_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            val credentialOptions = ArrayList<CredentialOption>()
+            credentialOptions.add(GetRestoreCredentialOption(TEST_JSON))
+            credentialOptions.add(GetPasswordOption())
+            GetCredentialRequest(credentialOptions)
+        }
+    }
+
+    @Test
+    fun constructor_singleUseOfGetRestoreCredentialOption_doesNotThrow() {
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetRestoreCredentialOption(TEST_JSON))
+        GetCredentialRequest(credentialOptions)
+    }
+
+    @Test
+    fun constructor_mixedUseOfDigitalCredentialOption_throws() {
+        assertThrows(IllegalArgumentException::class.java) {
+            val credentialOptions = ArrayList<CredentialOption>()
+            credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+            credentialOptions.add(GetPasswordOption())
+            GetCredentialRequest(credentialOptions)
+        }
+    }
+
+    @Test
+    fun constructor_singleUseOfDigitalCredentialOption_doesNotThrow() {
+        val credentialOptions = ArrayList<CredentialOption>()
+        credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+        credentialOptions.add(GetDigitalCredentialOption(TEST_JSON))
+        GetCredentialRequest(credentialOptions)
     }
 
     @Test
@@ -81,7 +118,7 @@ class GetCredentialRequestTest {
                 options,
                 /*origin=*/ null,
                 /*preferIdentityDocUi=*/ false,
-                expectedComponentName
+                expectedComponentName,
             )
 
         assertThat(request.credentialOptions[0].isAutoSelectAllowed).isFalse()
@@ -100,7 +137,7 @@ class GetCredentialRequestTest {
                 origin = null,
                 preferIdentityDocUi = false,
                 preferUiBrandingComponentName = null,
-                expectedPreferImmediatelyAvailableCredentials
+                expectedPreferImmediatelyAvailableCredentials,
             )
 
         assertThat(request.credentialOptions[0].isAutoSelectAllowed).isFalse()
@@ -228,10 +265,55 @@ class GetCredentialRequestTest {
                 expectedOrigin,
                 expectedPreferIdentityDocUi,
                 expectedComponentName,
-                expectedPreferImmediatelyAvailableCredentials
+                expectedPreferImmediatelyAvailableCredentials,
             )
 
-        val convertedRequest = createFrom(options, request.origin, toRequestDataBundle(request))
+        val convertedRequest =
+            createFrom(options, request.origin, getRequestMetadataBundle(request))
+
+        assertThat(convertedRequest.origin).isEqualTo(expectedOrigin)
+        assertThat(convertedRequest.preferIdentityDocUi).isEqualTo(expectedPreferIdentityDocUi)
+        assertThat(convertedRequest.preferUiBrandingComponentName).isEqualTo(expectedComponentName)
+        assertThat(convertedRequest.preferImmediatelyAvailableCredentials)
+            .isEqualTo(expectedPreferImmediatelyAvailableCredentials)
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun frameworkConversion_frameworkClass_success() {
+        val options = java.util.ArrayList<CredentialOption>()
+        options.add(GetPasswordOption())
+        val expectedPreferImmediatelyAvailableCredentials = true
+        val expectedComponentName = ComponentName("test pkg", "test cls")
+        val expectedPreferIdentityDocUi = true
+        val expectedOrigin = "origin"
+        val request =
+            GetCredentialRequest(
+                options,
+                expectedOrigin,
+                expectedPreferIdentityDocUi,
+                expectedComponentName,
+                expectedPreferImmediatelyAvailableCredentials,
+            )
+
+        val convertedRequest =
+            createFrom(
+                android.credentials.GetCredentialRequest.Builder(getRequestMetadataBundle(request))
+                    .setOrigin(expectedOrigin)
+                    .setCredentialOptions(
+                        options.map {
+                            android.credentials.CredentialOption.Builder(
+                                    it.type,
+                                    it.requestData,
+                                    it.candidateQueryData,
+                                )
+                                .setAllowedProviders(it.allowedProviders)
+                                .setIsSystemProviderRequired(it.isSystemProviderRequired)
+                                .build()
+                        }
+                    )
+                    .build()
+            )
 
         assertThat(convertedRequest.origin).isEqualTo(expectedOrigin)
         assertThat(convertedRequest.preferIdentityDocUi).isEqualTo(expectedPreferIdentityDocUi)

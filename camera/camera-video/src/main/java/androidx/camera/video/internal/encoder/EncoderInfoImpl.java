@@ -18,7 +18,7 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaCodecInfo;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -47,8 +47,7 @@ public abstract class EncoderInfoImpl implements EncoderInfo {
     }
 
     @Override
-    @NonNull
-    public String getName() {
+    public @NonNull String getName() {
         return mMediaCodecInfo.getName();
     }
 }

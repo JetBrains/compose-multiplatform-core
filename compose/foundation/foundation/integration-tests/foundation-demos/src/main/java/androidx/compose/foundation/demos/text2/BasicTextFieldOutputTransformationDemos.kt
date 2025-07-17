@@ -16,7 +16,11 @@
 
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.demos.text.TagLine
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,10 +56,14 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 @Composable
 fun BasicTextFieldOutputTransformationDemos() {
@@ -68,10 +76,15 @@ fun BasicTextFieldOutputTransformationDemos() {
 
         TagLine("Phone number full template")
         PhoneNumberFullTemplateDemo()
+
+        TagLine("Bold/Italic every character")
+        BoldItalicEveryOtherChar()
+
+        TagLine("Color animation")
+        ColorAnimationDemo()
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun InsertReplaceDeleteDemo() {
     val state = remember { TextFieldState("abc def ghi") }
@@ -89,7 +102,7 @@ private fun InsertReplaceDeleteDemo() {
         "To move the cursor around, use the GBoard menu to get at selection controls, plug in a " +
             "hardware keyboard, or use the Running Devices tool in Android Studio with a " +
             "physical device. On an emulator, your host's hardware arrow keys won't work.",
-        style = MaterialTheme.typography.caption
+        style = MaterialTheme.typography.caption,
     )
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -150,7 +163,7 @@ private fun InsertReplaceDeleteDemo() {
                             drawLine(
                                 Color.Blue,
                                 start = cursorRect.topCenter,
-                                end = cursorRect.bottomCenter
+                                end = cursorRect.bottomCenter,
                             )
                         } else {
                             val selectionPath =
@@ -159,7 +172,7 @@ private fun InsertReplaceDeleteDemo() {
                                 selectionPath,
                                 Color.Blue,
                                 alpha = 0.8f,
-                                style = Stroke(width = 1.dp.toPx())
+                                style = Stroke(width = 1.dp.toPx()),
                             )
                         }
                     },
@@ -167,7 +180,7 @@ private fun InsertReplaceDeleteDemo() {
         Icon(
             Icons.AutoMirrored.Default.KeyboardArrowRight,
             contentDescription = null,
-            modifier = Modifier.alignBy { (it.measuredHeight * 0.75f).toInt() }
+            modifier = Modifier.alignBy { (it.measuredHeight * 0.75f).toInt() },
         )
         BasicTextField(
             state = state,
@@ -201,7 +214,6 @@ private fun InsertReplaceDeleteDemo() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhoneNumberAsYouTypeDemo() {
     BasicTextField(
@@ -213,7 +225,6 @@ private fun PhoneNumberAsYouTypeDemo() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhoneNumberFullTemplateDemo() {
     BasicTextField(
@@ -227,7 +238,60 @@ private fun PhoneNumberFullTemplateDemo() {
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun BoldItalicEveryOtherChar() {
+    BasicTextField(
+        state = rememberTextFieldState(),
+        modifier = demoTextFieldModifiers,
+        outputTransformation =
+            OutputTransformation {
+                var i = 1
+                repeat(length - 1) {
+                    insert(i, "-")
+                    i += 2
+                }
+
+                // now the text is like "H-E-L-L-O".
+                // we are going to make the first character bold, the second italic, third bold
+                // and
+                // so on, skipping the decorations.
+                i = 0
+                val bold = SpanStyle(fontWeight = FontWeight.Bold)
+                val italic = SpanStyle(fontStyle = FontStyle.Italic)
+                var toggle = true
+                repeat(length / 2 + 1) {
+                    addStyle(if (toggle) bold else italic, i, i + 1)
+                    toggle = !toggle
+                    i += 2
+                }
+            },
+        decorator = demoDecorationBox,
+    )
+}
+
+@Composable
+private fun ColorAnimationDemo() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val color by
+        infiniteTransition.animateColor(Color.Red, Color.Blue, infiniteRepeatable(tween(1000)))
+    val weight by infiniteTransition.animateFloat(300f, 900f, infiniteRepeatable(tween(1000)))
+    BasicTextField(
+        state = rememberTextFieldState(),
+        modifier = demoTextFieldModifiers,
+        outputTransformation =
+            OutputTransformation {
+                for (i in asCharSequence().indices) {
+                    if (i % 2 == 0) {
+                        addStyle(SpanStyle(color = color), i, i + 1)
+                    } else {
+                        addStyle(SpanStyle(fontWeight = FontWeight(weight.roundToInt())), i, i + 1)
+                    }
+                }
+            },
+        decorator = demoDecorationBox,
+    )
+}
+
 @Stable
 private data class PhoneNumberOutputTransformation(private val pad: Boolean) :
     OutputTransformation {
@@ -246,7 +310,6 @@ private data class PhoneNumberOutputTransformation(private val pad: Boolean) :
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private object OnlyDigitsFilter : InputTransformation {
     override fun TextFieldBuffer.transformInput() {
         if ("""\D""".toRegex().containsMatchIn(asCharSequence())) {
@@ -255,7 +318,6 @@ private object OnlyDigitsFilter : InputTransformation {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private val demoDecorationBox = TextFieldDecorator { innerField ->
     Box(Modifier.padding(16.dp)) { innerField() }
 }

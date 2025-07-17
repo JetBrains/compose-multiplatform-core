@@ -22,11 +22,12 @@ import android.content.Context;
 import android.net.Uri;
 import android.provider.MediaStore;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A class providing options for storing output to MediaStore.
@@ -61,8 +62,7 @@ public final class MediaStoreOutputOptions extends OutputOptions {
     /**
      * An empty {@link ContentValues}.
      */
-    @NonNull
-    public static final ContentValues EMPTY_CONTENT_VALUES = new ContentValues();
+    public static final @NonNull ContentValues EMPTY_CONTENT_VALUES = new ContentValues();
 
     private final MediaStoreOutputOptionsInternal mMediaStoreOutputOptionsInternal;
 
@@ -77,8 +77,7 @@ public final class MediaStoreOutputOptions extends OutputOptions {
      *
      * @see Builder#Builder(ContentResolver, Uri)
      */
-    @NonNull
-    public ContentResolver getContentResolver() {
+    public @NonNull ContentResolver getContentResolver() {
         return mMediaStoreOutputOptionsInternal.getContentResolver();
     }
 
@@ -87,8 +86,7 @@ public final class MediaStoreOutputOptions extends OutputOptions {
      *
      * @see Builder#Builder(ContentResolver, Uri)
      */
-    @NonNull
-    public Uri getCollectionUri() {
+    public @NonNull Uri getCollectionUri() {
         return mMediaStoreOutputOptionsInternal.getCollectionUri();
     }
 
@@ -97,14 +95,12 @@ public final class MediaStoreOutputOptions extends OutputOptions {
      *
      * @see Builder#setContentValues(ContentValues)
      */
-    @NonNull
-    public ContentValues getContentValues() {
+    public @NonNull ContentValues getContentValues() {
         return mMediaStoreOutputOptionsInternal.getContentValues();
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         // Don't use Class.getSimpleName(), class name will be changed by proguard obfuscation.
         return mMediaStoreOutputOptionsInternal.toString().replaceFirst(
                 "MediaStoreOutputOptionsInternal", "MediaStoreOutputOptions");
@@ -179,8 +175,7 @@ public final class MediaStoreOutputOptions extends OutputOptions {
          *
          * @param contentValues the content values to be inserted.
          */
-        @NonNull
-        public Builder setContentValues(@NonNull ContentValues contentValues) {
+        public @NonNull Builder setContentValues(@NonNull ContentValues contentValues) {
             Preconditions.checkNotNull(contentValues, "Content values can't be null.");
             mInternalBuilder.setContentValues(contentValues);
             return this;
@@ -188,33 +183,25 @@ public final class MediaStoreOutputOptions extends OutputOptions {
 
         /** Builds the {@link MediaStoreOutputOptions} instance. */
         @Override
-        @NonNull
-        public MediaStoreOutputOptions build() {
+        public @NonNull MediaStoreOutputOptions build() {
             return new MediaStoreOutputOptions(mInternalBuilder.build());
         }
     }
 
     @AutoValue
     abstract static class MediaStoreOutputOptionsInternal extends OutputOptionsInternal {
-        @NonNull
-        abstract ContentResolver getContentResolver();
-        @NonNull
-        abstract Uri getCollectionUri();
-        @NonNull
-        abstract ContentValues getContentValues();
+        abstract @NonNull ContentResolver getContentResolver();
+        abstract @NonNull Uri getCollectionUri();
+        abstract @NonNull ContentValues getContentValues();
 
         @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
         @AutoValue.Builder
         abstract static class Builder extends OutputOptionsInternal.Builder<Builder> {
-            @NonNull
-            abstract Builder setContentResolver(@NonNull ContentResolver contentResolver);
-            @NonNull
-            abstract Builder setCollectionUri(@NonNull Uri collectionUri);
-            @NonNull
-            abstract Builder setContentValues(@NonNull ContentValues contentValues);
+            abstract @NonNull Builder setContentResolver(@NonNull ContentResolver contentResolver);
+            abstract @NonNull Builder setCollectionUri(@NonNull Uri collectionUri);
+            abstract @NonNull Builder setContentValues(@NonNull ContentValues contentValues);
             @Override
-            @NonNull
-            abstract MediaStoreOutputOptionsInternal build();
+            abstract @NonNull MediaStoreOutputOptionsInternal build();
         }
     }
 }

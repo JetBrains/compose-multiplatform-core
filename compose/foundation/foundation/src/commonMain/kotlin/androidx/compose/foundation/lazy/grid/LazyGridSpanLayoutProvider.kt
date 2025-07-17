@@ -16,16 +16,17 @@
 
 package androidx.compose.foundation.lazy.grid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPrecondition
+import androidx.compose.foundation.internal.requirePrecondition
 import kotlin.math.min
 import kotlin.math.sqrt
 
-@OptIn(ExperimentalFoundationApi::class)
 internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridIntervalContent) {
     class LineConfiguration(val firstItemIndex: Int, val spans: List<GridItemSpan>)
 
     /** Caches the bucket info on lines 0, [bucketSize], 2 * [bucketSize], etc. */
     private val buckets = ArrayList<Bucket>().apply { add(Bucket(0)) }
+
     /**
      * The interval at each we will store the starting element of lines. These will be then used to
      * calculate the layout of arbitrary lines, by starting from the closest known "bucket start".
@@ -37,20 +38,25 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
 
     /** Caches the last calculated line index, useful when scrolling in main axis direction. */
     private var lastLineIndex = 0
+
     /** Caches the starting item index on [lastLineIndex]. */
     private var lastLineStartItemIndex = 0
+
     /** Caches the span of [lastLineStartItemIndex], if this was already calculated. */
     private var lastLineStartKnownSpan = 0
+
     /**
      * Caches a calculated bucket, this is useful when scrolling in reverse main axis direction. We
      * cannot only keep the last element, as we would not know previous max span.
      */
     private var cachedBucketIndex = -1
+
     /**
      * Caches layout of [cachedBucketIndex], this is useful when scrolling in reverse main axis
      * direction. We cannot only keep the last element, as we would not know previous max span.
      */
     private val cachedBucket = mutableListOf<Int>()
+
     /** List of 1x1 spans if we do not have custom spans. */
     private var previousDefaultSpans = emptyList<GridItemSpan>()
 
@@ -81,7 +87,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
                 firstItemIndex,
                 getDefaultSpans(
                     slotsPerLine.coerceAtMost(totalSize - firstItemIndex).coerceAtLeast(0)
-                )
+                ),
             )
         }
 
@@ -113,7 +119,9 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
             cachedBucket.clear()
         }
 
-        check(currentLine <= lineIndex) { "currentLine > lineIndex" }
+        checkPrecondition(currentLine <= lineIndex) {
+            "currentLine ($currentLine) > lineIndex ($lineIndex)"
+        }
 
         while (currentLine < lineIndex && currentItemIndex < totalSize) {
             if (cacheThisBucket) {
@@ -140,7 +148,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
             if (currentLine % bucketSize == 0 && currentItemIndex < totalSize) {
                 val currentLineBucket = currentLine / bucketSize
                 // This should happen, as otherwise this should have been used as starting point.
-                check(buckets.size == currentLineBucket) { "invalid starting point" }
+                checkPrecondition(buckets.size == currentLineBucket) { "invalid starting point" }
                 buckets.add(Bucket(currentItemIndex, knownCurrentItemSpan))
             }
         }
@@ -174,7 +182,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
         if (totalSize <= 0) {
             return 0
         }
-        require(itemIndex < totalSize) { "ItemIndex > total count" }
+        requirePrecondition(itemIndex < totalSize) { "ItemIndex > total count" }
         if (!gridContent.hasCustomSpans) {
             return itemIndex / slotsPerLine
         }
@@ -186,7 +194,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
         var currentLine = lowerBoundBucket * bucketSize
         var currentItemIndex = buckets[lowerBoundBucket].firstItemIndex
 
-        require(currentItemIndex <= itemIndex) { "currentItemIndex > itemIndex" }
+        requirePrecondition(currentItemIndex <= itemIndex) { "currentItemIndex > itemIndex" }
         var spansUsed = 0
         while (currentItemIndex < itemIndex) {
             val span = spanOf(currentItemIndex++, slotsPerLine - spansUsed)
@@ -239,7 +247,7 @@ internal class LazyGridSpanLayoutProvider(private val gridContent: LazyGridInter
         /** Index of the first item in the bucket */
         val firstItemIndex: Int,
         /** Known span of the first item. Not zero only if this item caused "line break". */
-        val firstItemKnownSpan: Int = 0
+        val firstItemKnownSpan: Int = 0,
     )
 
     private object LazyGridItemSpanScopeImpl : LazyGridItemSpanScope {

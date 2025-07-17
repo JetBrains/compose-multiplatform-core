@@ -26,7 +26,7 @@ dependencies {
     implementation("androidx.core:core:1.12.0")
     implementation(libs.kotlinStdlib)
 
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation(project(":compose:animation:animation"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation:foundation-samples"))
@@ -34,6 +34,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation-layout:foundation-layout-samples"))
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:material:material"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-util"))
@@ -41,11 +42,12 @@ dependencies {
     implementation(project(":compose:ui:ui-text:ui-text-samples"))
     implementation(project(":paging:paging-compose:integration-tests:paging-demos"))
     implementation(project(":compose:ui:ui-tooling-preview"))
-    debugImplementation(project(":compose:ui:ui-tooling"))
+    implementation(project(":compose:ui:ui-tooling"))
     implementation(project(":internal-testutils-fonts"))
-    implementation("androidx.collection:collection:1.4.0")
+    implementation("androidx.collection:collection:1.4.2")
 }
 
 android {
-    namespace "androidx.compose.foundation.demos"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.demos"
 }

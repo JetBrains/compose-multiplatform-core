@@ -14,13 +14,15 @@ SCRIPT_PATH="$(cd $(dirname $0) && pwd -P)"
 if [ -n "$OUT_DIR" ] ; then
     mkdir -p "$OUT_DIR"
     OUT_DIR="$(cd $OUT_DIR && pwd -P)"
-    export GRADLE_USER_HOME="$OUT_DIR/.gradle"
     export TMPDIR="$OUT_DIR/tmp"
+elif [[ $SCRIPT_PATH == /google/cog/* ]] ; then
+    export OUT_DIR="$HOME/androidxout"
 else
     CHECKOUT_ROOT="$(cd $SCRIPT_PATH/../.. && pwd -P)"
     export OUT_DIR="$CHECKOUT_ROOT/out"
-    export GRADLE_USER_HOME=~/.gradle
 fi
+export GRADLE_USER_HOME="$OUT_DIR/.gradle"
+export KONAN_DATA_DIR="$OUT_DIR/.konan"
 
 ORG_GRADLE_JVMARGS="$(cd $SCRIPT_PATH && grep org.gradle.jvmargs gradle.properties | sed 's/^/-D/')"
 if [ -n "$DIST_DIR" ]; then
@@ -33,9 +35,6 @@ if [ -n "$DIST_DIR" ]; then
     # We don't set a default DIST_DIR in an else clause here because Studio doesn't use gradlew
     # and doesn't set DIST_DIR and we want gradlew and Studio to match
 fi
-
-# Loading the AIDL lexer requires disabling Lint's bytecode verification
-export ANDROID_LINT_SKIP_BYTECODE_VERIFIER=true
 
 # unset ANDROID_BUILD_TOP so that Lint doesn't think we're building the platform itself
 unset ANDROID_BUILD_TOP
@@ -317,8 +316,9 @@ fi
 if [ "$raiseMemory" == "true" ]; then
   # Set the initial heap size to match the max heap size,
   # by replacing a string like "-Xmx1g" with one like "-Xms1g -Xmx1g"
-  MAX_MEM=32g
-  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEM -Xmx$MAX_MEM/")"
+  MAX_MEM=38g
+  # First sed command replaces Gradle daemon -Xmx and second replaces Kotlin compliler deamon -Xmx
+  ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s/-Xmx\([^ ]*\)/-Xms$MAX_MEM -Xmx$MAX_MEM/" | sed "s/,-Xmx\([^ ]*\)/,-Xms$MAX_MEM,-Xmx$MAX_MEM/")"
 
   # Increase the compiler cache size: b/260643754 . Remove when updating to JDK 20 ( https://bugs.openjdk.org/browse/JDK-8295724 )
   ORG_GRADLE_JVMARGS="$(echo $ORG_GRADLE_JVMARGS | sed "s|$| -XX:ReservedCodeCacheSize=576M|")"
@@ -426,9 +426,6 @@ function runGradle() {
 
   RETURN_VALUE=0
   set -- "$@" -Dorg.gradle.projectcachedir="$OUT_DIR/gradle-project-cache"
-  KOTLIN_PROJECT_PERSISTENT_DIR="$OUT_DIR/kotlin-project-persistent-dir"
-  mkdir -p "$KOTLIN_PROJECT_PERSISTENT_DIR"
-  set -- "$@" -Pkotlin.project.persistent.dir="$KOTLIN_PROJECT_PERSISTENT_DIR"
   # Disabled in Studio until these errors become shown (b/268380971) or computed more quickly (https://github.com/gradle/gradle/issues/23272)
   if [[ " ${@} " =~ " --dependency-verification=" ]]; then
     VERIFICATION_ARGUMENT="" # already specified by caller

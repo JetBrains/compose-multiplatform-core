@@ -25,7 +25,7 @@ import androidx.privacysandbox.ads.adservices.internal.BackCompatManager
 /**
  * AppSetIdManager provides APIs for app and ad-SDKs to access appSetId for non-monetizing purpose.
  */
-abstract class AppSetIdManager internal constructor() {
+public abstract class AppSetIdManager internal constructor() {
     /**
      * Retrieve the AppSetId.
      *
@@ -33,9 +33,9 @@ abstract class AppSetIdManager internal constructor() {
      * @throws [IllegalStateException] if this API is not available.
      * @throws [LimitExceededException] if rate limit was reached.
      */
-    abstract suspend fun getAppSetId(): AppSetId
+    public abstract suspend fun getAppSetId(): AppSetId
 
-    companion object {
+    public companion object {
 
         /**
          * Creates [AppSetIdManager].
@@ -44,8 +44,8 @@ abstract class AppSetIdManager internal constructor() {
          *   returned is null.
          */
         @JvmStatic
-        @SuppressLint("NewApi", "ClassVerificationFailure")
-        fun obtain(context: Context): AppSetIdManager? {
+        @SuppressLint("NewApi")
+        public fun obtain(context: Context): AppSetIdManager? {
             return if (AdServicesInfo.adServicesVersion() >= 4) {
                 AppSetIdManagerApi33Ext4Impl(context)
             } else if (AdServicesInfo.extServicesVersionS() >= 9) {

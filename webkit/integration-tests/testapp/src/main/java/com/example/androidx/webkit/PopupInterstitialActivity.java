@@ -25,10 +25,11 @@ import android.webkit.WebViewClient;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.text.HtmlCompat;
 import androidx.webkit.WebViewCompat;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} to demonstrate one way to implement a custom Safe Browsing interstitial. This

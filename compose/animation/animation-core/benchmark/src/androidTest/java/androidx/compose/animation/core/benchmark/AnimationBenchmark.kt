@@ -128,14 +128,14 @@ class AnimationBenchmark {
         val start = AnimationVector4D(0f, 0f, 0f, 0f)
         val end = AnimationVector4D(120f, -50f, 256f, 0f)
         val anim =
-            VectorizedKeyframesSpec<AnimationVector4D>(
+            VectorizedKeyframesSpec(
                 keyframes =
                     mapOf(
                         0 to (start to LinearEasing),
                         900 to (start to FastOutSlowInEasing),
-                        1000 to (end to LinearOutSlowInEasing)
+                        1000 to (end to LinearOutSlowInEasing),
                     ),
-                durationMillis = 1000
+                durationMillis = 1000,
             )
 
         benchmarkRule.measureRepeated {
@@ -150,14 +150,14 @@ class AnimationBenchmark {
         val start = AnimationVector4D(0f, 0f, 0f, 0f)
         val end = AnimationVector4D(120f, -50f, 256f, 0f)
         val anim =
-            VectorizedKeyframesSpec<AnimationVector4D>(
+            VectorizedKeyframesSpec(
                 keyframes =
                     mapOf(
                         0 to (start to LinearEasing),
                         900 to (start to FastOutSlowInEasing),
-                        1000 to (end to LinearOutSlowInEasing)
+                        1000 to (end to LinearOutSlowInEasing),
                     ),
-                durationMillis = 1000
+                durationMillis = 1000,
             )
         val fixedAnimation = anim.createAnimation(start, end, start)
 

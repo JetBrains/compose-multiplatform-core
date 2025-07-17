@@ -18,12 +18,12 @@ package androidx.webkit.internal;
 
 import android.webkit.ServiceWorkerWebSettings;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.ServiceWorkerWebSettingsCompat;
 
 import org.chromium.support_lib_boundary.ServiceWorkerWebSettingsBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -183,9 +183,8 @@ public class ServiceWorkerWebSettingsImpl extends ServiceWorkerWebSettingsCompat
         }
     }
 
-    @NonNull
     @Override
-    public Set<String> getRequestedWithHeaderOriginAllowList() {
+    public @NonNull Set<String> getRequestedWithHeaderOriginAllowList() {
         final ApiFeature.NoFramework feature =
                 WebViewFeatureInternal.REQUESTED_WITH_HEADER_ALLOW_LIST;
         if (feature.isSupportedByWebView()) {
@@ -204,5 +203,23 @@ public class ServiceWorkerWebSettingsImpl extends ServiceWorkerWebSettingsCompat
         } else {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
+    }
+
+    @Override
+    public void setIncludeCookiesOnShouldInterceptRequestEnabled(boolean enabled) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        getBoundaryInterface().setIncludeCookiesOnIntercept(enabled);
+    }
+
+    @Override
+    public boolean isIncludeCookiesOnShouldInterceptRequestEnabled() {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.COOKIE_INTERCEPT;
+        if (!feature.isSupportedByWebView()) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        return getBoundaryInterface().getIncludeCookiesOnIntercept();
     }
 }

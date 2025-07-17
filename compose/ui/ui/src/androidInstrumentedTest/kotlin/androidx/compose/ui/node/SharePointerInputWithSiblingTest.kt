@@ -69,7 +69,7 @@ class SharePointerInputWithSiblingTest {
                             box2Clicked = true
                         }
                     )
-                }
+                },
             )
         }
 
@@ -127,32 +127,6 @@ class SharePointerInputWithSiblingTest {
     }
 
     @Test
-    fun stackedBox_doSharePointerWithCousin() {
-        var box1Clicked = false
-        var box2Clicked = false
-
-        rule.setContent {
-            Box(Modifier.size(50.dp)) {
-                Box(Modifier.fillMaxSize().testTag("box1").testPointerInput { box1Clicked = true })
-
-                Box(Modifier.fillMaxSize()) {
-                    Box(
-                        Modifier.fillMaxSize().testTag("box2").testPointerInput(
-                            sharePointerInputWithSibling = true
-                        ) {
-                            box2Clicked = true
-                        }
-                    )
-                }
-            }
-        }
-
-        rule.onNodeWithTag("box2").performClick()
-        assertThat(box1Clicked).isTrue()
-        assertThat(box2Clicked).isTrue()
-    }
-
-    @Test
     fun stackedBox_parentDisallowShare_notSharePointerWithCousin() {
         var box1Clicked = false
         var box2Clicked = false
@@ -179,7 +153,7 @@ class SharePointerInputWithSiblingTest {
     }
 
     @Test
-    fun stackedBox_doSharePointer_untilFirstBoxDisallowShare() {
+    fun stackedBox_doSharePointerWithSiblings_untilFirstBoxDisallowShare() {
         var box1Clicked = false
         var box2Clicked = false
         var box3Clicked = false
@@ -215,12 +189,12 @@ class SharePointerInputWithSiblingTest {
 
 private fun Modifier.testPointerInput(
     sharePointerInputWithSibling: Boolean = false,
-    onPointerEvent: () -> Unit = {}
+    onPointerEvent: () -> Unit = {},
 ): Modifier = this.then(TestPointerInputElement(sharePointerInputWithSibling, onPointerEvent))
 
 private data class TestPointerInputElement(
     val sharePointerInputWithSibling: Boolean,
-    val onPointerEvent: () -> Unit
+    val onPointerEvent: () -> Unit,
 ) : ModifierNodeElement<TestPointerInputNode>() {
     override fun create(): TestPointerInputNode {
         return TestPointerInputNode(sharePointerInputWithSibling, onPointerEvent)
@@ -234,12 +208,12 @@ private data class TestPointerInputElement(
 
 private class TestPointerInputNode(
     var sharePointerInputWithSibling: Boolean,
-    var onPointerEvent: () -> Unit
+    var onPointerEvent: () -> Unit,
 ) : Modifier.Node(), PointerInputModifierNode {
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         onPointerEvent.invoke()
     }

@@ -34,7 +34,6 @@ import androidx.room.compiler.processing.util.runKaptTest
 import androidx.room.compiler.processing.util.runProcessorTest
 import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
-import com.google.devtools.ksp.common.impl.KSNameImpl
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
@@ -59,7 +58,7 @@ class XConvertersTest {
           }
         }
         """
-                .trimIndent()
+                .trimIndent(),
         )
     val javaSrc =
         Source.java(
@@ -72,7 +71,7 @@ class XConvertersTest {
           }
         }
         """
-                .trimIndent()
+                .trimIndent(),
         )
 
     @Test
@@ -90,7 +89,7 @@ class XConvertersTest {
               }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSrc =
             Source.java(
@@ -105,7 +104,7 @@ class XConvertersTest {
               }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(kotlinSrc, javaSrc)) { invocation ->
             // Test toXProcessing returns an equivalent XType
@@ -155,11 +154,11 @@ class XConvertersTest {
 
                 assertEqualTypes(
                     xKotlinClass.type,
-                    kotlinClass.asType(emptyList()).toXProcessing(invocation.processingEnv)
+                    kotlinClass.asType(emptyList()).toXProcessing(invocation.processingEnv),
                 )
                 assertEqualTypes(
                     xJavaClass.type,
-                    javaClass.asType(emptyList()).toXProcessing(invocation.processingEnv)
+                    javaClass.asType(emptyList()).toXProcessing(invocation.processingEnv),
                 )
             } else {
                 val kotlinClass = invocation.getJavacTypeElement("KotlinClass.FooImpl")
@@ -173,11 +172,11 @@ class XConvertersTest {
 
                 assertEqualTypes(
                     xKotlinClass.type,
-                    kotlinClass.asType().toXProcessing(invocation.processingEnv)
+                    kotlinClass.asType().toXProcessing(invocation.processingEnv),
                 )
                 assertEqualTypes(
                     xJavaClass.type,
-                    javaClass.asType().toXProcessing(invocation.processingEnv)
+                    javaClass.asType().toXProcessing(invocation.processingEnv),
                 )
             }
         }
@@ -511,7 +510,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("KotlinClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                     )
@@ -523,7 +522,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("JavaClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                     )
@@ -536,7 +535,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("KotlinClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .toXProcessing(invocation.processingEnv)
@@ -550,7 +549,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("JavaClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .toXProcessing(invocation.processingEnv)
@@ -643,7 +642,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("KotlinClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .elementValues
@@ -661,7 +660,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("JavaClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .elementValues
@@ -680,7 +679,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("KotlinClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .elementValues
@@ -700,7 +699,7 @@ class XConvertersTest {
                     .isEqualTo(
                         MoreElements.getAnnotationMirror(
                                 invocation.getJavacTypeElement("JavaClass"),
-                                TestSuppressWarnings::class.java
+                                TestSuppressWarnings::class.java,
                             )
                             .get()
                             .elementValues
@@ -720,7 +719,7 @@ class XConvertersTest {
         var runCount = 0
         runKaptTest(sources = listOf(kotlinSrc, javaSrc)) { invocation ->
             val className = ClassName.get("foo.bar", "ToBeGenerated")
-            if (invocation.processingEnv.findTypeElement(className) == null) {
+            if (invocation.processingEnv.findTypeElement(className.toString()) == null) {
                 // Assert that this is only run only on the first round
                 assertThat(++runCount).isEqualTo(1)
 
@@ -734,7 +733,8 @@ class XConvertersTest {
             } else {
                 // Asserts that the class was generated in the second round
                 assertThat(++runCount).isEqualTo(2)
-                assertThat(invocation.processingEnv.findTypeElement(className)).isNotNull()
+                assertThat(invocation.processingEnv.findTypeElement(className.toString()))
+                    .isNotNull()
             }
         }
     }
@@ -786,7 +786,7 @@ class XConvertersTest {
                         fun method()
                     }
                     """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 )
         ) { invocation ->
@@ -857,7 +857,7 @@ class XConvertersTest {
         (this.processingEnv as JavacProcessingEnv).delegate.elementUtils.getTypeElement(fqn)
 
     private fun XTestInvocation.getKspTypeElement(fqn: String) =
-        (this.processingEnv as KspProcessingEnv)
-            .resolver
-            .getClassDeclarationByName(KSNameImpl.getCached(fqn))!!
+        (this.processingEnv as KspProcessingEnv).resolver.let { resolver ->
+            resolver.getClassDeclarationByName(resolver.getKSNameFromString(fqn))
+        }!!
 }

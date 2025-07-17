@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,26 +29,26 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
-    implementation(project(":collection:collection"))
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
+    implementation("androidx.collection:collection:1.4.2")
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy)
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy)
-    androidTestAnnotationProcessor (project(":remotecallback:remotecallback-processor"))
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
+    androidTestAnnotationProcessor(project(":remotecallback:remotecallback-processor"))
 }
 
 android {
-    namespace "androidx.remotecallback"
+    namespace = "androidx.remotecallback"
 }
 
 androidx {
     name = "Remote Callback"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Wraps PendingIntents in a friendly and easier way to handle remote callbacks"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
 }

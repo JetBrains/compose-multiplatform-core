@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -41,41 +40,17 @@ repackage {
 
 dependencies {
     // Must be compileOnly to not bring in protobufLite in runtime
-    // Repackaged protobufLite brought in by
-    // project(":core:core-location-altitude-external-protobuf") and used at runtime
     compileOnly(libs.protobufLite)
-    api(project(":core:core-location-altitude-external-protobuf"))}
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
-}
-
-afterEvaluate {
-    lint {
-        lintOptions {
-            // protobuf generates unannotated methods
-            disable("UnknownNullness")
-        }
-    }
+    // DO NOT REMOVE: Repackaged protobufLite brought in by
+    // project(":core:core-location-altitude-external-protobuf") and used at runtime
+    api(project(":core:core-location-altitude-external-protobuf"))
 }
 
 androidx {
     name = "Location Altitude Protos"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_PROTO_LIBRARY
     mavenVersion = LibraryVersions.CORE_LOCATION_ALTITUDE
     inceptionYear = "2022"
     description = "Implementation protos for core-location-altitude artifact."
-    runApiTasks = new RunApiTasks.No("Metalava doesn't properly parse the proto sources " +
-            "(b/180579063)")
 }

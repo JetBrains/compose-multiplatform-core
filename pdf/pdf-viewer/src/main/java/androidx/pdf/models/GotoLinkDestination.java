@@ -17,13 +17,17 @@
 package androidx.pdf.models;
 
 import android.annotation.SuppressLint;
+import android.graphics.pdf.content.PdfPageGotoLinkContent;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+import androidx.core.util.Preconditions;
 
-import com.google.common.base.Preconditions;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents the content associated with the destination where a goto link is directing.
@@ -49,8 +53,8 @@ public class GotoLinkDestination implements Parcelable {
             };
 
     private final int mPageNumber;
-    private final float mXCoordinate;
-    private final float mYCoordinate;
+    private Float mXCoordinate = null;
+    private Float mYCoordinate = null;
     private final float mZoom;
 
     /**
@@ -82,12 +86,6 @@ public class GotoLinkDestination implements Parcelable {
         this.mZoom = zoom;
     }
 
-    @Override
-    public String toString() {
-        return "GotoLinkDestination{" + "mPageNumber=" + mPageNumber + ", mXCoordinate="
-                + mXCoordinate + ", mYCoordinate=" + mYCoordinate + ", mZoom=" + mZoom + '}';
-    }
-
     /**
      * Gets the page number of the destination where the {@link GotoLink} is directing.
      *
@@ -104,7 +102,7 @@ public class GotoLinkDestination implements Parcelable {
      *
      * @return x coordinate of the Destination where the goto link is directing the user.
      */
-    public float getXCoordinate() {
+    public @Nullable Float getXCoordinate() {
         return mXCoordinate;
     }
 
@@ -115,7 +113,7 @@ public class GotoLinkDestination implements Parcelable {
      *
      * @return y coordinate of the Destination where the goto link is directing the user.
      */
-    public float getYCoordinate() {
+    public @Nullable Float getYCoordinate() {
         return mYCoordinate;
     }
 
@@ -142,5 +140,20 @@ public class GotoLinkDestination implements Parcelable {
         parcel.writeFloat(mXCoordinate);
         parcel.writeFloat(mYCoordinate);
         parcel.writeFloat(mZoom);
+    }
+
+    /**
+     * Converts android.graphics.pdf.content.PdfPageGotoLinkContent.Destination object to its
+     * androidx.pdf.aidl.GotoLinkDestination representation.
+     */
+    public static @NonNull GotoLinkDestination convert(
+            PdfPageGotoLinkContent.@NonNull Destination pdfPageGotoLinkContentDest) {
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+            return new GotoLinkDestination(pdfPageGotoLinkContentDest.getPageNumber(),
+                    pdfPageGotoLinkContentDest.getXCoordinate(),
+                    pdfPageGotoLinkContentDest.getYCoordinate(),
+                    pdfPageGotoLinkContentDest.getZoom());
+        }
+        throw new UnsupportedOperationException("Operation support above S");
     }
 }

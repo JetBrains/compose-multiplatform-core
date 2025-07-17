@@ -144,6 +144,7 @@ class ProtoLayoutMinSchemaDetector : Detector(), Detector.UastScanner {
                 in 101..200 -> 33
                 in 201..300 -> 34
                 in 301..400 -> 35
+                in 401..500 -> 36
                 else -> Int.MAX_VALUE
             }
 
@@ -176,7 +177,7 @@ class ProtoLayoutMinSchemaDetector : Detector(), Detector.UastScanner {
                 severity = Severity.ERROR,
                 androidSpecific = true,
                 implementation =
-                    Implementation(ProtoLayoutMinSchemaDetector::class.java, Scope.JAVA_FILE_SCOPE)
+                    Implementation(ProtoLayoutMinSchemaDetector::class.java, Scope.JAVA_FILE_SCOPE),
             )
 
         const val REQUIRES_SCHEMA_ANNOTATION =

@@ -19,7 +19,7 @@ package androidx.compose.runtime.benchmark
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.benchmark.junit4.measureRepeated
+import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -77,59 +77,51 @@ class SnapshotStateObserverBenchmark : ComposeBenchmarkBase() {
     @Test
     fun modelObservation() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            benchmarkRule.measureRepeated {
-                runWithTimingDisabled {
-                    nodes.forEach { node -> stateObserver.clear(node) }
-                    random = Random(0)
-                }
-                setupObservations()
+        benchmarkRule.measureRepeatedOnMainThread {
+            runWithMeasurementDisabled {
+                nodes.forEach { node -> stateObserver.clear(node) }
+                random = Random(0)
             }
+            setupObservations()
         }
     }
 
     @Test
     fun nestedModelObservation() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            val list = mutableListOf<Any>()
-            repeat(10) { list += nodes[random.nextInt(ScopeCount)] }
-            benchmarkRule.measureRepeated {
-                runWithTimingDisabled {
-                    random = Random(0)
-                    nodes.forEach { node -> stateObserver.clear(node) }
-                }
-                stateObserver.observeReads(nodes[0], doNothing) {
-                    list.forEach { node -> observeForNode(node) }
-                }
+        val list = mutableListOf<Any>()
+        repeat(10) { list += nodes[random.nextInt(ScopeCount)] }
+        benchmarkRule.measureRepeatedOnMainThread {
+            runWithMeasurementDisabled {
+                random = Random(0)
+                nodes.forEach { node -> stateObserver.clear(node) }
+            }
+            stateObserver.observeReads(nodes[0], doNothing) {
+                list.forEach { node -> observeForNode(node) }
             }
         }
     }
 
     @Test
     fun derivedStateObservation() {
+        val node = Any()
+        val states = models.take(3)
+        val derivedState = derivedStateOf { states[0].value + states[1].value + states[2].value }
         runOnUiThread {
-            val node = Any()
-            val states = models.take(3)
-            val derivedState = derivedStateOf {
-                states[0].value + states[1].value + states[2].value
+            stateObserver.observeReads(node, doNothing) {
+                // read derived state a few times
+                repeat(10) { derivedState.value }
             }
-
+        }
+        benchmarkRule.measureRepeatedOnMainThread {
             stateObserver.observeReads(node, doNothing) {
                 // read derived state a few times
                 repeat(10) { derivedState.value }
             }
 
-            benchmarkRule.measureRepeated {
-                stateObserver.observeReads(node, doNothing) {
-                    // read derived state a few times
-                    repeat(10) { derivedState.value }
-                }
-
-                runWithTimingDisabled {
-                    states.forEach { it.value += 1 }
-                    Snapshot.sendApplyNotifications()
-                }
+            runWithMeasurementDisabled {
+                states.forEach { it.value += 1 }
+                Snapshot.sendApplyNotifications()
             }
         }
     }
@@ -137,76 +129,65 @@ class SnapshotStateObserverBenchmark : ComposeBenchmarkBase() {
     @Test
     fun deeplyNestedModelObservations() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            val list = mutableListOf<Any>()
-            repeat(100) { list += nodes[random.nextInt(ScopeCount)] }
+        val list = mutableListOf<Any>()
+        repeat(100) { list += nodes[random.nextInt(ScopeCount)] }
 
-            fun observeRecursive(index: Int) {
-                if (index == 100) return
-                val node = list[index]
-                stateObserver.observeReads(node, doNothing) {
-                    observeForNode(node)
-                    observeRecursive(index + 1)
-                }
+        fun observeRecursive(index: Int) {
+            if (index == 100) return
+            val node = list[index]
+            stateObserver.observeReads(node, doNothing) {
+                observeForNode(node)
+                observeRecursive(index + 1)
             }
+        }
 
-            benchmarkRule.measureRepeated {
-                runWithTimingDisabled {
-                    random = Random(0)
-                    nodes.forEach { node -> stateObserver.clear(node) }
-                }
-                observeRecursive(0)
+        benchmarkRule.measureRepeatedOnMainThread {
+            runWithMeasurementDisabled {
+                random = Random(0)
+                nodes.forEach { node -> stateObserver.clear(node) }
             }
+            observeRecursive(0)
         }
     }
 
     @Test
     fun modelClear() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            val nodeSet = hashSetOf<Any>()
-            nodeSet.addAll(nodes)
-
-            benchmarkRule.measureRepeated {
-                stateObserver.clearIf { node -> node in nodeSet }
-                random = Random(0)
-                runWithTimingDisabled { setupObservations() }
-            }
+        val nodeSet = hashSetOf<Any>()
+        nodeSet.addAll(nodes)
+        benchmarkRule.measureRepeatedOnMainThread {
+            stateObserver.clearIf { node -> node in nodeSet }
+            random = Random(0)
+            runWithMeasurementDisabled { setupObservations() }
         }
     }
 
     @Test
     fun modelIncrementalClear() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            benchmarkRule.measureRepeated {
-                for (i in 0 until nodes.size) {
-                    stateObserver.clearIf { node -> (node as Int) < i }
-                }
-                runWithTimingDisabled { setupObservations() }
-            }
+        benchmarkRule.measureRepeatedOnMainThread {
+            repeat(nodes.size) { i -> stateObserver.clearIf { node -> (node as Int) < i } }
+            runWithMeasurementDisabled { setupObservations() }
         }
     }
 
     @Test
     fun notifyChanges() {
         assumeTrue(Build.VERSION.SDK_INT != 29)
-        runOnUiThread {
-            val states = mutableSetOf<Int>()
-            repeat(50) { states += random.nextInt(StateCount) }
-            val snapshot: Snapshot = Snapshot.current
-            benchmarkRule.measureRepeated {
-                random = Random(0)
-                stateObserver.notifyChanges(states, snapshot)
-                runWithTimingDisabled {
-                    stateObserver.clear()
-                    setupObservations()
-                }
+        val states = mutableSetOf<Int>()
+        repeat(50) { states += random.nextInt(StateCount) }
+        val snapshot: Snapshot = Snapshot.current
+        benchmarkRule.measureRepeatedOnMainThread {
+            random = Random(0)
+            stateObserver.notifyChanges(states, snapshot)
+            runWithMeasurementDisabled {
+                stateObserver.clear()
+                setupObservations()
             }
         }
     }
 
-    private fun runOnUiThread(block: () -> Unit) = activityRule.runOnUiThread(block)
+    private fun runOnUiThread(block: () -> Unit) = activityScenario.onActivity { block() }
 
     private fun setupObservations() = nodes.forEach { observeForNode(it) }
 

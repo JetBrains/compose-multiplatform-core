@@ -16,8 +16,8 @@
 
 package androidx.appsearch.app;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Serializes some {@link T} to and from a long.
@@ -34,6 +34,5 @@ public interface LongSerializer<T> {
     /**
      * Deserializes a {@link T} from a long. Returns null if deserialization failed.
      */
-    @Nullable
-    T deserialize(long value);
+    @Nullable T deserialize(long value);
 }

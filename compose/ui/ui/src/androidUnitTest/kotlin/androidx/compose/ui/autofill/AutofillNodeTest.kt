@@ -19,7 +19,6 @@ package androidx.compose.ui.autofill
 import android.app.Activity
 import android.view.View
 import android.view.autofill.AutofillManager
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toComposeRect
 import com.google.common.truth.Truth.assertThat
@@ -34,14 +33,13 @@ import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadow.api.Shadow
 
-@OptIn(ExperimentalComposeUiApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(shadows = [ShadowAutofillManager::class], minSdk = 26)
 class AutofillNodeTest {
     private lateinit var androidAutofill: AndroidAutofill
     private lateinit var autofillManager: ShadowAutofillManager
     private lateinit var view: View
-    private val autofillTree = AutofillTree()
+    private val autofillTree = @Suppress("Deprecation") AutofillTree()
 
     @Before
     fun setup() {
@@ -59,6 +57,7 @@ class AutofillNodeTest {
 
     @Test
     fun eachInstanceHasUniqueId() {
+        @Suppress("Deprecation")
         assertThat(listOf(AutofillNode {}.id, AutofillNode {}.id, AutofillNode {}.id))
             .containsNoDuplicates()
     }
@@ -72,7 +71,7 @@ class AutofillNodeTest {
     fun requestAutofillForNode_calls_notifyViewEntered() {
         // Arrange.
         val bounds = Rect(0f, 0f, 0f, 0f)
-        val autofillNode = AutofillNode(onFill = {}, boundingBox = bounds)
+        val autofillNode = @Suppress("Deprecation") AutofillNode(onFill = {}, boundingBox = bounds)
 
         // Act.
         androidAutofill.requestAutofillForNode(autofillNode)
@@ -85,7 +84,7 @@ class AutofillNodeTest {
     @Test
     fun requestAutofillForNode_beforeComposableIsPositioned_throwsError() {
         // Arrange - Before the composable is positioned, the boundingBox is null.
-        val autofillNode = AutofillNode(onFill = {})
+        val autofillNode = @Suppress("Deprecation") AutofillNode(onFill = {})
 
         // Act and assert.
         val exception =
@@ -102,7 +101,7 @@ class AutofillNodeTest {
     @Test
     fun cancelAutofillForNode_calls_notifyViewExited() {
         // Arrange.
-        val autofillNode = AutofillNode(onFill = {})
+        val autofillNode = @Suppress("Deprecation") AutofillNode(onFill = {})
 
         // Act.
         androidAutofill.cancelAutofillForNode(autofillNode)
@@ -122,11 +121,13 @@ internal class ShadowAutofillManager {
     val viewEnteredStats = mutableListOf<NotifyViewEntered>()
     val viewExitedStats = mutableListOf<NotifyViewExited>()
 
+    @Suppress("Unused")
     @Implementation
     fun notifyViewEntered(view: View, virtualId: Int, rect: android.graphics.Rect) {
         viewEnteredStats += NotifyViewEntered(view, virtualId, rect.toComposeRect())
     }
 
+    @Suppress("Unused")
     @Implementation
     fun notifyViewExited(view: View, virtualId: Int) {
         viewExitedStats += NotifyViewExited(view, virtualId)

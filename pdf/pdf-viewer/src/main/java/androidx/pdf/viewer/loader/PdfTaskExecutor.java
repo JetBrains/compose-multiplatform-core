@@ -16,10 +16,11 @@
 
 package androidx.pdf.viewer.loader;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.ThreadUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -84,8 +85,7 @@ public class PdfTaskExecutor extends Thread {
         }
     }
 
-    @Nullable
-    private AbstractPdfTask<?> getNextTask() {
+    private @Nullable AbstractPdfTask<?> getNextTask() {
         synchronized (this) {
             // Linear search - could use a priority heap for more efficiency, but this
             // way allows for changing priority of tasks that are already scheduled.

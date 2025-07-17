@@ -20,7 +20,7 @@ package androidx.core.provider;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 class CalleeHandler {
     private CalleeHandler() { }
@@ -30,8 +30,7 @@ class CalleeHandler {
      * If the current Thread has a Looper defined uses the current Thread
      * looper. Otherwise uses main Looper for the as the Handler.
      */
-    @NonNull
-    static Handler create() {
+    static @NonNull Handler create() {
         final Handler handler;
         if (Looper.myLooper() == null) {
             handler = new Handler(Looper.getMainLooper());

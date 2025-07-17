@@ -15,9 +15,10 @@
  */
 package androidx.work.impl;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.impl.model.WorkSpec;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface for classes responsible for scheduling background work.
@@ -43,7 +44,7 @@ public interface Scheduler {
      *
      * @param workSpecs The array of {@link WorkSpec}s to schedule
      */
-    void schedule(@NonNull WorkSpec... workSpecs);
+    void schedule(WorkSpec @NonNull ... workSpecs);
 
     /**
      * Cancel the work identified by the given {@link WorkSpec} id.

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.Paragraph
 import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
@@ -57,7 +58,7 @@ class ParagraphMethodBenchmark(private val textType: TextType, private val textL
 
     private fun paragraphIntrinsics(
         textGenerator: RandomTextGenerator,
-        textLength: Int
+        textLength: Int,
     ): ParagraphIntrinsics {
         val text = textGenerator.nextParagraph(textLength)
         val spanStyles =
@@ -68,17 +69,18 @@ class ParagraphMethodBenchmark(private val textType: TextType, private val textL
             }
         return ParagraphIntrinsics(
             text = text,
-            density = Density(density = 1f),
             style = TextStyle(fontSize = 12.sp),
+            annotations = spanStyles,
+            density = Density(density = 1f),
             fontFamilyResolver = fontFamilyResolver,
-            spanStyles = spanStyles
+            placeholders = listOf(),
         )
     }
 
     private fun paragraph(
         textGenerator: RandomTextGenerator,
         textLength: Int = this.textLength,
-        preferredLineCount: Int = 4
+        preferredLineCount: Int = 4,
     ): Paragraph {
         val paragraphIntrinsics = paragraphIntrinsics(textGenerator, textLength)
         return Paragraph(
@@ -87,7 +89,8 @@ class ParagraphMethodBenchmark(private val textType: TextType, private val textL
                 Constraints(
                     maxWidth =
                         ceil(paragraphIntrinsics.maxIntrinsicWidth / preferredLineCount).toInt()
-                )
+                ),
+            overflow = TextOverflow.Clip,
         )
     }
 

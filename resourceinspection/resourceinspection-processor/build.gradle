@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 
 plugins {
@@ -46,7 +47,7 @@ dependencies {
     testImplementation(libs.truth)
 
     testRuntimeOnly(project(":resourceinspection:resourceinspection-annotation"))
-    testRuntimeOnly(project(":annotation:annotation"))
+    testRuntimeOnly("androidx.annotation:annotation:1.8.1")
     testRuntimeOnly(SdkHelperKt.getSdkDependency(project))
     testRuntimeOnly(libs.intellijAnnotations)
     testRuntimeOnly(libs.jsr250)
@@ -54,7 +55,7 @@ dependencies {
 
 androidx {
     name = "Resource Inspection - Annotation Processor"
-    type = LibraryType.ANNOTATION_PROCESSOR
+    type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2021"
     description = "Annotation processors for Android resource and layout inspection"
 }

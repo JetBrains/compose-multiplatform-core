@@ -30,7 +30,6 @@ import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.DimenRes
-import androidx.annotation.DoNotInline
 import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
@@ -68,7 +67,7 @@ public object RemoteViewsCompat {
         remoteViews: RemoteViews,
         appWidgetId: Int,
         @IdRes viewId: Int,
-        items: RemoteCollectionItems
+        items: RemoteCollectionItems,
     ) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S) {
             // Due to an inefficient Parcelable implementation, the platform collections API is
@@ -97,7 +96,7 @@ public object RemoteViewsCompat {
             ids: LongArray,
             views: Array<RemoteViews>,
             hasStableIds: Boolean,
-            viewTypeCount: Int
+            viewTypeCount: Int,
         ) {
             mIds = ids
             mViews = views
@@ -232,7 +231,7 @@ public object RemoteViewsCompat {
                     mIds.toLongArray(),
                     mViews.toTypedArray(),
                     mHasStableIds,
-                    maxOf(mViewTypeCount, 1)
+                    maxOf(mViewTypeCount, 1),
                 )
             }
         }
@@ -241,7 +240,7 @@ public object RemoteViewsCompat {
             /** Reads a non-null array of [T] of [size] from the [Parcel]. */
             inline fun <reified T : Any> Parcel.readNonNullTypedArray(
                 size: Int,
-                creator: Parcelable.Creator<T>
+                creator: Parcelable.Creator<T>,
             ): Array<T> {
                 val array = arrayOfNulls<T?>(size)
                 readTypedArray(array, creator)
@@ -256,7 +255,6 @@ public object RemoteViewsCompat {
      */
     @RequiresApi(31)
     private object CollectionItemsApi31Impl {
-        @DoNotInline
         fun setRemoteAdapter(remoteViews: RemoteViews, viewId: Int, items: RemoteCollectionItems) {
             remoteViews.setRemoteAdapter(viewId, toPlatformCollectionItems(items))
         }
@@ -264,7 +262,6 @@ public object RemoteViewsCompat {
         /**
          * Returns a [RemoteViews.RemoteCollectionItems] equivalent to this [RemoteCollectionItems].
          */
-        @DoNotInline
         private fun toPlatformCollectionItems(
             items: RemoteCollectionItems
         ): RemoteViews.RemoteCollectionItems {
@@ -337,7 +334,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setCompoundButtonTintBlendMode(
         @IdRes viewId: Int,
-        tintMode: BlendMode?
+        tintMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setButtonTintBlendMode", tintMode)
     }
@@ -367,7 +364,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setCompoundButtonTintList(
         @IdRes viewId: Int,
         notNight: ColorStateList?,
-        night: ColorStateList?
+        night: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setButtonTintList", notNight, night)
     }
@@ -405,7 +402,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setFrameLayoutForegroundGravity(
         @IdRes viewId: Int,
-        foregroundGravity: Int
+        foregroundGravity: Int,
     ) {
         setInt(viewId, "setForegroundGravity", foregroundGravity)
     }
@@ -419,7 +416,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setFrameLayoutMeasureAllChildren(
         @IdRes viewId: Int,
-        measureAll: Boolean
+        measureAll: Boolean,
     ) {
         setBoolean(viewId, "setMeasureAllChildren", measureAll)
     }
@@ -484,7 +481,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewColumnWidthDimen(
         @IdRes viewId: Int,
-        @DimenRes columnWidth: Int
+        @DimenRes columnWidth: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setColumnWidth", columnWidth)
     }
@@ -499,7 +496,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewColumnWidthDimenAttr(
         @IdRes viewId: Int,
-        @AttrRes columnWidth: Int
+        @AttrRes columnWidth: Int,
     ) {
         Api31Impl.setIntDimenAttr(this, viewId, "setColumnWidth", columnWidth)
     }
@@ -528,7 +525,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setGridViewHorizontalSpacing(
         @IdRes viewId: Int,
         value: Float,
-        unit: Int
+        unit: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setHorizontalSpacing", value, unit)
     }
@@ -544,7 +541,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewHorizontalSpacingDimen(
         @IdRes viewId: Int,
-        @DimenRes resId: Int
+        @DimenRes resId: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setHorizontalSpacing", resId)
     }
@@ -560,7 +557,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewHorizontalSpacingDimenAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setIntDimenAttr(this, viewId, "setHorizontalSpacing", resId)
     }
@@ -616,7 +613,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewVerticalSpacingDimen(
         @IdRes viewId: Int,
-        @DimenRes resId: Int
+        @DimenRes resId: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setVerticalSpacing", resId)
     }
@@ -632,7 +629,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setGridViewVerticalSpacingDimenAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setIntDimenAttr(this, viewId, "setVerticalSpacing", resId)
     }
@@ -647,7 +644,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setImageViewAdjustViewBounds(
         @IdRes viewId: Int,
-        adjustViewBounds: Boolean
+        adjustViewBounds: Boolean,
     ) {
         setBoolean(viewId, "setAdjustViewBounds", adjustViewBounds)
     }
@@ -675,7 +672,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setImageViewColorFilter(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setColorFilter", notNight, night)
     }
@@ -690,7 +687,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setImageViewColorFilterResource(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColor(this, viewId, "setColorFilter", resId)
     }
@@ -741,7 +738,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setImageViewImageTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setImageTintBlendMode", blendMode)
     }
@@ -771,7 +768,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setImageViewImageTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setImageTintList", notNightTint, nightTint)
     }
@@ -905,7 +902,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setLinearLayoutBaselineAligned(
         @IdRes viewId: Int,
-        baselineAligned: Boolean
+        baselineAligned: Boolean,
     ) {
         setBoolean(viewId, "setBaselineAligned", baselineAligned)
     }
@@ -941,7 +938,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setLinearLayoutHorizontalGravity(
         @IdRes viewId: Int,
-        horizontalGravity: Int
+        horizontalGravity: Int,
     ) {
         setInt(viewId, "setHorizontalGravity", horizontalGravity)
     }
@@ -955,7 +952,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setLinearLayoutVerticalGravity(
         @IdRes viewId: Int,
-        verticalGravity: Int
+        verticalGravity: Int,
     ) {
         setInt(viewId, "setVerticalGravity", verticalGravity)
     }
@@ -970,7 +967,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setLinearLayoutMeasureWithLargestChildEnabled(
         @IdRes viewId: Int,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         setBoolean(viewId, "setMeasureWithLargestChildEnabled", enabled)
     }
@@ -1008,7 +1005,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarIndeterminateTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setIndeterminateTintBlendMode", blendMode)
     }
@@ -1023,7 +1020,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarIndeterminateTintList(
         @IdRes viewId: Int,
-        tint: ColorStateList?
+        tint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setIndeterminateTintList", tint)
     }
@@ -1041,14 +1038,14 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setProgressBarIndeterminateTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(
             this,
             viewId,
             "setIndeterminateTintList",
             notNightTint,
-            nightTint
+            nightTint,
         )
     }
 
@@ -1062,7 +1059,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarIndeterminateTintList(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setIndeterminateTintList", resId)
     }
@@ -1077,7 +1074,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarIndeterminateTintListAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setColorStateListAttr(this, viewId, "setIndeterminateTintList", resId)
     }
@@ -1116,7 +1113,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setProgressTintBlendMode", blendMode)
     }
@@ -1142,7 +1139,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressTintList(
         @IdRes viewId: Int,
-        tint: ColorStateList?
+        tint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setProgressTintList", tint)
     }
@@ -1160,7 +1157,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setProgressBarProgressTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setProgressTintList", notNightTint, nightTint)
     }
@@ -1175,7 +1172,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressTintList(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setProgressTintList", resId)
     }
@@ -1190,7 +1187,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressTintListAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setColorStateListAttr(this, viewId, "setProgressTintList", resId)
     }
@@ -1205,7 +1202,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressBackgroundTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setProgressBackgroundTintBlendMode", blendMode)
     }
@@ -1220,7 +1217,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressBackgroundTintList(
         @IdRes viewId: Int,
-        tint: ColorStateList?
+        tint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setProgressBackgroundTintList", tint)
     }
@@ -1238,14 +1235,14 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setProgressBarProgressBackgroundTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(
             this,
             viewId,
             "setProgressBackgroundTintList",
             notNightTint,
-            nightTint
+            nightTint,
         )
     }
 
@@ -1259,7 +1256,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressBackgroundTintList(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setProgressBackgroundTintList", resId)
     }
@@ -1274,7 +1271,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarProgressBackgroundTintListAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setColorStateListAttr(this, viewId, "setProgressBackgroundTintList", resId)
     }
@@ -1288,7 +1285,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarSecondaryProgress(
         @IdRes viewId: Int,
-        secondaryProgress: Int
+        secondaryProgress: Int,
     ) {
         setInt(viewId, "setSecondaryProgress", secondaryProgress)
     }
@@ -1303,7 +1300,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarSecondaryProgressTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setSecondaryProgressTintBlendMode", blendMode)
     }
@@ -1318,7 +1315,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarSecondaryProgressTintList(
         @IdRes viewId: Int,
-        tint: ColorStateList?
+        tint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setSecondaryProgressTintList", tint)
     }
@@ -1336,14 +1333,14 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setProgressBarSecondaryProgressTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(
             this,
             viewId,
             "setSecondaryProgressTintList",
             notNightTint,
-            nightTint
+            nightTint,
         )
     }
 
@@ -1357,7 +1354,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarSecondaryProgressTintList(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setSecondaryProgressTintList", resId)
     }
@@ -1372,7 +1369,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarSecondaryProgressTintListAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setColorStateListAttr(this, viewId, "setSecondaryProgressTintList", resId)
     }
@@ -1388,7 +1385,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarStateDescription(
         @IdRes viewId: Int,
-        stateDescription: CharSequence?
+        stateDescription: CharSequence?,
     ) {
         requireSdk(31, "setStateDescription")
         setCharSequence(viewId, "setStateDescription", stateDescription)
@@ -1405,7 +1402,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarStateDescription(
         @IdRes viewId: Int,
-        @StringRes resId: Int
+        @StringRes resId: Int,
     ) {
         Api31Impl.setCharSequence(this, viewId, "setStateDescription", resId)
     }
@@ -1421,7 +1418,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setProgressBarStateDescriptionAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setCharSequenceAttr(this, viewId, "setStateDescription", resId)
     }
@@ -1446,7 +1443,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutHorizontalGravity(
         @IdRes viewId: Int,
-        horizontalGravity: Int
+        horizontalGravity: Int,
     ) {
         setInt(viewId, "setHorizontalGravity", horizontalGravity)
     }
@@ -1461,7 +1458,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutIgnoreGravity(
         @IdRes viewId: Int,
-        @IdRes childViewId: Int
+        @IdRes childViewId: Int,
     ) {
         setInt(viewId, "setIgnoreGravity", childViewId)
     }
@@ -1475,7 +1472,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setRelativeLayoutVerticalGravity(
         @IdRes viewId: Int,
-        verticalGravity: Int
+        verticalGravity: Int,
     ) {
         setInt(viewId, "setVerticalGravity", verticalGravity)
     }
@@ -1718,7 +1715,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setSwitchThumbTextPaddingDimen(
         @IdRes viewId: Int,
-        @DimenRes resId: Int
+        @DimenRes resId: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setThumbTextPadding", resId)
     }
@@ -1734,7 +1731,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setSwitchThumbTextPaddingDimenAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setIntDimenAttr(this, viewId, "setThumbTextPadding", resId)
     }
@@ -1776,7 +1773,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setSwitchThumbTintList(
         @IdRes viewId: Int,
         notNight: ColorStateList?,
-        night: ColorStateList?
+        night: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setThumbTintList", notNight, night)
     }
@@ -1882,7 +1879,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setSwitchTrackTintList(
         @IdRes viewId: Int,
         notNight: ColorStateList?,
-        night: ColorStateList?
+        night: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setTrackTintList", notNight, night)
     }
@@ -2050,7 +2047,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewCompoundDrawablePadding(
         @IdRes viewId: Int,
         value: Float,
-        unit: Int
+        unit: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setCompoundDrawablePadding", value, unit)
     }
@@ -2066,7 +2063,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewCompoundDrawablePaddingDimen(
         @IdRes viewId: Int,
-        @DimenRes resId: Int
+        @DimenRes resId: Int,
     ) {
         Api31Impl.setIntDimen(this, viewId, "setCompoundDrawablePadding", resId)
     }
@@ -2082,7 +2079,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewCompoundDrawablePaddingDimenAttr(
         @IdRes viewId: Int,
-        @AttrRes resId: Int
+        @AttrRes resId: Int,
     ) {
         Api31Impl.setIntDimenAttr(this, viewId, "setCompoundDrawablePadding", resId)
     }
@@ -2145,7 +2142,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewFontFeatureSettings(
         @IdRes viewId: Int,
-        fontFeatureSettings: String
+        fontFeatureSettings: String,
     ) {
         requireSdk(21, "setFontFeatureSettings")
         setString(viewId, "setFontFeatureSettings", fontFeatureSettings)
@@ -2235,7 +2232,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewHighlightColor(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setHighlightColor", notNight, night)
     }
@@ -2250,7 +2247,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewHighlightColorResource(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColor(this, viewId, "setHighlightColor", resId)
     }
@@ -2326,7 +2323,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewHintTextColor(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setHintTextColor", notNight, night)
     }
@@ -2341,7 +2338,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewHintTextColorResource(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColor(this, viewId, "setHintTextColor", resId)
     }
@@ -2368,7 +2365,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewJustificationMode(
         @IdRes viewId: Int,
-        justificationMode: Int
+        justificationMode: Int,
     ) {
         requireSdk(31, "setJustificationMode")
         setInt(viewId, "setJustificationMode", justificationMode)
@@ -2458,7 +2455,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewLinkTextColor(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setLinkTextColor", notNight, night)
     }
@@ -2473,7 +2470,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewLinkTextColorResource(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         Api31Impl.setColor(this, viewId, "setLinkTextColor", resId)
     }
@@ -2757,7 +2754,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setTextViewSelectAllOnFocus(
         @IdRes viewId: Int,
-        selectAllOnFocus: Boolean
+        selectAllOnFocus: Boolean,
     ) {
         setBoolean(viewId, "setSelectAllOnFocus", selectAllOnFocus)
     }
@@ -2833,7 +2830,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewTextColor(
         @IdRes viewId: Int,
         notNight: ColorStateList,
-        night: ColorStateList
+        night: ColorStateList,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setTextColor", notNight, night)
     }
@@ -2850,7 +2847,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setTextViewTextColor(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setTextColor", notNight, night)
     }
@@ -3007,7 +3004,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setViewBackgroundColor(
         @IdRes viewId: Int,
         @ColorInt notNight: Int,
-        @ColorInt night: Int
+        @ColorInt night: Int,
     ) {
         Api31Impl.setColorInt(this, viewId, "setBackgroundColor", notNight, night)
     }
@@ -3021,7 +3018,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewBackgroundColorResource(
         @IdRes viewId: Int,
-        @ColorRes resId: Int
+        @ColorRes resId: Int,
     ) {
         if (Build.VERSION.SDK_INT >= 31) {
             Api31Impl.setColor(this, viewId, "setBackgroundColor", resId)
@@ -3064,7 +3061,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewBackgroundTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setBackgroundTintBlendMode", blendMode)
     }
@@ -3093,7 +3090,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setViewBackgroundTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setBackgroundTintList", notNightTint, nightTint)
     }
@@ -3145,7 +3142,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewContentDescription(
         @IdRes viewId: Int,
-        contentDescription: CharSequence?
+        contentDescription: CharSequence?,
     ) {
         setCharSequence(viewId, "setContentDescription", contentDescription)
     }
@@ -3263,7 +3260,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewFocusedByDefault(
         @IdRes viewId: Int,
-        isFocusedByDefault: Boolean
+        isFocusedByDefault: Boolean,
     ) {
         requireSdk(31, "setFocusedByDefault")
         setBoolean(viewId, "setFocusedByDefault", isFocusedByDefault)
@@ -3279,7 +3276,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewFocusableInTouchMode(
         @IdRes viewId: Int,
-        focusableInTouchMode: Boolean
+        focusableInTouchMode: Boolean,
     ) {
         requireSdk(31, "setFocusableInTouchMode")
         setBoolean(viewId, "setFocusableInTouchMode", focusableInTouchMode)
@@ -3295,7 +3292,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewForegroundTintBlendMode(
         @IdRes viewId: Int,
-        blendMode: BlendMode?
+        blendMode: BlendMode?,
     ) {
         Api31Impl.setBlendMode(this, viewId, "setForegroundTintBlendMode", blendMode)
     }
@@ -3324,7 +3321,7 @@ public object RemoteViewsCompat {
     public fun RemoteViews.setViewForegroundTintList(
         @IdRes viewId: Int,
         notNightTint: ColorStateList?,
-        nightTint: ColorStateList?
+        nightTint: ColorStateList?,
     ) {
         Api31Impl.setColorStateList(this, viewId, "setForegroundTintList", notNightTint, nightTint)
     }
@@ -3569,7 +3566,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewStateDescription(
         @IdRes viewId: Int,
-        stateDescription: CharSequence?
+        stateDescription: CharSequence?,
     ) {
         requireSdk(30, "setStateDescription")
         setCharSequence(viewId, "setStateDescription", stateDescription)
@@ -3625,7 +3622,7 @@ public object RemoteViewsCompat {
     @JvmStatic
     public fun RemoteViews.setViewStubLayoutResource(
         @IdRes viewId: Int,
-        @LayoutRes layoutResource: Int
+        @LayoutRes layoutResource: Int,
     ) {
         requireSdk(16, "setLayoutResource")
         setInt(viewId, "setLayoutResource", layoutResource)
@@ -3763,7 +3760,6 @@ public object RemoteViewsCompat {
 
     @RequiresApi(23)
     private object Api23Impl {
-        @DoNotInline
         @JvmStatic
         fun setIcon(rv: RemoteViews, @IdRes id: Int, method: String, icon: Icon?) {
             rv.setIcon(id, method, icon)
@@ -3772,158 +3768,141 @@ public object RemoteViewsCompat {
 
     @RequiresApi(31)
     private object Api31Impl {
-        @DoNotInline
         @JvmStatic
         fun setBlendMode(rv: RemoteViews, @IdRes id: Int, method: String, mode: BlendMode?) {
             rv.setBlendMode(id, method, mode)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setCharSequence(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            @StringRes resId: Int
+            @StringRes resId: Int,
         ) {
             rv.setCharSequence(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setCharSequenceAttr(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            @AttrRes resId: Int
+            @AttrRes resId: Int,
         ) {
             rv.setCharSequenceAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColor(rv: RemoteViews, @IdRes id: Int, method: String, @ColorRes resId: Int) {
             rv.setColor(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorAttr(rv: RemoteViews, @IdRes id: Int, method: String, @AttrRes resId: Int) {
             rv.setColorAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorInt(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
             @ColorInt notNight: Int,
-            @ColorInt night: Int
+            @ColorInt night: Int,
         ) {
             rv.setColorInt(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            colorStateList: ColorStateList?
+            colorStateList: ColorStateList?,
         ) {
             rv.setColorStateList(id, method, colorStateList)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
             notNight: ColorStateList?,
-            night: ColorStateList?
+            night: ColorStateList?,
         ) {
             rv.setColorStateList(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateList(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            @ColorRes resId: Int
+            @ColorRes resId: Int,
         ) {
             rv.setColorStateList(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setColorStateListAttr(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            @AttrRes resId: Int
+            @AttrRes resId: Int,
         ) {
             rv.setColorStateListAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIcon(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
             notNight: Icon?,
-            night: Icon?
+            night: Icon?,
         ) {
             rv.setIcon(id, method, notNight, night)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimen(rv: RemoteViews, @IdRes id: Int, method: String, value: Float, unit: Int) {
             rv.setIntDimen(id, method, value, unit)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimen(rv: RemoteViews, @IdRes id: Int, method: String, @DimenRes resId: Int) {
             rv.setIntDimen(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setIntDimenAttr(rv: RemoteViews, @IdRes id: Int, method: String, @AttrRes resId: Int) {
             rv.setIntDimenAttr(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimen(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
             value: Float,
-            unit: Int
+            unit: Int,
         ) {
             rv.setFloatDimen(id, method, value, unit)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimen(rv: RemoteViews, @IdRes id: Int, method: String, @DimenRes resId: Int) {
             rv.setFloatDimen(id, method, resId)
         }
 
-        @DoNotInline
         @JvmStatic
         fun setFloatDimenAttr(
             rv: RemoteViews,
             @IdRes id: Int,
             method: String,
-            @AttrRes resId: Int
+            @AttrRes resId: Int,
         ) {
             rv.setFloatDimenAttr(id, method, resId)
         }

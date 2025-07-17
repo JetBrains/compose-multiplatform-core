@@ -66,7 +66,6 @@ import kotlinx.coroutines.delay
  * Example of an [Alert] with an icon, title, body text and buttons:
  *
  * @sample androidx.wear.compose.material.samples.AlertWithButtons
- *
  * @param title A slot for displaying the title of the dialog, expected to be one or two lines of
  *   text.
  * @param negativeButton A slot for a [Button] indicating negative sentiment (e.g. No). Clicking the
@@ -101,7 +100,7 @@ public fun Alert(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable (ColumnScope.() -> Unit)? = null
+    content: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
     DialogImpl(
         modifier = modifier,
@@ -122,9 +121,7 @@ public fun Alert(
 
         // Buttons
         item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 negativeButton()
                 Spacer(modifier = Modifier.width(DialogDefaults.ButtonSpacing))
                 positiveButton()
@@ -145,7 +142,6 @@ public fun Alert(
  * Example of an [Alert] with an icon, title, body text and buttons:
  *
  * @sample androidx.wear.compose.material.samples.AlertWithButtons
- *
  * @param title A slot for displaying the title of the dialog, expected to be one or two lines of
  *   text.
  * @param negativeButton A slot for a [Button] indicating negative sentiment (e.g. No). Clicking the
@@ -171,7 +167,7 @@ public fun Alert(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1." +
         "A newer overload is available which uses ScalingLazyListState from " +
         "wear.compose.foundation.lazy package",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Alert(
@@ -188,7 +184,7 @@ public fun Alert(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable (ColumnScope.() -> Unit)? = null
+    content: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
     AlertWithMaterialSlc(
         title = title,
@@ -203,7 +199,7 @@ public fun Alert(
         iconColor = iconColor,
         verticalArrangement = verticalArrangement,
         contentPadding = contentPadding,
-        content = content
+        content = content,
     )
 }
 
@@ -225,7 +221,7 @@ internal fun AlertWithMaterialSlc(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable (ColumnScope.() -> Unit)? = null
+    content: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
     MaterialDialogImpl(
         modifier = modifier,
@@ -246,9 +242,7 @@ internal fun AlertWithMaterialSlc(
 
         // Buttons
         item {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 negativeButton()
                 Spacer(modifier = Modifier.width(DialogDefaults.ButtonSpacing))
                 positiveButton()
@@ -269,7 +263,6 @@ internal fun AlertWithMaterialSlc(
  * Example of an [Alert] with an icon, title, message text and chips:
  *
  * @sample androidx.wear.compose.material.samples.AlertWithChips
- *
  * @param title A slot for displaying the title of the dialog, expected to be one or two lines of
  *   text.
  * @param modifier Modifier to be applied to the dialog.
@@ -300,7 +293,7 @@ public fun Alert(
     iconColor: Color = contentColorFor(backgroundColor),
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: ScalingLazyListScope.() -> Unit
+    content: ScalingLazyListScope.() -> Unit,
 ) {
     DialogImpl(
         modifier = modifier,
@@ -335,7 +328,6 @@ public fun Alert(
  * Example of an [Alert] with an icon, title, message text and chips:
  *
  * @sample androidx.wear.compose.material.samples.AlertWithChips
- *
  * @param title A slot for displaying the title of the dialog, expected to be one or two lines of
  *   text.
  * @param modifier Modifier to be applied to the dialog.
@@ -358,7 +350,7 @@ public fun Alert(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1." +
         "A newer overload is available which uses ScalingLazyListState and ScalingLazyListScope " +
         "from wear.compose.foundation.lazy package",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Alert(
@@ -374,7 +366,7 @@ public fun Alert(
     iconColor: Color = contentColorFor(backgroundColor),
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit
+    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit,
 ) {
     AlertWithMaterialSlc(
         title = title,
@@ -388,7 +380,7 @@ public fun Alert(
         iconColor = iconColor,
         verticalArrangement = verticalArrangement,
         contentPadding = contentPadding,
-        content = content
+        content = content,
     )
 }
 
@@ -409,7 +401,7 @@ internal fun AlertWithMaterialSlc(
     iconColor: Color = contentColorFor(backgroundColor),
     verticalArrangement: Arrangement.Vertical = DialogDefaults.AlertVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit
+    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit,
 ) {
     MaterialDialogImpl(
         modifier = modifier,
@@ -444,7 +436,6 @@ internal fun AlertWithMaterialSlc(
  * Example of a [Confirmation] with animation:
  *
  * @sample androidx.wear.compose.material.samples.ConfirmationWithAnimation
- *
  * @param onTimeout Event invoked when the dialog has been shown for [durationMillis].
  * @param modifier Modifier to be applied to the dialog.
  * @param icon An optional slot for displaying an icon or image.
@@ -475,7 +466,7 @@ public fun Confirmation(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.ConfirmationVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     require(durationMillis > 0) { "Duration must be a positive integer" }
 
@@ -501,7 +492,7 @@ public fun Confirmation(
             DialogTitle(
                 titleColor = contentColor,
                 padding = DialogDefaults.TitleBottomPadding,
-                content = content
+                content = content,
             )
         }
     }
@@ -519,7 +510,6 @@ public fun Confirmation(
  * Example of a [Confirmation] with animation:
  *
  * @sample androidx.wear.compose.material.samples.ConfirmationWithAnimation
- *
  * @param onTimeout Event invoked when the dialog has been shown for [durationMillis].
  * @param modifier Modifier to be applied to the dialog.
  * @param icon An optional slot for displaying an icon or image.
@@ -543,7 +533,7 @@ public fun Confirmation(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1." +
         "A newer overload is available which uses ScalingLazyListState from " +
         "wear.compose.foundation.lazy package",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Confirmation(
@@ -558,7 +548,7 @@ public fun Confirmation(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.ConfirmationVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     ConfirmationWithMaterialSlc(
         onTimeout = onTimeout,
@@ -571,7 +561,7 @@ public fun Confirmation(
         iconColor = iconColor,
         verticalArrangement = verticalArrangement,
         contentPadding = contentPadding,
-        content = content
+        content = content,
     )
 }
 
@@ -591,7 +581,7 @@ internal fun ConfirmationWithMaterialSlc(
     iconColor: Color = contentColor,
     verticalArrangement: Arrangement.Vertical = DialogDefaults.ConfirmationVerticalArrangement,
     contentPadding: PaddingValues = DialogDefaults.ContentPadding,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     require(durationMillis > 0) { "Duration must be a positive integer" }
 
@@ -617,7 +607,7 @@ internal fun ConfirmationWithMaterialSlc(
             DialogTitle(
                 titleColor = contentColor,
                 padding = DialogDefaults.TitleBottomPadding,
-                content = content
+                content = content,
             )
         }
     }
@@ -626,23 +616,24 @@ internal fun ConfirmationWithMaterialSlc(
 /** Contains the default values used by [Alert] and [Confirmation]. */
 public object DialogDefaults {
     /** Creates the recommended vertical arrangement for [Alert] dialog content. */
-    public val AlertVerticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
+    public val AlertVerticalArrangement: Arrangement.Vertical =
+        Arrangement.spacedBy(4.dp, Alignment.CenterVertically)
 
     /** Creates the recommended vertical arrangement for [Confirmation] dialog content. */
-    public val ConfirmationVerticalArrangement =
+    public val ConfirmationVerticalArrangement: Arrangement.Vertical =
         Arrangement.spacedBy(space = 8.dp, alignment = Alignment.CenterVertically)
 
     /** The padding to apply around the contents. */
-    public val ContentPadding = PaddingValues(horizontal = 10.dp)
+    public val ContentPadding: PaddingValues = PaddingValues(horizontal = 10.dp)
 
     /** Short duration for showing [Confirmation]. */
-    public val ShortDurationMillis = 4000L
+    public val ShortDurationMillis: Long = 4000L
 
     /** Long duration for showing [Confirmation]. */
-    public val LongDurationMillis = 10000L
+    public val LongDurationMillis: Long = 10000L
 
     /** Show [Confirmation] indefinitely (supports swipe-to-dismiss). */
-    public val IndefiniteDurationMillis = Long.MAX_VALUE
+    public val IndefiniteDurationMillis: Long = Long.MAX_VALUE
 
     /** Spacing between [Button]s. */
     internal val ButtonSpacing = 12.dp
@@ -681,7 +672,7 @@ private fun DialogImpl(
     verticalArrangement: Arrangement.Vertical,
     backgroundColor: Color,
     contentPadding: PaddingValues,
-    content: ScalingLazyListScope.() -> Unit
+    content: ScalingLazyListScope.() -> Unit,
 ) {
     ScalingLazyColumn(
         state = scrollState,
@@ -690,7 +681,7 @@ private fun DialogImpl(
         verticalArrangement = verticalArrangement,
         contentPadding = contentPadding,
         modifier = modifier.fillMaxSize().background(backgroundColor),
-        content = content
+        content = content,
     )
 }
 
@@ -710,7 +701,7 @@ private fun MaterialDialogImpl(
     verticalArrangement: Arrangement.Vertical,
     backgroundColor: Color,
     contentPadding: PaddingValues,
-    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit
+    content: androidx.wear.compose.material.ScalingLazyListScope.() -> Unit,
 ) {
     androidx.wear.compose.material.ScalingLazyColumn(
         state = scrollState,
@@ -719,7 +710,7 @@ private fun MaterialDialogImpl(
         verticalArrangement = verticalArrangement,
         contentPadding = contentPadding,
         modifier = modifier.fillMaxSize().background(backgroundColor),
-        content = content
+        content = content,
     )
 }
 
@@ -734,7 +725,7 @@ private fun DialogIconHeader(iconColor: Color, content: @Composable ColumnScope.
     CompositionLocalProvider(LocalContentColor provides iconColor) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             content()
             Spacer(Modifier.fillMaxWidth().height(DialogDefaults.IconSpacing))
@@ -752,16 +743,13 @@ private fun DialogIconHeader(iconColor: Color, content: @Composable ColumnScope.
 private fun DialogTitle(
     titleColor: Color,
     padding: PaddingValues,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     CompositionLocalProvider(
         LocalContentColor provides titleColor,
-        LocalTextStyle provides MaterialTheme.typography.title3
+        LocalTextStyle provides MaterialTheme.typography.title3,
     ) {
-        Column(
-            modifier = Modifier.padding(padding),
-            content = content,
-        )
+        Column(modifier = Modifier.padding(padding), content = content)
     }
 }
 
@@ -770,7 +758,7 @@ private fun DialogTitle(
 private fun DialogBody(bodyColor: Color, content: @Composable ColumnScope.() -> Unit) {
     CompositionLocalProvider(
         LocalContentColor provides bodyColor,
-        LocalTextStyle provides MaterialTheme.typography.body2
+        LocalTextStyle provides MaterialTheme.typography.body2,
     ) {
         Column(modifier = Modifier.padding(DialogDefaults.BodyPadding), content = content)
     }

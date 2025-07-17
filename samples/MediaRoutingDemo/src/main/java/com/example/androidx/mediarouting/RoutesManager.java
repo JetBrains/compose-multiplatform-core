@@ -27,14 +27,15 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Resources;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.mediarouter.media.MediaRouter;
 import androidx.mediarouter.media.MediaRouterParams;
 import androidx.mediarouter.media.RouteListingPreference;
 
 import com.example.androidx.mediarouting.activities.MainActivity;
 import com.example.androidx.mediarouting.data.RouteItem;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,8 +73,7 @@ public final class RoutesManager {
     }
 
     /** Singleton method. */
-    @NonNull
-    public static RoutesManager getInstance(@NonNull Context context) {
+    public static @NonNull RoutesManager getInstance(@NonNull Context context) {
         synchronized (RoutesManager.class) {
             if (sInstance == null) {
                 sInstance = new RoutesManager(context);
@@ -82,8 +82,7 @@ public final class RoutesManager {
         return sInstance;
     }
 
-    @NonNull
-    public List<RouteItem> getRouteItems() {
+    public @NonNull List<RouteItem> getRouteItems() {
         return new ArrayList<>(mRouteItems.values());
     }
 
@@ -114,8 +113,7 @@ public final class RoutesManager {
      * @param id of the route to search for.
      * @return the route with the passed id, or null if it does not exist.
      */
-    @Nullable
-    public RouteItem getRouteWithId(@Nullable String id) {
+    public @Nullable RouteItem getRouteWithId(@Nullable String id) {
         return mRouteItems.get(id);
     }
 
@@ -172,8 +170,7 @@ public final class RoutesManager {
      * The current list of route listing preference items, as set via {@link
      * #setRouteListingPreferenceItems}.
      */
-    @NonNull
-    public List<RouteListingPreferenceItemHolder> getRouteListingPreferenceItems() {
+    public @NonNull List<RouteListingPreferenceItemHolder> getRouteListingPreferenceItems() {
         return mRouteListingPreferenceItems;
     }
 
@@ -338,19 +335,18 @@ public final class RoutesManager {
      */
     public static final class RouteListingPreferenceItemHolder {
 
-        @NonNull public final RouteListingPreference.Item mItem;
-        @NonNull public final String mRouteName;
+        public final RouteListingPreference.@NonNull Item mItem;
+        public final @NonNull String mRouteName;
 
         public RouteListingPreferenceItemHolder(
-                @NonNull RouteListingPreference.Item item, @NonNull String routeName) {
+                RouteListingPreference.@NonNull Item item, @NonNull String routeName) {
             mItem = item;
             mRouteName = routeName;
         }
 
         /** Returns the name of the corresponding route. */
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return mRouteName;
         }
 

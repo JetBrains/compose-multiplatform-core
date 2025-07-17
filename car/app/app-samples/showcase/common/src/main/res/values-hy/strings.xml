@@ -231,6 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"Հաղորդագրության ձևանմուշի դեմո"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Հաղորդագրությունը դրվում է այստեղ։\nԵրկրորդ տողում նույնպես տեքստ կա։"</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Կարճ հաղորդագրության ձևանմուշի դեմո"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Բաժիններով օբյեկտի ձևանմուշի դեմո"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Կետակոճակների բաժին"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Փոխանջատիչի բաժին"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Բազմատող բաժին"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Ցանցի տարրերի բաժին"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Վահանակի ձևանմուշի դեմո"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Տեղերի ցանկի ձևանմուշի դեմո"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Դիտել վայրերը"</string>
@@ -321,6 +326,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"Կարելի է ընտրել միայն երկրորդական գործողությունը"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"Ձևավորման թեստ"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"Երկրորդական գործողություններ և ձևավորում"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"Տող՝ երկրորդական գործողություններով և ձևավորմամբ, իսկապես երկար վերնագրով"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Շարքը ևս կարելի է ընտրել"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Ընտրված է շարքի երկրորդական գործողությունը"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Ընտրված է շարքի գլխավոր գործողությունը"</string>

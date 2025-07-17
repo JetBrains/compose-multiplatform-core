@@ -20,6 +20,7 @@ import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PAUSE;
 import static android.support.v4.media.session.PlaybackStateCompat.ACTION_PLAY;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -38,19 +39,18 @@ import android.view.KeyEvent;
 import android.widget.Toast;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.media.session.MediaButtonReceiver;
-import androidx.mediarouter.media.MediaControlIntent;
 import androidx.mediarouter.media.MediaRouter.RouteInfo;
 
 import com.example.androidx.mediarouting.R;
 import com.example.androidx.mediarouting.data.PlaylistItem;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstraction of common playback operations of media items, such as play,
@@ -78,15 +78,11 @@ public abstract class Player {
     private static final PlaybackStateCompat INIT_PLAYBACK_STATE = new PlaybackStateCompat.Builder()
             .setState(PlaybackStateCompat.STATE_NONE, 0, .0f).build();
 
-    @NonNull
-    protected Context mContext;
-    @NonNull
-    protected Callback mCallback;
-    @NonNull
-    protected MediaSessionCompat mMediaSession;
+    protected @NonNull Context mContext;
+    protected @NonNull Callback mCallback;
+    protected @NonNull MediaSessionCompat mMediaSession;
 
-    @NonNull
-    protected String mNotificationChannelId;
+    protected @NonNull String mNotificationChannelId;
     private NotificationCompat.Action mPlayAction;
     private NotificationCompat.Action mPauseAction;
 
@@ -168,8 +164,7 @@ public abstract class Player {
      * @param iid
      * @return
      */
-    @NonNull
-    public abstract PlaylistItem remove(@NonNull String iid);
+    public abstract @NonNull PlaylistItem remove(@NonNull String iid);
 
     /**
      * Takes player snapshot.
@@ -177,8 +172,7 @@ public abstract class Player {
     public void takeSnapshot() {
     }
 
-    @Nullable
-    public Bitmap getSnapshot() {
+    public @Nullable Bitmap getSnapshot() {
         return null;
     }
 
@@ -193,28 +187,30 @@ public abstract class Player {
     }
 
     /**
-     * Factory method for creating the suitable player.
-     * @param context
-     * @param route
-     * @param session
-     * @return
+     * Creates a {@link Player} for the given {@code route}, whose UI is hosted by the given {@code
+     * activity}.
      */
-    @NonNull
-    public static Player create(@NonNull Context context, @NonNull RouteInfo route,
+    public static @NonNull Player createPlayerForActivity(
+            @NonNull Activity activity,
+            @NonNull RouteInfo route,
             @NonNull MediaSessionCompat session) {
         Player player;
-        if (route != null && route.supportsControlCategory(
-                MediaControlIntent.CATEGORY_REMOTE_PLAYBACK)) {
-            player = new RemotePlayer(context);
-        } else if (route != null) {
-            player = new LocalPlayer.SurfaceViewPlayer(context);
+        if (route.isSystemRoute()) {
+            player = new LocalPlayer.SurfaceViewPlayer(activity);
         } else {
-            player = new LocalPlayer.OverlayPlayer(context);
+            player = new RemotePlayer(activity);
         }
         player.setPlayPauseNotificationAction();
         player.setMediaSession(session);
         player.initMediaSession();
         player.connect(route);
+        return player;
+    }
+
+    /** Creates a {@link Player} for playback on an overlay. */
+    public static @NonNull Player createPlayerForOverlay(@NonNull Context context) {
+        Player player = new LocalPlayer.OverlayPlayer(context);
+        player.setPlayPauseNotificationAction();
         return player;
     }
 
@@ -397,24 +393,20 @@ public abstract class Player {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static NotificationChannel createNotificationChannel(String notificationChannelId,
                 String name, int importance) {
             return new NotificationChannel(notificationChannelId, name, importance);
         }
 
-        @DoNotInline
         static void createNotificationChannel(NotificationManager notificationManager,
                 NotificationChannel channel) {
             notificationManager.createNotificationChannel(channel);
         }
 
-        @DoNotInline
         static void setDescription(NotificationChannel notificationChannel, String description) {
             notificationChannel.setDescription(description);
         }
 
-        @DoNotInline
         static NotificationManager getSystemServiceReturnsNotificationManager(Context context) {
             return context.getSystemService(NotificationManager.class);
         }

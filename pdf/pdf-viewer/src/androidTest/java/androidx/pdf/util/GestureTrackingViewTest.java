@@ -34,13 +34,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.RequiresApi;
 import androidx.pdf.TestActivity;
 import androidx.pdf.util.GestureTracker.Gesture;
 import androidx.pdf.util.GestureTracker.GestureHandler;
 import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -91,7 +91,7 @@ public class GestureTrackingViewTest {
             plainView.setBackgroundColor(Color.BLUE);
             plainView.setLayoutParams(params);
 
-            GestureTracker viewTracker = new GestureTracker("View", activity);
+            GestureTracker viewTracker = new GestureTracker(activity);
             viewTracker.setDelegateHandler(mViewGestureHandler);
             plainView.setOnTouchListener(viewTracker);
 
@@ -103,7 +103,7 @@ public class GestureTrackingViewTest {
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.CUPCAKE)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.CUPCAKE)
     @Test
     public void testInterceptDoubleTap() {
         setUpViews(Gesture.DOUBLE_TAP);

@@ -5,6 +5,10 @@ package androidx.wear.protolayout.renderer.common {
     method public boolean canLogD(String);
     method public void logD(String, String);
     method @com.google.errorprone.annotations.FormatMethod public void logD(String, @com.google.errorprone.annotations.FormatString String, java.lang.Object!...);
+    method public default void logDOrNotUser(String, String);
+    method @com.google.errorprone.annotations.FormatMethod public default void logDOrNotUser(String, @com.google.errorprone.annotations.FormatString String, java.lang.Object?...);
+    method public default void logE(String, String, Throwable?);
+    method public default void logW(String, String);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class LoggingUtilsImpl implements androidx.wear.protolayout.renderer.common.LoggingUtils {
@@ -22,8 +26,11 @@ package androidx.wear.protolayout.renderer.impl {
     ctor public ProtoLayoutViewInstance(androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config);
     method public void close() throws java.lang.Exception;
     method @UiThread public void detach(android.view.ViewGroup);
+    method public java.util.List<androidx.wear.protolayout.expression.pipeline.DynamicTypeAnimator!> getAnimations();
     method public void invalidateCache();
+    method public void invalidateLayout();
     method @UiThread public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> renderAndAttach(androidx.wear.protolayout.proto.LayoutElementProto.Layout, androidx.wear.protolayout.proto.ResourceProto.Resources, android.view.ViewGroup);
+    method @UiThread public void setLayoutVisibility(int);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class ProtoLayoutViewInstance.Config {

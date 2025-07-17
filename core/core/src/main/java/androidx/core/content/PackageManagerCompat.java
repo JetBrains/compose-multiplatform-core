@@ -36,14 +36,15 @@ import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.core.os.UserManagerCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.util.List;
@@ -129,8 +130,7 @@ public final class PackageManagerCompat {
      * not exist yet.
      * </ul>
      */
-    @NonNull
-    public static ListenableFuture<Integer> getUnusedAppRestrictionsStatus(
+    public static @NonNull ListenableFuture<Integer> getUnusedAppRestrictionsStatus(
             @NonNull Context context) {
         ResolvableFuture<Integer> resultFuture = ResolvableFuture.create();
         // If the user is in locked direct boot mode, return error as we cannot access the
@@ -211,10 +211,9 @@ public final class PackageManagerCompat {
      * Verifiers exist, this method will return the first Verifier's package name.
      *
      */
-    @Nullable
     @RestrictTo(LIBRARY)
     @SuppressWarnings("deprecation")
-    public static String getPermissionRevocationVerifierApp(
+    public static @Nullable String getPermissionRevocationVerifierApp(
             @NonNull PackageManager packageManager) {
         Intent permissionRevocationSettingsIntent =
                 new Intent(ACTION_PERMISSION_REVOCATION_SETTINGS)

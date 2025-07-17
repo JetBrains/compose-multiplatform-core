@@ -19,10 +19,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * DividerPresenter provides a default presentation for {@link DividerRow} in HeadersFragment.
@@ -42,9 +43,8 @@ public class DividerPresenter extends Presenter {
         mLayoutResourceId = layoutResourceId;
     }
 
-    @NonNull
     @Override
-    public Presenter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+    public Presenter.@NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         View headerView = LayoutInflater.from(parent.getContext())
                 .inflate(mLayoutResourceId, parent, false);
 

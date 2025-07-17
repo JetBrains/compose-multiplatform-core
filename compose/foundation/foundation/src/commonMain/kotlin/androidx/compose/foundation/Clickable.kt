@@ -17,40 +17,59 @@
 package androidx.compose.foundation
 
 import androidx.collection.mutableLongObjectMapOf
-import androidx.collection.mutableLongSetOf
+import androidx.compose.foundation.ComposeFoundationFlags.isDetectTapGesturesImmediateCoroutineDispatchEnabled
 import androidx.compose.foundation.gestures.PressGestureScope
 import androidx.compose.foundation.gestures.ScrollableContainerNode
+import androidx.compose.foundation.gestures.TouchInputEventSmoother
 import androidx.compose.foundation.gestures.detectTapAndPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.isChangedToDown
 import androidx.compose.foundation.interaction.HoverInteraction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.focus.FocusEventModifierNode
-import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.Focusability
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.indirect.IndirectTouchEvent
+import androidx.compose.ui.input.indirect.IndirectTouchEventPrimaryAxis
+import androidx.compose.ui.input.indirect.IndirectTouchEventType
+import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
+import androidx.compose.ui.input.key.KeyEventType.Companion.KeyUp
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.isOutOfBounds
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.ObserverModifierNode
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.node.SemanticsModifierNode
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.invalidateSemantics
+import androidx.compose.ui.node.observeReads
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.semantics.Role
@@ -62,6 +81,10 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastAll
+import androidx.compose.ui.util.fastAny
+import kotlin.math.absoluteValue
+import kotlin.math.max
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -91,7 +114,6 @@ import kotlinx.coroutines.launch
  * snapshot state system.)
  *
  * @sample androidx.compose.foundation.samples.ClickableSample
- *
  * @param enabled Controls the enabled state. When `false`, [onClick], and this modifier will appear
  *   disabled for accessibility services
  * @param onClickLabel semantic / accessibility label for the [onClick] action
@@ -99,11 +121,16 @@ import kotlinx.coroutines.launch
  *   the element or do customizations
  * @param onClick will be called when user clicks on the element
  */
+@Deprecated(
+    message =
+        "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
+    level = DeprecationLevel.HIDDEN,
+)
 fun Modifier.clickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -132,9 +159,104 @@ fun Modifier.clickable(
             onClick = onClick,
             role = role,
             indication = localIndication,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
     }
+
+/**
+ * Configure component to receive clicks via input or accessibility "click" event.
+ *
+ * Add this modifier to the element to make it clickable within its bounds and show a default
+ * indication when it's pressed.
+ *
+ * This overload will use the [Indication] from [LocalIndication]. Use the other overload to
+ * explicitly provide an [Indication] instance. Note that this overload only supports
+ * [IndicationNodeFactory] instances provided through [LocalIndication] - it is strongly recommended
+ * to migrate to [IndicationNodeFactory], but you can use the other overload if you still need to
+ * support [Indication] instances that are not [IndicationNodeFactory].
+ *
+ * If [interactionSource] is `null`, an internal [MutableInteractionSource] will be lazily created
+ * only when needed. This reduces the performance cost of clickable during composition, as creating
+ * the [indication] can be delayed until there is an incoming
+ * [androidx.compose.foundation.interaction.Interaction]. If you are only passing a remembered
+ * [MutableInteractionSource] and you are never using it outside of clickable, it is recommended to
+ * instead provide `null` to enable lazy creation. If you need the [Indication] to be created
+ * eagerly, provide a remembered [MutableInteractionSource].
+ *
+ * If you need to support double click or long click alongside the single click, consider using
+ * [combinedClickable].
+ *
+ * ***Note*** Any removal operations on Android Views from `clickable` should wrap `onClick` in a
+ * `post { }` block to guarantee the event dispatch completes before executing the removal. (You do
+ * not need to do this when removing a composable because Compose guarantees it completes via the
+ * snapshot state system.)
+ *
+ * @sample androidx.compose.foundation.samples.ClickableSample
+ * @param enabled Controls the enabled state. When `false`, [onClick], and this modifier will appear
+ *   disabled for accessibility services
+ * @param onClickLabel semantic / accessibility label for the [onClick] action
+ * @param role the type of user interface element. Accessibility services might use this to describe
+ *   the element or do customizations
+ * @param interactionSource [MutableInteractionSource] that will be used to dispatch
+ *   [PressInteraction.Press] when this clickable is pressed. If `null`, an internal
+ *   [MutableInteractionSource] will be created if needed.
+ * @param onClick will be called when user clicks on the element
+ */
+fun Modifier.clickable(
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    interactionSource: MutableInteractionSource? = null,
+    onClick: () -> Unit,
+): Modifier {
+    @OptIn(ExperimentalFoundationApi::class)
+    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
+        this.then(
+            ClickableElement(
+                interactionSource = interactionSource,
+                indicationNodeFactory = null,
+                useLocalIndication = true,
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                role = role,
+                onClick = onClick,
+            )
+        )
+    } else {
+        composed(
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "clickable"
+                    properties["enabled"] = enabled
+                    properties["onClickLabel"] = onClickLabel
+                    properties["role"] = role
+                    properties["interactionSource"] = interactionSource
+                    properties["onClick"] = onClick
+                }
+        ) {
+            val localIndication = LocalIndication.current
+            val intSource =
+                interactionSource
+                    ?: if (localIndication is IndicationNodeFactory) {
+                        // We can fast path here as it will be created inside clickable lazily
+                        null
+                    } else {
+                        // We need an interaction source to pass between the indication modifier and
+                        // clickable, so
+                        // by creating here we avoid another composed down the line
+                        remember { MutableInteractionSource() }
+                    }
+            Modifier.clickable(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onClick = onClick,
+                role = role,
+                indication = localIndication,
+                interactionSource = intSource,
+            )
+        }
+    }
+}
 
 /**
  * Configure component to receive clicks via input or accessibility "click" event.
@@ -164,7 +286,6 @@ fun Modifier.clickable(
  * snapshot state system.)
  *
  * @sample androidx.compose.foundation.samples.ClickableSample
- *
  * @param interactionSource [MutableInteractionSource] that will be used to dispatch
  *   [PressInteraction.Press] when this clickable is pressed. If `null`, an internal
  *   [MutableInteractionSource] will be created if needed.
@@ -184,19 +305,20 @@ fun Modifier.clickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
     role: Role? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         ClickableElement(
             interactionSource = intSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = false,
             enabled = enabled,
             onClickLabel = onClickLabel,
             role = role,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -225,7 +347,6 @@ fun Modifier.clickable(
  * snapshot state system.)
  *
  * @sample androidx.compose.foundation.samples.ClickableSample
- *
  * @param enabled Controls the enabled state. When `false`, [onClick], [onLongClick] or
  *   [onDoubleClick] won't be invoked
  * @param onClickLabel semantic / accessibility label for the [onClick] action
@@ -234,12 +355,14 @@ fun Modifier.clickable(
  * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
  * @param onLongClick will be called when user long presses on the element
  * @param onDoubleClick will be called when user double clicks on the element
+ * @param hapticFeedbackEnabled whether to use the default [HapticFeedback] behavior
  * @param onClick will be called when user clicks on the element
- *
- * Note: This API is experimental and is awaiting a rework. combinedClickable handles touch based
- * input quite well but provides subpar functionality for other input types.
  */
-@ExperimentalFoundationApi
+@Deprecated(
+    message =
+        "Replaced with new overload that only supports IndicationNodeFactory instances inside LocalIndication, and does not use composed",
+    level = DeprecationLevel.HIDDEN,
+)
 fun Modifier.combinedClickable(
     enabled: Boolean = true,
     onClickLabel: String? = null,
@@ -247,7 +370,172 @@ fun Modifier.combinedClickable(
     onLongClickLabel: String? = null,
     onLongClick: (() -> Unit)? = null,
     onDoubleClick: (() -> Unit)? = null,
-    onClick: () -> Unit
+    hapticFeedbackEnabled: Boolean = true,
+    onClick: () -> Unit,
+) =
+    composed(
+        inspectorInfo =
+            debugInspectorInfo {
+                name = "combinedClickable"
+                properties["enabled"] = enabled
+                properties["onClickLabel"] = onClickLabel
+                properties["role"] = role
+                properties["onClick"] = onClick
+                properties["onDoubleClick"] = onDoubleClick
+                properties["onLongClick"] = onLongClick
+                properties["onLongClickLabel"] = onLongClickLabel
+                properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
+            }
+    ) {
+        val localIndication = LocalIndication.current
+        val interactionSource =
+            if (localIndication is IndicationNodeFactory) {
+                // We can fast path here as it will be created inside clickable lazily
+                null
+            } else {
+                // We need an interaction source to pass between the indication modifier and
+                // clickable, so
+                // by creating here we avoid another composed down the line
+                remember { MutableInteractionSource() }
+            }
+        Modifier.combinedClickable(
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onDoubleClick = onDoubleClick,
+            onClick = onClick,
+            role = role,
+            indication = localIndication,
+            interactionSource = interactionSource,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+        )
+    }
+
+/**
+ * Configure component to receive clicks, double clicks and long clicks via input or accessibility
+ * "click" event.
+ *
+ * Add this modifier to the element to make it clickable within its bounds.
+ *
+ * If you need only click handling, and no double or long clicks, consider using [clickable]
+ *
+ * This overload will use the [Indication] from [LocalIndication]. Use the other overload to
+ * explicitly provide an [Indication] instance. Note that this overload only supports
+ * [IndicationNodeFactory] instances provided through [LocalIndication] - it is strongly recommended
+ * to migrate to [IndicationNodeFactory], but you can use the other overload if you still need to
+ * support [Indication] instances that are not [IndicationNodeFactory].
+ *
+ * If [interactionSource] is `null`, an internal [MutableInteractionSource] will be lazily created
+ * only when needed. This reduces the performance cost of combinedClickable during composition, as
+ * creating the [indication] can be delayed until there is an incoming
+ * [androidx.compose.foundation.interaction.Interaction]. If you are only passing a remembered
+ * [MutableInteractionSource] and you are never using it outside of combinedClickable, it is
+ * recommended to instead provide `null` to enable lazy creation. If you need the [Indication] to be
+ * created eagerly, provide a remembered [MutableInteractionSource].
+ *
+ * Note, if the modifier instance gets re-used between a key down and key up events, the ongoing
+ * input will be aborted.
+ *
+ * ***Note*** Any removal operations on Android Views from `clickable` should wrap `onClick` in a
+ * `post { }` block to guarantee the event dispatch completes before executing the removal. (You do
+ * not need to do this when removing a composable because Compose guarantees it completes via the
+ * snapshot state system.)
+ *
+ * @sample androidx.compose.foundation.samples.ClickableSample
+ * @param enabled Controls the enabled state. When `false`, [onClick], [onLongClick] or
+ *   [onDoubleClick] won't be invoked
+ * @param onClickLabel semantic / accessibility label for the [onClick] action
+ * @param role the type of user interface element. Accessibility services might use this to describe
+ *   the element or do customizations
+ * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
+ * @param onLongClick will be called when user long presses on the element
+ * @param onDoubleClick will be called when user double clicks on the element
+ * @param hapticFeedbackEnabled whether to use the default [HapticFeedback] behavior
+ * @param interactionSource [MutableInteractionSource] that will be used to dispatch
+ *   [PressInteraction.Press] when this clickable is pressed. If `null`, an internal
+ *   [MutableInteractionSource] will be created if needed.
+ * @param onClick will be called when user clicks on the element
+ */
+fun Modifier.combinedClickable(
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    onLongClickLabel: String? = null,
+    onLongClick: (() -> Unit)? = null,
+    onDoubleClick: (() -> Unit)? = null,
+    hapticFeedbackEnabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
+    onClick: () -> Unit,
+): Modifier {
+    @OptIn(ExperimentalFoundationApi::class)
+    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
+        this.then(
+            CombinedClickableElement(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick,
+                role = role,
+                interactionSource = interactionSource,
+                indicationNodeFactory = null,
+                useLocalIndication = true,
+                hapticFeedbackEnabled = hapticFeedbackEnabled,
+            )
+        )
+    } else
+        composed(
+            inspectorInfo =
+                debugInspectorInfo {
+                    name = "combinedClickable"
+                    properties["enabled"] = enabled
+                    properties["onClickLabel"] = onClickLabel
+                    properties["role"] = role
+                    properties["onClick"] = onClick
+                    properties["onDoubleClick"] = onDoubleClick
+                    properties["onLongClick"] = onLongClick
+                    properties["onLongClickLabel"] = onLongClickLabel
+                    properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
+                }
+        ) {
+            val localIndication = LocalIndication.current
+            val intSource =
+                interactionSource
+                    ?: if (localIndication is IndicationNodeFactory) {
+                        // We can fast path here as it will be created inside clickable lazily
+                        null
+                    } else {
+                        // We need an interaction source to pass between the indication modifier and
+                        // clickable, so
+                        // by creating here we avoid another composed down the line
+                        remember { MutableInteractionSource() }
+                    }
+            Modifier.combinedClickable(
+                enabled = enabled,
+                onClickLabel = onClickLabel,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onDoubleClick = onDoubleClick,
+                onClick = onClick,
+                role = role,
+                indication = localIndication,
+                interactionSource = intSource,
+                hapticFeedbackEnabled = hapticFeedbackEnabled,
+            )
+        }
+}
+
+@Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+fun Modifier.combinedClickable(
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    onLongClickLabel: String? = null,
+    onLongClick: (() -> Unit)? = null,
+    onDoubleClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
 ) =
     composed(
         inspectorInfo =
@@ -282,7 +570,8 @@ fun Modifier.combinedClickable(
             onClick = onClick,
             role = role,
             indication = localIndication,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
+            hapticFeedbackEnabled = true,
         )
     }
 
@@ -318,7 +607,6 @@ fun Modifier.combinedClickable(
  * snapshot state system.)
  *
  * @sample androidx.compose.foundation.samples.ClickableSample
- *
  * @param interactionSource [MutableInteractionSource] that will be used to emit
  *   [PressInteraction.Press] when this clickable is pressed. If `null`, an internal
  *   [MutableInteractionSource] will be created if needed.
@@ -333,12 +621,9 @@ fun Modifier.combinedClickable(
  * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
  * @param onLongClick will be called when user long presses on the element
  * @param onDoubleClick will be called when user double clicks on the element
+ * @param hapticFeedbackEnabled whether to use the default [HapticFeedback] behavior
  * @param onClick will be called when user clicks on the element
- *
- * Note: This API is experimental and is awaiting a rework. combinedClickable handles touch based
- * input quite well but provides subpar functionality for other input types.
  */
-@ExperimentalFoundationApi
 fun Modifier.combinedClickable(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
@@ -348,22 +633,56 @@ fun Modifier.combinedClickable(
     onLongClickLabel: String? = null,
     onLongClick: (() -> Unit)? = null,
     onDoubleClick: (() -> Unit)? = null,
-    onClick: () -> Unit
+    hapticFeedbackEnabled: Boolean = true,
+    onClick: () -> Unit,
 ) =
     clickableWithIndicationIfNeeded(
         interactionSource = interactionSource,
-        indication = indication
+        indication = indication,
     ) { intSource, indicationNodeFactory ->
         CombinedClickableElement(
             interactionSource = intSource,
             indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = false,
             enabled = enabled,
             onClickLabel = onClickLabel,
             role = role,
             onClick = onClick,
             onLongClickLabel = onLongClickLabel,
             onLongClick = onLongClick,
-            onDoubleClick = onDoubleClick
+            onDoubleClick = onDoubleClick,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+        )
+    }
+
+@Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+fun Modifier.combinedClickable(
+    interactionSource: MutableInteractionSource?,
+    indication: Indication?,
+    enabled: Boolean = true,
+    onClickLabel: String? = null,
+    role: Role? = null,
+    onLongClickLabel: String? = null,
+    onLongClick: (() -> Unit)? = null,
+    onDoubleClick: (() -> Unit)? = null,
+    onClick: () -> Unit,
+) =
+    clickableWithIndicationIfNeeded(
+        interactionSource = interactionSource,
+        indication = indication,
+    ) { intSource, indicationNodeFactory ->
+        CombinedClickableElement(
+            interactionSource = intSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = false,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onDoubleClick = onDoubleClick,
+            hapticFeedbackEnabled = true,
         )
     }
 
@@ -375,7 +694,7 @@ fun Modifier.combinedClickable(
 internal inline fun Modifier.clickableWithIndicationIfNeeded(
     interactionSource: MutableInteractionSource?,
     indication: Indication?,
-    crossinline createClickable: (MutableInteractionSource?, IndicationNodeFactory?) -> Modifier
+    crossinline createClickable: (MutableInteractionSource?, IndicationNodeFactory?) -> Modifier,
 ): Modifier {
     return this.then(
         when {
@@ -421,32 +740,60 @@ internal expect val TapIndicationDelay: Long
  */
 internal expect fun DelegatableNode.isComposeRootInScrollableContainer(): Boolean
 
-/** Whether the specified [KeyEvent] should trigger a press for a clickable component. */
-internal expect val KeyEvent.isPress: Boolean
+/**
+ * Whether the specified [KeyEvent] should trigger a press for a clickable component, i.e. whether
+ * it is associated with a press of an enter key or dpad centre.
+ */
+private val KeyEvent.isPress: Boolean
+    get() = type == KeyDown && isEnter
 
-/** Whether the specified [KeyEvent] should trigger a click for a clickable component. */
-internal expect val KeyEvent.isClick: Boolean
+/**
+ * Whether the specified [KeyEvent] should trigger a click for a clickable component, i.e. whether
+ * it is associated with a release of an enter key or dpad centre.
+ */
+private val KeyEvent.isClick: Boolean
+    get() = type == KeyUp && isEnter
+
+private val KeyEvent.isEnter: Boolean
+    get() =
+        when (key) {
+            Key.DirectionCenter,
+            Key.Enter,
+            Key.NumPadEnter,
+            Key.Spacebar -> true
+            else -> false
+        }
 
 private class ClickableElement(
     private val interactionSource: MutableInteractionSource?,
     private val indicationNodeFactory: IndicationNodeFactory?,
+    private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val onClickLabel: String?,
     private val role: Role?,
-    private val onClick: () -> Unit
+    private val onClick: () -> Unit,
 ) : ModifierNodeElement<ClickableNode>() {
     override fun create() =
         ClickableNode(
-            interactionSource,
-            indicationNodeFactory,
-            enabled,
-            onClickLabel,
-            role,
-            onClick
+            interactionSource = interactionSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
         )
 
     override fun update(node: ClickableNode) {
-        node.update(interactionSource, indicationNodeFactory, enabled, onClickLabel, role, onClick)
+        node.update(
+            interactionSource = interactionSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
+        )
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -468,6 +815,7 @@ private class ClickableElement(
 
         if (interactionSource != other.interactionSource) return false
         if (indicationNodeFactory != other.indicationNodeFactory) return false
+        if (useLocalIndication != other.useLocalIndication) return false
         if (enabled != other.enabled) return false
         if (onClickLabel != other.onClickLabel) return false
         if (role != other.role) return false
@@ -479,6 +827,7 @@ private class ClickableElement(
     override fun hashCode(): Int {
         var result = (interactionSource?.hashCode() ?: 0)
         result = 31 * result + (indicationNodeFactory?.hashCode() ?: 0)
+        result = 31 * result + useLocalIndication.hashCode()
         result = 31 * result + enabled.hashCode()
         result = 31 * result + (onClickLabel?.hashCode() ?: 0)
         result = 31 * result + (role?.hashCode() ?: 0)
@@ -490,28 +839,33 @@ private class ClickableElement(
 private class CombinedClickableElement(
     private val interactionSource: MutableInteractionSource?,
     private val indicationNodeFactory: IndicationNodeFactory?,
+    private val useLocalIndication: Boolean,
     private val enabled: Boolean,
     private val onClickLabel: String?,
     private val role: Role?,
     private val onClick: () -> Unit,
     private val onLongClickLabel: String?,
     private val onLongClick: (() -> Unit)?,
-    private val onDoubleClick: (() -> Unit)?
-) : ModifierNodeElement<CombinedClickableNodeImpl>() {
+    private val onDoubleClick: (() -> Unit)?,
+    private val hapticFeedbackEnabled: Boolean,
+) : ModifierNodeElement<CombinedClickableNode>() {
     override fun create() =
-        CombinedClickableNodeImpl(
-            onClick,
-            onLongClickLabel,
-            onLongClick,
-            onDoubleClick,
-            interactionSource,
-            indicationNodeFactory,
-            enabled,
-            onClickLabel,
-            role,
+        CombinedClickableNode(
+            onClick = onClick,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onDoubleClick = onDoubleClick,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+            interactionSource = interactionSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
         )
 
-    override fun update(node: CombinedClickableNodeImpl) {
+    override fun update(node: CombinedClickableNode) {
+        node.hapticFeedbackEnabled = hapticFeedbackEnabled
         node.update(
             onClick,
             onLongClickLabel,
@@ -519,9 +873,10 @@ private class CombinedClickableElement(
             onDoubleClick,
             interactionSource,
             indicationNodeFactory,
+            useLocalIndication,
             enabled,
             onClickLabel,
-            role
+            role,
         )
     }
 
@@ -536,6 +891,7 @@ private class CombinedClickableElement(
         properties["onDoubleClick"] = onDoubleClick
         properties["onLongClick"] = onLongClick
         properties["onLongClickLabel"] = onLongClickLabel
+        properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
     }
 
     override fun equals(other: Any?): Boolean {
@@ -547,6 +903,7 @@ private class CombinedClickableElement(
 
         if (interactionSource != other.interactionSource) return false
         if (indicationNodeFactory != other.indicationNodeFactory) return false
+        if (useLocalIndication != other.useLocalIndication) return false
         if (enabled != other.enabled) return false
         if (onClickLabel != other.onClickLabel) return false
         if (role != other.role) return false
@@ -554,6 +911,7 @@ private class CombinedClickableElement(
         if (onLongClickLabel != other.onLongClickLabel) return false
         if (onLongClick !== other.onLongClick) return false
         if (onDoubleClick !== other.onDoubleClick) return false
+        if (hapticFeedbackEnabled != other.hapticFeedbackEnabled) return false
 
         return true
     }
@@ -561,6 +919,7 @@ private class CombinedClickableElement(
     override fun hashCode(): Int {
         var result = (interactionSource?.hashCode() ?: 0)
         result = 31 * result + (indicationNodeFactory?.hashCode() ?: 0)
+        result = 31 * result + useLocalIndication.hashCode()
         result = 31 * result + enabled.hashCode()
         result = 31 * result + (onClickLabel?.hashCode() ?: 0)
         result = 31 * result + (role?.hashCode() ?: 0)
@@ -568,48 +927,148 @@ private class CombinedClickableElement(
         result = 31 * result + (onLongClickLabel?.hashCode() ?: 0)
         result = 31 * result + (onLongClick?.hashCode() ?: 0)
         result = 31 * result + (onDoubleClick?.hashCode() ?: 0)
+        result = 31 * result + hapticFeedbackEnabled.hashCode()
         return result
     }
 }
 
+// TODO(levima) Remove once ExperimentalIndirectTouchTypeApi stable b/426155641
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 internal open class ClickableNode(
     interactionSource: MutableInteractionSource?,
     indicationNodeFactory: IndicationNodeFactory?,
+    useLocalIndication: Boolean,
     enabled: Boolean,
     onClickLabel: String?,
     role: Role?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) :
     AbstractClickableNode(
-        interactionSource,
-        indicationNodeFactory,
-        enabled,
-        onClickLabel,
-        role,
-        onClick
+        interactionSource = interactionSource,
+        indicationNodeFactory = indicationNodeFactory,
+        useLocalIndication = useLocalIndication,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        onClick = onClick,
     ) {
-    override suspend fun PointerInputScope.clickPointerInput() {
-        detectTapAndPress(
-            onPress = { offset ->
-                if (enabled) {
-                    handlePressInteraction(offset)
+
+    @OptIn(ExperimentalFoundationApi::class)
+    private val isSuspendingPointerInputEnabled =
+        // old behavior prior this flag was heavily relying on coroutines dispatching
+        !isDetectTapGesturesImmediateCoroutineDispatchEnabled ||
+            !ComposeFoundationFlags.isNonSuspendingPointerInputInClickableEnabled
+
+    override fun createPointerInputNodeIfNeeded(): SuspendingPointerInputModifierNode? =
+        if (isSuspendingPointerInputEnabled) {
+            SuspendingPointerInputModifierNode {
+                detectTapAndPress(
+                    onPress = { offset ->
+                        if (enabled) {
+                            handlePressInteraction(offset)
+                        }
+                    },
+                    onTap = { if (enabled) onClick() },
+                )
+            }
+        } else {
+            null
+        }
+
+    private fun getExtendedTouchPadding(size: IntSize): Size {
+        // copied from SuspendingPointerInputModifierNodeImpl.extendedTouchPadding:
+        // TODO expose this as a new public api available outside of suspending apis b/422396609
+        val minimumTouchTargetSizeDp = currentValueOf(LocalViewConfiguration).minimumTouchTargetSize
+        val minimumTouchTargetSize = with(requireDensity()) { minimumTouchTargetSizeDp.toSize() }
+        val size = size
+        val horizontal = max(0f, minimumTouchTargetSize.width - size.width) / 2f
+        val vertical = max(0f, minimumTouchTargetSize.height - size.height) / 2f
+        return Size(horizontal, vertical)
+    }
+
+    private var downEvent: PointerInputChange? = null
+
+    @OptIn(ExperimentalFoundationApi::class)
+    override fun onPointerEvent(
+        pointerEvent: PointerEvent,
+        pass: PointerEventPass,
+        bounds: IntSize,
+    ) {
+        super.onPointerEvent(pointerEvent, pass, bounds)
+        if (isSuspendingPointerInputEnabled) {
+            return
+        }
+        if (pass == PointerEventPass.Main) {
+            val downEvent = this.downEvent
+            if (downEvent == null) {
+                if (pointerEvent.isChangedToDown(requireUnconsumed = true)) {
+                    val change = pointerEvent.changes[0]
+                    change.consume()
+                    this.downEvent = change
+                    if (enabled) {
+                        handlePressInteractionStart(change.position, indirectTouch = false)
+                    }
                 }
-            },
-            onTap = { if (enabled) onClick() }
-        )
+            } else if (pointerEvent.changes.fastAll { it.changedToUp() }) {
+                // All pointers are up
+                val up = pointerEvent.changes[0]
+                up.consume()
+                if (enabled) {
+                    handlePressInteractionRelease(downEvent.position, indirectTouch = false)
+                    onClick()
+                }
+                this.downEvent = null
+            } else {
+                val touchPadding = getExtendedTouchPadding(bounds)
+                if (
+                    pointerEvent.changes.fastAny {
+                        it.isConsumed || it.isOutOfBounds(bounds, touchPadding)
+                    }
+                ) {
+                    // Canceled
+                    this.downEvent = null
+                    handlePressInteractionCancel(indirectTouch = false)
+                }
+            }
+        } else if (pass == PointerEventPass.Final && downEvent != null) {
+            // Check for cancel by position consumption. We can look on the Final pass of the
+            // existing pointer event because it comes after the pass we checked above.
+            if (pointerEvent.changes.fastAny { it.isConsumed && it != downEvent }) {
+                // Canceled
+                downEvent = null
+                handlePressInteractionCancel(indirectTouch = false)
+            }
+        }
+    }
+
+    override fun onCancelPointerInput() {
+        super.onCancelPointerInput()
+        if (downEvent != null) {
+            downEvent = null
+            handlePressInteractionCancel(indirectTouch = false)
+        }
     }
 
     fun update(
         interactionSource: MutableInteractionSource?,
         indicationNodeFactory: IndicationNodeFactory?,
+        useLocalIndication: Boolean,
         enabled: Boolean,
         onClickLabel: String?,
         role: Role?,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         // enabled and onClick are captured inside callbacks, not as an input to detectTapGestures,
         // so no need need to reset pointer input handling when they change
-        updateCommon(interactionSource, indicationNodeFactory, enabled, onClickLabel, role, onClick)
+        updateCommon(
+            interactionSource = interactionSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
+        )
     }
 
     final override fun onClickKeyDownEvent(event: KeyEvent) = false
@@ -620,126 +1079,37 @@ internal open class ClickableNode(
     }
 }
 
-/**
- * Create a [CombinedClickableNode] that can be delegated to inside custom modifier nodes.
- *
- * This API is experimental and is temporarily being exposed to enable performance analysis, you
- * should use [combinedClickable] instead for the majority of use cases.
- *
- * @param onClick will be called when user clicks on the element
- * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
- * @param onLongClick will be called when user long presses on the element
- * @param onDoubleClick will be called when user double clicks on the element
- * @param interactionSource [MutableInteractionSource] that will be used to emit
- *   [PressInteraction.Press] when this clickable is pressed. Only the initial (first) press will be
- *   recorded and emitted with [MutableInteractionSource]. If `null`, and there is an
- *   [indicationNodeFactory] provided, an internal [MutableInteractionSource] will be created when
- *   required.
- * @param indicationNodeFactory the [IndicationNodeFactory] used to optionally render [Indication]
- *   inside this node, instead of using a separate [Modifier.indication]. This should be preferred
- *   for performance reasons over using [Modifier.indication] separately.
- * @param enabled Controls the enabled state. When false, [onClick], [onLongClick] or
- *   [onDoubleClick] won't be invoked
- * @param onClickLabel semantic / accessibility label for the [onClick] action
- * @param role the type of user interface element. Accessibility services might use this to describe
- *   the element or do customizations
- *
- * Note: This API is experimental and is awaiting a rework. combinedClickable handles touch based
- * input quite well but provides subpar functionality for other input types.
- */
-@ExperimentalFoundationApi
-fun CombinedClickableNode(
-    onClick: () -> Unit,
-    onLongClickLabel: String?,
-    onLongClick: (() -> Unit)?,
-    onDoubleClick: (() -> Unit)?,
-    interactionSource: MutableInteractionSource?,
-    indicationNodeFactory: IndicationNodeFactory?,
-    enabled: Boolean,
-    onClickLabel: String?,
-    role: Role?,
-): CombinedClickableNode =
-    CombinedClickableNodeImpl(
-        onClick,
-        onLongClickLabel,
-        onLongClick,
-        onDoubleClick,
-        interactionSource,
-        indicationNodeFactory,
-        enabled,
-        onClickLabel,
-        role,
-    )
-
-/**
- * Public interface for the internal node used inside [combinedClickable], to allow for custom
- * modifier nodes to delegate to it.
- *
- * Note: This API is experimental and is temporarily being exposed to enable performance analysis,
- * you should use [combinedClickable] instead for the majority of use cases.
- */
-@ExperimentalFoundationApi
-sealed interface CombinedClickableNode : PointerInputModifierNode {
-    /**
-     * Updates this node with new values, and resets any invalidated state accordingly.
-     *
-     * @param onClick will be called when user clicks on the element
-     * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action
-     * @param onLongClick will be called when user long presses on the element
-     * @param onDoubleClick will be called when user double clicks on the element
-     * @param interactionSource [MutableInteractionSource] that will be used to emit
-     *   [PressInteraction.Press] when this clickable is pressed. Only the initial (first) press
-     *   will be recorded and emitted with [MutableInteractionSource]. If `null`, and there is an
-     *   [indicationNodeFactory] provided, an internal [MutableInteractionSource] will be created
-     *   when required.
-     * @param indicationNodeFactory the [IndicationNodeFactory] used to optionally render
-     *   [Indication] inside this node, instead of using a separate [Modifier.indication]. This
-     *   should be preferred for performance reasons over using [Modifier.indication] separately.
-     * @param enabled Controls the enabled state. When false, [onClick], [onLongClick] or
-     *   [onDoubleClick] won't be invoked
-     * @param onClickLabel semantic / accessibility label for the [onClick] action
-     * @param role the type of user interface element. Accessibility services might use this to
-     *   describe the element or do customizations
-     */
-    fun update(
-        onClick: () -> Unit,
-        onLongClickLabel: String?,
-        onLongClick: (() -> Unit)?,
-        onDoubleClick: (() -> Unit)?,
-        interactionSource: MutableInteractionSource?,
-        indicationNodeFactory: IndicationNodeFactory?,
-        enabled: Boolean,
-        onClickLabel: String?,
-        role: Role?
-    )
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-private class CombinedClickableNodeImpl(
+private class CombinedClickableNode(
     onClick: () -> Unit,
     private var onLongClickLabel: String?,
     private var onLongClick: (() -> Unit)?,
     private var onDoubleClick: (() -> Unit)?,
+    var hapticFeedbackEnabled: Boolean,
     interactionSource: MutableInteractionSource?,
     indicationNodeFactory: IndicationNodeFactory?,
+    useLocalIndication: Boolean,
     enabled: Boolean,
     onClickLabel: String?,
     role: Role?,
 ) :
-    CombinedClickableNode,
     CompositionLocalConsumerModifierNode,
     AbstractClickableNode(
-        interactionSource,
-        indicationNodeFactory,
-        enabled,
-        onClickLabel,
-        role,
-        onClick
+        interactionSource = interactionSource,
+        indicationNodeFactory = indicationNodeFactory,
+        useLocalIndication = useLocalIndication,
+        enabled = enabled,
+        onClickLabel = onClickLabel,
+        role = role,
+        onClick = onClick,
     ) {
-    private val pressedDownKeys = mutableLongSetOf()
-    private val longKeyPressJobs = mutableLongObjectMapOf<Job>()
+    class DoubleKeyClickState(val job: Job) {
+        var doubleTapMinTimeMillisElapsed: Boolean = false
+    }
 
-    override suspend fun PointerInputScope.clickPointerInput() {
+    private val longKeyPressJobs = mutableLongObjectMapOf<Job>()
+    private val doubleKeyClickStates = mutableLongObjectMapOf<DoubleKeyClickState>()
+
+    override fun createPointerInputNodeIfNeeded() = SuspendingPointerInputModifierNode {
         detectTapGestures(
             onDoubleTap =
                 if (enabled && onDoubleClick != null) {
@@ -747,7 +1117,13 @@ private class CombinedClickableNodeImpl(
                 } else null,
             onLongPress =
                 if (enabled && onLongClick != null) {
-                    { onLongClick?.invoke() }
+                    {
+                        onLongClick?.invoke()
+                        if (hapticFeedbackEnabled) {
+                            currentValueOf(LocalHapticFeedback)
+                                .performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
+                    }
                 } else null,
             onPress = { offset ->
                 if (enabled) {
@@ -758,20 +1134,21 @@ private class CombinedClickableNodeImpl(
                 if (enabled) {
                     onClick()
                 }
-            }
+            },
         )
     }
 
-    override fun update(
+    fun update(
         onClick: () -> Unit,
         onLongClickLabel: String?,
         onLongClick: (() -> Unit)?,
         onDoubleClick: (() -> Unit)?,
         interactionSource: MutableInteractionSource?,
         indicationNodeFactory: IndicationNodeFactory?,
+        useLocalIndication: Boolean,
         enabled: Boolean,
         onClickLabel: String?,
-        role: Role?
+        role: Role?,
     ) {
         var resetPointerInputHandling = false
 
@@ -809,7 +1186,15 @@ private class CombinedClickableNodeImpl(
             // Updating is handled inside updateCommon
         }
 
-        updateCommon(interactionSource, indicationNodeFactory, enabled, onClickLabel, role, onClick)
+        updateCommon(
+            interactionSource = interactionSource,
+            indicationNodeFactory = indicationNodeFactory,
+            useLocalIndication = useLocalIndication,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
+        )
 
         if (resetPointerInputHandling) resetPointerInputHandler()
     }
@@ -821,14 +1206,14 @@ private class CombinedClickableNodeImpl(
                     onLongClick?.invoke()
                     true
                 },
-                label = onLongClickLabel
+                label = onLongClickLabel,
             )
         }
     }
 
     override fun onClickKeyDownEvent(event: KeyEvent): Boolean {
         val keyCode = event.key.keyCode
-        pressedDownKeys.add(keyCode)
+        var handledByLongClick = false
         if (onLongClick != null) {
             if (longKeyPressJobs[keyCode] == null) {
                 longKeyPressJobs[keyCode] =
@@ -836,58 +1221,128 @@ private class CombinedClickableNodeImpl(
                         delay(currentValueOf(LocalViewConfiguration).longPressTimeoutMillis)
                         onLongClick?.invoke()
                     }
-                return true
+                handledByLongClick = true
             }
         }
-        return false
+        val doubleClickState = doubleKeyClickStates[keyCode]
+        // This is the second down event, so it might be a double click
+        if (doubleClickState != null) {
+            // Within the allowed timeout, so check if this is above the minimum time needed for
+            // a double click
+            if (doubleClickState.job.isActive) {
+                doubleClickState.job.cancel()
+                // If the second down was before the minimum double tap time, don't track this as
+                // a double click. Instead, we need to invoke onClick for the previous click, since
+                // that is now counted as a standalone click instead of the first of a double click.
+                if (!doubleClickState.doubleTapMinTimeMillisElapsed) {
+                    onClick()
+                    doubleKeyClickStates.remove(keyCode)
+                }
+            } else {
+                // We already invoked onClick because we passed the timeout, so stop tracking this
+                // as a double click
+                doubleKeyClickStates.remove(keyCode)
+            }
+        }
+        return handledByLongClick
     }
 
     override fun onClickKeyUpEvent(event: KeyEvent): Boolean {
         val keyCode = event.key.keyCode
-        if (!pressedDownKeys.contains(keyCode)) {
-            // If the node is reused while a key is pressed down (which resets the set of pressed
-            // down keys), we shouldn't interpret the key up event as a click.
-            return false
-        }
-        pressedDownKeys.remove(keyCode)
+        var longClickInvoked = false
         if (longKeyPressJobs[keyCode] != null) {
             longKeyPressJobs[keyCode]?.let {
                 if (it.isActive) {
                     it.cancel()
-                    onClick()
+                } else {
+                    // If we already passed the timeout, we invoked long click already, and so
+                    // we shouldn't invoke onClick in this case
+                    longClickInvoked = true
                 }
             }
             longKeyPressJobs.remove(keyCode)
+        }
+        if (onDoubleClick != null) {
+            when {
+                // First click
+                doubleKeyClickStates[keyCode] == null -> {
+                    // We only track the second click if the first click was not a long click
+                    if (!longClickInvoked) {
+                        doubleKeyClickStates[keyCode] =
+                            DoubleKeyClickState(
+                                coroutineScope.launch {
+                                    val configuration = currentValueOf(LocalViewConfiguration)
+                                    val minTime = configuration.doubleTapMinTimeMillis
+                                    val timeout = configuration.doubleTapTimeoutMillis
+                                    delay(minTime)
+                                    doubleKeyClickStates[keyCode]?.doubleTapMinTimeMillisElapsed =
+                                        true
+                                    // Delay the remainder until we are at timeout
+                                    delay(timeout - minTime)
+                                    // If there was no second key press after the timeout, invoke
+                                    // onClick as normal
+                                    onClick()
+                                }
+                            )
+                    }
+                }
+                // Second click
+                else -> {
+                    // Invoke onDoubleClick if the second click was not a long click
+                    if (!longClickInvoked) {
+                        onDoubleClick?.invoke()
+                    }
+                    doubleKeyClickStates.remove(keyCode)
+                }
+            }
         } else {
-            onClick()
+            if (!longClickInvoked) {
+                onClick()
+            }
         }
         return true
     }
 
+    override fun onCancelKeyInput() {
+        resetKeyPressState()
+    }
+
     override fun onReset() {
         super.onReset()
+        resetKeyPressState()
+    }
+
+    private fun resetKeyPressState() {
         longKeyPressJobs.apply {
             forEachValue { it.cancel() }
             clear()
         }
-        pressedDownKeys.clear()
+        doubleKeyClickStates.apply {
+            forEachValue { it.job.cancel() }
+            clear()
+        }
     }
 }
 
+// TODO(levima) Remove once ExperimentalIndirectTouchTypeApi stable b/426155641
+@OptIn(ExperimentalIndirectTouchTypeApi::class)
 internal abstract class AbstractClickableNode(
     private var interactionSource: MutableInteractionSource?,
     private var indicationNodeFactory: IndicationNodeFactory?,
+    private var useLocalIndication: Boolean,
     enabled: Boolean,
     private var onClickLabel: String?,
     private var role: Role?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) :
     DelegatingNode(),
     PointerInputModifierNode,
     KeyInputModifierNode,
-    FocusEventModifierNode,
     SemanticsModifierNode,
-    TraversableNode {
+    TraversableNode,
+    CompositionLocalConsumerModifierNode,
+    ObserverModifierNode,
+    IndirectTouchInputModifierNode {
     protected var enabled = enabled
         private set
 
@@ -896,15 +1351,26 @@ internal abstract class AbstractClickableNode(
 
     final override val shouldAutoInvalidate: Boolean = false
 
-    private val focusableInNonTouchMode: FocusableInNonTouchMode = FocusableInNonTouchMode()
-    private val focusableNode: FocusableNode = FocusableNode(interactionSource)
+    private val focusableNode: FocusableNode =
+        FocusableNode(
+            interactionSource,
+            focusability = Focusability.SystemDefined,
+            onFocusChange = ::onFocusChange,
+        )
+
+    private var localIndicationNodeFactory: IndicationNodeFactory? = null
+
     private var pointerInputNode: SuspendingPointerInputModifierNode? = null
     private var indicationNode: DelegatableNode? = null
 
     private var pressInteraction: PressInteraction.Press? = null
     private var hoverInteraction: HoverInteraction.Enter? = null
-    private val currentKeyPressInteractions = mutableMapOf<Key, PressInteraction.Press>()
+    private val currentKeyPressInteractions = mutableLongObjectMapOf<PressInteraction.Press>()
     private var centerOffset: Offset = Offset.Zero
+
+    private var indirectTouchPressInteraction: PressInteraction.Press? = null
+    private var indirectTouchEventPressPosition: Offset? = null
+    private var touchInputEventSmoother: TouchInputEventSmoother? = null
 
     // Track separately from interactionSource, as we will create our own internal
     // InteractionSource if needed
@@ -912,24 +1378,24 @@ internal abstract class AbstractClickableNode(
 
     private var lazilyCreateIndication = shouldLazilyCreateIndication()
 
-    private fun shouldLazilyCreateIndication() =
-        userProvidedInteractionSource == null && indicationNodeFactory != null
+    private fun shouldLazilyCreateIndication() = userProvidedInteractionSource == null
 
     /**
      * Handles subclass-specific click related pointer input logic. Hover is already handled
      * elsewhere, so this should only handle clicks.
      */
-    abstract suspend fun PointerInputScope.clickPointerInput()
+    abstract fun createPointerInputNodeIfNeeded(): SuspendingPointerInputModifierNode?
 
     open fun SemanticsPropertyReceiver.applyAdditionalSemantics() {}
 
     protected fun updateCommon(
         interactionSource: MutableInteractionSource?,
         indicationNodeFactory: IndicationNodeFactory?,
+        useLocalIndication: Boolean,
         enabled: Boolean,
         onClickLabel: String?,
         role: Role?,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
         var isIndicationNodeDirty = false
         // Compare against userProvidedInteractionSource, as we will create a new InteractionSource
@@ -944,13 +1410,19 @@ internal abstract class AbstractClickableNode(
             this.indicationNodeFactory = indicationNodeFactory
             isIndicationNodeDirty = true
         }
+        if (this.useLocalIndication != useLocalIndication) {
+            this.useLocalIndication = useLocalIndication
+            if (useLocalIndication) {
+                // Need to update localIndicationNodeFactory, and start observing changes
+                onObservedReadsChanged()
+            }
+            isIndicationNodeDirty = true
+        }
         if (this.enabled != enabled) {
             if (enabled) {
-                delegate(focusableInNonTouchMode)
                 delegate(focusableNode)
             } else {
                 // TODO: Should we remove indicationNode? Previously we always emitted indication
-                undelegate(focusableInNonTouchMode)
                 undelegate(focusableNode)
                 disposeInteractions()
             }
@@ -974,23 +1446,104 @@ internal abstract class AbstractClickableNode(
         }
         // Create / recreate indication node
         if (isIndicationNodeDirty) {
-            // If we already created a node lazily, or we are not lazily creating the node, create
-            if (indicationNode != null || !lazilyCreateIndication) {
-                indicationNode?.let { undelegate(it) }
-                indicationNode = null
-                initializeIndicationAndInteractionSourceIfNeeded()
-            }
+            recreateIndicationIfNeeded()
         }
         focusableNode.update(this.interactionSource)
     }
 
+    override fun onIndirectTouchEvent(event: IndirectTouchEvent): Boolean {
+        // Indirect touch events usually require focus, but if a focused child does not handle the
+        // IndirectTouchEvent, the event can bubble up without this clickable ever being focused,
+        // and hence without this being initialized through the focus path
+        initializeIndicationAndInteractionSourceIfNeeded()
+        if (!enabled) return false
+        if (touchInputEventSmoother == null) touchInputEventSmoother = TouchInputEventSmoother()
+        return processIndirectTouchEvent(
+            event.type,
+            event.primaryAxis,
+            touchInputEventSmoother!!.smoothEventPosition(event, orientation = null),
+        )
+    }
+
+    private fun processIndirectTouchEvent(
+        type: IndirectTouchEventType,
+        primaryAxis: IndirectTouchEventPrimaryAxis,
+        position: Offset,
+    ): Boolean {
+        var consumedEvent = false
+        when (type) {
+            IndirectTouchEventType.Press -> {
+                if (indirectTouchEventPressPosition == null) {
+                    this.indirectTouchEventPressPosition = position
+                    handlePressInteractionStart(position, indirectTouch = true)
+                    consumedEvent = false
+                }
+            }
+            IndirectTouchEventType.Move -> {
+                val pressPosition = indirectTouchEventPressPosition
+                if (pressPosition != null) {
+                    /** TODO(levima) Change once b/424744511 to use a consumption based approach. */
+                    val distanceFromPress = position - pressPosition
+                    // move too far, give up event
+                    val adjustedDistance =
+                        when (primaryAxis) {
+                            IndirectTouchEventPrimaryAxis.X -> distanceFromPress.x
+                            IndirectTouchEventPrimaryAxis.Y -> distanceFromPress.y
+                            else -> distanceFromPress.getDistance()
+                        }
+                    if (
+                        adjustedDistance.absoluteValue >
+                            currentValueOf(LocalViewConfiguration).touchSlop
+                    ) {
+                        indirectTouchEventPressPosition = null
+                        handlePressInteractionCancel(indirectTouch = true)
+                    }
+                }
+            }
+            IndirectTouchEventType.Release -> {
+                indirectTouchEventPressPosition?.let {
+                    handlePressInteractionRelease(it, indirectTouch = true)
+                    onClick()
+                    indirectTouchEventPressPosition = null
+                    consumedEvent = true
+                }
+            }
+            else -> {
+                handlePressInteractionCancel(indirectTouch = true)
+                indirectTouchEventPressPosition = null
+            }
+        }
+
+        return consumedEvent
+    }
+
+    override fun onPreIndirectTouchEvent(event: IndirectTouchEvent): Boolean = false
+
     final override fun onAttach() {
+        onObservedReadsChanged()
         if (!lazilyCreateIndication) {
             initializeIndicationAndInteractionSourceIfNeeded()
         }
         if (enabled) {
-            delegate(focusableInNonTouchMode)
             delegate(focusableNode)
+        }
+    }
+
+    override fun onObservedReadsChanged() {
+        if (useLocalIndication) {
+            observeReads {
+                val indication = currentValueOf(LocalIndication)
+                requirePrecondition(indication is IndicationNodeFactory) {
+                    unsupportedIndicationExceptionMessage(indication)
+                }
+                val previousFactory = localIndicationNodeFactory
+                localIndicationNodeFactory = indication
+                // If we are changing from a non-null factory to a different factory, recreate
+                // indication if needed
+                if (previousFactory != null && localIndicationNodeFactory != previousFactory) {
+                    recreateIndicationIfNeeded()
+                }
+            }
         }
     }
 
@@ -1013,37 +1566,74 @@ internal abstract class AbstractClickableNode(
                 val interaction = PressInteraction.Cancel(oldValue)
                 interactionSource.tryEmit(interaction)
             }
+            indirectTouchPressInteraction?.let { oldValue ->
+                val interaction = PressInteraction.Cancel(oldValue)
+                interactionSource.tryEmit(interaction)
+            }
             hoverInteraction?.let { oldValue ->
                 val interaction = HoverInteraction.Exit(oldValue)
                 interactionSource.tryEmit(interaction)
             }
-            currentKeyPressInteractions.values.forEach {
+            currentKeyPressInteractions.forEachValue {
                 interactionSource.tryEmit(PressInteraction.Cancel(it))
             }
         }
         pressInteraction = null
+        indirectTouchPressInteraction = null
+        indirectTouchEventPressPosition = null
         hoverInteraction = null
         currentKeyPressInteractions.clear()
+    }
+
+    private fun onFocusChange(isFocused: Boolean) {
+        if (isFocused) {
+            initializeIndicationAndInteractionSourceIfNeeded()
+        } else {
+            // If we are no longer focused while we are tracking existing key presses, we need to
+            // clear them and cancel the presses.
+            if (interactionSource != null) {
+                currentKeyPressInteractions.forEachValue {
+                    coroutineScope.launch { interactionSource?.emit(PressInteraction.Cancel(it)) }
+                }
+                indirectTouchPressInteraction?.let {
+                    coroutineScope.launch { interactionSource?.emit(PressInteraction.Cancel(it)) }
+                }
+            }
+            currentKeyPressInteractions.clear()
+            indirectTouchPressInteraction = null
+            onCancelKeyInput()
+        }
+    }
+
+    private fun recreateIndicationIfNeeded() {
+        // If we already created a node lazily, or we are not lazily creating the node, create
+        if (indicationNode != null || !lazilyCreateIndication) {
+            indicationNode?.let { undelegate(it) }
+            indicationNode = null
+            initializeIndicationAndInteractionSourceIfNeeded()
+        }
     }
 
     private fun initializeIndicationAndInteractionSourceIfNeeded() {
         // We have already created the node, no need to do any work
         if (indicationNode != null) return
-        indicationNodeFactory?.let { indicationNodeFactory ->
+        val indicationFactory =
+            if (useLocalIndication) localIndicationNodeFactory else indicationNodeFactory
+        indicationFactory?.let { factory ->
             if (interactionSource == null) {
                 interactionSource = MutableInteractionSource()
             }
             focusableNode.update(interactionSource)
-            val node = indicationNodeFactory.create(interactionSource!!)
+            val node = factory.create(interactionSource!!)
             delegate(node)
             indicationNode = node
         }
     }
 
-    final override fun onPointerEvent(
+    override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         centerOffset = bounds.center.toOffset()
         initializeIndicationAndInteractionSourceIfNeeded()
@@ -1056,12 +1646,15 @@ internal abstract class AbstractClickableNode(
             }
         }
         if (pointerInputNode == null) {
-            pointerInputNode = delegate(SuspendingPointerInputModifierNode { clickPointerInput() })
+            val node = createPointerInputNodeIfNeeded()
+            if (node != null) {
+                pointerInputNode = delegate(node)
+            }
         }
         pointerInputNode?.onPointerEvent(pointerEvent, pass, bounds)
     }
 
-    final override fun onCancelPointerInput() {
+    override fun onCancelPointerInput() {
         // Press cancellation is handled as part of detecting presses
         interactionSource?.let { interactionSource ->
             hoverInteraction?.let { oldValue ->
@@ -1078,14 +1671,15 @@ internal abstract class AbstractClickableNode(
         // the event can bubble up without this clickable ever being focused, and hence without
         // this being initialized through the focus path
         initializeIndicationAndInteractionSourceIfNeeded()
+        val keyCode = event.key.keyCode
         return when {
             enabled && event.isPress -> {
                 // If the key already exists in the map, keyEvent is a repeat event.
                 // We ignore it as we only want to emit an interaction for the initial key press.
                 var wasInteractionHandled = false
-                if (!currentKeyPressInteractions.containsKey(event.key)) {
+                if (!currentKeyPressInteractions.containsKey(keyCode)) {
                     val press = PressInteraction.Press(centerOffset)
-                    currentKeyPressInteractions[event.key] = press
+                    currentKeyPressInteractions[keyCode] = press
                     // Even if the interactionSource is null, we still want to intercept the presses
                     // so we always track them above, and return true
                     if (interactionSource != null) {
@@ -1096,15 +1690,19 @@ internal abstract class AbstractClickableNode(
                 onClickKeyDownEvent(event) || wasInteractionHandled
             }
             enabled && event.isClick -> {
-                currentKeyPressInteractions.remove(event.key)?.let {
+                val press = currentKeyPressInteractions.remove(keyCode)
+                if (press != null) {
                     if (interactionSource != null) {
                         coroutineScope.launch {
-                            interactionSource?.emit(PressInteraction.Release(it))
+                            interactionSource?.emit(PressInteraction.Release(press))
                         }
                     }
+                    // Don't invoke onClick if we were not pressed - this could happen if we became
+                    // focused after the down event, or if the node was reused after the down event.
+                    onClickKeyUpEvent(event)
                 }
-                onClickKeyUpEvent(event)
-                true
+                // Only consume if we were previously pressed for this key event
+                press != null
             }
             else -> false
         }
@@ -1114,14 +1712,13 @@ internal abstract class AbstractClickableNode(
 
     protected abstract fun onClickKeyUpEvent(event: KeyEvent): Boolean
 
-    final override fun onPreKeyEvent(event: KeyEvent) = false
+    /**
+     * Called when focus is lost, to allow cleaning up and resetting the state for ongoing key
+     * presses
+     */
+    protected open fun onCancelKeyInput() {}
 
-    final override fun onFocusEvent(focusState: FocusState) {
-        if (focusState.isFocused) {
-            initializeIndicationAndInteractionSourceIfNeeded()
-        }
-        focusableNode.onFocusEvent(focusState)
-    }
+    final override fun onPreKeyEvent(event: KeyEvent) = false
 
     final override val shouldMergeDescendantSemantics: Boolean
         get() = true
@@ -1135,7 +1732,7 @@ internal abstract class AbstractClickableNode(
                 onClick()
                 true
             },
-            label = onClickLabel
+            label = onClickLabel,
         )
         if (enabled) {
             with(focusableNode) { applySemantics() }
@@ -1146,6 +1743,107 @@ internal abstract class AbstractClickableNode(
     }
 
     protected fun resetPointerInputHandler() = pointerInputNode?.resetPointerInputHandler()
+
+    private var delayJob: Job? = null
+
+    /**
+     * Handles emitting a [PressInteraction.Press].
+     *
+     * @param offset offset of the press
+     * @param indirectTouch whether the source of this press was indirect touch. False for pointer
+     *   input.
+     */
+    protected fun handlePressInteractionStart(offset: Offset, indirectTouch: Boolean) {
+        interactionSource?.let { interactionSource ->
+            val press = PressInteraction.Press(offset)
+            if (delayPressInteraction()) {
+                delayJob =
+                    coroutineScope.launch {
+                        delay(TapIndicationDelay)
+                        interactionSource.emit(press)
+                        if (indirectTouch) {
+                            indirectTouchPressInteraction = press
+                        } else {
+                            pressInteraction = press
+                        }
+                    }
+            } else {
+                if (indirectTouch) {
+                    indirectTouchPressInteraction = press
+                } else {
+                    pressInteraction = press
+                }
+                coroutineScope.launch { interactionSource.emit(press) }
+            }
+        }
+    }
+
+    /**
+     * Handles emitting a [PressInteraction.Release].
+     *
+     * @param offset offset of the press
+     * @param indirectTouch whether the source of this press was indirect touch. False for pointer
+     *   input.
+     */
+    protected fun handlePressInteractionRelease(offset: Offset, indirectTouch: Boolean) {
+        interactionSource?.let { interactionSource ->
+            if (delayJob?.isActive == true) {
+                coroutineScope.launch {
+                    delayJob?.cancelAndJoin()
+                    // The press released successfully, before the timeout duration - emit the press
+                    // interaction instantly.
+                    val press = PressInteraction.Press(offset)
+                    val release = PressInteraction.Release(press)
+                    interactionSource.emit(press)
+                    interactionSource.emit(release)
+                }
+            } else {
+                val interaction =
+                    if (indirectTouch) indirectTouchPressInteraction else pressInteraction
+                interaction?.let {
+                    coroutineScope.launch {
+                        val endInteraction = PressInteraction.Release(it)
+                        interactionSource.emit(endInteraction)
+                    }
+                }
+            }
+            if (indirectTouch) {
+                indirectTouchPressInteraction = null
+            } else {
+                pressInteraction = null
+            }
+        }
+    }
+
+    /**
+     * Handles emitting a [PressInteraction.Cancel].
+     *
+     * @param indirectTouch whether the source of this press was indirect touch. False for pointer
+     *   input.
+     */
+    protected fun handlePressInteractionCancel(indirectTouch: Boolean) {
+        interactionSource?.let { interactionSource ->
+            if (delayJob?.isActive == true) {
+                // We didn't finish sending the press, and we are cancelled, so we don't emit
+                // any interaction.
+                delayJob?.cancel()
+            } else {
+                val interaction =
+                    if (indirectTouch) indirectTouchPressInteraction else pressInteraction
+                interaction?.let {
+                    coroutineScope.launch {
+                        val endInteraction = PressInteraction.Cancel(it)
+                        interactionSource.emit(endInteraction)
+                    }
+                }
+            }
+            if (indirectTouch) {
+                indirectTouchPressInteraction = null
+            } else {
+                pressInteraction = null
+            }
+        }
+    }
 
     protected suspend fun PressGestureScope.handlePressInteraction(offset: Offset) {
         interactionSource?.let { interactionSource ->
@@ -1221,4 +1919,14 @@ internal fun TraversableNode.hasScrollableContainer(): Boolean {
         !hasScrollable
     }
     return hasScrollable
+}
+
+private fun unsupportedIndicationExceptionMessage(indication: Indication): String {
+    return "clickable only supports IndicationNodeFactory instances provided to LocalIndication, " +
+        "but Indication was provided instead. Either migrate the Indication implementation to " +
+        "implement IndicationNodeFactory, or use the other clickable overload that takes an " +
+        "Indication parameter, and explicitly pass LocalIndication.current there. You can also " +
+        "use ComposeFoundationFlags.isNonComposedClickableEnabled to temporarily opt-out; note " +
+        "that this flag will be removed in a future release and is only intended to be a " +
+        "temporary migration aid. The Indication instance provided here was: $indication"
 }

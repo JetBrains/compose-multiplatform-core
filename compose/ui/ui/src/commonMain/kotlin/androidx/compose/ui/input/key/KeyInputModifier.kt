@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.InspectorInfo
  * @param onKeyEvent This callback is invoked when the user interacts with the hardware keyboard.
  *   While implementing this callback, return true to stop propagation of this event. If you return
  *   false, the key event will be sent to this [onKeyEvent]'s parent.
- *
  * @sample androidx.compose.ui.samples.KeyEventSample
  */
 fun Modifier.onKeyEvent(onKeyEvent: (KeyEvent) -> Boolean): Modifier =
@@ -42,15 +41,14 @@ fun Modifier.onKeyEvent(onKeyEvent: (KeyEvent) -> Boolean): Modifier =
  *   Return true to stop propagation of this event. If you return false, the key event will be sent
  *   to this [onPreviewKeyEvent]'s child. If none of the children consume the event, it will be sent
  *   back up to the root [KeyInputModifierNode] using the onKeyEvent callback.
- *
  * @sample androidx.compose.ui.samples.KeyEventSample
  */
 fun Modifier.onPreviewKeyEvent(onPreviewKeyEvent: (KeyEvent) -> Boolean): Modifier =
     this then KeyInputElement(onKeyEvent = null, onPreKeyEvent = onPreviewKeyEvent)
 
-private data class KeyInputElement(
+private class KeyInputElement(
     val onKeyEvent: ((KeyEvent) -> Boolean)?,
-    val onPreKeyEvent: ((KeyEvent) -> Boolean)?
+    val onPreKeyEvent: ((KeyEvent) -> Boolean)?,
 ) : ModifierNodeElement<KeyInputNode>() {
     override fun create() = KeyInputNode(onKeyEvent, onPreKeyEvent)
 
@@ -69,11 +67,26 @@ private data class KeyInputElement(
             properties["onPreviewKeyEvent"] = it
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is KeyInputElement) return false
+
+        if (onKeyEvent !== other.onKeyEvent) return false
+        if (onPreKeyEvent !== other.onPreKeyEvent) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = onKeyEvent?.hashCode() ?: 0
+        result = 31 * result + (onPreKeyEvent?.hashCode() ?: 0)
+        return result
+    }
 }
 
 private class KeyInputNode(
     var onEvent: ((KeyEvent) -> Boolean)?,
-    var onPreEvent: ((KeyEvent) -> Boolean)?
+    var onPreEvent: ((KeyEvent) -> Boolean)?,
 ) : KeyInputModifierNode, Modifier.Node() {
     override fun onKeyEvent(event: KeyEvent): Boolean = this.onEvent?.invoke(event) ?: false
 

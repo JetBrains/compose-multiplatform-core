@@ -16,8 +16,9 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Holder for Tiles' TileLeaveEvent class, to be parceled and transferred to a Tile Service.
@@ -30,7 +31,7 @@ public final class TileLeaveEventData extends ProtoParcelable {
     public static final Creator<TileLeaveEventData> CREATOR =
             newCreator(TileLeaveEventData.class, TileLeaveEventData::new);
 
-    public TileLeaveEventData(@NonNull byte[] params, int version) {
+    public TileLeaveEventData(byte @NonNull [] params, int version) {
         super(params, version);
     }
 }

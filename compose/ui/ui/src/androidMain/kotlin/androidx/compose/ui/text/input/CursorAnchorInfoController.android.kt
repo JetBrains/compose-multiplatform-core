@@ -20,7 +20,7 @@ import android.view.inputmethod.CursorAnchorInfo
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.setFrom
-import androidx.compose.ui.input.pointer.PositionCalculator
+import androidx.compose.ui.input.pointer.MatrixPositionCalculator
 import androidx.compose.ui.text.TextLayoutResult
 
 @Deprecated(
@@ -28,8 +28,8 @@ import androidx.compose.ui.text.TextLayoutResult
         "code. A copy of this class in foundation is used by the legacy BasicTextField."
 )
 internal class CursorAnchorInfoController(
-    private val rootPositionCalculator: PositionCalculator,
-    @Suppress("DEPRECATION") private val inputMethodManager: InputMethodManager
+    private val rootPositionCalculator: MatrixPositionCalculator,
+    @Suppress("DEPRECATION") private val inputMethodManager: InputMethodManager,
 ) {
     private val lock = Any()
 
@@ -75,7 +75,7 @@ internal class CursorAnchorInfoController(
         includeInsertionMarker: Boolean,
         includeCharacterBounds: Boolean,
         includeEditorBounds: Boolean,
-        includeLineBounds: Boolean
+        includeLineBounds: Boolean,
     ) =
         synchronized(lock) {
             this.includeInsertionMarker = includeInsertionMarker
@@ -111,7 +111,7 @@ internal class CursorAnchorInfoController(
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) =
         synchronized(lock) {
             this.textFieldValue = textFieldValue
@@ -164,7 +164,7 @@ internal class CursorAnchorInfoController(
                 includeInsertionMarker,
                 includeCharacterBounds,
                 includeEditorBounds,
-                includeLineBounds
+                includeLineBounds,
             )
         )
 

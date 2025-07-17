@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,22 +29,22 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":wear:wear-input"))
     compileOnly fileTree(dir: "../wear_stubs", include: ["com.google.android.wearable-stubs.jar"])
 }
 
 android {
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.input.testing"
+    namespace = "androidx.wear.input.testing"
 }
 
 androidx {
     name = "Android Wear Input Testing Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.WEAR_INPUT_TESTING
     inceptionYear = "2020"
     description = "Android Wear Support Input Testing Helpers"
-    metalavaK2UastEnabled = true
 }

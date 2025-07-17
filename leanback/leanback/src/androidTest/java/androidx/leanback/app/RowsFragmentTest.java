@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Build;
@@ -40,8 +41,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
-import android.app.Fragment;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.LeakDetector;
 import androidx.leanback.testutils.PollingCheck;
@@ -65,6 +64,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationTest;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

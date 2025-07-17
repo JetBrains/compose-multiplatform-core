@@ -21,15 +21,18 @@ import static androidx.wear.protolayout.material.RunnerUtils.SCREEN_WIDTH;
 import static androidx.wear.protolayout.material.RunnerUtils.convertToTestParameters;
 import static androidx.wear.protolayout.material.RunnerUtils.runSingleScreenshotTest;
 import static androidx.wear.protolayout.material.RunnerUtils.waitForNotificationToDisappears;
+import static androidx.wear.protolayout.material.ScreenshotKt.SCREENSHOT_GOLDEN_PATH;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTestCases;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesLtrOnly;
 import static androidx.wear.protolayout.material.TestCasesGenerator.generateTextTestCasesRtlOnly;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.DisplayMetrics;
 
 import androidx.annotation.Dimension;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.wear.protolayout.DeviceParametersBuilders;
@@ -47,13 +50,17 @@ import java.util.List;
 
 @RunWith(Parameterized.class)
 @LargeTest
+@SdkSuppress(
+        minSdkVersion = 35,
+        maxSdkVersion = 35
+)
 public class MaterialGoldenTest {
     private final TestCase mTestCase;
     private final String mExpected;
 
     @Rule
     public AndroidXScreenshotTestRule mScreenshotRule =
-            new AndroidXScreenshotTestRule("wear/wear-protolayout-material");
+            new AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH);
 
     public MaterialGoldenTest(String expected, TestCase testCase) {
         mTestCase = testCase;
@@ -67,20 +74,9 @@ public class MaterialGoldenTest {
 
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         float scale = displayMetrics.density;
-
-        InstrumentationRegistry.getInstrumentation()
-                .getContext()
-                .getResources()
-                .getDisplayMetrics()
-                .setTo(displayMetrics);
-        InstrumentationRegistry.getInstrumentation()
-                .getTargetContext()
-                .getResources()
-                .getDisplayMetrics()
-                .setTo(displayMetrics);
 
         DeviceParameters deviceParameters =
                 new DeviceParameters.Builder()

@@ -19,12 +19,15 @@ package androidx.appsearch.builtintypes;
 import android.net.Uri;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -82,8 +85,7 @@ public class Person extends Thing {
             return mType;
         }
 
-        @NonNull
-        public String getValue() {
+        public @NonNull String getValue() {
             return mValue;
         }
 
@@ -148,6 +150,7 @@ public class Person extends Thing {
 
     private final List<AdditionalName> mTypedAdditionalNames;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Person(@NonNull String namespace,
             @NonNull String id,
             int documentScore,
@@ -167,7 +170,7 @@ public class Person extends Thing {
             boolean isImportant,
             boolean isBot,
             @NonNull List<String> notes,
-            @NonNull @AdditionalName.NameType List<Long> additionalNameTypes,
+            @AdditionalName.NameType @NonNull List<Long> additionalNameTypes,
             @NonNull List<String> additionalNames,
             @NonNull List<String> affiliations,
             @NonNull List<String> relations,
@@ -198,8 +201,7 @@ public class Person extends Thing {
     }
 
     /** Returns the given (or first) name for this {@link Person}. */
-    @Nullable
-    public String getGivenName() {
+    public @Nullable String getGivenName() {
         return mGivenName;
     }
 
@@ -209,14 +211,12 @@ public class Person extends Thing {
      * <p>For a Person with multiple middle names, this method returns a flattened and whitespace
      * separated list. For example, "middle1 middle2 ..."
      */
-    @Nullable
-    public String getMiddleName() {
+    public @Nullable String getMiddleName() {
         return mMiddleName;
     }
 
     /** Returns the family (or last) name for this {@link Person}. */
-    @Nullable
-    public String getFamilyName() {
+    public @Nullable String getFamilyName() {
         return mFamilyName;
     }
 
@@ -231,8 +231,7 @@ public class Person extends Thing {
      * <p>For mailto: and tel: URI schemes, it is recommended that the path portion
      * refers to a valid contact in the Contacts Provider.
      */
-    @Nullable
-    public Uri getExternalUri() {
+    public @Nullable Uri getExternalUri() {
         if (mExternalUri != null) {
             return Uri.parse(mExternalUri);
         }
@@ -240,8 +239,7 @@ public class Person extends Thing {
     }
 
     /** Returns {@link Uri} of the profile image for this {@link Person}. */
-    @Nullable
-    public Uri getImageUri() {
+    public @Nullable Uri getImageUri() {
         if (mImageUri != null) {
             return Uri.parse(mImageUri);
         }
@@ -262,8 +260,7 @@ public class Person extends Thing {
     }
 
     /** Returns the notes about this {@link Person}. */
-    @NonNull
-    public List<String> getNotes() {
+    public @NonNull List<String> getNotes() {
         return mNotes;
     }
 
@@ -275,8 +272,7 @@ public class Person extends Thing {
      * <p>Different from {@link #getTypedAdditionalNames()}, the return value doesn't include
      * type information for the additional names.
      */
-    @NonNull
-    public List<String> getAdditionalNames() {
+    public @NonNull List<String> getAdditionalNames() {
         return mAdditionalNames;
     }
 
@@ -287,8 +283,7 @@ public class Person extends Thing {
      *
      * <p>Each {@link AdditionalName} contains type information for the additional name.
      */
-    @NonNull
-    public List<AdditionalName> getTypedAdditionalNames() {
+    public @NonNull List<AdditionalName> getTypedAdditionalNames() {
         return mTypedAdditionalNames;
     }
 
@@ -299,14 +294,12 @@ public class Person extends Thing {
      * company "Cloud Company", this can include a flattened value of "Software Engineer,
      * Engineering, Cloud Company".
      */
-    @NonNull
-    public List<String> getAffiliations() {
+    public @NonNull List<String> getAffiliations() {
         return mAffiliations;
     }
 
     /** Returns a list of relations for this {@link Person}, like "Father" or "Mother". */
-    @NonNull
-    public List<String> getRelations() {
+    public @NonNull List<String> getRelations() {
         return mRelations;
     }
 
@@ -315,8 +308,7 @@ public class Person extends Thing {
      *
      * <p>More information can be found in {@link ContactPoint}.
      */
-    @NonNull
-    public List<ContactPoint> getContactPoints() {
+    public @NonNull List<ContactPoint> getContactPoints() {
         return mContactPoints;
     }
 
@@ -388,8 +380,7 @@ public class Person extends Thing {
         }
 
         /** Sets the given name of this {@link Person}. */
-        @NonNull
-        public T setGivenName(@NonNull String givenName) {
+        public @NonNull T setGivenName(@NonNull String givenName) {
             mGivenName = Preconditions.checkNotNull(givenName);
             return (T) this;
         }
@@ -401,15 +392,13 @@ public class Person extends Thing {
          * single string. Each middle name could be separated by a whitespace like "middleName1
          * middleName2 middleName3".
          */
-        @NonNull
-        public T setMiddleName(@NonNull String middleName) {
+        public @NonNull T setMiddleName(@NonNull String middleName) {
             mMiddleName = Preconditions.checkNotNull(middleName);
             return (T) this;
         }
 
         /** Sets the family name of this {@link Person}. */
-        @NonNull
-        public T setFamilyName(@NonNull String familyName) {
+        public @NonNull T setFamilyName(@NonNull String familyName) {
             mFamilyName = Preconditions.checkNotNull(familyName);
             return (T) this;
         }
@@ -425,36 +414,31 @@ public class Person extends Thing {
          * <p>For mailto: and tel: URI schemes, it is recommended that the path
          * portion refers to a valid contact in the Contacts Provider.
          */
-        @NonNull
-        public T setExternalUri(@NonNull Uri externalUri) {
+        public @NonNull T setExternalUri(@NonNull Uri externalUri) {
             mExternalUri = Preconditions.checkNotNull(externalUri);
             return (T) this;
         }
 
         /** Sets the {@link Uri} of the profile image for the {@link Person}. */
-        @NonNull
-        public T setImageUri(@NonNull Uri imageUri) {
+        public @NonNull T setImageUri(@NonNull Uri imageUri) {
             mImageUri = Preconditions.checkNotNull(imageUri);
             return (T) this;
         }
 
         /** Sets whether this {@link Person} is important. */
-        @NonNull
-        public T setImportant(boolean isImportant) {
+        public @NonNull T setImportant(boolean isImportant) {
             mIsImportant = isImportant;
             return (T) this;
         }
 
         /** Sets whether this {@link Person} is a bot. */
-        @NonNull
-        public T setBot(boolean isBot) {
+        public @NonNull T setBot(boolean isBot) {
             mIsBot = isBot;
             return (T) this;
         }
 
         /** Sets the notes about this {@link Person}. */
-        @NonNull
-        public T setNotes(@NonNull List<String> notes) {
+        public @NonNull T setNotes(@NonNull List<String> notes) {
             mNotes = Preconditions.checkNotNull(notes);
             return (T) this;
         }
@@ -464,8 +448,7 @@ public class Person extends Thing {
          *
          * <p>Only types defined in {@link AdditionalName.NameType} are accepted.
          */
-        @NonNull
-        public T setAdditionalNames(@NonNull List<AdditionalName> additionalNames) {
+        public @NonNull T setAdditionalNames(@NonNull List<AdditionalName> additionalNames) {
             Preconditions.checkNotNull(additionalNames);
             int size = additionalNames.size();
             mAdditionalNameTypes = new ArrayList<>(size);
@@ -485,15 +468,13 @@ public class Person extends Thing {
          * Sets a list of affiliations for this {@link Person}. Like company, school,
          * etc.
          */
-        @NonNull
-        public T setAffiliations(@NonNull List<String> affiliations) {
+        public @NonNull T setAffiliations(@NonNull List<String> affiliations) {
             mAffiliations = Preconditions.checkNotNull(affiliations);
             return (T) this;
         }
 
         /** Sets a list of relations for this {@link Person}, like "Father" or "Mother". */
-        @NonNull
-        public T setRelations(@NonNull List<String> relations) {
+        public @NonNull T setRelations(@NonNull List<String> relations) {
             mRelations = Preconditions.checkNotNull(relations);
             return (T) this;
         }
@@ -503,16 +484,14 @@ public class Person extends Thing {
          *
          * <p>More information could be found in {@link ContactPoint}.
          */
-        @NonNull
-        public T setContactPoints(@NonNull List<ContactPoint> contactPoints) {
+        public @NonNull T setContactPoints(@NonNull List<ContactPoint> contactPoints) {
             mContactPoints = Preconditions.checkNotNull(contactPoints);
             return (T) this;
         }
 
         /** Builds the {@link Person}. */
-        @NonNull
         @Override
-        public Person build() {
+        public @NonNull Person build() {
             Preconditions.checkState(mAdditionalNameTypes.size() == mAdditionalNames.size());
             return new Person(
                     /*namespace=*/ mNamespace,

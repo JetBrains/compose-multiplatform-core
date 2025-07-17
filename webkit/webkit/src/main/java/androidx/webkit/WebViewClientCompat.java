@@ -26,7 +26,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
@@ -36,6 +35,7 @@ import androidx.webkit.internal.WebViewFeatureInternal;
 
 import org.chromium.support_lib_boundary.WebViewClientBoundaryInterface;
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -72,8 +72,7 @@ public class WebViewClientCompat extends WebViewClient implements WebViewClientB
      */
     @Override
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    @NonNull
-    public final String[] getSupportedFeatures() {
+    public final String @NonNull [] getSupportedFeatures() {
         return sSupportedFeatures;
     }
 
@@ -292,7 +291,7 @@ public class WebViewClientCompat extends WebViewClient implements WebViewClientB
     @SuppressWarnings("MissingOverride")
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public boolean onWebAuthnIntent(@NonNull WebView view, @NonNull PendingIntent intent,
-            @NonNull /* WebAuthnCallbackBoundaryInterface */ InvocationHandler callback) {
+            /* WebAuthnCallbackBoundaryInterface */ @NonNull InvocationHandler callback) {
         // TODO(crbug.com/1284805): Implement the actual logic.
         return false;
     }

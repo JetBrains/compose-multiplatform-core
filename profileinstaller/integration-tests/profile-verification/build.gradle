@@ -29,7 +29,7 @@ import java.util.zip.ZipFile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 // This task copies the apks provided by the `apkAssets` configuration and places them in the
@@ -82,12 +82,19 @@ def prepareAssetsTaskProvider = tasks.register("prepareAssets", PrepareAssetsTas
     outputDir.set(layout.buildDirectory.dir("intermediates/profile-verification-assets"))
 }
 
+androidx {
+    deviceTests {
+        enableAlsoRunningOnPhysicalDevices = true
+    }
+}
+
 android {
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
     sourceSets.androidTest.assets.srcDir(prepareAssetsTaskProvider.map { it.outputDir })
-    namespace "androidx.profileinstaller.integration.profileverification"
+    namespace = "androidx.profileinstaller.integration.profileverification"
 }
 
 // Define a configuration that can be resolved. This project is the consumer of test apks, i.e. it
@@ -113,7 +120,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.testExtTruth)
-    androidTestImplementation(project(":core:core"))
+    androidTestImplementation("androidx.core:core:1.15.0")
     apkAssets(project(":profileinstaller:integration-tests:profile-verification-sample"))
     apkAssets(project(":profileinstaller:integration-tests:profile-verification-sample-no-initializer"))
     apkAssets(project(":benchmark:integration-tests:baselineprofile-consumer"))
@@ -121,5 +128,5 @@ dependencies {
 
 // It makes sure that the apks are generated before the assets are packed.
 afterEvaluate {
-    tasks.named("generateDebugAndroidTestAssets").configure { it.dependsOn(prepareAssetsTaskProvider) }
+    tasks.named("generateReleaseAndroidTestAssets").configure { it.dependsOn(prepareAssetsTaskProvider) }
 }

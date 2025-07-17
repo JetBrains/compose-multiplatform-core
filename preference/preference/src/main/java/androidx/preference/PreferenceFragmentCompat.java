@@ -35,8 +35,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.XmlRes;
 import androidx.fragment.app.DialogFragment;
@@ -44,6 +42,9 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A PreferenceFragmentCompat is the entry point to using the Preference library. This
@@ -175,10 +176,9 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
     public abstract void onCreatePreferences(@Nullable Bundle savedInstanceState,
             @Nullable String rootKey);
 
-    @NonNull
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @NonNull View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         TypedArray a = requireContext().obtainStyledAttributes(null,
                 R.styleable.PreferenceFragmentCompat,
@@ -501,8 +501,7 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
 
     @Override
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    public <T extends Preference> T findPreference(@NonNull CharSequence key) {
+    public <T extends Preference> @Nullable T findPreference(@NonNull CharSequence key) {
         if (mPreferenceManager == null) {
             return null;
         }
@@ -570,8 +569,7 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
      * @return A new {@link RecyclerView} object to be placed into the view hierarchy
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public RecyclerView onCreateRecyclerView(@NonNull LayoutInflater inflater,
+    public @NonNull RecyclerView onCreateRecyclerView(@NonNull LayoutInflater inflater,
             @NonNull ViewGroup parent, @Nullable Bundle savedInstanceState) {
         // If device detected is Auto, use Auto's custom layout that contains a custom ViewGroup
         // wrapping a RecyclerView
@@ -598,8 +596,7 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
      *
      * @return A new {@link RecyclerView.LayoutManager} instance
      */
-    @NonNull
-    public RecyclerView.LayoutManager onCreateLayoutManager() {
+    public RecyclerView.@NonNull LayoutManager onCreateLayoutManager() {
         return new LinearLayoutManager(requireContext());
     }
 
@@ -609,8 +606,8 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
      * @param preferenceScreen The {@link PreferenceScreen} object to create the adapter for
      * @return An adapter that contains the preferences contained in this {@link PreferenceScreen}
      */
-    @NonNull
-    protected RecyclerView.Adapter onCreateAdapter(@NonNull PreferenceScreen preferenceScreen) {
+    protected RecyclerView.@NonNull Adapter onCreateAdapter(
+            @NonNull PreferenceScreen preferenceScreen) {
         return new PreferenceGroupAdapter(preferenceScreen);
     }
 
@@ -684,9 +681,8 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
      *
      * @return The {@link Fragment} to possibly use as a callback
      */
-    @Nullable
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public Fragment getCallbackFragment() {
+    public @Nullable Fragment getCallbackFragment() {
         return null;
     }
 
@@ -698,8 +694,8 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
         scrollToPreferenceInternal(preference, null);
     }
 
-    private void scrollToPreferenceInternal(@Nullable final Preference preference,
-            @Nullable final String key) {
+    private void scrollToPreferenceInternal(final @Nullable Preference preference,
+            final @Nullable String key) {
         final Runnable r = new Runnable() {
             @Override
             public void run() {
@@ -857,7 +853,7 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
 
         @Override
         public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent,
-                @NonNull RecyclerView.State state) {
+                RecyclerView.@NonNull State state) {
             if (mDivider == null) {
                 return;
             }
@@ -875,7 +871,7 @@ public abstract class PreferenceFragmentCompat extends Fragment implements
 
         @Override
         public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
-                @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+                @NonNull RecyclerView parent, RecyclerView.@NonNull State state) {
             if (shouldDrawDividerBelow(view, parent)) {
                 outRect.bottom = mDividerHeight;
             }

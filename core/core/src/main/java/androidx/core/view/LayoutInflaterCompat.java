@@ -23,7 +23,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 
@@ -56,9 +56,8 @@ public final class LayoutInflaterCompat {
             return mDelegateFactory.onCreateView(parent, name, context, attributeSet);
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return getClass().getName() + "{" + mDelegateFactory + "}";
         }
     }
@@ -137,7 +136,7 @@ public final class LayoutInflaterCompat {
      * @see LayoutInflater#setFactory2(android.view.LayoutInflater.Factory2)
      */
     public static void setFactory2(
-            @NonNull LayoutInflater inflater, @NonNull LayoutInflater.Factory2 factory) {
+            @NonNull LayoutInflater inflater, LayoutInflater.@NonNull Factory2 factory) {
         inflater.setFactory2(factory);
 
         if (Build.VERSION.SDK_INT < 21) {

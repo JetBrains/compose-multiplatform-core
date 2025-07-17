@@ -16,56 +16,75 @@
 
 package androidx.camera.camera2.pipe.integration.compat.workaround
 
-import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraDevice.TEMPLATE_RECORD
+import android.hardware.camera2.CameraDevice.TEMPLATE_VIDEO_SNAPSHOT
 import android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_PREVIEW
+import android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_STILL_CAPTURE
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT
 import androidx.camera.camera2.pipe.RequestTemplate
+import androidx.camera.camera2.pipe.integration.compat.quirk.AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.CaptureIntentPreviewQuirk.Companion.workaroundByCaptureIntentPreview
+import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedWhenVideoCaptureIsBoundQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.PreviewDelayWhenVideoCaptureIsBoundQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.PreviewStretchWhenVideoCaptureIsBoundQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.TemporalNoiseQuirk
+import androidx.camera.core.impl.Quirks
 import dagger.Module
 import dagger.Provides
 
 /**
  * Workaround to get those capture parameters used to override the template default parameters.
- * - This workaround should only be applied on repeating request but not on single request.
  *
  * @see PreviewStretchWhenVideoCaptureIsBoundQuirk
  * @see PreviewDelayWhenVideoCaptureIsBoundQuirk
  * @see ImageCaptureFailedWhenVideoCaptureIsBoundQuirk
  * @see TemporalNoiseQuirk
+ * @see ImageCaptureFailedForVideoSnapshotQuirk
+ * @see AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk
  */
-interface TemplateParamsOverride {
+public interface TemplateParamsOverride {
     /** Returns capture parameters used to override the default parameters of the input template. */
-    fun getOverrideParams(template: RequestTemplate?): Map<CaptureRequest.Key<*>, Any>
+    public fun getOverrideParams(template: RequestTemplate?): Map<CaptureRequest.Key<*>, Any>
 
     @Module
-    abstract class Bindings {
-        companion object {
+    public abstract class Bindings {
+        public companion object {
             @Provides
-            fun provideTemplateParamsOverride(quirks: CameraQuirks): TemplateParamsOverride {
-                return if (workaroundByCaptureIntentPreview(quirks.quirks))
-                    TemplateParamsQuirkOverride
+            public fun provideTemplateParamsOverride(
+                cameraQuirks: CameraQuirks
+            ): TemplateParamsOverride {
+                val quirks = cameraQuirks.quirks
+                return if (
+                    workaroundByCaptureIntentPreview(quirks) ||
+                        quirks.contains(ImageCaptureFailedForVideoSnapshotQuirk::class.java)
+                )
+                    TemplateParamsQuirkOverride(quirks)
                 else NoOpTemplateParamsOverride
             }
         }
     }
 }
 
-object TemplateParamsQuirkOverride : TemplateParamsOverride {
+public class TemplateParamsQuirkOverride(quirks: Quirks) : TemplateParamsOverride {
+    private val workaroundByCaptureIntentPreview = workaroundByCaptureIntentPreview(quirks)
+    private val workaroundByCaptureIntentStillCapture =
+        quirks.contains(ImageCaptureFailedForVideoSnapshotQuirk::class.java)
+
     override fun getOverrideParams(template: RequestTemplate?): Map<CaptureRequest.Key<*>, Any> {
-        if (template?.value == CameraDevice.TEMPLATE_RECORD) {
+        if (template?.value == TEMPLATE_RECORD && workaroundByCaptureIntentPreview) {
             return mapOf(CONTROL_CAPTURE_INTENT to CONTROL_CAPTURE_INTENT_PREVIEW)
+        }
+        if (template?.value == TEMPLATE_VIDEO_SNAPSHOT && workaroundByCaptureIntentStillCapture) {
+            return mapOf(CONTROL_CAPTURE_INTENT to CONTROL_CAPTURE_INTENT_STILL_CAPTURE)
         }
         return emptyMap()
     }
 }
 
-object NoOpTemplateParamsOverride : TemplateParamsOverride {
+public object NoOpTemplateParamsOverride : TemplateParamsOverride {
     override fun getOverrideParams(template: RequestTemplate?): Map<CaptureRequest.Key<*>, Any> {
         return emptyMap()
     }

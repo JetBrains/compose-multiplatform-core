@@ -19,7 +19,6 @@ package androidx.compose.ui.draganddrop
 import android.os.Parcel
 import android.view.DragEvent
 import android.view.ViewGroup
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
@@ -76,16 +75,24 @@ class DragAndDropNodeTest {
 
     private lateinit var density: Density
 
-    /**
+    /*
      * Sets up a grid of drop targets resembling the following for testing:
+     *    accepts                 accepts
+     * ┌───────────┐           ┌───────────┐
+     * │           │           │           │
+     * │           │           │           │
+     * │           │           │           │
+     * └───────────┘           └───────────┘
      *
-     * accepts accepts ┌───────────┐ ┌───────────┐ │ │ │ │ │ │ │ │ │ │ │ │ └───────────┘
-     * └───────────┘
+     *    accepts                 rejects
+     * ┌───────────┐  accepts  ┌───────────┐
+     * │  accepts  │  ┌─────┐  │  accepts  │
+     * │─────┐     │  │     │  │     ┌─────│
+     * │     │     │  └─────┘  │     │     │
+     * └─────┘─────┘           └─────└─────┘
      *
-     * accepts rejects ┌───────────┐ accepts ┌───────────┐ │ accepts │ ┌─────┐ │ accepts │ │─────┐ │
-     * │ │ │ ┌─────│ │ │ │ └─────┘ │ │ │ └─────┘─────┘ └─────└─────┘
-     *
-     * parent <------> child offset
+     * parent <------> child
+     *         offset
      */
     @Before
     fun setup() {
@@ -109,8 +116,8 @@ class DragAndDropNodeTest {
                 container,
                 ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ),
             )
         }
         countDown(from = 1) { latch ->
@@ -151,7 +158,7 @@ class DragAndDropNodeTest {
                                 modifier =
                                     Modifier.offset(
                                             x = HalfContainerSize - HalfChildSize,
-                                            y = (HalfParentSize - HalfChildSize)
+                                            y = (HalfParentSize - HalfChildSize),
                                         )
                                         .requiredSize(ChildSize)
                                         .testDropTarget(acceptingOffsetInnerBottomStartDropTarget)
@@ -179,12 +186,7 @@ class DragAndDropNodeTest {
     @Test
     fun dispatchDragEvent_callsStartOnAllDragAndDropTargetsOn_ACTION_DRAG_STARTED() {
         rule.runOnUiThread {
-            val dragEvent =
-                DragEvent(
-                    action = DragEvent.ACTION_DRAG_STARTED,
-                    x = 0f,
-                    y = 0f,
-                )
+            val dragEvent = DragEvent(action = DragEvent.ACTION_DRAG_STARTED, x = 0f, y = 0f)
 
             val androidComposeView = findAndroidComposeView(container)!!
             // Act
@@ -237,11 +239,7 @@ class DragAndDropNodeTest {
                         y = with(density) { HalfContainerSize.toPx() },
                     ),
                     // Move to the top start
-                    DragEvent(
-                        action = DragEvent.ACTION_DRAG_LOCATION,
-                        x = 0f,
-                        y = 0f,
-                    ),
+                    DragEvent(action = DragEvent.ACTION_DRAG_LOCATION, x = 0f, y = 0f),
                     // Move across the top start
                     DragEvent(
                         action = DragEvent.ACTION_DRAG_LOCATION,
@@ -253,7 +251,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { (ParentSize + ChildSize).toPx() },
                         y = 0f,
-                    )
+                    ),
                 )
             val (initialEvent, moveStartEvent, moveEndEvent, exitEvent) = events
 
@@ -375,17 +373,13 @@ class DragAndDropNodeTest {
                         y = with(density) { HalfContainerSize.toPx() },
                     ),
                     // Move across the top start
-                    DragEvent(
-                        action = DragEvent.ACTION_DRAG_LOCATION,
-                        x = 0f,
-                        y = 0f,
-                    ),
+                    DragEvent(action = DragEvent.ACTION_DRAG_LOCATION, x = 0f, y = 0f),
                     // Exit the top start and into the top right
                     DragEvent(
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { ContainerSize.toPx() - ParentSize.toPx() },
                         y = 0f,
-                    )
+                    ),
                 )
 
             val (initialEvent, farStartEvent, startToEndEvent) = events
@@ -439,7 +433,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { HalfChildSize.toPx() },
                         y = with(density) { (ContainerSize - HalfChildSize).toPx() },
-                    )
+                    ),
                 )
 
             val androidComposeView = findAndroidComposeView(container)!!
@@ -452,7 +446,7 @@ class DragAndDropNodeTest {
                         "enter-parent",
                         // important bit is enter child is received before exit parent.
                         "enter-child",
-                        "exit-parent"
+                        "exit-parent",
                     )
                 )
         }
@@ -569,7 +563,7 @@ class DragAndDropNodeTest {
                         action = DragEvent.ACTION_DRAG_LOCATION,
                         x = with(density) { HalfContainerSize.toPx() },
                         y = with(density) { (ContainerSize - HalfParentSize).toPx() },
-                    )
+                    ),
                 )
             val (
                 initialEvent,
@@ -1037,7 +1031,6 @@ private class DropTargetModifierHolder(
     val exitOffsets = mutableListOf<Offset>()
     val endedOffsets = mutableListOf<Offset>()
 
-    @OptIn(ExperimentalFoundationApi::class)
     val modifier =
         Modifier.dragAndDropTarget(
             target =

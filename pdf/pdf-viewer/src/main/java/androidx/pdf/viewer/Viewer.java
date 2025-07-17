@@ -23,14 +23,15 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.fragment.app.Fragment;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.Observables;
 import androidx.pdf.util.Observables.ExposedValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A widget that displays the contents of a file in a given PDF format.
@@ -56,13 +57,7 @@ import androidx.pdf.util.Observables.ExposedValue;
 @SuppressWarnings("deprecation")
 public abstract class Viewer extends Fragment {
 
-    @NonNull
-    protected abstract String getLogTag();
-
     protected static final String KEY_DATA = "data";
-
-    /** Scale for the progress metric. */
-    protected static final int PROGRESS_SCALER = 100;
 
     /**
      * The state of the view hierarchy for this {@link Fragment}, as exposed by {@link #mViewState}.
@@ -114,15 +109,10 @@ public abstract class Viewer extends Fragment {
     protected boolean mIsPasswordProtected;
 
     /** The container where this viewer is attached. */
-    @NonNull
-    protected ViewGroup mContainer;
+    protected @NonNull ViewGroup mContainer;
 
-    @NonNull
-    protected ExposedValue<ViewState> mViewState = Observables.newExposedValueWithInitialValue(
-            ViewState.NO_VIEW);
-
-    // Debug log of lifecycle events that happened on this viewer, helps investigating.
-    private final StringBuilder mEventlog = new StringBuilder();
+    protected @NonNull ExposedValue<ViewState> mViewState =
+            Observables.newExposedValueWithInitialValue(ViewState.NO_VIEW);
 
     {
         // We can call getArguments() from setters and know that it will not be null.
@@ -130,8 +120,7 @@ public abstract class Viewer extends Fragment {
     }
 
     /** Reports the {@link ViewState} of this Fragment. */
-    @NonNull
-    public ObservableValue<ViewState> viewState() {
+    public @NonNull ObservableValue<ViewState> viewState() {
         return mViewState;
     }
 
@@ -158,10 +147,9 @@ public abstract class Viewer extends Fragment {
         // editFabTarget = new BaseViewerEditFabTargetImpl(requireActivity(), this);
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedState) {
         if (container == null) {
             // Don't throw an exception here, as this may happen during restoreInstanceState for
             // Viewers that we don't need anymore.
@@ -201,13 +189,6 @@ public abstract class Viewer extends Fragment {
         } else {
             mDelayedEnter = true;
         }
-    }
-
-    /** Notifies this Viewer goes off-screen. {@link #onExit()} will be called immediately. */
-    public void exit() {
-        mDelayedEnter = false; // in case we never started.
-        onExit();
-        mOnScreen = false;
     }
 
     /** Called after this viewer enters the screen and becomes visible. */
@@ -313,18 +294,6 @@ public abstract class Viewer extends Fragment {
     protected void saveToArguments(@NonNull DisplayData data) {
         getArguments().putBundle(KEY_DATA, data.asBundle());
     }
-
-    /** Returns a compact event log for this Viewer that helps investigating lifecycle issues. */
-    @NonNull
-    protected String getEventlog() {
-        return mEventlog.toString();
-    }
-
-    /** Returns the length of the current file. The meaning of the length is type dependent. */
-    public abstract long getContentLength();
-
-    /** Returns the user's current progress in the file in percentage. */
-    public abstract int getViewProgress();
 
     @Override
     protected void finalize() throws Throwable {

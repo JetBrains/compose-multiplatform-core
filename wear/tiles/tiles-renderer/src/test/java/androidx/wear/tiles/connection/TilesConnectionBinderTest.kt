@@ -21,11 +21,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.wear.tiles.InteractionEventsCallback
 import androidx.wear.tiles.ResourcesCallback
 import androidx.wear.tiles.ResourcesRequestData
 import androidx.wear.tiles.TileAddEventData
 import androidx.wear.tiles.TileCallback
 import androidx.wear.tiles.TileEnterEventData
+import androidx.wear.tiles.TileInteractionEventData
 import androidx.wear.tiles.TileLeaveEventData
 import androidx.wear.tiles.TileProvider
 import androidx.wear.tiles.TileRemoveEventData
@@ -80,7 +82,7 @@ public class TilesConnectionBinderTest {
                 appContext,
                 TILE_PROVIDER,
                 fakeCoroutineScope,
-                fakeCoroutineDispatcher
+                fakeCoroutineDispatcher,
             )
     }
 
@@ -294,7 +296,7 @@ public class TilesConnectionBinderTest {
         override fun onTileRequest(
             id: Int,
             requestData: TileRequestData?,
-            callback: TileCallback?
+            callback: TileCallback?,
         ) {
             TODO("Not yet implemented")
         }
@@ -302,7 +304,7 @@ public class TilesConnectionBinderTest {
         override fun onResourcesRequest(
             id: Int,
             requestData: ResourcesRequestData?,
-            callback: ResourcesCallback?
+            callback: ResourcesCallback?,
         ) {
             TODO("Not yet implemented")
         }
@@ -320,6 +322,13 @@ public class TilesConnectionBinderTest {
         }
 
         override fun onTileLeaveEvent(requestData: TileLeaveEventData?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onRecentInteractionEvents(
+            events: List<TileInteractionEventData?>?,
+            callback: InteractionEventsCallback?,
+        ) {
             TODO("Not yet implemented")
         }
     }

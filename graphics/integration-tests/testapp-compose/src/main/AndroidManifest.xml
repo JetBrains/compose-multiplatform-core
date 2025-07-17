@@ -15,13 +15,14 @@
   limitations under the License.
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <application>
         <activity
-            android:name=".SimpleMorph"
+            android:name=".ShapeEditor"
             android:exported="true"
-            android:label="Simple Morph"
-            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            android:label="Shape Editor"
+            android:taskAffinity=".morph"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -29,18 +30,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".SimpleMorph"
             android:exported="true"
-            android:label="Graphics Shapes Test - Compose"
+            android:label="Simple Morph"
+            android:taskAffinity=".morph"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity android:name=".ProgressActivity"
             android:label="Animating, Shaped Progress Bar"
             android:exported="true"
+            android:taskAffinity=".progress"
             android:theme="@android:style/Theme.Material.Light.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.node
 
+import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 
@@ -27,7 +28,7 @@ import androidx.compose.ui.util.fastForEach
 internal class LayoutTreeConsistencyChecker(
     private val root: LayoutNode,
     private val relayoutNodes: DepthSortedSetsForDifferentPasses,
-    private val postponedMeasureRequests: List<MeasureAndLayoutDelegate.PostponedRequest>
+    private val postponedMeasureRequests: List<MeasureAndLayoutDelegate.PostponedRequest>,
 ) {
     fun assertConsistent() {
         val inconsistencyFound = !isTreeConsistent(root)
@@ -81,7 +82,9 @@ internal class LayoutTreeConsistencyChecker(
                     parent.measurePending ||
                     parent.layoutPending ||
                     parentLayoutState == LayoutNode.LayoutState.Measuring ||
-                    parentLayoutState == LayoutNode.LayoutState.LayingOut
+                    parentLayoutState == LayoutNode.LayoutState.LayingOut ||
+                    postponedMeasureRequests.fastAny { it.node == this } ||
+                    layoutState == LayoutNode.LayoutState.Measuring
             }
         }
         if (isPlacedInLookahead == true) {

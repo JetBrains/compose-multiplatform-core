@@ -40,7 +40,6 @@ import androidx.compose.testutils.ToggleableTestCase
 import androidx.compose.testutils.assertNoPendingChanges
 import androidx.compose.testutils.benchmark.ComposeBenchmarkRule
 import androidx.compose.testutils.benchmark.toggleStateBenchmarkComposeMeasureLayout
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.RootForTest
 import androidx.compose.ui.platform.LocalView
@@ -61,7 +60,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class TextAccessibilityBenchmark(
     private val accessibilityEnabled: Boolean,
-    private val invalidateSemanticsOnEachRun: Boolean
+    private val invalidateSemanticsOnEachRun: Boolean,
 ) {
 
     @OptIn(ExperimentalBenchmarkConfigApi::class)
@@ -78,9 +77,12 @@ class TextAccessibilityBenchmark(
         measureRepeatedOnUiThread(
             content = { Text("Text Composable", Modifier.testTag("tag")) },
             benchmark = {
-                val semanticsId = runWithTimingDisabled { findIdByTag("tag") }
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
+                val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
-            }
+            },
         )
     }
 
@@ -96,9 +98,12 @@ class TextAccessibilityBenchmark(
                 }
             },
             benchmark = {
-                val semanticsId = runWithTimingDisabled { findIdByTag("tag") }
+                runWithMeasurementDisabled {
+                    nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID)
+                }
+                val semanticsId = runWithMeasurementDisabled { findIdByTag("tag") }
                 nodeProvider.createAccessibilityNodeInfo(semanticsId)
-            }
+            },
         )
     }
 
@@ -112,7 +117,7 @@ class TextAccessibilityBenchmark(
 
         measureRepeatedOnUiThread(
             content = { Text("Text Composable", Modifier.testTag("text")) },
-            benchmark = { nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID) }
+            benchmark = { nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID) },
         )
     }
 
@@ -131,7 +136,7 @@ class TextAccessibilityBenchmark(
                     repeat(9) { Text("Text Composable") }
                 }
             },
-            benchmark = { nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID) }
+            benchmark = { nodeProvider.createAccessibilityNodeInfo(HOST_VIEW_ID) },
         )
     }
 
@@ -340,7 +345,7 @@ class TextAccessibilityBenchmark(
 
     private fun measureRepeatedOnUiThread(
         content: @Composable () -> Unit,
-        @UiThread benchmark: BenchmarkRule.Scope.() -> Unit
+        @UiThread benchmark: BenchmarkRule.Scope.() -> Unit,
     ) {
         benchmarkRule.runBenchmarkFor(
             givenTestCase = {
@@ -356,19 +361,18 @@ class TextAccessibilityBenchmark(
             }
         ) {
             benchmarkRule.measureRepeatedOnUiThread {
-                runWithTimingDisabled {
+                runWithMeasurementDisabled {
                     doFrame()
                     assertNoPendingChanges()
                     if (invalidateSemanticsOnEachRun) invalidateSemantics()
                 }
                 benchmark()
-                runWithTimingDisabled { disposeContent() }
+                runWithMeasurementDisabled { disposeContent() }
             }
         }
     }
 
     @Composable
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun setupAccessibility() {
         view = LocalView.current
         // TODO(b/308007375): Eventually we will be able to remove `accessibilityForTesting()`;
@@ -381,7 +385,6 @@ class TextAccessibilityBenchmark(
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun invalidateSemantics() {
         // Setting forceAccessibilityForTesting invalidates semantics.
         (view as RootForTest).forceAccessibilityForTesting(accessibilityEnabled)

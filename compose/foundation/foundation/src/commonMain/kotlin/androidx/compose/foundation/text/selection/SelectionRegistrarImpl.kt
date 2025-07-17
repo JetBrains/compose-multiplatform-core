@@ -20,6 +20,7 @@ import androidx.collection.LongObjectMap
 import androidx.collection.emptyLongObjectMap
 import androidx.collection.mutableLongObjectMapOf
 import androidx.compose.foundation.AtomicLong
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
@@ -33,7 +34,7 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
         val Saver =
             Saver<SelectionRegistrarImpl, Long>(
                 save = { it.incrementId.get() },
-                restore = { SelectionRegistrarImpl(it) }
+                restore = { SelectionRegistrarImpl(it) },
             )
     }
 
@@ -99,10 +100,10 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
     override var subselections: LongObjectMap<Selection> by mutableStateOf(emptyLongObjectMap())
 
     override fun subscribe(selectable: Selectable): Selectable {
-        require(selectable.selectableId != SelectionRegistrar.InvalidSelectableId) {
+        requirePrecondition(selectable.selectableId != SelectionRegistrar.InvalidSelectableId) {
             "The selectable contains an invalid id: ${selectable.selectableId}"
         }
-        require(!_selectableMap.containsKey(selectable.selectableId)) {
+        requirePrecondition(!_selectableMap.containsKey(selectable.selectableId)) {
             "Another selectable with the id: $selectable.selectableId has already subscribed."
         }
         _selectableMap[selectable.selectableId] = selectable
@@ -173,13 +174,13 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
         layoutCoordinates: LayoutCoordinates,
         startPosition: Offset,
         adjustment: SelectionAdjustment,
-        isInTouchMode: Boolean
+        isInTouchMode: Boolean,
     ) {
         onSelectionUpdateStartCallback?.invoke(
             isInTouchMode,
             layoutCoordinates,
             startPosition,
-            adjustment
+            adjustment,
         )
     }
 
@@ -193,7 +194,7 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
         previousPosition: Offset,
         isStartHandle: Boolean,
         adjustment: SelectionAdjustment,
-        isInTouchMode: Boolean
+        isInTouchMode: Boolean,
     ): Boolean {
         return onSelectionUpdateCallback?.invoke(
             isInTouchMode,
@@ -201,7 +202,7 @@ internal class SelectionRegistrarImpl private constructor(initialIncrementId: Lo
             newPosition,
             previousPosition,
             isStartHandle,
-            adjustment
+            adjustment,
         ) ?: true
     }
 

@@ -21,16 +21,17 @@ import static androidx.lifecycle.testapp.TestEvent.OWNER_CALLBACK;
 import android.app.Activity;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleRegistry;
 import androidx.lifecycle.LifecycleRegistryOwner;
 
+import kotlin.Pair;
+
+import org.jspecify.annotations.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-
-import kotlin.Pair;
 
 /**
  * LifecycleRegistryOwner that extends framework activity.
@@ -40,9 +41,8 @@ public class FrameworkLifecycleRegistryActivity extends Activity implements
         LifecycleRegistryOwner, CollectingLifecycleOwner {
     private LifecycleRegistry mLifecycleRegistry = new LifecycleRegistry(this);
 
-    @NonNull
     @Override
-    public LifecycleRegistry getLifecycle() {
+    public @NonNull LifecycleRegistry getLifecycle() {
         return mLifecycleRegistry;
     }
 

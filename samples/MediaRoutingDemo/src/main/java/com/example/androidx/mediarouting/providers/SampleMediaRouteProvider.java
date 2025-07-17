@@ -31,9 +31,6 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.collection.ArrayMap;
 import androidx.mediarouter.media.MediaControlIntent;
@@ -50,6 +47,9 @@ import com.example.androidx.mediarouting.data.PlaylistItem;
 import com.example.androidx.mediarouting.player.Player;
 import com.example.androidx.mediarouting.services.SampleMediaRouteProviderService;
 import com.example.androidx.mediarouting.session.SessionManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -161,10 +161,8 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
         }
     }
 
-    @NonNull
-    protected Map<String, Integer> mVolumes = new ArrayMap<>();
-    @NonNull
-    protected Map<String, MediaRouteDescriptor> mRouteDescriptors = new HashMap<>();
+    protected @NonNull Map<String, Integer> mVolumes = new ArrayMap<>();
+    protected @NonNull Map<String, MediaRouteDescriptor> mRouteDescriptors = new HashMap<>();
 
     public SampleMediaRouteProvider(@NonNull Context context) {
         super(context);
@@ -172,9 +170,8 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
         publishRoutes();
     }
 
-    @Nullable
     @Override
-    public RouteController onCreateRouteController(@NonNull String routeId) {
+    public @Nullable RouteController onCreateRouteController(@NonNull String routeId) {
         if (!checkDrawOverlay()) return null;
         return new SampleRouteController(routeId);
     }
@@ -361,7 +358,7 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
 
         RouteControlHelper(String routeId) {
             mRouteId = routeId;
-            mPlayer = Player.create(getContext(), null, null);
+            mPlayer = Player.createPlayerForOverlay(getContext());
             mSessionManager.setPlayer(mPlayer);
             mSessionManager.setCallback(new SessionManager.Callback() {
                 @Override
@@ -735,7 +732,6 @@ public class SampleMediaRouteProvider extends MediaRouteProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean canDrawOverlays(Context context) {
             return Settings.canDrawOverlays(context);
         }

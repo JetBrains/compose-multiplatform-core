@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -33,14 +35,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AnimateBoundsModifierDemo() {
     var height by remember { mutableIntStateOf(200) }
@@ -65,18 +66,27 @@ fun AnimateBoundsModifierDemo() {
             Box(Modifier.fillMaxHeight(0.5f).fillMaxSize()) {
                 Box(
                     Modifier.background(Color.Gray)
-                        .animateBounds(Modifier.padding(left.dp, top.dp, right.dp, bottom.dp))
+                        .animateBounds(
+                            this@LookaheadScope,
+                            Modifier.padding(left.dp, top.dp, right.dp, bottom.dp),
+                        )
                         .background(Color.Red)
                         .fillMaxSize()
                 )
             }
             Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.animateBounds(Modifier.weight(weight).height(height.dp))
+                    Modifier.animateBounds(
+                            this@LookaheadScope,
+                            Modifier.weight(weight).height(height.dp),
+                        )
                         .background(Color(0xffa2d2ff), RoundedCornerShape(5.dp))
                 )
                 Box(
-                    Modifier.animateBounds(Modifier.weight(1f).height(height.dp))
+                    Modifier.animateBounds(
+                            this@LookaheadScope,
+                            Modifier.weight(1f).height(height.dp),
+                        )
                         .background(Color(0xfffff3b0))
                 )
             }

@@ -37,21 +37,37 @@ import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.core.telecom.CallAttributesCompat.Companion.CALL_TYPE_VIDEO_CALL
+import androidx.core.telecom.extensions.CallsManagerExtensions
+import androidx.core.telecom.extensions.ExtensionInitializationScope
+import androidx.core.telecom.extensions.ExtensionInitializationScopeImpl
 import androidx.core.telecom.internal.AddCallResult
+import androidx.core.telecom.internal.AudioDeviceListener
+import androidx.core.telecom.internal.BluetoothProfileListener
 import androidx.core.telecom.internal.CallChannels
+import androidx.core.telecom.internal.CallEndpointUuidTracker
 import androidx.core.telecom.internal.CallSession
 import androidx.core.telecom.internal.CallSessionLegacy
+import androidx.core.telecom.internal.CallStateEvent
 import androidx.core.telecom.internal.JetpackConnectionService
+import androidx.core.telecom.internal.PreCallEndpointsUpdater
+import androidx.core.telecom.internal.ProductionBluetoothDeviceChecker
 import androidx.core.telecom.internal.utils.Utils
+import androidx.core.telecom.internal.utils.Utils.Companion.hasBluetoothPermissions
 import androidx.core.telecom.internal.utils.Utils.Companion.remapJetpackCapsToPlatformCaps
+import androidx.core.telecom.util.ExperimentalAppActions
 import java.util.UUID
-import java.util.concurrent.CancellationException
 import java.util.concurrent.Executor
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -67,61 +83,27 @@ import kotlinx.coroutines.withTimeout
  * descriptions.
  */
 @RequiresApi(VERSION_CODES.O)
-class CallsManager constructor(context: Context) {
+public class CallsManager(context: Context) : CallsManagerExtensions {
     private val mContext: Context = context
     private var mPhoneAccount: PhoneAccount? = null
     private val mTelecomManager: TelecomManager =
         mContext.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
     internal val mConnectionService: JetpackConnectionService = JetpackConnectionService()
-
     // A single declared constant for a direct [Executor], since the coroutines primitives we invoke
     // from the associated callbacks will perform their own dispatch as needed.
     private val mDirectExecutor = Executor { it.run() }
 
-    companion object {
+    public companion object {
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.TYPE)
         @IntDef(
             CAPABILITY_BASELINE,
             CAPABILITY_SUPPORTS_VIDEO_CALLING,
             CAPABILITY_SUPPORTS_CALL_STREAMING,
-            flag = true
+            flag = true,
         )
         @Retention(AnnotationRetention.SOURCE)
-        annotation class Capability
-
-        /** Constants used to denote the type of [Capability] being registered. */
-        @Target(AnnotationTarget.TYPE)
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @Retention(AnnotationRetention.SOURCE)
-        @IntDef(PARTICIPANT, CALL_ICON, CALL_SILENCE)
-        annotation class ExtensionType
-
-        internal const val PARTICIPANT = 1
-        internal const val CALL_ICON = 2
-        internal const val CALL_SILENCE = 3
-
-        // Todo: Support additional capabilities
-
-        /**
-         * Constants used to denote the type of action supported by the [Capability] being
-         * registered.
-         */
-        @Target(AnnotationTarget.TYPE)
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @Retention(AnnotationRetention.SOURCE)
-        @IntDef(RAISE_HAND_ACTION, KICK_PARTICIPANT_ACTION)
-        annotation class ExtensionSupportedActions
-
-        internal const val RAISE_HAND_ACTION = 1
-        internal const val KICK_PARTICIPANT_ACTION = 2
-        // Todo: Support additional actions
-
-        // Represents a null Participant over Binder
-        internal const val NULL_PARTICIPANT_ID = -1
-
-        /** Set on Connections that are using ConnectionService+AUTO specific extension layer. */
-        internal const val EXTRA_VOIP_API_VERSION = "android.telecom.extra.VOIP_API_VERSION"
+        public annotation class Capability
 
         /**
          * Set on Jetpack Connections that are emulating the transactional APIs using
@@ -131,11 +113,10 @@ class CallsManager constructor(context: Context) {
             "android.telecom.extra.VOIP_BACKWARDS_COMPATIBILITY_SUPPORTED"
 
         /**
-         * EVENT used by InCallService as part of sendCallEvent to notify the VOIP Application that
-         * this InCallService supports jetpack extensions
+         * Event sent from the call producer application to the external call surfaces to notify
+         * them that the call has been successfully setup and is ready to be used.
          */
-        internal const val EVENT_JETPACK_CAPABILITY_EXCHANGE =
-            "android.telecom.event.CAPABILITY_EXCHANGE"
+        internal const val EVENT_CALL_READY = "androidx.core.telecom.EVENT_CALL_READY"
 
         /**
          * The connection is using transactional call APIs.
@@ -153,7 +134,7 @@ class CallsManager constructor(context: Context) {
          * perform a capability that is not supported by your application, Telecom will notify the
          * service of the inability to perform the action instead of hitting an error.
          */
-        const val CAPABILITY_BASELINE = 1 shl 0
+        public const val CAPABILITY_BASELINE: Int = 1 shl 0
 
         /**
          * Flag indicating that your VoIP application supports video calling. This is not an
@@ -165,7 +146,7 @@ class CallsManager constructor(context: Context) {
          * [androidx.core.telecom.CallAttributesCompat.CallType]#[CALL_TYPE_VIDEO_CALL], which
          * indicates that particular call is currently capable of making a video call.
          */
-        const val CAPABILITY_SUPPORTS_VIDEO_CALLING = 1 shl 1
+        public const val CAPABILITY_SUPPORTS_VIDEO_CALLING: Int = 1 shl 1
 
         /**
          * Flag indicating that this VoIP application supports call streaming. Call streaming means
@@ -176,16 +157,16 @@ class CallsManager constructor(context: Context) {
          * must also be set on per call basis in the event an application wants to gate this
          * capability on a stricter basis.
          */
-        const val CAPABILITY_SUPPORTS_CALL_STREAMING = 1 shl 2
+        public const val CAPABILITY_SUPPORTS_CALL_STREAMING: Int = 1 shl 2
 
         // identifiers that indicate the call was established with core-telecom
         internal const val PACKAGE_HANDLE_ID: String = "Jetpack"
         internal const val PACKAGE_LABEL: String = "Telecom-Jetpack"
         internal const val CONNECTION_SERVICE_CLASS =
             "androidx.core.telecom.internal.JetpackConnectionService"
+        internal const val PLACEHOLDER_VALUE_ACCOUNT_BUNDLE = "isCoreTelecomAccount"
 
         // fail messages specific to addCall
-        internal const val CALL_CREATION_FAILURE_MSG = "The call failed to be added."
         internal const val ADD_CALL_TIMEOUT = 5000L
         internal const val SWITCH_TO_SPEAKER_TIMEOUT = 1000L
         private val TAG: String = CallsManager::class.java.simpleName.toString()
@@ -203,7 +184,7 @@ class CallsManager constructor(context: Context) {
      * @throws UnsupportedOperationException if the device is on an invalid build
      */
     @RequiresPermission(value = "android.permission.MANAGE_OWN_CALLS")
-    fun registerAppWithTelecom(@Capability capabilities: Int) {
+    public fun registerAppWithTelecom(@Capability capabilities: Int) {
         // verify the build version supports this API and throw an exception if not
         Utils.verifyBuildVersion()
 
@@ -213,7 +194,11 @@ class CallsManager constructor(context: Context) {
         // remap and set capabilities
         phoneAccountBuilder.setCapabilities(remapJetpackCapsToPlatformCaps(capabilities))
         // see b/343674176. Some OEMs expect the PhoneAccount.getExtras() to be non-null
-        phoneAccountBuilder.setExtras(Bundle())
+        // see b/352526256. The bundle must contain a placeholder value. otherwise, the bundle
+        // empty bundle will be nulled out on reboot.
+        val defaultBundle = Bundle()
+        defaultBundle.putBoolean(PLACEHOLDER_VALUE_ACCOUNT_BUNDLE, true)
+        phoneAccountBuilder.setExtras(defaultBundle)
 
         // build and register the PhoneAccount via the Platform API
         mPhoneAccount = phoneAccountBuilder.build()
@@ -276,17 +261,18 @@ class CallsManager constructor(context: Context) {
      * @throws UnsupportedOperationException if the device is on an invalid build
      * @throws CallException if the platform cannot add the call (e.g. reached max # of calls) or
      *   failed with an exception (e.g. call was already removed)
-     * @throws CancellationException if the call failed to be added within 5000 milliseconds
+     * @throws androidx.core.telecom.CallException.ERROR_OPERATION_TIMED_OUT if the call failed to
+     *   be added within 5000 milliseconds
      */
     @RequiresPermission(value = "android.permission.MANAGE_OWN_CALLS")
-    suspend fun addCall(
+    public suspend fun addCall(
         callAttributes: CallAttributesCompat,
         onAnswer: suspend (callType: @CallAttributesCompat.Companion.CallType Int) -> Unit,
         onDisconnect: suspend (disconnectCause: DisconnectCause) -> Unit,
         onSetActive: suspend () -> Unit,
         onSetInactive: suspend () -> Unit,
-        block: CallControlScope.() -> Unit
-    ) {
+        block: CallControlScope.() -> Unit,
+    ): Unit = coroutineScope {
         // Provide a default empty handler for onEvent
         addCall(
             callAttributes,
@@ -294,14 +280,128 @@ class CallsManager constructor(context: Context) {
             onDisconnect,
             onSetActive,
             onSetInactive,
+            MutableSharedFlow(),
             onEvent = { _, _ -> },
-            block
+            block,
         )
     }
 
     /** Represents an event sent from an InCallService to this Call. */
     @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)
-    data class CallEvent(val event: String, val extras: Bundle)
+    public data class CallEvent(public val event: String, public val extras: Bundle)
+
+    /**
+     * Adds a call with extensions support, which allows an app to implement optional additional
+     * actions that go beyond the scope of a call, such as information about meeting participants
+     * and icons.
+     *
+     * @param callAttributes attributes of the new call (incoming or outgoing, address, etc. )
+     * @param onAnswer where callType is the audio/video state the call should be answered as.
+     *   Telecom is informing your VoIP application to answer an incoming call and set it to active.
+     *   Telecom is requesting this on behalf of an system service (e.g. Automotive service) or a
+     *   device (e.g. Wearable).
+     * @param onDisconnect where disconnectCause represents the cause for disconnecting the call.
+     *   Telecom is informing your VoIP application to disconnect the incoming call. Telecom is
+     *   requesting this on behalf of an system service (e.g. Automotive service) or a device (e.g.
+     *   Wearable).
+     * @param onSetActive Telecom is informing your VoIP application to set the call active. Telecom
+     *   is requesting this on behalf of an system service (e.g. Automotive service) or a device
+     *   (e.g. Wearable).
+     * @param onSetInactive Telecom is informing your VoIP application to set the call inactive.
+     *   This is the same as holding a call for two endpoints but can be extended to setting a
+     *   meeting inactive. Telecom is requesting this on behalf of an system service (e.g.
+     *   Automotive service) or a device (e.g.Wearable). Note: Your app must stop using the
+     *   microphone and playing incoming media when returning.
+     * @param init The scope used to first initialize Extensions that will be used when the call is
+     *   first notified to the platform and UX surfaces. Once the call is set up, the user's
+     *   implementation of [ExtensionInitializationScope.onCall] will be called.
+     * @see CallsManagerExtensions.addCallWithExtensions
+     */
+    @ExperimentalAppActions
+    override suspend fun addCallWithExtensions(
+        callAttributes: CallAttributesCompat,
+        onAnswer: suspend (callType: @CallAttributesCompat.Companion.CallType Int) -> Unit,
+        onDisconnect: suspend (disconnectCause: DisconnectCause) -> Unit,
+        onSetActive: suspend () -> Unit,
+        onSetInactive: suspend () -> Unit,
+        init: suspend ExtensionInitializationScope.() -> Unit,
+    ): Unit = coroutineScope {
+        Log.v(TAG, "addCall: begin")
+        val eventFlow = MutableSharedFlow<CallEvent>()
+        val callStateFlow = MutableSharedFlow<CallStateEvent>()
+        val scope = ExtensionInitializationScopeImpl(mContext, coroutineContext, callStateFlow)
+        scope.init()
+        val extensionJob = launch {
+            Log.d(TAG, "addCall: connecting extensions")
+            scope.collectEvents(this, eventFlow)
+        }
+        Log.v(TAG, "addCall: init complete")
+        addCall(
+            callAttributes,
+            onAnswer,
+            onDisconnect,
+            onSetActive,
+            onSetInactive,
+            callStateFlow,
+            onEvent = { event, extras -> eventFlow.emit(CallEvent(event, extras)) },
+        ) {
+            Log.d(TAG, "addCall: invoking delegates")
+            scope.invokeDelegate(this)
+        }
+        // Ensure that when the call ends, we also cancel any ongoing coroutines/flows as part of
+        // extension work
+        Log.d(TAG, "addCall: cancelling extension job")
+        extensionJob.cancelAndJoin()
+    }
+
+    /**
+     * Continuously streams available call audio endpoints that can be used for a new call session.
+     * This API leverages [callbackFlow] to emit updates as the available audio endpoints change.
+     *
+     * **Bluetooth Permissions**:
+     * * For API level 31 and above: The [android.Manifest.permission.BLUETOOTH_CONNECT] runtime
+     *   permission is highly recommended.
+     * * For API levels 28-30: The following runtime permissions are highly recommended:
+     *     * [android.Manifest.permission.BLUETOOTH] - Allows apps to view Bluetooth information.
+     *     * [android.Manifest.permission.BLUETOOTH_ADMIN] - Allows apps to connect to paired
+     *       devices.
+     *
+     * For all API levels: Granting these permissions allows the API to display the names of
+     * multiple connected Bluetooth devices. Without these permissions, only the active Bluetooth
+     * device will be surfaced.
+     *
+     * **Coroutine Usage and Cleanup:** The returned [Flow] from this [callbackFlow] should be
+     * collected within a [kotlinx.coroutines.CoroutineScope]. To properly manage resources and
+     * prevent leaks, ensure that the [Flow] is cancelled when it's no longer needed. This can be
+     * achieved by calling `cancel()` on the [kotlinx.coroutines.Job] of the collecting
+     * [kotlinx.coroutines.CoroutineScope]. Ideally, this cleanup should occur within the same scope
+     * where the [Flow] is being collected.
+     *
+     * @return A [Flow] that continuously emits a list of available [CallEndpointCompat]s.
+     */
+    public fun getAvailableStartingCallEndpoints(): Flow<List<CallEndpointCompat>> = callbackFlow {
+        val id: Int = CallEndpointUuidTracker.startSession()
+        // The emitted endpoints need to be tracked so that when the device list changes,
+        // the added or removed endpoints can be re-emitted as a whole list.  Otherwise, only
+        // the added or removed endpoints will be emitted.
+        val callEndpointsUpdater = PreCallEndpointsUpdater(mSendChannel = this.channel)
+        // register an audio callback that will listen for updates
+        val audioDeviceListener = AudioDeviceListener(mContext, callEndpointsUpdater, id)
+        // register a bluetooth listener to surface connected bluetooth devices instead of just
+        // the active bluetooth device
+        var bluetoothProfileListener =
+            if (hasBluetoothPermissions(mContext)) {
+                BluetoothProfileListener(mContext, callEndpointsUpdater, id)
+            } else {
+                null
+            }
+        awaitClose {
+            Log.i(TAG, "getAvailableStartingCallEndpoints: awaitClose")
+            bluetoothProfileListener?.close()
+            audioDeviceListener.close()
+            CallEndpointUuidTracker.endSession(id)
+        }
+    }
 
     /**
      * Internal version of addCall, which also allows components in the library to consume generic
@@ -311,17 +411,16 @@ class CallsManager constructor(context: Context) {
      * @param onEvent Incoming {@link CallEvents} from an InCallService implementation
      * @see addCall For more documentation on the operations/parameters of this class
      */
-    @Suppress("ClassVerificationFailure")
-    @OptIn(ExperimentalCoroutinesApi::class)
     @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)
-    suspend fun addCall(
+    internal suspend fun addCall(
         callAttributes: CallAttributesCompat,
         onAnswer: suspend (callType: @CallAttributesCompat.Companion.CallType Int) -> Unit,
         onDisconnect: suspend (disconnectCause: DisconnectCause) -> Unit,
         onSetActive: suspend () -> Unit,
         onSetInactive: suspend () -> Unit,
+        onCallStateEventChanged: MutableSharedFlow<CallStateEvent>,
         onEvent: suspend (event: String, extras: Bundle) -> Unit,
-        block: CallControlScope.() -> Unit
+        block: CallControlScope.() -> Unit,
     ) {
         // This API is not supported for device running anything below Android O (26)
         Utils.verifyBuildVersion()
@@ -333,7 +432,9 @@ class CallsManager constructor(context: Context) {
         // exception, addCall will unblock.
         val blockingSessionExecution = CompletableDeferred<Unit>(parent = coroutineContext.job)
 
+        val closableCallSession: AutoCloseable?
         // create a call session based off the build version
+        @Suppress("WRONG_ANNOTATION_TARGET") // b/407926117
         @RequiresApi(34)
         if (Utils.hasPlatformV2Apis()) {
             // CompletableDeferred pauses the execution of this method until the CallControl is
@@ -343,6 +444,7 @@ class CallsManager constructor(context: Context) {
             // and propagates CallControlCallbacks that originate in the Platform out to the client.
             val callSession =
                 CallSession(
+                    ProductionBluetoothDeviceChecker(mContext),
                     coroutineContext,
                     callAttributes,
                     onAnswer,
@@ -350,10 +452,11 @@ class CallsManager constructor(context: Context) {
                     onSetActive,
                     onSetInactive,
                     callChannels,
+                    onCallStateEventChanged,
                     onEvent,
-                    blockingSessionExecution
+                    blockingSessionExecution,
                 )
-
+            closableCallSession = callSession
             /**
              * The Platform [android.telecom.TelecomManager.addCall] requires a
              * [OutcomeReceiver]#<[CallControl], [CallException]> that will receive the async
@@ -378,12 +481,10 @@ class CallsManager constructor(context: Context) {
                 mDirectExecutor,
                 callControlOutcomeReceiver,
                 callSession as CallControlCallback,
-                callSession as CallEventCallback
+                callSession as CallEventCallback,
             )
 
             pauseExecutionUntilCallIsReadyOrTimeout(openResult, blockingSessionExecution)
-
-            callSession.maybeSwitchToSpeakerOnCallStart()
 
             /* at this point in time we have CallControl object */
             val scope =
@@ -391,8 +492,11 @@ class CallsManager constructor(context: Context) {
                     callSession,
                     callChannels,
                     blockingSessionExecution,
-                    coroutineContext
+                    coroutineContext,
                 )
+
+            callSession.sendEvent(EVENT_CALL_READY)
+            callSession.maybeSwitchStartingEndpoint(callAttributes.preferredStartingCallEndpoint)
 
             // Run the clients code with the session active and exposed via the CallControlScope
             // interface implementation declared above.
@@ -405,6 +509,7 @@ class CallsManager constructor(context: Context) {
             val request =
                 JetpackConnectionService.PendingConnectionRequest(
                     UUID.randomUUID().toString(),
+                    mContext,
                     callAttributes,
                     callChannels,
                     coroutineContext,
@@ -414,20 +519,28 @@ class CallsManager constructor(context: Context) {
                     onSetActive,
                     onSetInactive,
                     onEvent,
-                    blockingSessionExecution
+                    onCallStateEventChanged,
+                    callAttributes.preferredStartingCallEndpoint,
+                    blockingSessionExecution,
                 )
 
             mConnectionService.createConnectionRequest(mTelecomManager, request)
 
-            pauseExecutionUntilCallIsReadyOrTimeout(openResult, blockingSessionExecution, request)
+            val result =
+                pauseExecutionUntilCallIsReadyOrTimeout(
+                    openResult,
+                    blockingSessionExecution,
+                    request,
+                )
+                    as AddCallResult.SuccessCallSessionLegacy
 
-            val result = openResult.getCompleted() as AddCallResult.SuccessCallSessionLegacy
+            closableCallSession = result.callSessionLegacy
             val scope =
                 CallSessionLegacy.CallControlScopeImpl(
                     result.callSessionLegacy,
                     callChannels,
                     blockingSessionExecution,
-                    coroutineContext
+                    coroutineContext,
                 )
 
             // Run the clients code with the session active and exposed via the
@@ -435,15 +548,16 @@ class CallsManager constructor(context: Context) {
             scope.block()
         }
         blockingSessionExecution.await()
+        closableCallSession.close()
     }
 
-    @ExperimentalCoroutinesApi
     @VisibleForTesting
     internal suspend fun pauseExecutionUntilCallIsReadyOrTimeout(
         openResult: CompletableDeferred<AddCallResult>,
         blockingSessionExecution: CompletableDeferred<Unit>? = null,
         request: JetpackConnectionService.PendingConnectionRequest? = null,
-    ) {
+    ): AddCallResult {
+        var result: AddCallResult
         try {
             withTimeout(ADD_CALL_TIMEOUT) {
                 // This log will print once a request is sent to the platform to add a new call.
@@ -452,9 +566,18 @@ class CallsManager constructor(context: Context) {
                 Log.i(
                     TAG,
                     "addCall: pausing [$coroutineContext] execution" +
-                        " until the CallControl or Connection is ready"
+                        " until the CallControl or Connection is ready",
                 )
-                openResult.await()
+                result = openResult.await()
+                // In the event the platform encountered an exception while adding the call request,
+                // re-throw the call exception out to the client
+                if (result is AddCallResult.Error) {
+                    blockingSessionExecution?.complete(Unit)
+                    val error = result as AddCallResult.Error
+                    throw CallException(
+                        androidx.core.telecom.CallException.fromTelecomCode(error.errorCode)
+                    )
+                }
             }
         } catch (timeout: TimeoutCancellationException) {
             // If this block is entered, the platform failed to create the call in time and hung.
@@ -463,21 +586,13 @@ class CallsManager constructor(context: Context) {
                 JetpackConnectionService.mPendingConnectionRequests.remove(request)
             }
             blockingSessionExecution?.complete(Unit)
-            openResult.cancel(CancellationException(CALL_CREATION_FAILURE_MSG))
-        }
-        // In the event the platform encountered an exception while adding the call request,
-        // re-throw the call exception out to the client
-        val result = openResult.getCompleted()
-        if (result is AddCallResult.Error) {
-            blockingSessionExecution?.complete(Unit)
-            throw CallException(
-                androidx.core.telecom.CallException.fromTelecomCode(result.errorCode)
-            )
+            throw CallException(androidx.core.telecom.CallException.ERROR_OPERATION_TIMED_OUT)
         }
         // This log will print once the CallControl object or Connection is returned from the
         // the platform. This means the call was added successfully and Core-Telecom is ready to
         // run the clients CallControlScope block.
         Log.i(TAG, "addCall: creating call session and running the clients scope")
+        return result
     }
 
     internal fun getPhoneAccountHandleForPackage(): PhoneAccountHandle {
@@ -493,7 +608,7 @@ class CallsManager constructor(context: Context) {
         return PhoneAccountHandle(
             ComponentName(mContext.packageName, className),
             PACKAGE_HANDLE_ID,
-            Process.myUserHandle()
+            Process.myUserHandle(),
         )
     }
 

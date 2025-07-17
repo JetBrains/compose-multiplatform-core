@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.rangeOf
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextIndent
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
@@ -63,7 +64,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 lines is laid out.
@@ -77,7 +78,7 @@ class AndroidParagraphGetRangeForRectTest {
                     paragraph.getRangeForRect(
                         rect,
                         TextGranularity.Character,
-                        TextInclusionStrategy.ContainsCenter
+                        TextInclusionStrategy.ContainsCenter,
                     )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
@@ -92,7 +93,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 lines is laid out.
@@ -106,7 +107,7 @@ class AndroidParagraphGetRangeForRectTest {
                     paragraph.getRangeForRect(
                         rect,
                         TextGranularity.Character,
-                        TextInclusionStrategy.ContainsAll
+                        TextInclusionStrategy.ContainsAll,
                     )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
@@ -121,7 +122,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 lines is laid out.
@@ -140,7 +141,7 @@ class AndroidParagraphGetRangeForRectTest {
                     paragraph.getRangeForRect(
                         rect,
                         TextGranularity.Character,
-                        TextInclusionStrategy.AnyOverlap
+                        TextInclusionStrategy.AnyOverlap,
                     )
                 assertThat(range).isEqualTo(TextRange(start, end))
             }
@@ -156,7 +157,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = fontSize * charPerLine
+                width = fontSize * charPerLine,
             )
 
         // Precondition check: 2 lines are laid out.
@@ -168,7 +169,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Character,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('b', 'e'))
@@ -182,7 +183,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -194,7 +195,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Character,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('b', '\uDE03'))
@@ -209,7 +210,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -222,7 +223,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Character,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('c', '\u05D3'))
@@ -237,7 +238,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -255,7 +256,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Character,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(TextRange.Zero)
@@ -270,7 +271,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -284,7 +285,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Word,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'c'))
@@ -299,7 +300,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -322,7 +323,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -347,7 +348,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -359,7 +360,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Word,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(TextRange.Zero)
@@ -375,7 +376,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = fontSize * charPerLine
+                width = fontSize * charPerLine,
             )
 
         // Precondition check: 2 lines are laid out.
@@ -387,7 +388,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Word,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'k'))
@@ -403,7 +404,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = fontSize * charPerLine
+                width = fontSize * charPerLine,
             )
 
         // This paragraph is rendered like this:
@@ -421,7 +422,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Word,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(text.rangeOf('a', 'c'))
@@ -438,7 +439,7 @@ class AndroidParagraphGetRangeForRectTest {
             simpleParagraph(
                 text = text,
                 style = TextStyle(fontSize = fontSize.sp, fontFamily = basicFontFamily),
-                width = Float.MAX_VALUE
+                width = Float.MAX_VALUE,
             )
 
         // Precondition check: only 1 line is laid out.
@@ -451,7 +452,7 @@ class AndroidParagraphGetRangeForRectTest {
             paragraph.getRangeForRect(
                 rect,
                 TextGranularity.Word,
-                TextInclusionStrategy.ContainsCenter
+                TextInclusionStrategy.ContainsCenter,
             )
 
         assertThat(range).isEqualTo(TextRange(0, text.length))
@@ -471,7 +472,7 @@ class AndroidParagraphGetRangeForRectTest {
             left = rects.minOf { it.left },
             top = rects.minOf { it.top },
             right = rects.maxOf { it.right },
-            bottom = rects.maxOf { it.bottom }
+            bottom = rects.maxOf { it.bottom },
         )
     }
 
@@ -500,29 +501,28 @@ class AndroidParagraphGetRangeForRectTest {
         spanStyles: List<AnnotatedString.Range<SpanStyle>> = listOf(),
         textIndent: TextIndent? = null,
         textAlign: TextAlign = TextAlign.Unspecified,
-        ellipsis: Boolean = false,
         maxLines: Int = Int.MAX_VALUE,
         width: Float,
         height: Float = Float.POSITIVE_INFINITY,
         style: TextStyle? = null,
-        fontFamilyResolver: FontFamily.Resolver = UncachedFontFamilyResolver(context)
+        fontFamilyResolver: FontFamily.Resolver = UncachedFontFamilyResolver(context),
     ): AndroidParagraph {
         return AndroidParagraph(
             text = text,
-            spanStyles = spanStyles,
+            annotations = spanStyles,
             placeholders = listOf(),
             style =
                 TextStyle(
                         fontFamily = basicFontFamily,
                         textAlign = textAlign,
-                        textIndent = textIndent
+                        textIndent = textIndent,
                     )
                     .merge(style),
             maxLines = maxLines,
-            ellipsis = ellipsis,
+            overflow = TextOverflow.Clip,
             constraints = Constraints(maxWidth = width.ceilToInt(), maxHeight = height.ceilToInt()),
             density = Density(density = 1f),
-            fontFamilyResolver = fontFamilyResolver
+            fontFamilyResolver = fontFamilyResolver,
         )
     }
 }

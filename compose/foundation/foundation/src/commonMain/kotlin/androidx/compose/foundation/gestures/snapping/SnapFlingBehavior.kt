@@ -34,10 +34,12 @@ import androidx.compose.foundation.gestures.DefaultScrollMotionDurationScale
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
+import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.sign
@@ -57,33 +59,24 @@ import kotlinx.coroutines.withContext
  * Please refer to the sample to learn how to use this API.
  *
  * @sample androidx.compose.foundation.samples.SnapFlingBehaviorSimpleSample
- *
  * @sample androidx.compose.foundation.samples.SnapFlingBehaviorCustomizedSample
- *
  * @param snapLayoutInfoProvider The information about the layout being snapped.
  * @param decayAnimationSpec The animation spec used to approach the target offset when the fling
  *   velocity is large enough. Large enough means large enough to naturally decay.
  * @param snapAnimationSpec The animation spec used to finally snap to the correct bound.
  */
-@OptIn(ExperimentalFoundationApi::class)
-@Suppress("Deprecation")
 fun snapFlingBehavior(
     snapLayoutInfoProvider: SnapLayoutInfoProvider,
     decayAnimationSpec: DecayAnimationSpec<Float>,
-    snapAnimationSpec: AnimationSpec<Float>
+    snapAnimationSpec: AnimationSpec<Float>,
 ): TargetedFlingBehavior {
     return SnapFlingBehavior(snapLayoutInfoProvider, decayAnimationSpec, snapAnimationSpec)
 }
 
-@Deprecated(
-    "Please use the snapFlingBehavior function",
-    replaceWith = ReplaceWith("androidx.compose.foundation.gestures.snapping.snapFlingBehavior")
-)
-@ExperimentalFoundationApi
-class SnapFlingBehavior(
+internal class SnapFlingBehavior(
     private val snapLayoutInfoProvider: SnapLayoutInfoProvider,
     private val decayAnimationSpec: DecayAnimationSpec<Float>,
-    private val snapAnimationSpec: AnimationSpec<Float>
+    private val snapAnimationSpec: AnimationSpec<Float>,
 ) : TargetedFlingBehavior {
 
     internal var motionScaleDuration = DefaultScrollMotionDurationScale
@@ -102,7 +95,7 @@ class SnapFlingBehavior(
      */
     override suspend fun ScrollScope.performFling(
         initialVelocity: Float,
-        onRemainingDistanceUpdated: (Float) -> Unit
+        onRemainingDistanceUpdated: (Float) -> Unit,
     ): Float {
         val (remainingOffset, remainingState) = fling(initialVelocity, onRemainingDistanceUpdated)
 
@@ -115,20 +108,25 @@ class SnapFlingBehavior(
 
     private suspend fun ScrollScope.fling(
         initialVelocity: Float,
-        onRemainingScrollOffsetUpdate: (Float) -> Unit
+        onRemainingScrollOffsetUpdate: (Float) -> Unit,
     ): AnimationResult<Float, AnimationVector1D> {
         val result =
             withContext(motionScaleDuration) {
                 val decayOffset =
                     decayAnimationSpec.calculateTargetValue(
                         initialVelocity = initialVelocity,
-                        initialValue = 0.0f
+                        initialValue = 0.0f,
                     )
 
                 val initialOffset =
                     snapLayoutInfoProvider.calculateApproachOffset(initialVelocity, decayOffset)
-                var remainingScrollOffset =
-                    abs(initialOffset) * sign(initialVelocity) // ensure offset sign is correct
+
+                checkPrecondition(!initialOffset.isNaN()) {
+                    "calculateApproachOffset returned NaN. Please use a valid value."
+                }
+
+                // ensure offset sign and value are correct
+                var remainingScrollOffset = abs(initialOffset) * sign(initialVelocity)
 
                 onRemainingScrollOffsetUpdate(remainingScrollOffset) // First Scroll Offset
 
@@ -138,8 +136,14 @@ class SnapFlingBehavior(
                         onRemainingScrollOffsetUpdate(remainingScrollOffset)
                     }
 
-                remainingScrollOffset =
+                val finalSnapOffset =
                     snapLayoutInfoProvider.calculateSnapOffset(animationState.velocity)
+
+                checkPrecondition(!finalSnapOffset.isNaN()) {
+                    "calculateSnapOffset returned NaN. Please use a valid value."
+                }
+
+                remainingScrollOffset = finalSnapOffset
 
                 debugLog { "Settling Final Bound=$remainingScrollOffset" }
 
@@ -147,7 +151,7 @@ class SnapFlingBehavior(
                     remainingScrollOffset,
                     remainingScrollOffset,
                     animationState.copy(value = 0f), // re-use the velocity and timestamp from state
-                    snapAnimationSpec
+                    snapAnimationSpec,
                 ) { delta ->
                     remainingScrollOffset -= delta
                     onRemainingScrollOffsetUpdate(remainingScrollOffset)
@@ -161,7 +165,7 @@ class SnapFlingBehavior(
     private suspend fun ScrollScope.tryApproach(
         offset: Float,
         velocity: Float,
-        updateRemainingScrollOffset: (Float) -> Unit
+        updateRemainingScrollOffset: (Float) -> Unit,
     ): AnimationState<Float, AnimationVector1D> {
         // If we don't have velocity or approach offset, we shouldn't run the approach animation
         return if (offset.absoluteValue == 0.0f || velocity.absoluteValue == 0.0f) {
@@ -174,7 +178,7 @@ class SnapFlingBehavior(
     private suspend fun ScrollScope.runApproach(
         initialTargetOffset: Float,
         initialVelocity: Float,
-        onAnimationStep: (delta: Float) -> Unit
+        onAnimationStep: (delta: Float) -> Unit,
     ): AnimationResult<Float, AnimationVector1D> {
 
         val animation =
@@ -231,7 +235,7 @@ fun rememberSnapFlingBehavior(
         snapFlingBehavior(
             snapLayoutInfoProvider = snapLayoutInfoProvider,
             decayAnimationSpec = highVelocityApproachSpec,
-            snapAnimationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+            snapAnimationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         )
     }
 }
@@ -251,7 +255,7 @@ private suspend fun ScrollScope.approach(
     initialTargetOffset: Float,
     initialVelocity: Float,
     animation: ApproachAnimation<Float, AnimationVector1D>,
-    onAnimationStep: (delta: Float) -> Unit
+    onAnimationStep: (delta: Float) -> Unit,
 ): AnimationResult<Float, AnimationVector1D> {
 
     return animation.approachAnimation(this, initialTargetOffset, initialVelocity, onAnimationStep)
@@ -259,7 +263,7 @@ private suspend fun ScrollScope.approach(
 
 private class AnimationResult<T, V : AnimationVector>(
     val remainingOffset: T,
-    val currentAnimationState: AnimationState<T, V>
+    val currentAnimationState: AnimationState<T, V>,
 ) {
     operator fun component1(): T = remainingOffset
 
@@ -280,23 +284,30 @@ private operator fun <T : Comparable<T>> ClosedFloatingPointRange<T>.component2(
  * @param decayAnimationSpec The [DecayAnimationSpec] that will drive this animation
  * @param onAnimationStep Called for each new scroll delta emitted by the animation cycle.
  */
+@OptIn(ExperimentalFoundationApi::class)
 private suspend fun ScrollScope.animateDecay(
     targetOffset: Float,
     animationState: AnimationState<Float, AnimationVector1D>,
     decayAnimationSpec: DecayAnimationSpec<Float>,
-    onAnimationStep: (delta: Float) -> Unit
+    onAnimationStep: (delta: Float) -> Unit,
 ): AnimationResult<Float, AnimationVector1D> {
     var previousValue = 0f
 
     fun AnimationScope<Float, AnimationVector1D>.consumeDelta(delta: Float) {
-        val consumed = scrollBy(delta)
+        var consumed = 0.0f
+        try {
+            consumed = scrollBy(delta)
+        } catch (_: CancellationException) {
+            cancelAnimation()
+        }
+
         onAnimationStep(consumed)
         if (abs(delta - consumed) > 0.5f) cancelAnimation()
     }
 
     animationState.animateDecay(
         decayAnimationSpec,
-        sequentialAnimation = animationState.velocity != 0f
+        sequentialAnimation = animationState.velocity != 0f,
     ) {
         if (abs(value) >= abs(targetOffset)) {
             val finalValue = value.coerceToTarget(targetOffset)
@@ -325,23 +336,29 @@ private suspend fun ScrollScope.animateDecay(
  * @param animationSpec The [AnimationSpec] that will drive this animation
  * @param onAnimationStep Called for each new scroll delta emitted by the animation cycle.
  */
+@OptIn(ExperimentalFoundationApi::class)
 private suspend fun ScrollScope.animateWithTarget(
     targetOffset: Float,
     cancelOffset: Float,
     animationState: AnimationState<Float, AnimationVector1D>,
     animationSpec: AnimationSpec<Float>,
-    onAnimationStep: (delta: Float) -> Unit
+    onAnimationStep: (delta: Float) -> Unit,
 ): AnimationResult<Float, AnimationVector1D> {
     var consumedUpToNow = 0f
     val initialVelocity = animationState.velocity
     animationState.animateTo(
         targetOffset,
         animationSpec = animationSpec,
-        sequentialAnimation = (animationState.velocity != 0f)
+        sequentialAnimation = (animationState.velocity != 0f),
     ) {
         val realValue = value.coerceToTarget(cancelOffset)
         val delta = realValue - consumedUpToNow
-        val consumed = scrollBy(delta)
+        var consumed = 0.0f
+        try {
+            consumed = scrollBy(delta)
+        } catch (_: CancellationException) {
+            cancelAnimation()
+        }
         onAnimationStep(consumed)
         // stop when unconsumed or when we reach the desired value
         if (abs(delta - consumed) > 0.5f || realValue != value) {
@@ -356,7 +373,7 @@ private suspend fun ScrollScope.animateWithTarget(
     val finalVelocity = animationState.velocity.coerceToTarget(initialVelocity)
     return AnimationResult(
         targetOffset - consumedUpToNow,
-        animationState.copy(velocity = finalVelocity)
+        animationState.copy(velocity = finalVelocity),
     )
 }
 
@@ -371,7 +388,7 @@ private interface ApproachAnimation<T, V : AnimationVector> {
         scope: ScrollScope,
         offset: T,
         velocity: T,
-        onAnimationStep: (delta: T) -> Unit
+        onAnimationStep: (delta: T) -> Unit,
     ): AnimationResult<T, V>
 }
 
@@ -381,7 +398,7 @@ private class TargetApproachAnimation(private val animationSpec: AnimationSpec<F
         scope: ScrollScope,
         offset: Float,
         velocity: Float,
-        onAnimationStep: (delta: Float) -> Unit
+        onAnimationStep: (delta: Float) -> Unit,
     ): AnimationResult<Float, AnimationVector1D> {
         val animationState = AnimationState(initialValue = 0f, initialVelocity = velocity)
         val targetOffset = offset.absoluteValue * sign(velocity)
@@ -391,7 +408,7 @@ private class TargetApproachAnimation(private val animationSpec: AnimationSpec<F
                 cancelOffset = offset,
                 animationState = animationState,
                 animationSpec = animationSpec,
-                onAnimationStep = onAnimationStep
+                onAnimationStep = onAnimationStep,
             )
         }
     }
@@ -403,7 +420,7 @@ private class DecayApproachAnimation(private val decayAnimationSpec: DecayAnimat
         scope: ScrollScope,
         offset: Float,
         velocity: Float,
-        onAnimationStep: (delta: Float) -> Unit
+        onAnimationStep: (delta: Float) -> Unit,
     ): AnimationResult<Float, AnimationVector1D> {
         val animationState = AnimationState(initialValue = 0f, initialVelocity = velocity)
         return with(scope) {
@@ -419,7 +436,7 @@ internal const val NoVelocity = 0f
 internal fun calculateFinalOffset(
     snappingOffset: FinalSnappingItem,
     lowerBound: Float,
-    upperBound: Float
+    upperBound: Float,
 ): Float {
 
     fun Float.isValidDistance(): Boolean {

@@ -23,13 +23,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Left
 import androidx.compose.ui.focus.FocusDirection.Companion.Right
 import androidx.compose.ui.focus.FocusDirection.Companion.Up
-import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -78,13 +76,12 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
         val (child1, child2, child3, child4) = FocusRequester.createRefs()
         val customFocusEnter =
             Modifier.focusProperties {
-                @OptIn(ExperimentalComposeUiApi::class)
-                enter = {
-                    when (it) {
-                        Left -> child1
-                        Up -> child2
-                        Down -> child3
-                        Right -> child4
+                onEnter = {
+                    when (focusDirection) {
+                        Left -> child1.requestFocus()
+                        Up -> child2.requestFocus()
+                        Down -> child3.requestFocus()
+                        Right -> child4.requestFocus()
                         else -> error("Invalid Direction")
                     }
                 }
@@ -149,12 +146,11 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
         val child = mutableStateOf(false)
         var (upItem, downItem, leftItem, rightItem, childItem) = FocusRequester.createRefs()
         var directionSentToEnter: FocusDirection? = null
-        @OptIn(ExperimentalComposeUiApi::class)
         val customFocusEnter =
             Modifier.focusProperties {
-                enter = {
-                    directionSentToEnter = it
-                    Cancel
+                onEnter = {
+                    directionSentToEnter = focusDirection
+                    cancelFocusChange()
                 }
             }
         when (focusDirection) {
@@ -192,28 +188,35 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
     }
 
     /**
-     *                  _________                   |                    _________
-     *                 |   Up   |                   |                   |   Up   |
-     *                 |________|                   |                   |________|
-     *               ________________               |                 ________________
-     *              |  parent       |               |                |  parent       |
-     *              |   _________   |   __________  |   __________   |   _________   |
-     *              |  | child0 |   |  | focused |  |  | focused |   |  | child0 |   |
-     *              |  |________|   |  |_________|  |  |_________|   |  |________|   |
-     *              |_______________|               |                |_______________|
-     *                  _________                   |                    _________
-     *                 |  Down  |                   |                   |  Down  |
-     *                 |________|                   |                   |________|
-     *                                              |
-     *               moveFocus(Left)                |                moveFocus(Right)
-     *                                              |
-     *
-     * ---------------------------------------------|--------------------------------------------
-     * | __________ | | focused | | |_________| ________________ | ________________ | parent | | |
-     * parent | _________ | _________ | _________ | _________ | _________ | _________ | Left | | |
-     * child0 | | | Right | | | Left | | | child0 | | | Right | |________| | |________| | |________|
-     * | |________| | |________| | |________| |_______________| | |_______________| __________ | |
-     * focused | | |_________| | | moveFocus(Up) | moveFocus(Down) |
+     *                   _________                   |                    _________
+     *                  |   Up   |                   |                   |   Up   |
+     *                  |________|                   |                   |________|
+     *                ________________               |                 ________________
+     *               |  parent       |               |                |  parent       |
+     *               |   _________   |   __________  |   __________   |   _________   |
+     *               |  | child0 |   |  | focused |  |  | focused |   |  | child0 |   |
+     *               |  |________|   |  |_________|  |  |_________|   |  |________|   |
+     *               |_______________|               |                |_______________|
+     *                   _________                   |                    _________
+     *                  |  Down  |                   |                   |  Down  |
+     *                  |________|                   |                   |________|
+     *                                               |
+     *                moveFocus(Left)                |                moveFocus(Right)
+     *  ---------------------------------------------|--------------------------------------------
+     *                                               |                   __________
+     *                                               |                  | focused |
+     *                                               |                  |_________|
+     *                ________________               |                ________________
+     *               |  parent       |               |               |  parent       |
+     *     _________  |   _________   |   _________  |   _________   |   _________   |    _________
+     *    |  Left  |  |  | child0 |   |  |  Right |  |  |  Left  |   |  | child0 |   |   |  Right |
+     *    |________|  |  |________|   |  |________|  |  |________|   |  |________|   |   |________|
+     *               |_______________|               |               |_______________|
+     *                   __________                  |
+     *                  | focused |                  |
+     *                  |_________|                  |
+     *                                               |
+     *                 moveFocus(Up)                 |                moveFocus(Down)
      */
     @Test
     fun moveFocusEnter_blockFocusChange_appropriateOtherItemIsFocused() {
@@ -222,12 +225,11 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
         val child = mutableStateOf(false)
         var (upItem, downItem, leftItem, rightItem, childItem) = FocusRequester.createRefs()
         var directionSentToEnter: FocusDirection? = null
-        @OptIn(ExperimentalComposeUiApi::class)
         val customFocusEnter =
             Modifier.focusProperties {
-                enter = {
-                    directionSentToEnter = it
-                    Cancel
+                onEnter = {
+                    directionSentToEnter = focusDirection
+                    cancelFocusChange()
                 }
             }
         when (focusDirection) {
@@ -313,15 +315,15 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
     }
 
     /**
-     *                 _________
-     *                |   Up   |
-     *                |________|
-     *
-     * _________ _________ _________ | Left | | item | | Right | |________| |________| |________|
-     *
-     *                 _________    _________
-     *                |  Down  |   | Other  |
-     *                |________|   |________|
+     *                   _________
+     *                  |   Up   |
+     *                  |________|
+     *     _________     _________    _________
+     *    |  Left  |    |  item  |   |  Right |
+     *    |________|    |________|   |________|
+     *                   _________    _________
+     *                  |  Down  |   | Other  |
+     *                  |________|   |________|
      */
     @Test
     fun focusOnItem_doesNotTriggerEnter() {
@@ -329,8 +331,7 @@ class TwoDimensionalFocusTraversalImplicitEnterTest(param: Param) {
         val (up, down, left, right) = List(4) { mutableStateOf(false) }
         val (item, other) = List(2) { mutableStateOf(false) }
         var (upItem, downItem, leftItem, rightItem) = FocusRequester.createRefs()
-        @OptIn(ExperimentalComposeUiApi::class)
-        val customFocusEnter = Modifier.focusProperties { enter = { Cancel } }
+        val customFocusEnter = Modifier.focusProperties { onEnter = { cancelFocusChange() } }
         when (focusDirection) {
             Left -> rightItem = initialFocus
             Right -> leftItem = initialFocus

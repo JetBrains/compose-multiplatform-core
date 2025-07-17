@@ -18,9 +18,9 @@ package androidx.camera.core;
 
 import android.content.pm.PackageManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.RestrictTo;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -43,8 +43,7 @@ import java.util.List;
  */
 public class ConcurrentCamera {
 
-    @NonNull
-    private List<Camera> mCameras;
+    private @NonNull List<Camera> mCameras;
 
     /**
      * Constructor of concurrent cameras.
@@ -57,8 +56,7 @@ public class ConcurrentCamera {
     /**
      * Gets the list of cameras.
      */
-    @NonNull
-    public List<Camera> getCameras() {
+    public @NonNull List<Camera> getCameras() {
         return mCameras;
     }
 
@@ -72,14 +70,10 @@ public class ConcurrentCamera {
      */
     public static final class SingleCameraConfig {
 
-        @NonNull
-        private CameraSelector mCameraSelector;
-        @NonNull
-        private LifecycleOwner mLifecycleOwner;
-        @NonNull
-        private UseCaseGroup mUseCaseGroup;
-        @NonNull
-        private LayoutSettings mLayoutSettings;
+        private @NonNull CameraSelector mCameraSelector;
+        private @NonNull LifecycleOwner mLifecycleOwner;
+        private @NonNull UseCaseGroup mUseCaseGroup;
+        private @NonNull CompositionSettings mCompositionSettings;
 
         /**
          * Constructor of a {@link SingleCameraConfig} for concurrent cameras.
@@ -92,7 +86,7 @@ public class ConcurrentCamera {
                 @NonNull CameraSelector cameraSelector,
                 @NonNull UseCaseGroup useCaseGroup,
                 @NonNull LifecycleOwner lifecycleOwner) {
-            this(cameraSelector, useCaseGroup, LayoutSettings.DEFAULT, lifecycleOwner);
+            this(cameraSelector, useCaseGroup, CompositionSettings.DEFAULT, lifecycleOwner);
         }
 
         /**
@@ -100,18 +94,17 @@ public class ConcurrentCamera {
          *
          * @param cameraSelector {@link CameraSelector}.
          * @param useCaseGroup {@link UseCaseGroup}.
-         * @param layoutSettings {@link LayoutSettings}.
+         * @param compositionSettings {@link CompositionSettings}.
          * @param lifecycleOwner {@link LifecycleOwner}.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         public SingleCameraConfig(
                 @NonNull CameraSelector cameraSelector,
                 @NonNull UseCaseGroup useCaseGroup,
-                @NonNull LayoutSettings layoutSettings,
+                @NonNull CompositionSettings compositionSettings,
                 @NonNull LifecycleOwner lifecycleOwner) {
             this.mCameraSelector = cameraSelector;
             this.mUseCaseGroup = useCaseGroup;
-            this.mLayoutSettings = layoutSettings;
+            this.mCompositionSettings = compositionSettings;
             this.mLifecycleOwner = lifecycleOwner;
         }
 
@@ -119,8 +112,7 @@ public class ConcurrentCamera {
          * Returns {@link CameraSelector}.
          * @return {@link CameraSelector} instance.
          */
-        @NonNull
-        public CameraSelector getCameraSelector() {
+        public @NonNull CameraSelector getCameraSelector() {
             return mCameraSelector;
         }
 
@@ -128,8 +120,7 @@ public class ConcurrentCamera {
          * Returns {@link LifecycleOwner}.
          * @return {@link LifecycleOwner} instance.
          */
-        @NonNull
-        public LifecycleOwner getLifecycleOwner() {
+        public @NonNull LifecycleOwner getLifecycleOwner() {
             return mLifecycleOwner;
         }
 
@@ -137,19 +128,16 @@ public class ConcurrentCamera {
          * Returns {@link UseCaseGroup}.
          * @return {@link UseCaseGroup} instance.
          */
-        @NonNull
-        public UseCaseGroup getUseCaseGroup() {
+        public @NonNull UseCaseGroup getUseCaseGroup() {
             return mUseCaseGroup;
         }
 
         /**
-         * Returns {@link LayoutSettings}.
-         * @return {@link LayoutSettings} instance.
+         * Returns {@link CompositionSettings}.
+         * @return {@link CompositionSettings} instance.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        @NonNull
-        public LayoutSettings getLayoutSettings() {
-            return mLayoutSettings;
+        public @NonNull CompositionSettings getCompositionSettings() {
+            return mCompositionSettings;
         }
     }
 }

@@ -62,7 +62,7 @@ fun SemanticsNodeInteraction.printToString(
 fun SemanticsNodeInteraction.printToLog(
     tag: String,
     /*@IntRange(from = 0)*/
-    maxDepth: Int = Int.MAX_VALUE
+    maxDepth: Int = Int.MAX_VALUE,
 ) {
     val result = "printToLog:\n" + printToString(maxDepth)
     printToLog(tag, result)
@@ -109,7 +109,7 @@ fun SemanticsNodeInteractionCollection.printToString(
 fun SemanticsNodeInteractionCollection.printToLog(
     tag: String,
     /*@IntRange(from = 0)*/
-    maxDepth: Int = 0
+    maxDepth: Int = 0,
 ) {
     val result = "printToLog:\n" + printToString(maxDepth)
     printToLog(tag, result)
@@ -139,7 +139,7 @@ internal fun SemanticsNode.printToString(maxDepth: Int = 0): String {
         maxDepth = maxDepth,
         nestingLevel = 0,
         nestingIndent = "",
-        isFollowedBySibling = false
+        isFollowedBySibling = false,
     )
     return sb.toString()
 }
@@ -149,7 +149,7 @@ private fun SemanticsNode.printToStringInner(
     maxDepth: Int,
     nestingLevel: Int,
     nestingIndent: String,
-    isFollowedBySibling: Boolean
+    isFollowedBySibling: Boolean,
 ) {
     val newIndent =
         if (nestingLevel == 0) {
@@ -223,7 +223,10 @@ private fun rectToShortString(rect: Rect): String {
 private fun StringBuilder.appendConfigInfo(config: SemanticsConfiguration, indent: String = "") {
     val actions = mutableListOf<String>()
     val units = mutableListOf<String>()
-    for ((key, value) in config) {
+
+    // Keep output sorted to produce stable strings
+    val sorted = config.toList().sortedBy { it.key.name }
+    for ((key, value) in sorted) {
         if (key == SemanticsProperties.TestTag) {
             continue
         }

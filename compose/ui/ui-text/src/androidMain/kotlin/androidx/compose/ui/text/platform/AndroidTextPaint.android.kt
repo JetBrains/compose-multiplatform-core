@@ -64,6 +64,14 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
 
     @VisibleForTesting internal var shadow: Shadow = Shadow.None
 
+    /**
+     * Different than other backing properties, this variable only exists to enable easy comparison
+     * between the last set color and the new color that is going to be set. Color conversion from
+     * Compose to platform color primitive integer is expensive, so it is more efficient to skip
+     * this conversion if the color is not going to change at all.
+     */
+    private var lastColor: Color? = null
+
     @VisibleForTesting internal var brush: Brush? = null
 
     internal var shaderState: State<Shader?>? = null
@@ -92,14 +100,15 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
                     correctBlurRadius(this.shadow.blurRadius),
                     this.shadow.offset.x,
                     this.shadow.offset.y,
-                    this.shadow.color.toArgb()
+                    this.shadow.color.toArgb(),
                 )
             }
         }
     }
 
     fun setColor(color: Color) {
-        if (color.isSpecified) {
+        if (lastColor != color && color.isSpecified) {
+            this.lastColor = color
             this.color = color.toArgb()
             clearShader()
         }
@@ -132,6 +141,7 @@ internal class AndroidTextPaint(flags: Int, density: Float) : TextPaint(flags) {
                     }
                 }
                 composePaint.shader = this.shaderState?.value
+                this.lastColor = null
                 setAlpha(alpha)
             }
         }

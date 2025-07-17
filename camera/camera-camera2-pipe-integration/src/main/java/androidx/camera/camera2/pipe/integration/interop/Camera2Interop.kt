@@ -38,16 +38,16 @@ import androidx.camera.core.impl.Config
  * @constructor Private constructor to ensure this class isn't instantiated.
  */
 @ExperimentalCamera2Interop
-class Camera2Interop private constructor() {
+public class Camera2Interop private constructor() {
 
     /**
      * Extends a [ExtendableBuilder] to add Camera2 options.
      *
      * @param T the type being built by the extendable builder.
-     * @constructor Creates an Extender that can be used to add Camera2 options to another Builder.
      * @property baseBuilder The builder being extended.
+     * @constructor Creates an Extender that can be used to add Camera2 options to another Builder.
      */
-    class Extender<T>(private var baseBuilder: ExtendableBuilder<T>) {
+    public class Extender<T>(private var baseBuilder: ExtendableBuilder<T>) {
 
         /**
          * Sets a [CaptureRequest.Key] and Value on the configuration.
@@ -60,16 +60,16 @@ class Camera2Interop private constructor() {
          * @param ValueT The type of the value.
          * @return The current Extender.
          */
-        fun <ValueT> setCaptureRequestOption(
+        public fun <ValueT> setCaptureRequestOption(
             key: CaptureRequest.Key<ValueT>,
-            value: ValueT
+            value: ValueT,
         ): Extender<T> {
             // Reify the type so we can obtain the class
             val opt = key.createCaptureRequestOption()
             baseBuilder.mutableConfig.insertOption(
                 opt,
                 Config.OptionPriority.ALWAYS_OVERRIDE,
-                value
+                value,
             )
             return this
         }
@@ -87,7 +87,7 @@ class Camera2Interop private constructor() {
          * @return The current Extender.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun setCaptureRequestTemplate(templateType: Int): Extender<T> {
+        public fun setCaptureRequestTemplate(templateType: Int): Extender<T> {
             baseBuilder.mutableConfig.insertOption(TEMPLATE_TYPE_OPTION, templateType)
             return this
         }
@@ -111,7 +111,7 @@ class Camera2Interop private constructor() {
          *   Camera2 framework uses this.
          */
         @RequiresApi(33)
-        fun setStreamUseCase(streamUseCase: Long): Extender<T> {
+        public fun setStreamUseCase(streamUseCase: Long): Extender<T> {
             baseBuilder.mutableConfig.insertOption(STREAM_USE_CASE_OPTION, streamUseCase)
             return this
         }
@@ -131,7 +131,7 @@ class Camera2Interop private constructor() {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        fun setDeviceStateCallback(stateCallback: CameraDevice.StateCallback): Extender<T> {
+        public fun setDeviceStateCallback(stateCallback: CameraDevice.StateCallback): Extender<T> {
             baseBuilder.mutableConfig.insertOption(DEVICE_STATE_CALLBACK_OPTION, stateCallback)
             return this
         }
@@ -152,7 +152,7 @@ class Camera2Interop private constructor() {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        fun setSessionStateCallback(
+        public fun setSessionStateCallback(
             stateCallback: CameraCaptureSession.StateCallback
         ): Extender<T> {
             baseBuilder.mutableConfig.insertOption(SESSION_STATE_CALLBACK_OPTION, stateCallback)
@@ -177,7 +177,7 @@ class Camera2Interop private constructor() {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        fun setSessionCaptureCallback(captureCallback: CaptureCallback): Extender<T> {
+        public fun setSessionCaptureCallback(captureCallback: CaptureCallback): Extender<T> {
             baseBuilder.mutableConfig.insertOption(SESSION_CAPTURE_CALLBACK_OPTION, captureCallback)
             return this
         }
@@ -203,7 +203,9 @@ class Camera2Interop private constructor() {
          * @return The current Extender.
          */
         @RequiresApi(28)
-        fun setPhysicalCameraId(@Suppress("UNUSED_PARAMETER") cameraId: String): Extender<T> {
+        public fun setPhysicalCameraId(
+            @Suppress("UNUSED_PARAMETER") cameraId: String
+        ): Extender<T> {
             baseBuilder.mutableConfig.insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, cameraId)
             return this
         }

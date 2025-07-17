@@ -16,9 +16,10 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A processing step that updates the necessary {@link CaptureStage} based on the current
@@ -30,8 +31,7 @@ public interface ImageInfoProcessor {
      *
      * <p> This will be updated whenever {@link #process(ImageInfo)} is called and returns true.
      */
-    @Nullable
-    CaptureStage getCaptureStage();
+    @Nullable CaptureStage getCaptureStage();
 
     /**
      * Processes the metadata from a capture and updates the {@link CaptureStage} used for

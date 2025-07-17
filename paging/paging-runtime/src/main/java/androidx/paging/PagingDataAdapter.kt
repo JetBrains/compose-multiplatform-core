@@ -91,7 +91,7 @@ constructor(
      */
     @Deprecated(
         message = "Superseded by constructors which accept CoroutineContext",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     // Only for binary compatibility; cannot apply @JvmOverloads as the function signature would
     // conflict with the primary constructor.
@@ -119,7 +119,7 @@ constructor(
      */
     @Deprecated(
         message = "Superseded by constructors which accept CoroutineContext",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     // Only for binary compatibility; cannot apply @JvmOverloads as the function signature would
     // conflict with the primary constructor.
@@ -150,7 +150,7 @@ constructor(
             diffCallback = diffCallback,
             updateCallback = AdapterListUpdateCallback(this),
             mainDispatcher = mainDispatcher,
-            workerDispatcher = workerDispatcher
+            workerDispatcher = workerDispatcher,
         )
 
     init {
@@ -235,7 +235,6 @@ constructor(
      * [collectLatest][kotlinx.coroutines.flow.collectLatest].
      *
      * @sample androidx.paging.samples.submitDataFlowSample
-     *
      * @see [Pager]
      */
     suspend fun submitData(pagingData: PagingData<T>) {
@@ -251,9 +250,7 @@ constructor(
      * via [CoroutineScope][kotlinx.coroutines.CoroutineScope] instead of relying of [Lifecycle].
      *
      * @sample androidx.paging.samples.submitDataLiveDataSample
-     *
      * @sample androidx.paging.samples.submitDataRxSample
-     *
      * @see submitData
      * @see [Pager]
      */
@@ -288,9 +285,8 @@ constructor(
      * Invalidation due repository-layer signals, such as DB-updates, should instead use
      * [PagingSource.invalidate].
      *
-     * @see PagingSource.invalidate
-     *
      * @sample androidx.paging.samples.refreshSample
+     * @see PagingSource.invalidate
      */
     fun refresh() {
         differ.refresh()
@@ -357,9 +353,8 @@ constructor(
      * reflect the current [CombinedLoadStates].
      *
      * @param listener [LoadStates] listener to receive updates.
-     * @see removeLoadStateListener
-     *
      * @sample androidx.paging.samples.addLoadStateListenerSample
+     * @see removeLoadStateListener
      */
     fun addLoadStateListener(listener: (CombinedLoadStates) -> Unit) {
         differ.addLoadStateListener(listener)
@@ -440,7 +435,7 @@ constructor(
      */
     fun withLoadStateHeaderAndFooter(
         header: LoadStateAdapter<*>,
-        footer: LoadStateAdapter<*>
+        footer: LoadStateAdapter<*>,
     ): ConcatAdapter {
         addLoadStateListener { loadStates ->
             header.loadState = loadStates.prepend

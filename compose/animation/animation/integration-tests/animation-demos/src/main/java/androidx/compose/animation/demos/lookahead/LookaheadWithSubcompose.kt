@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
@@ -38,7 +39,6 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LookaheadWithSubcompose() {
     Column {
@@ -55,16 +55,18 @@ fun LookaheadWithSubcompose() {
                 Text(if (shouldAnimate) "Stop animating bounds" else "Animate bounds")
             }
             SubcomposeLayout(
-                Modifier.background(colors[3]).conditionallyAnimateBounds(shouldAnimate)
+                Modifier.background(colors[3])
+                    .conditionallyAnimateBounds(this@LookaheadScope, shouldAnimate)
             ) {
                 val constraints = it.copy(minWidth = 0)
                 val placeable =
                     subcompose(0) {
                             Box(
                                 Modifier.conditionallyAnimateBounds(
+                                        this@LookaheadScope,
                                         shouldAnimate,
                                         Modifier.width(if (isWide) 150.dp else 70.dp)
-                                            .requiredHeight(400.dp)
+                                            .requiredHeight(400.dp),
                                     )
                                     .background(colors[0])
                             )
@@ -75,9 +77,10 @@ fun LookaheadWithSubcompose() {
                     subcompose(1) {
                             Box(
                                 Modifier.conditionallyAnimateBounds(
+                                        this@LookaheadScope,
                                         shouldAnimate,
                                         Modifier.width(if (isWide) 150.dp else 70.dp)
-                                            .requiredHeight(400.dp)
+                                            .requiredHeight(400.dp),
                                     )
                                     .background(colors[1])
                             )
@@ -91,8 +94,9 @@ fun LookaheadWithSubcompose() {
                                 Box(
                                     Modifier.width(totalWidth.toDp())
                                         .conditionallyAnimateBounds(
+                                            this@LookaheadScope,
                                             shouldAnimate,
-                                            Modifier.height(if (isWide) 150.dp else 70.dp)
+                                            Modifier.height(if (isWide) 150.dp else 70.dp),
                                         )
                                         .background(colors[2])
                                 )
@@ -108,12 +112,12 @@ fun LookaheadWithSubcompose() {
     }
 }
 
-context(LookaheadScope)
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 private fun Modifier.conditionallyAnimateBounds(
+    lookaheadScope: LookaheadScope,
     shouldAnimate: Boolean,
-    modifier: Modifier = Modifier
-) = if (shouldAnimate) this.animateBounds(modifier) else this.then(modifier)
+    modifier: Modifier = Modifier,
+) = if (shouldAnimate) this.animateBounds(lookaheadScope, modifier) else this.then(modifier)
 
 private val colors =
     listOf(Color(0xffff6f69), Color(0xffffcc5c), Color(0xff2a9d84), Color(0xff264653))

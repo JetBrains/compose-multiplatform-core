@@ -16,20 +16,56 @@
 
 package androidx.compose.foundation.gestures
 
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.requireView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFold
 
 internal actual fun CompositionLocalConsumerModifierNode.platformScrollConfig(): ScrollConfig =
-    AndroidConfig
+    AndroidConfig(android.view.ViewConfiguration.get(requireView().context))
 
-private object AndroidConfig : ScrollConfig {
+internal class AndroidConfig(val viewConfiguration: android.view.ViewConfiguration) : ScrollConfig {
+    // 64 dp value is taken from ViewConfiguration.java, replace with better solution
+
+    @VisibleForTesting
+    internal fun Density.getVerticalScrollFactor() =
+        if (Build.VERSION.SDK_INT > 26) {
+            ViewConfigurationApi26Impl.getVerticalScrollFactor(viewConfiguration)
+        } else {
+            64.dp.toPx()
+        }
+
+    @VisibleForTesting
+    internal fun Density.getHorizontalScrollFactor() =
+        if (Build.VERSION.SDK_INT > 26) {
+            ViewConfigurationApi26Impl.getHorizontalScrollFactor(viewConfiguration)
+        } else {
+            64.dp.toPx()
+        }
+
     override fun Density.calculateMouseWheelScroll(event: PointerEvent, bounds: IntSize): Offset {
-        // 64 dp value is taken from ViewConfiguration.java, replace with better solution
-        return event.changes.fastFold(Offset.Zero) { acc, c -> acc + c.scrollDelta } * -64.dp.toPx()
+        val verticalScrollFactor = -getVerticalScrollFactor()
+        val horizontalScrollFactor = -getHorizontalScrollFactor()
+        return event.changes
+            .fastFold(Offset.Zero) { acc, c -> acc + c.scrollDelta }
+            .let { Offset(it.x * horizontalScrollFactor, it.y * verticalScrollFactor) }
+    }
+}
+
+@RequiresApi(26)
+private object ViewConfigurationApi26Impl {
+    fun getVerticalScrollFactor(viewConfiguration: android.view.ViewConfiguration): Float {
+        return viewConfiguration.scaledVerticalScrollFactor
+    }
+
+    fun getHorizontalScrollFactor(viewConfiguration: android.view.ViewConfiguration): Float {
+        return viewConfiguration.scaledHorizontalScrollFactor
     }
 }

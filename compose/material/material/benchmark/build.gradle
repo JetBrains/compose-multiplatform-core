@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,13 +33,13 @@ plugins {
 
 dependencies {
 
-    androidTestImplementation project(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:ui:ui-text:ui-text-benchmark")
-    androidTestImplementation project(":compose:foundation:foundation")
-    androidTestImplementation project(":compose:material:material")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui-text:ui-text-benchmark"))
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:material:material"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
@@ -49,9 +49,10 @@ dependencies {
 }
 
 android {
-    namespace "androidx.compose.material.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.material.benchmark"
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.BENCHMARK
 }

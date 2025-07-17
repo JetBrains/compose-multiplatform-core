@@ -22,7 +22,6 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -31,6 +30,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.androidx.Cheeses;
 import com.example.androidx.R;
 import com.example.androidx.widget.util.ConfigToggle;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;

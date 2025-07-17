@@ -105,15 +105,13 @@ internal class KspProcessingEnv(
 
     private val typeElementStore =
         XTypeElementStore(
-            findElement = {
-                resolver.getClassDeclarationByName(KspTypeMapper.swapWithKotlinType(it))
-            },
+            findElement = { resolver.getClassDeclarationByName(it) },
             getQName = {
                 // for error types or local types, qualified name is null.
                 // it is best to just not cache them
                 it.qualifiedName?.asString()
             },
-            wrap = { classDeclaration -> KspTypeElement.create(this, classDeclaration) }
+            wrap = { classDeclaration -> KspTypeElement.create(this, classDeclaration) },
         )
 
     private val executableElementStore =
@@ -131,19 +129,14 @@ internal class KspProcessingEnv(
     override val filer: XFiler = KspFiler(codeGenerator, messager)
 
     val voidType
-        get() =
-            KspVoidType(
-                env = this,
-                ksType = resolver.builtIns.unitType,
-                boxed = false,
-            )
+        get() = KspVoidType(env = this, ksType = resolver.builtIns.unitType, boxed = false)
 
     internal val jvmDefaultMode by lazy {
         jvmPlatformInfo?.let { JvmDefaultMode.fromStringOrNull(it.jvmDefaultMode) }
     }
 
     override fun findTypeElement(qName: String): KspTypeElement? {
-        return typeElementStore[qName]
+        return typeElementStore[KspTypeMapper.swapWithKotlinType(qName)]
     }
 
     fun wrapFunctionDeclaration(ksFunction: KSFunctionDeclaration): KspExecutableElement {
@@ -156,7 +149,7 @@ internal class KspProcessingEnv(
             .getDeclarationsFromPackage(packageName)
             .filterIsInstance<KSClassDeclaration>()
             .filterNot { it.classKind == ClassKind.ENUM_ENTRY }
-            .map { KspTypeElement.create(this, it) }
+            .map { this.wrapClassDeclaration(it) }
             .toList()
     }
 
@@ -165,14 +158,25 @@ internal class KspProcessingEnv(
         return resolver.findClass(kotlinTypeName)?.let {
             wrap(
                 allowPrimitives = KspTypeMapper.isJavaPrimitiveType(qName),
-                ksType = it.asType(emptyList())
+                ksType = it.asType(emptyList()),
             )
         }
     }
 
     override fun findGeneratedAnnotation(): XTypeElement? {
-        return findTypeElement("javax.annotation.processing.Generated")
-            ?: findTypeElement("javax.annotation.Generated")
+        val jvmPlatform =
+            delegate.platforms.filterIsInstance<JvmPlatformInfo>().singleOrNull() ?: return null
+        val jvmTarget =
+            try {
+                jvmPlatform.jvmTarget.toInt()
+            } catch (ex: NumberFormatException) {
+                null
+            }
+        return if (jvmTarget != null && jvmTarget >= 9) {
+            findTypeElement("javax.annotation.processing.Generated")
+        } else {
+            findTypeElement("javax.annotation.Generated")
+        }
     }
 
     override fun getDeclaredType(type: XTypeElement, vararg types: XType): KspType {
@@ -187,7 +191,7 @@ internal class KspProcessingEnv(
                             argType.typeArg.variance
                         } else {
                             Variance.INVARIANT
-                        }
+                        },
                 )
             }
         return wrap(ksType = type.declaration.asType(typeArguments), allowPrimitives = false)
@@ -202,18 +206,18 @@ internal class KspProcessingEnv(
                 if (consumerSuper != null) {
                     resolver.getTypeArgument(
                         typeRef = (consumerSuper as KspType).ksType.createTypeReference(),
-                        variance = Variance.CONTRAVARIANT
+                        variance = Variance.CONTRAVARIANT,
                     )
                 } else if (producerExtends != null) {
                     resolver.getTypeArgument(
                         typeRef = (producerExtends as KspType).ksType.createTypeReference(),
-                        variance = Variance.COVARIANT
+                        variance = Variance.COVARIANT,
                     )
                 } else {
                     // This returns the type "out Any?", which should be equivalent to "*"
                     resolver.getTypeArgument(
                         typeRef = resolver.builtIns.anyType.makeNullable().createTypeReference(),
-                        variance = Variance.COVARIANT
+                        variance = Variance.COVARIANT,
                     )
                 }
         )
@@ -249,7 +253,7 @@ internal class KspProcessingEnv(
         return wrap(
             originalAnnotations = originatingReference.annotations,
             ksType = ksType,
-            allowPrimitives = !originatingReference.isTypeParameterReference()
+            allowPrimitives = !originatingReference.isTypeParameterReference(),
         )
     }
 
@@ -266,7 +270,7 @@ internal class KspProcessingEnv(
                 return KspValueClassArgumentType(
                     env = this,
                     typeArg = ksTypeArgument,
-                    originalKSAnnotations = ksTypeArgument.annotations
+                    originalKSAnnotations = ksTypeArgument.annotations,
                 )
             }
 
@@ -274,13 +278,14 @@ internal class KspProcessingEnv(
             return wrap(
                 ksTypeArgument.annotations,
                 ksType = typeRef.resolve(),
-                allowPrimitives = false
+                allowPrimitives = false,
             )
         }
-        return KspTypeArgumentType(
-            env = this,
-            typeArg = ksTypeArgument,
-        )
+        return if (ksTypeArgument.variance == Variance.STAR) {
+            KspStarTypeArgumentType(env = this, typeArg = ksTypeArgument)
+        } else {
+            KspTypeArgumentType(env = this, typeArg = ksTypeArgument)
+        }
     }
 
     /**
@@ -297,14 +302,14 @@ internal class KspProcessingEnv(
     fun wrap(
         originalAnnotations: Sequence<KSAnnotation>,
         ksType: KSType,
-        allowPrimitives: Boolean
+        allowPrimitives: Boolean,
     ): KspType {
         val declaration = ksType.declaration
         if (declaration is KSTypeAlias) {
             return wrap(
                     originalAnnotations = originalAnnotations,
                     ksType = ksType.replaceTypeAliases(resolver),
-                    allowPrimitives = allowPrimitives && ksType.nullability == Nullability.NOT_NULL
+                    allowPrimitives = allowPrimitives && ksType.nullability == Nullability.NOT_NULL,
                 )
                 .copyWithTypeAlias(ksType)
         }
@@ -317,10 +322,6 @@ internal class KspProcessingEnv(
             val javaPrimitive = KspTypeMapper.getPrimitiveJavaTypeName(qName)
             if (javaPrimitive != null) {
                 return KspPrimitiveType(this, ksType, originalAnnotations)
-            }
-            // special case for void
-            if (qName == "kotlin.Unit") {
-                return voidType
             }
         }
         return arrayTypeFactory.createIfArray(ksType)

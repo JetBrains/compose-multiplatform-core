@@ -18,10 +18,11 @@ package androidx.work.worker;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A worker that passes its inputs as outputs.

@@ -79,7 +79,7 @@ import androidx.compose.ui.unit.dp
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.0." +
         "A newer overload is available with an additional shape parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Button(
@@ -89,7 +89,7 @@ public fun Button(
     colors: ButtonColors = ButtonDefaults.primaryButtonColors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     Button(
         onClick = onClick,
         modifier = modifier,
@@ -98,7 +98,7 @@ public fun Button(
         interactionSource = interactionSource,
         shape = CircleShape,
         border = ButtonDefaults.buttonBorder(),
-        content = content
+        content = content,
     )
 
 /**
@@ -167,13 +167,13 @@ public fun Button(
         shape = shape,
         border = { border.borderStroke(enabled = it).value },
         buttonSize = ButtonDefaults.DefaultButtonSize,
-        ripple = rippleOrFallbackImplementation(),
+        ripple = ripple(),
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
                 MaterialTheme.typography.button,
-                content
-            )
+                content,
+            ),
     )
 }
 
@@ -225,7 +225,7 @@ public fun OutlinedButton(
     shape: Shape = CircleShape,
     border: ButtonBorder = ButtonDefaults.outlinedButtonBorder(),
     content: @Composable BoxScope.() -> Unit,
-) = Button(onClick, modifier, enabled, colors, interactionSource, shape, border, content)
+): Unit = Button(onClick, modifier, enabled, colors, interactionSource, shape, border, content)
 
 /**
  * Wear Material [CompactButton] that offers a single slot to take any content (text, icon or
@@ -266,7 +266,7 @@ public fun OutlinedButton(
 @Deprecated(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.0." +
         "A newer overload is available with an additional shape parameter.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun CompactButton(
@@ -277,7 +277,7 @@ public fun CompactButton(
     backgroundPadding: Dp = ButtonDefaults.CompactButtonBackgroundPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     CompactButton(
         onClick,
         modifier,
@@ -287,7 +287,7 @@ public fun CompactButton(
         interactionSource,
         CircleShape,
         ButtonDefaults.buttonBorder(),
-        content
+        content,
     )
 
 /**
@@ -352,13 +352,13 @@ public fun CompactButton(
         shape = shape,
         border = { border.borderStroke(it).value },
         buttonSize = ButtonDefaults.ExtraSmallButtonSize,
-        ripple = rippleOrFallbackImplementation(),
+        ripple = ripple(),
         content =
             provideScopeContent(
                 colors.contentColor(enabled = enabled),
                 MaterialTheme.typography.button,
-                content
-            )
+                content,
+            ),
     )
 }
 
@@ -413,7 +413,7 @@ public fun OutlinedCompactButton(
     shape: Shape = CircleShape,
     border: ButtonBorder = ButtonDefaults.outlinedButtonBorder(),
     content: @Composable BoxScope.() -> Unit,
-) =
+): Unit =
     CompactButton(
         onClick = onClick,
         modifier = modifier,
@@ -423,7 +423,7 @@ public fun OutlinedCompactButton(
         interactionSource = interactionSource,
         shape = shape,
         border = border,
-        content = content
+        content = content,
     )
 
 /**
@@ -476,7 +476,7 @@ public object ButtonDefaults {
     @Composable
     public fun primaryButtonColors(
         backgroundColor: Color = MaterialTheme.colors.primary,
-        contentColor: Color = contentColorFor(backgroundColor)
+        contentColor: Color = contentColorFor(backgroundColor),
     ): ButtonColors {
         // For light background colors, the default disabled content colors do not provide
         // sufficient contrast. Instead, we default to using background for disabled content.
@@ -484,7 +484,7 @@ public object ButtonDefaults {
         return buttonColors(
             backgroundColor = backgroundColor,
             contentColor = contentColor,
-            disabledContentColor = MaterialTheme.colors.background
+            disabledContentColor = MaterialTheme.colors.background,
         )
     }
 
@@ -500,7 +500,7 @@ public object ButtonDefaults {
     @Composable
     public fun secondaryButtonColors(
         backgroundColor: Color = MaterialTheme.colors.surface,
-        contentColor: Color = contentColorFor(backgroundColor)
+        contentColor: Color = contentColorFor(backgroundColor),
     ): ButtonColors {
         return buttonColors(backgroundColor = backgroundColor, contentColor = contentColor)
     }
@@ -514,12 +514,9 @@ public object ButtonDefaults {
      */
     @Composable
     public fun iconButtonColors(
-        contentColor: Color = MaterialTheme.colors.onSurface,
+        contentColor: Color = MaterialTheme.colors.onSurface
     ): ButtonColors {
-        return buttonColors(
-            backgroundColor = Color.Transparent,
-            contentColor = contentColor,
-        )
+        return buttonColors(backgroundColor = Color.Transparent, contentColor = contentColor)
     }
 
     /**
@@ -531,7 +528,7 @@ public object ButtonDefaults {
      */
     @Composable
     public fun outlinedButtonColors(
-        contentColor: Color = MaterialTheme.colors.primary,
+        contentColor: Color = MaterialTheme.colors.primary
     ): ButtonColors {
         return buttonColors(backgroundColor = Color.Transparent, contentColor = contentColor)
     }
@@ -545,11 +542,11 @@ public object ButtonDefaults {
     @Composable
     public fun buttonBorder(
         borderStroke: BorderStroke? = null,
-        disabledBorderStroke: BorderStroke? = borderStroke
+        disabledBorderStroke: BorderStroke? = borderStroke,
     ): ButtonBorder {
         return DefaultButtonBorder(
             borderStroke = borderStroke,
-            disabledBorderStroke = disabledBorderStroke
+            disabledBorderStroke = disabledBorderStroke,
         )
     }
 
@@ -565,49 +562,49 @@ public object ButtonDefaults {
     public fun outlinedButtonBorder(
         borderColor: Color = MaterialTheme.colors.primaryVariant.copy(alpha = 0.6f),
         disabledBorderColor: Color = borderColor.copy(alpha = ContentAlpha.disabled),
-        borderWidth: Dp = 1.dp
+        borderWidth: Dp = 1.dp,
     ): ButtonBorder {
         return DefaultButtonBorder(
             borderStroke = BorderStroke(borderWidth, borderColor),
-            disabledBorderStroke = BorderStroke(borderWidth, disabledBorderColor)
+            disabledBorderStroke = BorderStroke(borderWidth, disabledBorderColor),
         )
     }
 
     /** The default background size of a [CompactButton]. */
-    public val ExtraSmallButtonSize = 32.dp
+    public val ExtraSmallButtonSize: Dp = 32.dp
 
     /**
      * The recommended size for a small [Button]. You can apply this value for the size by
      * overriding Modifier.size directly on [Button].
      */
-    public val SmallButtonSize = 48.dp
+    public val SmallButtonSize: Dp = 48.dp
 
     /**
      * The default size applied for the [Button]. Note that you can override it by applying
      * Modifier.size directly on [Button].
      */
-    public val DefaultButtonSize = 52.dp
+    public val DefaultButtonSize: Dp = 52.dp
 
     /**
      * The recommended size for a large [Button]. You can apply this value for the size by
      * overriding Modifier.size directly on [Button].
      */
-    public val LargeButtonSize = 60.dp
+    public val LargeButtonSize: Dp = 60.dp
 
     /** The size of an icon when used inside a small-sized [Button] or a [CompactButton]. */
-    public val SmallIconSize = 24.dp
+    public val SmallIconSize: Dp = 24.dp
 
     /** The default size of an icon when used inside a default-sized [Button]. */
-    public val DefaultIconSize = 26.dp
+    public val DefaultIconSize: Dp = 26.dp
 
     /** The size of an icon when used inside a large-sized [Button]. */
-    public val LargeIconSize = 30.dp
+    public val LargeIconSize: Dp = 30.dp
 
     /**
      * The default padding for a [CompactButton]. This will result in a larger tap area than visible
      * area.
      */
-    public val CompactButtonBackgroundPadding = 8.dp
+    public val CompactButtonBackgroundPadding: Dp = 8.dp
 
     /**
      * Creates a [ButtonColors] that represents the default background and content colors used in a
@@ -623,13 +620,13 @@ public object ButtonDefaults {
         backgroundColor: Color = MaterialTheme.colors.primary,
         contentColor: Color = contentColorFor(backgroundColor),
         disabledBackgroundColor: Color = backgroundColor.copy(alpha = ContentAlpha.disabled),
-        disabledContentColor: Color = contentColor.copy(alpha = ContentAlpha.disabled)
+        disabledContentColor: Color = contentColor.copy(alpha = ContentAlpha.disabled),
     ): ButtonColors =
         DefaultButtonColors(
             backgroundColor = backgroundColor,
             contentColor = contentColor,
             disabledBackgroundColor = disabledBackgroundColor,
-            disabledContentColor = disabledContentColor
+            disabledContentColor = disabledContentColor,
         )
 }
 
@@ -639,7 +636,7 @@ private class DefaultButtonColors(
     private val backgroundColor: Color,
     private val contentColor: Color,
     private val disabledBackgroundColor: Color,
-    private val disabledContentColor: Color
+    private val disabledContentColor: Color,
 ) : ButtonColors {
     @Composable
     override fun backgroundColor(enabled: Boolean): State<Color> {
@@ -679,7 +676,7 @@ private class DefaultButtonColors(
 @Immutable
 private class DefaultButtonBorder(
     private val borderStroke: BorderStroke? = null,
-    private val disabledBorderStroke: BorderStroke? = null
+    private val disabledBorderStroke: BorderStroke? = null,
 ) : ButtonBorder {
     @Composable
     override fun borderStroke(enabled: Boolean): State<BorderStroke?> {

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -33,13 +33,13 @@ plugins {
 }
 
 dependencies {
-    androidTestImplementation project(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:ui:ui-text:ui-text-benchmark")
-    androidTestImplementation project(":compose:foundation:foundation-layout")
-    androidTestImplementation project(":compose:foundation:foundation")
-    androidTestImplementation project(":compose:material:material")
-    androidTestImplementation project(":compose:benchmark-utils")
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui-text:ui-text-benchmark"))
+    androidTestImplementation(project(":compose:foundation:foundation-layout"))
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:material:material"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
@@ -58,12 +58,13 @@ tasks.withType(KotlinCompile).configureEach {
 }
 
 android {
-    namespace "androidx.compose.foundation.benchmark"
+    compileSdk = 35
+    namespace = "androidx.compose.foundation.benchmark"
 
     // DO NOT CHECK IN! Enable experimental benchmarking with R8 - for local runs only
     // buildTypes.release.androidTest.enableMinification = true
 }
 
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.BENCHMARK
 }

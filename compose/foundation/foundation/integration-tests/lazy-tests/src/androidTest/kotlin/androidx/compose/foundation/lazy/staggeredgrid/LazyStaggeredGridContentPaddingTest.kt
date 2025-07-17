@@ -16,11 +16,15 @@
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.lazy.list.assertIsNotPlaced
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
@@ -32,7 +36,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalFoundationApi::class)
 @MediumTest
 @RunWith(Parameterized::class)
 class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
@@ -41,11 +44,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> =
-            arrayOf(
-                Orientation.Vertical,
-                Orientation.Horizontal,
-            )
+        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
 
         private const val LazyStaggeredGrid = "Lazy"
     }
@@ -67,7 +66,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 lanes = 2,
                 modifier =
                     Modifier.axisSize(itemSizeDp * 4, itemSizeDp * 5).testTag(LazyStaggeredGrid),
-                contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = itemSizeDp)
+                contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = itemSizeDp),
             ) {
                 items(4) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -109,7 +108,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 modifier =
                     Modifier.axisSize(itemSizeDp * 4, itemSizeDp * 5).testTag(LazyStaggeredGrid),
                 contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = itemSizeDp),
-                state = state
+                state = state,
             ) {
                 items(100) {
                     Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it").debugBorder())
@@ -157,7 +156,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 modifier =
                     Modifier.axisSize(itemSizeDp * 4, itemSizeDp * 5).testTag(LazyStaggeredGrid),
                 contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = itemSizeDp),
-                state = state
+                state = state,
             ) {
                 items(100) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -180,7 +179,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 modifier =
                     Modifier.axisSize(itemSizeDp * 4, itemSizeDp * 5).testTag(LazyStaggeredGrid),
                 contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = itemSizeDp),
-                state = state
+                state = state,
             ) {
                 items(10) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -210,7 +209,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 modifier =
                     Modifier.axisSize(itemSizeDp * 2, itemSizeDp * 5).testTag(LazyStaggeredGrid),
                 contentPadding = PaddingValues(mainAxis = itemSizeDp * 6),
-                state = state
+                state = state,
             ) {
                 items(10) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -223,7 +222,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
 
         state.scrollBy(itemSizeDp * 20)
 
-        rule.onNodeWithTag("8").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp * -2f)
+        rule.onNodeWithTag("8").assertIsNotPlaced()
 
         assertThat(state.firstVisibleItemIndex).isEqualTo(8)
         // normally this item is invisible, but being the last item in the lane, it is forced to
@@ -239,7 +238,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 lanes = 2,
                 modifier = Modifier.testTag(LazyStaggeredGrid),
                 contentPadding = PaddingValues(mainAxis = 10.dp, crossAxis = 2.dp),
-                state = state
+                state = state,
             ) {
                 items(0) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
             }
@@ -260,7 +259,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                     lanes = 2,
                     modifier = Modifier.testTag(LazyStaggeredGrid),
                     contentPadding = PaddingValues(mainAxis = 10.dp, crossAxis = 2.dp),
-                    state = state
+                    state = state,
                 ) {
                     items(2) { Spacer(Modifier.mainAxisSize(0.dp).testTag("$it")) }
                 }
@@ -282,7 +281,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                 modifier =
                     Modifier.testTag(LazyStaggeredGrid).axisSize(itemSizeDp * 2, itemSizeDp * 5),
                 contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = 0.dp),
-                state = state
+                state = state,
             ) {
                 items(1000, key = { it }) {
                     Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it"))
@@ -304,7 +303,7 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
                     lanes = 2,
                     modifier = Modifier.testTag(LazyStaggeredGrid),
                     contentPadding = PaddingValues(mainAxis = itemSizeDp * 2, crossAxis = 0.dp),
-                    state = state
+                    state = state,
                 ) {
                     items(4, key = { it }) {
                         Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it"))
@@ -314,5 +313,67 @@ class LazyStaggeredGridContentPaddingTest(orientation: Orientation) :
         }
 
         rule.onNodeWithTag(LazyStaggeredGrid).assertMainAxisSizeIsEqualTo(itemSizeDp * 6)
+    }
+
+    @Test
+    fun afterContentPaddingWithSmallScrolls() {
+        state = LazyStaggeredGridState(initialFirstVisibleItemIndex = 0)
+        rule.setContent {
+            Box(Modifier.axisSize(itemSizeDp * 2, itemSizeDp * 4)) {
+                LazyStaggeredGrid(
+                    lanes = 2,
+                    modifier = Modifier.testTag(LazyStaggeredGrid),
+                    contentPadding = PaddingValues(afterContent = itemSizeDp / 2),
+                    state = state,
+                ) {
+                    items(20, key = { it }) {
+                        val size = if (it == 0 || it == 19) itemSizeDp / 2 else itemSizeDp * 2
+                        Spacer(Modifier.mainAxisSize(size).testTag("$it").debugBorder())
+                    }
+                }
+            }
+        }
+
+        // scroll to the end
+        state.scrollBy(itemSizeDp * 30)
+
+        state.scrollBy(-5.dp)
+
+        state.scrollBy(itemSizeDp / 2)
+
+        rule.onNodeWithTag("19").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp * 3f)
+    }
+
+    @Test
+    fun pinnedItemWorksIsPlacedOnceInContentPadding() {
+        state = LazyStaggeredGridState(initialFirstVisibleItemIndex = 0)
+        val focusRequester = FocusRequester()
+        rule.setContent {
+            Box(Modifier.axisSize(itemSizeDp * 2, itemSizeDp * 4)) {
+                LazyStaggeredGrid(
+                    lanes = 1,
+                    modifier = Modifier.testTag(LazyStaggeredGrid),
+                    contentPadding = PaddingValues(beforeContent = itemSizeDp),
+                    state = state,
+                ) {
+                    item {
+                        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        BasicTextField(
+                            "Test",
+                            onValueChange = {},
+                            modifier =
+                                Modifier.focusRequester(focusRequester).mainAxisSize(itemSizeDp),
+                        )
+                    }
+
+                    items(10) { Spacer(Modifier.mainAxisSize(itemSizeDp).testTag("$it")) }
+                }
+            }
+        }
+
+        // scroll to the end
+        state.scrollBy(itemSizeDp / 2)
+
+        rule.onNodeWithTag("0").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp * 1.5f)
     }
 }

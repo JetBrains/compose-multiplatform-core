@@ -20,19 +20,18 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.ui.graphics.Color
 
 /** Provider of colors for a glance composable's attributes. */
-interface ColorProvider {
+public interface ColorProvider {
     /** Returns the color the provider would use in the given [context]. */
-    fun getColor(context: Context): Color
+    public fun getColor(context: Context): Color
 }
 
 /** Returns a [ColorProvider] that always resolves to the [Color]. */
-fun ColorProvider(color: Color): ColorProvider {
+public fun ColorProvider(color: Color): ColorProvider {
     return FixedColorProvider(color)
 }
 
@@ -42,17 +41,17 @@ fun ColorProvider(color: Color): ColorProvider {
  * are resolved in
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun ColorProvider(@ColorRes resId: Int): ColorProvider {
+public fun ColorProvider(@ColorRes resId: Int): ColorProvider {
     return ResourceColorProvider(resId)
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class FixedColorProvider(val color: Color) : ColorProvider {
-    override fun getColor(context: Context) = color
+public data class FixedColorProvider(val color: Color) : ColorProvider {
+    override fun getColor(context: Context): Color = color
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-data class ResourceColorProvider(@ColorRes val resId: Int) : ColorProvider {
+public data class ResourceColorProvider(@ColorRes public val resId: Int) : ColorProvider {
     override fun getColor(context: Context): Color {
         val androidColor =
             if (Build.VERSION.SDK_INT >= 23) {
@@ -68,7 +67,6 @@ data class ResourceColorProvider(@ColorRes val resId: Int) : ColorProvider {
 @RequiresApi(23)
 private object ColorProviderApi23Impl {
     @ColorInt
-    @DoNotInline
     fun getColor(context: Context, @ColorRes resId: Int): Int {
         return context.getColor(resId)
     }

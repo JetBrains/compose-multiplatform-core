@@ -16,6 +16,8 @@
 
 package androidx.sqlite
 
+import androidx.annotation.IntRange
+
 /**
  * SQLite statement definition.
  *
@@ -24,15 +26,15 @@ package androidx.sqlite
  *
  * See also [Prepared Statement](https://www.sqlite.org/c3ref/stmt.html)
  */
-@Suppress("NotCloseable") // TODO(b/315461431): No common Closeable interface in KMP
-interface SQLiteStatement {
+@Suppress("NotCloseable")
+public interface SQLiteStatement : AutoCloseable {
     /**
      * Binds a ByteArray value to this statement at an index.
      *
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindBlob(index: Int, value: ByteArray)
+    public fun bindBlob(@IntRange(from = 1) index: Int, value: ByteArray)
 
     /**
      * Binds a Double value to this statement at an index.
@@ -40,7 +42,7 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindDouble(index: Int, value: Double)
+    public fun bindDouble(@IntRange(from = 1) index: Int, value: Double)
 
     /**
      * Binds a Float value to this statement at an index.
@@ -48,7 +50,7 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindFloat(index: Int, value: Float) {
+    public fun bindFloat(@IntRange(from = 1) index: Int, value: Float) {
         bindDouble(index, value.toDouble())
     }
 
@@ -58,7 +60,7 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindLong(index: Int, value: Long)
+    public fun bindLong(@IntRange(from = 1) index: Int, value: Long)
 
     /**
      * Binds a Int value to this statement at an index.
@@ -66,7 +68,7 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindInt(index: Int, value: Int) {
+    public fun bindInt(@IntRange(from = 1) index: Int, value: Int) {
         bindLong(index, value.toLong())
     }
 
@@ -76,7 +78,7 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindBoolean(index: Int, value: Boolean) {
+    public fun bindBoolean(@IntRange(from = 1) index: Int, value: Boolean) {
         bindLong(index, if (value) 1L else 0L)
     }
 
@@ -86,14 +88,14 @@ interface SQLiteStatement {
      * @param index the 1-based index of the parameter to bind
      * @param value the value to bind
      */
-    fun bindText(index: Int, value: String)
+    public fun bindText(@IntRange(from = 1) index: Int, value: String)
 
     /**
      * Binds a NULL value to this statement at an index.
      *
      * @param index the 1-based index of the parameter to bind
      */
-    fun bindNull(index: Int)
+    public fun bindNull(@IntRange(from = 1) index: Int)
 
     /**
      * Returns the value of the column at [index] as a ByteArray.
@@ -101,7 +103,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getBlob(index: Int): ByteArray
+    public fun getBlob(@IntRange(from = 0) index: Int): ByteArray
 
     /**
      * Returns the value of the column at [index] as a Double.
@@ -109,7 +111,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getDouble(index: Int): Double
+    public fun getDouble(@IntRange(from = 0) index: Int): Double
 
     /**
      * Returns the value of the column at [index] as a Float.
@@ -117,7 +119,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getFloat(index: Int): Float {
+    public fun getFloat(@IntRange(from = 0) index: Int): Float {
         return getDouble(index).toFloat()
     }
 
@@ -127,7 +129,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getLong(index: Int): Long
+    public fun getLong(@IntRange(from = 0) index: Int): Long
 
     /**
      * Returns the value of the column at [index] as a Int.
@@ -135,7 +137,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getInt(index: Int): Int {
+    public fun getInt(@IntRange(from = 0) index: Int): Int {
         return getLong(index).toInt()
     }
 
@@ -145,7 +147,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getBoolean(index: Int): Boolean {
+    public fun getBoolean(@IntRange(from = 0) index: Int): Boolean {
         return getLong(index) != 0L
     }
 
@@ -155,7 +157,7 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the value of the column
      */
-    fun getText(index: Int): String
+    public fun getText(@IntRange(from = 0) index: Int): String
 
     /**
      * Returns true if the value of the column at [index] is NULL.
@@ -163,14 +165,14 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return true if the column value is NULL, false otherwise
      */
-    fun isNull(index: Int): Boolean
+    public fun isNull(@IntRange(from = 0) index: Int): Boolean
 
     /**
      * Returns the number of columns in the result of the statement.
      *
      * @return the number of columns
      */
-    fun getColumnCount(): Int
+    public fun getColumnCount(): Int
 
     /**
      * Returns the name of a column at [index] in the result of the statement.
@@ -178,16 +180,27 @@ interface SQLiteStatement {
      * @param index the 0-based index of the column
      * @return the name of the column
      */
-    fun getColumnName(index: Int): String
+    public fun getColumnName(@IntRange(from = 0) index: Int): String
 
     /**
      * Returns the name of the columns in the result of the statement ordered by their index.
      *
      * @return the names of the columns
      */
-    fun getColumnNames(): List<String> {
+    public fun getColumnNames(): List<String> {
         return List(getColumnCount()) { i -> getColumnName(i) }
     }
+
+    /**
+     * Returns the data type of a column at [index] in the result of the statement.
+     *
+     * The data type can be used to determine the preferred `get*()` function to be used for the
+     * column but other getters may perform data type conversion.
+     *
+     * @param index the 0-based index of the column
+     * @return the data type of the column
+     */
+    @DataType public fun getColumnType(@IntRange(from = 0) index: Int): Int
 
     /**
      * Executes the statement and evaluates the next result row if available.
@@ -198,16 +211,16 @@ interface SQLiteStatement {
      *
      * @return true if there are more rows to evaluate or false if the statement is done executing
      */
-    fun step(): Boolean
+    public fun step(): Boolean
 
     /**
      * Resets the prepared statement back to initial state so that it can be re-executed via [step].
-     * Any parameter bound via the bind*() APIs will retain their value.
+     * Any parameter bound via the `bind*()` APIs will retain their value.
      */
-    fun reset()
+    public fun reset()
 
     /** Clears all parameter bindings. Unset bindings are treated as NULL. */
-    fun clearBindings()
+    public fun clearBindings()
 
     /**
      * Closes the statement.
@@ -215,5 +228,5 @@ interface SQLiteStatement {
      * Once a statement is closed it should no longer be used. Calling this function on an already
      * closed statement is a no-op.
      */
-    fun close()
+    public override fun close()
 }

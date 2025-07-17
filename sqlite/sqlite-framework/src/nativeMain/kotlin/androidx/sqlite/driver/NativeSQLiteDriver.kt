@@ -35,10 +35,14 @@ import sqlite3.sqlite3_threadsafe
  * A [SQLiteDriver] that uses a version of SQLite included with the host operating system.
  *
  * Usage of this driver expects that `libsqlite` can be found in the shared library path.
+ *
+ * The host's SQLite used by this driver might be compiled with different
+ * [threading modes](https://www.sqlite.org/threadsafe.html) which can be checked with
+ * [threadingMode]. Regardless of the mode compiled, this driver does not have an internal
+ * connection pool and whether the driver connections are thread-safe or not will be determined by
+ * the compiled threading mode of the host library.
  */
-// TODO:
-//    (b/304295573) busy handler registering
-class NativeSQLiteDriver : SQLiteDriver {
+public class NativeSQLiteDriver : SQLiteDriver {
 
     /**
      * The thread safe mode SQLite was compiled with.
@@ -46,7 +50,7 @@ class NativeSQLiteDriver : SQLiteDriver {
      * See also [SQLite In Multi-Threaded Applications](https://www.sqlite.org/threadsafe.html)
      */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    val threadingMode: Int
+    public val threadingMode: Int
         get() = sqlite3_threadsafe()
 
     override fun open(fileName: String): SQLiteConnection {
@@ -62,7 +66,7 @@ class NativeSQLiteDriver : SQLiteDriver {
      * @param flags Connection open flags.
      * @return the database connection.
      */
-    fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection = memScoped {
+    public fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection = memScoped {
         val dbPointer = allocPointerTo<sqlite3>()
         val resultCode =
             sqlite3_open_v2(filename = fileName, ppDb = dbPointer.ptr, flags = flags, zVfs = null)

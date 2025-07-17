@@ -24,7 +24,6 @@ import kotlin.math.ceil
 
 /** A utility object to invoke composable function by its name and containing class. */
 @Deprecated("Use androidx.compose.runtime.reflect.ComposableMethodInvoker instead")
-@ExperimentalComposeUiApi
 object ComposableInvoker {
 
     /**
@@ -38,7 +37,7 @@ object ComposableInvoker {
      */
     private fun areParameterTypesCompatible(
         composableMethodTypes: Array<Class<*>>,
-        previewParameterTypes: Array<Class<*>>
+        previewParameterTypes: Array<Class<*>>,
     ): Boolean =
         composableMethodTypes.size == previewParameterTypes.size &&
             composableMethodTypes
@@ -66,7 +65,7 @@ object ComposableInvoker {
      */
     private fun Array<Method>.findCompatibleComposeMethod(
         methodName: String,
-        vararg args: Class<*>
+        vararg args: Class<*>,
     ): Method =
         firstOrNull {
             (methodName == it.name || it.name.startsWith("$methodName-")) &&
@@ -87,7 +86,7 @@ object ComposableInvoker {
      */
     private fun Class<*>.findComposableMethod(
         methodName: String,
-        vararg previewParamArgs: Any?
+        vararg previewParamArgs: Any?,
     ): Method? {
         val argsArray: Array<Class<out Any>> =
             previewParamArgs.mapNotNull { it?.javaClass }.toTypedArray()
@@ -99,7 +98,7 @@ object ComposableInvoker {
                 methodName,
                 *argsArray,
                 Composer::class.java, // composer param
-                *changedParams // changed param
+                *changedParams, // changed param
             )
         } catch (e: ReflectiveOperationException) {
             try {
@@ -140,7 +139,7 @@ object ComposableInvoker {
     private fun Method.invokeComposableMethod(
         instance: Any?,
         composer: Composer,
-        vararg args: Any?
+        vararg args: Any?,
     ): Any? {
         val composerIndex = parameterTypes.indexOfLast { it == Composer::class.java }
         val realParams = composerIndex
@@ -209,7 +208,7 @@ object ComposableInvoker {
         className: String,
         methodName: String,
         composer: Composer,
-        vararg args: Any?
+        vararg args: Any?,
     ) {
         try {
             val composableClass = Class.forName(className)

@@ -78,7 +78,7 @@ class BorderTest(val shape: Shape) {
             arrayOf(
                 namedShape("Rectangle", RectangleShape),
                 namedShape("Circle", CircleShape),
-                namedShape("Rounded", RoundedCornerShape(5.0f))
+                namedShape("Rounded", RoundedCornerShape(5.0f)),
             )
 
         private fun namedShape(name: String, shape: Shape): Shape =
@@ -96,7 +96,7 @@ class BorderTest(val shape: Shape) {
             override fun createOutline(
                 size: Size,
                 layoutDirection: LayoutDirection,
-                density: Density
+                density: Density,
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     Outline.Rectangle(Rect(0f, 1f, 0f, 1f))
@@ -122,10 +122,9 @@ class BorderTest(val shape: Shape) {
             backgroundColor = Color.Red,
             shape = shape,
             backgroundShape = shape,
-            shapeSizeX = 20.0f,
-            shapeSizeY = 20.0f,
+            shapeSize = Size(20f, 20f),
             shapeColor = Color.Blue,
-            shapeOverlapPixelCount = 3.0f
+            antiAliasingGap = 3.0f,
         )
     }
 
@@ -146,10 +145,9 @@ class BorderTest(val shape: Shape) {
             backgroundColor = Color.Red,
             shape = shape,
             backgroundShape = shape,
-            shapeSizeX = 20.0f,
-            shapeSizeY = 20.0f,
+            shapeSize = Size(20f, 20f),
             shapeColor = Color.Blue,
-            shapeOverlapPixelCount = 3.0f
+            antiAliasingGap = 3.0f,
         )
     }
 
@@ -171,7 +169,7 @@ class BorderTest(val shape: Shape) {
             shapeColor = Color.Red,
             shape = shape,
             backgroundShape = shape,
-            shapeOverlapPixelCount = 2.0f
+            antiAliasingGap = 2.0f,
         )
     }
 
@@ -193,7 +191,7 @@ class BorderTest(val shape: Shape) {
             shapeColor = Color.Blue,
             shape = shape,
             backgroundShape = shape,
-            shapeOverlapPixelCount = 2.0f
+            antiAliasingGap = 2.0f,
         )
     }
 
@@ -215,7 +213,7 @@ class BorderTest(val shape: Shape) {
             backgroundColor = Color.White,
             shapeColor = Color.White,
             shape = RectangleShape,
-            shapeOverlapPixelCount = 1.0f
+            antiAliasingGap = 1.0f,
         )
     }
 
@@ -280,8 +278,8 @@ class BorderTest(val shape: Shape) {
                             topStart = topleft,
                             topEnd = topRight,
                             bottomStart = bottomLeft,
-                            bottomEnd = bottomRight
-                        )
+                            bottomEnd = bottomRight,
+                        ),
                     )
             )
         }
@@ -297,15 +295,15 @@ class BorderTest(val shape: Shape) {
             assertEquals(Color.White, map[borderPx.toInt() + offset, borderPx.toInt() + offset])
             assertEquals(
                 Color.White,
-                map[map.width - borderPx.toInt() - offset, borderPx.toInt() + offset]
+                map[map.width - borderPx.toInt() - offset, borderPx.toInt() + offset],
             )
             assertEquals(
                 Color.White,
-                map[map.width - borderPx.toInt() - offset, map.height - borderPx.toInt() - offset]
+                map[map.width - borderPx.toInt() - offset, map.height - borderPx.toInt() - offset],
             )
             assertEquals(
                 Color.White,
-                map[borderPx.toInt() + offset, map.height - borderPx.toInt() - offset]
+                map[borderPx.toInt() + offset, map.height - borderPx.toInt() - offset],
             )
 
             val topRightOffset = (topRight / 2).roundToInt()
@@ -338,10 +336,9 @@ class BorderTest(val shape: Shape) {
                 backgroundColor = Color.Red,
                 shape = shape,
                 backgroundShape = shape,
-                shapeSizeX = 20.0f,
-                shapeSizeY = 20.0f,
+                shapeSize = Size(20f, 20f),
                 shapeColor = Color.Blue,
-                shapeOverlapPixelCount = 3.0f
+                antiAliasingGap = 3.0f,
             )
     }
 
@@ -369,10 +366,9 @@ class BorderTest(val shape: Shape) {
                 backgroundColor = Color.Red,
                 shape = shape,
                 backgroundShape = shape,
-                shapeSizeX = 20.0f,
-                shapeSizeY = 20.0f,
+                shapeSize = Size(20f, 20f),
                 shapeColor = Color.Blue,
-                shapeOverlapPixelCount = 3.0f
+                antiAliasingGap = 3.0f,
             )
     }
 
@@ -394,7 +390,7 @@ class BorderTest(val shape: Shape) {
                             lineTo(size.width, size.height)
                             lineTo(0f, size.height)
                             close()
-                        }
+                        },
                     )
             )
         }
@@ -425,7 +421,7 @@ class BorderTest(val shape: Shape) {
                 0.0f to Color.Red,
                 0.5f to Color.Red,
                 0.5f to Color.Blue,
-                1.0f to Color.Blue
+                1.0f to Color.Blue,
             )
         val testTag = "testTag"
         val borderStrokeDp = 5.dp
@@ -443,9 +439,9 @@ class BorderTest(val shape: Shape) {
                     .border(
                         BorderStroke(
                             borderStrokeDp,
-                            if (toggle.value) gradient else SolidColor(Color.Green)
+                            if (toggle.value) gradient else SolidColor(Color.Green),
                         ),
-                        testShape
+                        testShape,
                     )
             )
         }
@@ -458,7 +454,7 @@ class BorderTest(val shape: Shape) {
             assertEquals(Color.Green, pixelMap[halfBorderStrokePx, height - halfBorderStrokePx])
             assertEquals(
                 Color.Green,
-                pixelMap[width - halfBorderStrokePx, height - halfBorderStrokePx]
+                pixelMap[width - halfBorderStrokePx, height - halfBorderStrokePx],
             )
             assertEquals(Color.White, pixelMap[width / 2, height / 2])
         }
@@ -472,7 +468,7 @@ class BorderTest(val shape: Shape) {
             assertEquals(Color.Blue, pixelMap[halfBorderStrokePx, height - halfBorderStrokePx])
             assertEquals(
                 Color.Blue,
-                pixelMap[width - halfBorderStrokePx, height - halfBorderStrokePx]
+                pixelMap[width - halfBorderStrokePx, height - halfBorderStrokePx],
             )
             assertEquals(Color.White, pixelMap[width / 2, height / 2])
         }
@@ -498,14 +494,14 @@ class BorderTest(val shape: Shape) {
                     LocalDensity.current,
                     arrowBaseWidthDp,
                     arrowTipDp,
-                    arrowLengthDp
+                    arrowLengthDp,
                 )
             with(LocalDensity.current) {
                 val outline =
                     bubbleWithArrow.createOutline(
                         Size(bubbleWidthDp.toPx(), bubbleHeightDp.toPx()),
                         LayoutDirection.Ltr,
-                        this
+                        this,
                     ) as Outline.Generic
 
                 val pathBounds = outline.path.getBounds()
@@ -538,20 +534,20 @@ class BorderTest(val shape: Shape) {
                 Color.Red,
                 map[
                     (currentX + arrowBaseWidthPx / 4).toInt(),
-                    (offset.y - arrowLengthPx / 2 + borderStrokePx / 2).toInt()]
+                    (offset.y - arrowLengthPx / 2 + borderStrokePx / 2).toInt()],
             )
 
             // Tip of the triangle is drawn within the border
             currentX += arrowBaseWidthPx / 2f
             assertEquals(
                 Color.Red,
-                map[currentX.toInt(), (offset.y - arrowLengthPx + borderStrokePx / 2).toInt()]
+                map[currentX.toInt(), (offset.y - arrowLengthPx + borderStrokePx / 2).toInt()],
             )
 
             // rounded rectangle directly below the triangle does not have the border rendered
             assertEquals(
                 Color.White,
-                map[currentX.toInt(), (offset.y + borderStrokePx / 2).toInt()]
+                map[currentX.toInt(), (offset.y + borderStrokePx / 2).toInt()],
             )
 
             // Midpoint of the end of the triangle being drawn back into the rounded rect
@@ -560,7 +556,7 @@ class BorderTest(val shape: Shape) {
                 Color.Red,
                 map[
                     (currentX + arrowBaseWidthPx / 4f).toInt(),
-                    (offset.y - arrowLengthPx / 4 + borderStrokePx / 2).toInt()]
+                    (offset.y - arrowLengthPx / 4 + borderStrokePx / 2).toInt()],
             )
 
             // Base of the triangle on the rounded rect shape has the border rendered
@@ -580,7 +576,7 @@ class BorderTest(val shape: Shape) {
                         .background(color = Color.Blue)
                         .border(
                             BorderStroke(1f.toDp(), Color.Red),
-                            if (roundedCorners) RoundedCornerShape(5f) else RectangleShape
+                            if (roundedCorners) RoundedCornerShape(5f) else RectangleShape,
                         )
                 ) {}
             }
@@ -614,7 +610,7 @@ class BorderTest(val shape: Shape) {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density
+                    density: Density,
                 ): Outline {
                     val roundRect =
                         if (roundedCorners) {
@@ -666,7 +662,7 @@ class BorderTest(val shape: Shape) {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density
+                    density: Density,
                 ): Outline {
                     val roundRect =
                         if (roundedCorners) {
@@ -755,7 +751,7 @@ class BorderTest(val shape: Shape) {
         density: Density,
         arrowBaseWidthDp: Dp,
         arrowTipDp: Dp,
-        arrowLengthDp: Dp
+        arrowLengthDp: Dp,
     ): Shape {
         val cornerRadiusDp: Dp = 8.dp
         val cornerRadiusPx: Float

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.ui.layout
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.internal.requirePreconditionNotNull
+import androidx.compose.ui.internal.throwIllegalArgumentExceptionForNullCheck
 import androidx.compose.ui.node.LayoutModifierNodeCoordinator
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.checkMeasuredSize
@@ -57,7 +56,7 @@ internal class ApproachMeasureScopeImpl(
 ) : ApproachMeasureScope, MeasureScope by coordinator, LookaheadScope {
     override val lookaheadConstraints: Constraints
         get() =
-            requireNotNull(coordinator.lookaheadConstraints) {
+            requirePreconditionNotNull(coordinator.lookaheadConstraints) {
                 "Error: Lookahead constraints requested before lookahead measure."
             }
 
@@ -71,13 +70,13 @@ internal class ApproachMeasureScopeImpl(
         if (this is NodeCoordinator) {
             return lookaheadDelegate?.lookaheadLayoutCoordinates ?: this
         }
-        throw IllegalArgumentException("Unsupported LayoutCoordinates: $this")
+        throwIllegalArgumentExceptionForNullCheck("Unsupported LayoutCoordinates")
     }
 
     override val Placeable.PlacementScope.lookaheadScopeCoordinates: LayoutCoordinates
         get() {
             val lookaheadRoot = coordinator.layoutNode.lookaheadRoot
-            requireNotNull(lookaheadRoot) {
+            requirePreconditionNotNull(lookaheadRoot) {
                 "Error: Requesting LookaheadScopeCoordinates is not permitted from outside of a" +
                     " LookaheadScope."
             }
@@ -95,7 +94,7 @@ internal class ApproachMeasureScopeImpl(
         height: Int,
         alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
-        placementBlock: Placeable.PlacementScope.() -> Unit
+        placementBlock: Placeable.PlacementScope.() -> Unit,
     ): MeasureResult {
         checkMeasuredSize(width, height)
         return object : MeasureResult {

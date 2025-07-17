@@ -936,6 +936,8 @@ package androidx.wear.tiles {
     method public androidx.wear.protolayout.StateBuilders.State getCurrentState();
     method public androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters getDeviceConfiguration();
     method @Deprecated public androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters? getDeviceParameters();
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public java.time.Instant getLastVisibleTime();
+    method public androidx.wear.protolayout.ProtoLayoutScope getScope();
     method @Deprecated public androidx.wear.tiles.StateBuilders.State? getState();
     method public int getTileId();
   }
@@ -946,6 +948,7 @@ package androidx.wear.tiles {
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setCurrentState(androidx.wear.protolayout.StateBuilders.State);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setDeviceConfiguration(androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters);
     method @Deprecated public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setDeviceParameters(androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setLastVisibleTime(java.time.Instant);
     method @Deprecated public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setState(androidx.wear.tiles.StateBuilders.State);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=0) public androidx.wear.tiles.RequestBuilders.TileRequest.Builder setTileId(int);
   }
@@ -1045,10 +1048,11 @@ package androidx.wear.tiles {
     method public static com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.wear.tiles.ActiveTileIdentifier!>!> getActiveTilesAsync(android.content.Context, java.util.concurrent.Executor);
     method public static androidx.wear.tiles.TileUpdateRequester getUpdater(android.content.Context);
     method public android.os.IBinder? onBind(android.content.Intent);
+    method @MainThread protected com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> onRecentInteractionEventsAsync(java.util.List<androidx.wear.tiles.EventBuilders.TileInteractionEvent!>);
     method @Deprecated @MainThread protected com.google.common.util.concurrent.ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources!> onResourcesRequest(androidx.wear.tiles.RequestBuilders.ResourcesRequest);
     method @MainThread protected void onTileAddEvent(androidx.wear.tiles.EventBuilders.TileAddEvent);
-    method @MainThread protected void onTileEnterEvent(androidx.wear.tiles.EventBuilders.TileEnterEvent);
-    method @MainThread protected void onTileLeaveEvent(androidx.wear.tiles.EventBuilders.TileLeaveEvent);
+    method @Deprecated @MainThread protected void onTileEnterEvent(androidx.wear.tiles.EventBuilders.TileEnterEvent);
+    method @Deprecated @MainThread protected void onTileLeaveEvent(androidx.wear.tiles.EventBuilders.TileLeaveEvent);
     method @MainThread protected void onTileRemoveEvent(androidx.wear.tiles.EventBuilders.TileRemoveEvent);
     method @MainThread protected abstract com.google.common.util.concurrent.ListenableFuture<androidx.wear.tiles.TileBuilders.Tile!> onTileRequest(androidx.wear.tiles.RequestBuilders.TileRequest);
     method @MainThread protected com.google.common.util.concurrent.ListenableFuture<androidx.wear.protolayout.ResourceBuilders.Resources!> onTileResourcesRequest(androidx.wear.tiles.RequestBuilders.ResourcesRequest);
@@ -1059,6 +1063,7 @@ package androidx.wear.tiles {
 
   public interface TileUpdateRequester {
     method public void requestUpdate(Class<? extends androidx.wear.tiles.TileService!>);
+    method public default void requestUpdate(Class<? extends androidx.wear.tiles.TileService!>, int);
   }
 
   @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public @interface TilesExperimental {

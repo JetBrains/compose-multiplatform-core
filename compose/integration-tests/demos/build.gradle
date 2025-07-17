@@ -1,3 +1,5 @@
+import androidx.build.ApkCopyHelperKt
+
 /**
  * This file was created using the `create_project.py` script located in the
  * `<AndroidX root>/development/project-creator` directory.
@@ -20,18 +22,20 @@ dependencies {
     implementation(project(":compose:material:material:integration-tests:material-demos"))
     implementation(project(":compose:material3:material3:integration-tests:material3-demos"))
     implementation(project(":navigation:navigation-compose:integration-tests:navigation-demos"))
+    implementation(project(":navigation3:navigation3-ui:integration-tests:navigation3-demos"))
     implementation(project(":paging:paging-compose:integration-tests:paging-demos"))
     implementation(project(":compose:ui:ui:integration-tests:ui-demos"))
 
     implementation(libs.kotlinReflect)
     implementation(libs.kotlinStdlib)
 
-    implementation(project(":core:core-ktx"))
+    implementation(project(":activity:activity"))
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:material:material"))
-    implementation("androidx.compose.material:material-icons-extended:1.6.7")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
@@ -39,9 +43,11 @@ dependencies {
     implementation("androidx.preference:preference-ktx:1.1.1")
 }
 
+// Publish an APK so demo app is available in ab/ for devs, PMs, QA to use.
+// Can also be used to bisect escaped defects in functionality.
+ApkCopyHelperKt.setupAppApkCopy(project, "release")
+
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    namespace "androidx.compose.integration.demos"
+    compileSdk = 36
+    namespace = "androidx.compose.integration.demos"
 }

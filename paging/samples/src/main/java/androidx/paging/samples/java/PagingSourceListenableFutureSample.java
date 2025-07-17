@@ -16,7 +16,6 @@
 
 package androidx.paging.samples.java;
 
-import androidx.annotation.NonNull;
 import androidx.paging.ListenableFuturePagingSource;
 import androidx.paging.PagingState;
 import androidx.paging.samples.shared.ExampleGuavaBackendService;
@@ -26,8 +25,8 @@ import androidx.paging.samples.shared.User;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -35,12 +34,9 @@ import java.util.concurrent.Executor;
 import retrofit2.HttpException;
 
 class PagingSourceListenableFutureSample extends ListenableFuturePagingSource<Integer, User> {
-    @NonNull
-    private ExampleGuavaBackendService mBackend;
-    @NonNull
-    private String mQuery;
-    @NonNull
-    private Executor mBgExecutor;
+    private @NonNull ExampleGuavaBackendService mBackend;
+    private @NonNull String mQuery;
+    private @NonNull Executor mBgExecutor;
 
     PagingSourceListenableFutureSample(
             @NonNull ExampleGuavaBackendService backend,
@@ -50,10 +46,9 @@ class PagingSourceListenableFutureSample extends ListenableFuturePagingSource<In
         mBgExecutor = bgExecutor;
     }
 
-    @NotNull
     @Override
-    public ListenableFuture<LoadResult<Integer, User>> loadFuture(
-            @NotNull LoadParams<Integer> params) {
+    public @NonNull ListenableFuture<LoadResult<Integer, User>> loadFuture(
+            @NonNull LoadParams<Integer> params) {
         // Start refresh at page 1 if undefined.
         Integer nextPageNumber = params.getKey();
         if (nextPageNumber == null) {
@@ -81,9 +76,8 @@ class PagingSourceListenableFutureSample extends ListenableFuturePagingSource<In
                 LoadResult.Page.COUNT_UNDEFINED);
     }
 
-    @Nullable
     @Override
-    public Integer getRefreshKey(@NotNull PagingState<Integer, User> state) {
+    public @Nullable Integer getRefreshKey(@NonNull PagingState<Integer, User> state) {
         Integer anchorPosition = state.getAnchorPosition();
         if (anchorPosition == null) {
             return null;

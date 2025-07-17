@@ -91,10 +91,10 @@ class ObjectListTest {
     @Test
     fun joinToString() {
         assertEquals("1, 2, 3, 4, 5", list.joinToString())
-        assertEquals("x1, 2, 3...", list.joinToString(prefix = "x", postfix = "y", limit = 3))
+        assertEquals("x1, 2, 3, ...y", list.joinToString(prefix = "x", postfix = "y", limit = 3))
         assertEquals(">1-2-3-4-5<", list.joinToString(separator = "-", prefix = ">", postfix = "<"))
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it) {
                     1 -> "one"
@@ -102,7 +102,7 @@ class ObjectListTest {
                     3 -> "three"
                     else -> "whoops"
                 }
-            }
+            },
         )
     }
 
@@ -153,21 +153,21 @@ class ObjectListTest {
             list.elementAtOrElse(0) {
                 assertEquals(0, it)
                 0
-            }
+            },
         )
         assertEquals(
             0,
             list.elementAtOrElse(-1) {
                 assertEquals(-1, it)
                 0
-            }
+            },
         )
         assertEquals(
             0,
             list.elementAtOrElse(5) {
                 assertEquals(5, it)
                 0
-            }
+            },
         )
     }
 
@@ -396,7 +396,7 @@ class ObjectListTest {
     fun foldRightIndexed() {
         assertEquals(
             "45-34-23-12-01-",
-            list.foldRightIndexed("") { index, i, acc -> "$acc$index$i-" }
+            list.foldRightIndexed("") { index, i, acc -> "$acc$index$i-" },
         )
     }
 
@@ -1058,9 +1058,9 @@ class ObjectListTest {
         assertEquals(2, v.size)
         assertEquals(1, v[0])
         assertEquals(5, v[1])
-        kotlin.test.assertNull(v.content[2])
-        kotlin.test.assertNull(v.content[3])
-        kotlin.test.assertNull(v.content[4])
+        assertNull(v.content[2])
+        assertNull(v.content[3])
+        assertNull(v.content[4])
     }
 
     @Test
@@ -1153,7 +1153,7 @@ class ObjectListTest {
         assertEquals(3, l2[0])
     }
 
-    @Suppress("KotlinConstantConditions")
+    @Suppress("KotlinConstantConditions", "RedundantSuppression")
     @Test
     fun list_outOfBounds_Get_Below() {
         assertFailsWith(IndexOutOfBoundsException::class) {
@@ -1162,7 +1162,7 @@ class ObjectListTest {
         }
     }
 
-    @Suppress("KotlinConstantConditions")
+    @Suppress("KotlinConstantConditions", "RedundantSuppression")
     @Test
     fun sublist_outOfBounds_Get_Below() {
         assertFailsWith(IndexOutOfBoundsException::class) {
@@ -1219,7 +1219,7 @@ class ObjectListTest {
         }
     }
 
-    @Suppress("KotlinConstantConditions")
+    @Suppress("KotlinConstantConditions", "RedundantSuppression")
     @Test
     fun list_outOfBounds_Set_Below() {
         assertFailsWith(IndexOutOfBoundsException::class) {
@@ -1228,7 +1228,7 @@ class ObjectListTest {
         }
     }
 
-    @Suppress("KotlinConstantConditions")
+    @Suppress("KotlinConstantConditions", "RedundantSuppression")
     @Test
     fun sublist_outOfBounds_Set_Below() {
         assertFailsWith(IndexOutOfBoundsException::class) {

@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,18 +29,18 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api(project(":arch:core:core-common"))
 }
 
 androidx {
     name = "Arch-Runtime"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Arch-Runtime"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.arch.core"
+    namespace = "androidx.arch.core"
 }

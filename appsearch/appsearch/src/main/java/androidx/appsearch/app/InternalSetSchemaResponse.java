@@ -16,12 +16,19 @@
 
 package androidx.appsearch.app;
 
-import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.safeparcel.AbstractSafeParcelable;
+import androidx.appsearch.safeparcel.SafeParcelable;
+import androidx.appsearch.safeparcel.stub.StubCreators.InternalSetSchemaResponseCreator;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An internal wrapper class of {@link SetSchemaResponse}.
@@ -34,36 +41,30 @@ import androidx.core.util.Preconditions;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class InternalSetSchemaResponse {
-
-    private static final String IS_SUCCESS_FIELD = "isSuccess";
-    private static final String SET_SCHEMA_RESPONSE_BUNDLE_FIELD = "setSchemaResponseBundle";
-    private static final String ERROR_MESSAGE_FIELD = "errorMessage";
-
-    private final Bundle mBundle;
-
-    public InternalSetSchemaResponse(@NonNull Bundle bundle) {
-        mBundle = Preconditions.checkNotNull(bundle);
-    }
-
-    private InternalSetSchemaResponse(boolean isSuccess,
-            @NonNull SetSchemaResponse setSchemaResponse,
-            @Nullable String errorMessage) {
-        Preconditions.checkNotNull(setSchemaResponse);
-        mBundle = new Bundle();
-        mBundle.putBoolean(IS_SUCCESS_FIELD, isSuccess);
-        mBundle.putBundle(SET_SCHEMA_RESPONSE_BUNDLE_FIELD, setSchemaResponse.getBundle());
-        mBundle.putString(ERROR_MESSAGE_FIELD, errorMessage);
-    }
-
-    /**
-     * Returns the {@link Bundle} populated by this builder.
-     * @exportToFramework:hide
-     */
-    @NonNull
+@SafeParcelable.Class(creator = "InternalSetSchemaResponseCreator")
+public class InternalSetSchemaResponse extends AbstractSafeParcelable {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public Bundle getBundle() {
-        return mBundle;
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+public static final Parcelable.@NonNull Creator<InternalSetSchemaResponse> CREATOR =
+            new InternalSetSchemaResponseCreator();
+
+    @Field(id = 1, getter = "isSuccess")
+    private final boolean mIsSuccess;
+
+    @Field(id = 2, getter = "getSetSchemaResponse")
+    private final SetSchemaResponse mSetSchemaResponse;
+    @Field(id = 3, getter = "getErrorMessage")
+private final @Nullable String mErrorMessage;
+
+    @Constructor
+    public InternalSetSchemaResponse(
+            @Param(id = 1) boolean isSuccess,
+            @Param(id = 2) @NonNull SetSchemaResponse setSchemaResponse,
+            @Param(id = 3) @Nullable String errorMessage) {
+        Preconditions.checkNotNull(setSchemaResponse);
+        mIsSuccess = isSuccess;
+        mSetSchemaResponse = setSchemaResponse;
+        mErrorMessage = errorMessage;
     }
 
     /**
@@ -71,8 +72,7 @@ public class InternalSetSchemaResponse {
      *
      * @param setSchemaResponse  The object this internal object represents.
      */
-    @NonNull
-    public static InternalSetSchemaResponse newSuccessfulSetSchemaResponse(
+    public static @NonNull InternalSetSchemaResponse newSuccessfulSetSchemaResponse(
             @NonNull SetSchemaResponse setSchemaResponse) {
         return new InternalSetSchemaResponse(/*isSuccess=*/ true, setSchemaResponse,
                 /*errorMessage=*/null);
@@ -84,8 +84,7 @@ public class InternalSetSchemaResponse {
      * @param setSchemaResponse  The object this internal object represents.
      * @param errorMessage       An string describing the reason or nature of the failure.
      */
-    @NonNull
-    public static InternalSetSchemaResponse newFailedSetSchemaResponse(
+    public static @NonNull InternalSetSchemaResponse newFailedSetSchemaResponse(
             @NonNull SetSchemaResponse setSchemaResponse,
             @NonNull String errorMessage) {
         return new InternalSetSchemaResponse(/*isSuccess=*/ false, setSchemaResponse,
@@ -94,7 +93,7 @@ public class InternalSetSchemaResponse {
 
     /** Returns {@code true} if the schema request is proceeded successfully. */
     public boolean isSuccess() {
-        return mBundle.getBoolean(IS_SUCCESS_FIELD);
+        return mIsSuccess;
     }
 
     /**
@@ -102,9 +101,8 @@ public class InternalSetSchemaResponse {
      *
      * <p>The call may or may not success. Check {@link #isSuccess()} before call this method.
      */
-    @NonNull
-    public SetSchemaResponse getSetSchemaResponse() {
-        return new SetSchemaResponse(mBundle.getBundle(SET_SCHEMA_RESPONSE_BUNDLE_FIELD));
+    public @NonNull SetSchemaResponse getSetSchemaResponse() {
+        return mSetSchemaResponse;
     }
 
 
@@ -113,8 +111,14 @@ public class InternalSetSchemaResponse {
      *
      * <p>If {@link #isSuccess} is {@code true}, the error message is always {@code null}.
      */
-    @Nullable
-    public String getErrorMessage() {
-        return mBundle.getString(ERROR_MESSAGE_FIELD);
+    public @Nullable String getErrorMessage() {
+        return mErrorMessage;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    @Override
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        InternalSetSchemaResponseCreator.writeToParcel(this, dest, flags);
     }
 }

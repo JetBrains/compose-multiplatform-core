@@ -24,11 +24,11 @@ import android.webkit.ServiceWorkerWebSettings;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.ServiceWorkerClientCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 
@@ -45,27 +45,21 @@ public class ApiHelperForN {
     /**
      * @see Context#getDataDir()
      */
-    @DoNotInline
-    @NonNull
-    public static File getDataDir(@NonNull Context context) {
+    public static @NonNull File getDataDir(@NonNull Context context) {
         return context.getDataDir();
     }
 
     /**
      * @see ServiceWorkerController#getInstance()
      */
-    @DoNotInline
-    @NonNull
-    public static ServiceWorkerController getServiceWorkerControllerInstance() {
+    public static @NonNull ServiceWorkerController getServiceWorkerControllerInstance() {
         return ServiceWorkerController.getInstance();
     }
 
     /**
      * @see ServiceWorkerController#getServiceWorkerWebSettings()
      */
-    @DoNotInline
-    @NonNull
-    public static ServiceWorkerWebSettings getServiceWorkerWebSettings(
+    public static @NonNull ServiceWorkerWebSettings getServiceWorkerWebSettings(
             @NonNull ServiceWorkerController serviceWorkerController) {
         return serviceWorkerController.getServiceWorkerWebSettings();
     }
@@ -73,9 +67,7 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerController#getServiceWorkerWebSettings()
      */
-    @DoNotInline
-    @NonNull
-    public static ServiceWorkerWebSettingsImpl getServiceWorkerWebSettingsImpl(
+    public static @NonNull ServiceWorkerWebSettingsImpl getServiceWorkerWebSettingsImpl(
             @NonNull ServiceWorkerController serviceWorkerController) {
         return new ServiceWorkerWebSettingsImpl(
                 getServiceWorkerWebSettings(serviceWorkerController));
@@ -84,7 +76,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerController#setServiceWorkerClient(ServiceWorkerClient)
      */
-    @DoNotInline
     public static void setServiceWorkerClient(
             @NonNull ServiceWorkerController serviceWorkerController,
             @Nullable ServiceWorkerClient serviceWorkerClient) {
@@ -94,7 +85,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerController#setServiceWorkerClient(ServiceWorkerClient)
      */
-    @DoNotInline
     public static void setServiceWorkerClientCompat(
             @NonNull ServiceWorkerController serviceWorkerController,
             @NonNull ServiceWorkerClientCompat serviceWorkerClientCompat) {
@@ -105,7 +95,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#setCacheMode(int)
      */
-    @DoNotInline
     public static void setCacheMode(@NonNull ServiceWorkerWebSettings serviceWorkerWebSettings,
             int cacheMode) {
         serviceWorkerWebSettings.setCacheMode(cacheMode);
@@ -114,7 +103,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#getCacheMode()
      */
-    @DoNotInline
     public static int getCacheMode(@NonNull ServiceWorkerWebSettings serviceWorkerWebSettings) {
         return serviceWorkerWebSettings.getCacheMode();
     }
@@ -122,7 +110,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#setAllowContentAccess(boolean)
      */
-    @DoNotInline
     public static void setAllowContentAccess(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings,
             boolean allowContentAccess) {
@@ -132,7 +119,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#getAllowContentAccess()
      */
-    @DoNotInline
     public static boolean getAllowContentAccess(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings) {
         return serviceWorkerWebSettings.getAllowContentAccess();
@@ -141,7 +127,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#setAllowFileAccess(boolean)
      */
-    @DoNotInline
     public static void setAllowFileAccess(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings, boolean allowFileAccess) {
         serviceWorkerWebSettings.setAllowFileAccess(allowFileAccess);
@@ -150,7 +135,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#getAllowFileAccess()
      */
-    @DoNotInline
     public static boolean getAllowFileAccess(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings) {
         return serviceWorkerWebSettings.getAllowFileAccess();
@@ -159,7 +143,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#setBlockNetworkLoads(boolean)
      */
-    @DoNotInline
     public static void setBlockNetworkLoads(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings, boolean blockNetworkLoads) {
         serviceWorkerWebSettings.setBlockNetworkLoads(blockNetworkLoads);
@@ -168,7 +151,6 @@ public class ApiHelperForN {
     /**
      * @see ServiceWorkerWebSettings#getBlockNetworkLoads()
      */
-    @DoNotInline
     public static boolean getBlockNetworkLoads(
             @NonNull ServiceWorkerWebSettings serviceWorkerWebSettings) {
         return serviceWorkerWebSettings.getBlockNetworkLoads();
@@ -177,7 +159,6 @@ public class ApiHelperForN {
     /**
      * @see WebResourceRequest#isRedirect()
      */
-    @DoNotInline
     public static boolean isRedirect(@NonNull WebResourceRequest webResourceRequest) {
         return webResourceRequest.isRedirect();
     }
@@ -185,7 +166,6 @@ public class ApiHelperForN {
     /**
      * @see WebSettings#setDisabledActionModeMenuItems(int)
      */
-    @DoNotInline
     public static void setDisabledActionModeMenuItems(@NonNull WebSettings webSettings, int i) {
         webSettings.setDisabledActionModeMenuItems(i);
     }
@@ -193,7 +173,6 @@ public class ApiHelperForN {
     /**
      * @see WebSettings#getDisabledActionModeMenuItems()
      */
-    @DoNotInline
     public static int getDisabledActionModeMenuItems(@NonNull WebSettings webSettings) {
         return webSettings.getDisabledActionModeMenuItems();
     }

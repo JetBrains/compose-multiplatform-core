@@ -35,8 +35,10 @@ import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraFactory.Provider
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.Observable
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.ContextUtilTest
+import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator
@@ -558,6 +560,15 @@ class CameraXInitRetryTest {
                                 override fun getCameraManager(): Any? {
                                     throw testException
                                 }
+
+                                override fun getCameraPresenceSource():
+                                    Observable<List<CameraIdentifier?>?> {
+                                    throw testException
+                                }
+
+                                override fun onCameraIdsUpdated(cameraIds: List<String?>) {
+                                    throw testException
+                                }
                             }
                     )
                 )
@@ -665,10 +676,16 @@ class CameraXInitRetryTest {
     private fun createCameraXConfig(
         cameraFactory: CameraFactory = createFakeCameraFactory(),
         surfaceManager: CameraDeviceSurfaceManager? = FakeCameraDeviceSurfaceManager(),
-        useCaseConfigFactory: UseCaseConfigFactory? = FakeUseCaseConfigFactory()
+        useCaseConfigFactory: UseCaseConfigFactory? = FakeUseCaseConfigFactory(),
     ): CameraXConfig {
         val cameraFactoryProvider =
-            Provider { _: Context?, _: CameraThreadConfig?, _: CameraSelector?, _: Long ->
+            Provider {
+                _: Context?,
+                _: CameraThreadConfig?,
+                _: CameraSelector?,
+                _: Long,
+                _: CameraXConfig?,
+                _: StreamSpecsCalculator ->
                 cameraFactory
             }
         return CameraXConfig.Builder()
@@ -692,7 +709,7 @@ class CameraXInitRetryTest {
                     FakeCamera(
                         CAMERA_ID_0,
                         null,
-                        FakeCameraInfoInternal(CAMERA_ID_0, 0, CameraSelector.LENS_FACING_BACK)
+                        FakeCameraInfoInternal(CAMERA_ID_0, 0, CameraSelector.LENS_FACING_BACK),
                     )
                 }
             }
@@ -701,7 +718,7 @@ class CameraXInitRetryTest {
                     FakeCamera(
                         CAMERA_ID_1,
                         null,
-                        FakeCameraInfoInternal(CAMERA_ID_1, 0, CameraSelector.LENS_FACING_FRONT)
+                        FakeCameraInfoInternal(CAMERA_ID_1, 0, CameraSelector.LENS_FACING_FRONT),
                     )
                 }
             }
@@ -715,7 +732,7 @@ class CameraXInitRetryTest {
             if (SystemClock.elapsedRealtime() < currentTime) {
                 ShadowSystemClock.advanceBy(
                     currentTime - SystemClock.elapsedRealtime(),
-                    TimeUnit.MILLISECONDS
+                    TimeUnit.MILLISECONDS,
                 )
             }
             delay(FAKE_INIT_PROCESS_TIME_MS)
@@ -725,7 +742,7 @@ class CameraXInitRetryTest {
     @Implements(
         value = VirtualDeviceManager::class,
         minSdk = AndroidVersions.U.SDK_INT,
-        isInAndroidSdk = false
+        isInAndroidSdk = false,
     )
     class TestShadowVDM : ShadowVirtualDeviceManager() {
         @Implementation

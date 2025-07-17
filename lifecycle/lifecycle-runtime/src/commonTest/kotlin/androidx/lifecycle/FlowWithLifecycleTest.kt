@@ -17,6 +17,7 @@
 package androidx.lifecycle
 
 import androidx.kruth.assertThat
+import androidx.testutils.lifecycle.FakeLifecycleOwner
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
+@IgnoreWebTarget
 class FlowWithLifecycleTest {
     private val owner = FakeLifecycleOwner()
 
@@ -76,7 +78,7 @@ class FlowWithLifecycleTest {
         assertFlowCollectsAgainOnRestart(
             flowOf(1, 2),
             expectedItemsBeforeRestarting = listOf(1, 2),
-            expectedItemsAfterRestarting = listOf(1, 2, 1, 2)
+            expectedItemsAfterRestarting = listOf(1, 2, 1, 2),
         )
     }
 
@@ -89,7 +91,7 @@ class FlowWithLifecycleTest {
                 delay(10000L)
             },
             expectedItemsBeforeRestarting = listOf(1, 2),
-            expectedItemsAfterRestarting = listOf(1, 2, 1, 2)
+            expectedItemsAfterRestarting = listOf(1, 2, 1, 2),
         )
     }
 
@@ -105,7 +107,7 @@ class FlowWithLifecycleTest {
                 sharedFlow.emit(2)
             },
             onRestart = { sharedFlow.emit(3) },
-            afterRestart = { sharedFlow.emit(4) }
+            afterRestart = { sharedFlow.emit(4) },
         )
     }
 
@@ -237,7 +239,7 @@ class FlowWithLifecycleTest {
         expectedItemsAfterRestarting: List<Int>,
         beforeRestart: suspend () -> Unit = {},
         onRestart: suspend () -> Unit = {},
-        afterRestart: suspend () -> Unit = {}
+        afterRestart: suspend () -> Unit = {},
     ) = coroutineScope {
         owner.setState(Lifecycle.State.STARTED)
 

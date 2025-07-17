@@ -29,7 +29,9 @@ class TextAnnotatedStringNodeInvalidationTest : NodeInvalidationTestParent() {
                 softWrap = params.softWrap,
                 fontFamilyResolver = params.fontFamilyResolver,
                 overflow = params.overflow,
-                placeholders = null
+                placeholders = null,
+                // TODO(b/364657660): Give this a non-null value when AutoSize becomes public
+                autoSize = null,
             )
     }
 
@@ -39,7 +41,7 @@ class TextAnnotatedStringNodeInvalidationTest : NodeInvalidationTestParent() {
             drawChanged = true,
             textChanged = true,
             layoutChanged = true,
-            callbacksChanged = true
+            callbacksChanged = true,
         )
     }
 
@@ -57,7 +59,7 @@ class TextAnnotatedStringNodeInvalidationTest : NodeInvalidationTestParent() {
             overflow = params.overflow,
             softWrap = params.softWrap,
             maxLines = params.maxLines,
-            minLines = params.minLines
+            minLines = params.minLines,
         )
     }
 
@@ -71,7 +73,7 @@ class TextAnnotatedStringNodeInvalidationTest : NodeInvalidationTestParent() {
             softWrap = params.softWrap,
             maxLines = params.maxLines,
             minLines = params.minLines,
-            overrideColor = drawParams.color
+            overrideColor = drawParams.color,
         )
     }
 }

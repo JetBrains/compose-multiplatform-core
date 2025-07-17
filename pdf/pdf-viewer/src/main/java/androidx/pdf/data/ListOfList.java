@@ -16,9 +16,10 @@
 
 package androidx.pdf.data;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.AbstractList;
 import java.util.List;
@@ -57,8 +58,7 @@ public class ListOfList<T> extends AbstractList<List<T>> {
     }
 
     /** Returns the flattened, one-dimensional list of all values. */
-    @NonNull
-    public List<T> flatten() {
+    public @NonNull List<T> flatten() {
         return mValues;
     }
 

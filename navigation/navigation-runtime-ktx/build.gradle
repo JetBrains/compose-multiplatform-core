@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,19 +31,15 @@ plugins {
 
 dependencies {
     api(project(":navigation:navigation-runtime"))
-    api(project(":navigation:navigation-common-ktx")) {
-        because 'Mirror navigation-runtime dependency graph for -ktx artifacts'
-    }
 }
 
 androidx {
     name = "Navigation Runtime Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Android Navigation-Runtime-Ktx"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.navigation.ktx"
+    namespace = "androidx.navigation.ktx"
 }

@@ -24,7 +24,12 @@ import androidx.compose.foundation.lazy.grid.scrollBy
 import androidx.compose.runtime.Stable
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -35,6 +40,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import org.junit.Rule
 
@@ -132,7 +138,7 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
             beforeContent = mainAxis,
             afterContent = mainAxis,
             beforeContentCrossAxis = crossAxis,
-            afterContentCrossAxis = crossAxis
+            afterContentCrossAxis = crossAxis,
         )
 
     fun PaddingValues(
@@ -146,18 +152,63 @@ open class BaseLazyLayoutTestWithOrientation(private val orientation: Orientatio
                 start = beforeContentCrossAxis,
                 top = beforeContent,
                 end = afterContentCrossAxis,
-                bottom = afterContent
+                bottom = afterContent,
             )
         } else {
             androidx.compose.foundation.layout.PaddingValues(
                 start = beforeContent,
                 top = beforeContentCrossAxis,
                 end = afterContent,
-                bottom = afterContentCrossAxis
+                bottom = afterContentCrossAxis,
             )
         }
 
     internal fun Modifier.debugBorder(color: Color = Color.Black) = border(1.dp, color)
+
+    internal class TestOverscrollEffect : OverscrollEffect {
+        var applyToScrollCalledCount: Int = 0
+            private set
+
+        var applyToFlingCalledCount: Int = 0
+            private set
+
+        var scrollOverscrollDelta: Offset = Offset.Zero
+            private set
+
+        var flingOverscrollVelocity: Velocity = Velocity.Zero
+            private set
+
+        var drawCalled: Boolean = false
+
+        override fun applyToScroll(
+            delta: Offset,
+            source: NestedScrollSource,
+            performScroll: (Offset) -> Offset,
+        ): Offset {
+            applyToScrollCalledCount++
+            val consumed = performScroll(delta)
+            scrollOverscrollDelta = delta - consumed
+            return consumed
+        }
+
+        override suspend fun applyToFling(
+            velocity: Velocity,
+            performFling: suspend (Velocity) -> Velocity,
+        ) {
+            applyToFlingCalledCount++
+            val consumed = performFling(velocity)
+            flingOverscrollVelocity = velocity - consumed
+        }
+
+        override val isInProgress: Boolean = false
+        override val node: DelegatableNode =
+            object : Modifier.Node(), DrawModifierNode {
+                override fun ContentDrawScope.draw() {
+                    drawContent()
+                    drawCalled = true
+                }
+            }
+    }
 
     companion object {
         internal const val FrameDuration = 16L

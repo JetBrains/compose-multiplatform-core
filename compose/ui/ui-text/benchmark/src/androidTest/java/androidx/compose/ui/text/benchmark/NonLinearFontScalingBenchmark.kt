@@ -26,6 +26,7 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
@@ -49,7 +50,7 @@ import org.junit.runners.Parameterized
 class NonLinearFontScalingBenchmark(
     private val textLength: Int,
     fontSizeSp: Int,
-    private val isLineHeightSp: Boolean
+    private val isLineHeightSp: Boolean,
 ) {
     companion object {
         @JvmStatic
@@ -61,7 +62,7 @@ class NonLinearFontScalingBenchmark(
                 arrayOf(8, 30),
                 // isLineHeightSp. This helps us verify that the calculation to keep line heights
                 // proportional doesn't affect performance too much. (see b/273326061)
-                arrayOf(false, true)
+                arrayOf(false, true),
             )
     }
 
@@ -82,7 +83,7 @@ class NonLinearFontScalingBenchmark(
             TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 textBenchmarkRule.widthDp,
-                instrumentationContext.resources.displayMetrics
+                instrumentationContext.resources.displayMetrics,
             )
     }
 
@@ -93,7 +94,8 @@ class NonLinearFontScalingBenchmark(
     private fun paragraph(text: String, width: Float, density: Density): Paragraph {
         return Paragraph(
             paragraphIntrinsics = paragraphIntrinsics(text, density),
-            constraints = Constraints(maxWidth = ceil(width).toInt())
+            constraints = Constraints(maxWidth = ceil(width).toInt()),
+            overflow = TextOverflow.Clip,
         )
     }
 
@@ -107,22 +109,24 @@ class NonLinearFontScalingBenchmark(
                     fontSize = fontSize,
                     lineHeight = fontSize * 2,
                     lineHeightStyle = LineHeightStyle.Default,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
                 )
             } else {
                 TextStyle(
                     fontSize = fontSize,
                     lineHeight = 2.em,
                     lineHeightStyle = LineHeightStyle.Default,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
                 )
             }
 
         return ParagraphIntrinsics(
             text = text,
-            density = density,
             style = style,
-            fontFamilyResolver = createFontFamilyResolver(instrumentationContext)
+            annotations = listOf(),
+            density = density,
+            fontFamilyResolver = createFontFamilyResolver(instrumentationContext),
+            placeholders = listOf(),
         )
     }
 
@@ -133,7 +137,7 @@ class NonLinearFontScalingBenchmark(
 
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
-                val text = runWithTimingDisabled {
+                val text = runWithMeasurementDisabled {
                     // create a new paragraph and use a smaller width to get
                     // some line breaking in the result
                     text(textGenerator)
@@ -151,7 +155,7 @@ class NonLinearFontScalingBenchmark(
 
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
-                val text = runWithTimingDisabled {
+                val text = runWithMeasurementDisabled {
                     // create a new paragraph and use a smaller width to get
                     // some line breaking in the result
                     text(textGenerator)

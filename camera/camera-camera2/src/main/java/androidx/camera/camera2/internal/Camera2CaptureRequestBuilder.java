@@ -21,11 +21,9 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
+import android.util.Range;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
@@ -39,6 +37,9 @@ import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +62,8 @@ class Camera2CaptureRequestBuilder {
      * @return a list of Surface confirmed to be configured.
      * @throws IllegalArgumentException if the DeferrableSurface is not the one in SessionConfig.
      */
-    @NonNull
-    private static List<Surface> getConfiguredSurfaces(List<DeferrableSurface> deferrableSurfaces,
+    private static @NonNull List<Surface> getConfiguredSurfaces(
+            List<DeferrableSurface> deferrableSurfaces,
             Map<DeferrableSurface, Surface> configuredSurfaceMap) {
         List<Surface> surfaceList = new ArrayList<>();
         for (DeferrableSurface deferrableSurface : deferrableSurfaces) {
@@ -79,7 +80,7 @@ class Camera2CaptureRequestBuilder {
     }
 
     private static void applyTemplateParamsOverrideWorkaround(
-            @NonNull CaptureRequest.Builder builder, int template,
+            CaptureRequest.@NonNull Builder builder, int template,
             @NonNull TemplateParamsOverride templateParamsOverride) {
         for (Map.Entry<CaptureRequest.Key<?>, Object> entry :
                 templateParamsOverride.getOverrideParams(template).entrySet()) {
@@ -110,28 +111,37 @@ class Camera2CaptureRequestBuilder {
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static void applyAeFpsRange(@NonNull CaptureConfig captureConfig,
-            @NonNull CaptureRequest.Builder builder) {
-        if (!captureConfig.getExpectedFrameRateRange().equals(
+            CaptureRequest.@NonNull Builder builder) {
+        Range<Integer> expectedFrameRateRange = captureConfig.getExpectedFrameRateRange();
+        if (!expectedFrameRateRange.equals(
                 StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED)) {
-            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                    captureConfig.getExpectedFrameRateRange());
+            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, expectedFrameRateRange);
         }
-
+        Logger.d(TAG, "applyAeFpsRange: expectedFrameRateRange = " + expectedFrameRateRange);
     }
 
     @VisibleForTesting
     static void applyVideoStabilization(@NonNull CaptureConfig captureConfig,
-            @NonNull CaptureRequest.Builder builder) {
+            CaptureRequest.@NonNull Builder builder) {
+        Integer mode = getVideoStabilizationModeFromCaptureConfig(captureConfig);
+        if (mode != null) {
+            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, mode);
+        }
+        Logger.d(TAG, "applyVideoStabilization: mode = " + mode);
+    }
+
+    // null indicates the stabilization mode unspecified.
+    static Integer getVideoStabilizationModeFromCaptureConfig(
+            @NonNull CaptureConfig captureConfig) {
         if (captureConfig.getPreviewStabilizationMode() == StabilizationMode.OFF
                 || captureConfig.getVideoStabilizationMode() == StabilizationMode.OFF) {
-            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+            return CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF;
         } else if (captureConfig.getPreviewStabilizationMode() == StabilizationMode.ON) {
-            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION);
+            return CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION;
         } else if (captureConfig.getVideoStabilizationMode() == StabilizationMode.ON) {
-            builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-                    CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
+            return CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON;
+        } else {
+            return null;
         }
     }
 
@@ -145,8 +155,7 @@ class Camera2CaptureRequestBuilder {
      * @param configuredSurfaceMap A map of {@link DeferrableSurface} to {@link Surface}
      * @param isRepeatingRequest   whether it is building a repeating request or not
      */
-    @Nullable
-    public static CaptureRequest build(@NonNull CaptureConfig captureConfig,
+    public static @Nullable CaptureRequest build(@NonNull CaptureConfig captureConfig,
             @Nullable CameraDevice device,
             @NonNull Map<DeferrableSurface, Surface> configuredSurfaceMap,
             boolean isRepeatingRequest, @NonNull TemplateParamsOverride mTemplateParamsOverride)
@@ -182,10 +191,8 @@ class Camera2CaptureRequestBuilder {
             }
         }
 
-        if (isRepeatingRequest) {
-            applyTemplateParamsOverrideWorkaround(builder, captureConfig.getTemplateType(),
-                    mTemplateParamsOverride);
-        }
+        applyTemplateParamsOverrideWorkaround(builder, captureConfig.getTemplateType(),
+                mTemplateParamsOverride);
 
         applyAeFpsRange(captureConfig, builder);
 
@@ -226,18 +233,20 @@ class Camera2CaptureRequestBuilder {
      *
      * <p>Returns {@code null} if a valid {@link CaptureRequest} can not be constructed.
      */
-    @Nullable
-    public static CaptureRequest buildWithoutTarget(@NonNull CaptureConfig captureConfig,
+    public static @Nullable CaptureRequest buildWithoutTarget(@NonNull CaptureConfig captureConfig,
             @Nullable CameraDevice device, @NonNull TemplateParamsOverride templateParamsOverride)
             throws CameraAccessException {
         if (device == null) {
             return null;
         }
+        Logger.d(TAG, "template type = " + captureConfig.getTemplateType());
         CaptureRequest.Builder builder = device.createCaptureRequest(
                 captureConfig.getTemplateType());
 
         applyTemplateParamsOverrideWorkaround(builder, captureConfig.getTemplateType(),
                 templateParamsOverride);
+
+        applyAeFpsRange(captureConfig, builder);
 
         applyImplementationOptionToCaptureBuilder(builder,
                 captureConfig.getImplementationOptions());
@@ -254,7 +263,6 @@ class Camera2CaptureRequestBuilder {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static CaptureRequest.Builder createReprocessCaptureRequest(
                 @NonNull CameraDevice cameraDevice,
                 @NonNull TotalCaptureResult totalCaptureResult)

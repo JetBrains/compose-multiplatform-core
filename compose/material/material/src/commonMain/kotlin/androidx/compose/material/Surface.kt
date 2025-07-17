@@ -41,8 +41,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/design/environment/surfaces.html" class="external"
- * target="_blank">Material Design surface</a>.
+ * [Material Design surface](https://material.io/design/environment/surfaces.html)
  *
  * Material surface is the central metaphor in material design. Each surface exists at a given
  * elevation, which influences how that piece of surface visually relates to other surfaces and how
@@ -89,6 +88,7 @@ import androidx.compose.ui.unit.dp
  * @param border Optional border to draw on top of the surface
  * @param elevation The size of the shadow below the surface. Note that It will not affect z index
  *   of the Surface. If you want to change the drawing order you can use `Modifier.zIndex`.
+ * @param content The content to be displayed on this Surface
  */
 @Composable
 fun Surface(
@@ -98,12 +98,12 @@ fun Surface(
     contentColor: Color = contentColorFor(color),
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -114,17 +114,17 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .semantics(mergeDescendants = false) {
                         @Suppress("DEPRECATION")
                         isContainer = true
                     }
                     .pointerInput(Unit) {},
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -190,6 +190,7 @@ fun Surface(
  *   emitting [Interaction]s for this surface. You can use this to change the surface's appearance
  *   or preview the surface in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ * @param content The content to be displayed on this Surface
  */
 @ExperimentalMaterialApi
 @Composable
@@ -203,12 +204,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -220,18 +221,18 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .clickable(
                         interactionSource = interactionSource,
-                        indication = rippleOrFallbackImplementation(),
+                        indication = ripple(),
                         enabled = enabled,
-                        onClick = onClick
+                        onClick = onClick,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -298,6 +299,7 @@ fun Surface(
  *   emitting [Interaction]s for this surface. You can use this to change the surface's appearance
  *   or preview the surface in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ * @param content The content to be displayed on this Surface
  */
 @ExperimentalMaterialApi
 @Composable
@@ -312,12 +314,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -329,19 +331,19 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .selectable(
                         selected = selected,
                         interactionSource = interactionSource,
-                        indication = rippleOrFallbackImplementation(),
+                        indication = ripple(),
                         enabled = enabled,
-                        onClick = onClick
+                        onClick = onClick,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -408,6 +410,7 @@ fun Surface(
  *   emitting [Interaction]s for this surface. You can use this to change the surface's appearance
  *   or preview the surface in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
+ * @param content The content to be displayed on this Surface
  */
 @ExperimentalMaterialApi
 @Composable
@@ -422,12 +425,12 @@ fun Surface(
     border: BorderStroke? = null,
     elevation: Dp = 0.dp,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val absoluteElevation = LocalAbsoluteElevation.current + elevation
     CompositionLocalProvider(
         LocalContentColor provides contentColor,
-        LocalAbsoluteElevation provides absoluteElevation
+        LocalAbsoluteElevation provides absoluteElevation,
     ) {
         Box(
             modifier =
@@ -439,19 +442,19 @@ fun Surface(
                             surfaceColorAtElevation(
                                 color = color,
                                 elevationOverlay = LocalElevationOverlay.current,
-                                absoluteElevation = absoluteElevation
+                                absoluteElevation = absoluteElevation,
                             ),
                         border = border,
-                        elevation = elevation
+                        elevation = elevation,
                     )
                     .toggleable(
                         value = checked,
                         interactionSource = interactionSource,
-                        indication = rippleOrFallbackImplementation(),
+                        indication = ripple(),
                         enabled = enabled,
-                        onValueChange = onCheckedChange
+                        onValueChange = onCheckedChange,
                     ),
-            propagateMinConstraints = true
+            propagateMinConstraints = true,
         ) {
             content()
         }
@@ -462,7 +465,7 @@ private fun Modifier.surface(
     shape: Shape,
     backgroundColor: Color,
     border: BorderStroke?,
-    elevation: Dp
+    elevation: Dp,
 ) =
     this.shadow(elevation, shape, clip = false)
         .then(if (border != null) Modifier.border(border, shape) else Modifier)
@@ -473,7 +476,7 @@ private fun Modifier.surface(
 private fun surfaceColorAtElevation(
     color: Color,
     elevationOverlay: ElevationOverlay?,
-    absoluteElevation: Dp
+    absoluteElevation: Dp,
 ): Color {
     return if (color == MaterialTheme.colors.surface && elevationOverlay != null) {
         elevationOverlay.apply(color, absoluteElevation)

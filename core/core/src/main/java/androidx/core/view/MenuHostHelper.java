@@ -21,10 +21,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -171,7 +172,7 @@ public class MenuHostHelper {
      */
     @SuppressLint("LambdaLast")
     public void addMenuProvider(@NonNull MenuProvider provider, @NonNull LifecycleOwner owner,
-            @NonNull Lifecycle.State state) {
+            Lifecycle.@NonNull State state) {
         Lifecycle lifecycle = owner.getLifecycle();
         LifecycleContainer lifecycleContainer = mProviderToLifecycleContainers.remove(provider);
         if (lifecycleContainer != null) {

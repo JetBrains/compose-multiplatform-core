@@ -18,6 +18,7 @@
 
     <application>
         <activity android:name="androidx.window.TestActivity" />
+        <activity android:name="androidx.window.TestActivityEdgeToEdge" />
         <activity android:name="androidx.window.TestConfigChangeHandlingActivity"
             android:configChanges="orientation|screenLayout|screenSize"/>
 
@@ -41,6 +42,14 @@
         <property
             android:name=
                 "android.window.PROPERTY_COMPAT_ALLOW_RESIZEABLE_ACTIVITY_OVERRIDES"
+            android:value="false" />
+        <property
+            android:name=
+                "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_OVERRIDE"
+            android:value="false" />
+        <property
+            android:name=
+                "android.window.PROPERTY_COMPAT_ALLOW_USER_ASPECT_RATIO_FULLSCREEN_OVERRIDE"
             android:value="false" />
     </application>
 </manifest>

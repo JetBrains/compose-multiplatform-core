@@ -42,7 +42,7 @@ class TestUwbClient(
     val localAddress: UwbAddress,
     val rangingCapabilities: RangingCapabilities,
     val isAvailable: Boolean,
-    private val isController: Boolean
+    private val isController: Boolean,
 ) : UwbClient {
     var stopRangingCalled = false
         private set
@@ -99,7 +99,7 @@ class TestUwbClient(
 
     override fun startRanging(
         parameters: RangingParameters,
-        sessionCallback: RangingSessionCallback
+        sessionCallback: RangingSessionCallback,
     ): Task<Void> {
         if (startedRanging) {
             throw ApiException(Status(UwbStatusCodes.RANGING_ALREADY_STARTED))
@@ -129,7 +129,14 @@ class TestUwbClient(
     }
 
     override fun addControleeWithSessionParams(p0: RangingControleeParameters): Task<Void> {
-        TODO("Not yet implemented")
+        if (!isController) {
+            throw RuntimeException("Illegal api calls for controlee client.")
+        }
+        if (!startedRanging) {
+            throw ApiException(Status(UwbStatusCodes.INVALID_API_CALL))
+        }
+        callback.onRangingResult(UwbDevice.createForAddress(p0.address.address), rangingPosition)
+        return Tasks.forResult(null)
     }
 
     override fun reconfigureRangeDataNtf(p0: Int, p1: Int, p2: Int): Task<Void> {

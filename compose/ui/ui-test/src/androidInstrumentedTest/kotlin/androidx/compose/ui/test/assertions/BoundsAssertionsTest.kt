@@ -23,7 +23,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.WithMinimumTouchTargetSize
@@ -32,11 +35,15 @@ import androidx.compose.testutils.expectError
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertHeightIsEqualTo
@@ -49,11 +56,22 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getAlignmentLinePosition
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getFirstLinkBounds
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkAnnotation.Url
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -444,8 +462,240 @@ class BoundsAssertionsTest {
             layout(
                 constraints.maxWidth,
                 constraints.maxHeight,
-                mapOf(TestLine to linePositionPx)
+                mapOf(TestLine to linePositionPx),
             ) {}
         }
     }
+
+    @Test
+    fun getFirstLinkBounds_multipleMatches_handleSecond() {
+        lateinit var textLayoutResult: TextLayoutResult
+        var count = -1
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Url("url1")) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Clickable("tag1") {}) { append("link3") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(
+                textNode.getFirstLinkBounds {
+                    count++
+                    count == 1
+                }
+            )
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(6).left,
+                    textLayoutResult.getBoundingBox(6).top,
+                    textLayoutResult.getBoundingBox(10).right,
+                    textLayoutResult.getBoundingBox(10).bottom,
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_forSpecificUrl_multipleMatches_firstReturn() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Url("url1")) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Url("url1") {}) { append("link3") }
+                    withLink(LinkAnnotation.Clickable("tag2") {}) { append("link4") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(textNode.getFirstLinkBounds { (it.item as? LinkAnnotation.Url)?.url == "url1" })
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(1).left,
+                    textLayoutResult.getBoundingBox(1).top,
+                    textLayoutResult.getBoundingBox(5).right,
+                    textLayoutResult.getBoundingBox(5).bottom,
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_forAllClickable_multipleMatches_returnsFirst() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(LinkAnnotation.Clickable("tag1") {}) { append("link1") }
+                    withLink(LinkAnnotation.Url("url2")) { append("link2") }
+                    withLink(LinkAnnotation.Clickable("tag2") {}) { append("link3") }
+                },
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a", substring = true)
+        assertThat(textNode.getFirstLinkBounds { it.item is LinkAnnotation.Clickable })
+            .isEqualTo(
+                Rect(
+                    textLayoutResult.getBoundingBox(1).left,
+                    textLayoutResult.getBoundingBox(1).top,
+                    textLayoutResult.getBoundingBox(5).right,
+                    textLayoutResult.getBoundingBox(5).bottom,
+                )
+            )
+    }
+
+    @Test
+    fun getFirstLinkBounds_ZeroMatches() {
+        rule.setContent { BasicText(AnnotatedString("a")) }
+        assertThat(rule.onNodeWithText("a").getFirstLinkBounds { true }).isNull()
+    }
+
+    @Test
+    fun getFirstLinkBounds_explicitZeroMatches() {
+        rule.setContent {
+            BasicText(buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("a") } })
+        }
+        assertThat(rule.onNodeWithText("a").getFirstLinkBounds { false }).isNull()
+    }
+
+    @Test
+    fun getFirstLinkBounds_relativeToTextNode() {
+        lateinit var textLayoutResult: TextLayoutResult
+        val offset = with(rule.density) { 17f.toDp() }
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(Url("url")) { append("a") } },
+                onTextLayout = { textLayoutResult = it },
+                modifier = Modifier.offset(offset, offset),
+            )
+        }
+
+        val textNode = rule.onNodeWithText("a")
+        assertThat(textNode.getBoundsInRoot().topLeft).isEqualTo(DpOffset(offset, offset))
+        assertThat(textLayoutResult.getBoundingBox(0).topLeft).isEqualTo(Offset(0f, 0f))
+        assertThat(textNode.getFirstLinkBounds { true }!!.topLeft).isEqualTo(Offset(0f, 0f))
+    }
+
+    @Test(expected = AssertionError::class)
+    fun getFirstLinkBounds_expectMatchingTextForTextLayoutResult() {
+        val TAG = "text node"
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("link") } },
+                modifier = Modifier.testTag(TAG).semantics { text = AnnotatedString("other text") },
+            )
+        }
+        rule.onNodeWithTag(TAG).getFirstLinkBounds { true }
+    }
+
+    @Test
+    fun getFirstLinkBounds_mergedNode_expectMatchingTextForTextLayoutResult() {
+        lateinit var textLayoutResult: TextLayoutResult
+        val TAG = "box node"
+        rule.setContent {
+            Box(Modifier.semantics(true) {}.testTag(TAG)) {
+                Box(Modifier.size(10.dp).semantics { text = AnnotatedString("no link text") })
+                BasicText(
+                    buildAnnotatedString { withLink(LinkAnnotation.Url("url")) { append("a") } },
+                    onTextLayout = { textLayoutResult = it },
+                )
+            }
+        }
+
+        val textNode = rule.onNodeWithTag(TAG)
+        assertThat(textNode.getFirstLinkBounds { true })
+            .isEqualTo(textLayoutResult.getBoundingBox(0))
+    }
+
+    @Test
+    fun getFirstLinkBounds_link_inMiddle_spansMultipleLines_returnsFirstLineBounds() {
+        lateinit var textLayoutResult: TextLayoutResult
+
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("a")
+                    withLink(Url("url")) { append("bc") }
+                },
+                modifier = Modifier.width(20.dp),
+                style = TextStyle(fontSize = with(rule.density) { 20.dp.toSp() }),
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("abc")
+        val expected =
+            Rect(
+                textLayoutResult.getBoundingBox(1).left,
+                textLayoutResult.getBoundingBox(1).top,
+                textLayoutResult.getBoundingBox(1).right,
+                textLayoutResult.getBoundingBox(1).bottom,
+            )
+        assertThat(textLayoutResult.lineCount).isEqualTo(3)
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expected)
+    }
+
+    @Test
+    fun getFirstLinkBounds_linkSpansMultipleLines_returnsFirstLineBounds() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString { withLink(Url("url")) { append("abc") } },
+                modifier = Modifier.width(30.dp),
+                style = TextStyle(fontSize = with(rule.density) { 20.dp.toSp() }),
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithText("abc")
+        val expected =
+            Rect(
+                textLayoutResult.getBoundingBox(0).left,
+                textLayoutResult.getBoundingBox(0).top,
+                textLayoutResult.getBoundingBox(1).right,
+                textLayoutResult.getBoundingBox(1).bottom,
+            )
+        assertThat(textLayoutResult.lineCount).isEqualTo(2)
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expected)
+    }
+
+    @Test
+    fun getFirstLinkBounds_rtlText() {
+        lateinit var textLayoutResult: TextLayoutResult
+        rule.setContent {
+            BasicText(
+                buildAnnotatedString {
+                    append("\u05D1\u05D2\u05D3\u05D0\u05D1")
+                    addLink(Url("url"), 1, 4)
+                },
+                modifier = Modifier.testTag("tag"),
+                onTextLayout = { textLayoutResult = it },
+            )
+        }
+
+        val textNode = rule.onNodeWithTag("tag")
+        val expectedBounds =
+            textLayoutResult.run {
+                val right = getBoundingBox(1).right
+                val top = getBoundingBox(1).top
+                val left = getBoundingBox(3).left
+                val bottom = getBoundingBox(3).bottom
+                Rect(left, top, right, bottom)
+            }
+        assertThat(textNode.getFirstLinkBounds { true }).isEqualTo(expectedBounds)
+    }
+
+    private val DpRect.topLeft: DpOffset
+        get() = DpOffset(left, top)
 }

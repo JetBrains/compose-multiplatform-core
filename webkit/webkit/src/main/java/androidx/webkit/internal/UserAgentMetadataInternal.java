@@ -16,8 +16,9 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.UserAgentMetadata;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,8 +100,7 @@ public class UserAgentMetadataInternal {
      *
      * @return A hashmap contains user-agent metadata key name, and corresponding objects.
      */
-    @NonNull
-    static Map<String, Object> convertUserAgentMetadataToMap(
+    static @NonNull Map<String, Object> convertUserAgentMetadataToMap(
             @NonNull UserAgentMetadata uaMetadata) {
         Map<String, Object> item = new HashMap<>();
         item.put(BRAND_VERSION_LIST, getBrandVersionArray(uaMetadata.getBrandVersionList()));
@@ -139,8 +139,7 @@ public class UserAgentMetadataInternal {
      *                      objects.
      * @return This UserAgentMetadata object
      */
-    @NonNull
-    static UserAgentMetadata getUserAgentMetadataFromMap(
+    static @NonNull UserAgentMetadata getUserAgentMetadataFromMap(
             @NonNull Map<String, Object> uaMetadataMap) {
         UserAgentMetadata.Builder builder = new UserAgentMetadata.Builder();
 

@@ -20,11 +20,12 @@ import android.content.Context;
 import android.view.KeyEvent;
 import android.view.animation.Animation;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.UiThread;
 import androidx.wear.utils.ActivityAnimationUtil;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Controller that handles the back button click for dismiss the frame layout

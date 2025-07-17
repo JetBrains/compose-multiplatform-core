@@ -18,7 +18,6 @@ package androidx.compose.ui.node
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.internal.checkPrecondition
-import org.jetbrains.annotations.TestOnly
 
 /**
  * A [Modifier.Node] which is able to delegate work to other [Modifier.Node] instances.
@@ -26,15 +25,10 @@ import org.jetbrains.annotations.TestOnly
  * This can be useful to compose multiple node implementations into one.
  *
  * @sample androidx.compose.ui.samples.DelegatedNodeSampleExplicit
- *
  * @sample androidx.compose.ui.samples.DelegatedNodeSampleImplicit
- *
  * @sample androidx.compose.ui.samples.LazyDelegationExample
- *
  * @sample androidx.compose.ui.samples.ConditionalDelegationExample
- *
  * @sample androidx.compose.ui.samples.DelegateInAttachSample
- *
  * @see DelegatingNode
  */
 abstract class DelegatingNode : Modifier.Node() {
@@ -52,11 +46,12 @@ abstract class DelegatingNode : Modifier.Node() {
 
     internal var delegate: Modifier.Node? = null
 
-    @TestOnly
+    // @TestOnly
     internal fun <T : DelegatableNode> delegateUnprotected(delegatableNode: T): T =
         delegate(delegatableNode)
 
-    @TestOnly internal fun undelegateUnprotected(instance: DelegatableNode) = undelegate(instance)
+    // @TestOnly
+    internal fun undelegateUnprotected(instance: DelegatableNode) = undelegate(instance)
 
     override fun setAsDelegateTo(owner: Modifier.Node) {
         super.setAsDelegateTo(owner)

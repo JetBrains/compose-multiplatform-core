@@ -5,7 +5,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -19,20 +19,25 @@ android {
     }
     buildTypes.configureEach {
         stableAidl {
-            version 1
+            version = 1
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.browser"
+    namespace = "androidx.browser"
+}
+
+android {
+    compileSdk = 36
 }
 
 dependencies {
-    api("androidx.core:core:1.1.0")
-    api("androidx.annotation:annotation:1.2.0")
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api(libs.jspecify)
+    api("androidx.core:core:1.10.0")
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.annotation:annotation-experimental:1.4.1")
     api(libs.guavaListenableFuture)
 
-    implementation("androidx.collection:collection:1.1.0")
+    implementation("androidx.activity:activity:1.9.0")
+    implementation("androidx.collection:collection:1.4.2")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.interpolator:interpolator:1.0.0")
 
@@ -40,25 +45,26 @@ dependencies {
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.guavaAndroid)
+    testImplementation(libs.junit)
 
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.testMonitor)
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 androidx {
     name = "Browser"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2015"
     description = "Provides support for embedding Custom Tabs in an app."
-    metalavaK2UastEnabled = true
+    enableRobolectric()
 }

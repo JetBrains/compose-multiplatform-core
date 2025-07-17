@@ -63,12 +63,11 @@ internal constructor(
     @get:JvmName("preferImmediatelyAvailableCredentials")
     val preferImmediatelyAvailableCredentials: Boolean,
 ) {
-
     init {
         credentialData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
         credentialData.putBoolean(
             BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-            preferImmediatelyAvailableCredentials
+            preferImmediatelyAvailableCredentials,
         )
         candidateQueryData.putBoolean(BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED, isAutoSelectAllowed)
     }
@@ -105,12 +104,7 @@ internal constructor(
         constructor(
             userId: CharSequence,
             userDisplayName: CharSequence? = null,
-        ) : this(
-            userId,
-            userDisplayName,
-            null,
-            null,
-        )
+        ) : this(userId, userDisplayName, null, null)
 
         /**
          * Constructs a [DisplayInfo].
@@ -129,13 +123,8 @@ internal constructor(
         constructor(
             userId: CharSequence,
             userDisplayName: CharSequence?,
-            preferDefaultProvider: String?
-        ) : this(
-            userId,
-            userDisplayName,
-            null,
-            preferDefaultProvider,
-        )
+            preferDefaultProvider: String?,
+        ) : this(userId, userDisplayName, null, preferDefaultProvider)
 
         init {
             require(userId.isNotEmpty()) { "userId should not be empty" }
@@ -177,11 +166,15 @@ internal constructor(
             /**
              * Returns a RequestDisplayInfo from a [CreateCredentialRequest.credentialData] Bundle.
              *
+             * It is recommended to construct a DisplayInfo by direct constructor calls, instead of
+             * using this API. This API should only be used by a small subset of system apps that
+             * reconstruct an existing object for user interactions such as collecting consents.
+             *
              * @param from the raw display data in the Bundle format, retrieved from
              *   [CreateCredentialRequest.credentialData]
              */
             @JvmStatic
-            @RequiresApi(23)
+            @RequiresApi(23) // Icon dependency
             fun createFrom(from: Bundle): DisplayInfo {
                 return try {
                     val displayInfoBundle = from.getBundle(BUNDLE_KEY_REQUEST_DISPLAY_INFO)!!
@@ -210,17 +203,52 @@ internal constructor(
             "androidx.credentials.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED"
 
         /**
+         * Parses the [request] into an instance of [CreateCredentialRequest].
+         *
+         * It is recommended to construct a CreateCredentialRequest by directly instantiating a
+         * CreateCredentialRequest subclass, instead of using this API. This API should only be used
+         * by a small subset of system apps that reconstruct an existing object for user
+         * interactions such as collecting consents.
+         *
+         * @param request the framework CreateCredentialRequest object
+         */
+        @JvmStatic
+        @RequiresApi(34)
+        fun createFrom(
+            request: android.credentials.CreateCredentialRequest
+        ): CreateCredentialRequest {
+            return createFrom(
+                request.type,
+                request.credentialData,
+                request.candidateQueryData,
+                request.isSystemProviderRequired,
+                request.origin,
+            )
+        }
+
+        /**
          * Attempts to parse the raw data into one of [CreatePasswordRequest],
          * [CreatePublicKeyCredentialRequest], and [CreateCustomCredentialRequest].
          *
+         * It is recommended to construct a CreateCredentialRequest by directly instantiating a
+         * CreateCredentialRequest subclass, instead of using this API. This API should only be used
+         * by a small subset of system apps that reconstruct an existing object for user
+         * interactions such as collecting consents.
+         *
          * @param type matches [CreateCredentialRequest.type]
-         * @param credentialData matches [CreateCredentialRequest.credentialData]
-         * @param candidateQueryData matches [CreateCredentialRequest.candidateQueryData]
+         * @param credentialData matches [CreateCredentialRequest.credentialData], the request data
+         *   in the [Bundle] format; this should be constructed and retrieved from the a given
+         *   [CreateCredentialRequest] itself and never be created from scratch
+         * @param candidateQueryData matches [CreateCredentialRequest.candidateQueryData], the
+         *   partial request data in the [Bundle] format that will be sent to the provider during
+         *   the initial candidate query stage; this should be constructed and retrieved from the a
+         *   given [CreateCredentialRequest] itself and never be created from scratch
          * @param requireSystemProvider whether the request must only be fulfilled by a system
          *   provider
          * @param origin the origin of a different application if the request is being made on
          *   behalf of that application
          */
+        @OptIn(ExperimentalDigitalCredentialApi::class)
         @JvmStatic
         @JvmOverloads
         @RequiresApi(23)
@@ -242,10 +270,16 @@ internal constructor(
                                 CreatePublicKeyCredentialRequest.createFrom(
                                     credentialData,
                                     origin,
-                                    candidateQueryData
+                                    candidateQueryData,
                                 )
                             else -> throw FrameworkClassParsingException()
                         }
+                    DigitalCredential.TYPE_DIGITAL_CREDENTIAL ->
+                        CreateDigitalCredentialRequest.createFrom(
+                            credentialData,
+                            origin,
+                            candidateQueryData,
+                        )
                     else -> throw FrameworkClassParsingException()
                 }
             } catch (e: FrameworkClassParsingException) {
@@ -261,7 +295,7 @@ internal constructor(
                     origin,
                     credentialData.getBoolean(
                         BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-                        false
+                        false,
                     ),
                 )
             }

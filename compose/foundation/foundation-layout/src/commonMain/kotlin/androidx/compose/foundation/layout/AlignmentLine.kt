@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.AlignmentLine
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
 import kotlin.math.max
 
@@ -49,22 +51,21 @@ import kotlin.math.max
  * modified layout will satisfy the min constraint and the content will be positioned to satisfy the
  * [before] requirement if specified, or the [after] requirement otherwise.
  *
+ * Example usage:
+ *
+ * @sample androidx.compose.foundation.layout.samples.PaddingFromSample
  * @param alignmentLine the alignment line relative to which the padding is defined
  * @param before the distance between the container's top edge and the horizontal alignment line, or
  *   the container's start edge and the vertical alignment line
  * @param after the distance between the container's bottom edge and the horizontal alignment line,
  *   or the container's end edge and the vertical alignment line
  * @see paddingFromBaseline
- *
- * Example usage:
- *
- * @sample androidx.compose.foundation.layout.samples.PaddingFromSample
  */
 @Stable
 fun Modifier.paddingFrom(
     alignmentLine: AlignmentLine,
     before: Dp = Dp.Unspecified,
-    after: Dp = Dp.Unspecified
+    after: Dp = Dp.Unspecified,
 ): Modifier =
     this.then(
         AlignmentLineOffsetDpElement(
@@ -76,7 +77,7 @@ fun Modifier.paddingFrom(
                 properties["alignmentLine"] = alignmentLine
                 properties["before"] = before
                 properties["after"] = after
-            }
+            },
         )
     )
 
@@ -94,22 +95,21 @@ fun Modifier.paddingFrom(
  * modified layout will satisfy the min constraint and the content will be positioned to satisfy the
  * [before] requirement if specified, or the [after] requirement otherwise.
  *
+ * Example usage:
+ *
+ * @sample androidx.compose.foundation.layout.samples.PaddingFromSample
  * @param alignmentLine the alignment line relative to which the padding is defined
  * @param before the distance between the container's top edge and the horizontal alignment line, or
  *   the container's start edge and the vertical alignment line
  * @param after the distance between the container's bottom edge and the horizontal alignment line,
  *   or the container's end edge and the vertical alignment line
  * @see paddingFromBaseline
- *
- * Example usage:
- *
- * @sample androidx.compose.foundation.layout.samples.PaddingFromSample
  */
 @Stable
 fun Modifier.paddingFrom(
     alignmentLine: AlignmentLine,
     before: TextUnit = TextUnit.Unspecified,
-    after: TextUnit = TextUnit.Unspecified
+    after: TextUnit = TextUnit.Unspecified,
 ): Modifier =
     this.then(
         AlignmentLineOffsetTextUnitElement(
@@ -121,7 +121,7 @@ fun Modifier.paddingFrom(
                 properties["alignmentLine"] = alignmentLine
                 properties["before"] = before
                 properties["after"] = after
-            }
+            },
         )
     )
 
@@ -135,23 +135,22 @@ fun Modifier.paddingFrom(
  * constraint, the modified layout will satisfy the min constraint and the content will be
  * positioned to satisfy the [top] requirement if specified, or the [bottom] requirement otherwise.
  *
- * @see paddingFrom
- *
  * Example usage:
  *
  * @sample androidx.compose.foundation.layout.samples.PaddingFromBaselineSampleDp
+ * @see paddingFrom
  */
 @Stable
 fun Modifier.paddingFromBaseline(top: Dp = Dp.Unspecified, bottom: Dp = Dp.Unspecified) =
     this.then(
-            if (top != Dp.Unspecified) {
+            if (top.isSpecified) {
                 Modifier.paddingFrom(FirstBaseline, before = top)
             } else {
                 Modifier
             }
         )
         .then(
-            if (bottom != Dp.Unspecified) {
+            if (bottom.isSpecified) {
                 Modifier.paddingFrom(LastBaseline, after = bottom)
             } else {
                 Modifier
@@ -168,16 +167,15 @@ fun Modifier.paddingFromBaseline(top: Dp = Dp.Unspecified, bottom: Dp = Dp.Unspe
  * constraint, the modified layout will satisfy the min constraint and the content will be
  * positioned to satisfy the [top] requirement if specified, or the [bottom] requirement otherwise.
  *
- * @see paddingFrom
- *
  * Example usage:
  *
  * @sample androidx.compose.foundation.layout.samples.PaddingFromBaselineSampleTextUnit
+ * @see paddingFrom
  */
 @Stable
 fun Modifier.paddingFromBaseline(
     top: TextUnit = TextUnit.Unspecified,
-    bottom: TextUnit = TextUnit.Unspecified
+    bottom: TextUnit = TextUnit.Unspecified,
 ) =
     this.then(
             if (!top.isUnspecified) Modifier.paddingFrom(FirstBaseline, before = top) else Modifier
@@ -191,12 +189,12 @@ private class AlignmentLineOffsetDpElement(
     val alignmentLine: AlignmentLine,
     val before: Dp,
     val after: Dp,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<AlignmentLineOffsetDpNode>() {
     init {
-        require(
-            (before.value >= 0f || before == Dp.Unspecified) &&
-                (after.value >= 0f || after == Dp.Unspecified)
+        requirePrecondition(
+            (before.value >= 0f || before.isUnspecified) and
+                (after.value >= 0f || after.isUnspecified)
         ) {
             "Padding from alignment line must be a non-negative number"
         }
@@ -241,7 +239,7 @@ private class AlignmentLineOffsetDpNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return alignmentLineOffsetMeasure(alignmentLine, before, after, measurable, constraints)
     }
@@ -251,7 +249,7 @@ private class AlignmentLineOffsetTextUnitElement(
     val alignmentLine: AlignmentLine,
     val before: TextUnit,
     val after: TextUnit,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<AlignmentLineOffsetTextUnitNode>() {
     override fun create(): AlignmentLineOffsetTextUnitNode {
         return AlignmentLineOffsetTextUnitNode(alignmentLine, before, after)
@@ -291,14 +289,14 @@ private class AlignmentLineOffsetTextUnitNode(
 ) : LayoutModifierNode, Modifier.Node() {
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return alignmentLineOffsetMeasure(
             alignmentLine,
             if (!before.isUnspecified) before.toDp() else Dp.Unspecified,
             if (!after.isUnspecified) after.toDp() else Dp.Unspecified,
             measurable,
-            constraints
+            constraints,
         )
     }
 }
@@ -308,7 +306,7 @@ private fun MeasureScope.alignmentLineOffsetMeasure(
     before: Dp,
     after: Dp,
     measurable: Measurable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val placeable =
         measurable.measure(
@@ -322,14 +320,14 @@ private fun MeasureScope.alignmentLineOffsetMeasure(
     val axisMax = if (alignmentLine.horizontal) constraints.maxHeight else constraints.maxWidth
     // Compute padding required to satisfy the total before and after offsets.
     val paddingBefore =
-        ((if (before != Dp.Unspecified) before.roundToPx() else 0) - linePosition).coerceIn(
+        ((if (before.isSpecified) before.roundToPx() else 0) - linePosition).coerceIn(
             0,
-            axisMax - axis
+            axisMax - axis,
         )
     val paddingAfter =
-        ((if (after != Dp.Unspecified) after.roundToPx() else 0) - axis + linePosition).coerceIn(
+        ((if (after.isSpecified) after.roundToPx() else 0) - axis + linePosition).coerceIn(
             0,
-            axisMax - axis - paddingBefore
+            axisMax - axis - paddingBefore,
         )
 
     val width =

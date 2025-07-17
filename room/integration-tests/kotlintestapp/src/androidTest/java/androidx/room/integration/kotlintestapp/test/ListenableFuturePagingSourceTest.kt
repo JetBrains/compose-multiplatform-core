@@ -83,7 +83,7 @@ class ListenableFuturePagingSourceTest {
         db =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    PagingDb::class.java
+                    PagingDb::class.java,
                 )
                 .setQueryCallback(
                     object : RoomDatabase.QueryCallback {
@@ -117,7 +117,8 @@ class ListenableFuturePagingSourceTest {
         queryExecutor.filterFunction = { runnable ->
             // filtering out the transform async function called inside loadFuture
             // filtering as String b/c `AbstractTransformFuture` is a package-private class
-            !runnable.javaClass.enclosingClass.toString().contains("AbstractTransformFuture")
+            runnable.javaClass.enclosingClass?.toString()?.contains("AbstractTransformFuture") !=
+                true
         }
 
         runTest {
@@ -155,7 +156,9 @@ class ListenableFuturePagingSourceTest {
             queryExecutor.filterFunction = { runnable ->
                 // filtering out the transform async function called inside loadFuture
                 // filtering as String b/c `AbstractTransformFuture` is a package-private class
-                !runnable.javaClass.enclosingClass.toString().contains("AbstractTransformFuture")
+                runnable.javaClass.enclosingClass
+                    ?.toString()
+                    ?.contains("AbstractTransformFuture") != true
             }
 
             // now access more items that should trigger loading more
@@ -202,7 +205,9 @@ class ListenableFuturePagingSourceTest {
             queryExecutor.filterFunction = { runnable ->
                 // filtering out the transform async function called inside loadFuture
                 // filtering as String b/c `AbstractTransformFuture` is a package-private class
-                !runnable.javaClass.enclosingClass.toString().contains("AbstractTransformFuture")
+                runnable.javaClass.enclosingClass
+                    ?.toString()
+                    ?.contains("AbstractTransformFuture") != true
             }
 
             // now access more items that should trigger loading more
@@ -242,7 +247,7 @@ class ListenableFuturePagingSourceTest {
                 // mimic real use case of wrapping the source returned from Room.
                 ListenableFuturePagingSourceImpl(baseSource).also { pagingSources.add(it) }
             },
-        block: suspend () -> Unit
+        block: suspend () -> Unit,
     ) {
         val collection =
             coroutineScope.launch(Dispatchers.Main) {

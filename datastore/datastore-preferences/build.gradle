@@ -21,25 +21,24 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
-android{
-    namespace "androidx.datastore.preferences"
-}
 androidXMultiplatform {
-    enableBinaryCompatibilityValidator = true
-
     jvm()
     mac()
     linux()
     ios()
-    android()
+    watchos()
+    tvos()
+    androidLibrary {
+        namespace = "androidx.datastore.preferences"
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -91,10 +90,9 @@ androidXMultiplatform {
     }
 }
 
-
 androidx {
     name = "Preferences DataStore"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Preferences DataStore"
     legacyDisableKotlinStrictApiMode = true

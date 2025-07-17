@@ -16,9 +16,10 @@
 
 package androidx.test.uiautomator.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
 
@@ -32,8 +33,7 @@ public final class Traces {
         void close();
     }
 
-    @NonNull
-    public static Section trace(@NonNull String label) {
+    public static @NonNull Section trace(@NonNull String label) {
         Trace.beginSection(label);
         return Trace::endSection;
     }

@@ -17,22 +17,23 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
-        minSdk 28
+        minSdk = 28
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
-    namespace "androidx.window.integration.macrobenchmark.target"
+    namespace = "androidx.window.integration.macrobenchmark.target"
 }
 
 dependencies {
@@ -41,7 +42,7 @@ dependencies {
     implementation(libs.constraintLayout)
     implementation(libs.kotlinStdlib)
     implementation(libs.material)
-    implementation(project(":activity:activity-ktx"))
+    implementation("androidx.activity:activity:1.10.1")
     implementation(project(":profileinstaller:profileinstaller"))
     implementation(project(":window:window-java"))
 }

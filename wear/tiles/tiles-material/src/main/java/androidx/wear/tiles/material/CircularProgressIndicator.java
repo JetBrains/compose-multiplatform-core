@@ -20,12 +20,13 @@ import static androidx.annotation.Dimension.DP;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tiles component {@link CircularProgressIndicator} that represents circular progress indicator
@@ -76,11 +77,11 @@ public class CircularProgressIndicator
      */
     static final String METADATA_TAG = "CPI";
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Arc mElement;
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.ArcLine mProgress;
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.ArcLine mBackground;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Arc mElement;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull ArcLine mProgress;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull ArcLine mBackground;
 
-    CircularProgressIndicator(@NonNull androidx.wear.tiles.LayoutElementBuilders.Arc element) {
+    CircularProgressIndicator(androidx.wear.tiles.LayoutElementBuilders.@NonNull Arc element) {
         this.mElement = element;
         this.mBackground =
                 (androidx.wear.tiles.LayoutElementBuilders.ArcLine) element.getContents().get(0);
@@ -91,23 +92,19 @@ public class CircularProgressIndicator
     /** Builder class for {@link CircularProgressIndicator} */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull
-        private ProgressIndicatorColors mCircularProgressIndicatorColors =
+        private @NonNull ProgressIndicatorColors mCircularProgressIndicatorColors =
                 ProgressIndicatorDefaults.DEFAULT_COLORS;
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DpProp mStrokeWidth =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DpProp mStrokeWidth =
                 ProgressIndicatorDefaults.DEFAULT_STROKE_WIDTH;
 
-        @NonNull private CharSequence mContentDescription = "";
+        private @NonNull CharSequence mContentDescription = "";
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DegreesProp mStartAngle =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp mStartAngle =
                 androidx.wear.tiles.DimensionBuilders.degrees(
                         ProgressIndicatorDefaults.DEFAULT_START_ANGLE);
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DegreesProp mEndAngle =
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp mEndAngle =
                 androidx.wear.tiles.DimensionBuilders.degrees(
                         ProgressIndicatorDefaults.DEFAULT_END_ANGLE);
 
@@ -122,8 +119,8 @@ public class CircularProgressIndicator
          * from 0 to 1. Progress will be colored in {@link ProgressIndicatorColors#getTrackColor}.
          * If not set, 0 will be used.
          */
-        @NonNull
-        public Builder setProgress(@FloatRange(from = 0, to = 1) float progressPercentage) {
+        public @NonNull Builder setProgress(
+                @FloatRange(from = 0, to = 1) float progressPercentage) {
             this.mProgress = progressPercentage;
             return this;
         }
@@ -134,8 +131,7 @@ public class CircularProgressIndicator
          * start arc from the 9 o'clock. If not set 0 will be used and the indicator will have full
          * length.
          */
-        @NonNull
-        public Builder setStartAngle(float startAngle) {
+        public @NonNull Builder setStartAngle(float startAngle) {
             this.mStartAngle = androidx.wear.tiles.DimensionBuilders.degrees(startAngle);
             return this;
         }
@@ -145,8 +141,7 @@ public class CircularProgressIndicator
          * 0 is 12 o'clock. End angle doesn't need to be within 0-360 range, but it must be larger
          * than start angle. If not set 360 will be used and the indicator will have full length.
          */
-        @NonNull
-        public Builder setEndAngle(float endAngle) {
+        public @NonNull Builder setEndAngle(float endAngle) {
             this.mEndAngle = androidx.wear.tiles.DimensionBuilders.degrees(endAngle);
             return this;
         }
@@ -155,8 +150,7 @@ public class CircularProgressIndicator
          * Sets the content description of the {@link CircularProgressIndicator} to be used for
          * accessibility support.
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -167,8 +161,7 @@ public class CircularProgressIndicator
          * made, while {@link ProgressIndicatorColors#getTrackColor()} will be used for a background
          * full size arc. If not set, {@link ProgressIndicatorDefaults#DEFAULT_COLORS} will be used.
          */
-        @NonNull
-        public Builder setCircularProgressIndicatorColors(
+        public @NonNull Builder setCircularProgressIndicatorColors(
                 @NonNull ProgressIndicatorColors circularProgressIndicatorColors) {
             this.mCircularProgressIndicatorColors = circularProgressIndicatorColors;
             return this;
@@ -178,9 +171,8 @@ public class CircularProgressIndicator
          * Sets the stroke width of the {@link CircularProgressIndicator}. Strongly recommended
          * value is {@link ProgressIndicatorDefaults#DEFAULT_STROKE_WIDTH}.
          */
-        @NonNull
-        public Builder setStrokeWidth(
-                @NonNull androidx.wear.tiles.DimensionBuilders.DpProp strokeWidth) {
+        public @NonNull Builder setStrokeWidth(
+                androidx.wear.tiles.DimensionBuilders.@NonNull DpProp strokeWidth) {
             this.mStrokeWidth = strokeWidth;
             return this;
         }
@@ -189,8 +181,7 @@ public class CircularProgressIndicator
          * Sets the stroke width of the {@link CircularProgressIndicator}. Strongly recommended
          * value is {@link ProgressIndicatorDefaults#DEFAULT_STROKE_WIDTH}.
          */
-        @NonNull
-        public Builder setStrokeWidth(@Dimension(unit = DP) float strokeWidth) {
+        public @NonNull Builder setStrokeWidth(@Dimension(unit = DP) float strokeWidth) {
             this.mStrokeWidth = androidx.wear.tiles.DimensionBuilders.dp(strokeWidth);
             return this;
         }
@@ -199,9 +190,8 @@ public class CircularProgressIndicator
          * Constructs and returns {@link CircularProgressIndicator} with the provided field and
          * look.
          */
-        @NonNull
         @Override
-        public CircularProgressIndicator build() {
+        public @NonNull CircularProgressIndicator build() {
             checkAngles();
 
             androidx.wear.tiles.DimensionBuilders.DegreesProp length = getLength();
@@ -268,8 +258,7 @@ public class CircularProgressIndicator
             }
         }
 
-        @NonNull
-        private androidx.wear.tiles.DimensionBuilders.DegreesProp getLength() {
+        private androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp getLength() {
             float startAngle = mStartAngle.getValue();
             float endAngle = mEndAngle.getValue();
             if (endAngle <= startAngle) {
@@ -280,26 +269,22 @@ public class CircularProgressIndicator
     }
 
     /** Returns angle representing progressed part of this CircularProgressIndicator. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.DegreesProp getProgress() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp getProgress() {
         return androidx.wear.tiles.material.Helper.checkNotNull(mProgress.getLength());
     }
 
     /** Returns stroke width of this CircularProgressIndicator. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.DpProp getStrokeWidth() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull DpProp getStrokeWidth() {
         return androidx.wear.tiles.material.Helper.checkNotNull(mProgress.getThickness());
     }
 
     /** Returns start angle of this CircularProgressIndicator. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.DegreesProp getStartAngle() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp getStartAngle() {
         return androidx.wear.tiles.material.Helper.checkNotNull(mElement.getAnchorAngle());
     }
 
     /** Returns start angle of this CircularProgressIndicator. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.DegreesProp getEndAngle() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull DegreesProp getEndAngle() {
         float backArcLength =
                 androidx.wear.tiles.material.Helper.checkNotNull(mBackground.getLength())
                         .getValue();
@@ -308,16 +293,14 @@ public class CircularProgressIndicator
     }
 
     /** Returns main arc color of this CircularProgressIndicator. */
-    @NonNull
-    public ProgressIndicatorColors getCircularProgressIndicatorColors() {
+    public @NonNull ProgressIndicatorColors getCircularProgressIndicatorColors() {
         return new ProgressIndicatorColors(
                 androidx.wear.tiles.material.Helper.checkNotNull(mProgress.getColor()),
                 androidx.wear.tiles.material.Helper.checkNotNull(mBackground.getColor()));
     }
 
     /** Returns content description of this CircularProgressIndicator. */
-    @Nullable
-    public CharSequence getContentDescription() {
+    public @Nullable CharSequence getContentDescription() {
         androidx.wear.tiles.ModifiersBuilders.Semantics semantics =
                 androidx.wear.tiles.material.Helper.checkNotNull(mElement.getModifiers())
                         .getSemantics();
@@ -331,8 +314,7 @@ public class CircularProgressIndicator
      * Returns metadata tag set to this CircularProgressIndicator, which should be {@link
      * #METADATA_TAG}.
      */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return androidx.wear.tiles.material.Helper.getMetadataTagName(
                 androidx.wear.tiles.material.Helper.checkNotNull(
                         androidx.wear.tiles.material.Helper.checkNotNull(mElement.getModifiers())
@@ -345,9 +327,8 @@ public class CircularProgressIndicator
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to CircularProgressIndicator. Otherwise, it will return null.
      */
-    @Nullable
-    public static CircularProgressIndicator fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable CircularProgressIndicator fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof CircularProgressIndicator) {
             return (CircularProgressIndicator) element;
         }
@@ -364,17 +345,15 @@ public class CircularProgressIndicator
         return new CircularProgressIndicator(arcElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

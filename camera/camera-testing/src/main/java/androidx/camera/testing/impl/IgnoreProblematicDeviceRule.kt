@@ -25,7 +25,7 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /** Test class to set the TestRule should not be run on the problematic devices. */
-class IgnoreProblematicDeviceRule : TestRule {
+public class IgnoreProblematicDeviceRule : TestRule {
     private val api21Emulator = isEmulator && Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP
 
     private val isProblematicDevices = isPixel2Api26Emulator || api21Emulator
@@ -48,7 +48,7 @@ class IgnoreProblematicDeviceRule : TestRule {
         }
     }
 
-    companion object {
+    public companion object {
         // Sync from TestRequestBuilder.RequiresDeviceFilter
         private const val EMULATOR_HARDWARE_GOLDFISH = "goldfish"
         private const val EMULATOR_HARDWARE_RANCHU = "ranchu"
@@ -56,24 +56,37 @@ class IgnoreProblematicDeviceRule : TestRule {
         private val emulatorHardwareNames: Set<String> =
             setOf(EMULATOR_HARDWARE_GOLDFISH, EMULATOR_HARDWARE_RANCHU, EMULATOR_HARDWARE_GCE)
         private var avdName: String =
-            try {
-                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-                device.executeShellCommand("getprop ro.kernel.qemu.avd_name").filterNot {
-                    it == '_' || it == '-' || it == ' '
-                }
-            } catch (e: Exception) {
-                Log.d("ProblematicDeviceRule", "Cannot get avd name", e)
-                ""
+            getPropSanitized("ro.kernel.qemu.avd_name").ifEmpty {
+                getPropSanitized("ro.boot.qemu.avd_name")
             }
 
-        val isEmulator = emulatorHardwareNames.contains(Build.HARDWARE.lowercase())
-        val isPixel2Api26Emulator =
+        public fun getPropSanitized(propKey: String): String {
+            return try {
+                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+                device.executeShellCommand("getprop $propKey")?.filter { it.isLetterOrDigit() }
+                    ?: ""
+            } catch (e: Exception) {
+                Log.w("ProblematicDeviceRule", "Cannot get $propKey", e)
+                ""
+            }
+        }
+
+        public val isEmulator: Boolean = emulatorHardwareNames.contains(Build.HARDWARE.lowercase())
+        public val isPixel2Api26Emulator: Boolean =
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.O
-        val isPixel2Api30Emulator =
+        public val isPixel2Api28Emulator: Boolean =
+            isEmulator &&
+                avdName.contains("Pixel2", ignoreCase = true) &&
+                Build.VERSION.SDK_INT == Build.VERSION_CODES.P
+        public val isPixel2Api30Emulator: Boolean =
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.R
+        public val isMediumPhoneApi35Emulator: Boolean =
+            isEmulator &&
+                avdName.contains("MediumPhone", ignoreCase = true) &&
+                Build.VERSION.SDK_INT == 35
     }
 }

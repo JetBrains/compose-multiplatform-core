@@ -20,13 +20,11 @@ import android.graphics.Point
 import android.view.ScrollCaptureCallback
 import android.view.ScrollCaptureTarget
 import android.view.View
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toAndroidRect
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.LayoutCoordinates
@@ -35,10 +33,10 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.semantics.SemanticsActions.ScrollByOffset
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsProperties.Disabled
 import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isHidden
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.roundToIntRect
 import java.util.function.Consumer
@@ -68,28 +66,22 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
      * See go/compose-long-screenshots for more background.
      */
     // Required not to be inlined for class verification.
-    @DoNotInline
     fun onScrollCaptureSearch(
         view: View,
         semanticsOwner: SemanticsOwner,
         coroutineContext: CoroutineContext,
-        targets: Consumer<ScrollCaptureTarget>
+        targets: Consumer<ScrollCaptureTarget>,
     ) {
         // Search the semantics tree for scroll containers.
         val candidates = mutableVectorOf<ScrollCaptureCandidate>()
         visitScrollCaptureCandidates(
             fromNode = semanticsOwner.unmergedRootSemanticsNode,
-            onCandidate = candidates::add
+            onCandidate = candidates::add,
         )
 
         // Sort to find the deepest node with the biggest bounds in the dimension(s) that the node
         // supports scrolling in.
-        candidates.sortWith(
-            compareBy(
-                { it.depth },
-                { it.viewportBoundsInWindow.height },
-            )
-        )
+        candidates.sortWith(compareBy({ it.depth }, { it.viewportBoundsInWindow.height }))
         val candidate = candidates.lastOrNull() ?: return
 
         // If we found a candidate, create a capture callback for it and give it to the system.
@@ -99,7 +91,8 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
                 node = candidate.node,
                 viewportBoundsInWindow = candidate.viewportBoundsInWindow,
                 coroutineScope = coroutineScope,
-                listener = this
+                listener = this,
+                view,
             )
         val localVisibleRectOfCandidate = candidate.coordinates.boundsInRoot()
         val windowOffsetOfCandidate = candidate.viewportBoundsInWindow.topLeft
@@ -108,7 +101,7 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
                     view,
                     localVisibleRectOfCandidate.roundToIntRect().toAndroidRect(),
                     windowOffsetOfCandidate.let { Point(it.x, it.y) },
-                    callback
+                    callback,
                 )
                 .apply { scrollBounds = candidate.viewportBoundsInWindow.toAndroidRect() }
         )
@@ -130,11 +123,14 @@ internal class ScrollCapture : ComposeScrollCaptureCallback.ScrollCaptureSession
 private fun visitScrollCaptureCandidates(
     fromNode: SemanticsNode,
     depth: Int = 0,
-    onCandidate: (ScrollCaptureCandidate) -> Unit
+    onCandidate: (ScrollCaptureCandidate) -> Unit,
 ) {
     fromNode.visitDescendants { node ->
-        // Invisible/disabled nodes can't be candidates, nor can any of their descendants.
-        if (!node.isVisible || Disabled in node.unmergedConfig) {
+        // TODO(mnuzen): Verify `isHidden` is needed here.
+        //  See b/354723415 for more details.
+        // Transparent, unimportant for accessibility, and disabled nodes can't be candidates, nor
+        // can any of their descendants.
+        if (node.isHidden || Disabled in node.unmergedConfig) {
             return@visitDescendants false
         }
 
@@ -173,7 +169,7 @@ private fun visitScrollCaptureCandidates(
         visitScrollCaptureCandidates(
             fromNode = node,
             depth = candidateDepth,
-            onCandidate = onCandidate
+            onCandidate = onCandidate,
         )
         // We've just visited descendants ourselves, don't need this visit call to do it.
         return@visitDescendants false
@@ -182,11 +178,6 @@ private fun visitScrollCaptureCandidates(
 
 internal val SemanticsNode.scrollCaptureScrollByAction
     get() = unmergedConfig.getOrNull(ScrollByOffset)
-
-// TODO(mnuzen): Port this back to the SemanticsUtil file
-@OptIn(ExperimentalComposeUiApi::class)
-private val SemanticsNode.isVisible: Boolean
-    get() = !isTransparent && !unmergedConfig.contains(SemanticsProperties.InvisibleToUser)
 
 private val SemanticsNode.canScrollVertically: Boolean
     get() {
@@ -219,7 +210,7 @@ private fun SemanticsNode.getChildrenForSearch() =
     getChildren(
         includeDeactivatedNodes = false,
         includeReplacedSemantics = false,
-        includeFakeNodes = false
+        includeFakeNodes = false,
     )
 
 /**

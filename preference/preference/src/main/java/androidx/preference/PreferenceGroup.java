@@ -30,12 +30,13 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -188,8 +189,7 @@ public abstract class PreferenceGroup extends Preference {
      * @param index The index of the {@link Preference} to retrieve
      * @return The {@link Preference}
      */
-    @NonNull
-    public Preference getPreference(int index) {
+    public @NonNull Preference getPreference(int index) {
         return mPreferences.get(index);
     }
 
@@ -366,8 +366,7 @@ public abstract class PreferenceGroup extends Preference {
      * @return The {@link Preference} with the key, or {@code null}
      */
     @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked"})
-    @Nullable
-    public <T extends Preference> T findPreference(@NonNull CharSequence key) {
+    public <T extends Preference> @Nullable T findPreference(@NonNull CharSequence key) {
         if (key == null) {
             throw new IllegalArgumentException("Key cannot be null");
         }
@@ -435,8 +434,7 @@ public abstract class PreferenceGroup extends Preference {
      * @return The callback to be invoked when the expand button is clicked.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public OnExpandButtonClickListener getOnExpandButtonClickListener() {
+    public @Nullable OnExpandButtonClickListener getOnExpandButtonClickListener() {
         return mOnExpandButtonClickListener;
     }
 
@@ -509,9 +507,8 @@ public abstract class PreferenceGroup extends Preference {
         }
     }
 
-    @NonNull
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @NonNull Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         return new SavedState(superState, mInitialExpandedChildrenCount);
     }

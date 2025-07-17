@@ -16,7 +16,7 @@
 
 package androidx.wear.tiles.material.layouts;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the default values used by layout templates for Tiles.
@@ -110,13 +110,11 @@ public class LayoutDefaults {
     public static final float EDGE_CONTENT_LAYOUT_PADDING_BELOW_MAIN_CONTENT_DP = 8;
 
     /** The default spacer width for slots in a {@link MultiSlotLayout}. */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
             MULTI_SLOT_LAYOUT_HORIZONTAL_SPACER_WIDTH = androidx.wear.tiles.DimensionBuilders.dp(8);
 
     /** The recommended space between the main content and additional labels in layouts. */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp
             DEFAULT_VERTICAL_SPACER_HEIGHT = androidx.wear.tiles.DimensionBuilders.dp(8);
 
     /** The maximum number of button that can be added to the {@link MultiButtonLayout}. */

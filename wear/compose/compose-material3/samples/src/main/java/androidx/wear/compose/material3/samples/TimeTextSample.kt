@@ -17,43 +17,48 @@
 package androidx.wear.compose.material3.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.Icon
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.wear.compose.foundation.CurvedModifier
+import androidx.wear.compose.foundation.weight
+import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.TimeText
+import androidx.wear.compose.material3.TimeTextDefaults
+import androidx.wear.compose.material3.curvedText
+import androidx.wear.compose.material3.timeTextCurvedText
+import androidx.wear.compose.material3.timeTextSeparator
 
 @Sampled
 @Composable
 fun TimeTextClockOnly() {
-    TimeText { time() }
+    // TimeText displays the current time by default.
+    TimeText()
 }
 
 @Sampled
 @Composable
 fun TimeTextWithStatus() {
-    TimeText {
-        text("ETA 12:48")
-        separator()
-        time()
+    val style = TimeTextDefaults.timeTextStyle()
+    val primaryStyle =
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colorScheme.primaryContainer)
+    TimeText { time ->
+        timeTextCurvedText("ETA 12:48", style = primaryStyle)
+        timeTextSeparator(style)
+        timeTextCurvedText(time)
     }
 }
 
 @Sampled
 @Composable
-fun TimeTextWithIcon() {
-    TimeText {
-        time()
-        separator()
-        composable {
-            Icon(
-                imageVector = Icons.Filled.Favorite,
-                contentDescription = "Favorite",
-                modifier = Modifier.size(13.dp)
-            )
-        }
+fun TimeTextWithStatusEllipsized() {
+    val style = TimeTextDefaults.timeTextStyle()
+    TimeText { time ->
+        curvedText(
+            "Long status that should be ellipsized.",
+            CurvedModifier.weight(1f),
+            overflow = TextOverflow.Ellipsis,
+        )
+        timeTextSeparator(style)
+        timeTextCurvedText(time)
     }
 }

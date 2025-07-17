@@ -16,12 +16,12 @@
 
 package androidx.compose.foundation.lazy.layout
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.ReusableContentHost
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.SaveableStateHolder
+import kotlin.jvm.JvmInline
 
 /**
  * This class:
@@ -32,13 +32,12 @@ import androidx.compose.runtime.saveable.SaveableStateHolder
  * 3) Adds state restoration on top of the composable returned by [itemProvider] with help of
  *    [saveableStateHolder].
  */
-@ExperimentalFoundationApi
 internal class LazyLayoutItemContentFactory(
     private val saveableStateHolder: SaveableStateHolder,
     val itemProvider: () -> LazyLayoutItemProvider,
 ) {
     /** Contains the cached lambdas produced by the [itemProvider]. */
-    private val lambdasCache = mutableMapOf<Any, CachedItemContent>()
+    private val lambdasCache = mutableScatterMapOf<Any, CachedItemContent>()
 
     /**
      * Returns the content type for the item with the given key. It is used to improve the item
@@ -92,12 +91,12 @@ internal class LazyLayoutItemContentFactory(
                     if (index != -1) this.index = index
                 }
 
-                ReusableContentHost(active = index != -1) {
+                if (index != -1) {
                     SkippableItem(
                         itemProvider,
                         StableValue(saveableStateHolder),
                         index,
-                        StableValue(key)
+                        StableValue(key),
                     )
                 }
                 DisposableEffect(key) {
@@ -117,13 +116,12 @@ internal class LazyLayoutItemContentFactory(
  * Hack around skippable functions to force skip SaveableStateProvider and Item block when nothing
  * changed. It allows us to skip heavy-weight composition local providers.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SkippableItem(
     itemProvider: LazyLayoutItemProvider,
     saveableStateHolder: StableValue<SaveableStateHolder>,
     index: Int,
-    key: StableValue<Any>
+    key: StableValue<Any>,
 ) {
     saveableStateHolder.value.SaveableStateProvider(key.value) {
         itemProvider.Item(index, key.value)

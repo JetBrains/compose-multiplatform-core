@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl.utils;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * The runtime version of the checked exception {@link InterruptedException}.

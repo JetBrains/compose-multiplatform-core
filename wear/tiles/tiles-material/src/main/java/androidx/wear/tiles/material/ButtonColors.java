@@ -17,7 +17,8 @@
 package androidx.wear.tiles.material;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the background and content colors used in a button Tiles component.
@@ -32,8 +33,8 @@ import androidx.annotation.NonNull;
 @Deprecated
 @SuppressWarnings("deprecation")
 public class ButtonColors {
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mBackgroundColor;
-    @NonNull private final androidx.wear.tiles.ColorBuilders.ColorProp mContentColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mBackgroundColor;
+    private final androidx.wear.tiles.ColorBuilders.@NonNull ColorProp mContentColor;
 
     /**
      * Constructor for {@link ButtonColors} object.
@@ -55,8 +56,8 @@ public class ButtonColors {
      * @param contentColor The content color or tint color to be used for a button.
      */
     public ButtonColors(
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp backgroundColor,
-            @NonNull androidx.wear.tiles.ColorBuilders.ColorProp contentColor) {
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp backgroundColor,
+            androidx.wear.tiles.ColorBuilders.@NonNull ColorProp contentColor) {
         mBackgroundColor = backgroundColor;
         mContentColor = contentColor;
     }
@@ -65,8 +66,7 @@ public class ButtonColors {
      * Returns a {@link ButtonColors} object, using the current Primary colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ButtonColors primaryButtonColors(@NonNull Colors colors) {
+    public static @NonNull ButtonColors primaryButtonColors(@NonNull Colors colors) {
         return new ButtonColors(colors.getPrimary(), colors.getOnPrimary());
     }
 
@@ -74,20 +74,17 @@ public class ButtonColors {
      * Returns a {@link ButtonColors} object, using the current Surface colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ButtonColors secondaryButtonColors(@NonNull Colors colors) {
+    public static @NonNull ButtonColors secondaryButtonColors(@NonNull Colors colors) {
         return new ButtonColors(colors.getSurface(), colors.getOnSurface());
     }
 
     /** The background color to be used on a button Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getBackgroundColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getBackgroundColor() {
         return mBackgroundColor;
     }
 
     /** The content or tint color to be used on a button Tiles components. */
-    @NonNull
-    public androidx.wear.tiles.ColorBuilders.ColorProp getContentColor() {
+    public androidx.wear.tiles.ColorBuilders.@NonNull ColorProp getContentColor() {
         return mContentColor;
     }
 }

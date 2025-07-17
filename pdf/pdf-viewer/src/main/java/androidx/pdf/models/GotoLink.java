@@ -18,14 +18,19 @@ package androidx.pdf.models;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.pdf.content.PdfPageGotoLinkContent;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+import androidx.core.util.Preconditions;
 
-import com.google.common.base.Preconditions;
+import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -77,14 +82,32 @@ public class GotoLink implements Parcelable {
     }
 
     /**
+     * Converts android.graphics.pdf.content.PdfPageGotoLinkContent object to its
+     * androidx.pdf.aidl.GotoLink representation.
+     */
+    public static @NonNull GotoLink convert(
+            @NonNull PdfPageGotoLinkContent pdfPageGotoLinkContent) {
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+            List<Rect> rectBounds = new ArrayList<>();
+            List<RectF> rectFBounds = pdfPageGotoLinkContent.getBounds();
+            for (RectF rectF : rectFBounds) {
+                rectBounds.add(new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right,
+                        (int) rectF.bottom));
+            }
+            return new GotoLink(rectBounds,
+                    GotoLinkDestination.convert(pdfPageGotoLinkContent.getDestination()));
+        }
+        throw new UnsupportedOperationException("Operation support above S");
+    }
+
+    /**
      * Gets the bounds of a {@link GotoLink} represented as a list of {@link Rect}.
      * Links which are spread across multiple lines will be surrounded by multiple {@link Rect}
      * in order of viewing.
      *
      * @return The bounds of the goto link.
      */
-    @NonNull
-    public List<Rect> getBounds() {
+    public @NonNull List<Rect> getBounds() {
         return mBounds;
     }
 
@@ -93,8 +116,7 @@ public class GotoLink implements Parcelable {
      *
      * @return Destination where goto link is directing the user.
      */
-    @NonNull
-    public GotoLinkDestination getDestination() {
+    public @NonNull GotoLinkDestination getDestination() {
         return mDestination;
     }
 

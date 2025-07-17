@@ -18,10 +18,11 @@ package androidx.wear.ongoing;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -33,9 +34,8 @@ import java.util.Objects;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @VersionedParcelize
 class TextStatusPart extends StatusPart {
-    @NonNull
     @ParcelField(value = 1, defaultValue = "")
-    String mStr = "";
+    @NonNull String mStr = "";
 
     // Required by VersionedParcelable
     TextStatusPart() {
@@ -48,9 +48,8 @@ class TextStatusPart extends StatusPart {
     /**
      * See {@link TimeDependentText#getText(Context, long)}
      */
-    @NonNull
     @Override
-    public CharSequence getText(@NonNull Context context, long timeNowMillis) {
+    public @NonNull CharSequence getText(@NonNull Context context, long timeNowMillis) {
         return mStr;
     }
 

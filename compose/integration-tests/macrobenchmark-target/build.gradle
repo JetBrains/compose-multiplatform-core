@@ -13,23 +13,47 @@ plugins {
 }
 
 android {
-    namespace "androidx.compose.integration.macrobenchmark.target"
+    compileSdk = 35
+    namespace = "androidx.compose.integration.macrobenchmark.target"
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
+/**
+ * Exclusion groups for JetBrains Compose. When a dependency depends on JetBrains Compose, prebuilts
+ * for all other platforms will be pulled in. We also want to ensure we're using *Jetpack* Compose
+ * and not mix JetBrains and Jetpack Compose.
+ *
+ * IMPORTANT: When adding a dependency here, please make sure that it is otherwise present on the
+ * classpath.
+ */
+def jetbrainsComposeExcludeGroups = [
+        'org.jetbrains.androidx.lifecycle',
+        'org.jetbrains.compose.animation',
+        'org.jetbrains.compose.annotation-internal',
+        'org.jetbrains.compose.collection-internal',
+        'org.jetbrains.compose.foundation',
+        'org.jetbrains.compose.runtime',
+        'org.jetbrains.compose.ui',
+        'org.jetbrains.skiko'
+]
+
 dependencies {
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
-    implementation 'androidx.viewpager2:viewpager2:1.0.0'
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
 
     implementation(libs.kotlinStdlib)
-    implementation(project(":activity:activity-compose"))
+    implementation(libs.material)
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.appcompat:appcompat:1.4.1")
     implementation("androidx.cardview:cardview:1.0.0")
     // old version of common-java8 conflicts with newer version, because both have
@@ -41,6 +65,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:material:material"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-tracing"))
@@ -48,7 +73,9 @@ dependencies {
     implementation(project(":compose:ui:ui-tooling"))
     implementation(project(":profileinstaller:profileinstaller"))
     implementation(project(":constraintlayout:constraintlayout-compose"))
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt.coil3:coil-compose-android:3.1.0") {
+        jetbrainsComposeExcludeGroups.each { group ->
+            exclude group: group
+        }
+    }
 }
-
-android.defaultConfig.minSdkVersion 21

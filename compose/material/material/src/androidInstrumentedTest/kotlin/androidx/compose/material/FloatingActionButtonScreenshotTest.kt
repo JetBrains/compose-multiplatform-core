@@ -15,7 +15,6 @@
  */
 package androidx.compose.material
 
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
@@ -23,14 +22,12 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.testutils.assertAgainstGolden
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.platform.LocalInputModeManager
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -50,8 +47,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class FloatingActionButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -97,7 +93,7 @@ class FloatingActionButtonScreenshotTest {
             ExtendedFloatingActionButton(
                 text = { Text("EXTENDED") },
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
-                onClick = {}
+                onClick = {},
             )
         }
 
@@ -156,17 +152,14 @@ class FloatingActionButtonScreenshotTest {
             Box(Modifier.requiredSize(100.dp, 100.dp).wrapContentSize()) {
                 FloatingActionButton(
                     onClick = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 ) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
                 }
             }
         }
 
-        rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class)
-            localInputModeManager!!.requestInputMode(InputMode.Keyboard)
-        }
+        rule.runOnIdle { localInputModeManager!!.requestInputMode(InputMode.Keyboard) }
 
         rule.runOnIdle { focusRequester.requestFocus() }
 

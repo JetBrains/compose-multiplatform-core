@@ -22,13 +22,13 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Xml;
 
-import androidx.annotation.NonNull;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.wear.protolayout.proto.ResourceProto.AndroidSeekableAnimatedImageResourceByResId;
 import androidx.wear.protolayout.proto.ResourceProto.AnimatedImageFormat;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.AndroidSeekableAnimatedImageResourceByResIdResolver;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.ResourceAccessException;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -38,7 +38,7 @@ import java.io.IOException;
 public class DefaultAndroidSeekableAnimatedImageResourceByResIdResolver
         implements AndroidSeekableAnimatedImageResourceByResIdResolver {
 
-    @NonNull private final Resources mAndroidResources;
+    private final @NonNull Resources mAndroidResources;
 
     /**
      * Constructor.
@@ -51,9 +51,8 @@ public class DefaultAndroidSeekableAnimatedImageResourceByResIdResolver
         this.mAndroidResources = androidResources;
     }
 
-    @NonNull
     @Override
-    public Drawable getDrawableOrThrow(
+    public @NonNull Drawable getDrawableOrThrow(
             @NonNull AndroidSeekableAnimatedImageResourceByResId resource)
             throws ResourceAccessException {
         if (resource.getAnimatedImageFormat() == AnimatedImageFormat.ANIMATED_IMAGE_FORMAT_AVD) {

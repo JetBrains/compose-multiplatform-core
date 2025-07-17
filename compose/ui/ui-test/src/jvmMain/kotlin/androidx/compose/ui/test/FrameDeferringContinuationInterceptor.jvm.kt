@@ -18,6 +18,8 @@ package androidx.compose.ui.test
 
 import androidx.compose.ui.test.FrameDeferringContinuationInterceptor.FrameDeferredContinuation
 import androidx.compose.ui.test.internal.DelayPropagatingContinuationInterceptorWrapper
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
@@ -31,11 +33,11 @@ import kotlinx.coroutines.CoroutineDispatcher
  * continuation needs to be dispatched.
  */
 @OptIn(InternalTestApi::class)
-internal class FrameDeferringContinuationInterceptor(parentInterceptor: ContinuationInterceptor?) :
+internal class FrameDeferringContinuationInterceptor(parentInterceptor: ContinuationInterceptor) :
     DelayPropagatingContinuationInterceptorWrapper(parentInterceptor) {
     private val parentDispatcher = parentInterceptor as? CoroutineDispatcher
     private val toRunTrampolined = ArrayDeque<TrampolinedTask<*>>()
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
     private var isDeferringContinuations = false
 
     val hasTrampolinedTasks: Boolean
@@ -124,7 +126,7 @@ internal class FrameDeferringContinuationInterceptor(parentInterceptor: Continua
 
     private class TrampolinedTask<T>(
         private val continuation: Continuation<T>,
-        private val result: Result<T>
+        private val result: Result<T>,
     ) {
         fun resume() = continuation.resumeWith(result)
 

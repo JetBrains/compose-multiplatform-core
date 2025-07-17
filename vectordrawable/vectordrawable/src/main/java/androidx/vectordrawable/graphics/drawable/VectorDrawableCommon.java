@@ -22,9 +22,10 @@ import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.drawable.Drawable;
 
-import androidx.annotation.NonNull;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.graphics.drawable.TintAwareDrawable;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Internal common delegation shared by VectorDrawableCompat and AnimatedVectorDrawableCompat
@@ -90,7 +91,7 @@ abstract class VectorDrawableCommon extends Drawable implements TintAwareDrawabl
     }
 
     @Override
-    public void applyTheme(@NonNull Resources.Theme t) {
+    public void applyTheme(Resources.@NonNull Theme t) {
         // API >= 21 only.
         if (mDelegateDrawable != null) {
             DrawableCompat.applyTheme(mDelegateDrawable, t);

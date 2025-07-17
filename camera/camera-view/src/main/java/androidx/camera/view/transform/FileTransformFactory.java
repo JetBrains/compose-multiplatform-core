@@ -28,11 +28,12 @@ import android.graphics.Rect;
 import android.media.ExifInterface;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.utils.Exif;
 import androidx.camera.view.TransformExperimental;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -77,8 +78,7 @@ public final class FileTransformFactory {
     /**
      * Extracts transform info from the given {@link Uri}.
      */
-    @NonNull
-    public OutputTransform getOutputTransform(@NonNull ContentResolver contentResolver,
+    public @NonNull OutputTransform getOutputTransform(@NonNull ContentResolver contentResolver,
             @NonNull Uri uri)
             throws IOException {
         try (InputStream inputStream = contentResolver.openInputStream(uri)) {
@@ -89,8 +89,7 @@ public final class FileTransformFactory {
     /**
      * Extracts transform info from the given {@link File}.
      */
-    @NonNull
-    public OutputTransform getOutputTransform(@NonNull File file) throws IOException {
+    public @NonNull OutputTransform getOutputTransform(@NonNull File file) throws IOException {
         try (InputStream inputStream = new FileInputStream(file)) {
             return getOutputTransform(inputStream);
         }
@@ -99,8 +98,8 @@ public final class FileTransformFactory {
     /**
      * Extracts transform info from the given {@link InputStream}.
      */
-    @NonNull
-    public OutputTransform getOutputTransform(@NonNull InputStream inputStream) throws IOException {
+    public @NonNull OutputTransform getOutputTransform(@NonNull InputStream inputStream)
+            throws IOException {
         Exif exif = Exif.createFromInputStream(inputStream);
         Rect cropRect = new Rect(0, 0, exif.getWidth(), exif.getHeight());
 

@@ -16,9 +16,10 @@
 
 package androidx.wear.tiles.material;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the default values used by {@link CircularProgressIndicator} Tiles components.
@@ -33,19 +34,16 @@ public class ProgressIndicatorDefaults {
     private ProgressIndicatorDefaults() {}
 
     /** The default stroke width for {@link CircularProgressIndicator} */
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp DEFAULT_STROKE_WIDTH =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp DEFAULT_STROKE_WIDTH =
             androidx.wear.tiles.DimensionBuilders.dp(8);
 
     /** The default padding for {@link CircularProgressIndicator} */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static final androidx.wear.tiles.DimensionBuilders.DpProp DEFAULT_PADDING =
+    public static final androidx.wear.tiles.DimensionBuilders.@NonNull DpProp DEFAULT_PADDING =
             androidx.wear.tiles.DimensionBuilders.dp(6);
 
     /** The recommended colors for {@link CircularProgressIndicator}. */
-    @NonNull
-    public static final ProgressIndicatorColors DEFAULT_COLORS =
+    public static final @NonNull ProgressIndicatorColors DEFAULT_COLORS =
             ProgressIndicatorColors.progressIndicatorColors(Colors.DEFAULT);
 
     static final float DEFAULT_GAP_LENGTH = 47.8f;

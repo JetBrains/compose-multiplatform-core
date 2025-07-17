@@ -29,6 +29,12 @@
             android:name="androidx.coordinatorlayout.widget.CoordinatorWithNestedScrollViewsActivity"
             />
 
+        <activity
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light"
+            android:name="androidx.coordinatorlayout.widget.CoordinatorWithRecyclerViewActivity"
+            />
+
         <activity android:name="androidx.coordinatorlayout.widget.DynamicCoordinatorLayoutActivity"/>
 
     </application>

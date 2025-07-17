@@ -23,11 +23,11 @@ import android.annotation.SuppressLint;
 import android.os.Build.VERSION;
 import android.telephony.TelephonyManager;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,8 +65,7 @@ public class TelephonyManagerCompat {
      */
     @SuppressLint("MissingPermission")
     @RequiresPermission(android.Manifest.permission.READ_PHONE_STATE)
-    @Nullable
-    public static String getImei(@NonNull TelephonyManager telephonyManager) {
+    public static @Nullable String getImei(@NonNull TelephonyManager telephonyManager) {
         if (VERSION.SDK_INT >= 26) {
             return Api26Impl.getImei(telephonyManager);
         } else if (VERSION.SDK_INT >= 22) {
@@ -137,7 +136,6 @@ public class TelephonyManagerCompat {
     private static class Api30Impl {
         private Api30Impl() {}
 
-        @DoNotInline
         static int getSubscriptionId(TelephonyManager telephonyManager) {
             return telephonyManager.getSubscriptionId();
         }
@@ -149,9 +147,7 @@ public class TelephonyManagerCompat {
 
         @SuppressLint("MissingPermission")
         @RequiresPermission(android.Manifest.permission.READ_PHONE_STATE)
-        @DoNotInline
-        @Nullable
-        static String getImei(TelephonyManager telephonyManager) {
+        static @Nullable String getImei(TelephonyManager telephonyManager) {
             return telephonyManager.getImei();
         }
     }
@@ -162,9 +158,7 @@ public class TelephonyManagerCompat {
 
         @SuppressLint("MissingPermission")
         @RequiresPermission(android.Manifest.permission.READ_PHONE_STATE)
-        @DoNotInline
-        @Nullable
-        static String getDeviceId(TelephonyManager telephonyManager, int slotIndex) {
+        static @Nullable String getDeviceId(TelephonyManager telephonyManager, int slotIndex) {
             return telephonyManager.getDeviceId(slotIndex);
         }
     }

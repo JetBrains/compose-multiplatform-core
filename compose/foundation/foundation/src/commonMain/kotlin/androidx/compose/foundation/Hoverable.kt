@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
  * Configure component to be hoverable via pointer enter/exit events.
  *
  * @sample androidx.compose.foundation.samples.HoverableSample
- *
  * @param interactionSource [MutableInteractionSource] that will be used to emit
  *   [HoverInteraction.Enter] when this element is being hovered.
  * @param enabled Controls the enabled state. When `false`, hover events will be ignored.
@@ -83,7 +82,7 @@ private class HoverableNode(private var interactionSource: MutableInteractionSou
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         if (pass == PointerEventPass.Main) {
             when (pointerEvent.type) {

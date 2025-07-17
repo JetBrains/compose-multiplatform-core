@@ -24,10 +24,11 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.transition.Transition;
 import androidx.transition.TransitionValues;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A sample implementation of support {@link Transition}.
@@ -61,9 +62,8 @@ public class ChangeColor extends Transition {
     // create a ValueAnimator based on an ArgbEvaluator that interpolates between the starting and
     // ending color. Also create an update listener that sets the View background color for each
     // animation frame
-    @Nullable
     @Override
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
                                    @Nullable TransitionValues startValues,
                                    @Nullable TransitionValues endValues) {
         // This transition can only be applied to views that are on both starting and ending scenes.

@@ -22,11 +22,11 @@ import android.view.Display;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityWindowInfo;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.test.uiautomator.util.Traces;
 import androidx.test.uiautomator.util.Traces.Section;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -365,7 +365,6 @@ class ByMatcher {
             private Api26Impl() {
             }
 
-            @DoNotInline
             static String getHintText(AccessibilityNodeInfo accessibilityNodeInfo) {
                 CharSequence chars = accessibilityNodeInfo.getHintText();
                 return chars != null ? chars.toString() : null;
@@ -392,8 +391,7 @@ class ByMatcher {
         }
 
         @Override
-        @NonNull
-        public Iterator<PartialMatch> iterator() {
+        public @NonNull Iterator<PartialMatch> iterator() {
             return new Iterator<PartialMatch>() {
                 private Node mNext = mHead;
 
@@ -427,7 +425,6 @@ class ByMatcher {
         private Api30Impl() {
         }
 
-        @DoNotInline
         static int getDisplayId(AccessibilityNodeInfo accessibilityNodeInfo) {
             AccessibilityWindowInfo accessibilityWindowInfo = accessibilityNodeInfo.getWindow();
             return accessibilityWindowInfo == null ? Display.DEFAULT_DISPLAY :

@@ -28,7 +28,7 @@ class XMemberName
 internal constructor(
     val enclosingClassName: XClassName?,
     internal val java: JCodeBlock,
-    internal val kotlin: KMemberName
+    internal val kotlin: KMemberName,
 ) {
     val simpleName = kotlin.simpleName
 
@@ -42,7 +42,7 @@ internal constructor(
          */
         fun XClassName.companionMember(
             simpleName: String,
-            isJvmStatic: Boolean = false
+            isJvmStatic: Boolean = false,
         ): XMemberName {
             return XMemberName(
                 enclosingClassName = this,
@@ -53,10 +53,10 @@ internal constructor(
                         JCodeBlock.of(
                             "$T.INSTANCE.$L",
                             this.java.nestedClass("Companion"),
-                            simpleName
+                            simpleName,
                         )
                     },
-                kotlin = this.kotlin.nestedClass("Companion").member(simpleName)
+                kotlin = this.kotlin.nestedClass("Companion").member(simpleName),
             )
         }
 
@@ -66,11 +66,19 @@ internal constructor(
          *
          * @see [androidx.room.compiler.processing.XMemberContainer.asClassName]
          */
-        fun XClassName.packageMember(simpleName: String): XMemberName {
+        fun XClassName.packageMember(simpleName: String) = packageMember(XName.of(simpleName))
+
+        /**
+         * Creates a [XMemberName] is that is contained by the receiving class's package, i.e. a
+         * top-level function or property.
+         *
+         * @see [androidx.room.compiler.processing.XMemberContainer.asClassName]
+         */
+        fun XClassName.packageMember(simpleName: XName): XMemberName {
             return XMemberName(
                 enclosingClassName = null,
-                java = JCodeBlock.of("$T.$L", this.java, simpleName),
-                kotlin = KMemberName(this.packageName, simpleName)
+                java = JCodeBlock.of("$T.$L", this.java, simpleName.java),
+                kotlin = KMemberName(this.packageName, simpleName.kotlin),
             )
         }
     }

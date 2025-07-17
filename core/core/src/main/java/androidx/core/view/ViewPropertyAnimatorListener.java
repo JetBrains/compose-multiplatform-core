@@ -18,7 +18,7 @@ package androidx.core.view;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>An animation listener receives notifications from an animation.

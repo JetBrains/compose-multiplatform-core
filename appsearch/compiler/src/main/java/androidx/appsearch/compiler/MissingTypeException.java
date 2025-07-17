@@ -16,8 +16,9 @@
 
 package androidx.appsearch.compiler;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import javax.lang.model.element.Element;
 
@@ -29,16 +30,14 @@ import javax.lang.model.element.Element;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 final class MissingTypeException extends Exception {
-    @NonNull
-    private final Element mTypeElement;
+    private final @NonNull Element mTypeElement;
 
     MissingTypeException(@NonNull Element typeElement) {
         super("Type " + typeElement.getSimpleName() + " is not present");
         mTypeElement = typeElement;
     }
 
-    @NonNull
-    Element getTypeName() {
+    @NonNull Element getTypeName() {
         return mTypeElement;
     }
 }

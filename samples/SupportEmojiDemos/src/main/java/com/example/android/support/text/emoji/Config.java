@@ -20,13 +20,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.provider.FontRequest;
 import androidx.emoji2.bundled.BundledEmojiCompatConfig;
 import androidx.emoji2.text.DefaultEmojiCompatConfig;
 import androidx.emoji2.text.EmojiCompat;
 import androidx.emoji2.text.FontRequestEmojiCompatConfig;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -60,8 +61,7 @@ class Config {
             mValue = value;
         }
 
-        @NonNull
-        public static Source forPosition(int value) {
+        public static @NonNull Source forPosition(int value) {
             for (Source source : Source.values()) {
                 if (source.getPosition() == value) {
                     return source;
@@ -174,7 +174,7 @@ class Config {
         return new EmojiCompat.Config(new EmojiCompat.MetadataRepoLoader() {
             @Override
             public void load(
-                    @NonNull EmojiCompat.MetadataRepoLoaderCallback loaderCallback) {
+                    EmojiCompat.@NonNull MetadataRepoLoaderCallback loaderCallback) {
                 loaderCallback.onFailed(new RuntimeException("Disable"));
             }
         }) {
@@ -193,8 +193,7 @@ class Config {
         return isCompatEnabled() && mSource == Source.DOWNLOADABLE;
     }
 
-    @NonNull
-    Source getSource() {
+    @NonNull Source getSource() {
         return mSource;
     }
 

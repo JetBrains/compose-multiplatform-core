@@ -20,13 +20,13 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link Activity} for testing {@link androidx.test.uiautomator.UiDevice#click(int, int)}.
  * Contains a centered button that can be predictably clicked using coordinates.
  */
-public class UiDeviceTestClickActivity extends Activity {
+public class UiDeviceTestClickActivity extends TestActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

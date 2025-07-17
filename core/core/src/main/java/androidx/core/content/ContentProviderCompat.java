@@ -19,7 +19,7 @@ package androidx.core.content;
 import android.content.ContentProvider;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link android.content.ContentProvider} in a backwards
@@ -41,7 +41,7 @@ public final class ContentProviderCompat {
      * @return The {@link android.content.Context} object associated with the
      * {@link android.content.ContentProvider}.
      */
-    public static @NonNull Context requireContext(@NonNull final ContentProvider provider) {
+    public static @NonNull Context requireContext(final @NonNull ContentProvider provider) {
         final Context ctx = provider.getContext();
         if (ctx == null) {
             throw new IllegalStateException("Cannot find context from the provider.");

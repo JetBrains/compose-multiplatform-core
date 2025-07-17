@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,18 +31,19 @@ plugins {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.car.app.sample.showcase.common"
+    namespace = "androidx.car.app.sample.showcase.common"
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":car:app:app"))
     debugImplementation(libs.leakcanary)
 
     implementation(libs.kotlinStdlibCommon)
     implementation("androidx.core:core:1.7.0")
-    implementation project(":annotation:annotation-experimental")
+    implementation(project(":annotation:annotation-experimental"))
 }
 
 

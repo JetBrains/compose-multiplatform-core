@@ -16,21 +16,30 @@
 // @exportToFramework:skipFile()
 package androidx.appsearch.app;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
+
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import androidx.appsearch.app.AppSearchSchema.PropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.platformstorage.PlatformStorage;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SdkSuppress;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutorService;
 
-// TODO(b/227356108): move this test to cts test once we un-hide search suggestion API.
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
 public class AppSearchSessionPlatformInternalTest extends AppSearchSessionInternalTestBase {
     @Override
@@ -49,9 +58,31 @@ public class AppSearchSessionPlatformInternalTest extends AppSearchSessionIntern
                         .setWorkerExecutor(executor).build());
     }
 
-    @Override
+    // TODO(b/384947619): move delete propagation tests back to AppSearchSessionCtsTestBase once the
+    //   API is ready.
     @Test
-    public void testSearchSuggestion_propertyFilter() throws Exception {
-        // TODO(b/227356108) enable the test when suggestion is ready in platform.
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testGetSchema_deletePropagationTypePropagateFrom_notSupported() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
+        assumeFalse(mDb1.getFeatures().isFeatureSupported(
+                Features.SCHEMA_STRING_PROPERTY_CONFIG_DELETE_PROPAGATION_TYPE_PROPAGATE_FROM));
+
+        AppSearchSchema inSchema = new AppSearchSchema.Builder("Test")
+                .addProperty(new StringPropertyConfig.Builder("qualifiedId")
+                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setJoinableValueType(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                        .setDeletePropagationType(
+                                StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM)
+                        .build()
+                ).build();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(inSchema).build();
+
+        UnsupportedOperationException e = assertThrows(UnsupportedOperationException.class, () ->
+                mDb1.setSchemaAsync(request).get());
+        assertThat(e.getMessage()).isEqualTo(
+                "StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM is not supported on "
+                        + "this AppSearch implementation.");
     }
 }

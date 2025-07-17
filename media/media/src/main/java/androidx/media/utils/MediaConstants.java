@@ -41,7 +41,13 @@ import androidx.media.MediaBrowserServiceCompat;
 
 import java.util.ArrayList;
 
-/** Media constants for sharing constants between media provider and consumer apps */
+/**
+ * Media constants for sharing constants between media provider and consumer apps.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
+ */
+@Deprecated
 public final class MediaConstants {
     /**
      * Bundle key used for the account name in {@link MediaSessionCompat session} extras.

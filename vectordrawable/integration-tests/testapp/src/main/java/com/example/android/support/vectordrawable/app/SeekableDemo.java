@@ -21,12 +21,13 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 
 import com.example.android.support.vectordrawable.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Demonstrates usage of {@link SeekableAnimatedVectorDrawable}.

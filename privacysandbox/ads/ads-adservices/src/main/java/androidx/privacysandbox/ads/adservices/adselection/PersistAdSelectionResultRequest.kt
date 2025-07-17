@@ -32,11 +32,12 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
  * @param adSelectionResult The adSelectionResult that is collected from device.
  */
 @ExperimentalFeatures.Ext10OptIn
-class PersistAdSelectionResultRequest
+public class PersistAdSelectionResultRequest
+@JvmOverloads
 public constructor(
-    val adSelectionId: Long,
-    val seller: AdTechIdentifier? = null,
-    val adSelectionResult: ByteArray? = null,
+    public val adSelectionId: Long,
+    public val seller: AdTechIdentifier? = null,
+    public val adSelectionResult: ByteArray? = null,
 ) {
     /** Checks whether two [PersistAdSelectionResultRequest] contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -66,6 +67,7 @@ public constructor(
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 10)
     internal fun convertToAdServices():
         android.adservices.adselection.PersistAdSelectionResultRequest {
+        @Suppress("DEPRECATION")
         return android.adservices.adselection.PersistAdSelectionResultRequest.Builder()
             .setAdSelectionId(adSelectionId)
             .setSeller(seller?.convertToAdServices())

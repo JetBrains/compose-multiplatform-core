@@ -40,7 +40,6 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.util.SemaphoreReleasingCamera2Callbacks;
@@ -59,6 +58,7 @@ import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
 import androidx.camera.testing.impl.CameraUtil;
 import androidx.camera.testing.impl.fakes.FakeCameraCoordinator;
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager;
@@ -71,6 +71,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -166,7 +168,8 @@ public class ExposureDeviceTest {
                 mCameraCoordinator,
                 mCameraStateRegistry, sCameraExecutor, sCameraHandler,
                 DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
-                -1L
+                -1L,
+                null
         );
 
         mCameraInfoInternal = mCamera2CameraImpl.getCameraInfoInternal();
@@ -177,11 +180,13 @@ public class ExposureDeviceTest {
                 new FakeCameraDeviceSurfaceManager();
         fakeCameraDeviceSurfaceManager.setSuggestedStreamSpec(mCameraId, FakeUseCaseConfig.class,
                 StreamSpec.builder(new Size(640, 480)).build());
+        FakeUseCaseConfigFactory useCaseConfigFactory = new FakeUseCaseConfigFactory();
         mCameraCoordinator = new FakeCameraCoordinator();
         mCameraUseCaseAdapter = new CameraUseCaseAdapter(
                 mCamera2CameraImpl,
                 mCameraCoordinator,
-                fakeCameraDeviceSurfaceManager, new FakeUseCaseConfigFactory());
+                new StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager),
+                useCaseConfigFactory);
     }
 
     @After
@@ -425,7 +430,7 @@ public class ExposureDeviceTest {
         FakeTestUseCase(
                 @NonNull FakeUseCaseConfig config,
                 @NonNull CameraInternal cameraInternal,
-                @NonNull CameraCaptureSession.StateCallback sessionStateCallback) {
+                CameraCaptureSession.@NonNull StateCallback sessionStateCallback) {
             super(config);
             mSessionStateCallback = sessionStateCallback;
         }
@@ -444,12 +449,12 @@ public class ExposureDeviceTest {
         }
 
         @Override
-        @NonNull
-        protected StreamSpec onSuggestedStreamSpecUpdated(
-                @NonNull StreamSpec suggestedStreamSpec) {
-            createPipeline(suggestedStreamSpec);
+        protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
+                @NonNull StreamSpec primaryStreamSpec,
+                @Nullable StreamSpec secondaryStreamSpec) {
+            createPipeline(primaryStreamSpec);
             notifyActive();
-            return suggestedStreamSpec;
+            return primaryStreamSpec;
         }
 
         private void createPipeline(StreamSpec streamSpec) {
@@ -486,11 +491,11 @@ public class ExposureDeviceTest {
                         }
                     }));
 
-            builder.addErrorListener((sessionConfig, error) -> {
+            builder.setErrorListener((sessionConfig, error) -> {
                 // Create new pipeline and it will close the old one.
                 createPipeline(streamSpec);
             });
-            updateSessionConfig(builder.build());
+            updateSessionConfig(List.of(builder.build()));
         }
     }
 }

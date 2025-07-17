@@ -17,7 +17,7 @@
 package androidx.compose.ui.node
 
 import androidx.collection.mutableObjectIntMapOf
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.classKeyForObject
 import androidx.compose.ui.draw.DrawModifier
@@ -27,7 +27,7 @@ import androidx.compose.ui.focus.FocusPropertiesModifierNode
 import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.invalidateFocusEvent
 import androidx.compose.ui.focus.invalidateFocusProperties
-import androidx.compose.ui.focus.invalidateFocusTarget
+import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.key.SoftKeyboardInterceptionModifierNode
 import androidx.compose.ui.input.pointer.PointerInputModifier
@@ -43,7 +43,10 @@ import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.modifier.ModifierLocalConsumer
 import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.modifier.ModifierLocalProvider
+import androidx.compose.ui.relocation.BringIntoViewModifierNode
 import androidx.compose.ui.semantics.SemanticsModifier
+import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmStatic
 
 @Suppress("NOTHING_TO_INLINE")
 @JvmInline
@@ -69,7 +72,6 @@ internal val NodeKind<*>.includeSelfInTraversal: Boolean
 // Note that these don't inherit from Modifier.Node to allow for a single Modifier.Node
 // instance to implement multiple Node interfaces
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal object Nodes {
     @JvmStatic
     inline val Any
@@ -142,6 +144,19 @@ internal object Nodes {
     @JvmStatic
     inline val Traversable
         get() = NodeKind<TraversableNode>(0b1 shl 18)
+
+    @JvmStatic
+    inline val BringIntoView
+        get() = NodeKind<BringIntoViewModifierNode>(0b1 shl 19)
+
+    @JvmStatic
+    inline val Unplaced
+        get() = NodeKind<OnUnplacedModifierNode>(0b1 shl 20)
+
+    @JvmStatic
+    @OptIn(ExperimentalIndirectTouchTypeApi::class)
+    inline val IndirectTouchInput
+        get() = NodeKind<IndirectTouchInputModifierNode>(0b1 shl 21)
     // ...
 }
 
@@ -179,12 +194,14 @@ internal fun calculateNodeKindSetFrom(element: Modifier.Element): Int {
     if (element is OnPlacedModifier || element is OnRemeasuredModifier) {
         mask = mask or Nodes.LayoutAware
     }
+    if (element is BringIntoViewModifierNode) {
+        mask = mask or Nodes.BringIntoView
+    }
     return mask
 }
 
 private val classToKindSetMap = mutableObjectIntMapOf<Any>()
 
-@OptIn(ExperimentalComposeUiApi::class)
 internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
     // This function does not take delegates into account, as a result, the kindSet will never
     // change, so if it is non-zero, it means we've already calculated it and we can just bail
@@ -242,6 +259,16 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
         }
         if (node is TraversableNode) {
             mask = mask or Nodes.Traversable
+        }
+        if (node is BringIntoViewModifierNode) {
+            mask = mask or Nodes.BringIntoView
+        }
+        if (node is OnUnplacedModifierNode) {
+            mask = mask or Nodes.Unplaced
+        }
+        @OptIn(ExperimentalIndirectTouchTypeApi::class)
+        if (node is IndirectTouchInputModifierNode) {
+            mask = mask or Nodes.IndirectTouchInput
         }
         mask
     }
@@ -302,6 +329,11 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
         }
     }
     if (Nodes.GlobalPositionAware in selfKindSet && node is GlobalPositionAwareModifierNode) {
+        if (phase == Inserted) {
+            node.requireLayoutNode().globallyPositionedObservers++
+        } else if (phase == Removed) {
+            node.requireLayoutNode().globallyPositionedObservers--
+        }
         // No need to invalidate when removing a GlobalPositionAwareModifierNode, as these won't be
         // invoked anyway
         if (phase != Removed) {
@@ -312,36 +344,20 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
         node.invalidateDraw()
     }
     if (Nodes.Semantics in selfKindSet && node is SemanticsModifierNode) {
-        node.invalidateSemantics()
+        node.requireLayoutNode().isSemanticsInvalidated = true
     }
     if (Nodes.ParentData in selfKindSet && node is ParentDataModifierNode) {
         node.invalidateParentData()
-    }
-    if (Nodes.FocusTarget in selfKindSet && node is FocusTargetNode) {
-        if (phase != Removed) {
-            node.invalidateFocusTarget()
-        }
     }
     if (
         Nodes.FocusProperties in selfKindSet &&
             node is FocusPropertiesModifierNode &&
             node.specifiesCanFocusProperty()
     ) {
-        when (phase) {
-            Removed -> node.scheduleInvalidationOfAssociatedFocusTargets()
-            else -> node.invalidateFocusProperties()
-        }
+        node.invalidateFocusProperties()
     }
     if (Nodes.FocusEvent in selfKindSet && node is FocusEventModifierNode) {
         node.invalidateFocusEvent()
-    }
-}
-
-private fun FocusPropertiesModifierNode.scheduleInvalidationOfAssociatedFocusTargets() {
-    visitChildren(Nodes.FocusTarget) {
-        // Schedule invalidation for the focus target,
-        // which will cause it to recalculate focus properties.
-        it.invalidateFocusTarget()
     }
 }
 

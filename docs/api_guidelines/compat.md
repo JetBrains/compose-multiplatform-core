@@ -17,254 +17,9 @@ compare the device's `Build.VERSION.SDK_INT` field to a known-good SDK version;
 for example, the SDK in which a method first appeared or in which a critical bug
 was first fixed.
 
-Non-reflective calls to new APIs gated on `SDK_INT` **must** be made from
-version-specific static inner classes to avoid verification errors that
-negatively affect run-time performance. This is enforced at build time by the
-`ClassVerificationFailure` lint check, which offers auto-fixes in Java sources.
-
-For more information, see Chromium's (deprecated but still accurate) guide to
-[Class Verification Failures](https://chromium.googlesource.com/chromium/src/+/HEAD/build/android/docs/class_verification_failures.md).
-
-NOTE As noted in the Chromium guide, the latest versions of R8 have added
-support for automatically out-of-lining calls to new platform SDK APIs; however,
-this depends on clients using the latest versions of R8. Since Jetpack libraries
-cannot make assertions about versions of tools used by clients, we must continue
-to manually out-of-line such calls.
-
-Methods in implementation-specific classes **must** be paired with the
-`@DoNotInline` annotation to prevent them from being inlined.
-
-```java {.good}
-public static void saveAttributeDataForStyleable(@NonNull View view, ...) {
-  if (Build.VERSION.SDK_INT >= 29) {
-    Api29Impl.saveAttributeDataForStyleable(view, ...);
-  }
-}
-
-@RequiresApi(29)
-private static class Api29Impl {
-  @DoNotInline
-  static void saveAttributeDataForStyleable(@NonNull View view, ...) {
-    view.saveAttributeDataForStyleable(...);
-  }
-}
-```
-
-Alternatively, in Kotlin sources:
-
-```kotlin {.good}
-@RequiresApi(29)
-private object Api29Impl {
-  @JvmStatic
-  @DoNotInline
-  fun saveAttributeDataForStyleable(view: View, ...) { ... }
-}
-```
-
-When developing against pre-release SDKs where the `SDK_INT` has not been
-finalized, SDK checks **must** use `BuildCompat.isAtLeastX()` methods and
-**must** use a tip-of-tree `project` dependency to ensure that the
-implementation of `BuildCompat` stays up-to-date when the SDK is finalized.
-
-**Do not** assume that the next SDK release's `SDK_INT` will be N+1. The value
+**Do not** assume that the `SDK_INT` for the next release will be N+1. The value
 is not finalized until SDK finalization happens, at which point the `isAtLeast`
 check will be updated. **Never** write your own check for a pre-release SDK.
-
-```java {.good}
-@NonNull
-public static List<Window> getAllWindows() {
-  if (BuildCompat.isAtLeastR()) {
-    return ApiRImpl.getAllWindows();
-  }
-  return Collections.emptyList();
-}
-```
-
-```kotlin {.good}
-dependencies {
-  api(project(":core:core"))
-}
-```
-
-##### Preventing invalid casting {#compat-casting}
-
-Even when a call to a new API is moved to a version-specific class, a class
-verification failure is still possible when referencing types introduced in new
-APIs.
-
-When a type does not exist on a device, the verifier treats the type as
-`Object`. This is a problem if the new type is implicitly cast to a different
-type which does exist on the device.
-
-In general, if `A extends B`, using an `A` as a `B` without an explicit cast is
-fine. However, if `A` was introduced at a later API level than `B`, on devices
-below that API level, `A` will be seen as `Object`. An `Object` cannot be used
-as a `B` without an explicit cast. However, adding an explicit cast to `B` won't
-fix this, because the compiler will see the cast as redundant (as it normally
-would be). So, implicit casts between types introduced at different API levels
-should be moved out to version-specific static inner classes, as described
-[above](#compat-sdk).
-
-The `ImplicitCastClassVerificationFailure` lint check detects and provides
-autofixes for instances of invalid implicit casts.
-
-For instance, the following would **not** be valid, because it implicitly casts
-an `AdaptiveIconDrawable` (new in API level 26, `Object` on lower API levels) to
-`Drawable`. Instead, the method inside of `Api26Impl` could return `Drawable`,
-or the cast could be moved into a version-specific static inner class.
-
-```java {.bad}
-private Drawable methodReturnsDrawable() {
-  if (Build.VERSION.SDK_INT >= 26) {
-    // Implicitly casts the returned AdaptiveIconDrawable to Drawable
-    return Api26Impl.createAdaptiveIconDrawable(null, null);
-  } else {
-    return null;
-  }
-}
-
-@RequiresApi(26)
-static class Api26Impl {
-  // Returns AdaptiveIconDrawable, introduced in API level 26
-  @DoNotInline
-  static AdaptiveIconDrawable createAdaptiveIconDrawable(Drawable backgroundDrawable, Drawable foregroundDrawable) {
-    return new AdaptiveIconDrawable(backgroundDrawable, foregroundDrawable);
-  }
-}
-```
-
-The version-specific static inner class solution would look like this:
-
-```java {.good}
-private Drawable methodReturnsDrawable() {
-  if (Build.VERSION.SDK_INT >= 26) {
-    return Api26Impl.castToDrawable(Api26Impl.createAdaptiveIconDrawable(null, null));
-  } else {
-    return null;
-  }
-}
-
-@RequiresApi(26)
-static class Api26Impl {
-  // Returns AdaptiveIconDrawable, introduced in API level 26
-  @DoNotInline
-  static AdaptiveIconDrawable createAdaptiveIconDrawable(Drawable backgroundDrawable, Drawable foregroundDrawable) {
-    return new AdaptiveIconDrawable(backgroundDrawable, foregroundDrawable);
-  }
-
-  // Method which performs the implicit cast from AdaptiveIconDrawable to Drawable
-  @DoNotInline
-  static Drawable castToDrawable(AdaptiveIconDrawable adaptiveIconDrawable) {
-    return adaptiveIconDrawable;
-  }
-}
-```
-
-The following would also **not** be valid, because it implicitly casts a
-`Notification.MessagingStyle` (new in API level 24, `Object` on lower API
-levels) to `Notification.Style`. Instead, `Api24Impl` could have a `setBuilder`
-method which takes `Notification.MessagingStyle` as a parameter, or the cast
-could be moved into a version-specific static inner class.
-
-```java {.bad}
-public void methodUsesStyle(Notification.MessagingStyle style, Notification.Builder builder) {
-  if (Build.VERSION.SDK_INT >= 24) {
-    Api16Impl.setBuilder(
-      // Implicitly casts the style to Notification.Style (added in API level 16)
-      // when it is a Notification.MessagingStyle (added in API level 24)
-      style, builder
-    );
-  }
-}
-
-@RequiresApi(16)
-static class Api16Impl {
-  private Api16Impl() { }
-
-  @DoNotInline
-  static void setBuilder(Notification.Style style, Notification.Builder builder) {
-    style.setBuilder(builder);
-  }
-}
-```
-
-The version-specific static inner class solution would look like this:
-
-```java {.good}
-public void methodUsesStyle(Notification.MessagingStyle style, Notification.Builder builder) {
-  if (Build.VERSION.SDK_INT >= 24) {
-    Api16Impl.setBuilder(
-      Api24Impl.castToStyle(style), builder
-    );
-  }
-}
-
-@RequiresApi(16)
-static class Api16Impl {
-  private Api16Impl() { }
-
-  @DoNotInline
-  static void setBuilder(Notification.Style style, Notification.Builder builder) {
-    style.setBuilder(builder);
-  }
-}
-
-@RequiresApi(24)
-static class Api24Impl {
-  private Api24Impl() { }
-
-  // Performs the implicit cast from Notification.MessagingStyle to Notification.Style
-  @DoNotInline
-  static Notification.Style castToStyle(Notification.MessagingStyle messagingStyle) {
-    return messagingStyle;
-  }
-}
-```
-
-#### Validating class verification
-
-To verify that your library does not raise class verification failures, look for
-`dex2oat` output during install time.
-
-You can generate class verification logs from test APKs. Simply call the
-class/method that should generate a class verification failure in a test.
-
-The test APK will generate class verification logs on install.
-
-```bash
-# Enable ART logging (requires root). Note the 2 pairs of quotes!
-adb root
-adb shell setprop dalvik.vm.dex2oat-flags '"--runtime-arg -verbose:verifier"'
-
-# Restart Android services to pick up the settings
-adb shell stop && adb shell start
-
-# Optional: clear logs which aren't relevant
-adb logcat -c
-
-# Install the app and check for ART logs
-# This line is what triggers log lines, and can be repeated
-adb install -d -r someApk.apk
-
-# it's useful to run this _during_ install in another shell
-adb logcat | grep 'dex2oat'
-...
-... I dex2oat : Soft verification failures in
-```
-
-#### View constructors {#compat-view-constructors}
-
-The four-arg View constructor -- `View(Context, AttributeSet, int, int)` -- was
-added in SDK 21 and allows a developer to pass in an explicit default style
-resource rather than relying on a theme attribute to resolve the default style
-resource. Because this API was added in SDK 21, care must be taken to ensure
-that it is not called through any < SDK 21 code path.
-
-Views *may* implement a four-arg constructor in one of the following ways:
-
-1.  Do not implement.
-1.  Implement and annotate with `@RequiresApi(21)`. This means the three-arg
-    constructor **must not** call into the four-arg constructor.
 
 #### Device-specific issues {#compat-oem}
 
@@ -380,10 +135,10 @@ will **not** be able to use reflection to access hidden APIs on devices with
 In cases where a hidden API is a constant value, **do not** inline the value.
 Hidden APIs cannot be tested by CTS and carry no stability guarantees.
 
-On earlier devices or in cases where an API is marked with
-`@UnsupportedAppUsage`, reflection on hidden platform APIs is allowed **only**
-when an alternative public platform API exists in a later revision of the
-Android SDK. For example, the following implementation is allowed:
+Per go/platform-parity, on earlier devices or in cases where an API is marked
+with `@UnsupportedAppUsage`, reflection on hidden platform APIs is allowed
+**only** when an alternative public platform API exists in a later revision of
+the Android SDK. For example, the following implementation is allowed:
 
 ```java
 public AccessibilityDelegate getAccessibilityDelegate(View v) {
@@ -431,6 +186,22 @@ if (BuildCompat.isAtLeastQ()) {
    // no-op or best-effort given no information
 }
 ```
+
+#### Shadowing platform classes {#sdk-shadowing}
+
+Generally, libraries should **never** create new classes in the `android.*`
+namespace or re-define any classes that may be present in the boot classpath.
+**Do not** create a library class with the same fully-qualified name as one in
+the platform SDK, a Mainline module, sidecar JAR, or another library. Keep all
+classes within your own package based on your Maven group ID.
+
+The reverse also applies: the platform SDK, Mainline modules, sidecar JARs, and
+other libraries **must not** define classes in the `androidx.*` namespace.
+
+In *extremely limited* cases, the overhead of reflecting on a platform class may
+cause performance issues for apps on a scale that warrants using a compile-only
+stub of the platform class to avoid reflection. Any instances of this **must**
+be approved by Jetpack Working Group before submitting the change.
 
 ### Inter-process communication {#ipc}
 
@@ -571,12 +342,6 @@ buffers in your library.
 WARNING While Protobuf is capable of maintaining inter-process compatibility,
 AndroidX does not currently provide compatibility tracking or enforcement.
 Library owners must perform their own validation.
-
-NOTE We are currently investigating the suitability of Square's
-[`wire` library](https://github.com/square/wire) for handling protocol buffers
-in Android libraries. If adopted, it will replace `proto` library dependencies.
-Libraries that expose their serialization mechanism in their API surface *will
-not be able to migrate*.
 
 #### Bundle <a name="ipc-bundle"></a>
 

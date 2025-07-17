@@ -16,6 +16,9 @@
 
 package androidx.compose.foundation.text.selection
 
+import androidx.compose.foundation.platform.makeSynchronizedObject
+import androidx.compose.foundation.platform.synchronized
+import androidx.compose.foundation.text.getLineHeight
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.isUnspecified
@@ -28,8 +31,9 @@ import kotlin.math.max
 internal class MultiWidgetSelectionDelegate(
     override val selectableId: Long,
     private val coordinatesCallback: () -> LayoutCoordinates?,
-    private val layoutResultCallback: () -> TextLayoutResult?
+    private val layoutResultCallback: () -> TextLayoutResult?,
 ) : Selectable {
+    private val lock = makeSynchronizedObject(this)
 
     private var _previousTextLayoutResult: TextLayoutResult? = null
 
@@ -44,31 +48,33 @@ internal class MultiWidgetSelectionDelegate(
      * instance check is enough to accomplish whether a text layout has changed in a meaningful way.
      */
     private val TextLayoutResult.lastVisibleOffset: Int
-        @Synchronized
-        get() {
-            if (_previousTextLayoutResult !== this) {
-                val lastVisibleLine =
-                    when {
-                        !didOverflowHeight || multiParagraph.didExceedMaxLines -> lineCount - 1
-                        else -> { // size.height < multiParagraph.height
-                            var finalVisibleLine =
-                                getLineForVerticalPosition(size.height.toFloat())
-                                    .coerceAtMost(lineCount - 1)
-                            // if final visible line's top is equal to or larger than text layout
-                            // result's height, we need to check above lines one by one until we
-                            // find
-                            // a line that fits in boundaries.
-                            while (
-                                finalVisibleLine >= 0 && getLineTop(finalVisibleLine) >= size.height
-                            ) finalVisibleLine--
-                            finalVisibleLine.coerceAtLeast(0)
+        get() =
+            synchronized(lock) {
+                if (_previousTextLayoutResult !== this) {
+                    val lastVisibleLine =
+                        when {
+                            !didOverflowHeight || multiParagraph.didExceedMaxLines -> lineCount - 1
+                            else -> { // size.height < multiParagraph.height
+                                var finalVisibleLine =
+                                    getLineForVerticalPosition(size.height.toFloat())
+                                        .coerceAtMost(lineCount - 1)
+                                // if final visible line's top is equal to or larger than text
+                                // layout
+                                // result's height, we need to check above lines one by one until we
+                                // find
+                                // a line that fits in boundaries.
+                                while (
+                                    finalVisibleLine >= 0 &&
+                                        getLineTop(finalVisibleLine) >= size.height
+                                ) finalVisibleLine--
+                                finalVisibleLine.coerceAtLeast(0)
+                            }
                         }
-                    }
-                _previousLastVisibleOffset = getLineEnd(lastVisibleLine, true)
-                _previousTextLayoutResult = this
+                    _previousLastVisibleOffset = getLineEnd(lastVisibleLine, true)
+                    _previousTextLayoutResult = this
+                }
+                _previousLastVisibleOffset
             }
-            return _previousLastVisibleOffset
-        }
 
     override fun appendSelectableInfoToBuilder(builder: SelectionLayoutBuilder) {
         val layoutCoordinates = getLayoutCoordinates() ?: return
@@ -102,15 +108,15 @@ internal class MultiWidgetSelectionDelegate(
                 Selection.AnchorInfo(
                     direction = textLayoutResult.getBidiRunDirection(start),
                     offset = start,
-                    selectableId = selectableId
+                    selectableId = selectableId,
                 ),
             end =
                 Selection.AnchorInfo(
                     direction = textLayoutResult.getBidiRunDirection(max(end - 1, 0)),
                     offset = end,
-                    selectableId = selectableId
+                    selectableId = selectableId,
                 ),
-            handlesCrossed = false
+            handlesCrossed = false,
         )
     }
 
@@ -132,7 +138,7 @@ internal class MultiWidgetSelectionDelegate(
             textLayoutResult = textLayoutResult,
             offset = coercedOffset,
             isStart = isStartHandle,
-            areHandlesCrossed = selection.handlesCrossed
+            areHandlesCrossed = selection.handlesCrossed,
         )
     }
 
@@ -140,6 +146,10 @@ internal class MultiWidgetSelectionDelegate(
         val layoutCoordinates = coordinatesCallback()
         if (layoutCoordinates == null || !layoutCoordinates.isAttached) return null
         return layoutCoordinates
+    }
+
+    override fun textLayoutResult(): TextLayoutResult? {
+        return layoutResultCallback()
     }
 
     override fun getText(): AnnotatedString {
@@ -184,13 +194,17 @@ internal class MultiWidgetSelectionDelegate(
         val line = textLayoutResult.getLineForOffset(offset.coerceIn(0, visibleTextLength - 1))
         return TextRange(
             start = textLayoutResult.getLineStart(line),
-            end = textLayoutResult.getLineEnd(line, visibleEnd = true)
+            end = textLayoutResult.getLineEnd(line, visibleEnd = true),
         )
     }
 
     override fun getLastVisibleOffset(): Int {
         val textLayoutResult = layoutResultCallback() ?: return 0
         return textLayoutResult.lastVisibleOffset
+    }
+
+    override fun getLineHeight(offset: Int): Float {
+        return layoutResultCallback()?.getLineHeight(offset) ?: 0f
     }
 }
 
@@ -214,7 +228,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
             0.0f,
             0.0f,
             textLayoutResult.size.width.toFloat(),
-            textLayoutResult.size.height.toFloat()
+            textLayoutResult.size.height.toFloat(),
         )
 
     val currentXDirection = getXDirection(localPosition, bounds)
@@ -258,7 +272,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
                 ?.getPreviousAdjustedOffset(
                     selectableIdOrderingComparator,
                     selectableId,
-                    textLength
+                    textLength,
                 ) ?: rawStartHandleOffset
     } else {
         rawEndHandleOffset = getOffsetForPosition(localPosition, textLayoutResult)
@@ -268,7 +282,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
                 ?.getPreviousAdjustedOffset(
                     selectableIdOrderingComparator,
                     selectableId,
-                    textLength
+                    textLength,
                 ) ?: rawEndHandleOffset
     }
 
@@ -294,7 +308,7 @@ internal fun SelectionLayoutBuilder.appendSelectableInfo(
 private fun Selection.AnchorInfo.getPreviousAdjustedOffset(
     selectableIdOrderingComparator: Comparator<Long>,
     currentSelectableId: Long,
-    currentTextLength: Int
+    currentTextLength: Int,
 ): Int {
     val compareResult =
         selectableIdOrderingComparator.compare(this.selectableId, currentSelectableId)

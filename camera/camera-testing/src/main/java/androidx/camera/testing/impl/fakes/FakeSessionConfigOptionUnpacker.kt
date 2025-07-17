@@ -22,11 +22,11 @@ import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.UseCaseConfig
 
-class FakeSessionConfigOptionUnpacker : SessionConfig.OptionUnpacker {
+public class FakeSessionConfigOptionUnpacker : SessionConfig.OptionUnpacker {
     override fun unpack(
         resolution: Size,
         config: UseCaseConfig<*>,
-        builder: SessionConfig.Builder
+        builder: SessionConfig.Builder,
     ) {
         val defaultSessionConfig = config.getDefaultSessionConfig(/* valueIfMissing= */ null)
 

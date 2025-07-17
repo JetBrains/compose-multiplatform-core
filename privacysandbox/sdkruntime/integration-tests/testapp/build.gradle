@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 plugins {
-    id('AndroidXPlugin')
-    id('com.android.application')
-    id('org.jetbrains.kotlin.android')
+    id("AndroidXPlugin")
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 android {
-    namespace 'androidx.privacysandbox.sdkruntime.integration.testapp'
+    namespace = "androidx.privacysandbox.sdkruntime.integration.testapp"
     defaultConfig {
-        applicationId 'androidx.privacysandbox.sdkruntime.integration.testapp'
-        compileSdk 34
-        compileSdkExtension 10
-        minSdk 34
+        applicationId = "androidx.privacysandbox.sdkruntime.integration.testapp"
+        compileSdk = 35
+        compileSdkExtension = 14
     }
     privacySandbox {
         enable = true
@@ -32,12 +31,17 @@ android {
 }
 
 dependencies {
-    implementation(project(':privacysandbox:sdkruntime:integration-tests:testaidl'))
-    implementation(project(':privacysandbox:sdkruntime:integration-tests:testsdk-asb'))
+    implementation(project(":privacysandbox:sdkruntime:integration-tests:testaidl"))
+    implementation(project(":privacysandbox:sdkruntime:integration-tests:testsdk-asb"))
 
-    implementation(project(':privacysandbox:sdkruntime:sdkruntime-client'))
+    implementation("androidx.appcompat:appcompat:1.6.0")
+    implementation("com.google.android.material:material:1.6.0")
+    implementation(project(":privacysandbox:sdkruntime:sdkruntime-client"))
 
-    androidTestImplementation(project(':internal-testutils-runtime'))
+    // For macrobenchmarks on API 34+
+    implementation("androidx.profileinstaller:profileinstaller:1.4.1")
+
+    androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.espressoCore)

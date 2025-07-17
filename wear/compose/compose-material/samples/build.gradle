@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,8 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
-
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.compose.animation:animation-graphics:1.6.0")
@@ -58,15 +57,17 @@ dependencies {
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
-    namespace "androidx.wear.compose.material.samples"
+    namespace = "androidx.wear.compose.material.samples"
 }
 
 androidx {
     name = "Android Wear Compose Material Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2021"
     description = "Contains the sample code for the Android Wear Compose Material Classes"
 }

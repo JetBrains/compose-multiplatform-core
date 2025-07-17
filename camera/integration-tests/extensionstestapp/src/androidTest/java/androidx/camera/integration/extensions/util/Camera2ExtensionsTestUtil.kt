@@ -37,14 +37,15 @@ import android.os.Looper
 import android.view.Surface
 import androidx.annotation.RequiresApi
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.integration.extensions.utils.Camera2ExtensionsUtil
 import androidx.camera.integration.extensions.utils.Camera2ExtensionsUtil.AVAILABLE_CAMERA2_EXTENSION_MODES
 import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.concurrent.futures.await
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.Executors
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assume.assumeTrue
 
@@ -72,18 +73,28 @@ object Camera2ExtensionsTestUtil {
 
     /** Gets a list of all camera id and extension mode combinations. */
     @JvmStatic
-    fun getAllCameraIdExtensionModeCombinations(): List<CameraIdExtensionModePair> =
-        CameraUtil.getBackwardCompatibleCameraIdListOrThrow().flatMap { cameraId ->
-            AVAILABLE_CAMERA2_EXTENSION_MODES.map { extensionMode ->
-                CameraIdExtensionModePair(cameraId, extensionMode)
+    fun getAllCameraIdExtensionModeCombinations(
+        context: Context = ApplicationProvider.getApplicationContext()
+    ): List<CameraIdExtensionModePair> =
+        CameraUtil.getBackwardCompatibleCameraIdListOrThrow()
+            .flatMap { cameraId ->
+                AVAILABLE_CAMERA2_EXTENSION_MODES.map { extensionMode ->
+                    CameraIdExtensionModePair(cameraId, extensionMode)
+                }
             }
-        }
+            .filter {
+                Camera2ExtensionsUtil.isCamera2ExtensionModeSupported(
+                    context,
+                    it.cameraId,
+                    it.extensionMode,
+                )
+            }
 
     suspend fun assertCanOpenExtensionsSession(
         cameraManager: CameraManager,
         cameraId: String,
         extensionMode: Int,
-        verifyOutput: Boolean = false
+        verifyOutput: Boolean = false,
     ) {
         val extensionsCharacteristics = cameraManager.getCameraExtensionCharacteristics(cameraId)
         assumeCameraExtensionSupported(extensionMode, extensionsCharacteristics)
@@ -95,22 +106,18 @@ object Camera2ExtensionsTestUtil {
                 .maxBy { it.width * it.height }
         val deferredPreviewFrame = CompletableDeferred<SurfaceTexture>()
 
-        val executorForGL = Executors.newSingleThreadExecutor()
         // Some OEM requires frames drain (updateTexImage being invoked) in SurfaceTexture,
         // otherwise it might cause still capture to fail.
         val surfaceTextureHolder =
             SurfaceTextureProvider.createAutoDrainingSurfaceTextureAsync(
-                    executorForGL,
                     previewSize.width,
                     previewSize.height,
                     {
                         if (!deferredPreviewFrame.isCompleted) {
                             deferredPreviewFrame.complete(it)
                         }
-                    }
-                ) {
-                    executorForGL.shutdown()
-                }
+                    },
+                )
                 .await()
         val previewSurface = Surface(surfaceTextureHolder.surfaceTexture)
 
@@ -125,7 +132,7 @@ object Camera2ExtensionsTestUtil {
             openExtensionSession(
                 cameraDevice,
                 extensionMode,
-                listOf(outputConfigurationPreview, outputConfigurationCapture)
+                listOf(outputConfigurationPreview, outputConfigurationCapture),
             )
         assertThat(extensionSession).isNotNull()
 
@@ -138,36 +145,36 @@ object Camera2ExtensionsTestUtil {
             object : CameraExtensionSession.ExtensionCaptureCallback() {
                 override fun onCaptureSequenceCompleted(
                     session: CameraExtensionSession,
-                    sequenceId: Int
+                    sequenceId: Int,
                 ) {}
 
                 override fun onCaptureStarted(
                     session: CameraExtensionSession,
                     request: CaptureRequest,
-                    timestamp: Long
+                    timestamp: Long,
                 ) {}
 
                 override fun onCaptureProcessStarted(
                     session: CameraExtensionSession,
-                    request: CaptureRequest
+                    request: CaptureRequest,
                 ) {}
 
                 override fun onCaptureFailed(
                     session: CameraExtensionSession,
-                    request: CaptureRequest
+                    request: CaptureRequest,
                 ) {}
 
                 override fun onCaptureSequenceAborted(
                     session: CameraExtensionSession,
-                    sequenceId: Int
+                    sequenceId: Int,
                 ) {}
 
                 override fun onCaptureResultAvailable(
                     session: CameraExtensionSession,
                     request: CaptureRequest,
-                    result: TotalCaptureResult
+                    result: TotalCaptureResult,
                 ) {}
-            }
+            },
         )
 
         if (verifyOutput) {
@@ -191,7 +198,7 @@ object Camera2ExtensionsTestUtil {
      */
     fun assumeCameraExtensionSupported(
         extensionMode: Int,
-        extensionsCharacteristics: CameraExtensionCharacteristics
+        extensionsCharacteristics: CameraExtensionCharacteristics,
     ) {
         assumeTrue(extensionsCharacteristics.supportedExtensions.contains(extensionMode))
         assumeTrue(
@@ -208,7 +215,7 @@ object Camera2ExtensionsTestUtil {
 
     fun createCaptureImageReader(
         extensionsCharacteristics: CameraExtensionCharacteristics,
-        extensionMode: Int
+        extensionMode: Int,
     ): ImageReader {
         val captureSize =
             extensionsCharacteristics
@@ -237,7 +244,7 @@ object Camera2ExtensionsTestUtil {
                         RuntimeException("Camera onError(error=$cameraDevice)")
                     )
                 }
-            }
+            },
         )
         return deferred.await()
     }
@@ -246,7 +253,7 @@ object Camera2ExtensionsTestUtil {
     suspend fun openExtensionSession(
         cameraDevice: CameraDevice,
         extensionMode: Int,
-        outputConfigs: List<OutputConfiguration>
+        outputConfigs: List<OutputConfiguration>,
     ): CameraExtensionSession {
         val deferred = CompletableDeferred<CameraExtensionSession>()
 
@@ -265,7 +272,7 @@ object Camera2ExtensionsTestUtil {
                     }
 
                     override fun onClosed(session: CameraExtensionSession) {}
-                }
+                },
             )
         cameraDevice.createExtensionSession(extensionSessionConfiguration)
         return deferred.await()
@@ -278,7 +285,7 @@ object Camera2ExtensionsTestUtil {
     suspend fun takePicture(
         cameraDevice: CameraDevice,
         session: CameraExtensionSession,
-        imageReader: ImageReader
+        imageReader: ImageReader,
     ): Image? {
         val builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
         builder.addTarget(imageReader.surface)
@@ -289,7 +296,7 @@ object Camera2ExtensionsTestUtil {
             object : CameraExtensionSession.ExtensionCaptureCallback() {
                 override fun onCaptureSequenceCompleted(
                     session: CameraExtensionSession,
-                    sequenceId: Int
+                    sequenceId: Int,
                 ) {
                     deferredCapture.complete(sequenceId)
                 }
@@ -297,30 +304,30 @@ object Camera2ExtensionsTestUtil {
                 override fun onCaptureStarted(
                     session: CameraExtensionSession,
                     request: CaptureRequest,
-                    timestamp: Long
+                    timestamp: Long,
                 ) {}
 
                 override fun onCaptureProcessStarted(
                     session: CameraExtensionSession,
-                    request: CaptureRequest
+                    request: CaptureRequest,
                 ) {}
 
                 override fun onCaptureFailed(
                     session: CameraExtensionSession,
-                    request: CaptureRequest
+                    request: CaptureRequest,
                 ) {
                     deferredCapture.completeExceptionally(RuntimeException("onCaptureFailed"))
                 }
 
                 override fun onCaptureSequenceAborted(
                     session: CameraExtensionSession,
-                    sequenceId: Int
+                    sequenceId: Int,
                 ) {
                     deferredCapture.completeExceptionally(
                         RuntimeException("onCaptureSequenceAborted")
                     )
                 }
-            }
+            },
         )
 
         val deferredImage = CompletableDeferred<Image?>()
@@ -329,7 +336,7 @@ object Camera2ExtensionsTestUtil {
                 val image = imageReader.acquireNextImage()
                 deferredImage.complete(image)
             },
-            Handler(Looper.getMainLooper())
+            Handler(Looper.getMainLooper()),
         )
         deferredCapture.await()
         return deferredImage.await()
@@ -338,7 +345,7 @@ object Camera2ExtensionsTestUtil {
     fun findNextSupportedCameraId(
         context: Context,
         currentCameraId: String,
-        extensionsMode: Int
+        extensionsMode: Int,
     ): String? {
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {

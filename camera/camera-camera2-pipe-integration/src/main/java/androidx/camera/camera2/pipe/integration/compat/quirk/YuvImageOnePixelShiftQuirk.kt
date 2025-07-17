@@ -18,6 +18,9 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isMotorolaDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.internal.compat.quirk.OnePixelShiftQuirk
 
 /**
@@ -27,10 +30,11 @@ import androidx.camera.core.internal.compat.quirk.OnePixelShiftQuirk
  *   data. It leads to the leftmost column degradation when converting YUV to RGB in applications.
  * - Device(s): Motorola MotoG3, Samsung SM-G532F/SM-J700F/SM-J415F/SM-920F, Xiaomi Mi A1
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO(b/270421716): enable when kotlin is supported.
-class YuvImageOnePixelShiftQuirk : OnePixelShiftQuirk {
-    companion object {
-        fun isEnabled() =
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO(b/270421716): enable when kotlin is supported.
+public class YuvImageOnePixelShiftQuirk : OnePixelShiftQuirk {
+    public companion object {
+        public fun isEnabled(): Boolean =
             isMotorolaMotoG3() ||
                 isSamsungSMG532F() ||
                 isSamsungSMJ700F() ||
@@ -39,27 +43,21 @@ class YuvImageOnePixelShiftQuirk : OnePixelShiftQuirk {
                 isXiaomiMiA1()
 
         private fun isMotorolaMotoG3() =
-            "motorola".equals(Build.BRAND, ignoreCase = true) &&
-                "MotoG3".equals(Build.MODEL, ignoreCase = true)
+            isMotorolaDevice() && "MotoG3".equals(Build.MODEL, ignoreCase = true)
 
         private fun isSamsungSMG532F() =
-            "samsung".equals(Build.BRAND, ignoreCase = true) &&
-                "SM-G532F".equals(Build.MODEL, ignoreCase = true)
+            isSamsungDevice() && "SM-G532F".equals(Build.MODEL, ignoreCase = true)
 
         private fun isSamsungSMJ700F() =
-            "samsung".equals(Build.BRAND, ignoreCase = true) &&
-                "SM-J700F".equals(Build.MODEL, ignoreCase = true)
+            isSamsungDevice() && "SM-J700F".equals(Build.MODEL, ignoreCase = true)
 
         private fun isSamsungSMJ415F() =
-            "samsung".equals(Build.BRAND, ignoreCase = true) &&
-                "SM-J415F".equals(Build.MODEL, ignoreCase = true)
+            isSamsungDevice() && "SM-J415F".equals(Build.MODEL, ignoreCase = true)
 
         private fun isSamsungSMA920F() =
-            "samsung".equals(Build.BRAND, ignoreCase = true) &&
-                "SM-A920F".equals(Build.MODEL, ignoreCase = true)
+            isSamsungDevice() && "SM-A920F".equals(Build.MODEL, ignoreCase = true)
 
         private fun isXiaomiMiA1() =
-            "xiaomi".equals(Build.BRAND, ignoreCase = true) &&
-                "Mi A1".equals(Build.MODEL, ignoreCase = true)
+            isXiaomiDevice() && "Mi A1".equals(Build.MODEL, ignoreCase = true)
     }
 }

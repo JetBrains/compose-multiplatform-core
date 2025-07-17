@@ -103,7 +103,7 @@ internal fun getTextLayoutResultMock(
             density = Density(1f),
             layoutDirection = LayoutDirection.Ltr,
             fontFamilyResolver = mock(),
-            constraints = Constraints(0L)
+            constraints = Constraints(0L),
         )
 
     fun lineForOffset(offset: Int): Int {
@@ -297,6 +297,7 @@ internal class FakeSelectable : Selectable {
     var endYHandleDirection = Direction.ON
     var rawPreviousHandleOffset = -1 // -1 = no previous offset
     var layoutCoordinatesToReturn: LayoutCoordinates? = null
+    var textLayoutResultToReturn: TextLayoutResult? = null
     var boundingBoxes: Map<Int, Rect> = emptyMap()
 
     private val selectableKey = 1L
@@ -306,14 +307,14 @@ internal class FakeSelectable : Selectable {
                 Selection.AnchorInfo(
                     direction = ResolvedTextDirection.Ltr,
                     offset = 0,
-                    selectableId = selectableKey
+                    selectableId = selectableKey,
                 ),
             end =
                 Selection.AnchorInfo(
                     direction = ResolvedTextDirection.Ltr,
                     offset = 10,
-                    selectableId = selectableKey
-                )
+                    selectableId = selectableKey,
+                ),
         )
 
     override fun appendSelectableInfoToBuilder(builder: SelectionLayoutBuilder) {
@@ -343,6 +344,10 @@ internal class FakeSelectable : Selectable {
         return layoutCoordinatesToReturn
     }
 
+    override fun textLayoutResult(): TextLayoutResult? {
+        return textLayoutResultToReturn
+    }
+
     override fun getHandlePosition(selection: Selection, isStartHandle: Boolean): Offset {
         return Offset.Zero
     }
@@ -369,6 +374,10 @@ internal class FakeSelectable : Selectable {
 
     override fun getLastVisibleOffset(): Int {
         return 0
+    }
+
+    override fun getLineHeight(offset: Int): Float {
+        return 0f
     }
 
     fun clear() {

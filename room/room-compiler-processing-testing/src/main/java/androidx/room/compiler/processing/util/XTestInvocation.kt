@@ -19,6 +19,7 @@ package androidx.room.compiler.processing.util
 import androidx.room.compiler.processing.ExperimentalProcessingApi
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XRoundEnv
+import androidx.room.compiler.processing.compat.XConverters.toKS
 import com.google.common.truth.Truth
 import kotlin.reflect.KClass
 
@@ -50,6 +51,8 @@ class XTestInvocation(processingEnv: XProcessingEnv, roundEnv: XRoundEnv) {
 
     val isKsp: Boolean = processingEnv.backend == XProcessingEnv.Backend.KSP
 
+    val isKsp2: Boolean = isKsp && processingEnv.toKS().kspVersion >= KotlinVersion(2, 0)
+
     /**
      * Registers a block that will be called with a [CompilationResultSubject] when compilation
      * finishes.
@@ -67,7 +70,8 @@ class XTestInvocation(processingEnv: XProcessingEnv, roundEnv: XRoundEnv) {
 
     fun <T : Any> getUserData(key: KClass<T>): T? {
         assertNotDisposed()
-        @Suppress("UNCHECKED_CAST") return userData[key] as T?
+        @Suppress("UNCHECKED_CAST")
+        return userData[key] as T?
     }
 
     fun <T : Any> putUserData(key: KClass<T>, value: T) {

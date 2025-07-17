@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import javax.inject.Inject
 
 plugins {
@@ -68,14 +68,14 @@ abstract class BundleTestSdkDexTask extends DefaultTask {
 }
 
 def bundleTestSdkDexTaskProvider = tasks.register("bundleTestSdkDexTask", BundleTestSdkDexTask) {
-    description("Bundle DEX from the androidTestBundleDex configuration into assets folder")
+    description = "Bundle DEX from the androidTestBundleDex configuration into assets folder"
 
     def configuration = configurations.getByName("androidTestBundleDex")
     testSdkApkFolders.from(configuration.incoming.artifactView {}.files)
 }
 
 androidComponents {
-    onVariants(selector().withBuildType("debug")) {
+    onVariants(selector().withBuildType("release")) {
         androidTest.sources.assets.addGeneratedSourceDirectory(
                 bundleTestSdkDexTaskProvider,
                 BundleTestSdkDexTask::getOutputDir
@@ -99,16 +99,17 @@ configurations {
 dependencies {
     api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
-    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-ktx:1.15.0")
 
-    api project(path: ':privacysandbox:sdkruntime:sdkruntime-core')
+    api(project(":privacysandbox:sdkruntime:sdkruntime-core"))
 
-    implementation("androidx.core:core:1.12.0")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.core:core:1.15.0")
+    implementation("androidx.activity:activity:1.9.3")
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    testImplementation project(":room:room-compiler-processing-testing")
+    testImplementation(project(":room:room-compiler-processing-testing"))
 
     // TODO(b/249982004): cleanup dependencies
     androidTestImplementation(libs.testCore)
@@ -117,25 +118,18 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.multidex)
-    androidTestImplementation(project(':internal-testutils-runtime'))
+    androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-truth")) // for assertThrows
 
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockitoInline, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockitoInline)
 
     androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:current"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v1"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v2"))
-    // V3 was released as V4 (original release postponed)
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v4"))
-    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v5"))
+    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v7"))
+    androidTestBundleDex(project(":privacysandbox:sdkruntime:test-sdks:v8"))
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled = true
-    }
     sourceSets {
         androidTest {
             assets {
@@ -144,16 +138,14 @@ android {
         }
     }
 
-    namespace "androidx.privacysandbox.sdkruntime.client"
-    compileSdk = 34
-    compileSdkExtension = 10
+    namespace = "androidx.privacysandbox.sdkruntime.client"
+    compileSdk = 35
+    compileSdkExtension = 14
 }
 
 androidx {
     name = "SdkRuntime Client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides components for SdkRuntime aware Applications"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }

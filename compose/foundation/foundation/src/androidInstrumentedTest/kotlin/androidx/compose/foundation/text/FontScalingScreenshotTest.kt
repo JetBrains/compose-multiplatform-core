@@ -16,10 +16,9 @@
 
 package androidx.compose.foundation.text
 
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.GOLDEN_UI
+import androidx.compose.foundation.GOLDEN_FOUNDATION
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -55,11 +54,11 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class FontScalingScreenshotTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
-    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_UI)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_FOUNDATION)
 
     private val containerTag = "container"
 
@@ -100,7 +99,7 @@ class FontScalingScreenshotTest {
         rule.setContent {
             TestLayout(
                 lineHeight = 28.sp,
-                lineHeightStyle = LineHeightStyle(Alignment.Bottom, Trim.Both)
+                lineHeightStyle = LineHeightStyle(Alignment.Bottom, Trim.Both),
             )
         }
         rule
@@ -117,7 +116,7 @@ class FontScalingScreenshotTest {
         rule.setContent {
             TestLayout(
                 lineHeight = 28.sp,
-                lineHeightStyle = LineHeightStyle(Alignment.Bottom, Trim.Both)
+                lineHeightStyle = LineHeightStyle(Alignment.Bottom, Trim.Both),
             )
         }
         rule
@@ -177,11 +176,9 @@ class FontScalingScreenshotTest {
     @Composable
     private fun TestLayout(
         lineHeight: TextUnit,
-        lineHeightStyle: LineHeightStyle = LineHeightStyle.Default
+        lineHeightStyle: LineHeightStyle = LineHeightStyle.Default,
     ) {
-        Column(
-            modifier = Modifier.testTag(containerTag),
-        ) {
+        Column(modifier = Modifier.testTag(containerTag)) {
             BasicText(
                 text =
                     buildAnnotatedString {
@@ -194,8 +191,8 @@ class FontScalingScreenshotTest {
                     TextStyle(
                         fontSize = 36.sp,
                         fontStyle = FontStyle.Italic,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        fontFamily = FontFamily.Monospace,
+                    ),
             )
             BasicText(text = "Here's a subtitle", style = TextStyle(fontSize = 20.sp))
             BasicText(
@@ -205,8 +202,8 @@ class FontScalingScreenshotTest {
                         fontSize = 14.sp,
                         fontStyle = FontStyle.Italic,
                         lineHeight = lineHeight,
-                        lineHeightStyle = lineHeightStyle
-                    )
+                        lineHeightStyle = lineHeightStyle,
+                    ),
             )
         }
     }
@@ -215,14 +212,12 @@ class FontScalingScreenshotTest {
     private fun TestDrawTextLayout() {
         val textMeasurer = rememberTextMeasurer()
 
-        Column(
-            modifier = Modifier.testTag(containerTag),
-        ) {
+        Column(modifier = Modifier.testTag(containerTag)) {
             Canvas(Modifier.fillMaxSize()) {
                 drawText(
                     textMeasurer = textMeasurer,
                     style = TextStyle(fontSize = 14.sp, lineHeight = 28.sp),
-                    text = sampleText
+                    text = sampleText,
                 )
             }
         }

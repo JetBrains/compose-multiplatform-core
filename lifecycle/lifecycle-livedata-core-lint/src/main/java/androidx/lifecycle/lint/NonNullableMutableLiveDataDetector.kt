@@ -28,19 +28,22 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.UastLintUtils
 import com.android.tools.lint.detector.api.isKotlin
+import com.intellij.psi.PsiAnnotationOwner
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.PsiImmediateClassType
 import org.jetbrains.kotlin.analysis.api.analyze
-import org.jetbrains.kotlin.analysis.api.calls.KtCall
-import org.jetbrains.kotlin.analysis.api.calls.KtCallableMemberCall
-import org.jetbrains.kotlin.analysis.api.calls.singleCallOrNull
-import org.jetbrains.kotlin.analysis.api.types.KtNonErrorClassType
-import org.jetbrains.kotlin.analysis.api.types.KtTypeParameterType
+import org.jetbrains.kotlin.analysis.api.resolution.KaCall
+import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
+import org.jetbrains.kotlin.analysis.api.resolution.singleCallOrNull
+import org.jetbrains.kotlin.analysis.api.types.KaClassType
+import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
+import org.jetbrains.kotlin.analysis.api.types.KaTypeParameterType
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtTypeReference
@@ -53,8 +56,8 @@ import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.getUastParentOfType
 import org.jetbrains.uast.isNullLiteral
-import org.jetbrains.uast.resolveToUElement
 import org.jetbrains.uast.toUElement
+import org.jetbrains.uast.toUElementOfType
 
 /**
  * Lint check for ensuring that [androidx.lifecycle.MutableLiveData] values are never null when the
@@ -81,9 +84,9 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                 implementation =
                     Implementation(
                         NonNullableMutableLiveDataDetector::class.java,
-                        Scope.JAVA_FILE_SCOPE
+                        Scope.JAVA_FILE_SCOPE,
                     ),
-                androidSpecific = true
+                androidSpecific = true,
             )
     }
 
@@ -133,16 +136,16 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                         ?: node.sourcePsi as? KtNameReferenceExpression
                         ?: return
                 analyze(ktCallExpression) {
-                    val ktCall = ktCallExpression.resolveCall()?.singleCallOrNull<KtCall>()
-                    val callee = (ktCall as? KtCallableMemberCall<*, *>)?.partiallyAppliedSymbol
+                    val ktCall = ktCallExpression.resolveToCall()?.singleCallOrNull<KaCall>()
+                    val callee = (ktCall as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
                     val receiver = callee?.extensionReceiver ?: callee?.dispatchReceiver
-                    var receiverType = receiver?.type as? KtNonErrorClassType
+                    var receiverType = receiver?.type as? KaClassType
                     while (!isGeneric && receiverType != null) {
-                        val typeArgument = receiverType.ownTypeArguments.singleOrNull()?.type
-                        if (typeArgument is KtTypeParameterType) {
+                        val typeArgument = receiverType.typeArguments.singleOrNull()?.type
+                        if (typeArgument is KaTypeParameterType) {
                             isGeneric = true
                         }
-                        receiverType = typeArgument as? KtNonErrorClassType
+                        receiverType = typeArgument as? KaClassType
                     }
                 }
                 if (isGeneric) return
@@ -153,7 +156,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                         !context.evaluator.isMemberInSubClassOf(
                             node.resolve()!!,
                             "androidx.lifecycle.LiveData",
-                            false
+                            false,
                         )
                 )
                     return
@@ -226,7 +229,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
     fun checkNullability(
         liveDataType: KtTypeReference,
         context: JavaContext,
-        node: UCallExpression
+        node: UCallExpression,
     ) {
         // ignore generic types
         if (node.isGenericTypeDefinition()) return
@@ -252,7 +255,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                     context,
                     argument,
                     "Cannot set non-nullable LiveData value to `null`",
-                    fixes
+                    fixes,
                 )
             } else if (argument.isNullable(context)) {
                 fixes.add(
@@ -287,7 +290,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
         context: JavaContext,
         element: UElement,
         message: String,
-        fixes: List<LintFix>
+        fixes: List<LintFix>,
     ) {
         if (fixes.isEmpty()) {
             context.report(ISSUE, context.getLocation(element), message)
@@ -296,7 +299,7 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
                 ISSUE,
                 context.getLocation(element),
                 message,
-                fix().alternatives(*fixes.toTypedArray())
+                fix().alternatives(*fixes.toTypedArray()),
             )
         }
     }
@@ -309,6 +312,22 @@ class NonNullableMutableLiveDataDetector : Detector(), UastScanner {
  * @return `true` if instance is nullable, `false` otherwise.
  */
 internal fun UElement.isNullable(context: JavaContext): Boolean {
+    val ktExpression = sourcePsi as? KtExpression
+    if (ktExpression != null) {
+        analyze(ktExpression) {
+            val nullability = ktExpression.expressionType?.nullability
+            // NB: to avoid unnecessary smartcast lookup for definitely non-null type
+            if (nullability == KaTypeNullability.NON_NULLABLE) {
+                return false
+            } else {
+                val smartCastNullity = ktExpression.smartCastInfo?.smartCastType?.nullability
+                if (smartCastNullity == KaTypeNullability.NON_NULLABLE) {
+                    return false
+                }
+                // For unknown (platform-type) or still nullable, fall back to @Nullable lookup.
+            }
+        }
+    }
     if (this is UCallExpression) {
         val psiMethod = resolve() ?: return false
         val sourceMethod = psiMethod.toUElement()?.sourcePsi
@@ -320,7 +339,12 @@ internal fun UElement.isNullable(context: JavaContext): Boolean {
         val isSuspendMethod = !context.evaluator.isSuspend(psiMethod)
         return psiMethod.hasAnnotation(NULLABLE_ANNOTATION) && isSuspendMethod
     } else if (this is UReferenceExpression) {
-        return (resolveToUElement() as? UAnnotated)?.findAnnotation(NULLABLE_ANNOTATION) != null
+        val resolved = resolve()
+        return if (resolved is PsiAnnotationOwner) {
+            resolved.findAnnotation(NULLABLE_ANNOTATION) != null
+        } else {
+            resolved.toUElementOfType<UAnnotated>()?.findAnnotation(NULLABLE_ANNOTATION) != null
+        }
     }
     return false
 }

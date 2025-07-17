@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -49,7 +48,7 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalTvMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CardContainerScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -65,7 +64,7 @@ class CardContainerScreenshotTest {
             LightMaterialTheme {
                 Box(
                     modifier = boxSizeModifier.testTag(CardContainerWrapperTag),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     StandardCardContainer(
                         modifier = standardCardContainerSizeModifier,
@@ -74,7 +73,7 @@ class CardContainerScreenshotTest {
                                 SampleImage(Modifier.fillMaxWidth().height(80.dp))
                             }
                         },
-                        title = { Text("Standard Card") }
+                        title = { Text("Standard Card") },
                     )
                 }
             }
@@ -89,7 +88,7 @@ class CardContainerScreenshotTest {
             DarkMaterialTheme {
                 Box(
                     modifier = boxSizeModifier.testTag(CardContainerWrapperTag),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     StandardCardContainer(
                         modifier = standardCardContainerSizeModifier,
@@ -98,7 +97,7 @@ class CardContainerScreenshotTest {
                                 SampleImage(Modifier.fillMaxWidth().height(80.dp))
                             }
                         },
-                        title = { Text("Standard Card") }
+                        title = { Text("Standard Card") },
                     )
                 }
             }
@@ -115,7 +114,7 @@ class CardContainerScreenshotTest {
                     boxSizeModifier.testTag(CardContainerWrapperTag).semantics(
                         mergeDescendants = true
                     ) {},
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 StandardCardContainer(
                     modifier = standardCardContainerSizeModifier,
@@ -124,7 +123,7 @@ class CardContainerScreenshotTest {
                             SampleImage(Modifier.fillMaxWidth().height(80.dp))
                         }
                     },
-                    title = { Text("Standard Card", Modifier.padding(top = 5.dp)) }
+                    title = { Text("Standard Card", Modifier.padding(top = 5.dp)) },
                 )
             }
         }
@@ -141,7 +140,7 @@ class CardContainerScreenshotTest {
             LightMaterialTheme {
                 Box(
                     modifier = boxSizeModifier.testTag(CardContainerWrapperTag),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     WideCardContainer(
                         modifier = wideCardContainerSizeModifier,
@@ -165,7 +164,7 @@ class CardContainerScreenshotTest {
             DarkMaterialTheme {
                 Box(
                     modifier = boxSizeModifier.testTag(CardContainerWrapperTag),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     WideCardContainer(
                         modifier = wideCardContainerSizeModifier,
@@ -191,7 +190,7 @@ class CardContainerScreenshotTest {
                     boxSizeModifier.testTag(CardContainerWrapperTag).semantics(
                         mergeDescendants = true
                     ) {},
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 WideCardContainer(
                     modifier = wideCardContainerSizeModifier,

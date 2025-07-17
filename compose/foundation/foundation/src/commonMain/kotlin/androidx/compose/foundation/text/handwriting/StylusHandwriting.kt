@@ -18,27 +18,28 @@ package androidx.compose.foundation.text.handwriting
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.gestures.isDeepPress
+import androidx.compose.foundation.text.handwritingPointerIcon
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusEventModifierNode
+import androidx.compose.ui.focus.FocusRequesterModifierNode
 import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.input.pointer.stylusHoverIcon
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.DpTouchBoundsExpansion
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
+import androidx.compose.ui.node.TouchBoundsExpansion
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirstOrNull
 
 /**
@@ -50,31 +51,31 @@ import androidx.compose.ui.util.fastFirstOrNull
  * @param enabled whether this modifier is enabled, it's used for the case where the editor is
  *   readOnly or disabled.
  * @param onHandwritingSlopExceeded the callback that's invoked when it detects stylus handwriting.
- *   The return value determines whether the handwriting is triggered or not. When it's true, this
- *   modifier will consume the pointer events.
+ *   And this modifier will consume the pointer events.
  */
 internal fun Modifier.stylusHandwriting(
     enabled: Boolean,
-    onHandwritingSlopExceeded: () -> Boolean
+    showHoverIcon: Boolean,
+    onHandwritingSlopExceeded: () -> Unit,
 ): Modifier =
     if (enabled && isStylusHandwritingSupported) {
-        this.then(StylusHandwritingElementWithNegativePadding(onHandwritingSlopExceeded))
-            .padding(
-                horizontal = HandwritingBoundsHorizontalOffset,
-                vertical = HandwritingBoundsVerticalOffset
-            )
+        if (showHoverIcon) {
+                this.stylusHoverIcon(handwritingPointerIcon, false, HandwritingBoundsExpansion)
+            } else {
+                this
+            }
+            .then(StylusHandwritingElement(onHandwritingSlopExceeded))
     } else {
         this
     }
 
-private data class StylusHandwritingElementWithNegativePadding(
-    val onHandwritingSlopExceeded: () -> Boolean
-) : ModifierNodeElement<StylusHandwritingNodeWithNegativePadding>() {
-    override fun create(): StylusHandwritingNodeWithNegativePadding {
-        return StylusHandwritingNodeWithNegativePadding(onHandwritingSlopExceeded)
+private class StylusHandwritingElement(val onHandwritingSlopExceeded: () -> Unit) :
+    ModifierNodeElement<StylusHandwritingNode>() {
+    override fun create(): StylusHandwritingNode {
+        return StylusHandwritingNode(onHandwritingSlopExceeded)
     }
 
-    override fun update(node: StylusHandwritingNodeWithNegativePadding) {
+    override fun update(node: StylusHandwritingNode) {
         node.onHandwritingSlopExceeded = onHandwritingSlopExceeded
     }
 
@@ -82,44 +83,30 @@ private data class StylusHandwritingElementWithNegativePadding(
         name = "stylusHandwriting"
         properties["onHandwritingSlopExceeded"] = onHandwritingSlopExceeded
     }
-}
 
-/**
- * A stylus handwriting node with negative padding. This node should be used in pair with a padding
- * modifier. Together, they expands the touch bounds of the editor while keep its visual bounds the
- * same. Note: this node is a temporary solution, ideally we don't need it.
- */
-internal class StylusHandwritingNodeWithNegativePadding(onHandwritingSlopExceeded: () -> Boolean) :
-    StylusHandwritingNode(onHandwritingSlopExceeded), LayoutModifierNode {
-    override fun MeasureScope.measure(
-        measurable: Measurable,
-        constraints: Constraints
-    ): MeasureResult {
-        val paddingVerticalPx = HandwritingBoundsVerticalOffset.roundToPx()
-        val paddingHorizontalPx = HandwritingBoundsHorizontalOffset.roundToPx()
-        val newConstraint = constraints.offset(2 * paddingHorizontalPx, 2 * paddingVerticalPx)
-        val placeable = measurable.measure(newConstraint)
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is StylusHandwritingElement) return false
 
-        val height = placeable.height - paddingVerticalPx * 2
-        val width = placeable.width - paddingHorizontalPx * 2
-        return layout(width, height) { placeable.place(-paddingHorizontalPx, -paddingVerticalPx) }
+        return onHandwritingSlopExceeded === other.onHandwritingSlopExceeded
     }
 
-    override fun sharePointerInputWithSiblings(): Boolean {
-        // Share events to siblings so that the expanded touch bounds won't block other elements
-        // surrounding the editor.
-        return true
+    override fun hashCode(): Int {
+        return onHandwritingSlopExceeded.hashCode()
     }
 }
 
-internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> Boolean) :
-    DelegatingNode(), PointerInputModifierNode, FocusEventModifierNode {
+internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> Unit) :
+    DelegatingNode(), PointerInputModifierNode, FocusEventModifierNode, FocusRequesterModifierNode {
 
     private var focused = false
 
     override fun onFocusEvent(focusState: FocusState) {
         focused = focusState.isFocused
     }
+
+    override val touchBoundsExpansion: TouchBoundsExpansion
+        get() = HandwritingBoundsExpansion.roundToTouchBoundsExpansion(requireDensity())
 
     private val suspendingPointerInputModifierNode =
         delegate(
@@ -168,6 +155,9 @@ internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> B
                         if (time >= viewConfiguration.longPressTimeoutMillis) {
                             break
                         }
+                        if (pointerEvent.isDeepPress) {
+                            break
+                        }
 
                         val offset = change.position - firstDown.position
                         if (offset.getDistance() > viewConfiguration.handwritingSlop) {
@@ -176,9 +166,15 @@ internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> B
                         }
                     }
 
-                    if (exceedsTouchSlop == null || !onHandwritingSlopExceeded.invoke()) {
+                    if (exceedsTouchSlop == null) {
                         return@awaitEachGesture
                     }
+
+                    if (!focused) {
+                        requestFocus()
+                    }
+
+                    onHandwritingSlopExceeded.invoke()
                     exceedsTouchSlop.consume()
 
                     // Consume the remaining changes of this pointer.
@@ -197,7 +193,7 @@ internal open class StylusHandwritingNode(var onHandwritingSlopExceeded: () -> B
     override fun onPointerEvent(
         pointerEvent: PointerEvent,
         pass: PointerEventPass,
-        bounds: IntSize
+        bounds: IntSize,
     ) {
         suspendingPointerInputModifierNode.onPointerEvent(pointerEvent, pass, bounds)
     }
@@ -220,3 +216,10 @@ internal expect val isStylusHandwritingSupported: Boolean
 /** The amount of the padding added to the handwriting bounds of an editor. */
 internal val HandwritingBoundsVerticalOffset = 40.dp
 internal val HandwritingBoundsHorizontalOffset = 10.dp
+internal val HandwritingBoundsExpansion =
+    DpTouchBoundsExpansion(
+        start = HandwritingBoundsHorizontalOffset,
+        top = HandwritingBoundsVerticalOffset,
+        end = HandwritingBoundsHorizontalOffset,
+        bottom = HandwritingBoundsVerticalOffset,
+    )

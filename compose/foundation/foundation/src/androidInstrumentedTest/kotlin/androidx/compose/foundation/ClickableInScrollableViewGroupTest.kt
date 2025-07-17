@@ -47,7 +47,6 @@ import org.junit.runner.RunWith
 /** Test for [clickable] [PressInteraction] behavior in scrollable [ViewGroup]s. */
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalFoundationApi::class)
 class ClickableInScrollableViewGroupTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
@@ -74,8 +73,8 @@ class ClickableInScrollableViewGroupTest {
                             modifier =
                                 Modifier.testTag("myClickable").combinedClickable(
                                     interactionSource = interactionSource,
-                                    indication = null
-                                ) {}
+                                    indication = null,
+                                ) {},
                         )
                     }
                 }
@@ -137,8 +136,8 @@ class ClickableInScrollableViewGroupTest {
                                     modifier =
                                         Modifier.testTag("myClickable").combinedClickable(
                                             interactionSource = interactionSource,
-                                            indication = null
-                                        ) {}
+                                            indication = null,
+                                        ) {},
                                 )
                             }
                         }
@@ -208,8 +207,8 @@ class ClickableInScrollableViewGroupTest {
                                     modifier =
                                         Modifier.testTag("myClickable").combinedClickable(
                                             interactionSource = interactionSource,
-                                            indication = null
-                                        ) {}
+                                            indication = null,
+                                        ) {},
                                 )
                             }
                         }

@@ -19,12 +19,19 @@
 package androidx.compose.foundation
 
 import android.os.Build
+import android.view.InputDevice
+import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_DOWN
+import android.view.MotionEvent.ACTION_MOVE
+import android.view.MotionEvent.CLASSIFICATION_DEEP_PRESS
+import android.view.MotionEvent.CLASSIFICATION_NONE
+import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -52,7 +59,6 @@ import org.junit.runner.RunWith
 class BasicTooltipTest {
     @get:Rule val rule = createComposeRule()
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun tooltip_handleDefaultGestures_enabled() {
         lateinit var state: BasicTooltipState
@@ -64,7 +70,7 @@ class BasicTooltipTest {
                 positionProvider = EmptyPositionProvider(),
                 tooltip = {},
                 state = state,
-                modifier = Modifier.testTag(TOOLTIP_ANCHOR)
+                modifier = Modifier.testTag(TOOLTIP_ANCHOR),
             ) {
                 Box(modifier = Modifier.requiredSize(1.dp)) {}
             }
@@ -103,7 +109,6 @@ class BasicTooltipTest {
         Truth.assertThat(state.isVisible).isFalse()
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun tooltip_handleDefaultGestures_disabled() {
         lateinit var state: BasicTooltipState
@@ -114,7 +119,7 @@ class BasicTooltipTest {
                 tooltip = {},
                 enableUserInput = false,
                 state = state,
-                modifier = Modifier.testTag(TOOLTIP_ANCHOR)
+                modifier = Modifier.testTag(TOOLTIP_ANCHOR),
             ) {
                 Box(modifier = Modifier.requiredSize(1.dp)) {}
             }
@@ -140,6 +145,97 @@ class BasicTooltipTest {
         rule.waitForIdle()
         Truth.assertThat(state.isVisible).isFalse()
     }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    @Test
+    fun tooltip_longPress_deepPress() {
+        lateinit var view: View
+        lateinit var state: BasicTooltipState
+        rule.setContent {
+            view = LocalView.current
+            state = rememberBasicTooltipState(initialIsVisible = false)
+            BasicTooltipBox(
+                positionProvider = EmptyPositionProvider(),
+                tooltip = {},
+                state = state,
+                modifier = Modifier.testTag(TOOLTIP_ANCHOR),
+            ) {
+                Box(modifier = Modifier.requiredSize(1.dp)) {}
+            }
+        }
+
+        // Stop auto advance for test consistency
+        rule.mainClock.autoAdvance = false
+
+        val pointerProperties =
+            arrayOf(
+                MotionEvent.PointerProperties().also {
+                    it.id = 0
+                    it.toolType = MotionEvent.TOOL_TYPE_FINGER
+                }
+            )
+
+        val downEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 0,
+                /* action = */ ACTION_DOWN,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    MotionEvent.PointerCoords().apply {
+                        x = 5f
+                        y = 5f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_NONE,
+            )
+
+        view.dispatchTouchEvent(downEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        rule.runOnIdle { Truth.assertThat(state.isVisible).isFalse() }
+
+        val deepPressMoveEvent =
+            MotionEvent.obtain(
+                /* downTime = */ 0,
+                /* eventTime = */ 50,
+                /* action = */ ACTION_MOVE,
+                /* pointerCount = */ 1,
+                /* pointerProperties = */ pointerProperties,
+                /* pointerCoords = */ arrayOf(
+                    MotionEvent.PointerCoords().apply {
+                        x = 10f
+                        y = 10f
+                    }
+                ),
+                /* metaState = */ 0,
+                /* buttonState = */ 0,
+                /* xPrecision = */ 0f,
+                /* yPrecision = */ 0f,
+                /* deviceId = */ 0,
+                /* edgeFlags = */ 0,
+                /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
+                /* displayId = */ 0,
+                /* flags = */ 0,
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
+            )
+
+        view.dispatchTouchEvent(deepPressMoveEvent)
+        rule.mainClock.advanceTimeBy(50)
+
+        // Even though the timeout didn't pass, the deep press should immediately show the tooltip
+        rule.runOnIdle { Truth.assertThat(state.isVisible).isTrue() }
+    }
 }
 
 private class EmptyPositionProvider : PopupPositionProvider {
@@ -147,7 +243,7 @@ private class EmptyPositionProvider : PopupPositionProvider {
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         return IntOffset(0, 0)
     }

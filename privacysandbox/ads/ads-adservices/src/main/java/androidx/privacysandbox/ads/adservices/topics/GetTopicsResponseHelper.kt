@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.topics
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
@@ -25,12 +24,11 @@ import androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures
 
 /** Helper class to consolidate conversion logic for GetTopicsResponse. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("ClassVerificationFailure")
-object GetTopicsResponseHelper {
+public object GetTopicsResponseHelper {
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
     internal fun convertResponse(
-        response: android.adservices.topics.GetTopicsResponse,
+        response: android.adservices.topics.GetTopicsResponse
     ): GetTopicsResponse {
         val topics = mutableListOf<Topic>()
         for (topic in response.topics) {
@@ -43,7 +41,7 @@ object GetTopicsResponseHelper {
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 11)
     @ExperimentalFeatures.Ext11OptIn
     internal fun convertResponseWithEncryptedTopics(
-        response: android.adservices.topics.GetTopicsResponse,
+        response: android.adservices.topics.GetTopicsResponse
     ): GetTopicsResponse {
         val topics = mutableListOf<Topic>()
         for (topic in response.topics) {
@@ -56,7 +54,7 @@ object GetTopicsResponseHelper {
                     encryptedTopic.encryptedTopic,
                     encryptedTopic.keyIdentifier,
                     encryptedTopic.encapsulatedKey,
-                ),
+                )
             )
         }
         return GetTopicsResponse(topics, encryptedTopics)

@@ -31,12 +31,13 @@ import androidx.annotation.RestrictTo
             SQLITE_OPEN_MEMORY,
             SQLITE_OPEN_NOMUTEX,
             SQLITE_OPEN_FULLMUTEX,
-            SQLITE_OPEN_NOFOLLOW
-        ]
+            SQLITE_OPEN_NOFOLLOW,
+            SQLITE_OPEN_EXRESCODE,
+        ],
 )
 @Retention(AnnotationRetention.SOURCE)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-actual annotation class OpenFlag
+public actual annotation class OpenFlag
 
 internal object ResultCode {
     const val SQLITE_MISUSE = 21

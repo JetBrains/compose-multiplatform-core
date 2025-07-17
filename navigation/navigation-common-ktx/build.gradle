@@ -21,17 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-}
-
-kotlin {
-    explicitApi = ExplicitApiMode.Strict
 }
 
 dependencies {
@@ -40,12 +35,11 @@ dependencies {
 
 androidx {
     name = "Navigation Common Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Android Navigation-Common-Ktx"
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.navigation.common.ktx"
+    namespace = "androidx.navigation.common.ktx"
 }

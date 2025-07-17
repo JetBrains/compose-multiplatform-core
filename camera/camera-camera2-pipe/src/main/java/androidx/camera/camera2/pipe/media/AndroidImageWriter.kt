@@ -31,11 +31,11 @@ import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
 /** Implements an [ImageWriterWrapper] using an [ImageWriter]. */
-@RequiresApi(Build.VERSION_CODES.M)
-class AndroidImageWriter
+@RequiresApi(23)
+public class AndroidImageWriter
 private constructor(
     private val imageWriter: ImageWriter,
-    private val inputStreamId: InputStreamId
+    private val inputStreamId: InputStreamId,
 ) : ImageWriterWrapper, ImageWriter.OnImageReleasedListener {
     private val onImageReleasedListener = atomic<ImageWriterWrapper.OnImageReleasedListener?>(null)
     override val maxImages: Int = imageWriter.maxImages
@@ -76,7 +76,7 @@ private constructor(
         onImageReleasedListener.value?.onImageReleased(inputStreamId)
     }
 
-    override fun close() = imageWriter.close()
+    override fun close(): Unit = imageWriter.close()
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Any> unwrapAs(type: KClass<T>): T? =
@@ -89,18 +89,18 @@ private constructor(
         return "ImageWriter-${StreamFormat(imageWriter.format).name}-$inputStreamId"
     }
 
-    companion object {
+    public companion object {
         /**
          * Create and configure a new ImageWriter instance as an [ImageWriter].
          *
          * See [ImageWriter.newInstance] for details.
          */
-        fun create(
+        public fun create(
             surface: Surface,
             inputStreamId: InputStreamId,
             maxImages: Int,
             format: StreamFormat?,
-            handler: Handler
+            handler: Handler,
         ): ImageWriterWrapper {
             require(maxImages > 0) { "Max images ($maxImages) must be > 0" }
             require(maxImages <= IMAGEREADER_MAX_CAPACITY) {

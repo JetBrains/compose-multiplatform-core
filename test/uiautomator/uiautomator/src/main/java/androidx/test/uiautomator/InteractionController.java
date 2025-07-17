@@ -34,6 +34,8 @@ import android.view.MotionEvent.PointerProperties;
 import android.view.ViewConfiguration;
 import android.view.accessibility.AccessibilityEvent;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -52,9 +54,6 @@ class InteractionController {
     private static final long LONG_PRESS_DURATION_MS =
             (long) (ViewConfiguration.getLongPressTimeout() * 1.5f);
 
-    private final KeyCharacterMap mKeyCharacterMap =
-            KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-
     private final UiDevice mDevice;
 
     private static final long REGULAR_CLICK_LENGTH = 100;
@@ -63,6 +62,30 @@ class InteractionController {
 
     // Inserted after each motion event injection.
     private static final int MOTION_EVENT_INJECTION_DELAY_MILLIS = 5;
+
+    private static final Map<Integer, Integer> KEY_MODIFIER = new HashMap<>();
+
+    static {
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_SHIFT_LEFT,
+                KeyEvent.META_SHIFT_LEFT_ON | KeyEvent.META_SHIFT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_SHIFT_RIGHT,
+                KeyEvent.META_SHIFT_RIGHT_ON | KeyEvent.META_SHIFT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_ALT_LEFT,
+                KeyEvent.META_ALT_LEFT_ON | KeyEvent.META_ALT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_ALT_RIGHT,
+                KeyEvent.META_ALT_RIGHT_ON | KeyEvent.META_ALT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_SYM, KeyEvent.META_SYM_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_FUNCTION, KeyEvent.META_FUNCTION_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_CTRL_LEFT,
+                KeyEvent.META_CTRL_LEFT_ON | KeyEvent.META_CTRL_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_CTRL_RIGHT,
+                KeyEvent.META_CTRL_RIGHT_ON | KeyEvent.META_CTRL_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_META_LEFT, KeyEvent.META_META_LEFT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_META_RIGHT, KeyEvent.META_META_RIGHT_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_CAPS_LOCK, KeyEvent.META_CAPS_LOCK_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_NUM_LOCK, KeyEvent.META_NUM_LOCK_ON);
+        KEY_MODIFIER.put(KeyEvent.KEYCODE_SCROLL_LOCK, KeyEvent.META_SCROLL_LOCK_ON);
+    }
 
     InteractionController(UiDevice device) {
         mDevice = device;
@@ -172,11 +195,11 @@ class InteractionController {
      * @return true if the click executed successfully
      */
     public boolean clickNoSync(int x, int y) {
-        if (touchDown(x, y)) {
-            SystemClock.sleep(REGULAR_CLICK_LENGTH);
-            return touchUp(x, y);
-        }
-        return false;
+        boolean success = touchDown(x, y);
+        SystemClock.sleep(REGULAR_CLICK_LENGTH);
+        // Always touch up (regardless of touch down success) to ensure the gesture is complete.
+        success &= touchUp(x, y);
+        return success;
     }
 
     /**
@@ -217,11 +240,11 @@ class InteractionController {
      * @return true if successful.
      */
     public boolean longTapNoSync(int x, int y) {
-        if (touchDown(x, y)) {
-            SystemClock.sleep(LONG_PRESS_DURATION_MS);
-            return touchUp(x, y);
-        }
-        return false;
+        boolean success = touchDown(x, y);
+        SystemClock.sleep(LONG_PRESS_DURATION_MS);
+        // Always touch up (regardless of touch down success) to ensure the gesture is complete.
+        success &= touchUp(x, y);
+        return success;
     }
 
     /**
@@ -392,29 +415,6 @@ class InteractionController {
         return ret;
     }
 
-
-    public boolean sendText(String text) {
-        KeyEvent[] events = mKeyCharacterMap.getEvents(text.toCharArray());
-
-        if (events != null) {
-            long keyDelay = Configurator.getInstance().getKeyInjectionDelay();
-            for (KeyEvent event2 : events) {
-                // We have to change the time of an event before injecting it because
-                // all KeyEvents returned by KeyCharacterMap.getEvents() have the same
-                // time stamp and the system rejects too old events. Hence, it is
-                // possible for an event to become stale before it is injected if it
-                // takes too long to inject the preceding ones.
-                KeyEvent event = KeyEvent.changeTimeRepeat(event2,
-                        SystemClock.uptimeMillis(), 0);
-                if (!injectEventSync(event)) {
-                    return false;
-                }
-                SystemClock.sleep(keyDelay);
-            }
-        }
-        return true;
-    }
-
     public boolean sendKey(int keyCode, int metaState) {
         return sendKeys(new int[]{keyCode}, metaState);
     }
@@ -429,6 +429,9 @@ class InteractionController {
     public boolean sendKeys(int[] keyCodes, int metaState) {
         final long eventTime = SystemClock.uptimeMillis();
         for (int keyCode : keyCodes) {
+            if (KEY_MODIFIER.containsKey(keyCode)) {
+                metaState |= KEY_MODIFIER.get(keyCode);
+            }
             KeyEvent downEvent = new KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN,
                     keyCode, 0, metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0,
                     InputDevice.SOURCE_KEYBOARD);
@@ -442,6 +445,9 @@ class InteractionController {
                     InputDevice.SOURCE_KEYBOARD);
             if (!injectEventSync(upEvent)) {
                 return false;
+            }
+            if (KEY_MODIFIER.containsKey(keyCode)) {
+                metaState &= ~KEY_MODIFIER.get(keyCode);
             }
         }
         return true;

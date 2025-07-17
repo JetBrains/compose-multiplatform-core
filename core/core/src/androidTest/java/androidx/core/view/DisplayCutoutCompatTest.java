@@ -23,7 +23,9 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Build;
 
@@ -36,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
@@ -95,6 +98,53 @@ public class DisplayCutoutCompatTest {
         } else {
             assertEquals(Insets.NONE, mCutoutWaterfall.getWaterfallInsets());
         }
+    }
+
+    @Test
+    public void testCutoutPath() {
+        Path cutoutPath = new Path();
+        cutoutPath.addCircle(55, 10, 5, Path.Direction.CW);
+
+        DisplayCutoutCompat cutoutWithPath =
+                new DisplayCutoutCompat(Insets.of(0, 20, 0, 20),
+                        ZERO_RECT, new Rect(50, 0, 60, 20),
+                        ZERO_RECT, ZERO_RECT,
+                        Insets.of(0, 20, 0, 20),
+                        cutoutPath);
+
+
+        if (Build.VERSION.SDK_INT >= 33) {
+            assertEquals(cutoutPath, cutoutWithPath.getCutoutPath());
+        } else {
+            assertNull(cutoutWithPath.getCutoutPath());
+        }
+    }
+
+    @Test
+    public void testNullBoundingRects() {
+        Path cutoutPath = new Path();
+        cutoutPath.addCircle(55, 10, 5, Path.Direction.CW);
+
+        DisplayCutoutCompat cutout =
+                new DisplayCutoutCompat(Insets.of(0, 20, 0, 20),
+                        null, null,
+                        null, null,
+                        Insets.of(0, 20, 0, 20),
+                        cutoutPath);
+
+        assertEquals(Collections.emptyList(), cutout.getBoundingRects());
+    }
+
+    @Test
+    public void testNullCutoutPath() {
+        DisplayCutoutCompat cutout =
+                new DisplayCutoutCompat(Insets.of(0, 20, 0, 20),
+                        ZERO_RECT, new Rect(50, 0, 60, 20),
+                        ZERO_RECT, ZERO_RECT,
+                        Insets.of(0, 20, 0, 20),
+                        null);
+
+        assertNull(cutout.getCutoutPath());
     }
 
     @Test

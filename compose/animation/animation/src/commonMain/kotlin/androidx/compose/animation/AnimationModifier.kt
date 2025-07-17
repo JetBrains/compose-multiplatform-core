@@ -61,19 +61,18 @@ import kotlinx.coroutines.launch
  * y dimensions).
  *
  * @sample androidx.compose.animation.samples.AnimateContent
- *
  * @param animationSpec a finite animation that will be used to animate size change, [spring] by
  *   default
  * @param finishedListener an optional listener to be called when the content change animation is
  *   completed.
  */
-fun Modifier.animateContentSize(
+public fun Modifier.animateContentSize(
     animationSpec: FiniteAnimationSpec<IntSize> =
         spring(
             stiffness = Spring.StiffnessMediumLow,
-            visibilityThreshold = IntSize.VisibilityThreshold
+            visibilityThreshold = IntSize.VisibilityThreshold,
         ),
-    finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null
+    finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null,
 ): Modifier =
     this.clipToBounds() then
         SizeAnimationModifierElement(animationSpec, Alignment.TopStart, finishedListener)
@@ -94,7 +93,6 @@ fun Modifier.animateContentSize(
  * y dimensions).
  *
  * @sample androidx.compose.animation.samples.AnimateContent
- *
  * @param animationSpec a finite animation that will be used to animate size change, [spring] by
  *   default
  * @param alignment sets the alignment of the content during the animation. [Alignment.TopStart] by
@@ -102,11 +100,11 @@ fun Modifier.animateContentSize(
  * @param finishedListener an optional listener to be called when the content change animation is
  *   completed.
  */
-fun Modifier.animateContentSize(
+public fun Modifier.animateContentSize(
     animationSpec: FiniteAnimationSpec<IntSize> =
         spring(
             stiffness = Spring.StiffnessMediumLow,
-            visibilityThreshold = IntSize.VisibilityThreshold
+            visibilityThreshold = IntSize.VisibilityThreshold,
         ),
     alignment: Alignment = Alignment.TopStart,
     finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)? = null,
@@ -117,7 +115,7 @@ fun Modifier.animateContentSize(
 private data class SizeAnimationModifierElement(
     val animationSpec: FiniteAnimationSpec<IntSize>,
     val alignment: Alignment,
-    val finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)?
+    val finishedListener: ((initialValue: IntSize, targetValue: IntSize) -> Unit)?,
 ) : ModifierNodeElement<SizeAnimationModifierNode>() {
     override fun create(): SizeAnimationModifierNode =
         SizeAnimationModifierNode(animationSpec, alignment, finishedListener)
@@ -147,7 +145,7 @@ internal val IntSize.isValid: Boolean
 private class SizeAnimationModifierNode(
     var animationSpec: AnimationSpec<IntSize>,
     var alignment: Alignment = Alignment.TopStart,
-    var listener: ((startSize: IntSize, endSize: IntSize) -> Unit)? = null
+    var listener: ((startSize: IntSize, endSize: IntSize) -> Unit)? = null,
 ) : LayoutModifierNodeWithPassThroughIntrinsics() {
     private var lookaheadSize: IntSize = InvalidSize
     private var lookaheadConstraints: Constraints = Constraints()
@@ -184,7 +182,7 @@ private class SizeAnimationModifierNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable =
             if (isLookingAhead) {
@@ -212,9 +210,9 @@ private class SizeAnimationModifierNode(
                 alignment.align(
                     size = measuredSize,
                     space = IntSize(width, height),
-                    layoutDirection = this@measure.layoutDirection
+                    layoutDirection = this@measure.layoutDirection,
                 )
-            placeable.placeRelative(offset)
+            placeable.place(offset)
         }
     }
 
@@ -238,7 +236,7 @@ private class SizeAnimationModifierNode(
             }
                 ?: AnimData(
                     Animatable(targetSize, IntSize.VectorConverter, IntSize(1, 1)),
-                    targetSize
+                    targetSize,
                 )
 
         animData = data
@@ -250,43 +248,21 @@ internal abstract class LayoutModifierNodeWithPassThroughIntrinsics :
     LayoutModifierNode, Modifier.Node() {
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) = measurable.minIntrinsicWidth(height)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) = measurable.minIntrinsicHeight(width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ) = measurable.maxIntrinsicWidth(height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
-    ) = measurable.maxIntrinsicHeight(width)
-}
-
-internal abstract class LayoutModifierWithPassThroughIntrinsics : LayoutModifier {
-    final override fun IntrinsicMeasureScope.minIntrinsicWidth(
-        measurable: IntrinsicMeasurable,
-        height: Int
-    ) = measurable.minIntrinsicWidth(height)
-
-    final override fun IntrinsicMeasureScope.minIntrinsicHeight(
-        measurable: IntrinsicMeasurable,
-        width: Int
-    ) = measurable.minIntrinsicHeight(width)
-
-    final override fun IntrinsicMeasureScope.maxIntrinsicWidth(
-        measurable: IntrinsicMeasurable,
-        height: Int
-    ) = measurable.maxIntrinsicWidth(height)
-
-    final override fun IntrinsicMeasureScope.maxIntrinsicHeight(
-        measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ) = measurable.maxIntrinsicHeight(width)
 }

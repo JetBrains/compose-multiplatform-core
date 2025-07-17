@@ -18,6 +18,7 @@ package androidx.room.compiler.processing
 
 import androidx.kruth.assertThat
 import androidx.room.compiler.codegen.JArrayTypeName
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.asJClassName
@@ -62,7 +63,8 @@ class XAnnotationValueTest(
     private fun runTest(
         javaSource: Source.JavaSource,
         kotlinSource: Source.KotlinSource,
-        handler: (XTestInvocation) -> Unit
+        kotlincArgs: List<String> = emptyList(),
+        handler: (XTestInvocation) -> Unit,
     ) {
         val sources =
             when (sourceKind) {
@@ -70,7 +72,7 @@ class XAnnotationValueTest(
                 SourceKind.KOTLIN -> listOf(kotlinSource)
             }
         if (isPreCompiled) {
-            val compiled = compileFiles(sources)
+            val compiled = compileFiles(sources, kotlincArguments = kotlincArgs)
             val hasKotlinSources = sources.any { it is Source.KotlinSource }
             val kotlinSources =
                 if (hasKotlinSources) {
@@ -81,9 +83,14 @@ class XAnnotationValueTest(
             val newSources =
                 kotlinSources +
                     Source.java("PlaceholderJava", "public class " + "PlaceholderJava {}")
-            runProcessorTest(sources = newSources, handler = handler, classpath = compiled)
+            runProcessorTest(
+                sources = newSources,
+                handler = handler,
+                classpath = compiled,
+                kotlincArguments = kotlincArgs,
+            )
         } else {
-            runProcessorTest(sources = sources, handler = handler)
+            runProcessorTest(sources = sources, handler = handler, kotlincArguments = kotlincArgs)
         }
     }
 
@@ -117,7 +124,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -144,8 +151,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Boolean) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.BOOLEAN)
@@ -228,7 +235,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -255,8 +262,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Int) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.INT)
@@ -339,7 +346,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -366,8 +373,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Short) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.SHORT)
@@ -450,7 +457,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -477,8 +484,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Long) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.LONG)
@@ -561,7 +568,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -588,8 +595,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Float) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.FLOAT)
@@ -672,7 +679,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -699,8 +706,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Double) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.DOUBLE)
@@ -816,7 +823,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -843,8 +850,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Byte) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.BYTE)
@@ -927,7 +934,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -954,8 +961,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: Char) {
                 assertThat(annotationValue.valueType.asTypeName().java).isEqualTo(JTypeName.CHAR)
@@ -1039,7 +1046,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -1067,8 +1074,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
                 assertThat(annotationValue.valueType.asTypeName().java)
@@ -1170,7 +1177,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -1198,8 +1205,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             val myEnumJTypeName = JClassName.get("test", "MyEnum")
             val myEnumKTypeName = KClassName("test", "MyEnum")
@@ -1299,7 +1306,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -1329,18 +1336,18 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             val classJTypeName =
                 JParameterizedTypeName.get(
                     JClassName.get(Class::class.java),
-                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
+                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT),
                 )
             val kClassJTypeName =
                 JParameterizedTypeName.get(
                     JClassName.get(kotlin.reflect.KClass::class.java),
-                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT)
+                    JWildcardTypeName.subtypeOf(JTypeName.OBJECT),
                 )
             val kClassKTypeName = kotlin.reflect.KClass::class.asKClassName().parameterizedBy(STAR)
             fun checkSingleValue(annotationValue: XAnnotationValue, expectedValue: String) {
@@ -1433,7 +1440,7 @@ class XAnnotationValueTest(
                 @MyAnnotation(stringParam = "2") class MyClass implements
                         @MyAnnotation(stringParam = "2") MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -1450,20 +1457,21 @@ class XAnnotationValueTest(
                 @MyAnnotation(stringParam = "2") class MyClass :
                         @MyAnnotation(stringParam = "2") MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
+            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS,
         ) { invocation ->
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace
             assertThat(annotation.toAnnotationSpec().toString().removeWhiteSpace())
                 .isEqualTo(
                     """
-                        @test.MyAnnotation(
-                            stringParam="2",
-                            stringParam2="1",
-                            stringArrayParam={"3","5","7"}
-                        )
-                        """
+                    @test.MyAnnotation(
+                        stringParam="2",
+                        stringParam2="1",
+                        stringArrayParam={"3","5","7"}
+                    )
+                    """
                         .removeWhiteSpace()
                 )
 
@@ -1525,7 +1533,7 @@ class XAnnotationValueTest(
                 )
                 MyInterface {}
                 """
-                        .trimIndent()
+                        .trimIndent(),
                 ) as Source.JavaSource,
             kotlinSource =
                 Source.kotlin(
@@ -1553,8 +1561,8 @@ class XAnnotationValueTest(
                 )
                 MyInterface
                 """
-                        .trimIndent()
-                ) as Source.KotlinSource
+                        .trimIndent(),
+                ) as Source.KotlinSource,
         ) { invocation ->
             val aJTypeName = JClassName.get("test", "A")
             val aKTypeName = KClassName("test", "A")
@@ -1639,7 +1647,7 @@ class XAnnotationValueTest(
 
     enum class SourceKind {
         JAVA,
-        KOTLIN
+        KOTLIN,
     }
 
     companion object {

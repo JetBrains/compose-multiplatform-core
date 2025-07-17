@@ -16,10 +16,11 @@ package androidx.leanback.app.wizard;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.app.GuidedStepFragment;
 import androidx.leanback.widget.GuidanceStylist;
 import androidx.leanback.widget.GuidedAction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;

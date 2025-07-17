@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,37 @@
 
 package androidx.wear.compose.material3.demos
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.material3.samples.ListHeaderSample
-import androidx.wear.compose.material3.samples.ListSubheaderSample
-import androidx.wear.compose.material3.samples.ListSubheaderWithIconSample
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListSubHeader
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.Text
 
 @Composable
 fun ListHeaderDemo() {
-    ScalingLazyColumn(modifier = Modifier.fillMaxWidth()) {
-        item { ListHeaderSample() }
-        item { ListSubheaderSample() }
-        item { ListSubheaderWithIconSample() }
+    val scrollState = rememberScalingLazyListState()
+
+    ScreenScaffold(scrollState = scrollState, modifier = Modifier.background(Color.Black)) {
+        contentPadding ->
+        ScalingLazyColumn(
+            state = scrollState,
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = contentPadding,
+        ) {
+            item { ListHeader { Text("Long heading should be center-aligned") } }
+            item { ListSubHeader(label = { Text("Long sub heading should be start-aligned") }) }
+            item { Button(modifier = Modifier.fillMaxWidth(), onClick = {}) { Text("Bluetooth") } }
+            item { Button(modifier = Modifier.fillMaxWidth(), onClick = {}) { Text("Wifi") } }
+        }
     }
 }

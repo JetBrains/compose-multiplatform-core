@@ -72,11 +72,11 @@ public class MediaRouterParams {
     public static final String EXTRAS_KEY_FIXED_CAST_ICON =
             "androidx.mediarouter.media.MediaRouterParams.FIXED_CAST_ICON";
 
-    @DialogType
-    final int mDialogType;
+    @DialogType final int mDialogType;
     final boolean mMediaTransferReceiverEnabled;
     final boolean mOutputSwitcherEnabled;
     final boolean mTransferToLocalEnabled;
+    final boolean mMediaTransferRestrictedToSelfProviders;
     final Bundle mExtras;
 
     MediaRouterParams(@NonNull Builder builder) {
@@ -84,6 +84,7 @@ public class MediaRouterParams {
         mMediaTransferReceiverEnabled = builder.mMediaTransferEnabled;
         mOutputSwitcherEnabled = builder.mOutputSwitcherEnabled;
         mTransferToLocalEnabled = builder.mTransferToLocalEnabled;
+        mMediaTransferRestrictedToSelfProviders = builder.mMediaTransferRestrictedToSelfProviders;
 
         Bundle extras = builder.mExtras;
         mExtras = extras == null ? Bundle.EMPTY : new Bundle(extras);
@@ -120,13 +121,23 @@ public class MediaRouterParams {
 
     /**
      * Returns whether transferring media from remote to local is enabled.
-     * <p>
-     * Note that it always returns {@code false} for Android versions earlier than Android R.
+     *
+     * <p>Note that it always returns {@code false} for Android versions earlier than Android R.
      *
      * @see Builder#setTransferToLocalEnabled(boolean)
      */
     public boolean isTransferToLocalEnabled() {
         return mTransferToLocalEnabled;
+    }
+
+    /**
+     * Returns whether the declared {@link MediaTransferReceiver} feature is restricted to the app's
+     * own media route providers.
+     *
+     * @see Builder#setMediaTransferRestrictedToSelfProviders(boolean)
+     */
+    public boolean isMediaTransferRestrictedToSelfProviders() {
+        return mMediaTransferRestrictedToSelfProviders;
     }
 
     /**
@@ -141,11 +152,11 @@ public class MediaRouterParams {
      * Builder class for {@link MediaRouterParams}.
      */
     public static final class Builder {
-        @DialogType
-        int mDialogType = DIALOG_TYPE_DEFAULT;
+        @DialogType int mDialogType = DIALOG_TYPE_DEFAULT;
         boolean mMediaTransferEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R;
         boolean mOutputSwitcherEnabled;
         boolean mTransferToLocalEnabled;
+        boolean mMediaTransferRestrictedToSelfProviders;
         Bundle mExtras;
 
         /**
@@ -154,8 +165,8 @@ public class MediaRouterParams {
         public Builder() {}
 
         /**
-         * Constructor for builder to create {@link MediaRouterParams} with existing
-         * {@link MediaRouterParams} instance.
+         * Constructor for builder to create {@link MediaRouterParams} with existing {@link
+         * MediaRouterParams} instance.
          *
          * @param params the existing instance to copy data from.
          */
@@ -168,15 +179,17 @@ public class MediaRouterParams {
             mOutputSwitcherEnabled = params.mOutputSwitcherEnabled;
             mTransferToLocalEnabled = params.mTransferToLocalEnabled;
             mMediaTransferEnabled = params.mMediaTransferReceiverEnabled;
+            mMediaTransferRestrictedToSelfProviders =
+                    params.mMediaTransferRestrictedToSelfProviders;
             mExtras = params.mExtras == null ? null : new Bundle(params.mExtras);
         }
 
         /**
-         * Sets the media route controller dialog type. Default value is
-         * {@link #DIALOG_TYPE_DEFAULT}.
-         * <p>
-         * Note that from Android R, output switcher will be used rather than the dialog type set by
-         * this method if both {@link #setOutputSwitcherEnabled(boolean)} output switcher} and
+         * Sets the media route controller dialog type. Default value is {@link
+         * #DIALOG_TYPE_DEFAULT}.
+         *
+         * <p>Note that from Android R, output switcher will be used rather than the dialog type set
+         * by this method if both {@link #setOutputSwitcherEnabled(boolean)} output switcher} and
          * {@link MediaTransferReceiver media transfer feature} are enabled.
          *
          * @param dialogType the dialog type
@@ -255,9 +268,30 @@ public class MediaRouterParams {
         }
 
         /**
-         * Set extras. Default value is {@link Bundle#EMPTY} if not set.
+         * Sets whether the declared {@link MediaTransferReceiver} feature is restricted to {@link
+         * MediaRouteProviderService} provider services that handle the action {@code
+         * android.media.MediaRoute2ProviderService} declared by this app.
          *
+         * <p>If this app restricts the {@link MediaTransferReceiver} feature to its own {@link
+         * MediaRouteProviderService} provider service that handles the action {@code
+         * android.media.MediaRoute2ProviderService}, then all other media route providers that
+         * declare both the {@code android.media.MediaRouteProviderService} action and the {@code
+         * android.media.MediaRoute2ProviderService} action would be treated as {@link
+         * MediaRouteProviderService} provider services with only the action {@code
+         * android.media.MediaRouteProviderService}.
+         *
+         * <p>For {@link MediaRouteProviderService} provider services that only handle the action
+         * {@code android.media.MediaRouteProviderService}, they are not affected by this flag.
          */
+        @NonNull
+        public Builder setMediaTransferRestrictedToSelfProviders(boolean enabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                mMediaTransferRestrictedToSelfProviders = enabled;
+            }
+            return this;
+        }
+
+        /** Set extras. Default value is {@link Bundle#EMPTY} if not set. */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @NonNull
         public Builder setExtras(@Nullable Bundle extras) {

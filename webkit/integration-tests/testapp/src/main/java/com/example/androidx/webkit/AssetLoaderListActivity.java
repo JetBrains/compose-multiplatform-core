@@ -22,8 +22,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Activity} for exercising various WebView functionality. This Activity is a {@link

@@ -42,12 +42,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.res.TypedArrayUtils;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,11 +97,9 @@ public class Preference implements Comparable<Preference> {
 
     private static final String CLIPBOARD_ID = "Preference";
 
-    @NonNull
-    private final Context mContext;
+    private final @NonNull Context mContext;
 
-    @Nullable
-    private PreferenceManager mPreferenceManager;
+    private @Nullable PreferenceManager mPreferenceManager;
 
     /**
      * The data store that should be used by this preference to store / retrieve data. If {@code
@@ -108,8 +107,7 @@ public class Preference implements Comparable<Preference> {
      * one is {@code null} too it means that we are using {@link SharedPreferences} to store the
      * data.
      */
-    @Nullable
-    private PreferenceDataStore mPreferenceDataStore;
+    private @Nullable PreferenceDataStore mPreferenceDataStore;
 
     /**
      * Set when added to hierarchy since we need a unique ID within that hierarchy.
@@ -337,8 +335,7 @@ public class Preference implements Comparable<Preference> {
      * @param index The index of the default value attribute
      * @return The default value of this preference type
      */
-    @Nullable
-    protected Object onGetDefaultValue(@NonNull TypedArray a, int index) {
+    protected @Nullable Object onGetDefaultValue(@NonNull TypedArray a, int index) {
         return null;
     }
 
@@ -357,8 +354,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The {@link Intent} last set via {@link #setIntent(Intent)} or XML
      */
-    @Nullable
-    public Intent getIntent() {
+    public @Nullable Intent getIntent() {
         return mIntent;
     }
 
@@ -376,8 +372,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The fragment class name last set via {@link #setFragment} or XML
      */
-    @Nullable
-    public String getFragment() {
+    public @Nullable String getFragment() {
         return mFragment;
     }
 
@@ -408,8 +403,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The {@link PreferenceDataStore} used by this preference or {@code null} if none
      */
-    @Nullable
-    public PreferenceDataStore getPreferenceDataStore() {
+    public @Nullable PreferenceDataStore getPreferenceDataStore() {
         if (mPreferenceDataStore != null) {
             return mPreferenceDataStore;
         } else if (mPreferenceManager != null) {
@@ -423,8 +417,7 @@ public class Preference implements Comparable<Preference> {
      * Return the extras Bundle object associated with this preference, creating a new Bundle if
      * there currently isn't one. You can use this to get and set individual extra key/value pairs.
      */
-    @NonNull
-    public Bundle getExtras() {
+    public @NonNull Bundle getExtras() {
         if (mExtras == null) {
             mExtras = new Bundle();
         }
@@ -436,8 +429,7 @@ public class Preference implements Comparable<Preference> {
      * there is not currently one.
      */
     @SuppressWarnings("NullableCollection")
-    @Nullable
-    public Bundle peekExtras() {
+    public @Nullable Bundle peekExtras() {
         return mExtras;
     }
 
@@ -686,8 +678,7 @@ public class Preference implements Comparable<Preference> {
      * @return The title
      * @see #setTitle(CharSequence)
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         return mTitle;
     }
 
@@ -723,8 +714,7 @@ public class Preference implements Comparable<Preference> {
      * @return The icon
      * @see #setIcon(Drawable)
      */
-    @Nullable
-    public Drawable getIcon() {
+    public @Nullable Drawable getIcon() {
         if (mIcon == null && mIconResId != 0) {
             mIcon = AppCompatResources.getDrawable(mContext, mIconResId);
         }
@@ -739,9 +729,8 @@ public class Preference implements Comparable<Preference> {
      * @see #setSummary(CharSequence)
      * @see #setSummaryProvider(SummaryProvider)
      */
-    @Nullable
     @SuppressWarnings("unchecked")
-    public CharSequence getSummary() {
+    public @Nullable CharSequence getSummary() {
         if (getSummaryProvider() != null) {
             return getSummaryProvider().provideSummary(this);
         }
@@ -1115,8 +1104,7 @@ public class Preference implements Comparable<Preference> {
      * {@code null} if there is no SummaryProvider set
      * @see SummaryProvider
      */
-    @Nullable
-    public final SummaryProvider getSummaryProvider() {
+    public final @Nullable SummaryProvider getSummaryProvider() {
         return mSummaryProvider;
     }
 
@@ -1148,8 +1136,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The callback to be invoked
      */
-    @Nullable
-    public OnPreferenceChangeListener getOnPreferenceChangeListener() {
+    public @Nullable OnPreferenceChangeListener getOnPreferenceChangeListener() {
         return mOnChangeListener;
     }
 
@@ -1168,8 +1155,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The callback to be invoked
      */
-    @Nullable
-    public OnPreferenceClickListener getOnPreferenceClickListener() {
+    public @Nullable OnPreferenceClickListener getOnPreferenceClickListener() {
         return mOnClickListener;
     }
 
@@ -1222,8 +1208,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The Context of this preference
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -1239,8 +1224,7 @@ public class Preference implements Comparable<Preference> {
      * {@link PreferenceDataStore} has been set, this method returns {@code null}.
      * @see #setPreferenceDataStore(PreferenceDataStore)
      */
-    @Nullable
-    public SharedPreferences getSharedPreferences() {
+    public @Nullable SharedPreferences getSharedPreferences() {
         if (mPreferenceManager == null || getPreferenceDataStore() != null) {
             return null;
         }
@@ -1431,8 +1415,7 @@ public class Preference implements Comparable<Preference> {
      * @see PreferenceGroup#findPreference(CharSequence)
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    protected <T extends Preference> T findPreferenceInHierarchy(@NonNull String key) {
+    protected <T extends Preference> @Nullable T findPreferenceInHierarchy(@NonNull String key) {
         if (mPreferenceManager == null) {
             return null;
         }
@@ -1553,8 +1536,7 @@ public class Preference implements Comparable<Preference> {
      * @return The key of the dependency
      * @see #setDependency(String)
      */
-    @Nullable
-    public String getDependency() {
+    public @Nullable String getDependency() {
         return mDependencyKey;
     }
 
@@ -1564,8 +1546,7 @@ public class Preference implements Comparable<Preference> {
      *
      * @return The parent PreferenceGroup or {@code null} if not attached to any
      */
-    @Nullable
-    public PreferenceGroup getParent() {
+    public @Nullable PreferenceGroup getParent() {
         return mParentGroup;
     }
 
@@ -1644,7 +1625,7 @@ public class Preference implements Comparable<Preference> {
      */
     protected void onSetInitialValue(@Nullable Object defaultValue) {}
 
-    private void tryCommit(@NonNull SharedPreferences.Editor editor) {
+    private void tryCommit(SharedPreferences.@NonNull Editor editor) {
         if (mPreferenceManager.shouldCommit()) {
             editor.apply();
         }
@@ -1972,9 +1953,8 @@ public class Preference implements Comparable<Preference> {
         return mPreferenceManager.getSharedPreferences().getBoolean(mKey, defaultReturnValue);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return getFilterableStringBuilder().toString();
     }
 
@@ -1987,8 +1967,7 @@ public class Preference implements Comparable<Preference> {
      * @return Text as a {@link StringBuilder} that will be used to filter this preference. By
      * default, this is the title and summary (concatenated with a space).
      */
-    @NonNull
-    StringBuilder getFilterableStringBuilder() {
+    @NonNull StringBuilder getFilterableStringBuilder() {
         StringBuilder sb = new StringBuilder();
         CharSequence title = getTitle();
         if (!TextUtils.isEmpty(title)) {
@@ -2050,8 +2029,7 @@ public class Preference implements Comparable<Preference> {
      * @see #onRestoreInstanceState
      * @see #saveHierarchyState
      */
-    @Nullable
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         mBaseMethodCalled = true;
         return BaseSavedState.EMPTY_STATE;
     }
@@ -2205,16 +2183,14 @@ public class Preference implements Comparable<Preference> {
          * @param preference This preference
          * @return A CharSequence that will be displayed as the summary for this preference
          */
-        @Nullable
-        CharSequence provideSummary(@NonNull T preference);
+        @Nullable CharSequence provideSummary(@NonNull T preference);
     }
 
     /**
      * A base class for managing the instance state of a {@link Preference}.
      */
     public static class BaseSavedState extends AbsSavedState {
-        @NonNull
-        public static final Parcelable.Creator<BaseSavedState> CREATOR =
+        public static final Parcelable.@NonNull Creator<BaseSavedState> CREATOR =
                 new Parcelable.Creator<BaseSavedState>() {
                     @Override
                     public BaseSavedState createFromParcel(Parcel in) {

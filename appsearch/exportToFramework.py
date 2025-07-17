@@ -32,9 +32,6 @@
 # Replaced with @hide:
 #   <!--@exportToFramework:hide-->
 #
-# Replaced with @CurrentTimeMillisLong:
-#   /*@exportToFramework:CurrentTimeMillisLong*/
-#
 # Removes the text appearing between ifJetpack() and else(), and causes the text appearing between
 # else() and --> to become uncommented, to support framework-only Javadocs:
 #   <!--@exportToFramework:ifJetpack()-->
@@ -64,7 +61,8 @@ FRAMEWORK_API_ROOT = 'framework/java/external/android/app/appsearch'
 FRAMEWORK_API_TEST_ROOT = 'testing/coretests/src/android/app/appsearch/external'
 FRAMEWORK_IMPL_ROOT = 'service/java/com/android/server/appsearch/external'
 FRAMEWORK_IMPL_TEST_ROOT = 'testing/servicestests/src/com/android/server/appsearch/external'
-FRAMEWORK_TEST_UTIL_ROOT = '../../../cts/tests/appsearch/testutils/src/android/app/appsearch/testutil/external'
+FRAMEWORK_TEST_UTIL_ROOT = (
+    '../../../cts/tests/appsearch/testutils/src/android/app/appsearch/testutil/external')
 FRAMEWORK_TEST_UTIL_TEST_ROOT = 'testing/servicestests/src/android/app/appsearch/testutil/external'
 FRAMEWORK_CTS_TEST_ROOT = '../../../cts/tests/appsearch/src/com/android/cts/appsearch/external'
 GOOGLE_JAVA_FORMAT = (
@@ -72,7 +70,6 @@ GOOGLE_JAVA_FORMAT = (
 
 # Miscellaneous constants
 SHA_FILE_NAME = 'synced_jetpack_sha.txt'
-
 
 class ExportToFramework:
     def __init__(self, jetpack_appsearch_root, framework_appsearch_root):
@@ -87,19 +84,46 @@ class ExportToFramework:
                 print('Prune: remove "%s"' % abs_path)
                 os.remove(abs_path)
 
+    def _TransformExportedToCts(self, contents):
+        """
+        Blanket transforms for files that are being exported to the CTS test repo (platform/cts).
+        File specific transforms will still be applied in _TransformAndCopyFileToPath
+        """
+        contents = (contents
+            .replace('com.google.android.icing.proto.',
+                     'com.android.server.appsearch.icing.proto.')
+        )
+        return contents
+
     def _TransformAndCopyFile(
-            self, source_path, dest_path, transform_func=None, ignore_skips=False):
+            self, source_path, default_dest_path, transform_func=None, ignore_skips=False):
+        """
+        Transforms the file located at 'source_path' and writes it into 'default_dest_path'.
+
+        An @exportToFramework:skip() directive will skip the copy process.
+        An @exportToFramework:copyToPath() directive will override default_dest_path with another
+          path relative to framework_appsearch_root (which is usually packages/modules/AppSearch)
+        """
         with open(source_path, 'r') as fh:
             contents = fh.read()
 
         if not ignore_skips and '@exportToFramework:skipFile()' in contents:
-            print('Skipping: "%s" -> "%s"' % (source_path, dest_path), file=sys.stderr)
+            print('Skipping: "%s" -> "%s"' % (source_path, default_dest_path), file=sys.stderr)
             return
 
-        copyToPath = re.search(r'@exportToFramework:copyToPath\(([^)]+)\)', contents)
-        if copyToPath:
-          dest_path = os.path.join(self._framework_appsearch_root, copyToPath.group(1))
+        copy_to_path = re.search(r'@exportToFramework:copyToPath\(([^)]+)\)', contents)
+        if copy_to_path:
+            dest_path = os.path.join(self._framework_appsearch_root, copy_to_path.group(1))
+            # Check if the file is being exported to the CTS test repo.
+            if "cts/tests/appsearch/" in dest_path:
+                contents = self._TransformExportedToCts(contents)
+        else:
+            dest_path = default_dest_path
 
+        self._TransformAndCopyFileToPath(source_path, dest_path, contents, transform_func)
+
+    def _TransformAndCopyFileToPath(self, source_path, dest_path, contents, transform_func=None):
+        """Transforms the file located at 'source_path' and writes it into 'dest_path'."""
         print('Copy: "%s" -> "%s"' % (source_path, dest_path), file=sys.stderr)
         if transform_func:
             contents = transform_func(contents)
@@ -127,10 +151,6 @@ class ExportToFramework:
 
         # Add additional imports if required
         imports_to_add = []
-        if '@exportToFramework:CurrentTimeMillisLong' in contents:
-            imports_to_add.append('android.annotation.CurrentTimeMillisLong')
-        if '@exportToFramework:UnsupportedAppUsage' in contents:
-            imports_to_add.append('android.compat.annotation.UnsupportedAppUsage')
         for import_to_add in imports_to_add:
             contents = re.sub(
                     r'^(\s*package [^;]+;\s*)$', r'\1\nimport %s;\n' % import_to_add, contents,
@@ -149,6 +169,14 @@ class ExportToFramework:
             .replace(
                     'androidx.appsearch.localstorage.',
                     'com.android.server.appsearch.external.localstorage.')
+            .replace('androidx.appsearch.flags.FlaggedApi', 'android.annotation.FlaggedApi')
+            .replace('androidx.appsearch.flags.Flags', 'com.android.appsearch.flags.Flags')
+            .replace(
+                    'androidx.appsearch.annotation.CurrentTimeMillis',
+                    'android.annotation.CurrentTimeMillis')
+            .replace(
+                    'androidx.appsearch.annotation.SystemApi',
+                    'android.annotation.SystemApi')
             .replace('androidx.appsearch', 'android.app.appsearch')
             .replace(
                     'androidx.annotation.GuardedBy',
@@ -172,14 +200,15 @@ class ExportToFramework:
             .replace('@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)', '')
             .replace('Preconditions.checkNotNull(', 'Objects.requireNonNull(')
             .replace('ObjectsCompat.', 'Objects.')
-
-            .replace('/*@exportToFramework:CurrentTimeMillisLong*/', '@CurrentTimeMillisLong')
-            .replace('/*@exportToFramework:UnsupportedAppUsage*/', '@UnsupportedAppUsage')
             .replace('<!--@exportToFramework:hide-->', '@hide')
             .replace('@exportToFramework:hide', '@hide')
             .replace('// @exportToFramework:skipFile()', '')
+            .replace('@ExperimentalAppSearchApi', '')
+            .replace('@OptIn(markerClass = ExperimentalAppSearchApi.class)', '')
         )
         contents = re.sub(r'\/\/ @exportToFramework:copyToPath\([^)]+\)', '', contents)
+        contents = re.sub(r'@RequiresFeature\([^)]*\)', '', contents, flags=re.DOTALL)
+        contents = re.sub(r'@RequiresOptIn\([^)]+\)', '', contents)
 
         # Jetpack methods have the Async suffix, but framework doesn't. Strip the Async suffix
         # to allow the same documentation to compile for both.
@@ -190,16 +219,30 @@ class ExportToFramework:
 
     def _TransformTestCode(self, contents):
         contents = (contents
+            .replace(
+                    'androidx.appsearch.testutil.flags.CheckFlagsRule',
+                    'android.platform.test.flag.junit.CheckFlagsRule')
+            .replace(
+                    'androidx.appsearch.testutil.flags.DeviceFlagsValueProvider',
+                    'android.platform.test.flag.junit.DeviceFlagsValueProvider')
+            .replace(
+                    'androidx.appsearch.testutil.flags.RequiresFlagsEnabled',
+                    'android.platform.test.annotations.RequiresFlagsEnabled')
+            .replace(
+                    'androidx.appsearch.testutil.flags.RequiresFlagsDisabled',
+                    'android.platform.test.annotations.RequiresFlagsDisabled')
             .replace('androidx.appsearch.testutil.', 'android.app.appsearch.testutil.')
             .replace(
                     'package androidx.appsearch.testutil;',
                     'package android.app.appsearch.testutil;')
             .replace(
-                    'androidx.appsearch.localstorage.LocalStorage',
-                    'android.app.appsearch.AppSearchManager')
+                    'import androidx.appsearch.localstorage.LocalStorage;',
+                    'import android.app.appsearch.AppSearchManager;')
             .replace('LocalStorage.', 'AppSearchManager.')
         )
-        for shim in ['AppSearchSession', 'GlobalSearchSession', 'SearchResults']:
+        for shim in [
+                'AppSearchSession', 'GlobalSearchSession', 'EnterpriseGlobalSearchSession',
+                'SearchResults']:
             contents = re.sub(r"([^a-zA-Z])(%s)([^a-zA-Z0-9])" % shim, r'\1\2Shim\3', contents)
         return self._TransformCommonCode(contents)
 
@@ -277,7 +320,8 @@ class ExportToFramework:
         self._TransformAndCopyFolder(
                 test_util_source_dir, test_util_dest_dir, transform_func=self._TransformTestCode)
         for iface_file in (
-                'AppSearchSession.java', 'GlobalSearchSession.java', 'SearchResults.java'):
+                'AppSearchSession.java', 'GlobalSearchSession.java',
+                'EnterpriseGlobalSearchSession.java', 'SearchResults.java'):
             dest_file_name = os.path.splitext(iface_file)[0] + 'Shim.java'
             self._TransformAndCopyFile(
                     os.path.join(api_source_dir, 'app/' + iface_file),
@@ -318,6 +362,8 @@ class ExportToFramework:
                             'package com.android.server.appsearch.external')
                     .replace('com.google.android.icing.proto.',
                             'com.android.server.appsearch.icing.proto.')
+                    .replace('com.google.android.appsearch.proto.',
+                            'com.android.server.appsearch.appsearch.proto.')
                     .replace('com.google.android.icing.protobuf.',
                             'com.android.server.appsearch.protobuf.')
             )
@@ -360,6 +406,32 @@ class ExportToFramework:
         print('Wrote "%s"' % file_path)
         return old_sha
 
+    def FormatCommitMessage(self, old_sha, new_sha):
+        print('\nCommand to diff old version to new version:')
+        print('  git log --pretty=format:"* %h %s" {}..{} -- appsearch/'.format(old_sha, new_sha))
+        pretty_log = subprocess.check_output([
+            'git',
+            'log',
+            '--pretty=format:* %h %s',
+            '{}..{}'.format(old_sha, new_sha),
+            '--',
+            'appsearch/'
+        ]).decode("utf-8")
+        bug_output = subprocess.check_output([
+            '/bin/sh',
+            '-c',
+            'git log {}..{} -- appsearch/ | grep Bug: | sort | uniq'.format(old_sha, new_sha)
+        ]).decode("utf-8")
+
+        print('\n--------------------------------------------------')
+        print('Update Framework from Jetpack.\n')
+        print(pretty_log)
+        print()
+        for line in bug_output.splitlines():
+            print(line.strip())
+        print('Test: Presubmit\n')
+        print('--------------------------------------------------\n')
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
@@ -388,5 +460,4 @@ if __name__ == '__main__':
     new_sha = sys.argv[2]
     old_sha = exporter.WriteShaFile(new_sha)
     if old_sha and old_sha != new_sha:
-      print('Command to diff old version to new version:')
-      print('  git log %s..%s -- appsearch/' % (old_sha, new_sha))
+        exporter.FormatCommitMessage(old_sha, new_sha)

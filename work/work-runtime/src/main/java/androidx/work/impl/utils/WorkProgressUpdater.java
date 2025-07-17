@@ -20,7 +20,6 @@ import static androidx.work.ListenableFutureKt.executeAsync;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.Logger;
@@ -33,6 +32,8 @@ import androidx.work.impl.model.WorkSpecDao;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -61,12 +62,11 @@ public class WorkProgressUpdater implements ProgressUpdater {
         mTaskExecutor = taskExecutor;
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> updateProgress(
-            @NonNull final Context context,
-            @NonNull final UUID id,
-            @NonNull final Data data) {
+    public @NonNull ListenableFuture<Void> updateProgress(
+            final @NonNull Context context,
+            final @NonNull UUID id,
+            final @NonNull Data data) {
         return executeAsync(mTaskExecutor.getSerialTaskExecutor(), "updateProgress", () -> {
             String workSpecId = id.toString();
             Logger.get().debug(TAG, "Updating progress for " + id + " (" + data + ")");

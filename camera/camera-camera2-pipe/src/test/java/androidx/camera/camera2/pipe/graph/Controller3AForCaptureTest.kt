@@ -26,6 +26,7 @@ import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
+import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.requiredParameters
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
 import androidx.camera.camera2.pipe.testing.FakeGraphProcessor
 import androidx.camera.camera2.pipe.testing.FakeRequestMetadata
@@ -45,7 +46,7 @@ import org.robolectric.annotation.Config
 @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class Controller3AForCaptureTest {
     private val graphTestContext = GraphTestContext()
-    private val graphState3A = graphTestContext.graphProcessor.graphState3A
+    private val graphState3A = GraphState3A()
     private val graphProcessor = graphTestContext.graphProcessor
     private val captureSequenceProcessor = graphTestContext.captureSequenceProcessor
 
@@ -61,13 +62,9 @@ class Controller3AForCaptureTest {
     @Test
     fun testLock3AForCaptureFailsImmediatelyWithoutRepeatingRequest() = runTest {
         val graphProcessor2 = FakeGraphProcessor()
+        val graphState3A2 = GraphState3A()
         val controller3A =
-            Controller3A(
-                graphProcessor2,
-                FakeCameraMetadata(),
-                graphProcessor2.graphState3A,
-                listener3A
-            )
+            Controller3A(graphProcessor2, FakeCameraMetadata(), graphState3A2, listener3A)
         val result = controller3A.lock3AForCapture()
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
     }
@@ -95,7 +92,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING,
                         )
             )
         }
@@ -113,7 +110,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
                         )
             )
         }
@@ -206,7 +203,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING,
                         )
             )
         }
@@ -258,7 +255,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
                         )
             )
         }
@@ -293,7 +290,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_SEARCHING
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING,
                         )
             )
         }
@@ -311,7 +308,7 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_CONVERGED
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
                         )
             )
         }
@@ -334,7 +331,7 @@ class Controller3AForCaptureTest {
                     listOf(
                             CaptureResult.CONTROL_AE_STATE_CONVERGED,
                             CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
-                            CaptureResult.CONTROL_AE_STATE_LOCKED
+                            CaptureResult.CONTROL_AE_STATE_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -343,7 +340,7 @@ class Controller3AForCaptureTest {
                 frameMetadata[CaptureResult.CONTROL_AF_STATE]?.let {
                     listOf(
                             CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -368,9 +365,9 @@ class Controller3AForCaptureTest {
                         resultMetadata =
                             mapOf(
                                 CaptureResult.CONTROL_AF_STATE to
-                                    CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                            )
-                    )
+                                    CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -388,9 +385,9 @@ class Controller3AForCaptureTest {
                 resultMetadata =
                     mapOf(
                         CaptureResult.CONTROL_AF_STATE to
-                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                    )
-            )
+                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
+                    ),
+            ),
         )
 
         // Assert, task should be completed with Status.Ok
@@ -436,9 +433,9 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_CONVERGED
-                        )
-                )
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                        ),
+                ),
             )
         }
 
@@ -466,9 +463,9 @@ class Controller3AForCaptureTest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_CONVERGED
-                        )
-                )
+                                CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                        ),
+                ),
             )
         }
 
@@ -477,14 +474,20 @@ class Controller3AForCaptureTest {
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
         // We now check if the correct sequence of requests were submitted by unlock3APostCapture
-        // call. There should be a request to cancel AF and AE precapture metering.
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
+        // call. There should be a request to cancel AF and AE precapture metering
+        val event1 = captureSequenceProcessor.nextEvent()
         if (cancelAf) {
-            assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER])
-                .isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            assertThat(event1.requiredParameters)
+                .containsEntry(
+                    CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
+                )
         }
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER])
-            .isEqualTo(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL)
+        assertThat(event1.requiredParameters)
+            .containsEntry(
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
+            )
     }
 
     private fun testUnlock3APostCaptureAndroidLAndBelow(cancelAf: Boolean = true) = runTest {
@@ -498,7 +501,7 @@ class Controller3AForCaptureTest {
             listener3A.onPartialCaptureResult(
                 FakeRequestMetadata(requestNumber = RequestNumber(1)),
                 FrameNumber(101L),
-                FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = mapOf())
+                FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = mapOf()),
             )
         }
 
@@ -509,31 +512,37 @@ class Controller3AForCaptureTest {
 
         // We now check if the correct sequence of requests were submitted by unlock3APostCapture
         // call. There should be a request to cancel AF and lock ae.
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
+        val event1 = captureSequenceProcessor.nextEvent()
         if (cancelAf) {
-            assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER])
-                .isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_CANCEL)
+            assertThat(event1.requiredParameters)
+                .containsEntry(
+                    CaptureRequest.CONTROL_AF_TRIGGER,
+                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
+                )
         }
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AE_LOCK]).isEqualTo(true)
+
+        assertThat(event1.requiredParameters).containsEntry(CaptureRequest.CONTROL_AE_LOCK, true)
 
         // Then another request to unlock ae.
-        val request2 = captureSequenceProcessor.nextEvent().requestSequence
-        assertThat(request2!!.requiredParameters[CaptureRequest.CONTROL_AE_LOCK]).isEqualTo(false)
+        val captureSequence2 = captureSequenceProcessor.nextEvent()
+        assertThat(captureSequence2.requiredParameters)
+            .containsEntry(CaptureRequest.CONTROL_AE_LOCK, false)
     }
 
-    private suspend fun assertCorrectCaptureSequenceInLock3AForCapture(
-        isAfTriggered: Boolean = true
-    ) {
-        val request1 = captureSequenceProcessor.nextEvent().requestSequence
-        assertThat(request1!!.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER]).apply {
+    private fun assertCorrectCaptureSequenceInLock3AForCapture(isAfTriggered: Boolean = true) {
+        val event1 = captureSequenceProcessor.nextEvent()
+        assertThat(event1.requiredParameters[CaptureRequest.CONTROL_AF_TRIGGER]).apply {
             if (isAfTriggered) {
                 isEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_START)
             } else {
                 isNotEqualTo(CaptureRequest.CONTROL_AF_TRIGGER_IDLE)
             }
         }
-        assertThat(request1.requiredParameters[CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER])
-            .isEqualTo(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START)
+        assertThat(event1.requiredParameters)
+            .containsEntry(
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START,
+            )
     }
 
     companion object {
@@ -545,12 +554,12 @@ class Controller3AForCaptureTest {
 private fun Listener3A.sendPartialCaptureResult(
     requestNumber: Long = 1L,
     frameNumber: Long = 101L,
-    resultMetadata: Map<CaptureResult.Key<*>, Any?>
+    resultMetadata: Map<CaptureResult.Key<*>, Any?>,
 ) {
     onRequestSequenceCreated(FakeRequestMetadata(requestNumber = RequestNumber(requestNumber)))
     onPartialCaptureResult(
         FakeRequestMetadata(requestNumber = RequestNumber(requestNumber)),
         FrameNumber(frameNumber),
-        FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = resultMetadata)
+        FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = resultMetadata),
     )
 }

@@ -26,6 +26,7 @@ import androidx.compose.animation.core.animateValueAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.annotation.RememberInComposition
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -46,7 +47,6 @@ import androidx.compose.ui.unit.Dp
  * from the tree. See [Animatable][androidx.compose.animation.Animatable] for cancelable animations.
  *
  * @sample androidx.compose.animation.samples.ColorAnimationSample
- *
  * @param targetValue Target value of the animation
  * @param animationSpec The animation that will be used to change the value through time, [spring]
  *   by default
@@ -54,11 +54,11 @@ import androidx.compose.ui.unit.Dp
  * @param finishedListener An optional listener to get notified when the animation is finished.
  */
 @Composable
-fun animateColorAsState(
+public fun animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
     label: String = "ColorAnimation",
-    finishedListener: ((Color) -> Unit)? = null
+    finishedListener: ((Color) -> Unit)? = null,
 ): State<Color> {
     val converter =
         remember(targetValue.colorSpace) { (Color.VectorConverter)(targetValue.colorSpace) }
@@ -67,19 +67,19 @@ fun animateColorAsState(
         converter,
         animationSpec,
         label = label,
-        finishedListener = finishedListener
+        finishedListener = finishedListener,
     )
 }
 
 @Deprecated(
     "animate*AsState APIs now have a new label parameter added.",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
-fun animateColorAsState(
+public fun animateColorAsState(
     targetValue: Color,
     animationSpec: AnimationSpec<Color> = colorDefaultSpring,
-    finishedListener: ((Color) -> Unit)? = null
+    finishedListener: ((Color) -> Unit)? = null,
 ): State<Color> {
     return animateColorAsState(targetValue, animationSpec, finishedListener = finishedListener)
 }
@@ -103,8 +103,8 @@ private val colorDefaultSpring = spring<Color>()
  * types. See [androidx.compose.animation.core.Animatable] for other variants.
  *
  * @sample androidx.compose.animation.samples.AnimatableColor
- *
  * @param initialValue initial value of the [Animatable]
  */
-fun Animatable(initialValue: Color): Animatable<Color, AnimationVector4D> =
+@RememberInComposition
+public fun Animatable(initialValue: Color): Animatable<Color, AnimationVector4D> =
     Animatable(initialValue, (Color.VectorConverter)(initialValue.colorSpace))

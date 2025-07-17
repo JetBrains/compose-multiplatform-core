@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.test
 
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+
 /**
  * A strategy to wait for idleness. This is typically implemented by different test frameworks, to
  * allow each framework to await idleness in their own unique way. For example, a framework could
@@ -32,6 +35,14 @@ internal interface IdlingStrategy {
     val canSynchronizeOnUiThread: Boolean
 
     /**
+     * The [CoroutineContext] that needs to be used to call synchronization methods. On instrumented
+     * tests, this needs to dispatch on a non-ui thread. On Robolectric tests, this needs to
+     * dispatch on the ui thread.
+     */
+    val synchronizationContext: CoroutineContext
+        get() = EmptyCoroutineContext
+
+    /**
      * Should block until the system is idle. A strategy may actively push the system towards an
      * idle state, but doesn't necessarily have to do that. For example, it could just poll the
      * system until it is idle and simply sleep in between.
@@ -39,14 +50,7 @@ internal interface IdlingStrategy {
     fun runUntilIdle()
 
     /**
-     * Should suspend until the system is idle. A strategy may actively push the system towards an
-     * idle state, but doesn't necessarily have to do that. Default implementation calls
-     * [runUntilIdle] without suspending.
-     */
-    suspend fun awaitIdle() = runUntilIdle()
-
-    /**
      * Runs the [block] while giving implementations the option to perform setup and tear down work.
      */
-    fun <R> withStrategy(block: () -> R): R = block()
+    suspend fun <R> withStrategy(block: suspend () -> R): R = block()
 }

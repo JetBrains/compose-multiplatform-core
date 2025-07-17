@@ -14,56 +14,112 @@
  * limitations under the License.
  */
 
-/**
- * This file was created using the `create_project.py` script located in the
- * `<AndroidX root>/development/project-creator` directory.
- *
- * Please use that script when creating a new project, rather than copying an existing project and
- * modifying its settings.
- */
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import androidx.build.LibraryType
+
+import androidx.build.KotlinTarget
+import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
+import com.google.devtools.ksp.gradle.KspAATask
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-    id("kotlin-android")
     id("com.google.devtools.ksp")
 }
 
-android {
-    defaultConfig {
-        multiDexEnabled true
+androidXMultiplatform {
+    androidLibrary {
+        namespace = "androidx.room.paging"
     }
-    namespace "androidx.room.paging"
+    jvm()
+    mac()
+    linux()
+    ios()
+    // TODO(b/394238801): Add TV and Watch once paging-common 3.4 is released
+    // tvos()
+    // watchos()
+
+    defaultPlatform(PlatformIdentifier.ANDROID)
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api(libs.kotlinStdlib)
+                api("androidx.paging:paging-common:3.3.2")
+                api(project(":room:room-runtime"))
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":kruth:kruth"))
+            }
+        }
+
+        androidMain {
+            dependsOn(commonMain)
+        }
+
+        jvmNativeMain {
+            dependsOn(commonMain)
+        }
+
+        jvmMain {
+            dependsOn(jvmNativeMain)
+        }
+
+        nativeMain {
+            dependsOn(jvmNativeMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
+        }
+
+        androidInstrumentedTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.junit)
+                implementation(project(":internal-testutils-common"))
+                implementation(libs.kotlinTestJunit)
+                implementation(libs.testExtJunit)
+                implementation(libs.testCore)
+                implementation(libs.testRunner)
+                implementation("androidx.arch.core:core-testing:2.2.0")
+                implementation("androidx.paging:paging-testing:3.3.2")
+            }
+        }
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
+            }
+        }
+    }
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-
-    api(project(":room:room-runtime"))
-    implementation(project(":room:room-ktx"))
-    api("androidx.paging:paging-common:3.1.1")
-
-    androidTestImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.multidex)
-    androidTestImplementation(libs.kotlinTestJunit)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    kspAndroidTest(project(":room:room-compiler"))
-    androidTestImplementation(project(":kruth:kruth"))
-    androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
-    androidTestImplementation(project(":internal-testutils-common"))
-    androidTestImplementation(projectOrArtifact(":paging:paging-testing"))
+    add("kspAndroidInstrumentedTest", project(":room:room-compiler"))
 }
 
 androidx {
     name = "Room Paging"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Room Paging integration"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(AndroidLintAnalysisTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(LintModelWriterTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
 }

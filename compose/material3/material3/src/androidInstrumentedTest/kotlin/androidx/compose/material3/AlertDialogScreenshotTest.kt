@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,7 +35,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
 
     @get:Rule val composeTestRule = createComposeRule()
@@ -60,7 +59,7 @@ class AlertDialogScreenshotTest {
                 },
                 dismissButton = {
                     TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                },
             )
         }
 
@@ -84,7 +83,7 @@ class AlertDialogScreenshotTest {
                 },
                 dismissButton = {
                     TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                },
             )
         }
 
@@ -109,7 +108,7 @@ class AlertDialogScreenshotTest {
                 },
                 dismissButton = {
                     TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                },
             )
         }
 
@@ -134,7 +133,7 @@ class AlertDialogScreenshotTest {
                 },
                 dismissButton = {
                     TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                }
+                },
             )
         }
 
@@ -159,7 +158,7 @@ class AlertDialogScreenshotTest {
                     },
                     dismissButton = {
                         TextButton(onClick = { /* doSomething() */ }) { Text("Dismiss") }
-                    }
+                    },
                 )
             }
         }

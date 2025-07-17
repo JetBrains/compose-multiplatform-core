@@ -21,6 +21,7 @@ package androidx.compose.runtime.lint
 import androidx.compose.lint.Name
 import androidx.compose.lint.Package
 import androidx.compose.lint.inheritsFrom
+import androidx.compose.lint.isComposable
 import androidx.compose.lint.isInvokedWithinComposable
 import androidx.compose.lint.toKmFunction
 import com.android.tools.lint.client.api.UElementHandler
@@ -34,7 +35,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.impl.compiled.ClsMethodImpl
 import java.util.EnumSet
-import kotlinx.metadata.KmClassifier
+import kotlin.metadata.KmClassifier
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UMethod
@@ -61,12 +62,12 @@ class ComposableFlowOperatorDetector : Detector(), SourceCodeScanner {
 
                 // We are calling a method on a `Flow` type, and the method is an operator function
                 if (receiverType?.inheritsFrom(FlowName) == true && method.isFlowOperator()) {
-                    if (node.isInvokedWithinComposable()) {
+                    if (!method.isComposable && node.isInvokedWithinComposable()) {
                         context.report(
                             FlowOperatorInvokedInComposition,
                             node,
                             context.getNameLocation(node),
-                            "Flow operator functions should not be invoked within composition"
+                            "Flow operator functions should not be invoked within composition",
                         )
                     }
                 }
@@ -87,8 +88,8 @@ class ComposableFlowOperatorDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     ComposableFlowOperatorDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

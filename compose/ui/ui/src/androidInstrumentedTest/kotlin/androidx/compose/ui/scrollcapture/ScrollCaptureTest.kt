@@ -26,8 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onPlaced
@@ -36,8 +36,8 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.compose.ui.semantics.ScrollAxisRange
+import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.horizontalScrollAxisRange
-import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.scrollByOffset
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.verticalScrollAxisRange
@@ -58,7 +58,6 @@ import org.junit.runner.RunWith
  * Tests the scroll capture implementation's integration with semantics. Tests in this class should
  * not use any scrollable components from Foundation.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 31)
@@ -76,7 +75,7 @@ class ScrollCaptureTest {
                 TestVerticalScrollable(
                     size = 10,
                     maxValue = 1f,
-                    modifier = Modifier.onPlaced { coordinates = it }
+                    modifier = Modifier.onPlaced { coordinates = it },
                 )
             }
 
@@ -100,10 +99,7 @@ class ScrollCaptureTest {
                     Modifier.onPlaced { coordinates = it }
                         .padding(with(LocalDensity.current) { padding.toDp() })
                 ) {
-                    TestVerticalScrollable(
-                        size = 10,
-                        maxValue = 1f,
-                    )
+                    TestVerticalScrollable(size = 10, maxValue = 1f)
                 }
             }
 
@@ -200,11 +196,20 @@ class ScrollCaptureTest {
         }
 
     @Test
-    fun search_doesNotFindTarget_whenInvisibleToUser() =
+    fun search_doesNotFindTarget_whenHidingFromAccessibility() =
         captureTester.runTest {
             captureTester.setContent {
-                TestVerticalScrollable(Modifier.semantics { invisibleToUser() })
+                TestVerticalScrollable(Modifier.semantics { hideFromAccessibility() })
             }
+
+            val targets = captureTester.findCaptureTargets()
+            assertThat(targets).isEmpty()
+        }
+
+    @Test
+    fun search_doesNotFindTarget_whenTransparent() =
+        captureTester.runTest {
+            captureTester.setContent { TestVerticalScrollable(Modifier.alpha(0f)) }
 
             val targets = captureTester.findCaptureTargets()
             assertThat(targets).isEmpty()
@@ -247,10 +252,7 @@ class ScrollCaptureTest {
                     Modifier.size(10.dp).semantics {
                         scrollByOffset { Offset.Zero }
                         horizontalScrollAxisRange =
-                            ScrollAxisRange(
-                                value = { 0f },
-                                maxValue = { 1f },
-                            )
+                            ScrollAxisRange(value = { 0f }, maxValue = { 1f })
                     }
                 )
             }
@@ -265,11 +267,7 @@ class ScrollCaptureTest {
             captureTester.setContent {
                 Box(
                     Modifier.size(10.dp).semantics {
-                        verticalScrollAxisRange =
-                            ScrollAxisRange(
-                                value = { 0f },
-                                maxValue = { 1f },
-                            )
+                        verticalScrollAxisRange = ScrollAxisRange(value = { 0f }, maxValue = { 1f })
                     }
                 )
             }
@@ -288,10 +286,7 @@ class ScrollCaptureTest {
                     Modifier.onPlaced { coordinates = it }
                         .padding(with(LocalDensity.current) { padding.toDp() })
                 ) {
-                    TestVerticalScrollable(
-                        size = 10,
-                        maxValue = 1f,
-                    )
+                    TestVerticalScrollable(size = 10, maxValue = 1f)
                 }
             }
 
@@ -307,7 +302,7 @@ class ScrollCaptureTest {
                             coordinates.positionInWindow().x.roundToInt() + padding,
                             coordinates.positionInWindow().y.roundToInt() + padding,
                             coordinates.positionInWindow().x.roundToInt() + padding + 10,
-                            coordinates.positionInWindow().y.roundToInt() + padding + 10
+                            coordinates.positionInWindow().y.roundToInt() + padding + 10,
                         )
                     )
             }
@@ -323,7 +318,7 @@ class ScrollCaptureTest {
                     TestVerticalScrollable(
                         size = size,
                         // Can't be a reference, see https://youtrack.jetbrains.com/issue/KT-49665
-                        onScrollByOffset = { respondToScrollExpectation(it) }
+                        onScrollByOffset = { respondToScrollExpectation(it) },
                     )
                 }
 
@@ -373,7 +368,7 @@ class ScrollCaptureTest {
                         reverseScrolling = true,
                         size = size,
                         // Can't be a reference, see https://youtrack.jetbrains.com/issue/KT-49665
-                        onScrollByOffset = { respondToScrollExpectation(it) }
+                        onScrollByOffset = { respondToScrollExpectation(it) },
                     )
                 }
 
@@ -471,7 +466,7 @@ class ScrollCaptureTest {
         maxValue: Float = 1f,
         onScrollByOffset: suspend (Offset) -> Offset = { Offset.Zero },
         reverseScrolling: Boolean = false,
-        content: (@Composable () -> Unit)? = null
+        content: (@Composable () -> Unit)? = null,
     ) {
         with(LocalDensity.current) {
             val updatedMaxValue by rememberUpdatedState(maxValue)
@@ -487,7 +482,7 @@ class ScrollCaptureTest {
                     verticalScrollAxisRange = scrollAxisRange
                     scrollByOffset(onScrollByOffset)
                 },
-                content = { content?.invoke() }
+                content = { content?.invoke() },
             )
         }
     }

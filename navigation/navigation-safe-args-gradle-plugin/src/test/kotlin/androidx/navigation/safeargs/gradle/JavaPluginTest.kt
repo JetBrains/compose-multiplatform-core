@@ -39,6 +39,7 @@ class JavaPluginTest : BasePluginTest() {
             suffix =
                 """
                 android {
+                    namespace "androidx.navigation.testapp"
                     flavorDimensions "mode"
                     productFlavors {
                         foo {
@@ -52,10 +53,10 @@ class JavaPluginTest : BasePluginTest() {
                 }
 
                 dependencies {
-                    implementation "${projectSetup.props.navigationRuntime}"
+                    implementation "$NAVIGATION_RUNTIME"
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
         runGradle("assembleNotfooDebug", "assembleFooDebug")
             .assertSuccessfulTask("assembleNotfooDebug")

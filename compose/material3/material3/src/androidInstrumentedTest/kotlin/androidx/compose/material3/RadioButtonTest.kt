@@ -35,7 +35,6 @@ import androidx.compose.ui.test.isFocusable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -72,7 +71,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -102,7 +101,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -128,7 +127,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -152,7 +151,7 @@ class RadioButtonTest {
                 RadioButton(
                     selected = true,
                     onClick = null,
-                    modifier = Modifier.semantics { focused = true }
+                    modifier = Modifier.semantics { focused = true },
                 )
             }
         }
@@ -174,7 +173,7 @@ class RadioButtonTest {
                     RadioButton(
                         modifier = Modifier.testTag(item),
                         selected = (selected.value == item),
-                        onClick = { selected.value = item }
+                        onClick = { selected.value = item },
                     )
                 }
             }
@@ -243,20 +242,20 @@ class RadioButtonTest {
     private fun materialSizesTestForValue(
         selected: Boolean,
         clickable: Boolean,
-        minimumTouchTarget: Boolean
+        minimumTouchTarget: Boolean,
     ) {
         rule
             .setMaterialContentForSizeAssertions {
                 CompositionLocalProvider(
                     LocalMinimumInteractiveComponentSize provides
-                        if (minimumTouchTarget) 48.dp else Dp.Unspecified
+                        if (minimumTouchTarget) 48.dp else 0.dp
                 ) {
                     RadioButton(
                         selected = selected,
                         onClick =
                             if (clickable) {
                                 {}
-                            } else null
+                            } else null,
                     )
                 }
             }

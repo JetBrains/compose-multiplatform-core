@@ -22,14 +22,10 @@ import androidx.room.writer.TypeWriter
 /**
  * Defines a code generation scope where we can provide temporary variables, global variables etc
  */
-class CodeGenScope(
-    val writer: TypeWriter,
-    // TODO(b/319660042): Remove once migration to driver API is done.
-    val useDriverApi: Boolean = false
-) {
+class CodeGenScope(val writer: TypeWriter) {
     val language = writer.context.codeLanguage
     val javaLambdaSyntaxAvailable = writer.context.javaLambdaSyntaxAvailable
-    val builder by lazy { XCodeBlock.builder(language) }
+    val builder by lazy { XCodeBlock.builder() }
     private val tmpVarIndices = mutableMapOf<String, Int>()
 
     companion object {
@@ -61,7 +57,7 @@ class CodeGenScope(
 
     /** Copies all variable indices but excludes generated code. */
     fun fork(): CodeGenScope {
-        val forked = CodeGenScope(writer, useDriverApi)
+        val forked = CodeGenScope(writer)
         forked.tmpVarIndices.putAll(tmpVarIndices)
         return forked
     }

@@ -18,6 +18,7 @@ package androidx.room.compiler.processing.ksp
 
 import androidx.room.compiler.processing.util.ISSUE_TRACKER_LINK
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.outerType
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSName
@@ -32,6 +33,7 @@ import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.javapoet.KClassName
+import com.squareup.kotlinpoet.javapoet.KParameterizedTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeName
 import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 import com.squareup.kotlinpoet.javapoet.KWildcardTypeName
@@ -45,7 +47,7 @@ internal fun KSTypeReference?.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSTypeReference?.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     return if (this == null) {
         ERROR_KTYPE_NAME
@@ -59,7 +61,7 @@ internal fun KSDeclaration.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSDeclaration.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     if (this is KSTypeAlias) {
         return this.type.asKTypeName(resolver, typeArgumentTypeLookup)
@@ -67,21 +69,34 @@ private fun KSDeclaration.asKTypeName(
     if (this is KSTypeParameter) {
         return this.asKTypeName(resolver, typeArgumentTypeLookup)
     }
-    val qualified = qualifiedName?.asString() ?: return ERROR_KTYPE_NAME
     val pkg = getNormalizedPackageName()
-    val shortNames =
-        if (pkg == "") {
-                qualified
-            } else {
-                qualified.substring(pkg.length + 1)
-            }
-            .split('.')
-    return KClassName(pkg, shortNames.first(), *(shortNames.drop(1).toTypedArray()))
+    val qualified = qualifiedName?.asString()
+    if (qualified != null) {
+        val simpleNames =
+            if (pkg.isNotEmpty()) {
+                    check(qualified.startsWith(pkg))
+                    qualified.substring(pkg.length + 1, qualified.length)
+                } else {
+                    qualified
+                }
+                .split('.')
+        return KClassName(pkg, simpleNames)
+    } else {
+        val errorTypeName =
+            ERROR_TYPE_PATTERN.find(simpleName.asString())?.groupValues?.get(1)
+                // If we don't match the ERROR_TYPE_PATTERN just return the default error type name.
+                ?: return ERROR_KTYPE_NAME
+        // Although we don't get an actual package for an error type, the error type found in the
+        // simple name's pattern match may contain a package if the type it references is fully
+        // qualified. Since we only get this as a string, use bestGuess to get a class name.
+        check(pkg.isEmpty())
+        return KClassName.bestGuess(errorTypeName)
+    }
 }
 
 private fun KSTypeParameter.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     typeArgumentTypeLookup[name]?.let {
         return it
@@ -103,7 +118,7 @@ internal fun KSTypeArgument.asKTypeName(resolver: Resolver): KTypeName =
 
 private fun KSTypeArgument.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
     fun resolveTypeName() = type.asKTypeName(resolver, typeArgumentTypeLookup)
     return when (variance) {
@@ -126,26 +141,40 @@ internal fun KSType.asKTypeName(resolver: Resolver): KTypeName =
 @OptIn(KspExperimental::class)
 private fun KSType.asKTypeName(
     resolver: Resolver,
-    typeArgumentTypeLookup: KTypeArgumentTypeLookup
+    typeArgumentTypeLookup: KTypeArgumentTypeLookup,
 ): KTypeName {
-    return if (declaration is KSTypeAlias) {
-        replaceTypeAliases(resolver).asKTypeName(resolver, typeArgumentTypeLookup)
-    } else
-        if (this.arguments.isNotEmpty() && !resolver.isJavaRawType(this)) {
-                val args: List<KTypeName> =
-                    this.arguments.map { typeArg ->
-                        typeArg.asKTypeName(
-                            resolver = resolver,
-                            typeArgumentTypeLookup = typeArgumentTypeLookup
-                        )
-                    }
-                val typeName = declaration.asKTypeName(resolver, typeArgumentTypeLookup)
-                check(typeName is KClassName) { "Unexpected type name for KSType: $typeName" }
-                typeName.parameterizedBy(args)
-            } else {
-                this.declaration.asKTypeName(resolver, typeArgumentTypeLookup)
+    if (declaration is KSTypeAlias) {
+        return replaceTypeAliases(resolver).asKTypeName(resolver, typeArgumentTypeLookup)
+    }
+    fun resolveTypeName(): KTypeName {
+        val typeName = declaration.asKTypeName(resolver, typeArgumentTypeLookup)
+        if (!isTypeParameter() && !resolver.isJavaRawType(this)) {
+            check(typeName is KClassName) { "Unexpected type name for KSType: $typeName" }
+            val args: List<KTypeName> =
+                this.innerArguments.map { typeArg ->
+                    typeArg.asKTypeName(
+                        resolver = resolver,
+                        typeArgumentTypeLookup = typeArgumentTypeLookup,
+                    )
+                }
+            val outerType = this.outerType
+            if (outerType != null) {
+                val outerTypeName = outerType.asKTypeName(resolver, typeArgumentTypeLookup)
+                if (outerTypeName is KParameterizedTypeName) {
+                    return outerTypeName.nestedClass(typeName.simpleName, args)
+                }
             }
-            .copy(nullable = isMarkedNullable || nullability == Nullability.PLATFORM)
+            return if (args.isEmpty()) {
+                typeName
+            } else {
+                typeName.parameterizedBy(args)
+            }
+        } else {
+            return typeName
+        }
+    }
+    return resolveTypeName()
+        .copy(nullable = isMarkedNullable || nullability == Nullability.PLATFORM)
 }
 
 /** See [KTypeVariableNameFactory.newInstance] */
@@ -163,7 +192,7 @@ private val typeVarNameCompanionInstance by lazy {
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
                 .trimIndent(),
-            ex
+            ex,
         )
     }
 }
@@ -191,7 +220,7 @@ private val typeVarNameFactoryMethod by lazy {
             Room couldn't find the method it is looking for in KotlinPoet.
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
-                .trimIndent(),
+                .trimIndent()
         )
     }
 }
@@ -202,7 +231,7 @@ private val typeVarNameFactoryMethod by lazy {
  */
 private fun createModifiableTypeVariableName(
     name: String,
-    bounds: List<KTypeName>
+    bounds: List<KTypeName>,
 ): KTypeVariableName =
     try {
         KTypeVariableNameFactory.newInstance(name, bounds)

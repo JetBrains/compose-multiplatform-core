@@ -21,6 +21,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.graphics.Rect;
@@ -32,6 +38,8 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.core.view.ScrollFeedbackProviderCompat;
+import androidx.core.view.ViewCompat;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -45,6 +53,7 @@ public class NestedScrollViewTest {
 
     private NestedScrollView mNestedScrollView;
     private View mChild;
+    private ScrollFeedbackProviderCompat mScrollFeedbackProvider;
 
     @Test
     public void getBottomFadingEdgeStrength_childBottomIsBelowParentWithoutMargins_isCorrect() {
@@ -456,6 +465,78 @@ public class NestedScrollViewTest {
         assertEquals(EdgeEffectSubstitute.State.Idle, edgeEffect.getState());
     }
 
+    @Test
+    public void scrollFeedbackCallbacks() {
+        setup(200);
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mNestedScrollView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        setChildMargins(0, 0);
+        measureAndLayout(100);
+
+        MotionEvent ev = createScrollMotionEvent(
+                /* scrollAmount= */ 2f,
+                /* deviceId= */ 3,
+                /* source= */ InputDevice.SOURCE_ROTARY_ENCODER,
+                /* axis= */ MotionEvent.AXIS_SCROLL);
+        // Scroll up by -2.
+        mNestedScrollView.scrollBy(
+                /* verticalScrollDistance= */ -2, MotionEvent.AXIS_SCROLL, ev, /* x= */ 3,
+                ViewCompat.TYPE_TOUCH, /* isSourceMouseOrKeyboard= */ false);
+
+        // Since the view was already at the very top, a scroll up by -2 should not cause a
+        // onScrollProgress call, but should call onScrollLimit.
+        verify(mScrollFeedbackProvider, never()).onScrollProgress(
+                anyInt(), anyInt(), anyInt(), anyInt());
+        verify(mScrollFeedbackProvider).onScrollLimit(
+                /* inputDeviceId= */ 3, InputDevice.SOURCE_ROTARY_ENCODER, MotionEvent.AXIS_SCROLL,
+                /* isStart= */ true);
+        reset(mScrollFeedbackProvider);
+
+        // Scroll down by 20.
+        mNestedScrollView.scrollBy(
+                /* verticalScrollDistance= */ 20, MotionEvent.AXIS_SCROLL, ev, /* x= */ 3,
+                ViewCompat.TYPE_TOUCH, /* isSourceMouseOrKeyboard= */ false);
+
+        // The height of the view is 100. Since the scroll is 20 pixels, we expect all of it to be
+        // consumed. So, expect onScrollProgress with 20 pixels, and no onScrollLimit.
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 3, InputDevice.SOURCE_ROTARY_ENCODER, MotionEvent.AXIS_SCROLL,
+                /* deltaInPixels= */ 20);
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                anyInt(), anyInt(), anyInt(), anyBoolean());
+
+        // At this point, the view was at y=20. So a scroll of 100 pixels should do a consumed
+        // scroll of 80 pixels, and also cause an onScrollLimit call.
+        mNestedScrollView.scrollBy(
+                /* verticalScrollDistance= */ 100, MotionEvent.AXIS_SCROLL, ev, /* x= */ 3,
+                ViewCompat.TYPE_TOUCH, /* isSourceMouseOrKeyboard= */ false);
+
+        verify(mScrollFeedbackProvider).onScrollProgress(
+                /* inputDeviceId= */ 3, InputDevice.SOURCE_ROTARY_ENCODER, MotionEvent.AXIS_SCROLL,
+                /* deltaInPixels= */ 80);
+        verify(mScrollFeedbackProvider).onScrollLimit(
+                /* inputDeviceId= */ 3, InputDevice.SOURCE_ROTARY_ENCODER, MotionEvent.AXIS_SCROLL,
+                /* isStart= */ false);
+    }
+
+    @Test
+    public void scrollFeedbackCallbacks_motionEventUnavailable() {
+        setup(200);
+        mScrollFeedbackProvider = mock(ScrollFeedbackProviderCompat.class);
+        mNestedScrollView.mScrollFeedbackProvider = mScrollFeedbackProvider;
+        setChildMargins(0, 0);
+        measureAndLayout(100);
+
+        mNestedScrollView.scrollBy(
+                /* verticalScrollDistance= */ -2, MotionEvent.AXIS_SCROLL, /* ev= */ null,
+                /* x= */ 3,  ViewCompat.TYPE_TOUCH, /* isSourceMouseOrKeyboard= */ false);
+
+        verify(mScrollFeedbackProvider, never()).onScrollProgress(
+                anyInt(), anyInt(), anyInt(), anyInt());
+        verify(mScrollFeedbackProvider, never()).onScrollLimit(
+                anyInt(), anyInt(), anyInt(), anyBoolean());
+    }
+
     private void swipeDown(boolean shortSwipe) {
         float endY = shortSwipe ? mNestedScrollView.getHeight() / 2f :
                 mNestedScrollView.getHeight() - 1;
@@ -495,7 +576,8 @@ public class NestedScrollViewTest {
         mNestedScrollView.dispatchTouchEvent(up);
     }
 
-    private void sendScroll(float scrollAmount, int source) {
+    private MotionEvent createScrollMotionEvent(
+            float scrollAmount, int deviceId, int source, int axis) {
         float x = mNestedScrollView.getWidth() / 2f;
         float y = mNestedScrollView.getHeight() / 2f;
         MotionEvent.PointerProperties pointerProperties = new MotionEvent.PointerProperties();
@@ -503,11 +585,10 @@ public class NestedScrollViewTest {
         MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
         pointerCoords.x = x;
         pointerCoords.y = y;
-        int axis = source == InputDevice.SOURCE_ROTARY_ENCODER ? MotionEvent.AXIS_SCROLL
-                : MotionEvent.AXIS_VSCROLL;
+
         pointerCoords.setAxisValue(axis, scrollAmount);
 
-        MotionEvent scroll = MotionEvent.obtain(
+        return MotionEvent.obtain(
                 0, /* downTime */
                 0, /* eventTime */
                 MotionEvent.ACTION_SCROLL, /* action */
@@ -518,13 +599,18 @@ public class NestedScrollViewTest {
                 0, /* buttonState */
                 0f, /* xPrecision */
                 0f, /* yPrecision */
-                0, /* deviceId */
+                deviceId,
                 0, /* edgeFlags */
                 source, /* source */
                 0 /* flags */
         );
+    }
 
-        mNestedScrollView.dispatchGenericMotionEvent(scroll);
+    private void sendScroll(float scrollAmount, int source) {
+        int axis = source == InputDevice.SOURCE_ROTARY_ENCODER
+                ? MotionEvent.AXIS_SCROLL : MotionEvent.AXIS_VSCROLL;
+        mNestedScrollView.dispatchGenericMotionEvent(
+                createScrollMotionEvent(scrollAmount, /* deviceId= */ 1, source, axis));
     }
 
     private void setup(int childHeight) {

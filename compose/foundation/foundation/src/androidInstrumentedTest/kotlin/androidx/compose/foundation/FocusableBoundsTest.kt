@@ -45,7 +45,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FocusableBoundsTest {
@@ -119,7 +118,7 @@ class FocusableBoundsTest {
                     Rect(0f, 0f, size, size),
                     // First child sends null when it loses focus before the second child gains it.
                     null,
-                    Rect(0f, size, size, size * 2)
+                    Rect(0f, size, size, size * 2),
                 )
                 .inOrder()
         }
@@ -162,7 +161,7 @@ class FocusableBoundsTest {
             assertThat(focusedBounds)
                 .containsAtLeast(
                     Rect(Offset.Zero, Size(size, size)),
-                    Rect(Offset(1f, 2f), Size(size, size))
+                    Rect(Offset(1f, 2f), Size(size, size)),
                 )
                 .inOrder()
         }
@@ -322,14 +321,14 @@ class FocusableBoundsTest {
                         focusedBounds +=
                             Pair(
                                 0,
-                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) }
+                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) },
                             )
                     }
                     .onFocusedBoundsChanged { childCoordinates ->
                         focusedBounds +=
                             Pair(
                                 1,
-                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) }
+                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) },
                             )
                     }
                     .focusRequester(focusRequester)
@@ -407,7 +406,7 @@ class FocusableBoundsTest {
                                         0,
                                         childCoordinates?.let {
                                             parentCoordinates.localBoundingBoxOf(it)
-                                        }
+                                        },
                                     )
                             }
                         } else Modifier
@@ -416,7 +415,7 @@ class FocusableBoundsTest {
                         focusedBounds +=
                             Pair(
                                 1,
-                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) }
+                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) },
                             )
                     }
                     .focusRequester(focusRequester)
@@ -455,7 +454,7 @@ class FocusableBoundsTest {
                         focusedBounds +=
                             Pair(
                                 0,
-                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) }
+                                childCoordinates?.let { parentCoordinates.localBoundingBoxOf(it) },
                             )
                     }
                     .then(
@@ -466,7 +465,7 @@ class FocusableBoundsTest {
                                         1,
                                         childCoordinates?.let {
                                             parentCoordinates.localBoundingBoxOf(it)
-                                        }
+                                        },
                                     )
                             }
                         } else Modifier

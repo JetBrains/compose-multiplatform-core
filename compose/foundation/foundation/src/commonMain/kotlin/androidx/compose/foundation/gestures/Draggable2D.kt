@@ -31,7 +31,6 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.Velocity
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 
 /**
@@ -54,13 +53,13 @@ interface Draggable2DState {
      */
     suspend fun drag(
         dragPriority: MutatePriority = MutatePriority.Default,
-        block: suspend Drag2DScope.() -> Unit
+        block: suspend Drag2DScope.() -> Unit,
     )
 
     /**
      * Dispatch drag delta in pixels avoiding all drag related priority mechanisms.
      *
-     * **Note:** unlike [drag], dispatching any delta with this method will bypass scrolling of any
+     * **Note:** unlike [drag], dispatching any delta with this method will bypass dragging of any
      * priority. This method will also ignore `reverseDirection` and other parameters set in
      * draggable2D.
      *
@@ -69,7 +68,7 @@ interface Draggable2DState {
      * this method will likely result in a bad user experience, you must prefer [drag] method over
      * this one.
      *
-     * @param delta amount of scroll dispatched in the nested drag process
+     * @param delta amount of drag dispatched in the nested drag process
      */
     fun dispatchRawDelta(delta: Offset)
 }
@@ -120,7 +119,6 @@ fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
  * If you are implementing dragging in a single orientation, consider using [draggable].
  *
  * @sample androidx.compose.foundation.samples.Draggable2DSample
- *
  * @param state [Draggable2DState] state of the draggable2D. Defines how drag events will be
  *   interpreted by the user land logic.
  * @param enabled whether or not drag is enabled
@@ -134,8 +132,8 @@ fun rememberDraggable2DState(onDelta: (Offset) -> Unit): Draggable2DState {
  *   position, allowing user to perform preparation for drag.
  * @param onDragStopped callback that will be invoked when drag is finished, allowing the user to
  *   react on velocity and process it.
- * @param reverseDirection reverse the direction of the scroll, so top to bottom scroll will behave
- *   like bottom to top and left to right will behave like right to left.
+ * @param reverseDirection reverse the direction of the dragging, so top to bottom dragging will
+ *   behave like bottom to top and left to right will behave like right to left.
  */
 @Stable
 fun Modifier.draggable2D(
@@ -145,7 +143,7 @@ fun Modifier.draggable2D(
     startDragImmediately: Boolean = false,
     onDragStarted: (startedPosition: Offset) -> Unit = NoOpOnDragStart,
     onDragStopped: (velocity: Velocity) -> Unit = NoOpOnDragStop,
-    reverseDirection: Boolean = false
+    reverseDirection: Boolean = false,
 ): Modifier =
     this then
         Draggable2DElement(
@@ -155,7 +153,7 @@ fun Modifier.draggable2D(
             startDragImmediately = startDragImmediately,
             onDragStarted = onDragStarted,
             onDragStopped = onDragStopped,
-            reverseDirection = reverseDirection
+            reverseDirection = reverseDirection,
         )
 
 internal class Draggable2DElement(
@@ -165,7 +163,7 @@ internal class Draggable2DElement(
     private val startDragImmediately: Boolean,
     private val onDragStarted: (startedPosition: Offset) -> Unit,
     private val onDragStopped: (velocity: Velocity) -> Unit,
-    private val reverseDirection: Boolean
+    private val reverseDirection: Boolean,
 ) : ModifierNodeElement<Draggable2DNode>() {
     override fun create(): Draggable2DNode =
         Draggable2DNode(
@@ -251,7 +249,7 @@ internal class Draggable2DNode(
         canDrag = canDrag,
         enabled = enabled,
         interactionSource = interactionSource,
-        orientationLock = null
+        orientationLock = null,
     ) {
 
     override suspend fun drag(forEachDelta: suspend ((dragDelta: DragDelta) -> Unit) -> Unit) {
@@ -300,13 +298,12 @@ internal class Draggable2DNode(
             enabled = enabled,
             interactionSource = interactionSource,
             orientationLock = null,
-            shouldResetPointerInputHandling = resetPointerInputHandling
+            shouldResetPointerInputHandling = resetPointerInputHandling,
         )
     }
 
-    private fun Velocity.reverseIfNeeded() = if (reverseDirection) this * -1f else this * 1f
-
-    private fun Offset.reverseIfNeeded() = if (reverseDirection) this * -1f else this * 1f
+    @Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+    private inline fun Offset.reverseIfNeeded() = if (reverseDirection) -this else this
 }
 
 private class DefaultDraggable2DState(val onDelta: (Offset) -> Unit) : Draggable2DState {
@@ -319,7 +316,7 @@ private class DefaultDraggable2DState(val onDelta: (Offset) -> Unit) : Draggable
 
     override suspend fun drag(
         dragPriority: MutatePriority,
-        block: suspend Drag2DScope.() -> Unit
+        block: suspend Drag2DScope.() -> Unit,
     ): Unit = coroutineScope { drag2DMutex.mutateWith(drag2DScope, dragPriority, block) }
 
     override fun dispatchRawDelta(delta: Offset) {
@@ -327,7 +324,5 @@ private class DefaultDraggable2DState(val onDelta: (Offset) -> Unit) : Draggable
     }
 }
 
-private val NoOpOnDragStarted: suspend CoroutineScope.(startedPosition: Offset) -> Unit = {}
 private val NoOpOnDragStart: (startedPosition: Offset) -> Unit = {}
-private val NoOpOnDragStopped: suspend CoroutineScope.(velocity: Velocity) -> Unit = {}
 private val NoOpOnDragStop: (velocity: Velocity) -> Unit = {}

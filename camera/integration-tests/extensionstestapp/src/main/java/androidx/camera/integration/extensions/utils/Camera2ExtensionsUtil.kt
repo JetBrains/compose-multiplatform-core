@@ -16,7 +16,6 @@
 
 package androidx.camera.integration.extensions.utils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.ImageFormat
 import android.graphics.Point
@@ -100,13 +99,12 @@ object Camera2ExtensionsUtil {
         throw IllegalArgumentException("Can't find camera of lens facing $lensFacing")
     }
 
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(31)
     @JvmStatic
     fun isCamera2ExtensionModeSupported(
         context: Context,
         cameraId: String,
-        extensionMode: Int
+        extensionMode: Int,
     ): Boolean {
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val extensionCharacteristics = cameraManager.getCameraExtensionCharacteristics(cameraId)
@@ -117,14 +115,13 @@ object Camera2ExtensionsUtil {
      * Picks a preview resolution that is both close/same as the display size and supported by
      * camera and extensions.
      */
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(Build.VERSION_CODES.S)
     @JvmStatic
     fun pickPreviewResolution(
         cameraManager: CameraManager,
         cameraId: String,
         displayMetrics: DisplayMetrics,
-        extensionMode: Int
+        extensionMode: Int,
     ): Size? {
         val characteristics = cameraManager.getCameraCharacteristics(cameraId)
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
@@ -138,15 +135,27 @@ object Camera2ExtensionsUtil {
         }
         val displayArRatio = displaySize.x.toFloat() / displaySize.y
         val previewSizes = ArrayList<Size>()
+        var previewSize: Size? = null
+        var currentDistance = Int.MAX_VALUE
         for (sz in textureSizes) {
             val arRatio = sz.width.toFloat() / sz.height
             if (Math.abs(arRatio - displayArRatio) <= .2f) {
                 previewSizes.add(sz)
             }
+            val distance = Math.abs(sz.width * sz.height - displaySize.x * displaySize.y)
+            if (currentDistance > distance) {
+                currentDistance = distance
+                previewSize = sz
+            }
         }
 
-        var previewSize = previewSizes[0]
-        var currentDistance = Int.MAX_VALUE
+        if (previewSizes.isEmpty()) {
+            previewSize?.let { previewSizes.add(it) }
+                ?: throw IllegalStateException("No preview size was found")
+        } else {
+            previewSize = previewSizes[0]
+        }
+
         if (extensionMode == EXTENSION_MODE_NONE) {
             for (sz in previewSizes) {
                 val distance = Math.abs(sz.width * sz.height - displaySize.x * displaySize.y)
@@ -162,7 +171,7 @@ object Camera2ExtensionsUtil {
         val extensionSizes =
             extensionCharacteristics.getExtensionSupportedSizes(
                 extensionMode,
-                SurfaceTexture::class.java
+                SurfaceTexture::class.java,
             )
         if (extensionSizes.isEmpty()) {
             return null
@@ -188,7 +197,7 @@ object Camera2ExtensionsUtil {
             Log.w(
                 TAG,
                 "No overlap between supported camera and extensions preview sizes using" +
-                    " first available!"
+                    " first available!",
             )
         }
 
@@ -196,13 +205,12 @@ object Camera2ExtensionsUtil {
     }
 
     /** Picks a resolution for still image capture. */
-    @SuppressLint("ClassVerificationFailure")
     @RequiresApi(Build.VERSION_CODES.S)
     @JvmStatic
     fun pickStillImageResolution(
         cameraCharacteristics: CameraCharacteristics,
         extensionCharacteristics: CameraExtensionCharacteristics,
-        extensionMode: Int
+        extensionMode: Int,
     ): Pair<Size, Int> {
         val yuvColorEncodingSystemSizes =
             if (extensionMode == EXTENSION_MODE_NONE) {
@@ -213,7 +221,7 @@ object Camera2ExtensionsUtil {
             } else {
                 extensionCharacteristics.getExtensionSupportedSizes(
                     extensionMode,
-                    ImageFormat.YUV_420_888
+                    ImageFormat.YUV_420_888,
                 )
             }
         val jpegSizes =

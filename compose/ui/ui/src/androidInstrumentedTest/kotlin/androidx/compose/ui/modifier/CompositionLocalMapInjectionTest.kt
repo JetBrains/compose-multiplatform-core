@@ -28,7 +28,6 @@ import androidx.compose.runtime.currentCompositeKeyHash
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
@@ -56,12 +55,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalViewConfiguration
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.TestActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,7 +72,20 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CompositionLocalMapInjectionTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+
+    @After
+    fun teardown() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
+        }
+    }
 
     @Test
     fun consumeInDraw() {
@@ -249,7 +264,7 @@ class ConsumeInLayoutNode :
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         // Consume Static local
         view = currentValueOf(LocalView)
@@ -289,9 +304,9 @@ class ConsumeInAttachNode :
 inline fun OldLayoutSkippableUpdate(
     content: @Composable @UiComposable () -> Unit,
     modifier: Modifier = Modifier,
-    measurePolicy: MeasurePolicy
+    measurePolicy: MeasurePolicy,
 ) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current
@@ -303,7 +318,7 @@ inline fun OldLayoutSkippableUpdate(
             set(density, SetDensity)
             set(layoutDirection, SetLayoutDirection)
             set(viewConfiguration, SetViewConfiguration)
-            @OptIn(ExperimentalComposeUiApi::class) set(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
         },
         // The old version of Layout called a function called "materializerOf". The function below
         // has the same JVM signature as that function used to have, so the code that this source
@@ -311,7 +326,7 @@ inline fun OldLayoutSkippableUpdate(
         // versions
         // of UI, despite this name being different now.
         skippableUpdate = materializerOfWithCompositionLocalInjection(modifier),
-        content = content
+        content = content,
     )
 }
 
@@ -319,7 +334,7 @@ inline fun OldLayoutSkippableUpdate(
 @Composable
 @UiComposable
 internal inline fun OldLayout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
-    val compositeKeyHash = currentCompositeKeyHash
+    val compositeKeyHash = @Suppress("DEPRECATION") currentCompositeKeyHash
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val viewConfiguration = LocalViewConfiguration.current
@@ -336,7 +351,7 @@ internal inline fun OldLayout(modifier: Modifier = Modifier, measurePolicy: Meas
             set(layoutDirection, SetLayoutDirection)
             set(viewConfiguration, SetViewConfiguration)
             set(materialized, SetModifier)
-            @OptIn(ExperimentalComposeUiApi::class) set(compositeKeyHash, SetCompositeKeyHash)
+            set(compositeKeyHash, SetCompositeKeyHash)
         },
     )
 }

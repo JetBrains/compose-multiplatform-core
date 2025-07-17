@@ -41,6 +41,7 @@ import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.FocusMeteringResult
 import androidx.camera.core.MeteringPoint
 import androidx.camera.core.Preview
+import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CameraControlInternal
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.Binds
@@ -58,7 +59,7 @@ import kotlinx.coroutines.launch
 /** Implementation of focus and metering controls exposed by [CameraControlInternal]. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @CameraScope
-class FocusMeteringControl
+public class FocusMeteringControl
 @Inject
 constructor(
     private val cameraProperties: CameraProperties,
@@ -66,20 +67,20 @@ constructor(
     private val state3AControl: State3AControl,
     private val threads: UseCaseThreads,
     private val zoomCompat: ZoomCompat,
-) : UseCaseCameraControl, UseCaseCamera.RunningUseCasesChangeListener {
-    private var _useCaseCamera: UseCaseCamera? = null
+) : UseCaseCameraControl, UseCaseManager.RunningUseCasesChangeListener {
+    private var _requestControl: UseCaseCameraRequestControl? = null
 
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
+            _requestControl = value
         }
 
-    override fun onRunningUseCasesChanged() {
+    override fun onRunningUseCasesChanged(runningUseCases: Set<UseCase>) {
         // reset to null since preview use case may not be active for current runningUseCases
         previewAspectRatio = null
 
-        _useCaseCamera?.runningUseCases?.forEach { useCase ->
+        for (useCase in runningUseCases) {
             if (useCase is Preview) {
                 useCase.attachedSurfaceResolution?.apply {
                     previewAspectRatio = Rational(width, height)
@@ -113,138 +114,128 @@ constructor(
     private var focusTimeoutJob: Job? = null
     private var autoCancelJob: Job? = null
 
-    fun startFocusAndMetering(
+    public fun startFocusAndMetering(
         action: FocusMeteringAction,
         autoFocusTimeoutMs: Long = AUTO_FOCUS_TIMEOUT_DURATION,
     ): ListenableFuture<FocusMeteringResult> {
         val signal = CompletableDeferred<FocusMeteringResult>()
 
-        useCaseCamera?.let { useCaseCamera ->
-            threads.sequentialScope.launch {
-                focusTimeoutJob?.cancel()
-                autoCancelJob?.cancel()
-                cancelSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
-                updateSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
+        requestControl?.let { requestControl ->
+            focusTimeoutJob?.cancel()
+            autoCancelJob?.cancel()
+            cancelSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
+            updateSignal?.setCancelException("Cancelled by another startFocusAndMetering()")
 
-                updateSignal = signal
+            updateSignal = signal
 
-                val aeRectangles =
-                    meteringRegionsFromMeteringPoints(
-                        action.meteringPointsAe,
-                        maxAeRegionCount,
-                        cropSensorRegion,
-                        defaultAspectRatio,
-                        FocusMeteringAction.FLAG_AE,
-                        meteringRegionCorrection,
-                    )
-                val afRectangles =
-                    meteringRegionsFromMeteringPoints(
-                        action.meteringPointsAf,
-                        maxAfRegionCount,
-                        cropSensorRegion,
-                        defaultAspectRatio,
-                        FocusMeteringAction.FLAG_AF,
-                        meteringRegionCorrection,
-                    )
-                val awbRectangles =
-                    meteringRegionsFromMeteringPoints(
-                        action.meteringPointsAwb,
-                        maxAwbRegionCount,
-                        cropSensorRegion,
-                        defaultAspectRatio,
-                        FocusMeteringAction.FLAG_AWB,
-                        meteringRegionCorrection,
-                    )
-                if (aeRectangles.isEmpty() && afRectangles.isEmpty() && awbRectangles.isEmpty()) {
-                    signal.completeExceptionally(
-                        IllegalArgumentException(
-                            "None of the specified AF/AE/AWB MeteringPoints is supported on" +
-                                " this camera."
-                        )
-                    )
-                    return@launch
-                }
-                if (afRectangles.isNotEmpty()) {
-                    state3AControl.preferredFocusMode = CaptureRequest.CONTROL_AF_MODE_AUTO
-                }
-
-                val aeRegions =
-                    if (maxAeRegionCount > 0)
-                        aeRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
-                    else null
-                val afRegions =
-                    if (maxAfRegionCount > 0)
-                        afRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
-                    else null
-                val awbRegions =
-                    if (maxAwbRegionCount > 0)
-                        awbRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
-                    else null
-
-                val deferredResult3A =
-                    if (
-                        afRectangles.isEmpty() ||
-                            !cameraProperties.metadata.supportsAutoFocusTrigger
-                    ) {
-                        /*
-                         * Controller3A.lock3A() returns early in such cases without updating the 3A
-                         * regions which conflicts with [CameraControl.startFocusAndMetering] doc.
-                         * However, we should update the regions explicitly here only in these cases
-                         * instead of all cases because Controller3A.update3A() will invalidate
-                         * the CameraGraph and thus may cause extra requests to the camera.
-                         */
-                        debug { "startFocusAndMetering: updating 3A regions only" }
-                        useCaseCamera.requestControl.update3aRegions(
-                            aeRegions = aeRegions,
-                            afRegions = afRegions,
-                            awbRegions = awbRegions,
-                        )
-                    } else {
-                        // No need to keep trying to focus if auto-cancel is already triggered
-                        val finalFocusTimeout =
-                            if (
-                                action.isAutoCancelEnabled &&
-                                    action.autoCancelDurationInMillis < autoFocusTimeoutMs
-                            ) {
-                                action.autoCancelDurationInMillis
-                            } else {
-                                autoFocusTimeoutMs
-                            }
-
-                        debug { "startFocusAndMetering: updating 3A regions & triggering AF" }
-                        /*
-                         * If device does not support a 3A region, we should not update it at all.
-                         * If device does support but a region list is empty, it means any previously
-                         * set region should be removed, so the no-op METERING_REGIONS_DEFAULT is used.
-                         */
-                        useCaseCamera.requestControl.startFocusAndMeteringAsync(
-                            aeRegions = aeRegions,
-                            afRegions = afRegions,
-                            awbRegions = awbRegions,
-                            afLockBehavior =
-                                if (maxAfRegionCount > 0) Lock3ABehavior.IMMEDIATE else null,
-                            afTriggerStartAeMode = cameraProperties.getSupportedAeMode(AeMode.ON),
-                            timeLimitNs =
-                                TimeUnit.NANOSECONDS.convert(
-                                    finalFocusTimeout,
-                                    TimeUnit.MILLISECONDS
-                                )
-                        )
-                    }
-
-                deferredResult3A.propagateToFocusMeteringResultDeferred(
-                    resultDeferred = signal,
-                    shouldTriggerAf = afRectangles.isNotEmpty(),
+            val aeRectangles =
+                meteringRegionsFromMeteringPoints(
+                    action.meteringPointsAe,
+                    maxAeRegionCount,
+                    cropSensorRegion,
+                    defaultAspectRatio,
+                    FocusMeteringAction.FLAG_AE,
+                    meteringRegionCorrection,
                 )
+            val afRectangles =
+                meteringRegionsFromMeteringPoints(
+                    action.meteringPointsAf,
+                    maxAfRegionCount,
+                    cropSensorRegion,
+                    defaultAspectRatio,
+                    FocusMeteringAction.FLAG_AF,
+                    meteringRegionCorrection,
+                )
+            val awbRectangles =
+                meteringRegionsFromMeteringPoints(
+                    action.meteringPointsAwb,
+                    maxAwbRegionCount,
+                    cropSensorRegion,
+                    defaultAspectRatio,
+                    FocusMeteringAction.FLAG_AWB,
+                    meteringRegionCorrection,
+                )
+            if (aeRectangles.isEmpty() && afRectangles.isEmpty() && awbRectangles.isEmpty()) {
+                signal.completeExceptionally(
+                    IllegalArgumentException(
+                        "None of the specified AF/AE/AWB MeteringPoints is supported on" +
+                            " this camera."
+                    )
+                )
+                return signal.asListenableFuture()
+            }
+            if (afRectangles.isNotEmpty()) {
+                state3AControl.preferredFocusMode = CaptureRequest.CONTROL_AF_MODE_AUTO
+            }
 
-                // camera-pipe core layer invokes timeout when there is a new frame result from
-                // camera, this is not precise enough for CameraX since it may allow auto-cancel to
-                // be triggered first for same or very close timeout values
-                triggerFocusTimeout(autoFocusTimeoutMs, signal)
+            val aeRegions =
+                if (maxAeRegionCount > 0) aeRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
+                else null
+            val afRegions =
+                if (maxAfRegionCount > 0) afRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
+                else null
+            val awbRegions =
+                if (maxAwbRegionCount > 0)
+                    awbRectangles.ifEmpty { METERING_REGIONS_DEFAULT.toList() }
+                else null
 
-                if (action.isAutoCancelEnabled) {
-                    triggerAutoCancel(action.autoCancelDurationInMillis, signal, useCaseCamera)
+            val deferredResult3A =
+                if (afRectangles.isEmpty() || !cameraProperties.metadata.supportsAutoFocusTrigger) {
+                    /*
+                     * Controller3A.lock3A() returns early in such cases without updating the 3A
+                     * regions which conflicts with [CameraControl.startFocusAndMetering] doc.
+                     * However, we should update the regions explicitly here only in these cases
+                     * instead of all cases because Controller3A.update3A() will invalidate
+                     * the CameraGraph and thus may cause extra requests to the camera.
+                     */
+                    debug { "startFocusAndMetering: updating 3A regions only" }
+                    requestControl.update3aRegions(
+                        aeRegions = aeRegions,
+                        afRegions = afRegions,
+                        awbRegions = awbRegions,
+                    )
+                } else {
+                    // No need to keep trying to focus if auto-cancel is already triggered
+                    val finalFocusTimeout =
+                        if (
+                            action.isAutoCancelEnabled &&
+                                action.autoCancelDurationInMillis < autoFocusTimeoutMs
+                        ) {
+                            action.autoCancelDurationInMillis
+                        } else {
+                            autoFocusTimeoutMs
+                        }
+
+                    debug { "startFocusAndMetering: updating 3A regions & triggering AF" }
+                    /*
+                     * If device does not support a 3A region, we should not update it at all.
+                     * If device does support but a region list is empty, it means any previously
+                     * set region should be removed, so the no-op METERING_REGIONS_DEFAULT is used.
+                     */
+                    requestControl.startFocusAndMeteringAsync(
+                        aeRegions = aeRegions,
+                        afRegions = afRegions,
+                        awbRegions = awbRegions,
+                        afLockBehavior =
+                            if (maxAfRegionCount > 0) Lock3ABehavior.IMMEDIATE else null,
+                        afTriggerStartAeMode = cameraProperties.getSupportedAeMode(AeMode.ON),
+                        timeLimitNs =
+                            TimeUnit.NANOSECONDS.convert(finalFocusTimeout, TimeUnit.MILLISECONDS),
+                    )
                 }
+
+            deferredResult3A.propagateToFocusMeteringResultDeferred(
+                resultDeferred = signal,
+                shouldTriggerAf = afRectangles.isNotEmpty(),
+            )
+
+            // camera-pipe core layer invokes timeout when there is a new frame result from
+            // camera, this is not precise enough for CameraX since it may allow auto-cancel to
+            // be triggered first for same or very close timeout values
+            triggerFocusTimeout(autoFocusTimeoutMs, signal)
+
+            if (action.isAutoCancelEnabled) {
+                triggerAutoCancel(action.autoCancelDurationInMillis, signal, requestControl)
             }
         }
             ?: run {
@@ -257,7 +248,7 @@ constructor(
     private fun triggerAutoCancel(
         delayMillis: Long,
         resultToCancel: CompletableDeferred<FocusMeteringResult>,
-        useCaseCamera: UseCaseCamera,
+        requestControl: UseCaseCameraRequestControl,
     ) {
         autoCancelJob?.cancel()
 
@@ -265,7 +256,7 @@ constructor(
             threads.sequentialScope.launch {
                 delay(delayMillis)
                 debug { "triggerAutoCancel: auto-canceling after $delayMillis ms" }
-                cancelFocusAndMeteringNowAsync(useCaseCamera, resultToCancel)
+                cancelFocusAndMeteringNowAsync(requestControl, resultToCancel)
             }
     }
 
@@ -314,7 +305,7 @@ constructor(
         }
     }
 
-    fun isFocusMeteringSupported(action: FocusMeteringAction): Boolean {
+    public fun isFocusMeteringSupported(action: FocusMeteringAction): Boolean {
         val rectanglesAe =
             meteringRegionsFromMeteringPoints(
                 action.meteringPointsAe,
@@ -363,16 +354,14 @@ constructor(
         } else AeMode.OFF
     }
 
-    fun cancelFocusAndMeteringAsync(): Deferred<Result3A?> {
+    public fun cancelFocusAndMeteringAsync(): Deferred<Result3A?> {
         val signal = CompletableDeferred<Result3A?>()
-        useCaseCamera?.let { useCaseCamera ->
-            threads.sequentialScope.launch {
-                focusTimeoutJob?.cancel()
-                autoCancelJob?.cancel()
-                cancelSignal?.setCancelException("Cancelled by another cancelFocusAndMetering()")
-                cancelSignal = signal
-                cancelFocusAndMeteringNowAsync(useCaseCamera, updateSignal).propagateTo(signal)
-            }
+        requestControl?.let { requestControl ->
+            focusTimeoutJob?.cancel()
+            autoCancelJob?.cancel()
+            cancelSignal?.setCancelException("Cancelled by another cancelFocusAndMetering()")
+            cancelSignal = signal
+            cancelFocusAndMeteringNowAsync(requestControl, updateSignal).propagateTo(signal)
         }
             ?: run {
                 signal.completeExceptionally(OperationCanceledException("Camera is not active."))
@@ -381,13 +370,13 @@ constructor(
         return signal
     }
 
-    private suspend fun cancelFocusAndMeteringNowAsync(
-        useCaseCamera: UseCaseCamera,
+    private fun cancelFocusAndMeteringNowAsync(
+        requestControl: UseCaseCameraRequestControl,
         signalToCancel: CompletableDeferred<FocusMeteringResult>?,
     ): Deferred<Result3A> {
         signalToCancel?.setCancelException("Cancelled by cancelFocusAndMetering()")
         state3AControl.preferredFocusMode = null
-        return useCaseCamera.requestControl.cancelFocusAndMeteringAsync()
+        return requestControl.cancelFocusAndMeteringAsync()
     }
 
     private fun <T> CompletableDeferred<T>.setCancelException(message: String) {
@@ -441,11 +430,11 @@ constructor(
         return modes.contains(afMode)
     }
 
-    companion object {
-        const val METERING_WEIGHT_DEFAULT = MeteringRectangle.METERING_WEIGHT_MAX
-        const val AUTO_FOCUS_TIMEOUT_DURATION = 5000L
+    public companion object {
+        public const val METERING_WEIGHT_DEFAULT: Int = MeteringRectangle.METERING_WEIGHT_MAX
+        public const val AUTO_FOCUS_TIMEOUT_DURATION: Long = 5000L
 
-        fun meteringRegionsFromMeteringPoints(
+        public fun meteringRegionsFromMeteringPoints(
             meteringPoints: List<MeteringPoint>,
             maxRegionCount: Int,
             cropSensorRegion: Rect,
@@ -474,7 +463,7 @@ constructor(
                         cropRegionAspectRatio,
                         defaultAspectRatio,
                         meteringMode,
-                        meteringRegionCorrection
+                        meteringRegionCorrection,
                     )
                 val meteringRectangle: MeteringRectangle =
                     getMeteringRect(adjustedPoint, meteringPoint.size, cropSensorRegion)
@@ -526,7 +515,7 @@ constructor(
         private fun getMeteringRect(
             normalizedPointF: PointF,
             normalizedSize: Float,
-            cropRegion: Rect
+            cropRegion: Rect,
         ): MeteringRectangle {
             val centerX = (cropRegion.left + normalizedPointF.x * cropRegion.width()).toInt()
             val centerY = (cropRegion.top + normalizedPointF.y * cropRegion.height()).toInt()
@@ -537,7 +526,7 @@ constructor(
                     centerX - width / 2,
                     centerY - height / 2,
                     centerX + width / 2,
-                    centerY + height / 2
+                    centerY + height / 2,
                 )
             focusRect.left = focusRect.left.coerceIn(cropRegion.left, cropRegion.right)
             focusRect.right = focusRect.right.coerceIn(cropRegion.left, cropRegion.right)
@@ -552,10 +541,10 @@ constructor(
     }
 
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(
+        public abstract fun provideControls(
             focusMeteringControl: FocusMeteringControl
         ): UseCaseCameraControl
     }

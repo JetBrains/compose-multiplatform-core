@@ -21,18 +21,19 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.2.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.6.0")
-    implementation("androidx.collection:collection:1.0.0")
+    implementation("androidx.collection:collection:1.4.2")
     api("androidx.vectordrawable:vectordrawable:1.1.0")
     api("androidx.vectordrawable:vectordrawable-animated:1.1.0")
 
@@ -42,34 +43,31 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":internal-testutils-runtime"), {
         exclude group: "androidx.appcompat", module: "appcompat-resources"
     })
-    androidTestImplementation(libs.multidex)
 }
 
 android {
     defaultConfig {
         // This disables the builds tools automatic vector -> PNG generation
         generatedDensities = []
-        multiDexEnabled = true
     }
 
     aaptOptions {
         additionalParameters "--no-version-vectors"
         noCompress "ttf"
     }
-    namespace "androidx.appcompat.resources"
+    namespace = "androidx.appcompat.resources"
 }
 
 androidx {
     name = "AppCompat Resources"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "Provides backward-compatible implementations of resource-related Android SDK" +
             "functionality, including color state list theming."
-    metalavaK2UastEnabled = true
 }

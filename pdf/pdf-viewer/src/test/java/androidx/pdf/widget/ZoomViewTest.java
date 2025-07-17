@@ -40,7 +40,6 @@ import androidx.pdf.widget.ZoomView.FitMode;
 import androidx.pdf.widget.ZoomView.RotateMode;
 import androidx.pdf.widget.ZoomView.ZoomScroll;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -54,7 +53,6 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 
 /** Unit tests for {@link ZoomView}. */
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class ZoomViewTest {
 
@@ -220,7 +218,7 @@ public class ZoomViewTest {
         assertThat(mZoomview.getViewportHeight()).isEqualTo(100);
 
         // Zoom out to fit increased content height inside decreased ZoomView height
-        assertThat(mZoomview.zoomScroll().get()).isEqualTo(new ZoomScroll(0.5f, -75, 25, true));
+        assertThat(mZoomview.zoomScroll().get()).isEqualTo(new ZoomScroll(0.375f, -81, 6, true));
     }
 
     @Test

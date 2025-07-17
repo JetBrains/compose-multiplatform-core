@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.text.AnnotatedString
@@ -35,7 +36,6 @@ private const val REPLACEMENT_CHAR = "\uFFFD"
  * [id], and it will use the [InlineTextContent.children] to replace this range of text.
  *
  * @sample androidx.compose.foundation.samples.InlineTextContentSample
- *
  * @param id The id used to look up the [InlineTextContent], it is referred by the inlineContent
  *   parameter of [BasicText] to replace the [alternateText] to the corresponding composable.
  * @param alternateText The text to be replaced by the inline content. It's displayed when the
@@ -47,9 +47,9 @@ private const val REPLACEMENT_CHAR = "\uFFFD"
  */
 fun AnnotatedString.Builder.appendInlineContent(
     id: String,
-    alternateText: String = REPLACEMENT_CHAR
+    alternateText: String = REPLACEMENT_CHAR,
 ) {
-    require(alternateText.isNotEmpty()) { "alternateText can't be an empty string." }
+    requirePrecondition(alternateText.isNotEmpty()) { "alternateText can't be an empty string." }
     pushStringAnnotation(INLINE_CONTENT_TAG, id)
     append(alternateText)
     pop()
@@ -65,7 +65,6 @@ fun AnnotatedString.Builder.appendInlineContent(
  * through [androidx.compose.ui.layout.Layout].
  *
  * @sample androidx.compose.foundation.samples.InlineTextContentSample
- *
  * @see BasicText
  * @see Placeholder
  */
@@ -82,5 +81,5 @@ class InlineTextContent(
      * The composable to be inserted into the text layout. The string parameter passed to it will
      * the alternateText given to [appendInlineContent].
      */
-    val children: @Composable (String) -> Unit
+    val children: @Composable (String) -> Unit,
 )

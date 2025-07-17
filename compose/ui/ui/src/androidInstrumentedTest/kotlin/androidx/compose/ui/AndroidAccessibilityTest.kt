@@ -20,8 +20,10 @@ import android.content.Context.ACCESSIBILITY_SERVICE
 import android.content.res.Resources
 import android.graphics.Rect
 import android.graphics.RectF
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_HOVER_ENTER
@@ -45,9 +47,9 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
@@ -59,6 +61,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -105,6 +109,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.testutils.expectError
 import androidx.compose.ui.AndroidComposeViewAccessibilityDelegateCompatTest.Companion.AccessibilityEventComparator
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
@@ -138,25 +143,30 @@ import androidx.compose.ui.semantics.SemanticsProperties.ContentDescription
 import androidx.compose.ui.semantics.SemanticsProperties.EditableText
 import androidx.compose.ui.semantics.SemanticsProperties.Focused
 import androidx.compose.ui.semantics.SemanticsProperties.TextSelectionRange
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.getOrNull
-import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.isSensitiveData
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.pageUp
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.semanticsId
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.textSelectionRange
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
-import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -206,6 +216,7 @@ import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_SET_S
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.ACTION_SET_TEXT
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_IME_ENTER
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.FOCUS_INPUT
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.MOVEMENT_GRANULARITY_CHARACTER
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat.RangeInfoCompat.RANGE_TYPE_FLOAT
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
@@ -213,15 +224,19 @@ import androidx.test.espresso.Espresso
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.FlakyTest
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import java.io.Serializable
 import java.lang.reflect.Method
+import java.util.Date
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers.instanceOf
+import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -276,7 +291,7 @@ class AndroidAccessibilityTest {
                         layoutParams =
                             ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
+                                ViewGroup.LayoutParams.MATCH_PARENT,
                             )
                     }
 
@@ -290,6 +305,11 @@ class AndroidAccessibilityTest {
         }
     }
 
+    @After
+    fun teardown() {
+        delegate.requestFromAccessibilityToolForTesting = null
+    }
+
     @Test
     fun testCreateAccessibilityNodeInfo_forToggleable() {
         // Arrange.
@@ -301,7 +321,7 @@ class AndroidAccessibilityTest {
                 BasicText("ToggleableText")
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -313,12 +333,13 @@ class AndroidAccessibilityTest {
                 assertThat(isClickable).isTrue()
                 assertThat(isVisibleToUser).isTrue()
                 assertThat(isCheckable).isTrue()
-                assertThat(isChecked).isTrue()
+                // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+                @Suppress("DEPRECATION") assertThat(isChecked).isTrue()
                 assertThat(actionList)
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, "toggle"),
                         AccessibilityActionCompat(ACTION_FOCUS, "toggle"),
-                        AccessibilityActionCompat(ACTION_CLICK, "toggle")
+                        AccessibilityActionCompat(ACTION_CLICK, "toggle"),
                     )
             }
         }
@@ -333,7 +354,7 @@ class AndroidAccessibilityTest {
                 Modifier.toggleable(
                         value = checked,
                         role = Role.Switch,
-                        onValueChange = { checked = it }
+                        onValueChange = { checked = it },
                     )
                     .testTag(tag)
             ) {
@@ -359,7 +380,7 @@ class AndroidAccessibilityTest {
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                         AccessibilityActionCompat(ACTION_FOCUS, null),
-                        AccessibilityActionCompat(ACTION_CLICK, null)
+                        AccessibilityActionCompat(ACTION_CLICK, null),
                     )
             }
 
@@ -368,7 +389,6 @@ class AndroidAccessibilityTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testCreateAccessibilityNodeInfo_forSecureTextField() {
         // Arrange.
@@ -377,12 +397,12 @@ class AndroidAccessibilityTest {
                 // BasicSecureTextField is considered a password field.
                 BasicSecureTextField(
                     state = rememberTextFieldState(),
-                    modifier = Modifier.testTag(tag)
+                    modifier = Modifier.testTag(tag),
                 )
             }
         }
 
-        val passwordFieldId = rule.onNodeWithTag(tag, true).semanticsId
+        val passwordFieldId = rule.onNodeWithTag(tag, true).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(passwordFieldId) }
@@ -407,7 +427,7 @@ class AndroidAccessibilityTest {
             var expanded by remember { mutableStateOf(false) }
             IconButton(
                 modifier = Modifier.semantics { role = Role.DropdownList }.testTag(tag),
-                onClick = { expanded = true }
+                onClick = { expanded = true },
             ) {
                 Icon(Icons.Default.MoreVert, null)
             }
@@ -419,7 +439,7 @@ class AndroidAccessibilityTest {
                 repeat(5) { DropdownMenuItem(onClick = {}) { Text("Menu Item $it") } }
             }
         }
-        val virtualId = rule.onNodeWithTag(tag, true).semanticsId
+        val virtualId = rule.onNodeWithTag(tag, true).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -434,7 +454,7 @@ class AndroidAccessibilityTest {
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                         AccessibilityActionCompat(ACTION_FOCUS, null),
-                        AccessibilityActionCompat(ACTION_CLICK, null)
+                        AccessibilityActionCompat(ACTION_CLICK, null),
                     )
             }
         }
@@ -448,7 +468,7 @@ class AndroidAccessibilityTest {
                 BasicText("Text")
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -479,7 +499,7 @@ class AndroidAccessibilityTest {
                 BasicText("Text")
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -512,7 +532,7 @@ class AndroidAccessibilityTest {
                 BasicText("Text")
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -523,7 +543,8 @@ class AndroidAccessibilityTest {
                 assertThat(className).isEqualTo("android.view.View")
                 assertThat(isClickable).isFalse()
                 assertThat(isVisibleToUser).isTrue()
-                assertThat(isChecked).isTrue()
+                // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+                @Suppress("DEPRECATION") assertThat(isChecked).isTrue()
                 assertThat(actionList)
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
@@ -541,7 +562,7 @@ class AndroidAccessibilityTest {
                 Text("Filter chip")
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -553,13 +574,78 @@ class AndroidAccessibilityTest {
                 assertThat(stateDescription).isEqualTo("Selected")
                 assertThat(isClickable).isTrue()
                 assertThat(isCheckable).isTrue()
-                assertThat(isChecked).isTrue()
+                // TODO(b/406574577): Remove suppression once 1.17.0 stable is released.
+                @Suppress("DEPRECATION") assertThat(isChecked).isTrue()
                 assertThat(isVisibleToUser).isTrue()
+                assertThat(actionList).contains(AccessibilityActionCompat(ACTION_CLICK, null))
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 29) // Pager a11y actions are only available from API 29
+    @Test
+    fun testCreateAccessibilityNodeInfo_pagerActionsWithoutRole_shouldSetPagerActions() {
+        // Arrange.
+        setContent {
+            Box(Modifier.semantics { pageUp { true } }.testTag(tag)) { BasicText("Text") }
+        }
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
+
+        // Act.
+        val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
+
+        // Assert.
+        rule.runOnIdle {
+            with(info) {
                 assertThat(actionList)
                     .contains(
-                        AccessibilityActionCompat(ACTION_CLICK, null),
+                        AccessibilityActionCompat(android.R.id.accessibilityActionPageUp, null)
                     )
             }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 29) // Pager a11y actions are only available from API 29
+    @Test
+    fun testCreateAccessibilityNodeInfo_pagerActionsRole_shouldNotSetPagerActions() {
+        // Arrange.
+        setContent {
+            Box(
+                Modifier.semantics { role = Role.Carousel }
+                    .semantics { pageUp { true } }
+                    .testTag(tag)
+            ) {
+                BasicText("Text")
+            }
+        }
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
+
+        // Act.
+        val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
+
+        // Assert.
+        rule.runOnIdle {
+            with(info) {
+                assertThat(actionList)
+                    .doesNotContain(
+                        AccessibilityActionCompat(android.R.id.accessibilityActionPageUp, null)
+                    )
+            }
+        }
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_numberPicker_expectedClassName() {
+        // Arrange.
+        setContent { Box(Modifier.semantics { role = Role.ValuePicker }.testTag(tag)) }
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
+
+        // Act.
+        val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
+
+        // Assert.
+        rule.runOnIdle {
+            with(info) { assertThat(className).isEqualTo("android.widget.NumberPicker") }
         }
     }
 
@@ -567,7 +653,7 @@ class AndroidAccessibilityTest {
     fun testCreateAccessibilityNodeInfo_progressIndicator_determinate() {
         // Arrange.
         setContent { Box(Modifier.progressSemantics(0.5f).testTag(tag)) { BasicText("Text") } }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -592,7 +678,7 @@ class AndroidAccessibilityTest {
     fun testCreateAccessibilityNodeInfo_progressIndicator_determinate_indeterminate() {
         // Arrange.
         setContent { Box(Modifier.progressSemantics().testTag(tag)) { BasicText("Text") } }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -617,10 +703,10 @@ class AndroidAccessibilityTest {
             BasicTextField(
                 modifier = Modifier.testTag(tag),
                 value = value,
-                onValueChange = { value = it }
+                onValueChange = { value = it },
             )
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -644,7 +730,7 @@ class AndroidAccessibilityTest {
                         AccessibilityActionCompat(ACTION_NEXT_AT_MOVEMENT_GRANULARITY, null),
                         AccessibilityActionCompat(ACTION_PREVIOUS_AT_MOVEMENT_GRANULARITY, null),
                         AccessibilityActionCompat(ACTION_FOCUS, null),
-                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null)
+                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
                 if (Build.VERSION.SDK_INT >= 26) {
                     assertThat(availableExtraData)
@@ -653,7 +739,7 @@ class AndroidAccessibilityTest {
                             // TODO(b/272068594): This looks like a bug. This should be
                             //  AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY
                             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
-                            "androidx.compose.ui.semantics.testTag"
+                            "androidx.compose.ui.semantics.testTag",
                         )
                 }
             }
@@ -664,7 +750,7 @@ class AndroidAccessibilityTest {
     fun emptyTextField_hasStateDescription() {
         setContent { BasicTextField(rememberTextFieldState(), modifier = Modifier.testTag(tag)) }
 
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
 
         rule.runOnIdle {
@@ -686,7 +772,7 @@ class AndroidAccessibilityTest {
             }
         }
 
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
 
         rule.runOnIdle {
@@ -707,11 +793,11 @@ class AndroidAccessibilityTest {
                         it()
                         BasicText(text = "Label")
                     }
-                }
+                },
             )
         }
 
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
 
         rule.runOnIdle { with(info) { assertThat(stateDescription).isNull() } }
@@ -733,11 +819,11 @@ class AndroidAccessibilityTest {
                             BasicText(text = "Label")
                         }
                     }
-                }
+                },
             )
         }
 
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
 
         rule.runOnIdle { with(info) { assertThat(stateDescription).isNull() } }
@@ -748,7 +834,7 @@ class AndroidAccessibilityTest {
         // Arrange.
         val text = "Test"
         setContent { BasicText(text = text) }
-        val virtualId = rule.onNodeWithText(text).semanticsId
+        val virtualId = rule.onNodeWithText(text).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -761,7 +847,7 @@ class AndroidAccessibilityTest {
     fun testCreateAccessibilityNodeInfo_forFocusable_notFocused() {
         // Arrange.
         setContent { Box(Modifier.testTag(tag).focusable()) { BasicText("focusable") } }
-        val virtualId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -772,7 +858,7 @@ class AndroidAccessibilityTest {
                 assertThat(actionList)
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_FOCUS, null),
-                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null)
+                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
                 @Suppress("DEPRECATION") recycle()
             }
@@ -789,7 +875,7 @@ class AndroidAccessibilityTest {
             }
         }
         rule.runOnIdle { focusRequester.requestFocus() }
-        val virtualId = rule.onNodeWithTag(tag).assert(expectValue(Focused, true)).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).assert(expectValue(Focused, true)).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -800,18 +886,78 @@ class AndroidAccessibilityTest {
                 assertThat(actionList)
                     .containsExactly(
                         AccessibilityActionCompat(ACTION_CLEAR_FOCUS, null),
-                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null)
+                        AccessibilityActionCompat(ACTION_ACCESSIBILITY_FOCUS, null),
                     )
                 @Suppress("DEPRECATION") recycle()
             }
         }
     }
 
+    @Test
+    fun testCreateAccessibilityNodeInfo_visibleToToolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = true
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = true })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(1)
+        assertThat(textNodeInfo).isNotNull()
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_visibleToNontoolIfNotSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = false })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(1)
+        assertThat(textNodeInfo).isNotNull()
+    }
+
+    @Test
+    fun testCreateAccessibilityNodeInfo_hiddenFromNontoolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val colTag = "column"
+        val text = "Test"
+        container.setContent {
+            Column(Modifier.testTag(colTag).semantics { isTraversalGroup = false }) {
+                BasicText(text = text, modifier = Modifier.semantics { isSensitiveData = true })
+            }
+        }
+        val columnNode = rule.onNodeWithTag(colTag).fetchSemanticsNode()
+        val columnNodeInfo = provider.createAccessibilityNodeInfo(columnNode.id)
+        val textNode = rule.onNodeWithText(text).fetchSemanticsNode()
+        val textNodeInfo = provider.createAccessibilityNodeInfo(textNode.id)
+
+        assertThat(columnNodeInfo).isNotNull()
+        assertThat(columnNodeInfo?.childCount).isEqualTo(0)
+        assertThat(textNodeInfo).isNull()
+    }
+
     @Composable
-    fun LastElementOverLaidColumn(
-        modifier: Modifier = Modifier,
-        content: @Composable () -> Unit,
-    ) {
+    fun LastElementOverLaidColumn(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
         var yPosition = 0
         Layout(modifier = modifier, content = content) { measurables, constraints ->
             val placeables = measurables.map { measurable -> measurable.measure(constraints) }
@@ -850,8 +996,8 @@ class AndroidAccessibilityTest {
                 Row { Text(overlaidText) }
             }
         }
-        val node3VirtualId = rule.onNodeWithText(text3).semanticsId
-        val overlaidNodeVirtualId = rule.onNodeWithText(overlaidText).semanticsId
+        val node3VirtualId = rule.onNodeWithText(text3).semanticsId()
+        val overlaidNodeVirtualId = rule.onNodeWithText(overlaidText).semanticsId()
 
         // Act.
         val ani3 = rule.runOnIdle { createAccessibilityNodeInfo(node3VirtualId) }
@@ -886,8 +1032,8 @@ class AndroidAccessibilityTest {
                 Row { Text(overlaidText) }
             }
         }
-        val node3VirtualId = rule.onNodeWithText(text3).semanticsId
-        val overlaidNodeVirtualId = rule.onNodeWithText(overlaidText).semanticsId
+        val node3VirtualId = rule.onNodeWithText(text3).semanticsId()
+        val overlaidNodeVirtualId = rule.onNodeWithText(overlaidText).semanticsId()
 
         // Act.
         val ani3 = rule.runOnIdle { createAccessibilityNodeInfo(node3VirtualId) }
@@ -928,8 +1074,8 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val rowVirtualId = rule.onNodeWithTag(clickableRowTag).semanticsId
-        val buttonId = rule.onNodeWithTag(clickableButtonTag).semanticsId
+        val rowVirtualId = rule.onNodeWithTag(clickableRowTag).semanticsId()
+        val buttonId = rule.onNodeWithTag(clickableButtonTag).semanticsId()
 
         // Act.
         val rowANI = rule.runOnIdle { createAccessibilityNodeInfo(rowVirtualId) }
@@ -938,17 +1084,66 @@ class AndroidAccessibilityTest {
         rule.runOnIdle { assertThat(rowANI.extras.traversalBefore).isEqualTo(buttonId) }
     }
 
+    @Test
+    fun testSortedAccessibilityNodeInfo_traversalGroupClipping() {
+        // Arrange.
+        val clickableTitle = "clickableTitle"
+        val clickableFirstListElement = "firstListElement"
+
+        setContent {
+            Box {
+                LazyColumn {
+                    items(50) { index ->
+                        Box(
+                            Modifier.fillMaxWidth()
+                                .clickable {}
+                                .padding(16.dp)
+                                .then(
+                                    if (index == 0) Modifier.testTag(clickableFirstListElement)
+                                    else Modifier
+                                )
+                        ) {
+                            Text("Item #${index + 1}")
+                        }
+                    }
+                }
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(120.dp)
+                            .background(Color.Black.copy(alpha = 0.9f))
+                            .semantics { isTraversalGroup = true }
+                ) {
+                    Text(
+                        "Testing Box Covering First Elements",
+                        Modifier.align(Alignment.Center).testTag(clickableTitle),
+                    )
+                }
+            }
+        }
+
+        val titleId = rule.onNodeWithTag(clickableTitle).semanticsId()
+        val firstElementId = rule.onNodeWithTag(clickableFirstListElement).semanticsId()
+
+        // Act.
+        val titleANI = rule.runOnIdle { createAccessibilityNodeInfo(titleId) }
+
+        // Assert - both the title and element are readable; though the title box covers the first
+        // element, it does not clip the items below.
+        rule.runOnIdle { assertThat(titleANI.extras.traversalBefore).isEqualTo(firstElementId) }
+    }
+
     @Composable
     fun CardRow(
         modifier: Modifier,
         columnNumber: Int,
         topSampleText: String,
-        bottomSampleText: String
+        bottomSampleText: String,
     ) {
         Row(
             modifier,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
         ) {
             Column {
                 Text(topSampleText + columnNumber)
@@ -973,21 +1168,21 @@ class AndroidAccessibilityTest {
                             .semantics { traversalIndex = 1f },
                         1,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                     CardRow(
                         Modifier.semantics { isTraversalGroup = true },
                         2,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                 }
             }
         }
-        val topText1 = rule.onNodeWithText(topSampleText + 1).semanticsId
-        val topText2 = rule.onNodeWithText(topSampleText + 2).semanticsId
-        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId
-        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId
+        val topText1 = rule.onNodeWithText(topSampleText + 1).semanticsId()
+        val topText2 = rule.onNodeWithText(topSampleText + 2).semanticsId()
+        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId()
+        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1018,21 +1213,21 @@ class AndroidAccessibilityTest {
                         Modifier.semantics { isTraversalGroup = true },
                         1,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                     CardRow(
                         Modifier.semantics { isTraversalGroup = true },
                         2,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                 }
             }
         }
-        val topText1 = rule.onNodeWithText(topSampleText + 1).semanticsId
-        val topText2 = rule.onNodeWithText(topSampleText + 2).semanticsId
-        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId
-        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId
+        val topText1 = rule.onNodeWithText(topSampleText + 1).semanticsId()
+        val topText2 = rule.onNodeWithText(topSampleText + 2).semanticsId()
+        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId()
+        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1066,19 +1261,19 @@ class AndroidAccessibilityTest {
                         Modifier.testTag("Row 1").semantics { isTraversalGroup = false },
                         1,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                     CardRow(
                         Modifier.testTag("Row 2").semantics { isTraversalGroup = false },
                         2,
                         topSampleText,
-                        bottomSampleText
+                        bottomSampleText,
                     )
                 }
             }
         }
-        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId
-        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId
+        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId()
+        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId()
 
         // Act.
         val bottomText1ANI = rule.runOnIdle { createAccessibilityNodeInfo(bottomText1) }
@@ -1104,26 +1299,26 @@ class AndroidAccessibilityTest {
                     Modifier.semantics { isTraversalGroup = false },
                     1,
                     topSampleText,
-                    bottomSampleText
+                    bottomSampleText,
                 )
                 CardRow(
                     Modifier.semantics { isTraversalGroup = false },
                     2,
                     topSampleText,
-                    bottomSampleText
+                    bottomSampleText,
                 )
                 CardRow(
                     Modifier.semantics { isTraversalGroup = true },
                     3,
                     topSampleText,
-                    bottomSampleText
+                    bottomSampleText,
                 )
             }
         }
-        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId
-        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId
-        val bottomText3 = rule.onNodeWithText(bottomSampleText + 3).semanticsId
-        val topText3 = rule.onNodeWithText(topSampleText + 3).semanticsId
+        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId()
+        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId()
+        val bottomText3 = rule.onNodeWithText(bottomSampleText + 3).semanticsId()
+        val topText3 = rule.onNodeWithText(topSampleText + 3).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1161,7 +1356,7 @@ class AndroidAccessibilityTest {
                         .semantics { isTraversalGroup = false },
                     1,
                     topSampleText,
-                    bottomSampleText
+                    bottomSampleText,
                 )
                 CardRow(
                     Modifier
@@ -1172,12 +1367,12 @@ class AndroidAccessibilityTest {
                         .semantics { isTraversalGroup = false },
                     2,
                     topSampleText,
-                    bottomSampleText
+                    bottomSampleText,
                 )
             }
         }
-        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId
-        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId
+        val bottomText1 = rule.onNodeWithText(bottomSampleText + 1).semanticsId()
+        val bottomText2 = rule.onNodeWithText(bottomSampleText + 2).semanticsId()
 
         // Act.
         val bottomText1ANI = rule.runOnIdle { createAccessibilityNodeInfo(bottomText1) }
@@ -1211,13 +1406,13 @@ class AndroidAccessibilityTest {
                 Row {
                     Text(
                         text = overlaidText,
-                        modifier = Modifier.semantics { traversalIndex = -1f }
+                        modifier = Modifier.semantics { traversalIndex = -1f },
                     )
                 }
             }
         }
-        val node1 = rule.onNodeWithText(text1).semanticsId
-        val overlaidNode = rule.onNodeWithText(overlaidText).semanticsId
+        val node1 = rule.onNodeWithText(text1).semanticsId()
+        val overlaidNode = rule.onNodeWithText(overlaidText).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(overlaidNode) }
@@ -1258,7 +1453,7 @@ class AndroidAccessibilityTest {
                         Row {
                             Text(
                                 text = text5,
-                                modifier = Modifier.semantics { traversalIndex = 1f }
+                                modifier = Modifier.semantics { traversalIndex = 1f },
                             )
                         }
                         Row { Text(text4) }
@@ -1269,12 +1464,12 @@ class AndroidAccessibilityTest {
                 Row { Text(text = text0) }
             }
         }
-        val virtualViewId0 = rule.onNodeWithText(text0).semanticsId
-        val virtualViewId1 = rule.onNodeWithText(text1).semanticsId
-        val virtualViewId2 = rule.onNodeWithText(text2).semanticsId
-        val virtualViewId3 = rule.onNodeWithText(text3).semanticsId
-        val virtualViewId4 = rule.onNodeWithText(text4).semanticsId
-        val virtualViewId5 = rule.onNodeWithText(text5).semanticsId
+        val virtualViewId0 = rule.onNodeWithText(text0).semanticsId()
+        val virtualViewId1 = rule.onNodeWithText(text1).semanticsId()
+        val virtualViewId2 = rule.onNodeWithText(text2).semanticsId()
+        val virtualViewId3 = rule.onNodeWithText(text3).semanticsId()
+        val virtualViewId4 = rule.onNodeWithText(text4).semanticsId()
+        val virtualViewId5 = rule.onNodeWithText(text5).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1319,13 +1514,13 @@ class AndroidAccessibilityTest {
                         text = overlaidText,
                         modifier =
                             Modifier.semantics { traversalIndex = 1f }
-                                .semantics { isTraversalGroup = true }
+                                .semantics { isTraversalGroup = true },
                     )
                 }
             }
         }
-        val node3Id = rule.onNodeWithText(text3).semanticsId
-        val overlayId = rule.onNodeWithText(overlaidText).semanticsId
+        val node3Id = rule.onNodeWithText(text3).semanticsId()
+        val overlayId = rule.onNodeWithText(overlaidText).semanticsId()
 
         // Act.
         val node3ANI = rule.runOnIdle { createAccessibilityNodeInfo(node3Id) }
@@ -1361,13 +1556,13 @@ class AndroidAccessibilityTest {
                         text = overlaidText,
                         modifier =
                             Modifier.semantics { isTraversalGroup = true }
-                                .semantics { traversalIndex = 1f }
+                                .semantics { traversalIndex = 1f },
                     )
                 }
             }
         }
-        val node3Id = rule.onNodeWithText(text3).semanticsId
-        val overlayId = rule.onNodeWithText(overlaidText).semanticsId
+        val node3Id = rule.onNodeWithText(text3).semanticsId()
+        val overlayId = rule.onNodeWithText(overlaidText).semanticsId()
 
         // Act.
         val node3ANI = rule.runOnIdle { createAccessibilityNodeInfo(node3Id) }
@@ -1386,8 +1581,8 @@ class AndroidAccessibilityTest {
 
             TopAppBar(title = { Text(text = topAppBarText) })
         }
-        val textBoxId = rule.onNodeWithTag(textBoxTag).semanticsId
-        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId
+        val textBoxId = rule.onNodeWithTag(textBoxTag).semanticsId()
+        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId()
 
         // Act.
         val topAppBarANI = rule.runOnIdle { createAccessibilityNodeInfo(topAppBarId) }
@@ -1410,9 +1605,9 @@ class AndroidAccessibilityTest {
                 repeat(100) { Text(sampleText + counter++) }
             }
         }
-        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId
-        val node1Id = rule.onNodeWithText(sampleText1).semanticsId
-        val node2Id = rule.onNodeWithText(sampleText2).semanticsId
+        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId()
+        val node1Id = rule.onNodeWithText(sampleText1).semanticsId()
+        val node2Id = rule.onNodeWithText(sampleText2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1446,12 +1641,12 @@ class AndroidAccessibilityTest {
                 },
                 drawerContent = { Text(text = "Drawer Menu 1") },
                 content = { padding -> Text(contentText, modifier = Modifier.padding(padding)) },
-                bottomBar = { BottomAppBar { Text(bottomAppBarText) } }
+                bottomBar = { BottomAppBar { Text(bottomAppBarText) } },
             )
         }
-        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId
-        val contentId = rule.onNodeWithText(contentText).semanticsId
-        val bottomAppBarId = rule.onNodeWithText(bottomAppBarText).semanticsId
+        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId()
+        val contentId = rule.onNodeWithText(contentText).semanticsId()
+        val bottomAppBarId = rule.onNodeWithText(bottomAppBarText).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1487,12 +1682,12 @@ class AndroidAccessibilityTest {
                         }
                     }
                 },
-                content = { padding -> Text(contentText, modifier = Modifier.padding(padding)) }
+                content = { padding -> Text(contentText, modifier = Modifier.padding(padding)) },
             )
         }
-        val face1Id = rule.onNodeWithContentDescription(content1).semanticsId
-        val face3Id = rule.onNodeWithContentDescription(content3).semanticsId
-        val contentId = rule.onNodeWithText(contentText).semanticsId
+        val face1Id = rule.onNodeWithContentDescription(content1).semanticsId()
+        val face3Id = rule.onNodeWithContentDescription(content3).semanticsId()
+        val contentId = rule.onNodeWithText(contentText).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1534,21 +1729,21 @@ class AndroidAccessibilityTest {
                                 // children with smaller [zIndex]. So child 1 covers child 2.
                                 .zIndex(1f)
                                 .testTag(childOneTag)
-                                .requiredSize(50.toDp())
+                                .requiredSize(50.toDp()),
                         )
                         BasicText(
                             "Child Two",
-                            Modifier.testTag(childTwoTag).requiredSize(50.toDp())
+                            Modifier.testTag(childTwoTag).requiredSize(50.toDp()),
                         )
                     }
                 }
                 Box { BasicText("Child Three", Modifier.testTag(childThreeTag)) }
             }
         }
-        val parentBox1Id = rule.onNodeWithTag(parentBox1Tag).semanticsId
-        val childOneId = rule.onNodeWithTag(childOneTag, useUnmergedTree = true).semanticsId
-        val childTwoId = rule.onNodeWithTag(childTwoTag, useUnmergedTree = true).semanticsId
-        val childThreeId = rule.onNodeWithTag(childThreeTag, useUnmergedTree = true).semanticsId
+        val parentBox1Id = rule.onNodeWithTag(parentBox1Tag).semanticsId()
+        val childOneId = rule.onNodeWithTag(childOneTag, useUnmergedTree = true).semanticsId()
+        val childTwoId = rule.onNodeWithTag(childTwoTag, useUnmergedTree = true).semanticsId()
+        val childThreeId = rule.onNodeWithTag(childThreeTag, useUnmergedTree = true).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1603,13 +1798,13 @@ class AndroidAccessibilityTest {
                 modifier = Modifier,
                 topBar = { TopAppBar(title = { Text(text = topAppBarText) }) },
                 content = { ScrollColumnNoPadding(firstContentText, lastContentText) },
-                bottomBar = { BottomAppBar { Text(bottomAppBarText) } }
+                bottomBar = { BottomAppBar { Text(bottomAppBarText) } },
             )
         }
 
-        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId
-        val firstContentId = rule.onNodeWithTag(firstContentText).semanticsId
-        val lastContentId = rule.onNodeWithTag(lastContentText).semanticsId
+        val topAppBarId = rule.onNodeWithText(topAppBarText).semanticsId()
+        val firstContentId = rule.onNodeWithTag(firstContentText).semanticsId()
+        val lastContentId = rule.onNodeWithTag(lastContentText).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1645,8 +1840,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1674,8 +1869,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1705,8 +1900,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1736,8 +1931,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1767,8 +1962,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1 = rule.onNodeWithTag(childTag1).semanticsId
-        val child2 = rule.onNodeWithTag(childTag2).semanticsId
+        val child1 = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2 = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1808,8 +2003,8 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         val child2ANI = rule.runOnIdle { createAccessibilityNodeInfo(child2Id) }
@@ -1836,13 +2031,13 @@ class AndroidAccessibilityTest {
                     { SimpleTestLayout(Modifier.requiredSize(100.dp).testTag(childTag1)) {} },
                     Offset(0f, size),
                     { SimpleTestLayout(Modifier.requiredSize(100.dp).testTag(childTag2)) {} },
-                    Offset(0f, 0f)
+                    Offset(0f, 0f),
                 )
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1872,13 +2067,13 @@ class AndroidAccessibilityTest {
                     { SimpleTestLayout(Modifier.requiredSize(100.dp).testTag(childTag1)) {} },
                     Offset(size, 0f),
                     { SimpleTestLayout(Modifier.requiredSize(100.dp).testTag(childTag2)) {} },
-                    Offset(0f, 0f)
+                    Offset(0f, 0f),
                 )
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithTag(childTag1).semanticsId
-        val child2Id = rule.onNodeWithTag(childTag2).semanticsId
+        val child1Id = rule.onNodeWithTag(childTag1).semanticsId()
+        val child2Id = rule.onNodeWithTag(childTag2).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1924,13 +2119,13 @@ class AndroidAccessibilityTest {
             }
         }
         val root = rule.onNodeWithTag(rootTag).fetchSemanticsNode()
-        val child1Id = rule.onNodeWithText(childText1).semanticsId
-        val child2Id = rule.onNodeWithText(childText2).semanticsId
-        val child3Id = rule.onNodeWithText(childText3).semanticsId
+        val child1Id = rule.onNodeWithText(childText1).semanticsId()
+        val child2Id = rule.onNodeWithText(childText2).semanticsId()
+        val child3Id = rule.onNodeWithText(childText3).semanticsId()
 
-        val rtlChild1Id = rule.onNodeWithText(rtlChildText1).semanticsId
-        val rtlChild2Id = rule.onNodeWithText(rtlChildText2).semanticsId
-        val rtlChild3Id = rule.onNodeWithText(rtlChildText3).semanticsId
+        val rtlChild1Id = rule.onNodeWithText(rtlChildText1).semanticsId()
+        val rtlChild2Id = rule.onNodeWithText(rtlChildText2).semanticsId()
+        val rtlChild3Id = rule.onNodeWithText(rtlChildText3).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -1970,7 +2165,7 @@ class AndroidAccessibilityTest {
         columnTag: String,
         interopText: String,
         firstButtonText: String,
-        lastButtonText: String
+        lastButtonText: String,
     ) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag(columnTag)) {
             Button(onClick = {}) { Text(firstButtonText) }
@@ -2005,7 +2200,7 @@ class AndroidAccessibilityTest {
                 content = { padding ->
                     InteropColumn(padding, columnTag, interopText, firstButtonText, lastButtonText)
                 },
-                bottomBar = { BottomAppBar { Text("Bottom App Bar") } }
+                bottomBar = { BottomAppBar { Text("Bottom App Bar") } },
             )
         }
         val colSemanticsNode =
@@ -2014,8 +2209,8 @@ class AndroidAccessibilityTest {
             androidComposeView.androidViewsHandler.layoutNodeToHolder[
                     colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder)
-        val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId
-        val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId
+        val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
+        val lastButtonId = rule.onNodeWithText(lastButtonText).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -2050,7 +2245,7 @@ class AndroidAccessibilityTest {
         interopText: String,
         firstButtonText: String,
         thirdButtonText: String,
-        fourthButtonText: String
+        fourthButtonText: String,
     ) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(padding).testTag(columnTag)) {
             Button(modifier = Modifier.semantics { traversalIndex = 3f }, onClick = {}) {
@@ -2100,10 +2295,10 @@ class AndroidAccessibilityTest {
                         interopText,
                         firstButtonText,
                         thirdButtonText,
-                        fourthButtonText
+                        fourthButtonText,
                     )
                 },
-                bottomBar = { BottomAppBar { Text("Bottom App Bar") } }
+                bottomBar = { BottomAppBar { Text("Bottom App Bar") } },
             )
         }
         val colSemanticsNode =
@@ -2112,9 +2307,9 @@ class AndroidAccessibilityTest {
             androidComposeView.androidViewsHandler.layoutNodeToHolder[
                     colSemanticsNode.replacedChildren[1].layoutNode]
         checkNotNull(viewHolder) // Check that the View exists
-        val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId
-        val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId
-        val fourthButtonId = rule.onNodeWithText(fourthButtonText).semanticsId
+        val firstButtonId = rule.onNodeWithText(firstButtonText).semanticsId()
+        val thirdButtonId = rule.onNodeWithText(thirdButtonText).semanticsId()
+        val fourthButtonId = rule.onNodeWithText(fourthButtonText).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -2172,14 +2367,14 @@ class AndroidAccessibilityTest {
         assertThat(scrollState.value).isEqualTo(0)
 
         val showOnScreen = android.R.id.accessibilityActionShowOnScreen
-        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
         }
         rule.mainClock.advanceTimeBy(5000)
         assertThat(scrollState.value).isGreaterThan(99)
 
-        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId
+        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target2Id, showOnScreen, null)).isTrue()
         }
@@ -2209,7 +2404,7 @@ class AndroidAccessibilityTest {
         assertThat(lazyState.firstVisibleItemScrollOffset).isEqualTo(0)
 
         val showOnScreen = android.R.id.accessibilityActionShowOnScreen
-        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
         }
@@ -2217,7 +2412,7 @@ class AndroidAccessibilityTest {
         assertThat(lazyState.firstVisibleItemIndex).isEqualTo(0)
         assertThat(lazyState.firstVisibleItemScrollOffset).isGreaterThan(99)
 
-        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId
+        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target2Id, showOnScreen, null)).isTrue()
         }
@@ -2241,13 +2436,13 @@ class AndroidAccessibilityTest {
                                 item {
                                     BasicText(
                                         "Backward",
-                                        Modifier.testTag(target2Tag).size(150.toDp())
+                                        Modifier.testTag(target2Tag).size(150.toDp()),
                                     )
                                 }
                                 item {
                                     BasicText(
                                         "Forward",
-                                        Modifier.testTag(target1Tag).size(150.toDp())
+                                        Modifier.testTag(target1Tag).size(150.toDp()),
                                     )
                                 }
                             }
@@ -2263,7 +2458,7 @@ class AndroidAccessibilityTest {
         // influenced by or influencing the parent row.
         // TODO(b/190865803): Is this the ultimate right behavior we want?
         val showOnScreen = android.R.id.accessibilityActionShowOnScreen
-        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId
+        val target1Id = rule.onNodeWithTag(target1Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target1Id, showOnScreen, null)).isTrue()
         }
@@ -2272,7 +2467,7 @@ class AndroidAccessibilityTest {
         assertThat(lazyState.firstVisibleItemScrollOffset).isGreaterThan(99)
         assertThat(parentLazyState.firstVisibleItemScrollOffset).isEqualTo(0)
 
-        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId
+        val target2Id = rule.onNodeWithTag(target2Tag).semanticsId()
         rule.runOnUiThread {
             assertThat(provider.performAction(target2Id, showOnScreen, null)).isTrue()
         }
@@ -2286,7 +2481,8 @@ class AndroidAccessibilityTest {
     fun testPerformAction_focus() {
         // Arrange.
         setContent { Box(Modifier.testTag(tag).focusable()) { BasicText("focusable") } }
-        val virtualViewId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId
+        val virtualViewId =
+            rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId()
 
         // Act.
         rule.runOnUiThread {
@@ -2311,7 +2507,7 @@ class AndroidAccessibilityTest {
             }
         }
         rule.runOnIdle { focusRequester.requestFocus() }
-        val virtualViewId = rule.onNodeWithTag(tag).assert(expectValue(Focused, true)).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).assert(expectValue(Focused, true)).semanticsId()
 
         // Act.
         rule.runOnUiThread {
@@ -2334,7 +2530,7 @@ class AndroidAccessibilityTest {
             }
         }
         rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn()
-        val toggleableNodeId = rule.onNodeWithTag(tag).semanticsId
+        val toggleableNodeId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val actionPerformed =
@@ -2355,13 +2551,13 @@ class AndroidAccessibilityTest {
                 Modifier.toggleable(
                         value = checked,
                         enabled = false,
-                        onValueChange = { checked = it }
+                        onValueChange = { checked = it },
                     )
                     .testTag(tag),
-                content = { BasicText("ToggleableText") }
+                content = { BasicText("ToggleableText") },
             )
         }
-        val toggleableId = rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn().semanticsId
+        val toggleableId = rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn().semanticsId()
 
         // Act.
         val actionPerformed =
@@ -2373,12 +2569,48 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testPerformAction_succeedFromToolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = true
+
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).semantics { isSensitiveData = true }.focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(focusableNode.id, ACTION_FOCUS, null)).isTrue()
+        }
+        rule.onNodeWithTag(tag).assert(expectValue(SemanticsProperties.Focused, true))
+    }
+
+    @Test
+    fun testPerformAction_failFromNontoolIfSensitiveData() {
+        delegate.requestFromAccessibilityToolForTesting = false
+
+        val tag = "node"
+        container.setContent {
+            Box(Modifier.testTag(tag).semantics { isSensitiveData = true }.focusable()) {
+                BasicText("focusable")
+            }
+        }
+
+        val focusableNode = rule.onNodeWithTag(tag).fetchSemanticsNode()
+        rule.runOnUiThread {
+            assertThat(provider.performAction(focusableNode.id, ACTION_FOCUS, null)).isFalse()
+        }
+        rule.onNodeWithTag(tag).assert(expectValue(SemanticsProperties.Focused, false))
+    }
+
+    @Test
     fun testTextField_performClickAction_succeedOnEnabledNode() {
         // Arrange.
         setContent {
             BasicTextField(modifier = Modifier.testTag(tag), value = "value", onValueChange = {})
         }
-        val textFieldNodeId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId
+        val textFieldNodeId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
 
         // Act.
         val actionPerformed =
@@ -2406,10 +2638,10 @@ class AndroidAccessibilityTest {
                         }
                         .testTag(tag),
                 value = value,
-                onValueChange = { value = it }
+                onValueChange = { value = it },
             )
         }
-        val textFieldId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId
+        val textFieldId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
         val argument = Bundle()
         argument.putInt(AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_START_INT, 1)
         argument.putInt(AccessibilityNodeInfoCompat.ACTION_ARGUMENT_SELECTION_END_INT, 1)
@@ -2437,11 +2669,11 @@ class AndroidAccessibilityTest {
                 BasicTextField(
                     modifier = Modifier.testTag(tag),
                     value = "value",
-                    onValueChange = {}
+                    onValueChange = {},
                 )
             }
         }
-        val textFieldId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId
+        val textFieldId = rule.onNodeWithTag(tag).assert(expectValue(Focused, false)).semanticsId()
 
         // Act.
         var actionPerformed =
@@ -2461,6 +2693,48 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testFindFocus_noInputFocus() {
+        // Arrange.
+        setContent {
+            Row {
+                // No focused item.
+                Box(Modifier.size(10.dp).focusable())
+                Box(Modifier.size(10.dp).focusable())
+            }
+        }
+
+        // Act.
+        val focusedNode = rule.runOnUiThread { provider.findFocus(FOCUS_INPUT) }
+
+        // Assert.
+        assertThat(focusedNode).isNull()
+    }
+
+    @Test
+    fun testFindFocus_hasInputFocus() {
+        // Arrange.
+        val focusRequester = FocusRequester()
+        setContent {
+            Row {
+                // Initially focused item.
+                Box(Modifier.size(10.dp).focusable())
+                Box(Modifier.testTag(tag).focusRequester(focusRequester).focusable()) {
+                    BasicText("focusable")
+                }
+            }
+        }
+        rule.runOnIdle { focusRequester.requestFocus() }
+        val virtualViewId = rule.onNodeWithTag(tag).assert(expectValue(Focused, true)).semanticsId()
+        val expectedNode = provider.createAccessibilityNodeInfo(virtualViewId)
+
+        // Act.
+        val actualNode = rule.runOnUiThread { provider.findFocus(FOCUS_INPUT) }
+
+        // Assert.
+        assertThat(actualNode).isEqualTo(expectedNode)
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Suppress("DEPRECATION")
     fun testAddExtraDataToAccessibilityNodeInfo_notMerged() {
@@ -2470,7 +2744,7 @@ class AndroidAccessibilityTest {
                 modifier = Modifier.testTag(tag),
                 value = "texy",
                 onValueChange = {},
-                onTextLayout = { textLayoutResult = it }
+                onTextLayout = { textLayoutResult = it },
             )
         }
         val textFieldNode =
@@ -2488,7 +2762,7 @@ class AndroidAccessibilityTest {
             textFieldNode.id,
             info,
             EXTRA_DATA_TEXT_CHARACTER_LOCATION_KEY,
-            argument
+            argument,
         )
 
         // TODO(b/272068594): This looks like a bug. This should be
@@ -2516,7 +2790,7 @@ class AndroidAccessibilityTest {
     fun getSemanticsNodeIdFromExtraData() {
         // Arrange.
         setContent { BasicText("texy") }
-        val textId = rule.onNodeWithText("texy").semanticsId
+        val textId = rule.onNodeWithText("texy").semanticsId()
         val info = AccessibilityNodeInfoCompat.obtain()
         val argument = Bundle()
         val idKey = "androidx.compose.ui.semantics.id"
@@ -2531,10 +2805,208 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun getCustomExtrasFromExtraData() {
+        // Arrange.
+        val date = Date()
+        setContent {
+            Box(
+                Modifier.size(10.dp).testTag(tag).semantics {
+                    customIntAccessibilityExtra = 123
+                    customStringAccessibilityExtra = "test"
+                    customParcelableAccessibilityExtra = Uri.parse("http://www.google.com")
+                    customSerializableAccessibilityExtra = date
+                }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = provider.createAccessibilityNodeInfo(virtualViewId)!!
+        rule.runOnIdle {
+            assertThat(info.availableExtraData)
+                .containsAtLeast(
+                    CustomIntAccessibilityExtraKey,
+                    CustomStringAccessibilityExtraKey,
+                    CustomParcelableAccessibilityExtraKey,
+                    CustomSerializableAccessibilityExtraKey,
+                )
+        }
+
+        fun populateExtra(extraKey: String) {
+            provider.addExtraDataToAccessibilityNodeInfo(virtualViewId, info, extraKey, Bundle())
+        }
+
+        // Act.
+        rule.runOnIdle {
+            populateExtra(CustomIntAccessibilityExtraKey)
+            populateExtra(CustomStringAccessibilityExtraKey)
+            populateExtra(CustomParcelableAccessibilityExtraKey)
+            populateExtra(CustomSerializableAccessibilityExtraKey)
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info.extras.getInt(CustomIntAccessibilityExtraKey)).isEqualTo(123)
+            assertThat(info.extras.getString(CustomStringAccessibilityExtraKey)).isEqualTo("test")
+            @Suppress("DEPRECATION")
+            assertThat(info.extras.getParcelable<Uri>(CustomParcelableAccessibilityExtraKey))
+                .isEqualTo(Uri.parse("http://www.google.com"))
+            @Suppress("DEPRECATION")
+            assertThat(info.extras.getSerializable(CustomSerializableAccessibilityExtraKey))
+                .isEqualTo(date)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun getCustomExtrasFromExtraData_sameExtraSetMultipleTimes_sameModifier_lastOneWins() {
+        // Arrange.
+        setContent {
+            Box(
+                Modifier.size(10.dp).testTag(tag).semantics {
+                    customIntAccessibilityExtra = 1
+                    customIntAccessibilityExtra = 2
+                }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = provider.createAccessibilityNodeInfo(virtualViewId)!!
+
+        // Act.
+        rule.runOnIdle {
+            provider.addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                CustomIntAccessibilityExtraKey,
+                Bundle(),
+            )
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info.extras.getInt(CustomIntAccessibilityExtraKey)).isEqualTo(2)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun getCustomExtrasFromExtraData_sameExtraSetMultipleTimes_twoModifiers_outerOneWins() {
+        // Arrange.
+        setContent {
+            Box(
+                Modifier.size(10.dp)
+                    .testTag(tag)
+                    .semantics { customIntAccessibilityExtra = 1 }
+                    .semantics { customIntAccessibilityExtra = 2 }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = provider.createAccessibilityNodeInfo(virtualViewId)!!
+
+        // Act.
+        rule.runOnIdle {
+            provider.addExtraDataToAccessibilityNodeInfo(
+                virtualViewId,
+                info,
+                CustomIntAccessibilityExtraKey,
+                Bundle(),
+            )
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info.extras.getInt(CustomIntAccessibilityExtraKey)).isEqualTo(1)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun getCustomExtrasFromExtraData_multipleSemanticsModifiers_mergesExtras() {
+        // Arrange.
+        val date = Date()
+        setContent {
+            Box(
+                Modifier.size(10.dp)
+                    .testTag(tag)
+                    .semantics {
+                        customIntAccessibilityExtra = 123
+                        customStringAccessibilityExtra = "test"
+                        customParcelableAccessibilityExtra = Uri.parse("http://www.google.com")
+                    }
+                    .semantics { customSerializableAccessibilityExtra = date }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = provider.createAccessibilityNodeInfo(virtualViewId)!!
+        rule.runOnIdle {
+            assertThat(info.availableExtraData)
+                .containsAtLeast(
+                    CustomIntAccessibilityExtraKey,
+                    CustomStringAccessibilityExtraKey,
+                    CustomParcelableAccessibilityExtraKey,
+                    CustomSerializableAccessibilityExtraKey,
+                )
+        }
+
+        fun populateExtra(extraKey: String) {
+            provider.addExtraDataToAccessibilityNodeInfo(virtualViewId, info, extraKey, Bundle())
+        }
+
+        // Act.
+        rule.runOnIdle {
+            populateExtra(CustomIntAccessibilityExtraKey)
+            populateExtra(CustomStringAccessibilityExtraKey)
+            populateExtra(CustomParcelableAccessibilityExtraKey)
+            populateExtra(CustomSerializableAccessibilityExtraKey)
+        }
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(info.extras.getInt(CustomIntAccessibilityExtraKey)).isEqualTo(123)
+            assertThat(info.extras.getString(CustomStringAccessibilityExtraKey)).isEqualTo("test")
+            @Suppress("DEPRECATION")
+            assertThat(info.extras.getParcelable<Uri>(CustomParcelableAccessibilityExtraKey))
+                .isEqualTo(Uri.parse("http://www.google.com"))
+            @Suppress("DEPRECATION")
+            assertThat(info.extras.getSerializable(CustomSerializableAccessibilityExtraKey))
+                .isEqualTo(date)
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun getInvalidExtraFromExtraData_throws() {
+        // Arrange.
+        setContent {
+            Box(
+                Modifier.size(10.dp).testTag(tag).semantics {
+                    invalidAccessibilityExtra = InvalidAccessibilityExtraValue(123)
+                }
+            )
+        }
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
+        val info = provider.createAccessibilityNodeInfo(virtualViewId)!!
+
+        // Act/Assert.
+        expectError<IllegalStateException>(
+            expectedMessage =
+                "Accessibility extra values must be either Serializable or Parcelable."
+        ) {
+            rule.runOnIdle {
+                provider.addExtraDataToAccessibilityNodeInfo(
+                    virtualViewId,
+                    info,
+                    InvalidAccessibilityExtraKey,
+                    Bundle(),
+                )
+            }
+        }
+    }
+
+    @Test
     fun sendClickedEvent_whenClick() {
         // Arrange.
         setContent { Box(Modifier.clickable(onClick = {}).testTag(tag)) { BasicText("Text") } }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val actionPerformed =
@@ -2552,7 +3024,7 @@ class AndroidAccessibilityTest {
                             getAccessibilityEventSourceSemanticsNodeId(it) == virtualViewId &&
                                 it.eventType == TYPE_VIEW_CLICKED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -2564,7 +3036,7 @@ class AndroidAccessibilityTest {
         setContent {
             Box(Modifier.semantics { stateDescription = state }.testTag(tag)) { BasicText("Text") }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).assertValueEquals("state one").semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).assertValueEquals("state one").semanticsId()
 
         // Act.
         rule.runOnIdle { state = "state two" }
@@ -2581,7 +3053,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
                         }
-                    )
+                    ),
                 )
             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2595,7 +3067,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_UNDEFINED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -2611,7 +3083,7 @@ class AndroidAccessibilityTest {
                 BasicText("ToggleableText")
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn().semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().assertIsOn().semanticsId()
 
         // Act.
         rule.onNodeWithTag(tag).performClick()
@@ -2629,7 +3101,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
                         }
-                    )
+                    ),
                 )
             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2643,7 +3115,65 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_UNDEFINED
                         }
-                    )
+                    ),
+                )
+        }
+    }
+
+    @Test
+    fun sendClickedAndChangeSubtree_whenDescendantClicked() {
+        val textTag = "text_tag"
+        // Arrange.
+        setContent {
+            var selected by remember { mutableStateOf(true) }
+            Box {
+                Box(Modifier.testTag(textTag)) {
+                    if (selected) {
+                        BasicText(text = "DisappearingText")
+                    }
+                }
+                Box(Modifier.clickable(onClick = { selected = !selected }).testTag(tag)) {
+                    BasicText("ToggleableComponent")
+                }
+            }
+        }
+        val toggleableVirtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
+
+        // Act.
+        val actionPerformed =
+            rule.runOnUiThread {
+                provider.performAction(toggleableVirtualViewId, ACTION_CLICK, null)
+            }
+
+        // Assert that `TYPE_VIEW_CLICKED` event was sent.
+        rule.runOnIdle {
+            assertThat(actionPerformed).isTrue()
+            verify(container, times(1))
+                .requestSendAccessibilityEvent(
+                    eq(androidComposeView),
+                    argThat(
+                        ArgumentMatcher {
+                            getAccessibilityEventSourceSemanticsNodeId(it) ==
+                                toggleableVirtualViewId && it.eventType == TYPE_VIEW_CLICKED
+                        }
+                    ),
+                )
+        }
+
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+
+        // Assert that `TYPE_WINDOW_CONTENT_CHANGED` event was also sent.
+        rule.onNodeWithTag(textTag).assertIsNotDisplayed()
+        rule.runOnIdle {
+            verify(container, atLeastOnce())
+                .requestSendAccessibilityEvent(
+                    eq(androidComposeView),
+                    argThat(
+                        ArgumentMatcher {
+                            it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
+                                it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
+                        }
+                    ),
                 )
         }
     }
@@ -2660,7 +3190,7 @@ class AndroidAccessibilityTest {
             }
         }
         val virtualViewId =
-            rule.onNodeWithTag(tag).assertIsDisplayed().assertIsNotSelected().semanticsId
+            rule.onNodeWithTag(tag).assertIsDisplayed().assertIsNotSelected().semanticsId()
 
         // Act.
         rule.onNodeWithTag(tag).performClick()
@@ -2678,7 +3208,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
                         }
-                    )
+                    ),
                 )
             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2692,7 +3222,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_UNDEFINED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -2706,7 +3236,7 @@ class AndroidAccessibilityTest {
                 Modifier.selectable(
                         selected = selected,
                         onClick = { selected = true },
-                        role = Role.Tab
+                        role = Role.Tab,
                     )
                     .testTag(tag)
             ) {
@@ -2714,7 +3244,7 @@ class AndroidAccessibilityTest {
             }
         }
         val virtualViewId =
-            rule.onNodeWithTag(tag).assertIsDisplayed().assertIsNotSelected().semanticsId
+            rule.onNodeWithTag(tag).assertIsDisplayed().assertIsNotSelected().semanticsId()
 
         // Act.
         rule.onNodeWithTag(tag).performClick()
@@ -2733,7 +3263,7 @@ class AndroidAccessibilityTest {
                                 it.text.size == 1 &&
                                 it.text[0].toString() == "Text"
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -2743,7 +3273,7 @@ class AndroidAccessibilityTest {
         // Arrange.
         var current by mutableStateOf(0.5f)
         setContent { Box(Modifier.progressSemantics(current).testTag(tag)) { BasicText("Text") } }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         rule.runOnIdle { current = 0.9f }
@@ -2760,7 +3290,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_STATE_DESCRIPTION
                         }
-                    )
+                    ),
                 )
             // Temporary(b/192295060) fix, sending CONTENT_CHANGE_TYPE_UNDEFINED to
             // force ViewRootImpl to update its accessibility-focused virtual-node.
@@ -2774,11 +3304,12 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_UNDEFINED
                         }
-                    )
+                    ),
                 )
         }
     }
 
+    @FlakyTest(bugId = 354750986)
     @Test
     fun sendTextEvents_whenSetText() {
         // Arrange.
@@ -2793,7 +3324,7 @@ class AndroidAccessibilityTest {
                 onValueChange = { value = it },
                 visualTransformation = {
                     TransformedText(it.toUpperCase(locale), OffsetMapping.Identity)
-                }
+                },
             )
         }
         rule
@@ -2802,7 +3333,7 @@ class AndroidAccessibilityTest {
             .assert(expectValue(EditableText, AnnotatedString("H")))
 
         // TODO(b/272068594): Extra TYPE_WINDOW_CONTENT_CHANGED sent 100ms after setup.
-        rule.mainClock.advanceTimeBy(100L)
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
         rule.runOnIdle { clearInvocations(container) }
 
         // Act.
@@ -2814,7 +3345,7 @@ class AndroidAccessibilityTest {
             rule
                 .onNodeWithTag(tag)
                 .assert(expectValue(EditableText, AnnotatedString("HELLO")))
-                .semanticsId
+                .semanticsId()
         rule.runOnIdle {
             verify(container, atLeastOnce())
                 .requestSendAccessibilityEvent(eq(androidComposeView), argument.capture())
@@ -2840,7 +3371,7 @@ class AndroidAccessibilityTest {
                         toIndex = finalText.length
                         itemCount = finalText.length
                         this.text.add(finalText.toUpperCase(locale))
-                    }
+                    },
                 )
                 .inOrder()
         }
@@ -2858,12 +3389,12 @@ class AndroidAccessibilityTest {
                     BasicTextField(
                         modifier = Modifier.testTag(textFieldTag),
                         value = "text",
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 }
             }
         }
-        val columnId = rule.onNodeWithTag(columnTag).semanticsId
+        val columnId = rule.onNodeWithTag(columnTag).semanticsId()
 
         rule.runOnIdle {
             verify(container, atLeastOnce())
@@ -2875,7 +3406,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
         clearInvocations(container)
@@ -2895,12 +3426,13 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
     }
 
     @Test
+    @FlakyTest(bugId = 364709885)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun selectionEventBeforeTraverseEvent_whenTraverseTextField() {
         val text = "h"
@@ -2914,10 +3446,10 @@ class AndroidAccessibilityTest {
                 decorationBox = {
                     BasicText("Label")
                     it()
-                }
+                },
             )
         }
-        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
 
         // TODO(b/272068594): Extra TYPE_WINDOW_CONTENT_CHANGED sent 100ms after setup.
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -2928,7 +3460,7 @@ class AndroidAccessibilityTest {
             provider.performAction(
                 virtualViewId,
                 ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                createMovementGranularityCharacterArgs()
+                createMovementGranularityCharacterArgs(),
             )
         }
 
@@ -2958,18 +3490,19 @@ class AndroidAccessibilityTest {
                         fromIndex = 0
                         toIndex = 1
                         this.text.add("•")
-                    }
+                    },
                 )
                 .inOrder()
         }
     }
 
+    @FlakyTest(bugId = 356384247)
     @Test
     fun selectionEventBeforeTraverseEvent_whenTraverseText() {
         // Arrange.
         val text = "h"
         setContent { BasicText(text, Modifier.testTag(tag)) }
-        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).assertIsDisplayed().semanticsId()
 
         // TODO(b/272068594): Extra TYPE_WINDOW_CONTENT_CHANGED sent 100ms after setup.
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -2980,7 +3513,7 @@ class AndroidAccessibilityTest {
             provider.performAction(
                 virtualViewId,
                 ACTION_NEXT_AT_MOVEMENT_GRANULARITY,
-                createMovementGranularityCharacterArgs()
+                createMovementGranularityCharacterArgs(),
             )
         }
 
@@ -3008,7 +3541,7 @@ class AndroidAccessibilityTest {
                         fromIndex = 0
                         toIndex = 1
                         this.text.add("h")
-                    }
+                    },
                 )
                 .inOrder()
         }
@@ -3026,7 +3559,7 @@ class AndroidAccessibilityTest {
                 Box { BasicText("TextNode") }
             }
         }
-        val toggleableId = rule.onNodeWithTag(tag).semanticsId
+        val toggleableId = rule.onNodeWithTag(tag).semanticsId()
         val textNode =
             rule
                 .onNodeWithText("TextNode", useUnmergedTree = true)
@@ -3042,15 +3575,13 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
 
         rule.runOnUiThread {
             // Directly call onLayoutChange because this guarantees short time.
-            for (i in 1..10) {
-                delegate.onLayoutChange(textNode.layoutNode)
-            }
+            repeat(10) { delegate.onLayoutChange(textNode.layoutNode) }
         }
 
         rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
@@ -3064,7 +3595,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3082,7 +3613,7 @@ class AndroidAccessibilityTest {
             }
         }
 
-        val toggleableId = rule.onNodeWithTag(tag).semanticsId
+        val toggleableId = rule.onNodeWithTag(tag).semanticsId()
         val textNode =
             rule
                 .onNodeWithText("TextNode", useUnmergedTree = true)
@@ -3099,13 +3630,13 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
 
         rule.runOnUiThread {
             // Directly call onLayoutChange because this guarantees short time.
-            for (i in 1..10) {
+            repeat(10) {
                 // layout change for the parent box node
                 delegate.onLayoutChange(textNode.layoutNode.parent!!)
             }
@@ -3123,7 +3654,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_CONTENT_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_SUBTREE
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3139,7 +3670,7 @@ class AndroidAccessibilityTest {
                 BasicText("ToggleableText")
             }
         }
-        val toggleableId = rule.onNodeWithTag(tag).semanticsId
+        val toggleableId = rule.onNodeWithTag(tag).semanticsId()
         val toggleableBounds =
             with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
 
@@ -3166,14 +3697,14 @@ class AndroidAccessibilityTest {
                 with(LocalDensity.current) {
                     BasicText(
                         "Child One",
-                        Modifier.zIndex(1f).testTag(childOneTag).requiredSize(50.toDp())
+                        Modifier.zIndex(1f).testTag(childOneTag).requiredSize(50.toDp()),
                     )
                     BasicText("Child Two", Modifier.testTag(childTwoTag).requiredSize(50.toDp()))
                 }
             }
         }
-        val childOneId = rule.onNodeWithTag(childOneTag).semanticsId
-        val childTwoId = rule.onNodeWithTag(childTwoTag).semanticsId
+        val childOneId = rule.onNodeWithTag(childOneTag).semanticsId()
+        val childTwoId = rule.onNodeWithTag(childTwoTag).semanticsId()
         val overlappedChildNodeBounds =
             with(rule.density) { rule.onNodeWithTag(childTwoTag).getBoundsInRoot().toRect() }
 
@@ -3182,7 +3713,7 @@ class AndroidAccessibilityTest {
             rule.runOnIdle {
                 delegate.hitTestSemanticsAt(
                     (overlappedChildNodeBounds.left + overlappedChildNodeBounds.right) / 2,
-                    (overlappedChildNodeBounds.top + overlappedChildNodeBounds.bottom) / 2
+                    (overlappedChildNodeBounds.top + overlappedChildNodeBounds.bottom) / 2,
                 )
             }
 
@@ -3218,23 +3749,27 @@ class AndroidAccessibilityTest {
 
         assertThat(scrollState.value).isGreaterThan(199)
 
-        val vitrualViewId = rule.onNodeWithTag(tag).semanticsId
+        val vitrualViewId = rule.onNodeWithTag(tag).semanticsId()
         val childNodeBounds =
             with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
         val hitTestedId =
             delegate.hitTestSemanticsAt(
                 (childNodeBounds.left + childNodeBounds.right) / 2,
-                (childNodeBounds.top + childNodeBounds.bottom) / 2
+                (childNodeBounds.top + childNodeBounds.bottom) / 2,
             )
         assertThat(vitrualViewId).isEqualTo(hitTestedId)
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
-    fun testSemanticsHitTest_invisibleToUserSemantics() {
+    fun testSemanticsHitTest_hideFromAccessibilitySemantics() {
         // Arrange.
         setContent {
-            Box(Modifier.size(100.dp).clickable {}.testTag(tag).semantics { invisibleToUser() }) {
+            Box(
+                Modifier.size(100.dp)
+                    .clickable {}
+                    .testTag(tag)
+                    .semantics { hideFromAccessibility() }
+            ) {
                 BasicText("")
             }
         }
@@ -3245,7 +3780,7 @@ class AndroidAccessibilityTest {
             rule.runOnIdle {
                 delegate.hitTestSemanticsAt(
                     bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2
+                    bounds.top + bounds.height / 2,
                 )
             }
 
@@ -3297,7 +3832,7 @@ class AndroidAccessibilityTest {
             rule.runOnIdle {
                 delegate.hitTestSemanticsAt(
                     bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2
+                    bounds.top + bounds.height / 2,
                 )
             }
 
@@ -3315,7 +3850,7 @@ class AndroidAccessibilityTest {
                 Box(Modifier.size(100.dp).clickable {}.testTag(innertag)) { BasicText("") }
             }
         }
-        val outerNodeId = rule.onNodeWithTag(outertag).semanticsId
+        val outerNodeId = rule.onNodeWithTag(outertag).semanticsId()
         val bounds =
             with(rule.density) { rule.onNodeWithTag(innertag, true).getBoundsInRoot().toRect() }
 
@@ -3324,7 +3859,7 @@ class AndroidAccessibilityTest {
             rule.runOnIdle {
                 delegate.hitTestSemanticsAt(
                     bounds.left + bounds.width / 2,
-                    bounds.top + bounds.height / 2
+                    bounds.top + bounds.height / 2,
                 )
             }
 
@@ -3344,7 +3879,7 @@ class AndroidAccessibilityTest {
                             addView(TextView(context).apply { text = "Text2" })
                         }
                     },
-                    Modifier.testTag(tag)
+                    Modifier.testTag(tag),
                 )
                 BasicText("text")
             }
@@ -3365,7 +3900,7 @@ class AndroidAccessibilityTest {
             getDeclaredMethod.invoke(
                 viewRootImplClass,
                 "getAccessibilityInteractionController",
-                arrayOf<Class<*>>()
+                arrayOf<Class<*>>(),
             ) as Method
         getAccessibilityInteractionControllerMethod.isAccessible = true
         val accessibilityInteractionController =
@@ -3377,7 +3912,7 @@ class AndroidAccessibilityTest {
             getDeclaredMethod.invoke(
                 accessibilityInteractionControllerClass,
                 "findViewByAccessibilityId",
-                arrayOf<Class<*>>(Int::class.java)
+                arrayOf<Class<*>>(Int::class.java),
             ) as Method
         findViewByAccessibilityIdMethod.isAccessible = true
 
@@ -3395,7 +3930,7 @@ class AndroidAccessibilityTest {
         val foundView =
             findViewByAccessibilityIdMethod.invoke(
                 accessibilityInteractionController,
-                textViewTwoId
+                textViewTwoId,
             )
         assertThat(foundView).isNotNull()
         assertThat(textTwo).isEqualTo(foundView)
@@ -3459,7 +3994,7 @@ class AndroidAccessibilityTest {
                 createHoverMotionEvent(
                     action = ACTION_HOVER_ENTER,
                     x = (bounds.left + bounds.right) / 2f,
-                    y = (bounds.top + bounds.bottom) / 2f
+                    y = (bounds.top + bounds.bottom) / 2f,
                 )
             assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
             assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
@@ -3469,18 +4004,18 @@ class AndroidAccessibilityTest {
             verify(container, times(1))
                 .requestSendAccessibilityEvent(
                     eq(androidComposeView),
-                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_ENTER })
+                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_ENTER }),
                 )
         }
 
-        val virtualViewId = rule.onNodeWithTag(textTag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(textTag).semanticsId()
         val bounds = with(rule.density) { rule.onNodeWithTag(textTag).getBoundsInRoot().toRect() }
         rule.runOnUiThread {
             val hoverEnter =
                 createHoverMotionEvent(
                     action = ACTION_HOVER_MOVE,
                     x = (bounds.left + bounds.right) / 2,
-                    y = (bounds.top + bounds.bottom) / 2
+                    y = (bounds.top + bounds.bottom) / 2,
                 )
             assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
             assertThat(delegate.hoveredVirtualViewId).isEqualTo(virtualViewId)
@@ -3491,7 +4026,7 @@ class AndroidAccessibilityTest {
             verify(container, times(1))
                 .requestSendAccessibilityEvent(
                     eq(androidComposeView),
-                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_EXIT })
+                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_EXIT }),
                 )
         }
     }
@@ -3530,7 +4065,7 @@ class AndroidAccessibilityTest {
                 createHoverMotionEvent(
                     action = ACTION_HOVER_ENTER,
                     x = (bounds.left + bounds.right) / 2f,
-                    y = (bounds.top + bounds.bottom) / 2f
+                    y = (bounds.top + bounds.bottom) / 2f,
                 )
             assertThat(androidComposeView.dispatchHoverEvent(hoverEnter)).isTrue()
             assertThat(delegate.hoveredVirtualViewId).isEqualTo(InvalidId)
@@ -3545,7 +4080,7 @@ class AndroidAccessibilityTest {
             verify(container, times(1))
                 .requestSendAccessibilityEvent(
                     eq(androidComposeView),
-                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_ENTER })
+                    argThat(ArgumentMatcher { it.eventType == TYPE_VIEW_HOVER_ENTER }),
                 )
         }
     }
@@ -3553,7 +4088,7 @@ class AndroidAccessibilityTest {
     private fun assertHoverEvent(
         event: PointerEvent,
         isEnter: Boolean = false,
-        isExit: Boolean = false
+        isExit: Boolean = false,
     ) {
         assertThat(event.changes).hasSize(1)
         val change = event.changes[0]
@@ -3590,7 +4125,7 @@ class AndroidAccessibilityTest {
             0 /* deviceId */,
             0 /* edgeFlags */,
             InputDevice.SOURCE_TOUCHSCREEN,
-            0 /* flags */
+            0, /* flags */
         )
     }
 
@@ -3605,15 +4140,15 @@ class AndroidAccessibilityTest {
                 with(LocalDensity.current) {
                     BasicText(
                         "Child One",
-                        Modifier.zIndex(1f).testTag(childOneTag).requiredSize(50.toDp())
+                        Modifier.zIndex(1f).testTag(childOneTag).requiredSize(50.toDp()),
                     )
                     BasicText("Child Two", Modifier.testTag(childTwoTag).requiredSize(50.toDp()))
                 }
             }
         }
-        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId
-        val overlappedChildOneNodeId = rule.onNodeWithTag(childOneTag).semanticsId
-        val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId
+        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId()
+        val overlappedChildOneNodeId = rule.onNodeWithTag(childOneTag).semanticsId()
+        val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId()
 
         // Assert.
         rule.runOnIdle {
@@ -3639,8 +4174,8 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId
-        val childTwoId = rule.onNodeWithText("Child Two").semanticsId
+        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId()
+        val childTwoId = rule.onNodeWithText("Child Two").semanticsId()
         val childTwoBounds = Rect()
 
         // Act.
@@ -3670,8 +4205,8 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId
-        val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId
+        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId()
+        val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId()
 
         rule.runOnIdle {
             assertThat(createAccessibilityNodeInfo(parentNodeId).childCount).isEqualTo(2)
@@ -3701,7 +4236,7 @@ class AndroidAccessibilityTest {
                 .onNodeWithTag(tag)
                 .assert(expectValue(SemanticsProperties.PaneTitle, "pane title"))
                 .assertIsDisplayed()
-                .semanticsId
+                .semanticsId()
         rule.runOnIdle {
             verify(container, times(1))
                 .requestSendAccessibilityEvent(
@@ -3712,7 +4247,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_STATE_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_PANE_APPEARED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3744,7 +4279,7 @@ class AndroidAccessibilityTest {
             rule
                 .onNodeWithTag(tag)
                 .assert(expectValue(SemanticsProperties.PaneTitle, "new pane title"))
-                .semanticsId
+                .semanticsId()
         rule.runOnIdle {
             verify(container, times(1))
                 .requestSendAccessibilityEvent(
@@ -3755,7 +4290,7 @@ class AndroidAccessibilityTest {
                                 it.eventType == TYPE_WINDOW_STATE_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_PANE_TITLE
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3793,7 +4328,7 @@ class AndroidAccessibilityTest {
                             it.eventType == TYPE_WINDOW_STATE_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_PANE_DISAPPEARED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3854,7 +4389,7 @@ class AndroidAccessibilityTest {
                             it.eventType == TYPE_WINDOW_STATE_CHANGED &&
                                 it.contentChangeTypes == CONTENT_CHANGE_TYPE_PANE_DISAPPEARED
                         }
-                    )
+                    ),
                 )
         }
     }
@@ -3867,7 +4402,7 @@ class AndroidAccessibilityTest {
                 modifier = Modifier.testTag(tag),
                 value = "value",
                 onValueChange = {},
-                visualTransformation = PasswordVisualTransformation()
+                visualTransformation = PasswordVisualTransformation(),
             )
         }
 
@@ -3880,7 +4415,30 @@ class AndroidAccessibilityTest {
             verify(container, atLeastOnce())
                 .requestSendAccessibilityEvent(
                     eq(androidComposeView),
-                    argThat(ArgumentMatcher { it.isPassword })
+                    argThat(ArgumentMatcher { it.isPassword }),
+                )
+        }
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun testCreateEvent_SensitiveDataFieldMatchesNode() {
+        setContent {
+            BasicTextField(
+                modifier = Modifier.testTag(tag).semantics { isSensitiveData = true },
+                value = "value",
+                onValueChange = {},
+            )
+        }
+
+        rule.onNodeWithTag(tag).performSemanticsAction(SetText) { it(AnnotatedString("new value")) }
+
+        rule.mainClock.advanceTimeBy(accessibilityEventLoopIntervalMs)
+        rule.runOnIdle {
+            verify(container, atLeastOnce())
+                .requestSendAccessibilityEvent(
+                    any(),
+                    argThat(ArgumentMatcher { it.isAccessibilityDataSensitive }),
                 )
         }
     }
@@ -3899,7 +4457,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag("node").semanticsId
+        val virtualViewId = rule.onNodeWithTag("node").semanticsId()
 
         var info = AccessibilityNodeInfoCompat.obtain()
         rule.runOnUiThread { info = createAccessibilityNodeInfo(virtualViewId) }
@@ -3937,7 +4495,7 @@ class AndroidAccessibilityTest {
             }
         }
 
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
         var info = AccessibilityNodeInfoCompat.obtain()
         rule.runOnUiThread { info = createAccessibilityNodeInfo(virtualViewId) }
         val rect = Rect()
@@ -3951,6 +4509,62 @@ class AndroidAccessibilityTest {
         info.getBoundsInScreen(rect)
         assertThat(rect.width()).isEqualTo(150)
         assertThat(rect.height()).isEqualTo(150)
+    }
+
+    @Test
+    fun testSemanticsHitTest_unimportantTraversalProperties() {
+        // Arrange.
+        setContent {
+            Box(
+                Modifier.size(100.dp).testTag(tag).semantics {
+                    isTraversalGroup = true
+                    traversalIndex = 1f
+                }
+            ) {}
+        }
+        val bounds = with(rule.density) { rule.onNodeWithTag(tag).getBoundsInRoot().toRect() }
+
+        // Act.
+        val hitNodeId =
+            rule.runOnIdle {
+                delegate.hitTestSemanticsAt(
+                    bounds.left + bounds.width / 2,
+                    bounds.top + bounds.height / 2,
+                )
+            }
+
+        // Assert it doesn't hit the tagged node since it only has unimportant properties.
+        rule.runOnIdle { assertThat(hitNodeId).isEqualTo(InvalidId) }
+    }
+
+    @Test
+    fun testAccessibilityNodeInfoTreePruned_hideFromAccessibilityDoesNotPrune() {
+        // Arrange.
+        val parentTag = "ParentForOverlappedChildren"
+        val childOneTag = "OverlappedChildOne"
+        val childTwoTag = "OverlappedChildTwo"
+        setContent {
+            Box(Modifier.testTag(parentTag)) {
+                with(LocalDensity.current) {
+                    BasicText(
+                        "Child One",
+                        Modifier.zIndex(1f)
+                            .testTag(childOneTag)
+                            .semantics { hideFromAccessibility() }
+                            .requiredSize(50.toDp()),
+                    )
+                    BasicText("Child Two", Modifier.testTag(childTwoTag).requiredSize(50.toDp()))
+                }
+            }
+        }
+        val parentNodeId = rule.onNodeWithTag(parentTag).semanticsId()
+        val overlappedChildTwoNodeId = rule.onNodeWithTag(childTwoTag).semanticsId()
+
+        rule.runOnIdle {
+            assertThat(createAccessibilityNodeInfo(parentNodeId).childCount).isEqualTo(2)
+            assertThat(createAccessibilityNodeInfo(overlappedChildTwoNodeId).text.toString())
+                .isEqualTo("Child Two")
+        }
     }
 
     @Test
@@ -3968,13 +4582,13 @@ class AndroidAccessibilityTest {
                     Box(Modifier.size(300.toDp())) {
                         BasicText(
                             text = "text",
-                            modifier = Modifier.offset(100.toDp(), 100.toDp()).fillMaxSize()
+                            modifier = Modifier.offset(100.toDp(), 100.toDp()).fillMaxSize(),
                         )
                     }
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithText("text").semanticsId
+        val virtualViewId = rule.onNodeWithText("text").semanticsId()
 
         var info = AccessibilityNodeInfoCompat.obtain()
         rule.runOnUiThread { info = createAccessibilityNodeInfo(virtualViewId) }
@@ -3994,13 +4608,12 @@ class AndroidAccessibilityTest {
                     textPositionOnScreenX,
                     textPositionOnScreenY,
                     textPositionOnScreenX + size,
-                    textPositionOnScreenY + size
+                    textPositionOnScreenY + size,
                 )
             )
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class)
     fun testTestTagsAsResourceId() {
         // Arrange.
         val tag1 = "box1"
@@ -4043,13 +4656,13 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val box1Id = rule.onNodeWithTag(tag1).semanticsId
-        val box2Id = rule.onNodeWithTag(tag2).semanticsId
-        val box3Id = rule.onNodeWithTag(tag3).semanticsId
-        val box4Id = rule.onNodeWithTag(tag4).semanticsId
-        val box5Id = rule.onNodeWithTag(tag5).semanticsId
-        val box6Id = rule.onNodeWithTag(tag6, true).semanticsId
-        val box7Id = rule.onNodeWithTag(tag7, true).semanticsId
+        val box1Id = rule.onNodeWithTag(tag1).semanticsId()
+        val box2Id = rule.onNodeWithTag(tag2).semanticsId()
+        val box3Id = rule.onNodeWithTag(tag3).semanticsId()
+        val box4Id = rule.onNodeWithTag(tag4).semanticsId()
+        val box5Id = rule.onNodeWithTag(tag5).semanticsId()
+        val box6Id = rule.onNodeWithTag(tag6, true).semanticsId()
+        val box7Id = rule.onNodeWithTag(tag7, true).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -4084,7 +4697,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualId) }
@@ -4104,7 +4717,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4121,7 +4734,7 @@ class AndroidAccessibilityTest {
                 Box(Modifier.size(100.toDp()).testTag(tag).semantics { contentDescription = "Box" })
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4142,7 +4755,7 @@ class AndroidAccessibilityTest {
                 )
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4168,7 +4781,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4188,7 +4801,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag("Row").semanticsId
+        val virtualViewId = rule.onNodeWithTag("Row").semanticsId()
 
         // Act.
         val info = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4215,7 +4828,7 @@ class AndroidAccessibilityTest {
                     }
                 }
             }
-            val virtualViewId = rule.onNodeWithTag("tag").semanticsId
+            val virtualViewId = rule.onNodeWithTag("tag").semanticsId()
 
             // Act.
             val accessibilityNodeInfo =
@@ -4254,7 +4867,7 @@ class AndroidAccessibilityTest {
                 }
             }
 
-            val virtualViewId = rule.onNodeWithTag("tag").semanticsId
+            val virtualViewId = rule.onNodeWithTag("tag").semanticsId()
 
             // Act.
             val accessibilityNodeInfo =
@@ -4289,7 +4902,7 @@ class AndroidAccessibilityTest {
             }
         }
 
-        val virtualViewId = rule.onNodeWithTag("tag").semanticsId
+        val virtualViewId = rule.onNodeWithTag("tag").semanticsId()
 
         // Act.
         val accessibilityNodeInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4323,7 +4936,7 @@ class AndroidAccessibilityTest {
                     }
                 }
             }
-            val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+            val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
             // Act.
             val accessibilityNodeInfo =
@@ -4357,7 +4970,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val accessibilityNodeInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4393,7 +5006,7 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val accessibilityNodeInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4456,8 +5069,8 @@ class AndroidAccessibilityTest {
 
         // Assert.
         rule.runOnIdle {
-            assertThat(parent.unmergedChildren(true).size).isEqualTo(1)
-            assertThat(child.unmergedChildren(true).size).isEqualTo(0)
+            assertThat(parent.unmergedChildren(includeFakeNodes = true).size).isEqualTo(1)
+            assertThat(child.unmergedChildren(includeFakeNodes = true).size).isEqualTo(0)
         }
     }
 
@@ -4487,7 +5100,9 @@ class AndroidAccessibilityTest {
         }
 
         // Assert.
-        rule.runOnIdle { assertThat(parent.unmergedChildren(true).size).isEqualTo(2) }
+        rule.runOnIdle {
+            assertThat(parent.unmergedChildren(includeFakeNodes = true).size).isEqualTo(2)
+        }
     }
 
     @Test
@@ -4637,7 +5252,7 @@ class AndroidAccessibilityTest {
         setContent {
             Column(Modifier.semantics(true) {}) { BasicText("test", Modifier.testTag(tag)) }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId()
 
         // Act.
         val childInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4653,7 +5268,7 @@ class AndroidAccessibilityTest {
         setContent {
             Column(Modifier.semantics(false) {}) { BasicText("test", Modifier.testTag(tag)) }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId()
 
         // Act.
         val childInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4669,7 +5284,7 @@ class AndroidAccessibilityTest {
         setContent {
             Column(Modifier.semantics(false) {}) { Box(Modifier.testTag(tag).size(100.dp)) }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, useUnmergedTree = true).semanticsId()
 
         // Act.
         val childInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4686,7 +5301,7 @@ class AndroidAccessibilityTest {
                 Image(ImageBitmap(100, 100), "Image", Modifier.testTag(tag))
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId()
 
         // Act.
         val imageInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4703,7 +5318,7 @@ class AndroidAccessibilityTest {
                 Image(ImageBitmap(100, 100), "Image", Modifier.testTag(tag))
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId()
 
         // Act.
         val imageInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4720,11 +5335,11 @@ class AndroidAccessibilityTest {
                 Image(
                     ImageBitmap(100, 100),
                     "Image",
-                    Modifier.testTag(tag).semantics(true) { /* imitate clickable node */ }
+                    Modifier.testTag(tag).semantics(true) { /* imitate clickable node */ },
                 )
             }
         }
-        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId
+        val virtualViewId = rule.onNodeWithTag(tag, true).semanticsId()
 
         // Act.
         val imageInfo = rule.runOnIdle { createAccessibilityNodeInfo(virtualViewId) }
@@ -4750,8 +5365,8 @@ class AndroidAccessibilityTest {
                 }
             }
         }
-        val columnId = rule.onNodeWithTag(tagColumn).semanticsId
-        val rowId = rule.onNodeWithTag(tagRow).semanticsId
+        val columnId = rule.onNodeWithTag(tagColumn).semanticsId()
+        val rowId = rule.onNodeWithTag(tagRow).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -4787,7 +5402,7 @@ class AndroidAccessibilityTest {
                                     }
                                 )
                             }
-                        },
+                        }
                     )
                 }
             }
@@ -4845,12 +5460,12 @@ class AndroidAccessibilityTest {
                 )
             }
         }
-        val parentId = rule.onNodeWithTag("parent").semanticsId
-        val child1Id = rule.onNodeWithTag("child1").semanticsId
-        val child2Id = rule.onNodeWithTag("child2").semanticsId
-        val child3Id = rule.onNodeWithTag("child3").semanticsId
-        val child4Id = rule.onNodeWithTag("child4").semanticsId
-        val child5Id = rule.onNodeWithTag("child5").semanticsId
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+        val child3Id = rule.onNodeWithTag("child3").semanticsId()
+        val child4Id = rule.onNodeWithTag("child4").semanticsId()
+        val child5Id = rule.onNodeWithTag("child5").semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -4904,10 +5519,10 @@ class AndroidAccessibilityTest {
                 )
             }
         }
-        val parentId = rule.onNodeWithTag("parent").semanticsId
-        val child1Id = rule.onNodeWithTag("child1").semanticsId
-        val child2Id = rule.onNodeWithTag("child2").semanticsId
-        val child3Id = rule.onNodeWithTag("child3").semanticsId
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+        val child3Id = rule.onNodeWithTag("child3").semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -4926,6 +5541,143 @@ class AndroidAccessibilityTest {
     }
 
     @Test
+    fun testTransparentNode_withAlphaAndClickableModifiers_notAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    modifier =
+                        Modifier.alpha(0f).clickable(onClick = {}).semantics {
+                            testTag = "child"
+                            contentDescription = "Test"
+                        }
+                )
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val childId = rule.onNodeWithTag("child").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child = createAccessibilityNodeInfo(childId)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child.isVisibleToUser).isFalse()
+        }
+    }
+
+    @Test
+    fun testTransparentNode_withAlphaAndMultipleClickableModifiers_accessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    modifier =
+                        Modifier.clickable(onClick = {})
+                            .alpha(0f)
+                            .clickable(onClick = {})
+                            .semantics {
+                                testTag = "child"
+                                contentDescription = "Test"
+                            }
+                )
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val childId = rule.onNodeWithTag("child").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child = createAccessibilityNodeInfo(childId)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child.isVisibleToUser).isTrue()
+        }
+    }
+
+    @Test
+    fun testTransparentNode_withMultipleAlphaAndNestedClickableNodes_notAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    Modifier.alpha(1f).alpha(0f).alpha(1f).clickable(onClick = {}).semantics {
+                        testTag = "child1"
+                        contentDescription = "test"
+                    }
+                ) {
+                    Box(
+                        Modifier.clickable(onClick = {}).semantics {
+                            testTag = "child2"
+                            contentDescription = "test"
+                        }
+                    )
+                }
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child1 = createAccessibilityNodeInfo(child1Id)
+        val child2 = createAccessibilityNodeInfo(child2Id)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child1.isVisibleToUser).isFalse()
+            assertThat(child2.isVisibleToUser).isFalse()
+        }
+    }
+
+    @Test
+    fun testNonTransparentNode_withMultipleAlphaAndNestedClickableNodes_parentAccessible() {
+        // Arrange.
+        setContent {
+            Column(Modifier.testTag("parent")) {
+                Box(
+                    Modifier.alpha(1f).clickable(onClick = {}).alpha(0f).alpha(1f).semantics {
+                        testTag = "child1"
+                        contentDescription = "test"
+                    }
+                ) {
+                    Box(
+                        Modifier.clickable(onClick = {}).semantics {
+                            testTag = "child2"
+                            contentDescription = "test"
+                        }
+                    )
+                }
+            }
+        }
+        val parentId = rule.onNodeWithTag("parent").semanticsId()
+        val child1Id = rule.onNodeWithTag("child1").semanticsId()
+        val child2Id = rule.onNodeWithTag("child2").semanticsId()
+
+        // Act.
+        rule.waitForIdle()
+        val parent = createAccessibilityNodeInfo(parentId)
+        val child1 = createAccessibilityNodeInfo(child1Id)
+        val child2 = createAccessibilityNodeInfo(child2Id)
+
+        // Assert.
+        rule.runOnIdle {
+            assertThat(parent.childCount).isEqualTo(1)
+            assertThat(child1.isVisibleToUser).isTrue()
+            assertThat(child2.isVisibleToUser).isFalse()
+        }
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     fun progressSemantics_mergesSemantics_forTalkback() {
         // Arrange.
@@ -4934,8 +5686,8 @@ class AndroidAccessibilityTest {
                 BasicText("test", Modifier.testTag("child"))
             }
         }
-        val boxId = rule.onNodeWithTag("box", useUnmergedTree = true).semanticsId
-        val textId = rule.onNodeWithTag("child", useUnmergedTree = true).semanticsId
+        val boxId = rule.onNodeWithTag("box", useUnmergedTree = true).semanticsId()
+        val textId = rule.onNodeWithTag("child", useUnmergedTree = true).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -4958,8 +5710,8 @@ class AndroidAccessibilityTest {
                 BasicText("test", Modifier.testTag("child"))
             }
         }
-        val boxId = rule.onNodeWithTag("box", useUnmergedTree = true).semanticsId
-        val textId = rule.onNodeWithTag("child", useUnmergedTree = true).semanticsId
+        val boxId = rule.onNodeWithTag("box", useUnmergedTree = true).semanticsId()
+        val textId = rule.onNodeWithTag("child", useUnmergedTree = true).semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -5068,11 +5820,11 @@ class AndroidAccessibilityTest {
         return Bundle().apply {
             this.putInt(
                 AccessibilityNodeInfoCompat.ACTION_ARGUMENT_MOVEMENT_GRANULARITY_INT,
-                MOVEMENT_GRANULARITY_CHARACTER
+                MOVEMENT_GRANULARITY_CHARACTER,
             )
             this.putBoolean(
                 AccessibilityNodeInfoCompat.ACTION_ARGUMENT_EXTEND_SELECTION_BOOLEAN,
-                false
+                false,
             )
         }
     }
@@ -5106,7 +5858,7 @@ private fun SimpleTestLayout(modifier: Modifier = Modifier, content: @Composable
                 with(placeables) {
                     Pair(
                         max(maxByOrNull { it.width }?.width ?: 0, constraints.minWidth),
-                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight)
+                        max(maxByOrNull { it.height }?.height ?: 0, constraints.minHeight),
                     )
                 }
             layout(width, height) {
@@ -5130,13 +5882,13 @@ private fun SimpleSubcomposeLayout(
     contentOne: @Composable () -> Unit,
     positionOne: Offset,
     contentTwo: @Composable () -> Unit,
-    positionTwo: Offset
+    positionTwo: Offset,
 ) {
     SubcomposeLayout(modifier) { constraints ->
         val layoutWidth = constraints.maxWidth
         val layoutHeight = constraints.maxHeight
 
-        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val looseConstraints = constraints.copyMaxDimensions()
 
         layout(layoutWidth, layoutHeight) {
             val placeablesOne =
@@ -5161,13 +5913,13 @@ fun ScaffoldedSubcomposeLayout(
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit,
     content: @Composable () -> Unit,
-    bottomBar: @Composable () -> Unit
+    bottomBar: @Composable () -> Unit,
 ) {
     var yPosition = 0
     SubcomposeLayout(modifier) { constraints ->
         val layoutWidth = constraints.maxWidth
         val layoutHeight = constraints.maxHeight
-        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val looseConstraints = constraints.copyMaxDimensions()
         layout(layoutWidth, layoutHeight) {
             val topPlaceables =
                 subcompose(ScaffoldedSlots.Top, topBar).fastMap { it.measure(looseConstraints) }
@@ -5200,18 +5952,14 @@ fun ScaffoldedSubcomposeLayout(
 
 private enum class TestSlot {
     First,
-    Second
+    Second,
 }
 
 private enum class ScaffoldedSlots {
     Top,
     Content,
-    Bottom
+    Bottom,
 }
-
-// TODO(b/272068594): Add api to fetch the semantics id from SemanticsNodeInteraction directly.
-private val SemanticsNodeInteraction.semanticsId: Int
-    get() = fetchSemanticsNode().id
 
 // TODO(b/304359126): Move this to AccessibilityEventCompat and use it wherever we use obtain().
 private fun AccessibilityEvent(): android.view.accessibility.AccessibilityEvent {
@@ -5221,8 +5969,53 @@ private fun AccessibilityEvent(): android.view.accessibility.AccessibilityEvent 
             @Suppress("DEPRECATION") android.view.accessibility.AccessibilityEvent.obtain()
         }
         .apply {
-            packageName = "androidx.compose.ui.test"
+            packageName = "androidx.compose.ui.tests"
             className = "android.view.View"
             isEnabled = true
         }
 }
+
+const val CustomIntAccessibilityExtraKey =
+    "androidx.compose.ui.semantics.customIntAccessibilityExtra"
+val CustomIntAccessibilityExtra =
+    SemanticsPropertyKey<Int>("CustomIntAccessibilityExtra", CustomIntAccessibilityExtraKey)
+var SemanticsPropertyReceiver.customIntAccessibilityExtra by CustomIntAccessibilityExtra
+
+const val CustomStringAccessibilityExtraKey =
+    "androidx.compose.ui.semantics.customStringAccessibilityExtra"
+val CustomStringAccessibilityExtra =
+    SemanticsPropertyKey<String>(
+        "CustomStringAccessibilityExtra",
+        CustomStringAccessibilityExtraKey,
+    )
+var SemanticsPropertyReceiver.customStringAccessibilityExtra by CustomStringAccessibilityExtra
+
+const val CustomParcelableAccessibilityExtraKey =
+    "androidx.compose.ui.semantics.customParcelableAccessibilityExtra"
+val CustomParcelableAccessibilityExtra =
+    SemanticsPropertyKey<Parcelable>(
+        "CustomParcelableAccessibilityExtra",
+        CustomParcelableAccessibilityExtraKey,
+    )
+var SemanticsPropertyReceiver.customParcelableAccessibilityExtra by
+    CustomParcelableAccessibilityExtra
+
+const val CustomSerializableAccessibilityExtraKey =
+    "androidx.compose.ui.semantics.customSerializableAccessibilityExtra"
+val CustomSerializableAccessibilityExtra =
+    SemanticsPropertyKey<Serializable>(
+        "CustomSerializableAccessibilityExtra",
+        CustomSerializableAccessibilityExtraKey,
+    )
+var SemanticsPropertyReceiver.customSerializableAccessibilityExtra by
+    CustomSerializableAccessibilityExtra
+
+data class InvalidAccessibilityExtraValue(val value: Int)
+
+const val InvalidAccessibilityExtraKey = "androidx.compose.ui.semantics.invalidAccessibilityExtra"
+val InvalidAccessibilityExtra =
+    SemanticsPropertyKey<InvalidAccessibilityExtraValue>(
+        "InvalidAccessibilityExtra",
+        InvalidAccessibilityExtraKey,
+    )
+var SemanticsPropertyReceiver.invalidAccessibilityExtra by InvalidAccessibilityExtra

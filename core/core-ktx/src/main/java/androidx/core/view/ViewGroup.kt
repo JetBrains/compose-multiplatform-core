@@ -21,6 +21,7 @@ package androidx.core.view
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.Px
+import kotlin.collections.removeLast as removeLastKt
 
 /**
  * Returns the view at [index].
@@ -142,7 +143,7 @@ public val ViewGroup.descendants: Sequence<View>
  */
 internal class TreeIterator<T>(
     rootIterator: Iterator<T>,
-    private val getChildIterator: ((T) -> Iterator<T>?)
+    private val getChildIterator: ((T) -> Iterator<T>?),
 ) : Iterator<T> {
     private val stack = mutableListOf<Iterator<T>>()
 
@@ -170,7 +171,10 @@ internal class TreeIterator<T>(
         } else {
             while (!iterator.hasNext() && stack.isNotEmpty()) {
                 iterator = stack.last()
-                stack.removeLast()
+                // MutableCollections.removeLast() is shadowed by java.util.list.removeAt()
+                // which was added in sdk 35 making this call unsafe
+                // stack.removeLast()
+                stack.removeLastKt()
             }
         }
     }
@@ -196,7 +200,7 @@ public inline fun ViewGroup.MarginLayoutParams.updateMargins(
     @Px left: Int = leftMargin,
     @Px top: Int = topMargin,
     @Px right: Int = rightMargin,
-    @Px bottom: Int = bottomMargin
+    @Px bottom: Int = bottomMargin,
 ) {
     setMargins(left, top, right, bottom)
 }
@@ -216,7 +220,7 @@ public inline fun ViewGroup.MarginLayoutParams.updateMarginsRelative(
     @Px start: Int = marginStart,
     @Px top: Int = topMargin,
     @Px end: Int = marginEnd,
-    @Px bottom: Int = bottomMargin
+    @Px bottom: Int = bottomMargin,
 ) {
     marginStart = start
     topMargin = top

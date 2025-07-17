@@ -18,6 +18,7 @@ package androidx.room.solver.types
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.processing.XNullability
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.ExceptionTypeNames
@@ -31,7 +32,7 @@ class NullSafeTypeConverter(val delegate: TypeConverter) :
     TypeConverter(
         from = delegate.from.makeNullable(),
         to = delegate.to.makeNullable(),
-        cost = delegate.cost + Cost.NULL_SAFE
+        cost = delegate.cost + Cost.NULL_SAFE,
     ) {
     init {
         check(delegate.from.nullability == XNullability.NONNULL) {
@@ -51,9 +52,8 @@ class NullSafeTypeConverter(val delegate: TypeConverter) :
 }
 
 /** A [TypeConverter] that checks the value is `non-null` and throws if it is null. */
-class RequireNotNullTypeConverter(
-    from: XType,
-) : TypeConverter(from = from, to = from.makeNonNullable(), cost = Cost.REQUIRE_NOT_NULL) {
+class RequireNotNullTypeConverter(from: XType) :
+    TypeConverter(from = from, to = from.makeNonNullable(), cost = Cost.REQUIRE_NOT_NULL) {
     init {
         check(from.nullability != XNullability.NONNULL) {
             "No reason to null check a non-null input"
@@ -76,19 +76,18 @@ class RequireNotNullTypeConverter(
         return inputVarName
     }
 
-    private fun XCodeBlock.Builder.addIllegalStateException() {
+    private fun XCodeBlock.Builder.addIllegalStateException() = applyTo { language ->
         val typeName = from.asTypeName().copy(nullable = false).toString(language)
-        val exceptionClassName =
-            when (language) {
-                CodeLanguage.JAVA -> ExceptionTypeNames.JAVA_ILLEGAL_STATE_EXCEPTION
-                CodeLanguage.KOTLIN -> ExceptionTypeNames.KOTLIN_ILLEGAL_STATE_EXCEPTION
-            }
         val message = "Expected NON-NULL '$typeName', but it was NULL."
         when (language) {
             CodeLanguage.JAVA -> {
                 addStatement(
                     "throw %L",
-                    XCodeBlock.ofNewInstance(language, exceptionClassName, "%S", message)
+                    XCodeBlock.ofNewInstance(
+                        ExceptionTypeNames.JAVA_ILLEGAL_STATE_EXCEPTION,
+                        "%S",
+                        message,
+                    ),
                 )
             }
             CodeLanguage.KOTLIN -> {

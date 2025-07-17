@@ -152,7 +152,7 @@ class AmbiguousColumnResolverTest {
     @Database(
         entities = [User::class, Comment::class, Avatar::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     internal abstract class TestDatabase : RoomDatabase() {
         abstract fun getDao(): TestDao
@@ -193,9 +193,9 @@ class AmbiguousColumnResolverTest {
 
         // This works because star projections are ordered from queried tables, but if the JOIN
         // is swapped it would return bad results, hence the AMBIGUOUS_COLUMN_IN_RESULT.
-        // Suppress on CURSOR_MISMATCH is because @RewriteQueriesToDropUnusedColumns does not
+        // Suppress on QUERY_MISMATCH is because @RewriteQueriesToDropUnusedColumns does not
         // rewrite queries with duplicate columns.
-        @Suppress(RoomWarnings.CURSOR_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT)
+        @Suppress(RoomWarnings.QUERY_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT)
         @Query("SELECT * FROM User JOIN Comment ON User.id = Comment.userId")
         fun getUserIdAndComments(): Map<@MapColumn("id") Int, List<Comment>>
 
@@ -247,25 +247,11 @@ class AmbiguousColumnResolverTest {
         fun getUserCommentEmbeddedAliased(): List<UserAndCommentAliased>
     }
 
-    @Entity
-    data class User(
-        @PrimaryKey val id: Int,
-        val name: String,
-    )
+    @Entity data class User(@PrimaryKey val id: Int, val name: String)
 
-    @Entity
-    data class Comment(
-        @PrimaryKey val id: Int,
-        val userId: Int,
-        val text: String,
-    )
+    @Entity data class Comment(@PrimaryKey val id: Int, val userId: Int, val text: String)
 
-    @Entity
-    data class Avatar(
-        @PrimaryKey val userId: Int,
-        val url: String,
-        val data: ByteBuffer,
-    )
+    @Entity data class Avatar(@PrimaryKey val userId: Int, val url: String, val data: ByteBuffer)
 
     data class UserAndAvatar(
         @Embedded val user: User,

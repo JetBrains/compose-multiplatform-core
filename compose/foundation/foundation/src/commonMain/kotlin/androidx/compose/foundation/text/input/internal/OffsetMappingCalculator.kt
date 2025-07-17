@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.input.internal
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.ui.text.TextRange
 
 /**
@@ -262,7 +263,7 @@ internal class OffsetMappingCalculator {
      * [sourceEnd] (exclusive) in the original text with some text with length [newLength].
      */
     fun recordEditOperation(sourceStart: Int, sourceEnd: Int, newLength: Int) {
-        require(newLength >= 0) { "Expected newLen to be ≥ 0, was $newLength" }
+        requirePrecondition(newLength >= 0) { "Expected newLen to be ≥ 0, was $newLength" }
         val sourceMin = minOf(sourceStart, sourceEnd)
         val sourceMax = maxOf(sourceMin, sourceEnd)
         val sourceLength = sourceMax - sourceMin
@@ -305,7 +306,7 @@ internal class OffsetMappingCalculator {
                     opOffset = opOffset,
                     untransformedLen = opSrcLen,
                     transformedLen = opDestLen,
-                    fromSource = fromSource
+                    fromSource = fromSource,
                 )
             val newEnd =
                 mapStep(
@@ -313,7 +314,7 @@ internal class OffsetMappingCalculator {
                     opOffset = opOffset,
                     untransformedLen = opSrcLen,
                     transformedLen = opDestLen,
-                    fromSource = fromSource
+                    fromSource = fromSource,
                 )
             // range = newStart ∪ newEnd
             // Note we don't read TextRange.min/max here because the above code always returns
@@ -331,7 +332,7 @@ internal class OffsetMappingCalculator {
         opOffset: Int,
         untransformedLen: Int,
         transformedLen: Int,
-        fromSource: Boolean
+        fromSource: Boolean,
     ): TextRange {
         val srcLen = if (fromSource) untransformedLen else transformedLen
         val destLen = if (fromSource) transformedLen else untransformedLen
@@ -369,18 +370,18 @@ internal class OffsetMappingCalculator {
  */
 @kotlin.jvm.JvmInline
 private value class OpArray private constructor(private val values: IntArray) {
-    constructor(size: Int) : this(IntArray(size * ElementSize))
+    constructor(size: Int) : this(IntArray(size * OpArrayElementSize))
 
     val size: Int
-        get() = values.size / ElementSize
+        get() = values.size / OpArrayElementSize
 
     fun set(index: Int, offset: Int, srcLen: Int, destLen: Int) {
-        values[index * ElementSize] = offset
-        values[index * ElementSize + 1] = srcLen
-        values[index * ElementSize + 2] = destLen
+        values[index * OpArrayElementSize] = offset
+        values[index * OpArrayElementSize + 1] = srcLen
+        values[index * OpArrayElementSize + 2] = destLen
     }
 
-    fun copyOf(newSize: Int) = OpArray(values.copyOf(newSize * ElementSize))
+    fun copyOf(newSize: Int) = OpArray(values.copyOf(newSize * OpArrayElementSize))
 
     /**
      * Loops through the array between 0 and [max] (exclusive). If [reversed] is false (the
@@ -389,7 +390,7 @@ private value class OpArray private constructor(private val values: IntArray) {
     inline fun forEach(
         max: Int,
         reversed: Boolean = false,
-        block: (offset: Int, srcLen: Int, destLen: Int) -> Unit
+        block: (offset: Int, srcLen: Int, destLen: Int) -> Unit,
     ) {
         if (max < 0) return
         // Note: This stamps out block twice at the callsite, which is normally bad for an inline
@@ -398,22 +399,20 @@ private value class OpArray private constructor(private val values: IntArray) {
         // duplication here keeps the more complicated logic at the callsite more readable.
         if (reversed) {
             for (i in max - 1 downTo 0) {
-                val offset = values[i * ElementSize]
-                val srcLen = values[i * ElementSize + 1]
-                val destLen = values[i * ElementSize + 2]
+                val offset = values[i * OpArrayElementSize]
+                val srcLen = values[i * OpArrayElementSize + 1]
+                val destLen = values[i * OpArrayElementSize + 2]
                 block(offset, srcLen, destLen)
             }
         } else {
             for (i in 0 until max) {
-                val offset = values[i * ElementSize]
-                val srcLen = values[i * ElementSize + 1]
-                val destLen = values[i * ElementSize + 2]
+                val offset = values[i * OpArrayElementSize]
+                val srcLen = values[i * OpArrayElementSize + 1]
+                val destLen = values[i * OpArrayElementSize + 2]
                 block(offset, srcLen, destLen)
             }
         }
     }
-
-    private companion object {
-        const val ElementSize = 3
-    }
 }
+
+private const val OpArrayElementSize = 3

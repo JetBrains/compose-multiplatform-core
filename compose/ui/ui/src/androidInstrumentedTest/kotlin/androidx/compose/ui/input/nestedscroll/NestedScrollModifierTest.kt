@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -38,7 +39,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performMouseInput
@@ -53,6 +53,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.math.abs
 import kotlin.math.sign
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertFalse
@@ -90,7 +91,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(3)
                     counter++
@@ -105,7 +106,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(7)
                     counter++
@@ -129,7 +130,7 @@ class NestedScrollModifierTest {
         childDispatcher.dispatchPostScroll(
             scrollOffset,
             scrollLeftOffset,
-            NestedScrollSource.UserInput
+            NestedScrollSource.UserInput,
         )
         assertThat(counter).isEqualTo(4)
         counter++
@@ -194,7 +195,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(1)
                     counter++
@@ -206,7 +207,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(2)
                     counter++
@@ -231,7 +232,7 @@ class NestedScrollModifierTest {
             childDispatcher.dispatchPostScroll(
                 scrollOffset,
                 scrollLeftOffset,
-                NestedScrollSource.UserInput
+                NestedScrollSource.UserInput,
             )
             assertThat(counter).isEqualTo(3)
             counter++
@@ -286,7 +287,7 @@ class NestedScrollModifierTest {
             object : NestedScrollConnection {
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(1)
                     counter++
@@ -297,7 +298,7 @@ class NestedScrollModifierTest {
             object : NestedScrollConnection {
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(2)
                     counter++
@@ -342,7 +343,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(consumed).isEqualTo(scrollOffset)
                     assertThat(available).isEqualTo(scrollLeftOffset)
@@ -357,7 +358,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(consumed).isEqualTo(postFlingConsumed)
                     assertThat(available).isEqualTo(postFlingLeft)
@@ -441,7 +442,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(consumed).isEqualTo(parentConsumedScroll + dispatchedConsumedScroll)
                     assertThat(available).isEqualTo(dispatchedScroll - parentConsumedScroll)
@@ -453,7 +454,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(consumed).isEqualTo(dispatchedConsumedScroll)
                     assertThat(available).isEqualTo(dispatchedScroll)
@@ -475,7 +476,7 @@ class NestedScrollModifierTest {
             childDispatcher.dispatchPostScroll(
                 dispatchedConsumedScroll,
                 dispatchedScroll,
-                NestedScrollSource.UserInput
+                NestedScrollSource.UserInput,
             )
         }
     }
@@ -529,7 +530,7 @@ class NestedScrollModifierTest {
             object : NestedScrollConnection {
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(consumed)
                         .isEqualTo(parentConsumedPostFling + dispatchedConsumedVelocity)
@@ -543,7 +544,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(consumed).isEqualTo(dispatchedConsumedVelocity)
                     assertThat(available).isEqualTo(dispatchedLeftVelocity)
@@ -582,7 +583,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(consumed).isEqualTo(scrollOffset)
                     assertThat(available).isEqualTo(scrollLeftOffset)
@@ -597,7 +598,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(consumed).isEqualTo(postFlingConsumed)
                     assertThat(available).isEqualTo(postFlingLeft)
@@ -642,7 +643,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertWithMessage("self connection shouldn't be called").fail()
                     return Offset.Zero
@@ -655,7 +656,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertWithMessage("self connection shouldn't be called").fail()
                     return Velocity.Zero
@@ -673,7 +674,7 @@ class NestedScrollModifierTest {
         childDispatcher.dispatchPostScroll(
             scrollOffset,
             scrollLeftOffset,
-            NestedScrollSource.SideEffect
+            NestedScrollSource.SideEffect,
         )
 
         childDispatcher.dispatchPreFling(preFling)
@@ -758,7 +759,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
                     counter++
@@ -773,7 +774,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
                     counter++
@@ -791,7 +792,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
                     counter++
@@ -806,7 +807,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
                     counter++
@@ -838,7 +839,7 @@ class NestedScrollModifierTest {
             childDispatcher.dispatchPostScroll(
                 scrollOffset,
                 scrollLeftOffset,
-                NestedScrollSource.UserInput
+                NestedScrollSource.UserInput,
             )
             assertThat(counter).isEqualTo(3)
             counter = 1
@@ -902,7 +903,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
                     counter++
@@ -917,7 +918,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 2 else 1)
                     counter++
@@ -935,7 +936,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
                     counter++
@@ -950,7 +951,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     assertThat(counter).isEqualTo(if (isConnection1Parent.value) 1 else 2)
                     counter++
@@ -978,7 +979,7 @@ class NestedScrollModifierTest {
             childDispatcher.dispatchPostScroll(
                 scrollOffset,
                 scrollLeftOffset,
-                NestedScrollSource.UserInput
+                NestedScrollSource.UserInput,
             )
             assertThat(counter).isEqualTo(3)
             counter = 1
@@ -1015,7 +1016,7 @@ class NestedScrollModifierTest {
 
                     override fun onPreScroll(
                         available: Offset,
-                        source: NestedScrollSource
+                        source: NestedScrollSource,
                     ): Offset {
                         return if (available.y < 0) {
                             val consumed = consumedDelta(available.y)
@@ -1026,7 +1027,7 @@ class NestedScrollModifierTest {
                     override fun onPostScroll(
                         consumed: Offset,
                         available: Offset,
-                        source: NestedScrollSource
+                        source: NestedScrollSource,
                     ): Offset {
                         return if (abs(available.y) > 0f && available.y > 0f) {
                             Offset(0f, consumedDelta(available.y))
@@ -1109,7 +1110,7 @@ class NestedScrollModifierTest {
             content.invoke(
                 Modifier.nestedScroll(rootParent),
                 maybeNestedScroll,
-                Modifier.nestedScroll(childConnection, childDispatcher)
+                Modifier.nestedScroll(childConnection, childDispatcher),
             )
         }
 
@@ -1154,7 +1155,7 @@ class NestedScrollModifierTest {
                 if (emitParentNestedScroll.value) Modifier.nestedScroll(parent) else Modifier
             content.invoke(
                 maybeNestedScroll,
-                Modifier.nestedScroll(childConnection, childDispatcher)
+                Modifier.nestedScroll(childConnection, childDispatcher),
             )
         }
 
@@ -1180,7 +1181,6 @@ class NestedScrollModifierTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testPreScrollConsumption_verticalScrollMouse_postScrollAvailableIsZero() {
@@ -1203,7 +1203,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     postScrollCount++
                     postScrollConsumedOffset = consumed
@@ -1251,7 +1251,6 @@ class NestedScrollModifierTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testNoPreScrollConsumption_verticalScrollMouse_postScrollAvailableNotZero() {
@@ -1274,7 +1273,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     postScrollCount++
                     postScrollConsumedOffset = consumed
@@ -1344,7 +1343,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     postScrollCount++
                     postScrollConsumedOffset = consumed
@@ -1408,7 +1407,7 @@ class NestedScrollModifierTest {
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     postScrollCount++
                     postScrollConsumedOffset = consumed
@@ -1450,7 +1449,6 @@ class NestedScrollModifierTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @MediumTest
     @Test
     fun testFlingCallbacks_verticalScrollMouse_shouldNotTriggerCallbacks() {
@@ -1466,7 +1464,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     postFlingCount++
                     return super.onPostFling(consumed, available)
@@ -1520,7 +1518,7 @@ class NestedScrollModifierTest {
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     postFlingCount++
                     return super.onPostFling(consumed, available)
@@ -1551,6 +1549,97 @@ class NestedScrollModifierTest {
             assertThat(preFlingCount).isGreaterThan(0)
             assertThat(postFlingCount).isGreaterThan(0)
         }
+    }
+
+    @Test
+    fun modifierIsRemoved_shouldKeepInfoAboutPreviousParent() {
+        val innerDispatcher = NestedScrollDispatcher()
+        val outerDispatcher = NestedScrollDispatcher()
+        var keepAround by mutableStateOf(true)
+
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.nestedScroll(
+                        dispatcher = outerDispatcher,
+                        connection = object : NestedScrollConnection {},
+                    )
+            ) {
+                Box(
+                    Modifier.size(400.dp)
+                        .then(
+                            if (keepAround)
+                                Modifier.nestedScroll(
+                                    dispatcher = innerDispatcher,
+                                    connection = object : NestedScrollConnection {},
+                                )
+                            else Modifier
+                        )
+                )
+            }
+        }
+
+        rule.runOnIdle {
+            assertThat(innerDispatcher.lastKnownParentNode).isNull()
+            assertThat(innerDispatcher.nestedScrollNode?.parentNestedScrollNode)
+                .isEqualTo(outerDispatcher.nestedScrollNode)
+        }
+
+        rule.runOnIdle {
+            keepAround = false // remove inner node
+        }
+
+        rule.runOnIdle {
+            // the inner node's parent is the outer node
+            assertThat(innerDispatcher.lastKnownParentNode)
+                .isEqualTo(outerDispatcher.nestedScrollNode)
+            assertThat(innerDispatcher.nestedScrollNode?.parentNestedScrollNode).isNull()
+        }
+    }
+
+    @Test
+    fun modifierIsRemoved_thenReadded_scopeIsCorrect() {
+        val innerDispatcher = NestedScrollDispatcher()
+        val outerDispatcher = NestedScrollDispatcher()
+        var keepAround by mutableStateOf(true)
+
+        rule.setContent {
+            Column(
+                modifier =
+                    Modifier.nestedScroll(
+                        dispatcher = outerDispatcher,
+                        connection = object : NestedScrollConnection {},
+                    )
+            ) {
+                Box(
+                    Modifier.size(400.dp)
+                        .then(
+                            if (keepAround)
+                                Modifier.nestedScroll(
+                                    dispatcher = innerDispatcher,
+                                    connection = object : NestedScrollConnection {},
+                                )
+                            else Modifier
+                        )
+                )
+            }
+        }
+
+        rule.waitForIdle()
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotNull()
+        assertThat(innerDispatcher.coroutineScope).isNotNull()
+        assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
+        keepAround = false
+        rule.waitForIdle()
+        val calculatedScope = innerDispatcher.calculateNestedScrollScope()
+        val coroutineScope = innerDispatcher.coroutineScope
+        keepAround = true
+        outerDispatcher.coroutineScope.cancel() // cancelling parent node
+        rule.waitForIdle()
+        assertThat(innerDispatcher.calculateNestedScrollScope()).isNotEqualTo(calculatedScope)
+        assertThat(innerDispatcher.calculateNestedScrollScope()?.isActive).isTrue()
+        assertThat(innerDispatcher.coroutineScope).isNotEqualTo(coroutineScope)
+        assertThat(innerDispatcher.coroutineScope.isActive).isTrue()
     }
 }
 

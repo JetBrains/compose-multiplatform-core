@@ -37,15 +37,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
 /**
- * <a href="https://m3.material.io/components/date-pickers/overview" class="external"
- * target="_blank">Material Design date picker dialog</a>.
+ * [Material Design date picker dialog](https://m3.material.io/components/date-pickers/overview)
  *
  * A dialog for displaying a [DatePicker]. Date pickers let people select a date.
  *
  * A sample for displaying a [DatePicker] in a dialog:
  *
  * @sample androidx.compose.material3.samples.DatePickerDialogSample
- *
  * @param onDismissRequest called when the user tries to dismiss the Dialog by clicking outside or
  *   pressing the back button. This is not called when the dismiss button is clicked.
  * @param confirmButton button which is meant to confirm a proposed action, thus resolving what
@@ -62,23 +60,23 @@ import androidx.compose.ui.window.DialogProperties
  * @param properties typically platform specific properties to further configure the dialog
  * @param content the content of the dialog (i.e. a [DatePicker], for example)
  */
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerDialog(
+actual fun DatePickerDialog(
     onDismissRequest: () -> Unit,
     confirmButton: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    dismissButton: @Composable (() -> Unit)? = null,
-    shape: Shape = DatePickerDefaults.shape,
-    tonalElevation: Dp = DatePickerDefaults.TonalElevation,
-    colors: DatePickerColors = DatePickerDefaults.colors(),
-    properties: DialogProperties = DialogProperties(usePlatformDefaultWidth = false),
-    content: @Composable ColumnScope.() -> Unit
+    modifier: Modifier,
+    dismissButton: @Composable (() -> Unit)?,
+    shape: Shape,
+    tonalElevation: Dp,
+    colors: DatePickerColors,
+    properties: DialogProperties,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier.wrapContentHeight(),
-        properties = properties
+        properties = properties,
     ) {
         Surface(
             modifier =
@@ -99,11 +97,11 @@ fun DatePickerDialog(
                 Box(modifier = Modifier.align(Alignment.End).padding(DialogButtonsPadding)) {
                     ProvideContentColorTextStyle(
                         contentColor = DialogTokens.ActionLabelTextColor.value,
-                        textStyle = DialogTokens.ActionLabelTextFont.value
+                        textStyle = DialogTokens.ActionLabelTextFont.value,
                     ) {
                         AlertDialogFlowRow(
                             mainAxisSpacing = DialogButtonsMainAxisSpacing,
-                            crossAxisSpacing = DialogButtonsCrossAxisSpacing
+                            crossAxisSpacing = DialogButtonsCrossAxisSpacing,
                         ) {
                             dismissButton?.invoke()
                             confirmButton()

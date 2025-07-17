@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 
 package androidx.compose.ui.node
 
 import androidx.compose.ui.internal.checkPrecondition
+import kotlin.jvm.JvmInline
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -43,11 +44,7 @@ internal interface DiffCallback {
  * @param cb The callback that acts as a gateway to the backing list data
  * @return A LongStack that contains the diagonals which are used by [applyDiff] to update the list
  */
-private fun calculateDiff(
-    oldSize: Int,
-    newSize: Int,
-    cb: DiffCallback,
-): IntStack {
+private fun calculateDiff(oldSize: Int, newSize: Int, cb: DiffCallback): IntStack {
     val max = (oldSize + newSize + 1) / 2
     val diagonals = IntStack(max * 3)
     // instead of a recursive implementation, we keep our own stack to avoid potential stack
@@ -100,10 +97,7 @@ private fun calculateDiff(
     return diagonals
 }
 
-private fun applyDiff(
-    diagonals: IntStack,
-    callback: DiffCallback,
-) {
+private fun applyDiff(diagonals: IntStack, callback: DiffCallback) {
     var posX = 0
     var posY = 0
     var i = 0
@@ -179,7 +173,7 @@ private fun forward(
 ): Boolean {
     val oldSize = oldEnd - oldStart
     val newSize = newEnd - newStart
-    val checkForSnake = abs(oldSize - newSize) % 2 == 1
+    val checkForSnake = (abs(oldSize - newSize) and 1) == 1
     val delta = oldSize - newSize
     var k = -d
     while (k <= d) {
@@ -199,7 +193,7 @@ private fun forward(
             x = startX + 1
         }
         var y: Int = newStart + (x - oldStart) - k
-        startY = if (d == 0 || x != startX) y else y - 1
+        startY = y - ((d != 0) and (x == startX)).toInt()
         // now find snake size
         while ((x < oldEnd) && y < newEnd && cb.areItemsTheSame(x, y)) {
             x++
@@ -214,14 +208,7 @@ private fun forward(
             // if backwards K is calculated and it passed me, found match
             if ((backwardsK >= -d + 1 && backwardsK <= d - 1) && backward[backwardsK] <= x) {
                 // match
-                fillSnake(
-                    startX,
-                    startY,
-                    x,
-                    y,
-                    false,
-                    snake,
-                )
+                fillSnake(startX, startY, x, y, false, snake)
                 return true
             }
         }
@@ -243,7 +230,7 @@ private fun backward(
 ): Boolean {
     val oldSize = oldEnd - oldStart
     val newSize = newEnd - newStart
-    val checkForSnake = (oldSize - newSize) % 2 == 0
+    val checkForSnake = ((oldSize - newSize) and 1) == 0
     val delta = oldSize - newSize
     // same as androidx.compose.ui.node.forward but we go backwards from end of the lists to be
     // beginning this also means we'll try to optimize for minimizing x instead of maximizing it
@@ -266,7 +253,7 @@ private fun backward(
             x = startX - 1
         }
         var y = newEnd - (oldEnd - x - k)
-        val startY = if (d == 0 || x != startX) y else y + 1
+        val startY = y + ((d != 0) and (x == startX)).toInt()
         // now find snake size
         while ((x > oldStart) && y > newStart && cb.areItemsTheSame(x - 1, y - 1)) {
             x--
@@ -282,14 +269,7 @@ private fun backward(
             if (((forwardsK >= -d) && forwardsK <= d) && forward[forwardsK] >= x) {
                 // match
                 // assignment are reverse since we are a reverse snake
-                fillSnake(
-                    x,
-                    y,
-                    startX,
-                    startY,
-                    true,
-                    snake,
-                )
+                fillSnake(x, y, startX, startY, true, snake)
                 return true
             }
         }
@@ -305,26 +285,26 @@ private fun backward(
 @JvmInline
 private value class Snake(val data: IntArray) {
     /** Position in the old list */
-    val startX: Int
+    inline val startX: Int
         get() = data[0]
 
     /** Position in the new list */
-    val startY: Int
+    inline val startY: Int
         get() = data[1]
 
     /** End position in the old list, exclusive */
-    val endX: Int
+    inline val endX: Int
         get() = data[2]
 
     /** End position in the new list, exclusive */
-    val endY: Int
+    inline val endY: Int
         get() = data[3]
 
     /** True if this snake was created in the reverse search, false otherwise. */
-    val reverse: Boolean
+    inline val reverse: Boolean
         get() = data[4] != 0
 
-    val diagonalSize: Int
+    inline val diagonalSize: Int
         get() = min(endX - startX, endY - startY)
 
     private val hasAdditionOrRemoval: Boolean
@@ -338,26 +318,40 @@ private value class Snake(val data: IntArray) {
      * where we try to produce a path and also find moves.
      */
     fun addDiagonalToStack(diagonals: IntStack) {
+        // if (hasAdditionOrRemoval) {
+        //     if (reverse) {
+        //         x = startX
+        //         y = startY
+        //     } else {
+        //         if (isAddition) {
+        //             x = startX
+        //             y = startY + 1
+        //         } else {
+        //             x = startX + 1
+        //             y = startY
+        //         }
+        //     }
+        // } else {
+        //     x = startX
+        //     y = startY
+        // }
+        val size: Int
+        var x = startX
+        var y = startY
         if (hasAdditionOrRemoval) {
-            if (reverse) {
-                // snake edge it at the end
-                diagonals.pushDiagonal(startX, startY, diagonalSize)
-            } else {
-                // snake edge it at the beginning
-                if (isAddition) {
-                    diagonals.pushDiagonal(startX, startY + 1, diagonalSize)
-                } else {
-                    diagonals.pushDiagonal(startX + 1, startY, diagonalSize)
-                }
-            }
+            size = diagonalSize
+            x += (!(reverse or isAddition)).toInt()
+            y += (!(reverse or !isAddition)).toInt()
         } else {
-            // we are a pure diagonal
-            diagonals.pushDiagonal(startX, startY, endX - startX)
+            size = endX - startX
         }
+        diagonals.pushDiagonal(x, y, size)
     }
 
     override fun toString() = "Snake($startX,$startY,$endX,$endY,$reverse)"
 }
+
+private inline fun Boolean.toInt() = if (this) 1 else 0
 
 internal fun fillSnake(
     startX: Int,
@@ -402,17 +396,18 @@ private class IntStack(initialCapacity: Int) {
     val size: Int
         get() = lastIndex
 
-    fun pushRange(
-        oldStart: Int,
-        oldEnd: Int,
-        newStart: Int,
-        newEnd: Int,
-    ) {
+    private fun resizeStack(stack: IntArray): IntArray {
+        val copy = stack.copyOf(stack.size * 2)
+        this.stack = copy
+        return copy
+    }
+
+    fun pushRange(oldStart: Int, oldEnd: Int, newStart: Int, newEnd: Int) {
         val i = lastIndex
+        var stack = stack
         if (i + 4 >= stack.size) {
-            stack = stack.copyOf(stack.size * 2)
+            stack = resizeStack(stack)
         }
-        val stack = stack
         stack[i + 0] = oldStart
         stack[i + 1] = oldEnd
         stack[i + 2] = newStart
@@ -420,16 +415,12 @@ private class IntStack(initialCapacity: Int) {
         lastIndex = i + 4
     }
 
-    fun pushDiagonal(
-        x: Int,
-        y: Int,
-        size: Int,
-    ) {
+    fun pushDiagonal(x: Int, y: Int, size: Int) {
         val i = lastIndex
+        var stack = stack
         if (i + 3 >= stack.size) {
-            stack = stack.copyOf(stack.size * 2)
+            stack = resizeStack(stack)
         }
-        val stack = stack
         stack[i + 0] = x + size
         stack[i + 1] = y + size
         stack[i + 2] = size

@@ -20,9 +20,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.app.unusedapprestrictions.IUnusedAppRestrictionsBackportCallback;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wrapper class for {IUnusedAppRestrictionsBackportCallback}.

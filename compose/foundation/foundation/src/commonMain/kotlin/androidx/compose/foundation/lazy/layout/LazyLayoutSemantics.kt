@@ -18,6 +18,7 @@ package androidx.compose.foundation.lazy.layout
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.ModifierNodeElement
@@ -198,14 +199,14 @@ private class LazyLayoutSemanticsModifierNode(
             ScrollAxisRange(
                 value = { state.scrollOffset },
                 maxValue = { state.maxScrollOffset },
-                reverseScrolling = reverseScrolling
+                reverseScrolling = reverseScrolling,
             )
 
         scrollToIndexAction =
             if (userScrollEnabled) {
                 { index ->
                     val itemProvider = itemProviderLambda()
-                    require(index >= 0 && index < itemProvider.itemCount) {
+                    requirePrecondition(index >= 0 && index < itemProvider.itemCount) {
                         "Can't scroll to index $index, it is out of " +
                             "bounds [0, ${itemProvider.itemCount})"
                     }
@@ -246,7 +247,7 @@ internal interface LazyLayoutSemanticState {
 // fewer than ~16000 items, the integer value is exactly preserved).
 internal fun estimatedLazyScrollOffset(
     firstVisibleItemIndex: Int,
-    firstVisibleItemScrollOffset: Int
+    firstVisibleItemScrollOffset: Int,
 ): Float {
     return (firstVisibleItemScrollOffset + firstVisibleItemIndex * 500).toFloat()
 }
@@ -254,7 +255,7 @@ internal fun estimatedLazyScrollOffset(
 internal fun estimatedLazyMaxScrollOffset(
     firstVisibleItemIndex: Int,
     firstVisibleItemScrollOffset: Int,
-    canScrollForward: Boolean
+    canScrollForward: Boolean,
 ): Float {
     return if (canScrollForward) {
             // If we can scroll further, indicate that by setting it slightly higher than

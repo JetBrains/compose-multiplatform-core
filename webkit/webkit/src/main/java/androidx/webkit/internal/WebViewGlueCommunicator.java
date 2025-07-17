@@ -19,10 +19,9 @@ package androidx.webkit.internal;
 import android.os.Build;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-
 import org.chromium.support_lib_boundary.WebViewProviderFactoryBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -40,13 +39,11 @@ public class WebViewGlueCommunicator {
     /**
      * Fetch the one global support library WebViewProviderFactory from the WebView glue layer.
      */
-    @NonNull
-    public static WebViewProviderFactory getFactory() {
+    public static @NonNull WebViewProviderFactory getFactory() {
         return LAZY_FACTORY_HOLDER.INSTANCE;
     }
 
-    @NonNull
-    public static WebkitToCompatConverter getCompatConverter() {
+    public static @NonNull WebkitToCompatConverter getCompatConverter() {
         return LAZY_COMPAT_CONVERTER_HOLDER.INSTANCE;
     }
 
@@ -70,8 +67,7 @@ public class WebViewGlueCommunicator {
     }
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    @NonNull
-    static WebViewProviderFactory createGlueProviderFactory() {
+    static @NonNull WebViewProviderFactory createGlueProviderFactory() {
         InvocationHandler invocationHandler;
         try {
             invocationHandler = fetchGlueProviderFactoryImpl();
@@ -92,8 +88,7 @@ public class WebViewGlueCommunicator {
     /**
      * Load the WebView code from the WebView APK and return the classloader containing that code.
      */
-    @NonNull
-    public static ClassLoader getWebViewClassLoader() {
+    public static @NonNull ClassLoader getWebViewClassLoader() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             return ApiHelperForP.getWebViewClassLoader();
         } else {

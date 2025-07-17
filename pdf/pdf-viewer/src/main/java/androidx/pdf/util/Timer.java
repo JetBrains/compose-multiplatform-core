@@ -18,8 +18,9 @@ package androidx.pdf.util;
 
 import android.os.SystemClock;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Simple timer for profiling methods.
@@ -30,8 +31,7 @@ public class Timer {
     private final long mStartTimeMs;
 
     /** Start a new timer right now. */
-    @NonNull
-    public static Timer start() {
+    public static @NonNull Timer start() {
         return new Timer();
     }
 

@@ -21,46 +21,42 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        namespace = "androidx.compose.material3.windowsizeclass"
+        compileSdk = 35
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
-                implementation("androidx.compose.ui:ui-util:1.6.0")
-                api("androidx.compose.runtime:runtime:1.7.0")
-                api("androidx.compose.ui:ui:1.6.0")
-                api("androidx.compose.ui:ui-unit:1.6.0")
+                implementation(libs.kotlinStdlib)
+                implementation("androidx.compose.ui:ui-util:1.8.1")
+                api("androidx.compose.runtime:runtime:1.8.1")
+                api("androidx.compose.ui:ui:1.8.2")
+                api("androidx.compose.ui:ui-unit:1.8.1")
             }
         }
 
         commonTest {
             dependencies {
-
             }
         }
 
         jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-            }
-        }
-
-        skikoMain {
             dependsOn(commonMain)
             dependencies {
             }
@@ -69,30 +65,29 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation-experimental:1.4.0")
+                api("androidx.annotation:annotation-experimental:1.4.1")
                 implementation("androidx.window:window:1.0.0")
             }
         }
 
-        desktopMain {
-            dependsOn(skikoMain)
-            dependsOn(jvmMain)
-            dependencies {
-
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
 
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
                 implementation("androidx.compose.foundation:foundation:1.6.0")
+                implementation(project(":compose:runtime:runtime"))
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
@@ -101,17 +96,10 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTest)
                 implementation(libs.truth)
-            }
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependencies {
-
             }
         }
     }
@@ -119,13 +107,10 @@ androidXMultiplatform {
 
 androidx {
     name = "Compose Material 3 Window Size Class"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2022"
     description = "Provides window size classes for building responsive UIs"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:material3:material3-window-size-class:material3-window-size-class-samples"))
 }
 
-android {
-    namespace "androidx.compose.material3.windowsizeclass"
-}

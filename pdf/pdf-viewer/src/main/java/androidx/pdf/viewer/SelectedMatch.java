@@ -18,11 +18,13 @@ package androidx.pdf.viewer;
 
 import android.graphics.Rect;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.MatchRects;
 import androidx.pdf.util.CycleRange.Direction;
 import androidx.pdf.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a currently selected match, including the query that was matched, the page the match
@@ -34,7 +36,7 @@ import androidx.pdf.util.Preconditions;
  * <p>Immutable.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-class SelectedMatch {
+public class SelectedMatch {
     private final String mQuery;
     private final int mPage;
     private final MatchRects mPageMatches;
@@ -45,7 +47,8 @@ class SelectedMatch {
      * the
      * matches is selected, or one with no matches.
      */
-    SelectedMatch(String query, int page, MatchRects pageMatches, int selected) {
+    public SelectedMatch(@Nullable String query, int page, @Nullable MatchRects pageMatches,
+            int selected) {
         Preconditions.checkNotNull(query);
         Preconditions.checkNotNull(pageMatches);
         Preconditions.checkArgument(!pageMatches.isEmpty(), "Cannot select empty matches");
@@ -58,15 +61,11 @@ class SelectedMatch {
         this.mSelected = selected;
     }
 
-    public String getQuery() {
-        return mQuery;
-    }
-
     public int getPage() {
         return mPage;
     }
 
-    public MatchRects getPageMatches() {
+    public @NonNull MatchRects getPageMatches() {
         return mPageMatches;
     }
 
@@ -95,19 +94,16 @@ class SelectedMatch {
         return mQuery.hashCode() + 31 * mPage + 101 * mPageMatches.hashCode() + 313 * mSelected;
     }
 
-    @Nullable
-    public Rect getFirstSelectionRect() {
+    public @Nullable Rect getFirstSelectionRect() {
         return isEmpty() ? null : mPageMatches.getFirstRect(mSelected);
     }
 
     /** Returns the page overlay for this selection. */
-    @Nullable
-    public PdfHighlightOverlay getOverlay() {
+    public @Nullable PdfHighlightOverlay getOverlay() {
         return isEmpty() ? null : new PdfHighlightOverlay(mPageMatches, mSelected);
     }
 
-    @Nullable
-    public SelectedMatch selectNextMatchOnPage(Direction direction) {
+    public @Nullable SelectedMatch selectNextMatchOnPage(@NonNull Direction direction) {
         if (direction == Direction.BACKWARDS && mSelected > 0) {
             return withSelected(mSelected - 1);
         } else if (direction == Direction.FORWARDS && mSelected < mPageMatches.size() - 1) {
@@ -124,7 +120,8 @@ class SelectedMatch {
      * Given a new set of matches, selects the one that is closest to the old selected match (if
      * any).
      */
-    public SelectedMatch nearestMatch(String newQuery, MatchRects newMatches) {
+    public @NonNull SelectedMatch nearestMatch(@NonNull String newQuery,
+            @NonNull MatchRects newMatches) {
         if (newMatches.isEmpty()) {
             return noMatches(newQuery, mPage);
         }
@@ -138,12 +135,13 @@ class SelectedMatch {
     }
 
     /** Returns a SelectedMatch that contains no matches and so nothing is selected. */
-    public static SelectedMatch noMatches(String query, int page) {
+    public static @NonNull SelectedMatch noMatches(@NonNull String query, int page) {
         return new SelectedMatch(query, page, MatchRects.NO_MATCHES, -1);
     }
 
     /** Selects the first match from the given matches. */
-    public static SelectedMatch firstMatch(String query, int page, MatchRects matches) {
+    public static @NonNull SelectedMatch firstMatch(@NonNull String query, int page,
+            @NonNull MatchRects matches) {
         return matches.isEmpty() ? noMatches(query, page) : new SelectedMatch(query, page, matches,
                 0);
     }

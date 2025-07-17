@@ -17,13 +17,14 @@
 package androidx.camera.core;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.Executor;
@@ -45,22 +46,19 @@ final class ImageAnalysisNonBlockingAnalyzer extends ImageAnalysisAbstractAnalyz
     // The cached image when analyzer is busy. Image removed from cache must be closed by 1) closing
     // it directly or 2) re-posting it to close it eventually.
     @GuardedBy("mLock")
-    @Nullable
     @VisibleForTesting
-    ImageProxy mCachedImage;
+    @Nullable ImageProxy mCachedImage;
 
     // The latest unclosed image sent to the app.
     @GuardedBy("mLock")
-    @Nullable
-    private CacheAnalyzingImageProxy mPostedImage;
+    private @Nullable CacheAnalyzingImageProxy mPostedImage;
 
     ImageAnalysisNonBlockingAnalyzer(Executor executor) {
         mBackgroundExecutor = executor;
     }
 
-    @Nullable
     @Override
-    ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
+    @Nullable ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
         // Use acquireLatestImage() so older images should be released.
         return imageReaderProxy.acquireLatestImage();
     }

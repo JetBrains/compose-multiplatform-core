@@ -28,11 +28,12 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable;
 import androidx.wear.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link CircularProgressLayout} adds a circular countdown timer behind the view it contains,
@@ -217,8 +218,7 @@ public class CircularProgressLayout extends FrameLayout {
      *
      * @return {@link CircularProgressDrawable}
      */
-    @NonNull
-    public CircularProgressDrawable getProgressDrawable() {
+    public @NonNull CircularProgressDrawable getProgressDrawable() {
         return mProgressDrawable;
     }
 
@@ -354,8 +354,7 @@ public class CircularProgressLayout extends FrameLayout {
      *
      * @return registered {@link OnTimerFinishedListener}
      */
-    @Nullable
-    public OnTimerFinishedListener getOnTimerFinishedListener() {
+    public @Nullable OnTimerFinishedListener getOnTimerFinishedListener() {
         return mController.getOnTimerFinishedListener();
     }
 

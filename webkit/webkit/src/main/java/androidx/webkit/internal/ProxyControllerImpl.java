@@ -16,13 +16,13 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.webkit.ProxyConfig;
 import androidx.webkit.ProxyConfig.ProxyRule;
 import androidx.webkit.ProxyController;
 
 import org.chromium.support_lib_boundary.ProxyControllerBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -71,9 +71,9 @@ public class ProxyControllerImpl extends ProxyController {
     /**
      * Converts a ProxyRule List into a String array.
      */
-    @NonNull
     @VisibleForTesting
-    public static String[][] proxyRulesToStringArray(@NonNull List<ProxyRule> proxyRuleList) {
+    public static String @NonNull [][] proxyRulesToStringArray(
+            @NonNull List<ProxyRule> proxyRuleList) {
         String[][] proxyRuleArray = new String[proxyRuleList.size()][2];
         for (int i = 0; i < proxyRuleList.size(); i++) {
             proxyRuleArray[i][0] = proxyRuleList.get(i).getSchemeFilter();

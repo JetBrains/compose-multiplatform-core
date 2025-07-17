@@ -22,12 +22,13 @@ import static androidx.media.AudioAttributesCompat.INVALID_STREAM_TYPE;
 import android.annotation.SuppressLint;
 import android.media.AudioAttributes;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @VersionedParcelize(jetifyAs = "android.support.v4.media.AudioAttributesImplApi21")
 @RestrictTo(LIBRARY)
@@ -62,8 +63,7 @@ public class AudioAttributesImplApi21 implements AudioAttributesImpl {
     }
 
     @Override
-    @Nullable
-    public Object getAudioAttributes() {
+    public @Nullable Object getAudioAttributes() {
         return mAudioAttributes;
     }
 
@@ -116,8 +116,7 @@ public class AudioAttributesImplApi21 implements AudioAttributesImpl {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return "AudioAttributesCompat: audioattributes=" + mAudioAttributes;
     }
 
@@ -134,15 +133,13 @@ public class AudioAttributesImplApi21 implements AudioAttributesImpl {
         }
 
         @Override
-        @NonNull
-        public AudioAttributesImpl build() {
+        public @NonNull AudioAttributesImpl build() {
             return new AudioAttributesImplApi21(mFwkBuilder.build());
         }
 
         @Override
-        @NonNull
         @SuppressLint("WrongConstant")
-        public Builder setUsage(int usage) {
+        public @NonNull Builder setUsage(int usage) {
             if (usage == AudioAttributes.USAGE_ASSISTANT) {
                 // TODO: shouldn't we keep the origin usage?
                 usage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
@@ -152,22 +149,19 @@ public class AudioAttributesImplApi21 implements AudioAttributesImpl {
         }
 
         @Override
-        @NonNull
-        public Builder setContentType(int contentType) {
+        public @NonNull Builder setContentType(int contentType) {
             mFwkBuilder.setContentType(contentType);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setFlags(int flags) {
+        public @NonNull Builder setFlags(int flags) {
             mFwkBuilder.setFlags(flags);
             return this;
         }
 
         @Override
-        @NonNull
-        public Builder setLegacyStreamType(int streamType) {
+        public @NonNull Builder setLegacyStreamType(int streamType) {
             mFwkBuilder.setLegacyStreamType(streamType);
             return this;
         }

@@ -16,9 +16,14 @@
 
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
+import android.annotation.SuppressLint
 import android.graphics.ImageFormat
 import android.os.Build
 import android.util.Size
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isHuaweiDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isOnePlusDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isRedmiDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
 import androidx.camera.core.Logger
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.Quirk
@@ -26,22 +31,28 @@ import androidx.camera.core.impl.Quirk
 /**
  * Quirk required to exclude certain supported surface sizes that are problematic.
  *
- * QuirkSummary Bug Id: b/157448499, b/192129158, b/245495234, b/303151423 Description: These sizes
- * are dependent on the device, camera and image format. An example is the resolution size 4000x3000
- * which is supported on OnePlus 6, but causes a WYSIWYG issue between preview and image capture.
- * Another example is on Huawei P20 Lite, the Preview screen will become too bright when 400x400 or
- * 720x720 Preview resolutions are used together with a large zoom in value. The same symptom
- * happens on ImageAnalysis. On Samsung J7 Prime (SM-G610M) or J7 (SM-J710MN) API 27 devices, the
- * Preview images will be stretched if 1920x1080 resolution is used. Device(s): OnePlus 6, OnePlus
- * 6T, Huawei P20, Samsung J7 Prime (SM-G610M) API 27, Samsung J7 (SM-J710MN) API 27, Redmi Note 9
- * Pro
+ * QuirkSummary
+ * - Bug Id: b/157448499, b/192129158, b/245495234, b/303151423, b/365877975
+ * - Description: These sizes are dependent on the device, camera and image format. An example is
+ *   the resolution size 4000x3000 which is supported on OnePlus 6, but causes a WYSIWYG issue
+ *   between preview and image capture. Another example is on Huawei P20 Lite, the Preview screen
+ *   will become too bright when 400x400 or 720x720 Preview resolutions are used together with a
+ *   large zoom in value. The same symptom happens on ImageAnalysis. On Samsung J7 Prime (SM-G610M)
+ *   or J7 (SM-J710MN) API 27 devices, the Preview images will be stretched if 1920x1080 resolution
+ *   is used. On Samsung A05s (SM-A057G) device, black preview issue can happen when ImageAnalysis
+ *   uses output sizes larger than 1920x1080.
+ * - Device(s): OnePlus 6, OnePlus 6T, Huawei P20, Samsung J7 Prime (SM-G610M) API 27, Samsung J7
+ *   (SM-J710MN) API 27, Redmi Note 9 Pro, Samsung A05s (SM-A057G)
+ *
+ * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
-class ExcludedSupportedSizesQuirk : Quirk {
+@SuppressLint("CameraXQuirksClassDetector")
+public class ExcludedSupportedSizesQuirk : Quirk {
     /**
      * Retrieves problematic supported surface sizes that have to be excluded on the current device,
      * for the given camera id and image format.
      */
-    fun getExcludedSizes(cameraId: String, imageFormat: Int): List<Size> {
+    public fun getExcludedSizes(cameraId: String, imageFormat: Int): List<Size> {
         if (isOnePlus6) {
             return getOnePlus6ExcludedSizes(cameraId, imageFormat)
         }
@@ -60,6 +71,9 @@ class ExcludedSupportedSizesQuirk : Quirk {
         if (isRedmiNote9Pro) {
             return getRedmiNote9ProExcludedSizes(cameraId, imageFormat)
         }
+        if (isSamsungA05s) {
+            return getSamsungA05sExcludedSizes(imageFormat)
+        }
         Logger.w(TAG, "Cannot retrieve list of supported sizes to exclude on this device.")
         return emptyList()
     }
@@ -68,7 +82,7 @@ class ExcludedSupportedSizesQuirk : Quirk {
      * Retrieves problematic supported surface sizes that have to be excluded on the current device,
      * for the given camera id and class type.
      */
-    fun getExcludedSizes(cameraId: String, klass: Class<*>): List<Size> {
+    public fun getExcludedSizes(cameraId: String, klass: Class<*>): List<Size> {
         if (isHuaweiP20Lite) {
             return getHuaweiP20LiteExcludedSizes(cameraId, UNKNOWN_IMAGE_FORMAT, klass)
         }
@@ -103,7 +117,7 @@ class ExcludedSupportedSizesQuirk : Quirk {
     private fun getHuaweiP20LiteExcludedSizes(
         cameraId: String,
         imageFormat: Int,
-        klass: Class<*>?
+        klass: Class<*>?,
     ): List<Size> {
         val sizes: MutableList<Size> = ArrayList()
         // When klass is not null, the list for PRIVATE format should be returned.
@@ -122,7 +136,7 @@ class ExcludedSupportedSizesQuirk : Quirk {
     private fun getSamsungJ7PrimeApi27AboveExcludedSizes(
         cameraId: String,
         imageFormat: Int,
-        klass: Class<*>?
+        klass: Class<*>?,
     ): List<Size> {
         val sizes: MutableList<Size> = ArrayList()
 
@@ -170,7 +184,7 @@ class ExcludedSupportedSizesQuirk : Quirk {
     private fun getSamsungJ7Api27AboveExcludedSizes(
         cameraId: String,
         imageFormat: Int,
-        klass: Class<*>?
+        klass: Class<*>?,
     ): List<Size> {
         val sizes: MutableList<Size> = ArrayList()
 
@@ -218,53 +232,71 @@ class ExcludedSupportedSizesQuirk : Quirk {
         return sizes
     }
 
-    companion object {
+    private fun getSamsungA05sExcludedSizes(imageFormat: Int) =
+        mutableListOf<Size>().apply {
+            if (imageFormat == ImageFormat.YUV_420_888) {
+                add(Size(3840, 2160))
+                add(Size(3264, 2448))
+                add(Size(3200, 2400))
+                add(Size(2688, 1512))
+                add(Size(2592, 1944))
+                add(Size(2592, 1940))
+                add(Size(1920, 1440))
+            }
+        }
+
+    public companion object {
         private const val TAG: String = "ExcludedSupportedSizesQuirk"
         private const val UNKNOWN_IMAGE_FORMAT: Int = -1
 
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             return (isOnePlus6 ||
                 isOnePlus6T ||
                 isHuaweiP20Lite ||
                 isSamsungJ7PrimeApi27Above ||
                 isSamsungJ7Api27Above ||
-                isRedmiNote9Pro)
+                isRedmiNote9Pro ||
+                isSamsungA05s)
         }
 
         internal val isOnePlus6: Boolean
-            get() =
-                "OnePlus".equals(Build.BRAND, ignoreCase = true) &&
-                    "OnePlus6".equals(Build.DEVICE, ignoreCase = true)
+            get() = isOnePlusDevice() && "OnePlus6".equals(Build.DEVICE, ignoreCase = true)
 
         internal val isOnePlus6T: Boolean
-            get() =
-                "OnePlus".equals(Build.BRAND, ignoreCase = true) &&
-                    "OnePlus6T".equals(Build.DEVICE, ignoreCase = true)
+            get() = isOnePlusDevice() && "OnePlus6T".equals(Build.DEVICE, ignoreCase = true)
 
         internal val isHuaweiP20Lite: Boolean
             get() {
-                return "HUAWEI".equals(Build.BRAND, ignoreCase = true) &&
-                    "HWANE".equals(Build.DEVICE, ignoreCase = true)
+                return isHuaweiDevice() && "HWANE".equals(Build.DEVICE, ignoreCase = true)
             }
 
         internal val isSamsungJ7PrimeApi27Above: Boolean
             get() {
-                return ("SAMSUNG".equals(Build.BRAND, ignoreCase = true) &&
+                return (isSamsungDevice() &&
                     "ON7XELTE".equals(Build.DEVICE, ignoreCase = true) &&
                     (Build.VERSION.SDK_INT >= 27))
             }
 
         internal val isSamsungJ7Api27Above: Boolean
             get() {
-                return ("SAMSUNG".equals(Build.BRAND, ignoreCase = true) &&
+                return (isSamsungDevice() &&
                     "J7XELTE".equals(Build.DEVICE, ignoreCase = true) &&
                     (Build.VERSION.SDK_INT >= 27))
             }
 
         internal val isRedmiNote9Pro: Boolean
             get() {
-                return ("REDMI".equals(Build.BRAND, ignoreCase = true) &&
-                    "joyeuse".equals(Build.DEVICE, ignoreCase = true))
+                return (isRedmiDevice() && "joyeuse".equals(Build.DEVICE, ignoreCase = true))
+            }
+
+        internal val isSamsungA05s: Boolean
+            get() {
+                // "a05s" device name is not only used for Samsung A05s series devices but is also
+                // used for the other F14 series devices that use different chipset. Therefore,
+                // additionally checks the model name to not apply the quirk onto the F14 devices.
+                return (isSamsungDevice() &&
+                    "a05s".equals(Build.DEVICE, ignoreCase = true) &&
+                    Build.MODEL.uppercase().contains("SM-A057"))
             }
     }
 }

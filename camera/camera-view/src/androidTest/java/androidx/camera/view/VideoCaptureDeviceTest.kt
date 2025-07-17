@@ -28,13 +28,16 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.annotation.MainThread
 import androidx.camera.camera2.Camera2Config
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.testing.impl.AndroidUtil.skipVideoRecordingTestIfNotSupportedByEmulator
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.CoreAppTestUtil.ForegroundOccupiedError
+import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
+import androidx.camera.testing.impl.LabTestRule.Companion.isInLabTest
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.testrule.PreTestRule
 import androidx.camera.video.FallbackStrategy
 import androidx.camera.video.FileDescriptorOutputOptions
 import androidx.camera.video.FileOutputOptions
@@ -71,6 +74,7 @@ import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -80,7 +84,9 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class VideoCaptureDeviceTest(
     private val initialQuality: TargetQuality,
-    private val nextQuality: TargetQuality
+    private val nextQuality: TargetQuality,
+    private val cameraSelector: CameraSelector,
+    private val lensFacing: Int,
 ) {
 
     /**
@@ -132,35 +138,49 @@ class VideoCaptureDeviceTest(
         }
 
         @JvmStatic
-        @Parameterized.Parameters(name = "initialQuality={0}, nextQuality={1}")
+        @Parameterized.Parameters(name = "initialQuality={0}, nextQuality={1}, lensFacing={3}")
         fun data() =
-            mutableListOf<Array<TargetQuality>>().apply {
-                add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD))
-                add(arrayOf(TargetQuality.FHD, TargetQuality.HD))
-                add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST))
-                add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST))
-                add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD))
-                add(arrayOf(TargetQuality.SD, TargetQuality.UHD))
-                add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED))
+            if (isInLabTest()) {
+                mutableListOf<Array<Any?>>().apply {
+                    CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                        val lens = selector.lensFacing
+                        add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD, selector, lens))
+                        add(arrayOf(TargetQuality.FHD, TargetQuality.HD, selector, lens))
+                        add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST, selector, lens))
+                        add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST, selector, lens))
+                        add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD, selector, lens))
+                        add(arrayOf(TargetQuality.SD, TargetQuality.UHD, selector, lens))
+                        add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED, selector, lens))
+                    }
+                }
+            } else {
+                // Return empty list since prepareDeviceUI will skip the test if not in the CameraX
+                // lab environment.
+                emptyList()
             }
     }
 
-    @get:Rule
+    @get:Rule(order = 0)
+    val skipRule: TestRule =
+        RuleChain.outerRule(IgnoreVideoRecordingProblematicDeviceRule())
+            .around(PreTestRule { skipTestWithSurfaceProcessingOnCuttlefishApi30() })
+
+    @get:Rule(order = 1)
     val cameraRule: TestRule =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
             CameraUtil.PreTestCameraIdList(Camera2Config.defaultConfig())
         )
 
-    @get:Rule
-    val activityRule: ActivityScenarioRule<FakeActivity> =
-        ActivityScenarioRule(FakeActivity::class.java)
-
-    @get:Rule
+    @get:Rule(order = 2)
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
+
+    @get:Rule(order = 3)
+    val activityRule: ActivityScenarioRule<FakeActivity> =
+        ActivityScenarioRule(FakeActivity::class.java)
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -210,9 +230,6 @@ class VideoCaptureDeviceTest(
 
     @Before
     fun setUp() {
-        skipVideoRecordingTestIfNotSupportedByEmulator()
-        skipTestWithSurfaceProcessingOnCuttlefishApi30()
-
         initialLifecycleOwner()
         initialPreviewView()
         initialController()
@@ -230,7 +247,7 @@ class VideoCaptureDeviceTest(
         if (Build.VERSION.SDK_INT == 28) return // b/264902324
         assumeTrue(
             "Ignore the test since the MediaStore.Video has compatibility issues.",
-            DeviceQuirks.get(MediaStoreVideoCannotWrite::class.java) == null
+            DeviceQuirks.get(MediaStoreVideoCannotWrite::class.java) == null,
         )
 
         // Arrange.
@@ -508,7 +525,7 @@ class VideoCaptureDeviceTest(
                         cameraController.startRecording(
                             outputOptions2,
                             audioEnabled,
-                            CameraXExecutors.directExecutor()
+                            CameraXExecutors.directExecutor(),
                         ) {}
                 }
                 activeRecording.stop()
@@ -542,6 +559,7 @@ class VideoCaptureDeviceTest(
             if (initialQuality != TargetQuality.NOT_SPECIFIED) {
                 cameraController.videoCaptureQualitySelector = initialQuality.getSelector()
             }
+            cameraController.cameraSelector = cameraSelector
 
             //  If the PreviewView is not attached, the enabled use cases will not be applied.
             previewView.controller = cameraController
@@ -563,7 +581,7 @@ class VideoCaptureDeviceTest(
         contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, videoFileName)
         return MediaStoreOutputOptions.Builder(
                 resolver,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             )
             .setContentValues(contentValues)
             .build()
@@ -582,7 +600,7 @@ class VideoCaptureDeviceTest(
     private fun recordVideoWithInterruptAction(
         outputOptions: OutputOptions,
         audioConfig: AudioConfig,
-        runInterruptAction: () -> Unit
+        runInterruptAction: () -> Unit,
     ) {
         // Arrange.
         latchForVideoSaved = CountDownLatch(VIDEO_SAVED_COUNT_DOWN)
@@ -624,7 +642,7 @@ class VideoCaptureDeviceTest(
                     outputOptions,
                     audioConfig,
                     CameraXExecutors.directExecutor(),
-                    videoRecordEventListener
+                    videoRecordEventListener,
                 )
         } else if (outputOptions is FileDescriptorOutputOptions) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -633,7 +651,7 @@ class VideoCaptureDeviceTest(
                         outputOptions,
                         audioConfig,
                         CameraXExecutors.directExecutor(),
-                        videoRecordEventListener
+                        videoRecordEventListener,
                     )
             } else {
                 throw UnsupportedOperationException(
@@ -646,7 +664,7 @@ class VideoCaptureDeviceTest(
                     outputOptions,
                     audioConfig,
                     CameraXExecutors.directExecutor(),
-                    videoRecordEventListener
+                    videoRecordEventListener,
                 )
         } else {
             throw IllegalArgumentException("Unsupported OutputOptions type.")
@@ -686,7 +704,7 @@ class VideoCaptureDeviceTest(
         // Skip test for b/253211491
         Assume.assumeFalse(
             "Skip tests for Cuttlefish API 30 eglCreateWindowSurface issue",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 30,
         )
     }
 }

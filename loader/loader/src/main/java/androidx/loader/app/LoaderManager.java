@@ -21,12 +21,13 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.loader.content.Loader;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -55,8 +56,7 @@ public abstract class LoaderManager {
          * @return Return a new Loader instance that is ready to start loading.
          */
         @MainThread
-        @NonNull
-        Loader<D> onCreateLoader(int id, @Nullable Bundle args);
+        @NonNull Loader<D> onCreateLoader(int id, @Nullable Bundle args);
 
         /**
          * Called when a previously created loader has finished its load.  Note
@@ -125,14 +125,12 @@ public abstract class LoaderManager {
      *           {@link androidx.fragment.app.FragmentActivity} or {@link androidx.fragment.app.Fragment}.
      * @return A valid LoaderManager
      */
-    @NonNull
-    public static <T extends LifecycleOwner & ViewModelStoreOwner> LoaderManager getInstance(
-            @NonNull T owner) {
+    public static <T extends LifecycleOwner & ViewModelStoreOwner> @NonNull LoaderManager
+            getInstance(@NonNull T owner) {
         return new LoaderManagerImpl(owner, owner.getViewModelStore());
     }
 
-    @NonNull
-    static LoaderManager getInstance(@NonNull LifecycleOwner owner,
+    static @NonNull LoaderManager getInstance(@NonNull LifecycleOwner owner,
             @NonNull ViewModelStore viewModelStore) {
         return new LoaderManagerImpl(owner, viewModelStore);
     }
@@ -162,9 +160,8 @@ public abstract class LoaderManager {
      * changes in the state of the loader.  Required.
      */
     @MainThread
-    @NonNull
-    public abstract <D> Loader<D> initLoader(int id, @Nullable Bundle args,
-            @NonNull LoaderManager.LoaderCallbacks<D> callback);
+    public abstract <D> @NonNull Loader<D> initLoader(int id, @Nullable Bundle args,
+            LoaderManager.@NonNull LoaderCallbacks<D> callback);
 
     /**
      * Starts a new or restarts an existing {@link android.content.Loader} in
@@ -184,9 +181,8 @@ public abstract class LoaderManager {
      * changes in the state of the loader.  Required.
      */
     @MainThread
-    @NonNull
-    public abstract <D> Loader<D> restartLoader(int id, @Nullable Bundle args,
-            @NonNull LoaderManager.LoaderCallbacks<D> callback);
+    public abstract <D> @NonNull Loader<D> restartLoader(int id, @Nullable Bundle args,
+            LoaderManager.@NonNull LoaderCallbacks<D> callback);
 
     /**
      * Stops and removes the loader with the given ID.  If this loader
@@ -203,8 +199,7 @@ public abstract class LoaderManager {
      * Return the Loader with the given id or null if no matching Loader
      * is found.
      */
-    @Nullable
-    public abstract <D> Loader<D> getLoader(int id);
+    public abstract <D> @Nullable Loader<D> getLoader(int id);
 
     /**
      * Mark all Loaders associated with this LoaderManager for redelivery of their current
@@ -234,7 +229,7 @@ public abstract class LoaderManager {
      */
     @Deprecated
     public abstract void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args);
+            @NonNull PrintWriter writer, String @Nullable [] args);
 
     /**
      * Control whether the framework's internal loader manager debugging

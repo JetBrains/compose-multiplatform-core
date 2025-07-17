@@ -16,9 +16,9 @@
 
 package androidx.compose.ui.text.font
 
+import androidx.collection.LruCache
 import androidx.compose.runtime.State
-import androidx.compose.ui.text.caches.LruCache
-import androidx.compose.ui.text.platform.createSynchronizedObject
+import androidx.compose.ui.text.platform.makeSynchronizedObject
 import androidx.compose.ui.text.platform.synchronized
 import androidx.compose.ui.util.fastMap
 
@@ -30,7 +30,7 @@ internal class FontFamilyResolverImpl(
     private val fontListFontFamilyTypefaceAdapter: FontListFontFamilyTypefaceAdapter =
         FontListFontFamilyTypefaceAdapter(GlobalAsyncTypefaceCache),
     private val platformFamilyTypefaceAdapter: PlatformFontFamilyTypefaceAdapter =
-        PlatformFontFamilyTypefaceAdapter()
+        PlatformFontFamilyTypefaceAdapter(),
 ) : FontFamily.Resolver {
     private val createDefaultTypeface: (TypefaceRequest) -> Any = {
         resolve(it.copy(fontFamily = null)).value
@@ -49,7 +49,7 @@ internal class FontFamilyResolverImpl(
                     platformResolveInterceptor.interceptFontWeight(it.weight),
                     platformResolveInterceptor.interceptFontStyle(it.style),
                     FontSynthesis.All,
-                    platformFontLoader.cacheKey
+                    platformFontLoader.cacheKey,
                 )
             }
 
@@ -59,13 +59,13 @@ internal class FontFamilyResolverImpl(
                 typefaceRequest = typeRequest,
                 platformFontLoader = platformFontLoader,
                 onAsyncCompletion = { /* nothing */ },
-                createDefaultTypeface = createDefaultTypeface
+                createDefaultTypeface = createDefaultTypeface,
             )
                 ?: platformFamilyTypefaceAdapter.resolve(
                     typefaceRequest = typeRequest,
                     platformFontLoader = platformFontLoader,
                     onAsyncCompletion = { /* nothing */ },
-                    createDefaultTypeface = createDefaultTypeface
+                    createDefaultTypeface = createDefaultTypeface,
                 )
                 ?: throw IllegalStateException("Could not load font")
         }
@@ -83,7 +83,7 @@ internal class FontFamilyResolverImpl(
                 platformResolveInterceptor.interceptFontWeight(fontWeight),
                 platformResolveInterceptor.interceptFontStyle(fontStyle),
                 platformResolveInterceptor.interceptFontSynthesis(fontSynthesis),
-                platformFontLoader.cacheKey
+                platformFontLoader.cacheKey,
             )
         )
     }
@@ -96,13 +96,13 @@ internal class FontFamilyResolverImpl(
                     typefaceRequest,
                     platformFontLoader,
                     onAsyncCompletion,
-                    createDefaultTypeface
+                    createDefaultTypeface,
                 )
                     ?: platformFamilyTypefaceAdapter.resolve(
                         typefaceRequest,
                         platformFontLoader,
                         onAsyncCompletion,
-                        createDefaultTypeface
+                        createDefaultTypeface,
                     )
                     ?: throw IllegalStateException("Could not load font")
             }
@@ -139,7 +139,7 @@ internal expect class PlatformFontFamilyTypefaceAdapter() : FontFamilyTypefaceAd
         typefaceRequest: TypefaceRequest,
         platformFontLoader: PlatformFontLoader,
         onAsyncCompletion: (TypefaceResult.Immutable) -> Unit,
-        createDefaultTypeface: (TypefaceRequest) -> Any
+        createDefaultTypeface: (TypefaceRequest) -> Any,
     ): TypefaceResult?
 }
 
@@ -148,7 +148,7 @@ internal data class TypefaceRequest(
     val fontWeight: FontWeight,
     val fontStyle: FontStyle,
     val fontSynthesis: FontSynthesis,
-    val resourceLoaderCacheKey: Any?
+    val resourceLoaderCacheKey: Any?,
 )
 
 internal sealed interface TypefaceResult : State<Any> {
@@ -165,16 +165,16 @@ internal sealed interface TypefaceResult : State<Any> {
 }
 
 internal class TypefaceRequestCache {
-    internal val lock = createSynchronizedObject()
+    internal val lock = makeSynchronizedObject()
     // @GuardedBy("lock")
     private val resultCache = LruCache<TypefaceRequest, TypefaceResult>(16)
 
     fun runCached(
         typefaceRequest: TypefaceRequest,
-        resolveTypeface: ((TypefaceResult) -> Unit) -> TypefaceResult
+        resolveTypeface: ((TypefaceResult) -> Unit) -> TypefaceResult,
     ): State<Any> {
         synchronized(lock) {
-            resultCache.get(typefaceRequest)?.let {
+            resultCache[typefaceRequest]?.let {
                 if (it.cacheable) {
                     return it
                 } else {
@@ -216,7 +216,7 @@ internal class TypefaceRequestCache {
         synchronized(lock) {
             // async result may have completed prior to this block entering, do not overwrite
             // final results
-            if (resultCache.get(typefaceRequest) == null && currentTypefaceResult.cacheable) {
+            if (resultCache[typefaceRequest] == null && currentTypefaceResult.cacheable) {
                 resultCache.put(typefaceRequest, currentTypefaceResult)
             }
         }
@@ -225,12 +225,12 @@ internal class TypefaceRequestCache {
 
     fun preWarmCache(
         typefaceRequests: List<TypefaceRequest>,
-        resolveTypeface: (TypefaceRequest) -> TypefaceResult
+        resolveTypeface: (TypefaceRequest) -> TypefaceResult,
     ) {
         for (i in typefaceRequests.indices) {
             val typeRequest = typefaceRequests[i]
 
-            val prior = synchronized(lock) { resultCache.get(typeRequest) }
+            val prior = synchronized(lock) { resultCache[typeRequest] }
             if (prior != null) continue
 
             val next =
@@ -254,5 +254,5 @@ internal class TypefaceRequestCache {
 
     // @VisibleForTesting
     internal val size: Int
-        get() = synchronized(lock) { resultCache.size }
+        get() = synchronized(lock) { resultCache.size() }
 }

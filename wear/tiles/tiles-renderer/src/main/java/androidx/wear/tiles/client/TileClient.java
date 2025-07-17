@@ -18,7 +18,6 @@ package androidx.wear.tiles.client;
 
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.ResourceBuilders;
 import androidx.wear.tiles.RequestBuilders;
 import androidx.wear.tiles.TileBuilders;
@@ -26,22 +25,21 @@ import androidx.wear.tiles.TileBuilders;
 import com.google.common.util.concurrent.FluentFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 /** Client to connect and interact with a TileService. */
 public interface TileClient {
     /** Gets the API version supported by the connected TileService. */
-    @NonNull
-    ListenableFuture<Integer> requestApiVersion();
+    @NonNull ListenableFuture<Integer> requestApiVersion();
 
     /** Request a tile payload from the connected TileService. */
-    @NonNull
-    ListenableFuture<TileBuilders.Tile> requestTile(
-            @NonNull RequestBuilders.TileRequest requestParams);
+    @NonNull ListenableFuture<TileBuilders.Tile> requestTile(
+            RequestBuilders.@NonNull TileRequest requestParams);
 
     /** Request a resource bundle from the connected TileService. */
-    @NonNull
     @SuppressWarnings("deprecation") // For backward compatibility
-    default ListenableFuture<ResourceBuilders.Resources> requestTileResourcesAsync(
-            @NonNull RequestBuilders.ResourcesRequest requestParams) {
+    default @NonNull ListenableFuture<ResourceBuilders.Resources> requestTileResourcesAsync(
+            RequestBuilders.@NonNull ResourcesRequest requestParams) {
         return FluentFuture.from(requestResources(requestParams))
                 .transform(
                         res -> ResourceBuilders.Resources.fromProto(res.toProto()),
@@ -53,24 +51,19 @@ public interface TileClient {
      *
      * @deprecated Use {@link #requestTileResourcesAsync(RequestBuilders.ResourcesRequest)} instead.
      */
-    @NonNull
     @Deprecated
-    ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources> requestResources(
-            @NonNull RequestBuilders.ResourcesRequest requestParams);
+    @NonNull ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources> requestResources(
+            RequestBuilders.@NonNull ResourcesRequest requestParams);
 
     /** Send a Tile Added notification to the connected TileService. */
-    @NonNull
-    ListenableFuture<Void> sendOnTileAddedEvent();
+    @NonNull ListenableFuture<Void> sendOnTileAddedEvent();
 
     /** Send a Tile Removed notification to the connected TileService. */
-    @NonNull
-    ListenableFuture<Void> sendOnTileRemovedEvent();
+    @NonNull ListenableFuture<Void> sendOnTileRemovedEvent();
 
     /** Send a Tile Enter notification to the connected TileService. */
-    @NonNull
-    ListenableFuture<Void> sendOnTileEnterEvent();
+    @NonNull ListenableFuture<Void> sendOnTileEnterEvent();
 
     /** Send a Tile Leave notification to the connected TileService. */
-    @NonNull
-    ListenableFuture<Void> sendOnTileLeaveEvent();
+    @NonNull ListenableFuture<Void> sendOnTileLeaveEvent();
 }

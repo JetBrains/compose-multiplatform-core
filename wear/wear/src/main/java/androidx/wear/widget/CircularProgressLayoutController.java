@@ -18,8 +18,9 @@ package androidx.wear.widget;
 
 import android.os.CountDownTimer;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Controller for {@link CircularProgressLayout}.
@@ -36,9 +37,8 @@ class CircularProgressLayoutController {
     /**
      * Called when the timer is finished.
      */
-    @Nullable
     @SuppressWarnings("WeakerAccess") /* synthetic access */
-    CircularProgressLayout.OnTimerFinishedListener mOnTimerFinishedListener;
+    CircularProgressLayout.@Nullable OnTimerFinishedListener mOnTimerFinishedListener;
 
     CircularProgressLayoutController(CircularProgressLayout layout) {
         mLayout = layout;
@@ -47,8 +47,7 @@ class CircularProgressLayoutController {
     /**
      * Returns the registered {@link CircularProgressLayout.OnTimerFinishedListener}.
      */
-    @Nullable
-    public CircularProgressLayout.OnTimerFinishedListener getOnTimerFinishedListener() {
+    public CircularProgressLayout.@Nullable OnTimerFinishedListener getOnTimerFinishedListener() {
         return mOnTimerFinishedListener;
     }
 
@@ -57,7 +56,7 @@ class CircularProgressLayoutController {
      * countdown is finished.
      */
     public void setOnTimerFinishedListener(
-            @Nullable CircularProgressLayout.OnTimerFinishedListener listener) {
+            CircularProgressLayout.@Nullable OnTimerFinishedListener listener) {
         mOnTimerFinishedListener = listener;
     }
 

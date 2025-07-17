@@ -20,13 +20,14 @@ import android.app.PendingIntent;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.mediarouter.media.MediaItemStatus;
 import androidx.mediarouter.media.MediaSessionStatus;
 
 import com.example.androidx.mediarouting.data.PlaylistItem;
 import com.example.androidx.mediarouting.player.Player;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,19 +68,16 @@ public class SessionManager implements Player.Callback {
         return mSessionValid;
     }
 
-    @Nullable
-    public String getSessionId() {
+    public @Nullable String getSessionId() {
         return mSessionValid ? Integer.toString(mSessionId) : null;
     }
 
-    @Nullable
-    public PlaylistItem getCurrentItem() {
+    public @Nullable PlaylistItem getCurrentItem() {
         return mPlaylist.isEmpty() ? null : mPlaylist.get(0);
     }
 
     // Returns the cached playlist (note this is not responsible for updating it)
-    @Nullable
-    public List<PlaylistItem> getPlaylist() {
+    public @Nullable List<PlaylistItem> getPlaylist() {
         return mPlaylist;
     }
 
@@ -118,16 +116,15 @@ public class SessionManager implements Player.Callback {
     /**
      * Adds an item to the playlist.
      */
-    @NonNull
-    public PlaylistItem add(@NonNull String title, @NonNull Uri uri, @NonNull String mime) {
+    public @NonNull PlaylistItem add(@NonNull String title, @NonNull Uri uri,
+            @NonNull String mime) {
         return add(title, uri, mime, 0, null);
     }
 
     /**
      * Adds an item to the playlist.
      */
-    @NonNull
-    public PlaylistItem add(@NonNull String title, @NonNull Uri uri, @NonNull String mime,
+    public @NonNull PlaylistItem add(@NonNull String title, @NonNull Uri uri, @NonNull String mime,
             long startPosition, @Nullable PendingIntent receiver) {
         if (DEBUG) {
             log("add: title=" + title + ", uri=" + uri + ", receiver=" + receiver);
@@ -154,8 +151,7 @@ public class SessionManager implements Player.Callback {
     /**
      * Removes an item from the playlist.
      */
-    @NonNull
-    public PlaylistItem remove(@NonNull String iid) {
+    public @NonNull PlaylistItem remove(@NonNull String iid) {
         if (DEBUG) {
             log("remove: iid=" + iid);
         }
@@ -166,8 +162,7 @@ public class SessionManager implements Player.Callback {
     /**
      * Seeks a specific position for the current item.
      */
-    @NonNull
-    public PlaylistItem seek(@NonNull String iid, long pos) {
+    public @NonNull PlaylistItem seek(@NonNull String iid, long pos) {
         if (DEBUG) {
             log("seek: iid=" + iid + ", pos=" + pos);
         }
@@ -189,8 +184,7 @@ public class SessionManager implements Player.Callback {
     /**
      * Returns the status for the current item.
      */
-    @NonNull
-    public PlaylistItem getStatus(@NonNull String iid) {
+    public @NonNull PlaylistItem getStatus(@NonNull String iid) {
         checkPlayerAndSession();
 
         // This should only be called for local player. Remote player is
@@ -261,8 +255,7 @@ public class SessionManager implements Player.Callback {
     /**
      * Starts the current session.
      */
-    @Nullable
-    public String startSession() {
+    public @Nullable String startSession() {
         if (!mSessionValid) {
             mSessionId++;
             mItemId = 0;
@@ -307,8 +300,7 @@ public class SessionManager implements Player.Callback {
     /**
      * Returns the current session status.
      */
-    @NonNull
-    public MediaSessionStatus getSessionStatus(@NonNull String sid) {
+    public @NonNull MediaSessionStatus getSessionStatus(@NonNull String sid) {
         int sessionState = (sid != null && sid.equals(Integer.toString(mSessionId)))
                 ? MediaSessionStatus.SESSION_STATE_ACTIVE
                 : MediaSessionStatus.SESSION_STATE_INVALIDATED;
@@ -493,9 +485,8 @@ public class SessionManager implements Player.Callback {
         mCallback = callback;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         String result = "Media Queue: ";
         if (!mPlaylist.isEmpty()) {
             for (PlaylistItem item : mPlaylist) {

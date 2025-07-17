@@ -231,6 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"Demo Template Pesan"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"Pesan akan muncul di sini.\nTeks lainnya ada di baris kedua."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Demo Template Pesan Singkat"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Demo Template Item dengan Bagian"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Bagian Tombol Pilihan"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Beralih Bagian"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Bagian Banyak Baris"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Bagian Item Petak"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demo Template Panel"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demo Template Daftar Tempat"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Jelajahi Tempat"</string>
@@ -321,6 +326,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"Hanya tindakan sekunder yang dapat dipilih"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"Pengujian Dekorasi"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"Tindakan Sekunder dan Dekorasi"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"Baris dengan Tindakan Sekunder dan Dekorasi dengan judul yang sangat panjang"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"Baris juga dapat dipilih"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"Tindakan Sekunder dipilih"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"Tindakan utama baris dipilih"</string>

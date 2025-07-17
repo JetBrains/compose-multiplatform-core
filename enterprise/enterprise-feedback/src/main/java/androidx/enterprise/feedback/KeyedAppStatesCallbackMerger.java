@@ -16,7 +16,7 @@
 
 package androidx.enterprise.feedback;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Merge multiple {@link KeyedAppStatesCallback} instances into a single one.

@@ -17,14 +17,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application
-        android:name="androidx.multidex.MultiDexApplication"
         android:allowBackup="true"
         android:supportsRtl="true">
         <service
             android:name=".SampleDatabaseService"
             android:label="Multi-process SampleDatabase"
             android:exported="false"
-            android:process="androidx.room.integration.testapp.service"
-            tools:ignore="MissingServiceExportedEqualsTrue" />
+            android:process="androidx.room.integration.testapp.service" />
     </application>
 </manifest>

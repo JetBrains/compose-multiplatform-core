@@ -17,8 +17,8 @@ package androidx.leanback.graphics;
 
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class contains the rules for updating the bounds of a
@@ -40,8 +40,7 @@ public class BoundsRule {
          * @param fraction Percentage of parent.
          * @return Newly created ValueRule.
          */
-        @NonNull
-        public static ValueRule inheritFromParent(float fraction) {
+        public static @NonNull ValueRule inheritFromParent(float fraction) {
             return new ValueRule(0, fraction);
         }
 
@@ -51,8 +50,7 @@ public class BoundsRule {
          * @param absoluteValue Absolute value.
          * @return Newly created ValueRule.
          */
-        @NonNull
-        public static ValueRule absoluteValue(int absoluteValue) {
+        public static @NonNull ValueRule absoluteValue(int absoluteValue) {
             return new ValueRule(absoluteValue, 0);
         }
 
@@ -63,8 +61,7 @@ public class BoundsRule {
          * @param value    Offset
          * @return Newly created ValueRule.
          */
-        @NonNull
-        public static ValueRule inheritFromParentWithOffset(float fraction, int value) {
+        public static @NonNull ValueRule inheritFromParentWithOffset(float fraction, int value) {
             return new ValueRule(value, fraction);
         }
 
@@ -159,18 +156,14 @@ public class BoundsRule {
     }
 
     /** {@link ValueRule} for left attribute of {@link BoundsRule} */
-    @Nullable
-    public ValueRule left;
+    public @Nullable ValueRule left;
 
     /** {@link ValueRule} for top attribute of {@link BoundsRule} */
-    @Nullable
-    public ValueRule top;
+    public @Nullable ValueRule top;
 
     /** {@link ValueRule} for right attribute of {@link BoundsRule} */
-    @Nullable
-    public ValueRule right;
+    public @Nullable ValueRule right;
 
     /** {@link ValueRule} for bottom attribute of {@link BoundsRule} */
-    @Nullable
-    public ValueRule bottom;
+    public @Nullable ValueRule bottom;
 }

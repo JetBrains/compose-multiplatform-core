@@ -19,6 +19,7 @@ package androidx.compose.ui.text.font
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.ui.text.internal.checkPrecondition
 
 /**
  * The primary typography interface for Compose applications.
@@ -89,7 +90,7 @@ sealed class FontFamily(canLoadSynchronously: Boolean) {
             fontFamily: FontFamily? = null,
             fontWeight: FontWeight = FontWeight.Normal,
             fontStyle: FontStyle = FontStyle.Normal,
-            fontSynthesis: FontSynthesis = FontSynthesis.All
+            fontSynthesis: FontSynthesis = FontSynthesis.All,
         ): State<Any>
     }
 
@@ -140,7 +141,7 @@ sealed class FontFamily(canLoadSynchronously: Boolean) {
     @Suppress("CanBePrimaryConstructorProperty") // for deprecation
     @get:Deprecated(
         message = "Unused property that has no meaning. Do not use.",
-        level = DeprecationLevel.ERROR
+        level = DeprecationLevel.ERROR,
     )
     val canLoadSynchronously = canLoadSynchronously
 }
@@ -155,7 +156,6 @@ sealed class SystemFontFamily : FontFamily(true)
  * Defines a font family with list of [Font].
  *
  * @sample androidx.compose.ui.text.samples.FontFamilySansSerifSample
- *
  * @sample androidx.compose.ui.text.samples.CustomFontFamilySample
  */
 @Immutable
@@ -165,7 +165,7 @@ internal constructor(
     val fonts: List<Font>
 ) : FileBasedFontFamily(), List<Font> by fonts {
     init {
-        check(fonts.isNotEmpty()) { "At least one font should be passed to FontFamily" }
+        checkPrecondition(fonts.isNotEmpty()) { "At least one font should be passed to FontFamily" }
     }
 
     override fun equals(other: Any?): Boolean {

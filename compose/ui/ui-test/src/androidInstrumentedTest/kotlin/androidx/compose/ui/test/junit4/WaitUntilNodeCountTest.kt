@@ -140,4 +140,10 @@ class WaitUntilNodeCountTest {
             waitUntilDoesNotExist(hasTestTag(TestTag), timeoutMillis = Timeout)
         }
     }
+
+    // Regression for b/361250553
+    @Test
+    fun waitUntil_succeedsWhen_noRoots() = runComposeUiTest {
+        waitUntilDoesNotExist(hasTestTag(TestTag), Timeout)
+    }
 }

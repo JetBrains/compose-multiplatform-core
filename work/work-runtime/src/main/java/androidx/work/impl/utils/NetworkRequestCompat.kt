@@ -19,17 +19,22 @@ package androidx.work.impl.utils
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
+import androidx.work.Logger
 
 internal data class NetworkRequestCompat(val wrapped: Any? = null) {
+
+    companion object {
+        val TAG = Logger.tagWithPrefix("NetworkRequestCompat")
+    }
+
     @get:RequiresApi(21)
     val networkRequest: NetworkRequest?
         get() = wrapped as NetworkRequest?
 }
 
 @get:RequiresApi(28)
-val NetworkRequest.transportTypesCompat: IntArray
+public val NetworkRequest.transportTypesCompat: IntArray
     get() =
         if (Build.VERSION.SDK_INT >= 31) {
             NetworkRequest31.transportTypes(this)
@@ -39,6 +44,7 @@ val NetworkRequest.transportTypesCompat: IntArray
                     NetworkCapabilities.TRANSPORT_CELLULAR,
                     NetworkCapabilities.TRANSPORT_ETHERNET,
                     NetworkCapabilities.TRANSPORT_LOWPAN,
+                    NetworkCapabilities.TRANSPORT_SATELLITE,
                     NetworkCapabilities.TRANSPORT_THREAD,
                     NetworkCapabilities.TRANSPORT_USB,
                     NetworkCapabilities.TRANSPORT_VPN,
@@ -50,7 +56,7 @@ val NetworkRequest.transportTypesCompat: IntArray
         }
 
 @get:RequiresApi(28)
-val NetworkRequest.capabilitiesCompat: IntArray
+public val NetworkRequest.capabilitiesCompat: IntArray
     get() =
         if (Build.VERSION.SDK_INT >= 31) {
             NetworkRequest31.capabilities(this)
@@ -67,6 +73,7 @@ val NetworkRequest.capabilitiesCompat: IntArray
                     NetworkCapabilities.NET_CAPABILITY_IA,
                     NetworkCapabilities.NET_CAPABILITY_IMS,
                     NetworkCapabilities.NET_CAPABILITY_INTERNET,
+                    NetworkCapabilities.NET_CAPABILITY_LOCAL_NETWORK,
                     NetworkCapabilities.NET_CAPABILITY_MCX,
                     NetworkCapabilities.NET_CAPABILITY_MMS,
                     NetworkCapabilities.NET_CAPABILITY_MMTEL,
@@ -90,29 +97,67 @@ val NetworkRequest.capabilitiesCompat: IntArray
                 .toIntArray()
         }
 
+// List of default capabilities that are set when a network request is constructed.
+// https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Connectivity/framework/src/android/net/NetworkCapabilities.java;?q=DEFAULT_CAPABILITIES
+private val defaultCapabilities =
+    intArrayOf(
+        NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED,
+        NetworkCapabilities.NET_CAPABILITY_NOT_VPN,
+        NetworkCapabilities.NET_CAPABILITY_TRUSTED,
+    )
+
 @RequiresApi(28)
-object NetworkRequest28 {
-    @DoNotInline
+public object NetworkRequest28 {
     internal fun hasCapability(request: NetworkRequest, capability: Int) =
         request.hasCapability(capability)
 
-    @DoNotInline
     internal fun hasTransport(request: NetworkRequest, transport: Int) =
         request.hasTransport(transport)
 
     @JvmStatic
-    @DoNotInline
-    fun createNetworkRequest(capabilities: IntArray, transports: IntArray): NetworkRequest {
+    public fun createNetworkRequest(capabilities: IntArray, transports: IntArray): NetworkRequest {
         val networkRequest = NetworkRequest.Builder()
-        capabilities.forEach { networkRequest.addCapability(it) }
+        capabilities.forEach {
+            try {
+                networkRequest.addCapability(it)
+            } catch (ex: IllegalArgumentException) {
+                // b/351180465 - Ignoring the IAE that addCapability() can throw on SDK < 35 and
+                // aligning with newer SDK behaviour. Capabilities are persisted in the database
+                // and the framework can by default add new ones. Catching this exception mitigates
+                // the case where decoding the capabilities from the database fails across OS
+                // changes.
+                Logger.get()
+                    .warning(NetworkRequestCompat.TAG, "Ignoring adding capability '$it'", ex)
+            }
+        }
+        // b/409716532 - There is a list of capabilities that are set by default when the network
+        // request is constructed and must be explicitly removed if they were not persisted as
+        // otherwise the request to exclude those capabilities will be lost between
+        // encoding and decoding.
+        defaultCapabilities.forEach {
+            if (!capabilities.contains(it)) {
+                try {
+                    networkRequest.removeCapability(it)
+                } catch (ex: IllegalArgumentException) {
+                    // Ignoring the IAE that removeCapability() can throw in the case that default
+                    // capabilities changes across OS versions.
+                    Logger.get()
+                        .warning(
+                            NetworkRequestCompat.TAG,
+                            "Ignoring removing default capability '$it'",
+                            ex,
+                        )
+                }
+            }
+        }
+
         transports.forEach { networkRequest.addTransportType(it) }
         return networkRequest.build()
     }
 
-    @DoNotInline
     internal fun createNetworkRequestCompat(
         capabilities: IntArray,
-        transports: IntArray
+        transports: IntArray,
     ): NetworkRequestCompat {
         return NetworkRequestCompat(createNetworkRequest(capabilities, transports))
     }
@@ -120,12 +165,12 @@ object NetworkRequest28 {
 
 @RequiresApi(31)
 private object NetworkRequest31 {
-    @DoNotInline fun capabilities(request: NetworkRequest) = request.capabilities
+    fun capabilities(request: NetworkRequest) = request.capabilities
 
-    @DoNotInline fun transportTypes(request: NetworkRequest) = request.transportTypes
+    fun transportTypes(request: NetworkRequest) = request.transportTypes
 }
 
 @RequiresApi(30)
 internal object NetworkRequest30 {
-    @DoNotInline fun getNetworkSpecifier(request: NetworkRequest) = request.networkSpecifier
+    fun getNetworkSpecifier(request: NetworkRequest) = request.networkSpecifier
 }

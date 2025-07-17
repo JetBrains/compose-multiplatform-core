@@ -20,10 +20,11 @@ import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -76,9 +77,8 @@ class OutputConfigurationCompatApi24Impl extends OutputConfigurationCompatBaseIm
         ((OutputConfigurationParamsApi24) mObject).mPhysicalCameraId = physicalCameraId;
     }
 
-    @Nullable
     @Override
-    public String getPhysicalCameraId() {
+    public @Nullable String getPhysicalCameraId() {
         return ((OutputConfigurationParamsApi24) mObject).mPhysicalCameraId;
     }
 
@@ -93,14 +93,12 @@ class OutputConfigurationCompatApi24Impl extends OutputConfigurationCompatBaseIm
     }
 
     @Override
-    @Nullable
-    public Surface getSurface() {
+    public @Nullable Surface getSurface() {
         return ((OutputConfiguration) getOutputConfiguration()).getSurface();
     }
 
     @Override
-    @NonNull
-    public List<Surface> getSurfaces() {
+    public @NonNull List<Surface> getSurfaces() {
         return Collections.singletonList(getSurface());
     }
 
@@ -109,19 +107,16 @@ class OutputConfigurationCompatApi24Impl extends OutputConfigurationCompatBaseIm
         return ((OutputConfiguration) getOutputConfiguration()).getSurfaceGroupId();
     }
 
-    @NonNull
     @Override
-    public Object getOutputConfiguration() {
+    public @NonNull Object getOutputConfiguration() {
         Preconditions.checkArgument(mObject instanceof OutputConfigurationParamsApi24);
         return ((OutputConfigurationParamsApi24) mObject).mOutputConfiguration;
     }
 
     private static final class OutputConfigurationParamsApi24 {
-        @NonNull
-        final OutputConfiguration mOutputConfiguration;
+        final @NonNull OutputConfiguration mOutputConfiguration;
 
-        @Nullable
-        String mPhysicalCameraId;
+        @Nullable String mPhysicalCameraId;
         boolean mIsShared;
         long mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
 

@@ -20,7 +20,6 @@ import android.graphics.Matrix
 import android.os.Build
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorBoundsInfo
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.toAndroidRectF
@@ -59,7 +58,7 @@ internal fun CursorAnchorInfo.Builder.build(
     includeInsertionMarker: Boolean = true,
     includeCharacterBounds: Boolean = true,
     includeEditorBounds: Boolean = true,
-    includeLineBounds: Boolean = true
+    includeLineBounds: Boolean = true,
 ): CursorAnchorInfo {
     reset()
 
@@ -80,14 +79,14 @@ internal fun CursorAnchorInfo.Builder.build(
         if (compositionStart in 0 until compositionEnd) {
             setComposingText(
                 compositionStart,
-                textFieldValue.text.subSequence(compositionStart, compositionEnd)
+                textFieldValue.text.subSequence(compositionStart, compositionEnd),
             )
             addCharacterBounds(
                 compositionStart,
                 compositionEnd,
                 offsetMapping,
                 textLayoutResult,
-                innerTextFieldBounds
+                innerTextFieldBounds,
             )
         }
     }
@@ -100,7 +99,7 @@ internal fun CursorAnchorInfo.Builder.build(
         CursorAnchorInfoApi34Helper.addVisibleLineBounds(
             this,
             textLayoutResult,
-            innerTextFieldBounds
+            innerTextFieldBounds,
         )
     }
 
@@ -111,7 +110,7 @@ private fun CursorAnchorInfo.Builder.setInsertionMarker(
     selectionStart: Int,
     offsetMapping: OffsetMapping,
     textLayoutResult: TextLayoutResult,
-    innerTextFieldBounds: Rect
+    innerTextFieldBounds: Rect,
 ): CursorAnchorInfo.Builder {
     if (selectionStart < 0) return this
 
@@ -141,7 +140,7 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
     endOffset: Int,
     offsetMapping: OffsetMapping,
     textLayoutResult: TextLayoutResult,
-    innerTextFieldBounds: Rect
+    innerTextFieldBounds: Rect,
 ): CursorAnchorInfo.Builder {
     val startOffsetTransformed = offsetMapping.originalToTransformed(startOffset)
     val endOffsetTransformed = offsetMapping.originalToTransformed(endOffset)
@@ -149,7 +148,7 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
     textLayoutResult.multiParagraph.fillBoundingBoxes(
         TextRange(startOffsetTransformed, endOffsetTransformed),
         array,
-        0
+        0,
     )
 
     for (offset in startOffset until endOffset) {
@@ -165,7 +164,7 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
                 array[arrayIndex] /* left */,
                 array[arrayIndex + 1] /* top */,
                 array[arrayIndex + 2] /* right */,
-                array[arrayIndex + 3] /* bottom */
+                array[arrayIndex + 3], /* bottom */
             )
 
         var flags = 0
@@ -190,10 +189,9 @@ private fun CursorAnchorInfo.Builder.addCharacterBounds(
 @RequiresApi(33)
 private object CursorAnchorInfoApi33Helper {
     @JvmStatic
-    @DoNotInline
     fun setEditorBoundsInfo(
         builder: CursorAnchorInfo.Builder,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ): CursorAnchorInfo.Builder =
         builder.setEditorBoundsInfo(
             EditorBoundsInfo.Builder()
@@ -206,11 +204,10 @@ private object CursorAnchorInfoApi33Helper {
 @RequiresApi(34)
 private object CursorAnchorInfoApi34Helper {
     @JvmStatic
-    @DoNotInline
     fun addVisibleLineBounds(
         builder: CursorAnchorInfo.Builder,
         textLayoutResult: TextLayoutResult,
-        innerTextFieldBounds: Rect
+        innerTextFieldBounds: Rect,
     ): CursorAnchorInfo.Builder {
         if (!innerTextFieldBounds.isEmpty) {
             val firstLine = textLayoutResult.getLineForVerticalPosition(innerTextFieldBounds.top)
@@ -220,7 +217,7 @@ private object CursorAnchorInfoApi34Helper {
                     textLayoutResult.getLineLeft(index),
                     textLayoutResult.getLineTop(index),
                     textLayoutResult.getLineRight(index),
-                    textLayoutResult.getLineBottom(index)
+                    textLayoutResult.getLineBottom(index),
                 )
             }
         }

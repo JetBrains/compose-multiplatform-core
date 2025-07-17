@@ -72,7 +72,6 @@ public object LocalActivityResultRegistryOwner {
  * [ActivityResultLauncher]. Attempting to do so will result in an [IllegalStateException].
  *
  * @sample androidx.activity.compose.samples.RememberLauncherForActivityResult
- *
  * @param contract the contract, specifying conversions to/from [Intent]s
  * @param onResult the callback to be called on the main thread when activity result is available
  * @return the launcher that can be used to start the activity.
@@ -80,7 +79,7 @@ public object LocalActivityResultRegistryOwner {
 @Composable
 public fun <I, O> rememberLauncherForActivityResult(
     contract: ActivityResultContract<I, O>,
-    onResult: (O) -> Unit
+    onResult: (O) -> Unit,
 ): ManagedActivityResultLauncher<I, O> {
     // Keep track of the current contract and onResult listener
     val currentContract = rememberUpdatedState(contract)
@@ -120,7 +119,7 @@ public fun <I, O> rememberLauncherForActivityResult(
 public class ManagedActivityResultLauncher<I, O>
 internal constructor(
     private val launcher: ActivityResultLauncherHolder<I>,
-    private val currentContract: State<ActivityResultContract<I, O>>
+    private val currentContract: State<ActivityResultContract<I, O>>,
 ) : ActivityResultLauncher<I>() {
     /**
      * This function should never be called and doing so will result in an

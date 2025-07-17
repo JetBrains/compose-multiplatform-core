@@ -21,9 +21,10 @@ import static androidx.annotation.Dimension.DP;
 import androidx.annotation.Dimension;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.wear.protolayout.proto.DeviceParametersProto;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -108,13 +109,12 @@ public final class DeviceParametersBuilders {
             return mImpl.getScreenShape().getNumber();
         }
 
-        @NonNull
-        static DeviceParameters fromProto(@NonNull DeviceParametersProto.DeviceParameters proto) {
+        static @NonNull DeviceParameters fromProto(
+                DeviceParametersProto.@NonNull DeviceParameters proto) {
             return new DeviceParameters(proto);
         }
 
-        @NonNull
-        DeviceParametersProto.DeviceParameters toProto() {
+        DeviceParametersProto.@NonNull DeviceParameters toProto() {
             return mImpl;
         }
 
@@ -126,15 +126,13 @@ public final class DeviceParametersBuilders {
             public Builder() {}
 
             /** Sets width of the device's screen in DP. */
-            @NonNull
-            public Builder setScreenWidthDp(@Dimension(unit = DP) int screenWidthDp) {
+            public @NonNull Builder setScreenWidthDp(@Dimension(unit = DP) int screenWidthDp) {
                 mImpl.setScreenWidthDp(screenWidthDp);
                 return this;
             }
 
             /** Sets height of the device's screen in DP. */
-            @NonNull
-            public Builder setScreenHeightDp(@Dimension(unit = DP) int screenHeightDp) {
+            public @NonNull Builder setScreenHeightDp(@Dimension(unit = DP) int screenHeightDp) {
                 mImpl.setScreenHeightDp(screenHeightDp);
                 return this;
             }
@@ -143,8 +141,7 @@ public final class DeviceParametersBuilders {
              * Sets density of the display. This value is the scaling factor to get from DP to
              * Pixels (px = dp * density).
              */
-            @NonNull
-            public Builder setScreenDensity(
+            public @NonNull Builder setScreenDensity(
                     @FloatRange(from = 0.0, fromInclusive = false, toInclusive = false)
                             float screenDensity) {
                 mImpl.setScreenDensity(screenDensity);
@@ -152,23 +149,20 @@ public final class DeviceParametersBuilders {
             }
 
             /** Sets the platform of the device. */
-            @NonNull
-            public Builder setDevicePlatform(@DevicePlatform int devicePlatform) {
+            public @NonNull Builder setDevicePlatform(@DevicePlatform int devicePlatform) {
                 mImpl.setDevicePlatform(
                         DeviceParametersProto.DevicePlatform.forNumber(devicePlatform));
                 return this;
             }
 
             /** Sets the shape of the device's screen. */
-            @NonNull
-            public Builder setScreenShape(@ScreenShape int screenShape) {
+            public @NonNull Builder setScreenShape(@ScreenShape int screenShape) {
                 mImpl.setScreenShape(DeviceParametersProto.ScreenShape.forNumber(screenShape));
                 return this;
             }
 
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public DeviceParameters build() {
+            public @NonNull DeviceParameters build() {
                 return DeviceParameters.fromProto(mImpl.build());
             }
         }

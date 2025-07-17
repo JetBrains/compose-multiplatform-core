@@ -19,7 +19,6 @@ package androidx.compose.ui.input.pointer
 import android.view.MotionEvent
 import android.view.View
 import androidx.collection.LongSparseArray
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.gesture.PointerCoords
 import androidx.compose.ui.gesture.PointerProperties
@@ -29,7 +28,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class PointerInteropUtilsTest {
@@ -49,7 +47,7 @@ class PointerInteropUtilsTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1)),
-                arrayOf(PointerCoords(3f, 4f))
+                arrayOf(PointerCoords(3f, 4f)),
             )
         val pointerEvent = PointerEvent(listOf(down(1, 2, 3f, 4f)), expected)
 
@@ -68,7 +66,7 @@ class PointerInteropUtilsTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1)),
-                arrayOf(PointerCoords(3f, 4f))
+                arrayOf(PointerCoords(3f, 4f)),
             )
         val pointerEvent = PointerEvent(listOf(down(1, 2, 3f, 4f).up(5)), expected)
 
@@ -89,7 +87,7 @@ class PointerInteropUtilsTest {
                 2,
                 1,
                 arrayOf(PointerProperties(1), PointerProperties(8)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1, pointer2), expected)
 
@@ -110,7 +108,7 @@ class PointerInteropUtilsTest {
                 2,
                 0,
                 arrayOf(PointerProperties(8), PointerProperties(1)),
-                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f))
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer2, pointer1), expected)
 
@@ -131,7 +129,7 @@ class PointerInteropUtilsTest {
                 2,
                 1,
                 arrayOf(PointerProperties(1), PointerProperties(8)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f))
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1, pointer2), expected)
 
@@ -152,7 +150,7 @@ class PointerInteropUtilsTest {
                 2,
                 0,
                 arrayOf(PointerProperties(8), PointerProperties(1)),
-                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f))
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer2, pointer1), expected)
 
@@ -172,7 +170,7 @@ class PointerInteropUtilsTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1)),
-                arrayOf(PointerCoords(8f, 9f))
+                arrayOf(PointerCoords(8f, 9f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1), expected)
 
@@ -193,7 +191,7 @@ class PointerInteropUtilsTest {
                 2,
                 0,
                 arrayOf(PointerProperties(1), PointerProperties(11)),
-                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1, pointer2), expected)
 
@@ -213,7 +211,7 @@ class PointerInteropUtilsTest {
                     1,
                     0,
                     arrayOf(PointerProperties(1)),
-                    arrayOf(PointerCoords(13f, 104f))
+                    arrayOf(PointerCoords(13f, 104f)),
                 )
                 .apply { offsetLocation(-10f, -100f) }
         val pointerEvent = PointerEvent(listOf(pointer1), expected)
@@ -235,7 +233,7 @@ class PointerInteropUtilsTest {
                     2,
                     0,
                     arrayOf(PointerProperties(8), PointerProperties(1)),
-                    arrayOf(PointerCoords(110f, 1011f), PointerCoords(103f, 1004f))
+                    arrayOf(PointerCoords(110f, 1011f), PointerCoords(103f, 1004f)),
                 )
                 .apply { offsetLocation(-100f, -1000f) }
         val pointerEvent = PointerEvent(listOf(pointer2, pointer1), expected)
@@ -262,7 +260,7 @@ class PointerInteropUtilsTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1)),
-                arrayOf(PointerCoords(8f, 9f))
+                arrayOf(PointerCoords(8f, 9f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1), expected)
 
@@ -283,7 +281,7 @@ class PointerInteropUtilsTest {
                 2,
                 0,
                 arrayOf(PointerProperties(1), PointerProperties(11)),
-                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f))
+                arrayOf(PointerCoords(8f, 9f), PointerCoords(18f, 19f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer1, pointer2), expected)
 
@@ -304,7 +302,7 @@ class PointerInteropUtilsTest {
                 2,
                 0,
                 arrayOf(PointerProperties(11), PointerProperties(1)),
-                arrayOf(PointerCoords(18f, 19f), PointerCoords(8f, 9f))
+                arrayOf(PointerCoords(18f, 19f), PointerCoords(8f, 9f)),
             )
         val pointerEvent = PointerEvent(listOf(pointer2, pointer1), expected)
 
@@ -324,7 +322,7 @@ class PointerInteropUtilsTest {
                     1,
                     0,
                     arrayOf(PointerProperties(1)),
-                    arrayOf(PointerCoords(13f, 104f))
+                    arrayOf(PointerCoords(13f, 104f)),
                 )
                 .apply { offsetLocation(-10f, -100f) }
         val pointerEvent = PointerEvent(listOf(pointer1), expected)
@@ -346,7 +344,7 @@ class PointerInteropUtilsTest {
                     2,
                     0,
                     arrayOf(PointerProperties(8), PointerProperties(1)),
-                    arrayOf(PointerCoords(110f, 1011f), PointerCoords(103f, 1004f))
+                    arrayOf(PointerCoords(110f, 1011f), PointerCoords(103f, 1004f)),
                 )
                 .apply { offsetLocation(-100f, -1000f) }
         val pointerEvent = PointerEvent(listOf(pointer2, pointer1), expected)
@@ -367,7 +365,7 @@ class PointerInteropUtilsTest {
                 0,
                 arrayOf(PointerProperties(0)),
                 arrayOf(PointerCoords(0f, 0f)),
-                76
+                76,
             )
         lateinit var actual: MotionEvent
 
@@ -384,7 +382,7 @@ private fun MotionEvent(
     actionIndex: Int,
     pointerProperties: Array<MotionEvent.PointerProperties>,
     pointerCoords: Array<MotionEvent.PointerCoords>,
-    downtime: Long = 0L
+    downtime: Long = 0L,
 ) =
     MotionEvent.obtain(
         downtime,
@@ -400,7 +398,7 @@ private fun MotionEvent(
         0,
         0,
         0,
-        0
+        0,
     )
 
 private fun assertEquals(actual: MotionEvent, expected: MotionEvent) {
@@ -459,7 +457,7 @@ private fun MotionEvent.asOffsetToScreen() =
 
 private fun PointerEvent(
     changes: List<PointerInputChange>,
-    motionEvent: MotionEvent
+    motionEvent: MotionEvent,
 ): PointerEvent {
     val internalPointerEvent = InternalPointerEvent(changes.toLongSparseArray(), motionEvent)
     return PointerEvent(changes, internalPointerEvent)

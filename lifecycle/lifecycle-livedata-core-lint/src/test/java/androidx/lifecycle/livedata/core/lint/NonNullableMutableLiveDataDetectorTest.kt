@@ -23,9 +23,12 @@ import androidx.lifecycle.livedata.core.lint.stubs.STUBS
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
 import com.android.tools.lint.checks.infrastructure.TestLintResult
+import com.android.tools.lint.checks.infrastructure.TestLintTask.OptionSetter
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.useFirUast
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -37,8 +40,16 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
     override fun getIssues(): MutableList<Issue> =
         mutableListOf(NonNullableMutableLiveDataDetector.ISSUE)
 
-    private fun check(vararg files: TestFile): TestLintResult {
-        return lint().files(*files, *STUBS).testModes(TestMode.DEFAULT).run()
+    private fun check(vararg files: TestFile, optionSetter: OptionSetter? = null): TestLintResult {
+        return lint()
+            .apply {
+                if (optionSetter != null) {
+                    this.configureOptions(optionSetter)
+                }
+            }
+            .files(*files, *STUBS)
+            .testModes(TestMode.DEFAULT)
+            .run()
     }
 
     @Test
@@ -76,7 +87,7 @@ class NonNullableMutableLiveDataDetectorTest : LintDetectorTest() {
                 open class GenericLiveData<T> : MutableLiveData<T>()
             """
                     )
-                    .indented()
+                    .indented(),
             )
             .expectClean()
     }
@@ -459,7 +470,7 @@ Fix for src/com/example/test.kt line 7: Change `LiveData` type to nullable:
                 open class GenericLiveData<T> : MutableLiveData<T>()
             """
                     )
-                    .indented()
+                    .indented(),
             )
             .expect(
                 """
@@ -513,7 +524,7 @@ Fix for src/com/example/test.kt line 6: Add non-null asserted (!!) call:
                 }
             """
                     )
-                    .indented()
+                    .indented(),
             )
             .expect(
                 """
@@ -567,7 +578,7 @@ Fix for src/com/example/MyClass1.kt line 9: Change `LiveData` type to nullable:
                 }
             """
                     )
-                    .indented()
+                    .indented(),
             )
             .expect(
                 """
@@ -923,6 +934,92 @@ src/com/example/Foo.kt:10: Error: Expected non-nullable value [NullSafeMutableLi
     }
 
     @Test
+    fun smartcastToNonNull_platformType() {
+        check(
+                java(
+                    """
+                        package com.example;
+
+                        public class Util {
+                            public static String getPrefix() {
+                                return "prefix";
+                            }
+                        }
+                    """
+                ),
+                kotlin(
+                        """
+            package com.example
+
+            import androidx.lifecycle.MutableLiveData
+
+            class Foo(
+                var target: MutableLiveData<String>
+            ) {
+                fun bar() {
+                    val prefix = Util.getPrefix()
+                    if (!prefix.isNullOrEmpty()) {
+                        target.value = prefix
+                    }
+                }
+            }
+                """
+                    )
+                    .indented(),
+            )
+            .expectClean()
+    }
+
+    @Test
+    fun smartcastToNonNull() {
+        assumeTrue("Test fails under K1: b/353980920", useFirUast())
+        check(
+                kotlin(
+                        """
+            package com.example
+
+            import androidx.lifecycle.MutableLiveData
+
+            class Foo(
+                var target: MutableLiveData<String>
+            ) {
+                fun foo(v: String?) {
+                    if (v != null) {
+                        target.value = v
+                    }
+                }
+            }
+                """
+                    )
+                    .indented()
+            ) { flags ->
+                // smart-cast info is more accurate in AA FIR
+                flags.setUseK2Uast(true)
+            }
+            .expectClean()
+    }
+
+    @Test
+    fun typeParameter() {
+        check(
+                kotlin(
+                        """
+            package com.example
+
+            class EntityHolder<T> {
+                private val mutableLiveData = MutableLiveData<T>()
+                fun postValue(value: T) {
+                    mutableLiveData.postValue(value)
+                }
+            }
+                """
+                    )
+                    .indented()
+            )
+            .expectClean()
+    }
+
+    @Test
     fun dataClassFromBinary_nonNull() {
         check(
                 kotlin(
@@ -1031,6 +1128,54 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
             .expectClean()
     }
 
+    @Test
+    fun lambdaParameterFromMediatorLiveData() {
+        // Regression test from b/341316048
+        // https://youtrack.jetbrains.com/issue/KTIJ-30464
+        check(
+                kotlin(
+                        """
+                    package androidx.lifecycle
+
+                    fun interface Observer<T> {
+                      fun onChanged(value: T)
+                    }
+                """
+                    )
+                    .indented(),
+                java(
+                        """
+                    package androidx.lifecycle;
+
+                    public class MediatorLiveData<T> extends MutableLiveData<T> {
+                        public <S> void addSource(LiveData<S> source, Observer<? super S> onChanged) {
+                        }
+                    }
+                """
+                    )
+                    .indented(),
+                kotlin(
+                        """
+                    import androidx.lifecycle.MediatorLiveData
+
+                    class Test {
+                        val myData = MediatorLiveData<List<Boolean>>()
+
+                        init {
+                          myData.addSource(getSources()) { data ->
+                            myData.value = data
+                          }
+                        }
+
+                        private fun getSources(): MediatorLiveData<List<Boolean>> = TODO()
+                    }
+                """
+                    )
+                    .indented(),
+            )
+            .expectClean()
+    }
+
     private companion object {
         val DATA_LIB: TestFile =
             bytecode(
@@ -1089,7 +1234,7 @@ Fix for src/com/example/test.kt line 9: Add non-null asserted (!!) call:
                 Ue+UeHBKKoj2JMmciXhGhKI78f3cx2tyL3vo33mjhac0z9NukWDmZhDKQ8/j
                 cZ72FkiEkccilmYgHJRQnkGLg24HdLcp3ki/dm+MOuhzkHFw0sExB1kH/Q5O
                 Objr4KGDgoMhUvsPdw4FK1ANAAA=
-                """
+                """,
             )
     }
 }

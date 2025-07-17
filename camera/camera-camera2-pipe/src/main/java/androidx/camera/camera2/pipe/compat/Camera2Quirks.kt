@@ -16,19 +16,20 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.AT_LEAST
+import androidx.camera.camera2.pipe.CameraGraph.RepeatingRequestRequirementsBeforeCapture.CompletionBehavior.EXACT
 import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.max
 
 @Singleton
 internal class Camera2Quirks
 @Inject
-constructor(
-    private val metadataProvider: Camera2MetadataProvider,
-) {
+constructor(private val metadataProvider: Camera2MetadataProvider) {
     /**
      * A quirk that waits for the last repeating capture request to start before stopping the
      * current capture session. This is an issue in the Android camera framework where recreating a
@@ -38,18 +39,16 @@ constructor(
      * - Device(s): Camera devices on hardware level LEGACY
      * - API levels: All
      */
-    internal fun shouldWaitForRepeatingRequest(graphConfig: CameraGraph.Config): Boolean {
+    internal fun shouldWaitForRepeatingRequestStartOnDisconnect(
+        graphConfig: CameraGraph.Config
+    ): Boolean {
         // First, check for overrides.
-        graphConfig.flags.quirkWaitForRepeatingRequestOnDisconnect?.let {
+        graphConfig.flags.awaitRepeatingRequestOnDisconnect?.let {
             return it
         }
 
         // Then we verify whether we need this quirk based on hardware level.
-        val level =
-            metadataProvider
-                .awaitCameraMetadata(graphConfig.camera)[
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
-        return level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+        return metadataProvider.awaitCameraMetadata(graphConfig.camera).isHardwareLevelLegacy
     }
 
     /**
@@ -63,14 +62,9 @@ constructor(
      * - Device(s): Camera devices on hardware level LEGACY
      * - API levels: 24 (N) – 28 (P)
      */
-    internal fun shouldCreateCaptureSessionBeforeClosing(cameraId: CameraId): Boolean {
-        if (Build.VERSION.SDK_INT !in (Build.VERSION_CODES.N..Build.VERSION_CODES.P)) {
-            return false
-        }
-        val level =
-            metadataProvider
-                .awaitCameraMetadata(cameraId)[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
-        return level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+    internal fun shouldCreateEmptyCaptureSessionBeforeClosing(cameraId: CameraId): Boolean {
+        return Build.VERSION.SDK_INT in (Build.VERSION_CODES.N..Build.VERSION_CODES.P) &&
+            metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
     }
 
     /**
@@ -82,31 +76,70 @@ constructor(
      * - Device(s): Camera devices on hardware level LEGACY
      * - API levels: All
      */
-    internal fun shouldWaitForCameraDeviceOnClosed(cameraId: CameraId): Boolean {
-        val level =
-            metadataProvider
-                .awaitCameraMetadata(cameraId)[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
-        return level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+    internal fun shouldWaitForCameraDeviceOnClosed(cameraId: CameraId): Boolean =
+        metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
+
+    /**
+     * A quirk that closes the camera devices before creating a new capture session. This is needed
+     * on certain devices where creating a capture session directly may lead to deadlocks, NPEs or
+     * other undesirable behaviors. When [shouldCreateEmptyCaptureSessionBeforeClosing] is also
+     * required, a regular camera device closure would then be expanded to:
+     * 1. Close the camera device.
+     * 2. Open the camera device.
+     * 3. Create an empty capture session.
+     * 4. Close the capture session.
+     * 5. Close the camera device.
+     * - Bug(s): b/237341513, b/359062845, b/342263275, b/379347826, b/359062845
+     * - Device(s): Camera devices on hardware level LEGACY
+     * - API levels: 23 (M) – 31 (S_V2)
+     */
+    internal fun shouldCloseCameraBeforeCreatingCaptureSession(cameraId: CameraId): Boolean {
+        val isLegacyDevice =
+            Build.VERSION.SDK_INT in (Build.VERSION_CODES.M..Build.VERSION_CODES.S_V2) &&
+                metadataProvider.awaitCameraMetadata(cameraId).isHardwareLevelLegacy
+        val isQuirkyDevice =
+            "motorola".equals(Build.BRAND, ignoreCase = true) &&
+                "moto e20".equals(Build.MODEL, ignoreCase = true) &&
+                cameraId.value == "1"
+        return isLegacyDevice || isQuirkyDevice
     }
 
     companion object {
         private val SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP =
-            mapOf(
-                "Google" to setOf("oriole", "raven", "bluejay", "panther", "cheetah", "lynx"),
-            )
+            mapOf("Google" to setOf("oriole", "raven", "bluejay", "panther", "cheetah", "lynx"))
 
         /**
-         * A quirk that waits for a certain number of repeating requests to complete before allowing
-         * (single) capture requests to be issued. This is needed on some devices where issuing a
-         * capture request too early might cause it to fail prematurely.
+         * Returns the number of repeating requests frames before capture for quirks.
+         *
+         * This kind of quirk behavior requires waiting for a certain number of repeating requests
+         * to complete before allowing (single) capture requests to be issued. This is needed on
+         * some devices where issuing a capture request too early might cause it to fail prematurely
+         * or cause some other problem. A value of zero is returned when not required.
          * - Bug(s): b/287020251, b/289284907
          * - Device(s): See [SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP]
          * - API levels: Before 34 (U)
          */
-        internal fun shouldWaitForRepeatingBeforeCapture(): Boolean {
-            return SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP[Build.MANUFACTURER]?.contains(
-                Build.DEVICE
-            ) == true && Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+        internal fun getRepeatingRequestFrameCountForCapture(
+            graphConfigFlags: CameraGraph.Flags
+        ): Int {
+            val requirements = graphConfigFlags.awaitRepeatingRequestBeforeCapture
+
+            var frameCount = 0
+
+            if (
+                SHOULD_WAIT_FOR_REPEATING_DEVICE_MAP[Build.MANUFACTURER]?.contains(Build.DEVICE) ==
+                    true && Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+            ) {
+                frameCount = max(frameCount, 10)
+            }
+
+            frameCount =
+                when (requirements.completionBehavior) {
+                    AT_LEAST -> max(frameCount, requirements.repeatingFramesToComplete.toInt())
+                    EXACT -> requirements.repeatingFramesToComplete.toInt()
+                }
+
+            return frameCount
         }
 
         /**

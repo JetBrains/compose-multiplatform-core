@@ -28,6 +28,7 @@ import androidx.camera.extensions.internal.Version
 import androidx.camera.integration.extensions.CameraExtensionsActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.CameraXExtensionTestParams
+import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.assumeExtensionModeOutputFormatSupported
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.assumeExtensionModeSupported
 import androidx.camera.integration.extensions.util.CameraXExtensionsTestUtil.launchCameraExtensionsActivity
 import androidx.camera.integration.extensions.util.HOME_TIMEOUT_MS
@@ -39,6 +40,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
@@ -83,17 +85,21 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
             Manifest.permission.RECORD_AUDIO,
         )
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-
     companion object {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
         @Parameterized.Parameters(name = "config = {0}")
         @JvmStatic
         fun parameters() = CameraXExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
+    private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var extensionsManager: ExtensionsManager
+
     @Before
     fun setup() {
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumePcsSupportedForImageCapture(context)
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
@@ -104,10 +110,9 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
         device.setOrientationNatural()
 
         ProcessCameraProvider.configureInstance(config.cameraXConfig)
-        val cameraProvider =
-            ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
+        cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        val extensionsManager =
+        extensionsManager =
             ExtensionsManager.getInstanceAsync(context, cameraProvider)[
                     10000, TimeUnit.MILLISECONDS]
 
@@ -116,14 +121,13 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
 
     @After
     fun tearDown() {
-        val cameraProvider =
-            ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-        cameraProvider.shutdownAsync()
+        if (::cameraProvider.isInitialized) {
+            cameraProvider.shutdownAsync()
+        }
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
-        extensionsManager.shutdown()
+        if (::extensionsManager.isInitialized) {
+            extensionsManager.shutdown()
+        }
 
         // Unfreeze rotation so the device can choose the orientation via its own policy. Be nice
         // to other tests :)
@@ -133,11 +137,62 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
     }
 
     /**
-     * Checks that ImageCapture can successfully take a picture when an extension mode is enabled.
+     * Checks that ImageCapture can successfully take a JPEG picture when an extension mode is
+     * enabled.
      */
     @Test
-    fun takePictureWithExtensionMode() {
-        val activityScenario = launchCameraExtensionsActivity(config.cameraId, config.extensionMode)
+    fun takeJpegPictureWithExtensionMode() {
+        takePictureWithExtensionMode(ImageCapture.OUTPUT_FORMAT_JPEG, false)
+    }
+
+    /**
+     * Checks that ImageCapture can successfully take a picture when an extension mode is enabled
+     * and VideoCapture is bound together.
+     */
+    @Test
+    fun takeJpegPictureWithExtensionModeAndVideoCaptureOn() {
+        takePictureWithExtensionMode(ImageCapture.OUTPUT_FORMAT_JPEG, true)
+    }
+
+    /**
+     * Checks that ImageCapture can successfully take a JPEG_R picture when an extension mode is
+     * enabled.
+     */
+    @Test
+    fun takeJpegUltraHdrPictureWithExtensionMode() {
+        takePictureWithExtensionMode(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR, false)
+    }
+
+    /**
+     * Checks that ImageCapture can successfully take a JPEG_R picture when an extension mode is
+     * enabled and VideoCapture is bound together.
+     */
+    @Test
+    fun takeJpegUltraHdrPictureWithExtensionModeAndVideoCaptureOn() {
+        takePictureWithExtensionMode(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR, true)
+    }
+
+    private fun takePictureWithExtensionMode(
+        outputFormat: Int = ImageCapture.OUTPUT_FORMAT_JPEG,
+        videoCaptureEnabled: Boolean = false,
+    ) {
+        if (outputFormat == ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR) {
+            assumeExtensionModeOutputFormatSupported(
+                cameraProvider,
+                extensionsManager,
+                config.cameraId,
+                config.extensionMode,
+                ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR,
+            )
+        }
+
+        val activityScenario =
+            launchCameraExtensionsActivity(
+                config.cameraId,
+                config.extensionMode,
+                outputFormat = outputFormat,
+                videoCaptureEnabled = videoCaptureEnabled,
+            )
 
         with(activityScenario) { use { takePictureAndWaitForImageSavedIdle() } }
     }
@@ -189,7 +244,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
         val cameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(
                 baseCameraSelector,
-                config.extensionMode
+                config.extensionMode,
             )
 
         val fakeLifecycleOwner =
@@ -224,7 +279,7 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
             CameraXExecutors.mainThreadExecutor(),
             object : ImageCapture.OnImageCapturedCallback() {
                 override fun onCaptureSuccess(image: ImageProxy) {
-                    imageCapturedTimestamp = SystemClock.elapsedRealtime()
+                    imageCapturedTimestamp = SystemClock.elapsedRealtimeNanos()
                     imageCapturedLatch.countDown()
                     image.close()
                 }
@@ -232,11 +287,11 @@ class ImageCaptureTest(private val config: CameraXExtensionTestParams) {
                 override fun onCaptureProcessProgressed(progress: Int) {
                     processProgressData.add(progress)
                     if (progress == 100) {
-                        progress100Timestamp = SystemClock.elapsedRealtime()
+                        progress100Timestamp = SystemClock.elapsedRealtimeNanos()
                         progress100Latch.countDown()
                     }
                 }
-            }
+            },
         )
 
         assertThat(progress100Latch.await(10, TimeUnit.SECONDS)).isTrue()

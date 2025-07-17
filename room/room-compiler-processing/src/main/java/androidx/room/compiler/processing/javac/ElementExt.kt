@@ -21,35 +21,59 @@ import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.ExecutableType
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 import kotlin.coroutines.Continuation
 
 private val NONNULL_ANNOTATIONS =
-    arrayOf("androidx.annotation.NonNull", "org.jetbrains.annotations.NotNull")
+    arrayOf(
+        "androidx.annotation.NonNull",
+        "org.jetbrains.annotations.NotNull",
+        "org.jspecify.annotations.NonNull",
+    )
 
 private val NULLABLE_ANNOTATIONS =
-    arrayOf("androidx.annotation.Nullable", "org.jetbrains.annotations.Nullable")
+    arrayOf(
+        "androidx.annotation.Nullable",
+        "org.jetbrains.annotations.Nullable",
+        "org.jspecify.annotations.Nullable",
+    )
+
+/** Checks if any of the [annotations] are present on the [Element] or its [type]. */
+private fun Element.hasAnyOf(annotations: Array<String>, type: TypeMirror) =
+    annotationMirrors.hasAnyOf(annotations) || type.annotationMirrors.hasAnyOf(annotations)
 
 @Suppress("UnstableApiUsage")
-private fun Element.hasAnyOf(annotations: Array<String>) =
-    annotationMirrors.any { annotationMirror ->
-        val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
-        annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
-    }
+private fun List<AnnotationMirror>.hasAnyOf(annotations: Array<String>) = any { annotationMirror ->
+    val annotationTypeElement = MoreElements.asType(annotationMirror.annotationType.asElement())
+    annotations.any { annotationTypeElement.qualifiedName.contentEquals(it) }
+}
 
 internal val Element.nullability: XNullability
-    get() =
-        if (asType().kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS)) {
+    get() {
+        // Get the type of the element: if this is a method, use the return type instead of the full
+        // method type since the return is what determines nullability.
+        val asType =
+            asType().let {
+                when (it) {
+                    is ExecutableType -> it.returnType
+                    else -> it
+                }
+            }
+        return if (asType.kind.isPrimitive || hasAnyOf(NONNULL_ANNOTATIONS, asType)) {
             XNullability.NONNULL
-        } else if (hasAnyOf(NULLABLE_ANNOTATIONS)) {
+        } else if (hasAnyOf(NULLABLE_ANNOTATIONS, asType)) {
             XNullability.NULLABLE
         } else {
             XNullability.UNKNOWN
         }
+    }
 
 internal fun Element.requireEnclosingType(env: JavacProcessingEnv): JavacTypeElement {
     return checkNotNull(enclosingType(env)) { "Cannot find required enclosing type for $this" }
@@ -77,7 +101,7 @@ internal fun suspendOverrides(
     overrider: ExecutableElement,
     overridden: ExecutableElement,
     owner: TypeElement,
-    typeUtils: Types
+    typeUtils: Types,
 ): Boolean {
     if (overrider.simpleName != overridden.simpleName) {
         return false
@@ -95,7 +119,7 @@ internal fun suspendOverrides(
     if (
         !typeUtils.isSubtype(
             typeUtils.erasure(owner.asType()),
-            typeUtils.erasure(overriddenType.asType())
+            typeUtils.erasure(overriddenType.asType()),
         )
     ) {
         return false
@@ -130,7 +154,7 @@ internal fun suspendOverrides(
     if (
         !typeUtils.isSameType(
             typeUtils.erasure(overriderContinuationTypeArg),
-            typeUtils.erasure(overriddenContinuationTypeArg)
+            typeUtils.erasure(overriddenContinuationTypeArg),
         )
     ) {
         return false
@@ -143,7 +167,7 @@ internal fun suspendOverrides(
                 if (
                     !typeUtils.isSameType(
                         typeUtils.erasure(overriderParam),
-                        typeUtils.erasure(overriddenParam)
+                        typeUtils.erasure(overriddenParam),
                     )
                 ) {
                     return false

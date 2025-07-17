@@ -20,8 +20,8 @@ import android.os.Build;
 import android.view.View.OnTouchListener;
 import android.widget.PopupMenu;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link PopupMenu}.
@@ -50,8 +50,7 @@ public final class PopupMenuCompat {
      * @return a touch listener that controls drag-to-open behavior, or {@code null} on
      *         unsupported APIs
      */
-    @Nullable
-    public static OnTouchListener getDragToOpenListener(@NonNull Object popupMenu) {
+    public static @Nullable OnTouchListener getDragToOpenListener(@NonNull Object popupMenu) {
         return ((PopupMenu) popupMenu).getDragToOpenListener();
     }
 }

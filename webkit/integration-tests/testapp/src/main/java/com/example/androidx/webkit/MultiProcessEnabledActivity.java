@@ -18,10 +18,11 @@ package com.example.androidx.webkit;
 
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link android.app.Activity} to demonstrate IsMultiProcessEnabled query.

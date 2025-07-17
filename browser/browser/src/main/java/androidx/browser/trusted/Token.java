@@ -19,8 +19,8 @@ package androidx.browser.trusted;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,8 +45,7 @@ import java.util.List;
 public final class Token {
     private static final String TAG = "Token";
 
-    @NonNull
-    private final TokenContents mContents;
+    private final @NonNull TokenContents mContents;
 
     /**
      * Creates a {@link Token} for the given package, taking into account the package name
@@ -56,8 +55,7 @@ public final class Token {
      * @return A {@link Token}. {@code null} if the provided package cannot be found (the
      *         app is not installed).
      */
-    @Nullable
-    public static Token create(@NonNull String packageName,
+    public static @Nullable Token create(@NonNull String packageName,
             @NonNull PackageManager packageManager) {
         List<byte[]> fingerprints =
                 PackageIdentityUtils.getFingerprintsForPackage(packageName, packageManager);
@@ -76,8 +74,7 @@ public final class Token {
      * @param serialized The result of a {@link Token#serialize} call.
      * @return The deserialized Token.
      */
-    @NonNull
-    public static Token deserialize(@NonNull byte[] serialized) {
+    public static @NonNull Token deserialize(byte @NonNull [] serialized) {
         return new Token(TokenContents.deserialize(serialized));
     }
 
@@ -90,8 +87,7 @@ public final class Token {
      * method.
      * @return A serialization of the {@link Token}.
      */
-    @NonNull
-    public byte[] serialize() {
+    public byte @NonNull [] serialize() {
         return mContents.serialize();
     }
 

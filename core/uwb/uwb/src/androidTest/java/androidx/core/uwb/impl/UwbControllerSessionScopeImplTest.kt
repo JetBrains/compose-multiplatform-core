@@ -16,6 +16,7 @@
 
 package androidx.core.uwb.impl
 
+import androidx.core.uwb.RangingControleeParameters
 import androidx.core.uwb.RangingResult
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.common.TestCommons.Companion.COMPLEX_CHANNEL
@@ -44,7 +45,7 @@ class UwbControllerSessionScopeImplTest {
             LOCAL_ADDRESS,
             RANGING_CAPABILITIES,
             isAvailable = true,
-            isController = true
+            isController = true,
         )
     private val uwbClientSession =
         UwbClientSessionScopeImpl(
@@ -60,9 +61,9 @@ class UwbControllerSessionScopeImplTest {
                 RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
                 RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
                 RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
-                RANGING_CAPABILITIES.hasBackgroundRangingSupport()
+                RANGING_CAPABILITIES.hasBackgroundRangingSupport(),
             ),
-            UwbAddress(LOCAL_ADDRESS.address)
+            UwbAddress(LOCAL_ADDRESS.address),
         )
     private val uwbControllerSession =
         UwbControllerSessionScopeImpl(
@@ -78,13 +79,13 @@ class UwbControllerSessionScopeImplTest {
                 RANGING_CAPABILITIES.supportedSlotDurations.toSet(),
                 RANGING_CAPABILITIES.supportedRangingUpdateRates.toSet(),
                 RANGING_CAPABILITIES.supportsRangingIntervalReconfigure(),
-                RANGING_CAPABILITIES.hasBackgroundRangingSupport()
+                RANGING_CAPABILITIES.hasBackgroundRangingSupport(),
             ),
             UwbAddress(LOCAL_ADDRESS.address),
             androidx.core.uwb.UwbComplexChannel(
                 COMPLEX_CHANNEL.channel,
-                COMPLEX_CHANNEL.preambleIndex
-            )
+                COMPLEX_CHANNEL.preambleIndex,
+            ),
         )
 
     private var rangingResult: RangingResult? = null
@@ -180,5 +181,27 @@ class UwbControllerSessionScopeImplTest {
         // cancel and wait for the job to terminate.
         job.cancel()
         runBlocking { job.join() }
+    }
+
+    @Test
+    public fun testAddControleeIndividualKeyCase_success() {
+        val job = startRanging()
+
+        // a non-null RangingResult should return from the TestUwbClient.
+        if (rangingResult != null) {
+            assertThat(rangingResult is RangingResult.RangingResultPosition).isTrue()
+            assertThat(rangingResult!!.device.address.address).isEqualTo(NEIGHBOR_1)
+        } else {
+            stopRanging(job)
+            Assert.fail()
+        }
+
+        runBlocking {
+            uwbControllerSession.addControlee(UwbAddress(NEIGHBOR_2), RangingControleeParameters(1))
+            delay(500)
+        }
+        assertThat(rangingResult is RangingResult.RangingResultPosition).isTrue()
+        assertThat(rangingResult!!.device.address.address).isEqualTo(NEIGHBOR_2)
+        stopRanging(job)
     }
 }

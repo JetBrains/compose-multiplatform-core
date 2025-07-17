@@ -20,10 +20,11 @@ import android.content.Context;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
 import androidx.camera.extensions.impl.ImageCaptureExtenderImpl;
 import androidx.camera.extensions.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.extensions.internal.compat.quirk.GetAvailableKeysNeedsOnInit;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -45,8 +46,7 @@ public class AvailableKeysRetriever {
      * cameraId, cameraCharacteristics and the context is needed for invoking onInit whenever
      * necessary.
      */
-    @NonNull
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys(
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys(
             @NonNull ImageCaptureExtenderImpl imageCaptureExtender,
             @NonNull String cameraId,
             @NonNull CameraCharacteristics cameraCharacteristics,

@@ -26,18 +26,20 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 import android.support.customtabs.IEngagementSignalsCallback;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsService.Relation;
 import androidx.browser.customtabs.CustomTabsService.Result;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -62,8 +64,7 @@ public final class CustomTabsSession {
      *
      * {@see Intent#filterEquals()}
      */
-    @Nullable
-    private final PendingIntent mId;
+    private final @Nullable PendingIntent mId;
 
     /**
      * Provides browsers a way to generate a mock {@link CustomTabsSession} for testing
@@ -73,8 +74,7 @@ public final class CustomTabsSession {
      * @return A mock session with no functionality.
      */
     @VisibleForTesting
-    @NonNull
-    public static CustomTabsSession createMockSessionForTesting(
+    public static @NonNull CustomTabsSession createMockSessionForTesting(
             @NonNull ComponentName componentName) {
         return new CustomTabsSession(
                 new MockSession(), new CustomTabsSessionToken.MockCallback(), componentName, null);
@@ -118,6 +118,44 @@ public final class CustomTabsSession {
     }
 
     /**
+     * Request the browser to start navigational prefetch to the page that will be used for future
+     * navigations.
+     *
+     * @param url     The url to be prefetched for upcoming navigations.
+     * @param options The option used for prefetch request. Please see
+     *                {@link PrefetchOptions}.
+     */
+    @ExperimentalPrefetch
+    @SuppressWarnings("NullAway")  // TODO: b/142938599
+    public void prefetch(@NonNull Uri url, @NonNull PrefetchOptions options) {
+        Bundle optionsWithId = createBundleWithId(options.toBundle());
+        try {
+            mService.prefetch(mCallback, url, optionsWithId);
+        } catch (RemoteException e) {
+            return;
+        }
+    }
+
+    /**
+     * Request the browser to start navigational prefetch to the pages that will be used for future
+     * navigations.
+     *
+     * @param urls    The urls to be prefetched for upcoming navigations.
+     * @param options The option used for prefetch request. Please see
+     *                {@link PrefetchOptions}.
+     */
+    @ExperimentalPrefetch
+    @SuppressWarnings("NullAway")  // TODO: b/142938599
+    public void prefetch(@NonNull List<Uri> urls, @NonNull PrefetchOptions options) {
+        Bundle optionsWithId = createBundleWithId(options.toBundle());
+        try {
+            mService.prefetchWithMultipleUrls(mCallback, urls, optionsWithId);
+        } catch (RemoteException e) {
+            return;
+        }
+    }
+
+    /**
      * This sets the action button on the toolbar with ID
      * {@link CustomTabsIntent#TOOLBAR_ACTION_BUTTON_ID}.
      *
@@ -151,7 +189,7 @@ public final class CustomTabsSession {
      *                      of the {@link View}s in clickableIDs.
      */
     public boolean setSecondaryToolbarViews(@Nullable RemoteViews remoteViews,
-            @Nullable int[] clickableIDs, @Nullable PendingIntent pendingIntent) {
+            int @Nullable [] clickableIDs, @Nullable PendingIntent pendingIntent) {
         Bundle bundle = new Bundle();
         bundle.putParcelable(CustomTabsIntent.EXTRA_REMOTEVIEWS, remoteViews);
         bundle.putIntArray(CustomTabsIntent.EXTRA_REMOTEVIEWS_VIEW_IDS, clickableIDs);
@@ -393,7 +431,7 @@ public final class CustomTabsSession {
     }
 
     private IEngagementSignalsCallback.Stub createEngagementSignalsCallbackWrapper(
-            @NonNull final EngagementSignalsCallback callback) {
+            final @NonNull EngagementSignalsCallback callback) {
         return new IEngagementSignalsCallback.Stub() {
             private final Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -446,7 +484,7 @@ public final class CustomTabsSession {
     }
 
     private IEngagementSignalsCallback.Stub createEngagementSignalsCallbackWrapper(
-            @NonNull final EngagementSignalsCallback callback, @NonNull Executor executor) {
+            final @NonNull EngagementSignalsCallback callback, @NonNull Executor executor) {
         return new IEngagementSignalsCallback.Stub() {
             private final Executor mExecutor = executor;
 
@@ -518,8 +556,7 @@ public final class CustomTabsSession {
         return mComponentName;
     }
 
-    @Nullable
-        /* package */ PendingIntent getId() {
+        /* package */ @Nullable PendingIntent getId() {
         return mId;
     }
 
@@ -529,12 +566,9 @@ public final class CustomTabsSession {
      *
      * Use {@link CustomTabsClient#attachSession(PendingSession)} to get {@link CustomTabsSession}.
      */
-    @ExperimentalPendingSession
     public static class PendingSession {
-        @Nullable
-        private final CustomTabsCallback mCallback;
-        @Nullable
-        private final PendingIntent mId;
+        private final @Nullable CustomTabsCallback mCallback;
+        private final @Nullable PendingIntent mId;
 
         /* package */ PendingSession(
                 @Nullable CustomTabsCallback callback, @Nullable PendingIntent sessionId) {
@@ -542,13 +576,11 @@ public final class CustomTabsSession {
             mId = sessionId;
         }
 
-        @Nullable
-            /* package */ PendingIntent getId() {
+            /* package */ @Nullable PendingIntent getId() {
             return mId;
         }
 
-        @Nullable
-            /* package */ CustomTabsCallback getCallback() {
+            /* package */ @Nullable CustomTabsCallback getCallback() {
             return mCallback;
         }
     }
@@ -575,6 +607,18 @@ public final class CustomTabsSession {
         public boolean mayLaunchUrl(ICustomTabsCallback callback, Uri url, Bundle extras,
                 List<Bundle> otherLikelyBundles) throws RemoteException {
             return false;
+        }
+
+        @Override
+        @ExperimentalPrefetch
+        public void prefetch(ICustomTabsCallback callback, Uri url, Bundle options)
+                throws RemoteException {
+        }
+
+        @Override
+        @ExperimentalPrefetch
+        public void prefetchWithMultipleUrls(ICustomTabsCallback callback, List<Uri> urls,
+                Bundle options) throws RemoteException {
         }
 
         @SuppressWarnings("NullAway")  // TODO: b/142938599
@@ -628,6 +672,12 @@ public final class CustomTabsSession {
         @Override
         public boolean setEngagementSignalsCallback(ICustomTabsCallback customTabsCallback,
                 IBinder callback, Bundle extras) throws RemoteException {
+            return false;
+        }
+
+        @Override
+        public boolean newAuthTabSession(IAuthTabCallback callback, Bundle extras)
+                throws RemoteException {
             return false;
         }
     }

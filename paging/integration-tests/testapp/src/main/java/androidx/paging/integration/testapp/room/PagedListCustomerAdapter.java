@@ -19,12 +19,12 @@ package androidx.paging.integration.testapp.room;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.paging.PagedList;
 import androidx.paging.PagedListAdapter;
 import androidx.paging.integration.testapp.R;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample adapter which uses a AsyncPagedListDiffer.
@@ -48,9 +48,8 @@ class PagedListCustomerAdapter extends PagedListAdapter<Customer, RecyclerView.V
         mScrollToKey = key;
     }
 
-    @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public RecyclerView.@NonNull ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         RecyclerView.ViewHolder holder = new RecyclerView.ViewHolder(
                 new TextView(parent.getContext())) {
         };
@@ -59,7 +58,7 @@ class PagedListCustomerAdapter extends PagedListAdapter<Customer, RecyclerView.V
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(RecyclerView.@NonNull ViewHolder holder, int position) {
         Customer customer = getItem(position);
 
         if (customer != null) {
@@ -71,7 +70,7 @@ class PagedListCustomerAdapter extends PagedListAdapter<Customer, RecyclerView.V
 
     private static int findKeyInPagedList(@NonNull String key, @NonNull PagedList<Customer> list) {
         for (int i = 0; i < list.size(); i++) {
-            @Nullable Customer customer = list.get(i);
+            Customer customer = list.get(i);
             if (customer != null
                     && LastNameAscCustomerDataSource.getKeyStatic(customer).equals(key)) {
                 return i;

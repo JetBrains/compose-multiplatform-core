@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,14 +29,15 @@ plugins {
     id("androidx.stableaidl")
 }
 dependencies {
+    api(libs.jspecify)
     api(project(":car:app:app"))
     api(libs.guavaListenableFuture)
-    api("androidx.annotation:annotation-experimental:1.4.0")
+    api("androidx.annotation:annotation-experimental:1.4.1")
     implementation(libs.guavaAndroid)
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.fragment:fragment:1.3.0")
     implementation("androidx.lifecycle:lifecycle-common-java8:2.2.0")
-    implementation("androidx.annotation:annotation:1.1.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.core:core:1.7.0")
     implementation(libs.autoValueAnnotations)
 
@@ -49,35 +50,33 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation("androidx.fragment:fragment-testing:1.2.3")
-    testImplementation project(path: ':car:app:app-testing')
+    testImplementation(project(":car:app:app-testing"))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 29
+        minSdk = 29
     }
     buildFeatures {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
 
         stableAidl {
-            version 1
+            version = 1
         }
     }
     useLibrary 'android.car'
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.car.app.automotive"
+    namespace = "androidx.car.app.automotive"
 }
 
 androidx {
     name = "Android for Cars App Automotive Extension"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Automotive OS specific functionality to build navigation, parking, and charging apps for cars"
-    metalavaK2UastEnabled = true
+    enableRobolectric()
 }

@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("deprecation") // For usage of Slice
+
 package androidx.credentials.provider
 
 import android.annotation.SuppressLint
@@ -21,6 +23,7 @@ import android.app.slice.Slice
 import android.app.slice.SliceSpec
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -47,7 +50,17 @@ import java.util.Collections
  * @constructor constructs an instance of [RemoteEntry]
  * @throws NullPointerException If [pendingIntent] is null
  */
-class RemoteEntry constructor(val pendingIntent: PendingIntent) {
+class RemoteEntry(val pendingIntent: PendingIntent) {
+
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY)
+    @set:RestrictTo(RestrictTo.Scope.LIBRARY)
+    var isAutoSelect: Boolean = false
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    constructor(pendingIntent: PendingIntent, isAutoSelect: Boolean) : this(pendingIntent) {
+        this@RemoteEntry.isAutoSelect = isAutoSelect
+    }
+
     /**
      * A builder for [RemoteEntry]
      *
@@ -78,6 +91,9 @@ class RemoteEntry constructor(val pendingIntent: PendingIntent) {
         private const val SLICE_HINT_PENDING_INTENT =
             "androidx.credentials.provider.remoteEntry.SLICE_HINT_PENDING_INTENT"
 
+        private const val SLICE_HINT_IS_AUTO_SELECT =
+            "androidx.credentials.provider.remoteEntry.SLICE_HINT_IS_AUTO_SELECT"
+
         private const val SLICE_SPEC_TYPE = "RemoteEntry"
 
         private const val REVISION_ID = 1
@@ -99,8 +115,16 @@ class RemoteEntry constructor(val pendingIntent: PendingIntent) {
                 Slice.Builder(sliceBuilder)
                     .addHints(Collections.singletonList(SLICE_HINT_PENDING_INTENT))
                     .build(),
-                /*subType=*/ null
+                /*subType=*/ null,
             )
+            if (remoteEntry.isAutoSelect) {
+                sliceBuilder.addInt(
+                    /*true=*/ 1,
+                    /*subType=*/ null,
+                    listOf(SLICE_HINT_IS_AUTO_SELECT),
+                )
+            }
+
             return sliceBuilder.build()
         }
 
@@ -115,13 +139,16 @@ class RemoteEntry constructor(val pendingIntent: PendingIntent) {
         @JvmStatic
         fun fromSlice(slice: Slice): RemoteEntry? {
             var pendingIntent: PendingIntent? = null
+            var isAutoSelect = false
             slice.items.forEach {
                 if (it.hasHint(SLICE_HINT_PENDING_INTENT)) {
                     pendingIntent = it.action
+                } else if (it.hasHint(SLICE_HINT_IS_AUTO_SELECT)) {
+                    isAutoSelect = true
                 }
             }
             return try {
-                RemoteEntry(pendingIntent!!)
+                RemoteEntry(pendingIntent!!, isAutoSelect)
             } catch (e: Exception) {
                 Log.i(TAG, "fromSlice failed with: " + e.message)
                 null
@@ -146,5 +173,29 @@ class RemoteEntry constructor(val pendingIntent: PendingIntent) {
             }
             return null
         }
+
+        private const val EXTRA_REMOTE_ENTRY_PENDING_INTENT =
+            "androidx.credentials.provider.extra.REMOTE_ENTRY_PENDING_INTENT"
+
+        /** Marshall the remote entry data through an intent. */
+        internal fun RemoteEntry.marshall(bundle: Bundle) {
+            bundle.putParcelable(EXTRA_REMOTE_ENTRY_PENDING_INTENT, this.pendingIntent)
+        }
+
+        internal fun Bundle.unmarshallRemoteEntry(): RemoteEntry? {
+            val pendingIntent: PendingIntent =
+                this.getParcelable(EXTRA_REMOTE_ENTRY_PENDING_INTENT) ?: return null
+            return RemoteEntry(pendingIntent)
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RemoteEntry) return false
+        return this.pendingIntent == other.pendingIntent
+    }
+
+    override fun hashCode(): Int {
+        return pendingIntent.hashCode()
     }
 }

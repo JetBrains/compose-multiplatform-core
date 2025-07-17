@@ -16,10 +16,10 @@
 
 package androidx.core.uwb.impl
 
-import android.util.Log
 import androidx.core.uwb.RangingCapabilities
 import androidx.core.uwb.RangingMeasurement
 import androidx.core.uwb.RangingParameters
+import androidx.core.uwb.RangingResult.RangingResultInitialized
 import androidx.core.uwb.RangingResult.RangingResultPeerDisconnected
 import androidx.core.uwb.RangingResult.RangingResultPosition
 import androidx.core.uwb.UwbAddress
@@ -31,6 +31,7 @@ import com.google.android.gms.nearby.uwb.RangingSessionCallback
 import com.google.android.gms.nearby.uwb.UwbClient
 import com.google.android.gms.nearby.uwb.UwbComplexChannel
 import com.google.android.gms.nearby.uwb.UwbDevice
+import com.google.android.gms.nearby.uwb.UwbRangeDataNtfConfig
 import com.google.android.gms.nearby.uwb.UwbStatusCodes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +43,7 @@ import kotlinx.coroutines.tasks.await
 internal open class UwbClientSessionScopeImpl(
     private val uwbClient: UwbClient,
     override val rangingCapabilities: RangingCapabilities,
-    override val localAddress: UwbAddress
+    override val localAddress: UwbAddress,
 ) : UwbClientSessionScope {
     companion object {
         private const val TAG = "UwbClientSessionScope"
@@ -126,7 +127,7 @@ internal open class UwbClientSessionScopeImpl(
             }
         parametersBuilder.setSlotDuration(slotDuration)
         if (parameters.uwbRangeDataNtfConfig != null) {
-            val ntfConfig = com.google.android.gms.nearby.uwb.UwbRangeDataNtfConfig.Builder()
+            val ntfConfig = UwbRangeDataNtfConfig.Builder()
             ntfConfig.setRangeDataConfigType(parameters.uwbRangeDataNtfConfig.configType)
             ntfConfig.setNtfProximityNear(parameters.uwbRangeDataNtfConfig.ntfProximityNearCm)
             ntfConfig.setNtfProximityFar(parameters.uwbRangeDataNtfConfig.ntfProximityFarCm)
@@ -138,7 +139,11 @@ internal open class UwbClientSessionScopeImpl(
         val callback =
             object : RangingSessionCallback {
                 override fun onRangingInitialized(device: UwbDevice) {
-                    Log.i(TAG, "Started UWB ranging.")
+                    trySend(
+                        RangingResultInitialized(
+                            androidx.core.uwb.UwbDevice(UwbAddress(device.address.address))
+                        )
+                    )
                 }
 
                 override fun onRangingResult(device: UwbDevice, position: RangingPosition) {
@@ -149,8 +154,8 @@ internal open class UwbClientSessionScopeImpl(
                                 RangingMeasurement(position.distance.value),
                                 position.azimuth?.let { RangingMeasurement(it.value) },
                                 position.elevation?.let { RangingMeasurement(it.value) },
-                                position.elapsedRealtimeNanos
-                            )
+                                position.elapsedRealtimeNanos,
+                            ),
                         )
                     )
                 }
@@ -185,7 +190,7 @@ internal open class UwbClientSessionScopeImpl(
     override suspend fun reconfigureRangeDataNtf(
         configType: Int,
         proximityNear: Int,
-        proximityFar: Int
+        proximityFar: Int,
     ) {
         try {
             uwbClient.reconfigureRangeDataNtf(configType, proximityNear, proximityFar).await()

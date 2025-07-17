@@ -18,7 +18,7 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.KotlinCollectionMemberNames
 import androidx.room.ext.RoomMemberNames
@@ -39,23 +39,20 @@ class FtsTableInfoValidationWriter(val entity: FtsEntity) : ValidationWriter() {
                 name = columnSetVar,
                 typeName = columnsSetType,
                 assignExpr =
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                CommonTypeNames.HASH_SET.parametrizedBy(CommonTypeNames.STRING),
-                                "%L",
-                                entity.fields.size
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_SET_OF
-                            )
-                    }
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add(
+                                    "new %T(%L)",
+                                    CommonTypeNames.HASH_SET.parametrizedBy(CommonTypeNames.STRING),
+                                    entity.properties.size,
+                                )
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
+                        }
+                    },
             )
-            entity.nonHiddenFields.forEach {
+            entity.nonHiddenProperties.forEach {
                 addStatement("%L.add(%S)", columnSetVar, it.columnName)
             }
 
@@ -64,13 +61,12 @@ class FtsTableInfoValidationWriter(val entity: FtsEntity) : ValidationWriter() {
                 typeName = RoomTypeNames.FTS_TABLE_INFO,
                 assignExpr =
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.FTS_TABLE_INFO,
                         "%S, %L, %S",
                         entity.tableName,
                         columnSetVar,
-                        entity.createTableQuery
-                    )
+                        entity.createTableQuery,
+                    ),
             )
 
             val existingVar = scope.getTmpVar("_existing$suffix")
@@ -80,21 +76,20 @@ class FtsTableInfoValidationWriter(val entity: FtsEntity) : ValidationWriter() {
                 "%M(%L, %S)",
                 RoomMemberNames.FTS_TABLE_INFO_READ,
                 connectionParamName,
-                entity.tableName
+                entity.tableName,
             )
 
             beginControlFlow("if (!%L.equals(%L))", expectedInfoVar, existingVar).apply {
                 addStatement(
                     "return %L",
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                         "false, %S + %L + %S + %L",
                         "${entity.tableName}(${entity.element.qualifiedName}).\n Expected:\n",
                         expectedInfoVar,
                         "\n Found:\n",
-                        existingVar
-                    )
+                        existingVar,
+                    ),
                 )
             }
             endControlFlow()

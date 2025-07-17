@@ -20,6 +20,7 @@ import android.os.Build
 import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.fragment.test.R
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
@@ -109,6 +110,171 @@ class PredictiveBackTest {
                 )
                 dispatcher.onBackPressed()
             }
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun backOnNoRecordTest() {
+        withUse(ActivityScenario.launch(SimpleContainerActivity::class.java)) {
+            val fm = withActivity { supportFragmentManager }
+
+            val fragment1 = StrictViewFragment()
+
+            fm.beginTransaction()
+                .replace(R.id.fragmentContainer, fragment1, "1")
+                .setReorderingAllowed(true)
+                .commit()
+            executePendingTransactions()
+
+            val dispatcher = withActivity { onBackPressedDispatcher }
+
+            // We need a pending commit that doesn't include a fragment to mimic calling
+            // system back while commit is pending.
+            fm.beginTransaction().commit()
+
+            dispatcher.dispatchOnBackStarted(BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT))
+            withActivity { dispatcher.onBackPressed() }
+
+            assertThat(fm.backStackEntryCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun backSaveStateAfterInterruptedByExecutePendingTransactions() {
+        withUse(ActivityScenario.launch(SimpleContainerActivity::class.java)) {
+            val fm = withActivity { supportFragmentManager }
+
+            val fragment1 = StrictViewFragment()
+
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment1, "1")
+                .setPrimaryNavigationFragment(fragment1)
+                .commit()
+            executePendingTransactions()
+
+            val fragment2 = StrictViewFragment()
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment2, "2")
+                .setPrimaryNavigationFragment(fragment2)
+                .addToBackStack("replacement")
+                .commit()
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            val dispatcher = withActivity { onBackPressedDispatcher }
+            withActivity {
+                dispatcher.dispatchOnBackStarted(
+                    BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+                )
+            }
+            // Interrupt the back event by forcing all pending transactions to be executed
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            // Now save the FragmentTransaction that was interrupted
+            fm.saveBackStack("replacement")
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun backSaveStateAfterInterruptedByCommitNow() {
+        withUse(ActivityScenario.launch(SimpleContainerActivity::class.java)) {
+            val fm = withActivity { supportFragmentManager }
+
+            val fragment1 = StrictViewFragment()
+
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment1, "1")
+                .setPrimaryNavigationFragment(fragment1)
+                .commit()
+            executePendingTransactions()
+
+            val fragment2 = StrictViewFragment()
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment2, "2")
+                .setPrimaryNavigationFragment(fragment2)
+                .addToBackStack("replacement")
+                .commit()
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            val dispatcher = withActivity { onBackPressedDispatcher }
+            withActivity {
+                dispatcher.dispatchOnBackStarted(
+                    BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+                )
+            }
+            // Interrupt the back event by committing a single action
+            withActivity {
+                fm.beginTransaction()
+                    .setReorderingAllowed(true)
+                    .setMaxLifecycle(fragment1, Lifecycle.State.RESUMED)
+                    .commitNow()
+            }
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            // Now save the FragmentTransaction that was interrupted
+            fm.saveBackStack("replacement")
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun backSaveStateAfterCancelled() {
+        withUse(ActivityScenario.launch(SimpleContainerActivity::class.java)) {
+            val fm = withActivity { supportFragmentManager }
+
+            val fragment1 = StrictViewFragment()
+
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment1, "1")
+                .setPrimaryNavigationFragment(fragment1)
+                .commit()
+            executePendingTransactions()
+
+            val fragment2 = StrictViewFragment()
+            fm.beginTransaction()
+                .setReorderingAllowed(true)
+                .replace(R.id.fragmentContainer, fragment2, "2")
+                .setPrimaryNavigationFragment(fragment2)
+                .addToBackStack("replacement")
+                .commit()
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            val dispatcher = withActivity { onBackPressedDispatcher }
+            withActivity {
+                dispatcher.dispatchOnBackStarted(
+                    BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
+                )
+            }
+
+            // Cancel the back operation via the dispatcher
+            withActivity { dispatcher.dispatchOnBackCancelled() }
+            executePendingTransactions()
+
+            assertThat(fm.backStackEntryCount).isEqualTo(1)
+
+            // Now save the FragmentTransaction that was cancelled
+            fm.saveBackStack("replacement")
             executePendingTransactions()
 
             assertThat(fm.backStackEntryCount).isEqualTo(0)

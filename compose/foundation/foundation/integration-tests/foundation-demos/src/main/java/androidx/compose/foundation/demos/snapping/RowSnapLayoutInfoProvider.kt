@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.snapping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import kotlin.math.abs
@@ -26,11 +25,10 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sign
 
-@OptIn(ExperimentalFoundationApi::class)
 fun SnapLayoutInfoProvider(
     scrollState: ScrollState,
     itemSize: () -> Float,
-    layoutSize: () -> Float
+    layoutSize: () -> Float,
 ) =
     object : SnapLayoutInfoProvider {
 

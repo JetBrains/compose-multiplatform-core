@@ -17,11 +17,20 @@
 package androidx.compose.foundation.text.input
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPrecondition
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList
 import androidx.compose.foundation.text.input.internal.ChangeTracker
 import androidx.compose.foundation.text.input.internal.OffsetMappingCalculator
 import androidx.compose.foundation.text.input.internal.PartialGapBuffer
+import androidx.compose.runtime.collection.MutableVector
+import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.util.fastForEach
+import kotlin.jvm.JvmName
 
 /**
  * A text buffer that can be edited, similar to [StringBuilder].
@@ -43,7 +52,6 @@ import androidx.compose.ui.text.TextRange
  * To get one of these, and for usage samples, see [TextFieldState.edit]. Every change to the buffer
  * is tracked in a [ChangeList] which you can access via the [changes] property.
  */
-@OptIn(ExperimentalFoundationApi::class)
 class TextFieldBuffer
 internal constructor(
     initialValue: TextFieldCharSequence,
@@ -58,7 +66,7 @@ internal constructor(
         initialChanges?.let { ChangeTracker(initialChanges) }
 
     /** Lazily-allocated [ChangeTracker], initialized on the first access. */
-    private val changeTracker: ChangeTracker
+    internal val changeTracker: ChangeTracker
         get() = backingChangeTracker ?: ChangeTracker().also { backingChangeTracker = it }
 
     /** The number of characters in the text field. */
@@ -85,12 +93,13 @@ internal constructor(
      * this value at any given time, even those made after reading this property.
      *
      * @sample androidx.compose.foundation.samples.BasicTextFieldChangeIterationSample
-     *
      * @sample androidx.compose.foundation.samples.BasicTextFieldChangeReverseIterationSample
      */
     @ExperimentalFoundationApi
     val changes: ChangeList
         get() = changeTracker
+
+    // region selection
 
     /**
      * True if the selection range has non-zero length. If this is false, then the selection
@@ -111,7 +120,7 @@ internal constructor(
     /**
      * The selected range of characters.
      *
-     * Places the selection around the given [range] in characters.
+     * Places the selection around the given range in characters.
      *
      * If the start or end of TextRange fall inside surrogate pairs or other invalid runs, the
      * values will be adjusted to the nearest earlier and later characters, respectively.
@@ -126,7 +135,140 @@ internal constructor(
         set(value) {
             requireValidRange(value)
             selectionInChars = value
+            highlight = null
         }
+
+    // endregion
+
+    // region composition
+
+    /**
+     * Returns the composition information as TextRange. Returns null if no composition is set.
+     *
+     * Evaluates to null if it is set to a collapsed TextRange. Clears [composingAnnotations] when
+     * set to null, including collapsed TextRange.
+     */
+    internal var composition: TextRange? = initialValue.composition
+        private set(value) {
+            // collapsed composition region is equivalent to no composition
+            if (value == null || value.collapsed) {
+                field = null
+                // Do not deallocate an existing list. We will probably use it again.
+                composingAnnotations?.clear()
+            } else {
+                field = value
+            }
+        }
+
+    /**
+     * List of annotations that are attached to the composing region. These are usually styling cues
+     * like underline or different background colors.
+     */
+    internal var composingAnnotations:
+        MutableVector<AnnotatedString.Range<AnnotatedString.Annotation>>? =
+        if (!initialValue.composingAnnotations.isNullOrEmpty()) {
+            MutableVector(initialValue.composingAnnotations.size) {
+                initialValue.composingAnnotations[it]
+            }
+        } else {
+            null
+        }
+        private set
+
+    /** Helper function that returns true if the buffer has composing region */
+    internal fun hasComposition(): Boolean = composition != null
+
+    /** Clears current composition. */
+    internal fun commitComposition() {
+        composition = null
+    }
+
+    /**
+     * Mark the specified area of the text as composition text.
+     *
+     * The empty range or reversed range is not allowed. Use [commitComposition] in case if you want
+     * to clear composition.
+     *
+     * @param start the inclusive start offset of the composition
+     * @param end the exclusive end offset of the composition
+     * @param annotations Annotations that are attached to the composing region of text. This
+     *   function does not check whether the given annotations are inside the composing region. It
+     *   simply adds them to the current buffer while adjusting their range according to where the
+     *   new composition region is set.
+     * @throws IndexOutOfBoundsException if start or end offset is outside of current buffer
+     * @throws IllegalArgumentException if start is larger than or equal to end. (reversed or
+     *   collapsed range)
+     */
+    internal fun setComposition(start: Int, end: Int, annotations: List<PlacedAnnotation>? = null) {
+        if (start < 0 || start > buffer.length) {
+            throw IndexOutOfBoundsException(
+                "start ($start) offset is outside of text region ${buffer.length}"
+            )
+        }
+        if (end < 0 || end > buffer.length) {
+            throw IndexOutOfBoundsException(
+                "end ($end) offset is outside of text region ${buffer.length}"
+            )
+        }
+        if (start >= end) {
+            throw IllegalArgumentException("Do not set reversed or empty range: $start > $end")
+        }
+
+        composition = TextRange(start, end)
+
+        this.composingAnnotations?.clear()
+        if (!annotations.isNullOrEmpty()) {
+            if (this.composingAnnotations == null) {
+                this.composingAnnotations = mutableVectorOf()
+            }
+            annotations.fastForEach {
+                // place the annotations at the correct indices in the buffer.
+                this.composingAnnotations?.add(
+                    it.copy(start = it.start + start, end = it.end + start)
+                )
+            }
+        }
+    }
+
+    // endregion
+
+    // region highlight
+
+    /**
+     * A highlighted range of text. This may be used to display handwriting gesture previews from
+     * the IME.
+     */
+    internal var highlight: Pair<TextHighlightType, TextRange>? = null
+        private set
+
+    /**
+     * Mark a range of text to be highlighted. This may be used to display handwriting gesture
+     * previews from the IME.
+     *
+     * An empty or reversed range is not allowed.
+     *
+     * @param type the highlight type
+     * @param start the inclusive start offset of the highlight
+     * @param end the exclusive end offset of the highlight
+     */
+    internal fun setHighlight(type: TextHighlightType, start: Int, end: Int) {
+        if (start >= end) {
+            throw IllegalArgumentException("Do not set reversed or empty range: $start > $end")
+        }
+        val clampedStart = start.coerceIn(0, length)
+        val clampedEnd = end.coerceIn(0, length)
+
+        highlight = Pair(type, TextRange(clampedStart, clampedEnd))
+    }
+
+    /** Clear the highlighted text range. */
+    internal fun clearHighlight() {
+        highlight = null
+    }
+
+    // endregion
+
+    // region editing
 
     /**
      * Replaces the text between [start] (inclusive) and [end] (exclusive) in this value with
@@ -161,12 +303,17 @@ internal constructor(
         end: Int,
         text: CharSequence,
         textStart: Int = 0,
-        textEnd: Int = text.length
+        textEnd: Int = text.length,
     ) {
-        require(start <= end) { "Expected start=$start <= end=$end" }
-        require(textStart <= textEnd) { "Expected textStart=$textStart <= textEnd=$textEnd" }
+        requirePrecondition(start <= end) { "Expected start=$start <= end=$end" }
+        requirePrecondition(textStart <= textEnd) {
+            "Expected textStart=$textStart <= textEnd=$textEnd"
+        }
         onTextWillChange(start, end, textEnd - textStart)
         buffer.replace(start, end, text, textStart, textEnd)
+
+        commitComposition()
+        clearHighlight()
     }
 
     /**
@@ -181,6 +328,7 @@ internal constructor(
 
     // Doc inherited from Appendable.
     // This append overload should be first so it ends up being the target of links to this method.
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(text: CharSequence?): Appendable = apply {
         if (text != null) {
             onTextWillChange(length, length, text.length)
@@ -189,6 +337,7 @@ internal constructor(
     }
 
     // Doc inherited from Appendable.
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(text: CharSequence?, start: Int, end: Int): Appendable = apply {
         if (text != null) {
             onTextWillChange(length, length, end - start)
@@ -197,6 +346,7 @@ internal constructor(
     }
 
     // Doc inherited from Appendable.
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
     override fun append(char: Char): Appendable = apply {
         onTextWillChange(length, length, 1)
         buffer.replace(buffer.length, buffer.length, char.toString())
@@ -212,47 +362,15 @@ internal constructor(
     private fun onTextWillChange(replaceStart: Int, replaceEnd: Int, newLength: Int) {
         changeTracker.trackChange(replaceStart, replaceEnd, newLength)
         offsetMappingCalculator?.recordEditOperation(replaceStart, replaceEnd, newLength)
-
-        // Adjust selection.
-        val start = minOf(replaceStart, replaceEnd)
-        val end = maxOf(replaceStart, replaceEnd)
-        var selStart = selection.min
-        var selEnd = selection.max
-
-        if (selEnd < start) {
-            // The entire selection is before the insertion point – we don't have to adjust the
-            // mark at all, so skip the math.
-            return
-        }
-
-        if (selStart <= start && end <= selEnd) {
-            // The insertion is entirely inside the selection, move the end only.
-            val diff = newLength - (end - start)
-            // Preserve "cursorness".
-            if (selStart == selEnd) {
-                selStart += diff
-            }
-            selEnd += diff
-        } else if (selStart > start && selEnd < end) {
-            // Selection is entirely inside replacement, move it to the end.
-            selStart = start + newLength
-            selEnd = start + newLength
-        } else if (selStart >= end) {
-            // The entire selection is after the insertion, so shift everything forward.
-            val diff = newLength - (end - start)
-            selStart += diff
-            selEnd += diff
-        } else if (start < selStart) {
-            // Insertion is around start of selection, truncate start of selection.
-            selStart = start + newLength
-            selEnd += newLength - (end - start)
-        } else {
-            // Insertion is around end of selection, truncate end of selection.
-            selEnd = start
-        }
-        // should not validate
-        selectionInChars = TextRange(selStart, selEnd)
+        // On Android, IME calls are usually followed with an explicit change to selection.
+        // Therefore it might seem unnecessary to adjust the selection here. However, this sort of
+        // behavior is not expected for edits that are coming from the developer programmatically
+        // or desktop APIs. So, we make sure that the selection is placed at a reasonable place
+        // after any kind of edit.
+        selectionInChars = adjustTextRange(selection, replaceStart, replaceEnd, newLength)
     }
+
+    // endregion
 
     /** Returns the [Char] at [index] in this buffer. */
     fun charAt(index: Int): Char = buffer[index]
@@ -327,24 +445,78 @@ internal constructor(
      *   this buffer's selection. Passing a different value in here _only_ affects the return value,
      *   it does not change the current selection in the buffer.
      * @param composition The composition range for the returned [TextFieldCharSequence]. Default
-     *   value is no composition (null).
+     *   value is this buffer's current composition.
      */
     internal fun toTextFieldCharSequence(
         selection: TextRange = this.selection,
-        composition: TextRange? = null
+        composition: TextRange? = this.composition,
+        composingAnnotations: List<PlacedAnnotation>? =
+            this.composingAnnotations?.asMutableList()?.takeIf { it.isNotEmpty() },
+        outputAnnotations: List<PlacedAnnotation>? = null,
     ): TextFieldCharSequence =
-        TextFieldCharSequence(buffer.toString(), selection = selection, composition = composition)
+        TextFieldCharSequence(
+            text = buffer.toString(),
+            selection = selection,
+            composition = composition,
+            composingAnnotations = composingAnnotations,
+            outputAnnotations = outputAnnotations,
+        )
 
     private fun requireValidIndex(index: Int, startExclusive: Boolean, endExclusive: Boolean) {
         val start = if (startExclusive) 0 else -1
         val end = if (endExclusive) length else length + 1
 
-        require(index in start until end) { "Expected $index to be in [$start, $end)" }
+        requirePrecondition(index in start until end) { "Expected $index to be in [$start, $end)" }
     }
 
     private fun requireValidRange(range: TextRange) {
         val validRange = TextRange(0, length)
-        require(range in validRange) { "Expected $range to be in $validRange" }
+        requirePrecondition(range in validRange) { "Expected $range to be in $validRange" }
+    }
+
+    // TODO(135556699): Remove this when [TextFieldBuffer.addStyle] is supported by all
+    //  TextFieldBuffer instances when multi styled editing is implemented.
+    // Context; b/424167352
+    internal var canCallAddStyle: Boolean = offsetMappingCalculator != null
+
+    internal var outputTransformationAnnotations: MutableList<PlacedAnnotation>? = null
+
+    internal fun addAnnotation(annotation: AnnotatedString.Annotation, start: Int, end: Int) {
+        checkPrecondition(canCallAddStyle) {
+            "You can add styling to a [TextFieldBuffer] only from an [OutputTransformation]."
+        }
+        if (outputTransformationAnnotations == null) {
+            outputTransformationAnnotations = mutableListOf()
+        }
+        outputTransformationAnnotations?.add(AnnotatedString.Range(annotation, start, end))
+    }
+
+    /**
+     * Adds the given [spanStyle] to the text between [start] and [end] on this buffer.
+     *
+     * Caution: You should only use this function from an [OutputTransformation]. Styling is not yet
+     * supported by [InputTransformation] or [TextFieldState]. Any added styling by
+     * [OutputTransformation] will be presented to the user without being part of the state.
+     *
+     * Also, the added styling is not tracked by this [TextFieldBuffer] if further edits are made.
+     * Please call this function after text content is finalized.
+     */
+    fun addStyle(spanStyle: SpanStyle, start: Int, end: Int) {
+        addAnnotation(spanStyle, start, end)
+    }
+
+    /**
+     * Adds the given [paragraphStyle] to the text between [start] and [end] on this buffer.
+     *
+     * Caution: You should only use this function from an [OutputTransformation]. Styling is not yet
+     * supported by [InputTransformation] or [TextFieldState]. Any added styling by
+     * [OutputTransformation] will be presented to the user without being part of the state.
+     *
+     * Also, the added styling is not tracked by this [TextFieldBuffer] if further edits are made.
+     * Please call this function after text content is finalized.
+     */
+    fun addStyle(paragraphStyle: ParagraphStyle, start: Int, end: Int) {
+        addAnnotation(paragraphStyle, start, end)
     }
 
     /**
@@ -354,7 +526,6 @@ internal constructor(
      * appear in the text, not the order in which they were made. Overlapping changes are
      * represented as a single change.
      */
-    @ExperimentalFoundationApi
     interface ChangeList {
         /** The number of changes that have been performed. */
         val changeCount: Int
@@ -373,6 +544,76 @@ internal constructor(
          */
         fun getOriginalRange(changeIndex: Int): TextRange
     }
+}
+
+/**
+ * Given [originalRange], calculates its new placement in the buffer after a region starting from
+ * [replaceStart] (inclusive) ending at [replaceEnd] (exclusive) is deleted and [insertedTextLength]
+ * number of characters are inserted at [replaceStart]. The rules of the adjustment are as follows;
+ * - '||'; denotes the [originalRange]
+ * - '\/'; denotes the [replaceStart], [replaceEnd]
+ *
+ * If the [originalRange]
+ * - is before the replaced region, it remains in the same place.
+ *     - abcd|efg|hijk\lmno/pqrs => abcd|efg|hijkxyzpqrs
+ *     - TextRange(4, 7) => TextRange(4, 7)
+ * - is after the replaced region, it is moved by the difference in length after replacement,
+ *   essentially corresponding to the same part of the text.
+ *     - abcd\efg/hijk|lmno|pqrs => abcdxyzxyzxyzhijk|lmno|pqrs
+ *     - TextRange(11, 15) => TextRange(17, 21)
+ * - fully wraps the replaced region, only the end is adjusted.
+ *     - ab|cd\efg/hijklmno|pqrs => ab|cdxyzxyzxyzhijklmno|pqrs
+ *     - TextRange(2, 15) => TextRange(2, 21)
+ * - is inside the replaced region, range is collapsed and moved to the end of the replaced region.
+ *     - ab\cd|efg|hijklmno/pqrs => abxyzxyz|pqrs
+ *     - TextRange(4, 7) => TextRange(8, 8)
+ * - collides with the replaced region at the start or at the end, it is adjusted so that the
+ *   colliding range is not included anymore.
+ *     - abcd|efg\hijk|lm/nopqrs => abcd|efg|xyzxyznopqrs
+ *     - TextRange(4, 11) => TextRange(4, 7)
+ */
+internal fun adjustTextRange(
+    originalRange: TextRange,
+    replaceStart: Int,
+    replaceEnd: Int,
+    insertedTextLength: Int,
+): TextRange {
+    var selStart = originalRange.min
+    var selEnd = originalRange.max
+
+    if (selEnd < replaceStart) {
+        // The entire originalRange is before the insertion point – we don't have to adjust
+        // the mark at all, so skip the math.
+        return originalRange
+    }
+
+    if (selStart <= replaceStart && replaceEnd <= selEnd) {
+        // The insertion is entirely inside the originalRange, move the end only.
+        val diff = insertedTextLength - (replaceEnd - replaceStart)
+        // Preserve "cursorness".
+        if (selStart == selEnd) {
+            selStart += diff
+        }
+        selEnd += diff
+    } else if (selStart > replaceStart && selEnd < replaceEnd) {
+        // originalRange is entirely inside replacement, move it to the end.
+        selStart = replaceStart + insertedTextLength
+        selEnd = replaceStart + insertedTextLength
+    } else if (selStart >= replaceEnd) {
+        // The entire originalRange is after the insertion, so shift everything forward.
+        val diff = insertedTextLength - (replaceEnd - replaceStart)
+        selStart += diff
+        selEnd += diff
+    } else if (replaceStart < selStart) {
+        // Insertion is around start of originalRange, truncate start of originalRange.
+        selStart = replaceStart + insertedTextLength
+        selEnd += insertedTextLength - (replaceEnd - replaceStart)
+    } else {
+        // Insertion is around end of originalRange, truncate end of originalRange.
+        selEnd = replaceStart
+    }
+    // should not validate
+    return TextRange(selStart, selEnd)
 }
 
 /**
@@ -424,7 +665,6 @@ fun TextFieldBuffer.selectAll() {
  * [forEachChangeReversed].
  *
  * @sample androidx.compose.foundation.samples.BasicTextFieldChangeIterationSample
- *
  * @see forEachChangeReversed
  */
 @ExperimentalFoundationApi
@@ -445,7 +685,6 @@ inline fun ChangeList.forEachChange(block: (range: TextRange, originalRange: Tex
  * safely, such changes will not be visited.
  *
  * @sample androidx.compose.foundation.samples.BasicTextFieldChangeReverseIterationSample
- *
  * @see forEachChange
  */
 @ExperimentalFoundationApi
@@ -471,7 +710,7 @@ inline fun ChangeList.forEachChangeReversed(
 internal inline fun findCommonPrefixAndSuffix(
     a: CharSequence,
     b: CharSequence,
-    onFound: (aPrefixStart: Int, aSuffixStart: Int, bPrefixStart: Int, bSuffixStart: Int) -> Unit
+    onFound: (aPrefixStart: Int, aSuffixStart: Int, bPrefixStart: Int, bSuffixStart: Int) -> Unit,
 ) {
     var aStart = 0
     var aEnd = a.length
@@ -517,4 +756,14 @@ internal inline fun findCommonPrefixAndSuffix(
     }
 
     onFound(aStart, aEnd, bStart, bEnd)
+}
+
+/**
+ * Normally [TextFieldBuffer] throws an [IllegalArgumentException] when an invalid selection change
+ * is attempted. However internally and especially for selection ranges coming from the IME we
+ * coerce the given numbers to a valid range to not crash. Also, IMEs sometimes send values like
+ * `Int.MAX_VALUE` to move selection to end.
+ */
+internal fun TextFieldBuffer.setSelectionCoerced(start: Int, end: Int = start) {
+    selection = TextRange(start.coerceIn(0, length), end.coerceIn(0, length))
 }

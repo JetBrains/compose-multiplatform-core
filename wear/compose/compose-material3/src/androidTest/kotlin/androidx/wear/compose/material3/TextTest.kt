@@ -19,17 +19,22 @@ package androidx.wear.compose.material3
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -90,14 +95,14 @@ class TextTest {
                         "Lorem ipsum",
                         minLines = 1,
                         maxLines = 3,
-                        onTextLayout = { size1 = it.size.height }
+                        onTextLayout = { size1 = it.size.height },
                     )
 
                     Text(
                         "Lorem ipsum",
                         minLines = 2,
                         maxLines = 3,
-                        onTextLayout = { size2 = it.size.height }
+                        onTextLayout = { size2 = it.size.height },
                     )
                 }
             }
@@ -128,7 +133,7 @@ class TextTest {
                         Text(
                             TestText,
                             color = expectedColor,
-                            onTextLayout = { textColor = it.layoutInput.style.color }
+                            onTextLayout = { textColor = it.layoutInput.style.color },
                         )
                     }
                 }
@@ -193,7 +198,7 @@ class TextTest {
                             letterSpacing = it.layoutInput.style.letterSpacing
                             textDecoration = it.layoutInput.style.textDecoration
                             textAlign = it.layoutInput.style.textAlign
-                        }
+                        },
                     )
                 }
             }
@@ -238,7 +243,7 @@ class TextTest {
                             fontSize = it.layoutInput.style.fontSize
                             fontStyle = it.layoutInput.style.fontStyle
                             letterSpacing = it.layoutInput.style.letterSpacing
-                        }
+                        },
                     )
                 }
             }
@@ -250,5 +255,98 @@ class TextTest {
             assertThat(fontStyle).isEqualTo(expectedFontStyle)
             assertThat(letterSpacing).isEqualTo(expectedLetterSpacing)
         }
+    }
+
+    @Test
+    fun verify_max_text_lines_limits_number_of_lines() {
+        val maxLines = 2
+        val text =
+            "Long text that will cover multiple lines of text, and needs to be more " +
+                "than 2 lines so that we can make sure that our max lines override is " +
+                "working otherwise it would not be a good test."
+        var result: TextLayoutResult? = null
+        rule.setContent {
+            CompositionLocalProvider(
+                LocalTextConfiguration provides
+                    TextConfiguration(
+                        maxLines = maxLines,
+                        textAlign = TextConfigurationDefaults.TextAlign,
+                        overflow = TextConfigurationDefaults.Overflow,
+                    )
+            ) {
+                Text(
+                    text = text,
+                    onTextLayout = { textLayoutResult -> result = textLayoutResult },
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
+        }
+
+        assertThat(result!!.lineCount).isEqualTo(maxLines)
+    }
+
+    @Test
+    fun verify_text_without_maxlines_does_not_limit_number_of_lines() {
+        val text =
+            "Long text that will cover multiple lines of text, and needs to be more " +
+                "than 2 lines so that we can make sure that our max lines override is " +
+                "working otherwise it would not be a good test."
+        var result: TextLayoutResult? = null
+        rule.setContent {
+            Text(
+                text = text,
+                onTextLayout = { textLayoutResult -> result = textLayoutResult },
+                modifier = Modifier.testTag(TEST_TAG).width(200.dp),
+            )
+        }
+
+        assertThat(result!!.lineCount).isAtLeast(3)
+    }
+
+    @Test
+    fun verify_overflow_defaults_to_clip() {
+        val text =
+            "Long text that will cover multiple lines of text, and needs to be more " +
+                "than 2 lines so that we can make sure that our max lines override is " +
+                "working otherwise it would not be a good test."
+        var result: TextLayoutResult? = null
+        rule.setContent {
+            Text(
+                text = text,
+                maxLines = 1,
+                onTextLayout = { textLayoutResult -> result = textLayoutResult },
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        assertThat(result!!.isLineEllipsized(0)).isFalse()
+    }
+
+    @Test
+    fun verify_overflow_is_overridable() {
+        val text =
+            "Long text that will cover multiple lines of text, and needs to be more " +
+                "than 2 lines so that we can make sure that our max lines override is " +
+                "working otherwise it would not be a good test."
+        var result: TextLayoutResult? = null
+        rule.setContent {
+            CompositionLocalProvider(
+                LocalTextConfiguration provides
+                    TextConfiguration(
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextConfigurationDefaults.TextAlign,
+                        maxLines = TextConfigurationDefaults.MaxLines,
+                    )
+            ) {
+                Text(
+                    text = text,
+                    maxLines = 1,
+                    onTextLayout = { textLayoutResult -> result = textLayoutResult },
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
+        }
+
+        assertThat(result!!.isLineEllipsized(0)).isTrue()
     }
 }

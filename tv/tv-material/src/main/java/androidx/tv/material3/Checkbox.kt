@@ -78,9 +78,8 @@ import kotlin.math.max
  *   emitting [Interaction]s for this checkbox. You can use this to change the checkbox's appearance
  *   or preview the checkbox in different states. Note that if `null` is provided, interactions will
  *   still happen internally.
- * @see [TriStateCheckbox] if you require support for an indeterminate state.
- *
  * @sample androidx.tv.material3.samples.CheckboxSample
+ * @see [TriStateCheckbox] if you require support for an indeterminate state.
  */
 @Composable
 fun Checkbox(
@@ -89,7 +88,7 @@ fun Checkbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     TriStateCheckbox(
         state = ToggleableState(checked),
@@ -102,7 +101,7 @@ fun Checkbox(
         modifier = modifier,
         enabled = enabled,
         colors = colors,
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     )
 }
 
@@ -140,7 +139,7 @@ fun TriStateCheckbox(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: CheckboxColors = CheckboxDefaults.colors(),
-    interactionSource: MutableInteractionSource? = null
+    interactionSource: MutableInteractionSource? = null,
 ) {
     val toggleableModifier =
         if (onClick != null) {
@@ -151,7 +150,7 @@ fun TriStateCheckbox(
                 role = Role.Checkbox,
                 // TODO: remove the optional argument once we update to compose 1.7.x
                 interactionSource = interactionSource ?: remember { MutableInteractionSource() },
-                indication = null
+                indication = null,
             )
         } else {
             Modifier
@@ -160,7 +159,7 @@ fun TriStateCheckbox(
         enabled = enabled,
         value = state,
         modifier = modifier.then(toggleableModifier).padding(CheckboxDefaultPadding),
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -235,7 +234,7 @@ object CheckboxDefaults {
                                 .copy(alpha = CheckboxTokens.UnselectedDisabledContainerOpacity),
                         disabledIndeterminateBorderColor =
                             fromToken(CheckboxTokens.SelectedDisabledContainerColor)
-                                .copy(alpha = CheckboxTokens.SelectedDisabledContainerOpacity)
+                                .copy(alpha = CheckboxTokens.SelectedDisabledContainerOpacity),
                     )
                     .also { defaultCheckboxColorsCached = it }
         }
@@ -246,7 +245,7 @@ private fun CheckboxImpl(
     enabled: Boolean,
     value: ToggleableState,
     modifier: Modifier,
-    colors: CheckboxColors
+    colors: CheckboxColors,
 ) {
     val transition = updateTransition(value)
     val checkDrawFraction =
@@ -292,14 +291,14 @@ private fun CheckboxImpl(
             boxColor = boxColor.value,
             borderColor = borderColor.value,
             radius = RadiusSize.toPx(),
-            strokeWidth = strokeWidthPx
+            strokeWidth = strokeWidthPx,
         )
         drawCheck(
             checkColor = checkColor.value,
             checkFraction = checkDrawFraction.value,
             crossCenterGravitation = checkCenterGravitationShiftFraction.value,
             strokeWidthPx = strokeWidthPx,
-            drawingCache = checkCache
+            drawingCache = checkCache,
         )
     }
 }
@@ -308,7 +307,7 @@ private fun DrawScope.drawBox(
     boxColor: Color,
     borderColor: Color,
     radius: Float,
-    strokeWidth: Float
+    strokeWidth: Float,
 ) {
     val halfStrokeWidth = strokeWidth / 2.0f
     val stroke = Stroke(strokeWidth)
@@ -318,7 +317,7 @@ private fun DrawScope.drawBox(
             boxColor,
             size = Size(checkboxSize, checkboxSize),
             cornerRadius = CornerRadius(radius),
-            style = Fill
+            style = Fill,
         )
     } else {
         drawRoundRect(
@@ -326,14 +325,14 @@ private fun DrawScope.drawBox(
             topLeft = Offset(strokeWidth, strokeWidth),
             size = Size(checkboxSize - strokeWidth * 2, checkboxSize - strokeWidth * 2),
             cornerRadius = CornerRadius(max(0f, radius - strokeWidth)),
-            style = Fill
+            style = Fill,
         )
         drawRoundRect(
             borderColor,
             topLeft = Offset(halfStrokeWidth, halfStrokeWidth),
             size = Size(checkboxSize - strokeWidth, checkboxSize - strokeWidth),
             cornerRadius = CornerRadius(radius - halfStrokeWidth),
-            style = stroke
+            style = stroke,
         )
     }
 }
@@ -343,7 +342,7 @@ private fun DrawScope.drawCheck(
     checkFraction: Float,
     crossCenterGravitation: Float,
     strokeWidthPx: Float,
-    drawingCache: CheckDrawingCache
+    drawingCache: CheckDrawingCache,
 ) {
     val stroke = Stroke(width = strokeWidthPx, cap = StrokeCap.Square)
     val width = size.width
@@ -377,7 +376,7 @@ private fun DrawScope.drawCheck(
 private class CheckDrawingCache(
     val checkPath: Path = Path(),
     val pathMeasure: PathMeasure = PathMeasure(),
-    val pathToDraw: Path = Path()
+    val pathToDraw: Path = Path(),
 )
 
 /**
@@ -418,7 +417,7 @@ class CheckboxColors(
     val uncheckedBorderColor: Color,
     val disabledBorderColor: Color,
     val disabledUncheckedBorderColor: Color,
-    val disabledIndeterminateBorderColor: Color
+    val disabledIndeterminateBorderColor: Color,
 ) {
     /**
      * Returns a copy of this CheckboxColors, optionally overriding some of the values. This uses
@@ -436,7 +435,7 @@ class CheckboxColors(
         uncheckedBorderColor: Color = this.uncheckedBorderColor,
         disabledBorderColor: Color = this.disabledBorderColor,
         disabledUncheckedBorderColor: Color = this.disabledUncheckedBorderColor,
-        disabledIndeterminateBorderColor: Color = this.disabledIndeterminateBorderColor
+        disabledIndeterminateBorderColor: Color = this.disabledIndeterminateBorderColor,
     ) =
         CheckboxColors(
             checkedCheckmarkColor.takeOrElse { this.checkedCheckmarkColor },

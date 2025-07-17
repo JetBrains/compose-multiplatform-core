@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -79,50 +80,22 @@ class LongFloatMapTest {
 
     @Test
     fun longFloatMapInitFunction() {
-        val map1 =
-            longFloatMapOf(
-                1L,
-                1f,
-            )
+        val map1 = longFloatMapOf(1L, 1f)
         assertEquals(1, map1.size)
         assertEquals(1f, map1[1L])
 
-        val map2 =
-            longFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-            )
+        val map2 = longFloatMapOf(1L, 1f, 2L, 2f)
         assertEquals(2, map2.size)
         assertEquals(1f, map2[1L])
         assertEquals(2f, map2[2L])
 
-        val map3 =
-            longFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-            )
+        val map3 = longFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f)
         assertEquals(3, map3.size)
         assertEquals(1f, map3[1L])
         assertEquals(2f, map3[2L])
         assertEquals(3f, map3[3L])
 
-        val map4 =
-            longFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-                4L,
-                4f,
-            )
+        val map4 = longFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f, 4L, 4f)
 
         assertEquals(4, map4.size)
         assertEquals(1f, map4[1L])
@@ -130,19 +103,7 @@ class LongFloatMapTest {
         assertEquals(3f, map4[3L])
         assertEquals(4f, map4[4L])
 
-        val map5 =
-            longFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-                4L,
-                4f,
-                5L,
-                5f,
-            )
+        val map5 = longFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f, 4L, 4f, 5L, 5f)
 
         assertEquals(5, map5.size)
         assertEquals(1f, map5[1L])
@@ -154,50 +115,22 @@ class LongFloatMapTest {
 
     @Test
     fun mutableLongFloatMapInitFunction() {
-        val map1 =
-            mutableLongFloatMapOf(
-                1L,
-                1f,
-            )
+        val map1 = mutableLongFloatMapOf(1L, 1f)
         assertEquals(1, map1.size)
         assertEquals(1f, map1[1L])
 
-        val map2 =
-            mutableLongFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-            )
+        val map2 = mutableLongFloatMapOf(1L, 1f, 2L, 2f)
         assertEquals(2, map2.size)
         assertEquals(1f, map2[1L])
         assertEquals(2f, map2[2L])
 
-        val map3 =
-            mutableLongFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-            )
+        val map3 = mutableLongFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f)
         assertEquals(3, map3.size)
         assertEquals(1f, map3[1L])
         assertEquals(2f, map3[2L])
         assertEquals(3f, map3[3L])
 
-        val map4 =
-            mutableLongFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-                4L,
-                4f,
-            )
+        val map4 = mutableLongFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f, 4L, 4f)
 
         assertEquals(4, map4.size)
         assertEquals(1f, map4[1L])
@@ -205,19 +138,7 @@ class LongFloatMapTest {
         assertEquals(3f, map4[3L])
         assertEquals(4f, map4[4L])
 
-        val map5 =
-            mutableLongFloatMapOf(
-                1L,
-                1f,
-                2L,
-                2f,
-                3L,
-                3f,
-                4L,
-                4f,
-                5L,
-                5f,
-            )
+        val map5 = mutableLongFloatMapOf(1L, 1f, 2L, 2f, 3L, 3f, 4L, 4f, 5L, 5f)
 
         assertEquals(5, map5.size)
         assertEquals(1f, map5[1L])
@@ -225,6 +146,36 @@ class LongFloatMapTest {
         assertEquals(3f, map5[3L])
         assertEquals(4f, map5[4L])
         assertEquals(5f, map5[5L])
+    }
+
+    @Test
+    fun buildLongFloatMapFunction() {
+        val contract: Boolean
+        val map = buildLongFloatMap {
+            contract = true
+            put(1L, 1f)
+            put(2L, 2f)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals(1f, map[1L])
+        assertEquals(2f, map[2L])
+    }
+
+    @Test
+    fun buildLongObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map =
+            buildLongFloatMap(20) {
+                contract = true
+                put(1L, 1f)
+                put(2L, 2f)
+            }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals(1f, map[1L])
+        assertEquals(2f, map[2L])
     }
 
     @Test
@@ -597,28 +548,29 @@ class LongFloatMapTest {
                 "${order[1].toFloat()}, ${order[2].toLong()}=${order[2].toFloat()}," +
                 " ${order[3].toLong()}=${order[3].toFloat()}, ${order[4].toLong()}=" +
                 "${order[4].toFloat()}",
-            map.joinToString()
+            map.joinToString(),
         )
         assertEquals(
             "x${order[0].toLong()}=${order[0].toFloat()}, ${order[1].toLong()}=" +
-                "${order[1].toFloat()}, ${order[2].toLong()}=${order[2].toFloat()}...",
-            map.joinToString(prefix = "x", postfix = "y", limit = 3)
+                "${order[1].toFloat()}, ${order[2].toLong()}=${order[2].toFloat()}, ...y",
+            map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${order[0].toLong()}=${order[0].toFloat()}-${order[1].toLong()}=" +
                 "${order[1].toFloat()}-${order[2].toLong()}=${order[2].toFloat()}-" +
                 "${order[3].toLong()}=${order[3].toFloat()}-${order[4].toLong()}=" +
                 "${order[4].toFloat()}<",
-            map.joinToString(separator = "-", prefix = ">", postfix = "<")
+            map.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] }
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
+            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] },
         )
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableLongFloatMap()
         map[1L] = 1f
@@ -631,6 +583,13 @@ class LongFloatMapTest {
 
         map2[1L] = 1f
         assertEquals(map, map2)
+
+        // Same number of items but different keys to test that looking up
+        // a non-existing entry doesn't throw during equals()
+        assertNotEquals(
+            mutableLongFloatMapOf(1L, 1f, 2L, 2f),
+            mutableLongFloatMapOf(1L, 1f, 3L, 2f),
+        )
     }
 
     @Test
@@ -749,5 +708,16 @@ class LongFloatMapTest {
 
         assertEquals(1024, map.trim())
         assertEquals(0, map.trim())
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutableLongFloatMap()
+
+        for (i in 0..1000000) {
+            map[i.toLong()] = i.toFloat()
+            map.remove(i.toLong())
+            assertTrue(map.capacity < 16, "Map grew larger than 16 after step $i")
+        }
     }
 }

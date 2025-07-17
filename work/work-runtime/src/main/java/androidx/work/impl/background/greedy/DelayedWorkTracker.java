@@ -16,7 +16,6 @@
 
 package androidx.work.impl.background.greedy;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Clock;
 import androidx.work.Logger;
@@ -24,9 +23,10 @@ import androidx.work.RunnableScheduler;
 import androidx.work.impl.Scheduler;
 import androidx.work.impl.model.WorkSpec;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.HashMap;
 import java.util.Map;
-
 
 /**
  * Keeps track of {@link androidx.work.WorkRequest}s that have a timing component in a
@@ -66,7 +66,7 @@ public class DelayedWorkTracker {
      * @param workSpec The {@link WorkSpec} corresponding to the {@link androidx.work.WorkRequest}
      * @param nextRunTime time when work should be executed
      */
-    public void schedule(@NonNull final WorkSpec workSpec, long nextRunTime) {
+    public void schedule(final @NonNull WorkSpec workSpec, long nextRunTime) {
         Runnable existing = mRunnables.remove(workSpec.id);
         if (existing != null) {
             mRunnableScheduler.cancel(existing);

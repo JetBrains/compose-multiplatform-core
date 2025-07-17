@@ -25,7 +25,8 @@ import androidx.compose.runtime.IntStack
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MovableContentState
 import androidx.compose.runtime.MovableContentStateReference
-import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.RecomposeScopeImpl
+import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.SlotReader
 import androidx.compose.runtime.SlotTable
 import androidx.compose.runtime.Stack
@@ -39,7 +40,7 @@ internal class ComposerChangeListWriter(
      */
     private val composer: ComposerImpl,
     /** The ChangeList that will be written to */
-    var changeList: ChangeList
+    var changeList: ChangeList,
 ) {
     private val reader: SlotReader
         get() = composer.reader
@@ -188,8 +189,20 @@ internal class ComposerChangeListWriter(
         }
     }
 
-    fun remember(value: RememberObserver) {
+    fun remember(value: RememberObserverHolder) {
         changeList.pushRemember(value)
+    }
+
+    fun rememberPausingScope(scope: RecomposeScopeImpl) {
+        changeList.pushRememberPausingScope(scope)
+    }
+
+    fun startResumingScope(scope: RecomposeScopeImpl) {
+        changeList.pushStartResumingScope(scope)
+    }
+
+    fun endResumingScope(scope: RecomposeScopeImpl) {
+        changeList.pushEndResumingScope(scope)
     }
 
     fun updateValue(value: Any?, groupSlotIndex: Int) {
@@ -416,7 +429,7 @@ internal class ComposerChangeListWriter(
     fun releaseMovableGroupAtCurrent(
         composition: ControlledComposition,
         parentContext: CompositionContext,
-        reference: MovableContentStateReference
+        reference: MovableContentStateReference,
     ) {
         changeList.pushReleaseMovableGroupAtCurrent(composition, parentContext, reference)
     }

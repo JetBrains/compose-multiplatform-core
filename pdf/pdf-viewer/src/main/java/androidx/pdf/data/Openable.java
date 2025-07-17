@@ -19,9 +19,10 @@ package androidx.pdf.data;
 import android.os.ParcelFileDescriptor;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,15 +40,13 @@ import java.io.InputStream;
 public interface Openable extends Parcelable {
 
     /** Open this data and return an object that allows reading it. */
-    @NonNull
-    Open openWith(@NonNull Opener opener) throws IOException;
+    @NonNull Open openWith(@NonNull Opener opener) throws IOException;
 
     /** Returns the length of the data in bytes (pre-connection, so might be an estimate). */
     long length();
 
     /** Returns the MIME type of the data (pre-connection, so might not be available). */
-    @Nullable
-    String getContentType();
+    @Nullable String getContentType();
 
     /** An object that represents an open connection to obtain the data, and gives ways to read
      * it. */
@@ -58,8 +57,7 @@ public interface Openable extends Parcelable {
          * <br>
          * Callers take ownership of the returned InputStream and are responsible for closing it.
          */
-        @NonNull
-        InputStream getInputStream() throws IOException;
+        @NonNull InputStream getInputStream() throws IOException;
 
         /**
          * Returns a file descriptor on this data, if available (e.g. doesn't work for http).
@@ -68,14 +66,12 @@ public interface Openable extends Parcelable {
          * closing
          * it.
          */
-        @NonNull
-        ParcelFileDescriptor getFd() throws IOException;
+        @NonNull ParcelFileDescriptor getFd() throws IOException;
 
         /** Returns the declared length of the data. */
         long length();
 
         /** Returns the declared content-type of the data. */
-        @NonNull
-        String getContentType();
+        @NonNull String getContentType();
     }
 }

@@ -22,8 +22,6 @@ import kotlin.math.min
 
 internal interface LazyLayoutBeyondBoundsState {
 
-    fun remeasure()
-
     val itemCount: Int
 
     val hasVisibleItems: Boolean
@@ -31,6 +29,8 @@ internal interface LazyLayoutBeyondBoundsState {
     val firstPlacedIndex: Int
 
     val lastPlacedIndex: Int
+
+    fun itemsPerViewport(): Int
 }
 
 @OptIn(ExperimentalFoundationApi::class)

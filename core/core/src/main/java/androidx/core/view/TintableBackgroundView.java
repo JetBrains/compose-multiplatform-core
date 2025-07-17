@@ -19,7 +19,7 @@ package androidx.core.view;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface which allows a {@link android.view.View} to receive background tinting calls from
@@ -50,8 +50,7 @@ public interface TintableBackgroundView {
      *
      * @return the tint applied to the background drawable
      */
-    @Nullable
-    ColorStateList getSupportBackgroundTintList();
+    @Nullable ColorStateList getSupportBackgroundTintList();
 
     /**
      * Specifies the blending mode used to apply the tint specified by
@@ -62,7 +61,7 @@ public interface TintableBackgroundView {
      *                 {@code null} to clear tint
      * @see #getSupportBackgroundTintMode()
      */
-    void setSupportBackgroundTintMode(@Nullable PorterDuff.Mode tintMode);
+    void setSupportBackgroundTintMode(PorterDuff.@Nullable Mode tintMode);
 
     /**
      * Return the blending mode used to apply the tint to the background
@@ -71,6 +70,5 @@ public interface TintableBackgroundView {
      * @return the blending mode used to apply the tint to the background
      *         drawable
      */
-    @Nullable
-    PorterDuff.Mode getSupportBackgroundTintMode();
+    PorterDuff.@Nullable Mode getSupportBackgroundTintMode();
 }

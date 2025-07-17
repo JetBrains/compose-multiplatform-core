@@ -77,6 +77,10 @@ class BanInappropriateExperimentalUsageTest :
             getMavenCoordinatesFromPath(
                 "/path/to/checkout/out/androidx/room/room-compiler-processing/build/libs/room-compiler-processing-2.5.0-alpha02.jar"
             )
+        val uiTest =
+            getMavenCoordinatesFromPath(
+                "/path/to/checkout/out/androidx/compose/ui/ui-test/build/libs/ui-test-jvmstubs-1.8.0-beta01.jar"
+            )
 
         assertNotNull(paging!!)
         assertEquals("androidx.paging", paging.groupId)
@@ -87,6 +91,11 @@ class BanInappropriateExperimentalUsageTest :
         assertEquals("androidx.room", room.groupId)
         assertEquals("room-compiler-processing", room.artifactId)
         assertEquals("2.5.0-alpha02", room.version)
+
+        assertNotNull(uiTest!!)
+        assertEquals("androidx.compose.ui", uiTest.groupId)
+        assertEquals("ui-test", uiTest.artifactId)
+        assertEquals("jvmstubs-1.8.0-beta01", uiTest.version)
 
         val invalid = getMavenCoordinatesFromPath("/foo/bar/baz")
         assertNull(invalid)

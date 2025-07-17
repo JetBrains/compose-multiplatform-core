@@ -17,9 +17,10 @@
 package androidx.lifecycle;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Factory methods for {@link ViewModelStore} class.
@@ -43,9 +44,8 @@ public class ViewModelStores {
      * @deprecated Use {@link FragmentActivity#getViewModelStore()}
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelStore of(@NonNull FragmentActivity activity) {
+    public static @NonNull ViewModelStore of(@NonNull FragmentActivity activity) {
         return activity.getViewModelStore();
     }
 
@@ -57,9 +57,8 @@ public class ViewModelStores {
      * @deprecated Use {@link Fragment#getViewModelStore()}
      */
     @Deprecated
-    @NonNull
     @MainThread
-    public static ViewModelStore of(@NonNull Fragment fragment) {
+    public static @NonNull ViewModelStore of(@NonNull Fragment fragment) {
         return fragment.getViewModelStore();
     }
 }

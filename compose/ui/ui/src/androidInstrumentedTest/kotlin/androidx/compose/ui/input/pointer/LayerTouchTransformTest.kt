@@ -97,7 +97,7 @@ class LayerTouchTransformTest {
                                             translationX = 50.0f,
                                             translationY = 30.0f,
                                             rotationZ = 45.0f,
-                                            transformOrigin = TransformOrigin(1.0f, 1.0f)
+                                            transformOrigin = TransformOrigin(1.0f, 1.0f),
                                         )
                                         .drawBehind { drawRect(color) }
                                         .then(latchDrawModifier)
@@ -136,7 +136,7 @@ class LayerTouchTransformTest {
         node.captureToImage().asAndroidBitmap().apply {
             Assert.assertEquals(
                 Color.Red.toArgb(),
-                getPixel(mappedPosition.x.toInt(), mappedPosition.y.toInt())
+                getPixel(mappedPosition.x.toInt(), mappedPosition.y.toInt()),
             )
         }
     }
@@ -145,7 +145,7 @@ class LayerTouchTransformTest {
 @Composable
 fun SimpleLayout(modifier: Modifier, content: @Composable () -> Unit = {}) {
     Layout(content, modifier) { measurables, constraints ->
-        val childConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+        val childConstraints = constraints.copyMaxDimensions()
         val placeables = measurables.map { it.measure(childConstraints) }
         var containerWidth = constraints.minWidth
         var containerHeight = constraints.minHeight

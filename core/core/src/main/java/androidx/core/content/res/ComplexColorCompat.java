@@ -30,10 +30,10 @@ import android.util.Xml;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -75,8 +75,7 @@ public final class ComplexColorCompat {
         return new ComplexColorCompat(null, null, color);
     }
 
-    @Nullable
-    public Shader getShader() {
+    public @Nullable Shader getShader() {
         return mShader;
     }
 
@@ -132,9 +131,8 @@ public final class ComplexColorCompat {
      * @param theme     Optional theme to apply to the color, may be {@code null}.
      * @return A new color.
      */
-    @Nullable
-    public static ComplexColorCompat inflate(@NonNull Resources resources, @ColorRes int resId,
-            @Nullable Resources.Theme theme) {
+    public static @Nullable ComplexColorCompat inflate(@NonNull Resources resources,
+            @ColorRes int resId, Resources.@Nullable Theme theme) {
         try {
             return createFromXml(resources, resId, theme);
         } catch (Exception e) {
@@ -143,9 +141,8 @@ public final class ComplexColorCompat {
         return null;
     }
 
-    @NonNull
-    private static ComplexColorCompat createFromXml(@NonNull Resources resources,
-            @ColorRes int resId, @Nullable Resources.Theme theme)
+    private static @NonNull ComplexColorCompat createFromXml(@NonNull Resources resources,
+            @ColorRes int resId, Resources.@Nullable Theme theme)
             throws IOException, XmlPullParserException {
         @SuppressLint("ResourceType")
         XmlPullParser parser = resources.getXml(resId);

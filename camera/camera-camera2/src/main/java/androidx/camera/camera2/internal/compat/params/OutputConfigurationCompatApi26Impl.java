@@ -21,11 +21,12 @@ import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -113,9 +114,8 @@ class OutputConfigurationCompatApi26Impl extends OutputConfigurationCompatApi24I
         ((OutputConfigurationParamsApi26) mObject).mPhysicalCameraId = physicalCameraId;
     }
 
-    @Nullable
     @Override
-    public String getPhysicalCameraId() {
+    public @Nullable String getPhysicalCameraId() {
         return ((OutputConfigurationParamsApi26) mObject).mPhysicalCameraId;
     }
 
@@ -169,24 +169,20 @@ class OutputConfigurationCompatApi26Impl extends OutputConfigurationCompatApi24I
      * Get the immutable list of surfaces associated with this {@link OutputConfigurationCompat}.
      */
     @Override
-    @NonNull
-    public List<Surface> getSurfaces() {
+    public @NonNull List<Surface> getSurfaces() {
         return ((OutputConfiguration) getOutputConfiguration()).getSurfaces();
     }
 
-    @NonNull
     @Override
-    public Object getOutputConfiguration() {
+    public @NonNull Object getOutputConfiguration() {
         Preconditions.checkArgument(mObject instanceof OutputConfigurationParamsApi26);
         return ((OutputConfigurationParamsApi26) mObject).mOutputConfiguration;
     }
 
     private static final class OutputConfigurationParamsApi26 {
-        @NonNull
-        final OutputConfiguration mOutputConfiguration;
+        final @NonNull OutputConfiguration mOutputConfiguration;
 
-        @Nullable
-        String mPhysicalCameraId;
+        @Nullable String mPhysicalCameraId;
 
         long mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
 

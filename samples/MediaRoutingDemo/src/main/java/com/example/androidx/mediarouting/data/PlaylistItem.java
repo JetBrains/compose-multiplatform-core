@@ -20,8 +20,9 @@ import android.app.PendingIntent;
 import android.net.Uri;
 import android.os.SystemClock;
 
-import androidx.annotation.NonNull;
 import androidx.mediarouter.media.MediaItemStatus;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * PlaylistItem helps keep track of the current status of an media item.
@@ -87,38 +88,31 @@ public final class PlaylistItem {
         mContentDuration = duration;
     }
 
-    @NonNull
-    public String getSessionId() {
+    public @NonNull String getSessionId() {
         return mSessionId;
     }
 
-    @NonNull
-    public String getItemId() {
+    public @NonNull String getItemId() {
         return mItemId;
     }
 
-    @NonNull
-    public String getRemoteItemId() {
+    public @NonNull String getRemoteItemId() {
         return mRemoteItemId;
     }
 
-    @NonNull
-    public String getTitle() {
+    public @NonNull String getTitle() {
         return mTitle;
     }
 
-    @NonNull
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
-    @NonNull
-    public String getMime() {
+    public @NonNull String getMime() {
         return mMime;
     }
 
-    @NonNull
-    public PendingIntent getUpdateReceiver() {
+    public @NonNull PendingIntent getUpdateReceiver() {
         return mUpdateReceiver;
     }
 
@@ -138,8 +132,7 @@ public final class PlaylistItem {
         return mTimestamp;
     }
 
-    @NonNull
-    public MediaItemStatus getStatus() {
+    public @NonNull MediaItemStatus getStatus() {
         return new MediaItemStatus.Builder(mPlaybackState)
                 .setContentPosition(mContentPosition)
                 .setContentDuration(mContentDuration)
@@ -147,9 +140,8 @@ public final class PlaylistItem {
                 .build();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         String[] state = {
                 "PENDING",
                 "PLAYING",

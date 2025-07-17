@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.accessibility
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -39,7 +38,7 @@ import androidx.compose.ui.semantics.CollectionItemInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.semantics.semanticsId
 import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -51,7 +50,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +65,19 @@ class CollectionInfoTest {
     private lateinit var composeView: AndroidComposeView
     private val tag = "TestTag"
 
+    @After
+    fun teardown() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
+        }
+    }
+
     // Collection Info tests
     @Test
     fun testCollectionInfo_withSelectableGroup() {
@@ -74,7 +88,7 @@ class CollectionInfoTest {
                 Box(Modifier.size(50.dp).selectable(selected = false, onClick = {}))
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -95,7 +109,7 @@ class CollectionInfoTest {
         rule.setContentWithAccessibilityEnabled {
             LazyColumn(Modifier.testTag(tag)) { items(2) { BasicText("Text") } }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -103,7 +117,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -118,7 +132,7 @@ class CollectionInfoTest {
                 items(2) { BasicText("Text") }
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -139,7 +153,7 @@ class CollectionInfoTest {
         rule.setContentWithAccessibilityEnabled {
             LazyColumn(Modifier.testTag(tag).selectableGroup()) { items(2) { BasicText("Text") } }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -147,7 +161,7 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle {
             with(info.collectionInfo) {
-                assertThat(rowCount).isEqualTo(-1)
+                assertThat(rowCount).isEqualTo(2)
                 assertThat(columnCount).isEqualTo(1)
                 assertThat(isHierarchical).isFalse()
             }
@@ -166,7 +180,7 @@ class CollectionInfoTest {
                 items(2) { BasicText("Text") }
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -191,7 +205,7 @@ class CollectionInfoTest {
                 Box(Modifier.size(50.dp).selectable(selected = false, onClick = {}))
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -216,7 +230,7 @@ class CollectionInfoTest {
                 itemsIndexed(listOf("Text", "Text")) { index, item -> BasicText(item + index) }
             }
         }
-        val virtualId = rule.onNodeWithText("Text0").semanticsId
+        val virtualId = rule.onNodeWithText("Text0").semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -235,12 +249,12 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
         }
-        val virtualId = rule.onNodeWithText("Text0").semanticsId
+        val virtualId = rule.onNodeWithText("Text0").semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -267,12 +281,12 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
         }
-        val virtualId = rule.onNodeWithText("Text0").semanticsId
+        val virtualId = rule.onNodeWithText("Text0").semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -299,12 +313,12 @@ class CollectionInfoTest {
                         item + index,
                         Modifier.semantics {
                             collectionItemInfo = CollectionItemInfo(index, 1, 0, 1)
-                        }
+                        },
                     )
                 }
             }
         }
-        val virtualId = rule.onNodeWithText("Text0").semanticsId
+        val virtualId = rule.onNodeWithText("Text0").semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -333,7 +347,7 @@ class CollectionInfoTest {
                 // items
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -356,7 +370,7 @@ class CollectionInfoTest {
                 Box(Modifier.size(10.dp).selectable(selected = false, onClick = {}))
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -376,7 +390,7 @@ class CollectionInfoTest {
                 // items
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -393,7 +407,7 @@ class CollectionInfoTest {
                 // items
             }
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -427,9 +441,9 @@ class CollectionInfoTest {
                 )
             }
         }
-        val virtualId0 = rule.onNodeWithTag("item0").semanticsId
-        val virtualId1 = rule.onNodeWithTag("item1").semanticsId
-        val virtualId2 = rule.onNodeWithTag("item2").semanticsId
+        val virtualId0 = rule.onNodeWithTag("item0").semanticsId()
+        val virtualId1 = rule.onNodeWithTag("item1").semanticsId()
+        val virtualId2 = rule.onNodeWithTag("item2").semanticsId()
 
         // Act.
         rule.waitForIdle()
@@ -450,10 +464,9 @@ class CollectionInfoTest {
         // Arrange.
         val pageCount = 20
         rule.setContentWithAccessibilityEnabled {
-            @OptIn(ExperimentalFoundationApi::class)
             HorizontalPager(rememberPagerState { pageCount }, Modifier.size(10.dp).testTag(tag)) {}
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -467,10 +480,9 @@ class CollectionInfoTest {
         // Arrange.
         val pageCount = 20
         rule.setContentWithAccessibilityEnabled {
-            @OptIn(ExperimentalFoundationApi::class)
             VerticalPager(rememberPagerState { pageCount }, Modifier.size(10.dp).testTag(tag)) {}
         }
-        val virtualId = rule.onNodeWithTag(tag).semanticsId
+        val virtualId = rule.onNodeWithTag(tag).semanticsId()
 
         // Act.
         val info = rule.runOnIdle { composeView.createAccessibilityNodeInfo(virtualId) }
@@ -478,10 +490,6 @@ class CollectionInfoTest {
         // Assert.
         rule.runOnIdle { assertThat(info.collectionInfo.rowCount).isEqualTo(pageCount) }
     }
-
-    // TODO(b/272068594): Add api to fetch the semantics id from SemanticsNodeInteraction directly.
-    private val SemanticsNodeInteraction.semanticsId: Int
-        get() = fetchSemanticsNode().id
 
     private fun ComposeContentTestRule.setContentWithAccessibilityEnabled(
         content: @Composable () -> Unit

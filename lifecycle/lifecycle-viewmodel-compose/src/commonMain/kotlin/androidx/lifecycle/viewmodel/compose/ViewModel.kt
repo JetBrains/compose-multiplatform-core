@@ -26,6 +26,8 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
 
 /**
@@ -46,7 +48,6 @@ import kotlin.reflect.KClass
  *   null if you would like to use the default factory from the [LocalViewModelStoreOwner]
  * @param extras The default extras used to create the [ViewModel].
  * @return A [ViewModel] that is an instance of the given [VM] type.
- *
  * @sample androidx.lifecycle.viewmodel.compose.samples.CreationExtrasViewModel
  */
 @Suppress("MissingJvmstatic")
@@ -63,7 +64,7 @@ public inline fun <reified VM : ViewModel> viewModel(
             viewModelStoreOwner.defaultViewModelCreationExtras
         } else {
             CreationExtras.Empty
-        }
+        },
 ): VM = viewModel(VM::class, viewModelStoreOwner, key, factory, extras)
 
 /**
@@ -84,7 +85,6 @@ public inline fun <reified VM : ViewModel> viewModel(
  *   null if you would like to use the default factory from the [LocalViewModelStoreOwner]
  * @param extras The default extras used to create the [ViewModel].
  * @return A [ViewModel] that is an instance of the given [VM] type.
- *
  * @sample androidx.lifecycle.viewmodel.compose.samples.CreationExtrasViewModel
  */
 @Suppress("MissingJvmstatic")
@@ -102,7 +102,7 @@ public fun <VM : ViewModel> viewModel(
             viewModelStoreOwner.defaultViewModelCreationExtras
         } else {
             CreationExtras.Empty
-        }
+        },
 ): VM = viewModelStoreOwner.get(modelClass, key, factory, extras)
 
 /**
@@ -120,7 +120,6 @@ public fun <VM : ViewModel> viewModel(
  * @param key The key to use to identify the [ViewModel].
  * @param initializer lambda used to create an instance of the ViewModel class
  * @return A [ViewModel] that is an instance of the given [VM] type.
- *
  * @sample androidx.lifecycle.viewmodel.compose.samples.CreationExtrasViewModelInitializer
  */
 @Composable
@@ -130,7 +129,7 @@ public inline fun <reified VM : ViewModel> viewModel(
             "No ViewModelStoreOwner was provided via LocalViewModelStoreOwner"
         },
     key: String? = null,
-    noinline initializer: CreationExtras.() -> VM
+    noinline initializer: CreationExtras.() -> VM,
 ): VM =
     viewModel(
         VM::class,
@@ -141,7 +140,7 @@ public inline fun <reified VM : ViewModel> viewModel(
             viewModelStoreOwner.defaultViewModelCreationExtras
         } else {
             CreationExtras.Empty
-        }
+        },
     )
 
 internal fun <VM : ViewModel> ViewModelStoreOwner.get(
@@ -153,7 +152,7 @@ internal fun <VM : ViewModel> ViewModelStoreOwner.get(
             this.defaultViewModelCreationExtras
         } else {
             CreationExtras.Empty
-        }
+        },
 ): VM {
     val provider =
         if (factory != null) {
@@ -162,7 +161,7 @@ internal fun <VM : ViewModel> ViewModelStoreOwner.get(
             ViewModelProvider.create(
                 this.viewModelStore,
                 this.defaultViewModelProviderFactory,
-                extras
+                extras,
             )
         } else {
             ViewModelProvider.create(this)

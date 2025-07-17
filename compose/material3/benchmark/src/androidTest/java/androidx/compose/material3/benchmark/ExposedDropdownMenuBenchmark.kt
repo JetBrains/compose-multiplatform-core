@@ -22,9 +22,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -109,11 +109,11 @@ internal class ExposedDropdownMenuTestCase(private val expanded: Boolean) :
         Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.height(state.value))
 
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = {},
-            ) {
-                Spacer(Modifier.size(100.dp).menuAnchor(MenuAnchorType.PrimaryNotEditable))
+            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {}) {
+                Spacer(
+                    Modifier.size(100.dp)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                )
                 // Can't test ExposedDropdownMenu directly because Popup can't be benchmarked
             }
         }

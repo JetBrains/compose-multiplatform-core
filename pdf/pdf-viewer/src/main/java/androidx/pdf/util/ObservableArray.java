@@ -18,9 +18,10 @@ package androidx.pdf.util;
 
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for an observable array of values, which can be exposed by a Subject. Array is
@@ -50,12 +51,10 @@ import androidx.annotation.RestrictTo;
 public interface ObservableArray<T> extends Observable<ObservableArray.ArrayObserver<T>> {
 
     /** Returns the value associated to the given key, or null if none. */
-    @Nullable
-    T get(int key);
+    @Nullable T get(int key);
 
     /** Iterable over the set of mapped keys, in crescent order. */
-    @NonNull
-    Iterable<Integer> keys();
+    @NonNull Iterable<Integer> keys();
 
     /** The number of values in this array. */
     int size();

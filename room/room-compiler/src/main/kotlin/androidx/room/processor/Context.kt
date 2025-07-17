@@ -20,8 +20,6 @@ import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.processing.XElement
 import androidx.room.compiler.processing.XProcessingEnv
-import androidx.room.compiler.processing.XType
-import androidx.room.ext.CommonTypeNames
 import androidx.room.log.RLog
 import androidx.room.parser.expansion.ProjectionExpander
 import androidx.room.parser.optimization.RemoveUnusedColumnQueryRewriter
@@ -42,7 +40,6 @@ private constructor(
     private val canRewriteQueriesToDropUnusedColumns: Boolean,
 ) {
     val checker: Checks = Checks(logger)
-    val COMMON_TYPES = CommonTypes(processingEnv)
 
     /**
      * Checks whether we should use the TypeConverter store that has a specific heuristic for
@@ -60,7 +57,7 @@ private constructor(
             TypeAdapterStore.create(
                 this,
                 typeConverters.builtInConverterFlags,
-                typeConverters.converters
+                typeConverters.converters,
             )
         }
     }
@@ -126,24 +123,16 @@ private constructor(
                 parent = null,
                 converters = LinkedHashSet(),
                 suppressedWarnings = emptySet(),
-                builtInConverterFlags = BuiltInConverterFlags.DEFAULT
+                builtInConverterFlags = BuiltInConverterFlags.DEFAULT,
             ),
-        canRewriteQueriesToDropUnusedColumns = false
+        canRewriteQueriesToDropUnusedColumns = false,
     )
-
-    class CommonTypes(val processingEnv: XProcessingEnv) {
-        val VOID: XType by lazy { processingEnv.requireType(CommonTypeNames.VOID) }
-        val STRING: XType by lazy { processingEnv.requireType(CommonTypeNames.STRING) }
-        val READONLY_COLLECTION: XType by lazy {
-            processingEnv.requireType(CommonTypeNames.COLLECTION)
-        }
-        val LIST: XType by lazy { processingEnv.requireType(CommonTypeNames.LIST) }
-        val SET: XType by lazy { processingEnv.requireType(CommonTypeNames.SET) }
-    }
 
     val schemaInFolderPath by lazy {
         val internalInputFolder =
             processingEnv.options[ProcessorOptions.INTERNAL_SCHEMA_INPUT_FOLDER.argName]
+                // Warning: Format must match with room-gradle-plugin
+                ?.replace("%20", " ")
         val legacySchemaFolder =
             processingEnv.options[ProcessorOptions.OPTION_SCHEMA_FOLDER.argName]
         if (!internalInputFolder.isNullOrBlank()) {
@@ -158,6 +147,8 @@ private constructor(
     val schemaOutFolderPath by lazy {
         val internalOutputFolder =
             processingEnv.options[ProcessorOptions.INTERNAL_SCHEMA_OUTPUT_FOLDER.argName]
+                // Warning: Format must match with room-gradle-plugin
+                ?.replace("%20", " ")
         val legacySchemaFolder =
             processingEnv.options[ProcessorOptions.OPTION_SCHEMA_FOLDER.argName]
         if (!internalOutputFolder.isNullOrBlank() && !legacySchemaFolder.isNullOrBlank()) {
@@ -181,7 +172,7 @@ private constructor(
                 typeConverters = this.typeConverters,
                 inheritedAdapterStore = typeAdapterStore,
                 cache = cache,
-                canRewriteQueriesToDropUnusedColumns = canRewriteQueriesToDropUnusedColumns
+                canRewriteQueriesToDropUnusedColumns = canRewriteQueriesToDropUnusedColumns,
             )
         subContext.databaseVerifier = databaseVerifier
         val result = handler(subContext)
@@ -201,7 +192,7 @@ private constructor(
     fun fork(
         element: XElement,
         forceSuppressedWarnings: Set<Warning> = emptySet(),
-        forceBuiltInConverters: BuiltInConverterFlags? = null
+        forceBuiltInConverters: BuiltInConverterFlags? = null,
     ): Context {
         val suppressedWarnings = SuppressWarningProcessor.getSuppressedWarnings(element)
         val processConvertersResult =
@@ -236,7 +227,7 @@ private constructor(
                 parent = cache,
                 converters = subTypeConverters.classes,
                 suppressedWarnings = subSuppressedWarnings,
-                builtInConverterFlags = subBuiltInConverterFlags
+                builtInConverterFlags = subBuiltInConverterFlags,
             )
         val subCanRemoveUnusedColumns =
             canRewriteQueriesToDropUnusedColumns || element.hasRemoveUnusedColumnsAnnotation()
@@ -247,7 +238,7 @@ private constructor(
                 typeConverters = subTypeConverters,
                 inheritedAdapterStore = if (canReUseAdapterStore) typeAdapterStore else null,
                 cache = subCache,
-                canRewriteQueriesToDropUnusedColumns = subCanRemoveUnusedColumns
+                canRewriteQueriesToDropUnusedColumns = subCanRemoveUnusedColumns,
             )
         subContext.databaseVerifier = databaseVerifier
         return subContext
@@ -259,7 +250,7 @@ private constructor(
                 logger.w(
                     warning = Warning.EXPAND_PROJECTION_WITH_REMOVE_UNUSED_COLUMNS,
                     element = this,
-                    msg = ProcessorErrors.EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED
+                    msg = ProcessorErrors.EXPAND_PROJECTION_ALONG_WITH_REMOVE_UNUSED,
                 )
             }
         }
@@ -314,12 +305,19 @@ private constructor(
      * Check if the target platform is only Android.
      *
      * Note that there is no 'Android' target in the `targetPlatforms` list, so instead we check for
-     * JVM and also validate that an Android only class [Context] is in the classpath.
+     * JVM and also validate that an Android only class `android.content.Context` is in the
+     * classpath.
      */
     fun isAndroidOnlyTarget(): Boolean {
         val targetPlatforms = this.processingEnv.targetPlatforms
         return targetPlatforms.size == 1 &&
             targetPlatforms.contains(XProcessingEnv.Platform.JVM) &&
             this.processingEnv.findType("android.content.Context") != null
+    }
+
+    /** Check if the target platform is JVM. */
+    fun isJvmOnlyTarget(): Boolean {
+        val targetPlatforms = this.processingEnv.targetPlatforms
+        return targetPlatforms.size == 1 && targetPlatforms.contains(XProcessingEnv.Platform.JVM)
     }
 }

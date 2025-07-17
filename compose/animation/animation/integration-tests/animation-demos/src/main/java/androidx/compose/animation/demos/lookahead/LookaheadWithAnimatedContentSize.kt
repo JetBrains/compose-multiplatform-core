@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.demos.gesture.pastelColors
 import androidx.compose.foundation.background
@@ -26,7 +28,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
@@ -35,8 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LookaheadWithAnimatedContentSize() {
     val expanded by
@@ -58,7 +59,12 @@ fun LookaheadWithAnimatedContentSize() {
                     Box(Modifier.fillMaxWidth().height(200.dp).background(Color.White))
                 }
             }
-            Box(Modifier.animateBounds().fillMaxWidth().height(100.dp).background(pastelColors[1]))
+            Box(
+                Modifier.animateBounds(this@LookaheadScope)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(pastelColors[1])
+            )
         }
     }
 }

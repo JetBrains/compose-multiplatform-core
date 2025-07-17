@@ -109,7 +109,7 @@ fun Project.addTaskToAggregateBuildInfoFileTask(task: Provider<CreateLibraryBuil
     rootProject.tasks.named(CREATE_AGGREGATE_BUILD_INFO_FILES_TASK).configure {
         val aggregateLibraryBuildInfoFileTask = it as CreateAggregateLibraryBuildInfoFileTask
         aggregateLibraryBuildInfoFileTask.libraryBuildInfoFiles.add(
-            task.flatMap { task -> task.outputFile }
+            task.flatMap { task -> task.outputFile.asFile }
         )
     }
 }

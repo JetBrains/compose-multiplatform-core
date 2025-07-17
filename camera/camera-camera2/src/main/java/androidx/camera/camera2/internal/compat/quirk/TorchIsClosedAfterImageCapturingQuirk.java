@@ -41,7 +41,8 @@ public class TorchIsClosedAfterImageCapturingQuirk implements Quirk {
             "redmi 5a",         // Xiaomi Redmi 5A
             "redmi note 5",     // Xiaomi Redmi Note 5
             "redmi note 5 pro", // Xiaomi Redmi Note 5 Pro
-            "redmi 6 pro"       // Xiaomi Redmi 6 Pro
+            "redmi 6 pro",      // Xiaomi Redmi 6 Pro
+            "redmi note 6 pro"  // Xiaomi Redmi Note 6 Pro
     );
 
     static boolean load() {

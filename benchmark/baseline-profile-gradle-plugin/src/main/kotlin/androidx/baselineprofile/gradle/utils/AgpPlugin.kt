@@ -51,10 +51,15 @@ internal abstract class AgpPlugin(
 
     // Properties that can be specified by cmd line using -P<property_name> when invoking gradle.
     val testMaxAgpVersion by lazy {
-        project.properties["androidx.benchmark.test.maxagpversion"]?.let { str ->
-            val parts = str.toString().split(".").map { it.toInt() }
+        project.providers.gradleProperty("androidx.benchmark.test.maxagpversion").orNull?.let { str
+            ->
+            val parts = str.split(".").map { it.toInt() }
             return@lazy AndroidPluginVersion(parts[0], parts[1], parts[2])
         } ?: return@lazy null
+    }
+
+    val suppressWarnings: Boolean by lazy {
+        project.providers.gradleProperty("androidx.baselineprofile.suppresswarnings").isPresent
     }
 
     // Logger
@@ -99,6 +104,14 @@ internal abstract class AgpPlugin(
 
     private fun configureWithAndroidPlugin() {
 
+        fun setWarnings() {
+            if (suppressWarnings) {
+                logger.suppressAllWarnings()
+            } else {
+                getWarnings()?.let { warnings -> logger.setWarnings(warnings) }
+            }
+        }
+
         onBeforeFinalizeDsl()
 
         testAndroidComponentExtension()?.let { testComponent ->
@@ -107,7 +120,7 @@ internal abstract class AgpPlugin(
 
                 // This can be done only here, since warnings may depend on user configuration
                 // that is ready only after `finalizeDsl`.
-                getWarnings()?.let { warnings -> logger.setWarnings(warnings) }
+                setWarnings()
                 checkAgpVersion()
             }
             testComponent.beforeVariants { onTestBeforeVariants(it) }
@@ -123,7 +136,7 @@ internal abstract class AgpPlugin(
 
                 // This can be done only here, since warnings may depend on user configuration
                 // that is ready only after `finalizeDsl`.
-                getWarnings()?.let { warnings -> logger.setWarnings(warnings) }
+                setWarnings()
                 checkAgpVersion()
             }
             applicationComponent.beforeVariants { onApplicationBeforeVariants(it) }
@@ -139,7 +152,7 @@ internal abstract class AgpPlugin(
 
                 // This can be done only here, since warnings may depend on user configuration
                 // that is ready only after `finalizeDsl`.
-                getWarnings()?.let { warnings -> logger.setWarnings(warnings) }
+                setWarnings()
                 checkAgpVersion()
             }
             libraryComponent.beforeVariants { onLibraryBeforeVariants(it) }
@@ -224,7 +237,7 @@ internal abstract class AgpPlugin(
     protected fun <T : Task> addArtifactToConfiguration(
         configurationName: String,
         taskProvider: TaskProvider<T>,
-        artifactType: String
+        artifactType: String,
     ) {
         project.artifacts { artifactHandler ->
             artifactHandler.add(configurationName, taskProvider) { artifact ->
@@ -296,7 +309,7 @@ internal abstract class AgpPlugin(
         Gradle Plugin version $maxAgpVersionExclusive and it may not work as intended.
         Current version is $agpVersion.
                 """
-                        .trimIndent()
+                        .trimIndent(),
             )
         }
     }
@@ -381,15 +394,15 @@ private val gradleSyncProps by lazy {
 }
 
 internal fun Project.isGradleSyncRunning() =
-    gradleSyncProps.any {
-        it in project.properties && project.properties[it].toString().toBoolean()
+    gradleSyncProps.any { property ->
+        providers.gradleProperty(property).map { it.toBoolean() }.orElse(false).get()
     }
 
 /** Enumerates the supported android plugins. */
 internal enum class AgpPluginId(val value: String) {
     ID_ANDROID_APPLICATION_PLUGIN("com.android.application"),
     ID_ANDROID_LIBRARY_PLUGIN("com.android.library"),
-    ID_ANDROID_TEST_PLUGIN("com.android.test")
+    ID_ANDROID_TEST_PLUGIN("com.android.test"),
 }
 
 /**

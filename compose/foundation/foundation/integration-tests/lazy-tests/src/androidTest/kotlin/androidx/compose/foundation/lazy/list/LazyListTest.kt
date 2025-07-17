@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
 
 package androidx.compose.foundation.lazy.list
 
@@ -24,9 +24,9 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.AutoTestFrameClock
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.VelocityTrackerCalculationThreshold
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -60,10 +60,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.testutils.assertPixels
 import androidx.compose.testutils.assertShape
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
@@ -80,6 +80,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -103,12 +104,14 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeWithVelocity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -121,6 +124,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -932,7 +936,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContentWithTestViewConfiguration {
             LazyColumnOrRow(
                 modifier = Modifier.requiredSize(100.dp).testTag(LazyListTag),
-                beyondBoundsItemCount = 0
+                beyondBoundsItemCount = 0,
             ) {
                 items(items) {
                     Spacer(Modifier.requiredSize(20.dp).drawBehind { redrawCount[it]++ })
@@ -959,7 +963,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContentWithTestViewConfiguration {
             LazyColumnOrRow(
                 modifier = Modifier.requiredSize(100.dp).testTag(LazyListTag),
-                beyondBoundsItemCount = beyondBoundsItemCount
+                beyondBoundsItemCount = beyondBoundsItemCount,
             ) {
                 items(items) {
                     Spacer(Modifier.requiredSize(20.dp).drawBehind { redrawCount[it]++ })
@@ -1020,7 +1024,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContentWithTestViewConfiguration {
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemSizeMinusOne).testTag(LazyListTag),
-                state = rememberLazyListState().also { state = it }
+                state = rememberLazyListState().also { state = it },
             ) {
                 items(2) {
                     Spacer(
@@ -1047,7 +1051,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContentWithTestViewConfiguration {
             LazyColumnOrRow(
                 Modifier.mainAxisSize(itemSize * 1.75f).testTag(LazyListTag),
-                state = rememberLazyListState().also { state = it }
+                state = rememberLazyListState().also { state = it },
             ) {
                 items(items) {
                     Spacer(
@@ -1140,7 +1144,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             Box(Modifier.testTag(containerTag).size(containerSize)) {
                 LazyColumnOrRow(
                     Modifier.testTag(LazyListTag).background(Color.Blue),
-                    state = rememberLazyListState(2, 5)
+                    state = rememberLazyListState(2, 5),
                 ) {
                     items(100) {
                         Box(Modifier.fillMaxCrossAxis().mainAxisSize(itemSizeDp).testTag("$it"))
@@ -1158,7 +1162,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 moveBy(
                     Offset(
                         0f,
-                        itemSizePx * 15f // large value which makes us overscroll
+                        itemSizePx * 15f, // large value which makes us overscroll
                     )
                 )
             } else {
@@ -1166,7 +1170,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 moveBy(
                     Offset(
                         itemSizePx * 15f, // large value which makes us overscroll
-                        0f
+                        0f,
                     )
                 )
             }
@@ -1202,7 +1206,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 shapeColor = Color.Red,
                 backgroundColor = Color.Gray,
                 horizontalPadding = horizontalPadding,
-                verticalPadding = verticalPadding
+                verticalPadding = verticalPadding,
             )
     }
 
@@ -1395,7 +1399,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContent {
             LazyColumnOrRow(
                 modifier = Modifier.requiredSize(itemSize * 3),
-                state = LazyListState(firstVisibleItemIndex = Int.MAX_VALUE - 3)
+                state = LazyListState(firstVisibleItemIndex = Int.MAX_VALUE - 3),
             ) {
                 items(Int.MAX_VALUE) { Box(Modifier.size(itemSize).testTag("$it")) }
             }
@@ -1416,7 +1420,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.setContent {
             LazyColumnOrRow(
                 modifier = Modifier.requiredSize(itemSize),
-                state = LazyListState(firstVisibleItemIndex = Int.MAX_VALUE / 2)
+                state = LazyListState(firstVisibleItemIndex = Int.MAX_VALUE / 2),
             ) {
                 items(Int.MAX_VALUE, key = { it }) { Box(Modifier.size(itemSize).testTag("$it")) }
             }
@@ -1562,7 +1566,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     scrollConsumedAccumulator += consumed
                     return Offset.Zero
@@ -1574,7 +1578,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             LazyColumnOrRow(
                 modifier = Modifier.testTag("mainList").nestedScroll(collectingDataConnection),
                 state = state,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(all = 10.dp)
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(all = 10.dp),
             ) {
                 item { Spacer(modifier = Modifier.size(size = 0.dp)) }
                 items(10) { Box(Modifier.fillMaxWidth()) { BasicText(text = it.toString()) } }
@@ -1595,7 +1599,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             LazyColumnOrRow(
                 modifier = Modifier.testTag("mainList"),
                 state = state,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(all = 10.dp)
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(all = 10.dp),
             ) {
                 item {
                     Spacer(
@@ -1676,7 +1680,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                     recomposeCount++
                     Modifier
                 },
-                state
+                state,
             ) {
                 items(1000) { Spacer(Modifier.size(10.dp)) }
             }
@@ -1741,7 +1745,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                 drawRect(
                                     color,
                                     topLeft = Offset(-10.dp.toPx(), -10.dp.toPx()),
-                                    size = Size(20.dp.toPx(), 20.dp.toPx())
+                                    size = Size(20.dp.toPx(), 20.dp.toPx()),
                                 )
                             }
                     )
@@ -1759,13 +1763,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 val state = rememberLazyListState()
                 LazyColumnOrRow(
                     state = state,
-                    modifier = Modifier.mainAxisSize(100.dp).fillMaxCrossAxis()
+                    modifier = Modifier.mainAxisSize(100.dp).fillMaxCrossAxis(),
                 ) {
                     items(20) {
                         val tag = it.toString()
                         BasicText(
                             text = tag,
-                            modifier = Modifier.mainAxisSize(30.dp).fillMaxCrossAxis().testTag(tag)
+                            modifier = Modifier.mainAxisSize(30.dp).fillMaxCrossAxis().testTag(tag),
                         )
                     }
                 }
@@ -1782,13 +1786,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             val state = rememberLazyListState()
             LazyColumnOrRow(
                 state = state,
-                modifier = Modifier.mainAxisSize(100.dp).fillMaxCrossAxis()
+                modifier = Modifier.mainAxisSize(100.dp).fillMaxCrossAxis(),
             ) {
                 items(20) {
                     val tag = it.toString()
                     BasicText(
                         text = tag,
-                        modifier = Modifier.mainAxisSize(30.dp).fillMaxCrossAxis().testTag(tag)
+                        modifier = Modifier.mainAxisSize(30.dp).fillMaxCrossAxis().testTag(tag),
                     )
                 }
             }
@@ -1921,7 +1925,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             initialList = listOf(0, 1, 2, 3),
             targetList = listOf(3, 2, 1, 0),
             initialExpectedLookaheadPositions = listOf(0, 100, 200, 300),
-            targetExpectedLookaheadPositions = listOf(300, 200, 100, 0)
+            targetExpectedLookaheadPositions = listOf(300, 200, 100, 0),
         )
     }
 
@@ -1932,7 +1936,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             targetList = listOf(4, 3, 2, 1, 0),
             initialExpectedLookaheadPositions = listOf(null, 0, 100, 200, 300),
             targetExpectedLookaheadPositions = listOf(300, 200, 100, 0, -100),
-            startingIndex = 1
+            startingIndex = 1,
         )
     }
 
@@ -1963,13 +1967,142 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     }
 
     @Test
+    fun testSmallScrollWithLookaheadScope_lookaheadSizeIsDifferent() {
+        val itemSize = 5
+        val itemSizeDp = with(rule.density) { itemSize.toDp() }
+        val containerSize = 12
+        val containerSizeDp = with(rule.density) { containerSize.toDp() }
+        val scrollDelta = 7f
+        val scrollDeltaDp = with(rule.density) { scrollDelta.toDp() }
+        val state = LazyListState()
+        lateinit var scope: CoroutineScope
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            LookaheadScope {
+                LazyColumnOrRow(Modifier.mainAxisSize(containerSizeDp), state = state) {
+                    repeat(20) {
+                        item {
+                            Box(
+                                Modifier.layout { measurable, _ ->
+                                        val size =
+                                            if (isLookingAhead) {
+                                                itemSize * 2
+                                            } else {
+                                                itemSize
+                                            }
+                                        val placeable =
+                                            measurable.measure(Constraints.fixed(size, size))
+                                        layout(placeable.width, placeable.height) {
+                                            placeable.place(0, 0)
+                                        }
+                                    }
+                                    .testTag("$it")
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.onNodeWithTag("0").assertMainAxisStartPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithTag("1").assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp)
+
+        rule.runOnIdle { runBlocking { scope.launch { state.scrollBy(scrollDelta) } } }
+
+        // users see the actual sizes (5 pixels), not the lookahead ones (10 pixels).
+        // as we scrolled by 7 pixels, the 0th item is not visible anymore
+        // but in the lookahead measuring it is still partially visible, so
+        // it is not disposed.
+        rule.onNodeWithTag("0").assertIsNotDisplayed()
+        rule
+            .onNodeWithTag("1")
+            .assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp - scrollDeltaDp)
+        rule
+            .onNodeWithTag("2")
+            .assertMainAxisStartPositionInRootIsEqualTo(itemSizeDp * 2 - scrollDeltaDp)
+    }
+
+    @Test
+    fun testLookaheadItemPlacementAnimatorTarget() {
+        var mutableSize by mutableStateOf(80)
+        var lastItemOffset by mutableStateOf(Offset.Zero)
+        val initialSize = IntSize(200, 200)
+        val largerCrossAxisSize = if (vertical) IntSize(300, 200) else IntSize(200, 300)
+        var containerSize by mutableStateOf(initialSize)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                LookaheadScope {
+                    LazyColumnOrRow(
+                        modifier =
+                            Modifier.requiredSize(containerSize.width.dp, containerSize.height.dp),
+                        beyondBoundsItemCount = 1,
+                    ) {
+                        item { // item 0
+                            Box(Modifier.requiredSize(40.dp))
+                        }
+                        item { // item 1. Will change size from 80.dp to 160.dp
+                            Box(Modifier.requiredSize(mutableSize.dp))
+                        }
+                        item { // item 2
+                            Box(Modifier.requiredSize(40.dp))
+                        }
+                        item { // item 3
+                            Box(
+                                Modifier.animateItem(
+                                        fadeInSpec = null,
+                                        fadeOutSpec = null,
+                                        placementSpec = tween(160, easing = LinearEasing),
+                                    )
+                                    .onGloballyPositioned { lastItemOffset = it.positionInRoot() }
+                                    .requiredSize(80.dp)
+                            )
+                        }
+                        item { // item 4
+                            Box(Modifier.requiredSize(1.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        containerSize = largerCrossAxisSize
+        mutableSize = 160
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeByFrame()
+
+        containerSize = initialSize
+        rule.waitForIdle()
+
+        // Expect last item to move from 160 to 240 within 10 frames
+        while (lastItemOffset.mainAxisPosition == 160) {
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+
+        repeat(9) {
+            val expected = (it + 1) * (240 - 160) / 10 + 160
+            if (expected <= 200) { // within the viewport
+                assertEquals((it + 1) * 8 + 160, lastItemOffset.mainAxisPosition)
+            } else {
+                // Once the item moves out of the viewport, we don't enforce the exact offset
+                assertTrue(lastItemOffset.mainAxisPosition >= 200)
+            }
+            rule.waitForIdle()
+            rule.mainClock.advanceTimeByFrame()
+        }
+    }
+
+    @Test
     fun testLookaheadPositionWithTwoInBoundTwoOutBound() {
         testLookaheadPositionWithPlacementAnimator(
             initialList = listOf(0, 1, 2, 3, 4, 5),
             targetList = listOf(5, 4, 2, 1, 3, 0),
             initialExpectedLookaheadPositions = listOf(null, null, 0, 100, 200, 300),
             targetExpectedLookaheadPositions = listOf(300, 100, 0, 200, -100, -200),
-            startingIndex = 2
+            startingIndex = 2,
         )
     }
 
@@ -1978,7 +2111,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         targetList: List<Int>,
         initialExpectedLookaheadPositions: List<Int?>,
         targetExpectedLookaheadPositions: List<Int?>,
-        startingIndex: Int = 0
+        startingIndex: Int = 0,
     ) {
         var list by mutableStateOf(initialList)
         val lookaheadPosition = mutableMapOf<Int, Int>()
@@ -1990,7 +2123,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                     list = list,
                     startingIndex = startingIndex,
                     lookaheadPosition = lookaheadPosition,
-                    postLookaheadPosition = postLookaheadPosition
+                    postLookaheadPosition = postLookaheadPosition,
                 )
             }
         }
@@ -2017,13 +2150,12 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     @Composable
     private fun LazyListInLookaheadScope(
         list: List<Int>,
         startingIndex: Int,
         lookaheadPosition: MutableMap<Int, Int>,
-        postLookaheadPosition: MutableMap<Int, Int>
+        postLookaheadPosition: MutableMap<Int, Int>,
     ) {
         LookaheadScope {
             LazyColumnOrRow(
@@ -2039,13 +2171,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                         Modifier.animateItem(
                                 fadeInSpec = null,
                                 fadeOutSpec = null,
-                                placementSpec = tween<IntOffset>(160)
+                                placementSpec = tween<IntOffset>(160),
                             )
                             .trackPositions(
                                 lookaheadPosition,
                                 postLookaheadPosition,
                                 this@LookaheadScope,
-                                item
+                                item,
                             )
                             .requiredSize(ItemSize.dp)
                     )
@@ -2054,12 +2186,11 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun Modifier.trackPositions(
         lookaheadPosition: MutableMap<Int, Int>,
         postLookaheadPosition: MutableMap<Int, Int>,
         lookaheadScope: LookaheadScope,
-        item: Int
+        item: Int,
     ): Modifier =
         this.layout { measurable, constraints ->
             measurable.measure(constraints).run {
@@ -2091,7 +2222,6 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             }
         }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     @Test
     fun animContentSizeWithPlacementAnimator() {
         val lookaheadPosition = mutableMapOf<Int, Int>()
@@ -2107,13 +2237,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                 Modifier.animateItem(
                                         fadeInSpec = null,
                                         fadeOutSpec = null,
-                                        placementSpec = tween<IntOffset>(160, easing = LinearEasing)
+                                        placementSpec = tween<IntOffset>(160, easing = LinearEasing),
                                     )
                                     .trackPositions(
                                         lookaheadPosition,
                                         postLookaheadPosition,
                                         this@LookaheadScope,
-                                        it
+                                        it,
                                     )
                                     .then(
                                         if (animateSizeChange)
@@ -2145,7 +2275,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 assertEquals(it * ItemSize * 2, lookaheadPosition[it])
                 assertEquals(
                     (it * ItemSize * (1 + fraction)).roundToInt(),
-                    postLookaheadPosition[it]
+                    postLookaheadPosition[it],
                 )
             }
             rule.mainClock.advanceTimeByFrame()
@@ -2165,7 +2295,7 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 assertEquals(it * ItemSize, lookaheadPosition[it])
                 assertEquals(
                     (it * (2 - fraction) * ItemSize).roundToInt(),
-                    postLookaheadPosition[it]
+                    postLookaheadPosition[it],
                 )
             }
             rule.mainClock.advanceTimeByFrame()
@@ -2269,7 +2399,6 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
             assert(assertedSmallItems)
         }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
     @Test
     fun animVisibilityWithPlacementAnimator() {
         val lookaheadPosition = mutableMapOf<Int, Int>()
@@ -2286,13 +2415,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                             fadeInSpec = null,
                                             fadeOutSpec = null,
                                             placementSpec =
-                                                tween<IntOffset>(160, easing = LinearEasing)
+                                                tween<IntOffset>(160, easing = LinearEasing),
                                         )
                                         .trackPositions(
                                             lookaheadPosition,
                                             postLookaheadPosition,
                                             this@LookaheadScope,
-                                            it
+                                            it,
                                         )
                                 ) {
                                     Box(Modifier.requiredSize(ItemSize.dp))
@@ -2306,13 +2435,13 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                                             fadeInSpec = null,
                                             fadeOutSpec = null,
                                             placementSpec =
-                                                tween<IntOffset>(160, easing = LinearEasing)
+                                                tween<IntOffset>(160, easing = LinearEasing),
                                         )
                                         .trackPositions(
                                             lookaheadPosition,
                                             postLookaheadPosition,
                                             this@LookaheadScope,
-                                            it
+                                            it,
                                         )
                                 ) {
                                     Box(Modifier.requiredSize(ItemSize.dp))
@@ -2344,14 +2473,44 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
                 assertEquals(it * ItemSize * 2, lookaheadPosition[it])
                 assertEquals(
                     (it * ItemSize * (1 + fraction)).roundToInt(),
-                    postLookaheadPosition[it]
+                    postLookaheadPosition[it],
                 )
             }
             rule.mainClock.advanceTimeByFrame()
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun triggerBackScrollAndVerifyNoScrollDeltaBetweenTwoPasses() {
+        val lazyState = LazyListState()
+        rule.setContent {
+            val list = (0..10).toList()
+            LookaheadScope {
+                CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                    LazyColumnOrRow(state = lazyState, modifier = Modifier.size(500.dp)) {
+                        items(list.size, key = { i -> i }) {
+                            val color = if (it % 2 == 0) Color.Red else Color.Blue
+                            Box(
+                                modifier =
+                                    Modifier.padding(vertical = 6.dp)
+                                        .size(100.dp)
+                                        .background(color = color)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        lazyState.requestScrollToItem(10)
+        repeat(5) {
+            rule.mainClock.advanceTimeByFrame()
+            assertEquals(0f, lazyState.scrollDeltaBetweenPasses)
+            rule.waitForIdle()
+        }
+    }
+
     @Test
     fun resizeLazyList() {
         val lookaheadPositions = mutableMapOf<Int, Offset>()
@@ -2444,7 +2603,6 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun lookaheadSizeSmallerThanPostLookahead() {
         val lookaheadPositions = mutableMapOf<Int, Offset>()
@@ -2544,7 +2702,6 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
     private val Offset.mainAxisPosition
         get() = (if (vertical) y else x).roundToInt()
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun postLookaheadItemsComposed() {
         lateinit var state: LazyListState
@@ -2583,7 +2740,6 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun postLookaheadItemsComposedBasedOnScrollDelta() {
         var lookaheadSize by mutableStateOf(30)
@@ -2743,6 +2899,202 @@ class LazyListTest(orientation: Orientation) : BaseLazyListTestWithOrientation(o
         rule.onNodeWithTag(LazyListTag).assertStartPositionInRootIsEqualTo(itemSize)
     }
 
+    @Test
+    fun reorderingInLookeahead() {
+        var items by mutableStateOf(List(500) { it })
+
+        val itemSizePx = 50f
+        val itemSize = with(rule.density) { itemSizePx.toDp() }
+
+        rule.setContent {
+            LookaheadScope {
+                LazyColumnOrRow(Modifier.mainAxisSize(itemSize * 2)) {
+                    items(items, key = { it }) {
+                        Box(Modifier.animateItem().mainAxisSize(itemSize)) {
+                            Box { BasicText("Item $it") }
+                        }
+                    }
+                }
+            }
+        }
+
+        val random = Random(42)
+        repeat(20) {
+            val newItems = items.shuffled(random)
+            items = newItems
+            rule.runOnUiThread {
+                Snapshot.sendApplyNotifications()
+                rule.mainClock.advanceTimeByFrame()
+            }
+        }
+    }
+
+    @Test // b/371168883
+    fun whenInnerListIsReused_makeSureFlingUsesCorrectStateForCancellation() {
+        val state = LazyListState()
+        lateinit var scope: CoroutineScope
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            LazyColumnOrRow(state = state, modifier = Modifier.size(50.dp)) {
+                items(20) { main ->
+                    LazyColumnOrRow(modifier = Modifier.testTag("main=$main"), isCrossAxis = true) {
+                        items(100) { item ->
+                            Box(Modifier.size(10.dp).testTag("main=$main item=$item")) {
+                                BasicText("main=$main item=$item")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            scope.launch {
+                state.animateScrollToItem(3) // make sure item 0 is out of view
+            }
+        }
+
+        rule.runOnIdle { assertThat(state.firstVisibleItemIndex).isEqualTo(3) }
+
+        // trying to fling the last 3 items
+        (5..7).forEach {
+            rule.onNodeWithTag("main=$it").performTouchInput {
+                if (vertical) {
+                    swipeLeft()
+                } else {
+                    swipeUp()
+                }
+            }
+
+            rule.onNodeWithTag("main=$it item=0").assertIsNotDisplayed()
+            // we should go back
+            rule.onNodeWithTag("main=$it").performTouchInput {
+                if (vertical) {
+                    swipeRight()
+                } else {
+                    swipeDown()
+                }
+            }
+            // make sure we came back to the start so the fling happened correctly
+            rule.onNodeWithTag("main=$it item=0").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun nestedLists_flingOnInnerListIsCancelled_doesNotStopOuterListFling() {
+        val state = LazyListState()
+        var onPreFlingReceived = false
+        var onListRemoved = false
+        rule.setContent {
+            LazyColumnOrRow(
+                state = state,
+                modifier =
+                    Modifier.size(100.dp)
+                        .testTag(LazyListTag)
+                        .nestedScroll(
+                            connection =
+                                object : NestedScrollConnection {
+                                    override suspend fun onPreFling(available: Velocity): Velocity {
+                                        onPreFlingReceived = true
+                                        return super.onPreFling(available)
+                                    }
+                                }
+                        ),
+            ) {
+                items(100) { main ->
+                    if (main == 4) {
+                        DisposableEffect(Unit) { onDispose { onListRemoved = true } }
+                    }
+                    LazyColumnOrRow(
+                        isCrossAxis = true,
+                        modifier = Modifier.testTag(main.toString()),
+                    ) {
+                        items(100) { item ->
+                            Box(
+                                Modifier.size(20.dp).testTag("$main $item").border(1.dp, Color.Red)
+                            ) {
+                                BasicText("$main $item")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.mainClock.autoAdvance = false
+
+        // swipe right/up on inner list
+        rule.onNodeWithTag("4").performTouchInput {
+            if (vertical) {
+                swipeLeft()
+            } else {
+                swipeUp()
+            }
+        }
+
+        // advance time until inner fling is about to begin and let fling play a bit
+        rule.mainClock.advanceTimeUntil { onPreFlingReceived }
+        rule.mainClock.advanceTimeBy(100L)
+
+        // swipe outer list
+        rule.onNodeWithTag(LazyListTag).performTouchInput {
+            if (vertical) {
+                swipeWithVelocity(center, topCenter, 5000f)
+            } else {
+                swipeWithVelocity(center, centerLeft, 5000f)
+            }
+        }
+
+        rule.mainClock.advanceTimeUntil { onListRemoved } // move time more so inner list disappears
+        rule.onNodeWithTag("4").assertDoesNotExist() // check if inner list was removed
+
+        rule.mainClock.autoAdvance = true
+        val firstVisibleItemOnOuterList = state.firstVisibleItemIndex
+        // outer list continued flinging
+        rule.runOnIdle {
+            assertThat(state.firstVisibleItemIndex)
+                .isNotIn(firstVisibleItemOnOuterList - 1..firstVisibleItemOnOuterList + 1)
+        }
+    }
+
+    @Test
+    fun customOverscroll() {
+        val overscroll = TestOverscrollEffect()
+        val items = (1..4).map { it.toString() }
+
+        rule.setContentWithTestViewConfiguration {
+            Box(Modifier.mainAxisSize(200.dp)) {
+                LazyColumnOrRow(Modifier.testTag(LazyListTag), overscrollEffect = overscroll) {
+                    items(items) {
+                        Spacer(
+                            Modifier.mainAxisSize(101.dp).then(fillParentMaxCrossAxis()).testTag(it)
+                        )
+                    }
+                }
+            }
+        }
+
+        // The overscroll modifier should be added / drawn
+        rule.runOnIdle { assertThat(overscroll.drawCalled).isTrue() }
+
+        // Swipe backwards to trigger overscroll
+        rule.onNodeWithTag(LazyListTag).performTouchInput {
+            if (vertical) swipeDown() else swipeRight()
+        }
+
+        rule.runOnIdle {
+            // The swipe will result in multiple scroll deltas
+            assertThat(overscroll.applyToScrollCalledCount).isGreaterThan(1)
+            assertThat(overscroll.applyToFlingCalledCount).isEqualTo(1)
+            if (vertical) {
+                assertThat(overscroll.scrollOverscrollDelta.y).isGreaterThan(0)
+                assertThat(overscroll.flingOverscrollVelocity.y).isGreaterThan(0)
+            } else {
+                assertThat(overscroll.scrollOverscrollDelta.x).isGreaterThan(0)
+                assertThat(overscroll.flingOverscrollVelocity.x).isGreaterThan(0)
+            }
+        }
+    }
+
     // ********************* END OF TESTS *********************
     // Helper functions, etc. live below here
 
@@ -2789,7 +3141,7 @@ internal fun SemanticsNodeInteraction.scrollBy(x: Dp = 0.dp, y: Dp = 0.dp, densi
             swipeWithVelocity(
                 start = center,
                 end = Offset(center.x - offsetX, center.y - offsetY),
-                endVelocity = 0f
+                endVelocity = 0f,
             )
         }
     }

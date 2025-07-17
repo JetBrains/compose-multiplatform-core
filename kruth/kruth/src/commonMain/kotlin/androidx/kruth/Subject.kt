@@ -39,7 +39,7 @@ open class Subject<out T>
 internal constructor(
     val actual: T?,
     metadata: FailureMetadata,
-    private val typeDescriptionOverride: String?
+    private val typeDescriptionOverride: String?,
 ) {
     /**
      * Constructor for use by subclasses. If you want to create an instance of this class itself,
@@ -130,7 +130,7 @@ internal constructor(
         if (actual is V) {
             doFail(
                 fact("expected not to be an instance of", typeOf<V>()),
-                fact("but was", actual.toString())
+                fact("but was", actual.toString()),
             )
         }
     }
@@ -179,7 +179,7 @@ internal constructor(
                 first,
                 *rest,
                 // TODO(dustinlam): Value should be .actualCustomStringRepresentation()
-                fact("but was", actual)
+                fact("but was", actual),
             )
         )
     }
@@ -202,8 +202,8 @@ internal constructor(
             "resulting method call, as well).",
         ReplaceWith(
             "failWithoutActual(simpleFact(\"Not true that the subject \$check\"))",
-            "androidx.kruth.Fact.Companion.simpleFact"
-        )
+            "androidx.kruth.Fact.Companion.simpleFact",
+        ),
     )
     internal fun failWithoutActual(check: String) {
         failWithoutActual(simpleFact("Not true that the subject $check"))
@@ -297,7 +297,7 @@ internal constructor(
         if (compareForEquality(unexpected)) {
             failWithoutActual(
                 fact("expected not to be", unexpected),
-                fact("but was; string representation of actual value", actual)
+                fact("but was; string representation of actual value", actual),
             )
         }
     }
@@ -353,9 +353,13 @@ internal constructor(
     private fun Any?.toStringForAssert(): String =
         when {
             this == null -> toString()
-            isIntegralBoxedPrimitive() -> "${this::class.qualifiedName}<$this>"
+            isIntegralBoxedPrimitive() -> "${this::class.qName}<$this>"
             else -> toString()
         }
+
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun checkInternal(format: String, vararg args: Any): StandardSubjectBuilder =
+        check(format, *args)
 
     /**
      * Returns a builder for creating a derived subject.
@@ -386,16 +390,16 @@ internal constructor(
      */
     protected fun check(format: String, vararg args: Any): StandardSubjectBuilder {
         validatePlaceholders(format, args)
-        return doCheck(DIFFERENT, lenientFormat(format, *args))
+        return doCheck(DIFFERENT, lenientFormat(format, args))
     }
 
     // TODO(b/134064106): Figure out a public API for this.
     internal fun checkNoNeedToDisplayBothValues(
         format: String,
-        vararg args: Any
+        vararg args: Any,
     ): StandardSubjectBuilder {
         validatePlaceholders(format, args)
-        return doCheck(SIMILAR, lenientFormat(format, *args))
+        return doCheck(SIMILAR, lenientFormat(format, args))
     }
 
     private fun validatePlaceholders(format: String, args: Array<out Any?>) {
@@ -413,7 +417,7 @@ internal constructor(
 
     private fun doCheck(
         valuesAreSimilar: OldAndNewValuesAreSimilar,
-        message: String
+        message: String,
     ): StandardSubjectBuilder {
         return StandardSubjectBuilder(
             metadata.updateForCheckCall(valuesAreSimilar) { input: String? -> "$input.$message" }
@@ -464,7 +468,7 @@ internal constructor(
     }
 }
 
-internal fun lenientFormat(template: String, vararg args: Any?): String {
+internal fun lenientFormat(template: String, args: Array<out Any?>): String {
     val argsToLenientStrings =
         args.map {
             if (it == null) {

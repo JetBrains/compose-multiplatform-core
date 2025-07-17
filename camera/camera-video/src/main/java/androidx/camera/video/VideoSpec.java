@@ -18,12 +18,13 @@ package androidx.camera.video;
 
 import android.util.Range;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.AspectRatio;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -36,14 +37,12 @@ import java.util.Arrays;
 public abstract class VideoSpec {
 
     /**
-     * Frame rate range representing no preference for frame rate.
+     * Frame rate representing no preference for encode frame rate.
      *
-     * <p>Using this value with {@link Builder#setFrameRate(Range)} informs the video frame producer
-     * it should choose any appropriate frame rate given the device and codec constraints.
+     * <p>Using this value with {@link Builder#setEncodeFrameRate(int)} informs the encoder should
+     * follow the incoming frame rate, i.e. capturing frame rate.
      */
-    @NonNull
-    public static final Range<Integer> FRAME_RATE_RANGE_AUTO = new Range<>(0,
-            Integer.MAX_VALUE);
+    public static final int ENCODE_FRAME_RATE_AUTO = 0;
 
     /**
      * Bitrate range representing no preference for bitrate.
@@ -51,8 +50,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setBitrate(Range)} informs the video frame producer
      * it should choose any appropriate bitrate given the device and codec constraints.
      */
-    @NonNull
-    public static final Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
+    public static final @NonNull Range<Integer> BITRATE_RANGE_AUTO = new Range<>(0,
             Integer.MAX_VALUE);
 
     /**
@@ -61,8 +59,7 @@ public abstract class VideoSpec {
      * <p>Using this value with {@link Builder#setQualitySelector(QualitySelector)} allows the
      * video frame producer to choose video quality based on its current state.
      */
-    @NonNull
-    public static final QualitySelector QUALITY_SELECTOR_AUTO =
+    public static final @NonNull QualitySelector QUALITY_SELECTOR_AUTO =
             QualitySelector.fromOrderedList(Arrays.asList(Quality.FHD, Quality.HD, Quality.SD),
                     FallbackStrategy.higherQualityOrLowerThan(Quality.FHD));
 
@@ -71,26 +68,22 @@ public abstract class VideoSpec {
     }
 
     /** Returns a build for this config. */
-    @NonNull
-    public static Builder builder() {
+    public static @NonNull Builder builder() {
         return new AutoValue_VideoSpec.Builder()
                 .setQualitySelector(QUALITY_SELECTOR_AUTO)
-                .setFrameRate(FRAME_RATE_RANGE_AUTO)
+                .setEncodeFrameRate(ENCODE_FRAME_RATE_AUTO)
                 .setBitrate(BITRATE_RANGE_AUTO)
                 .setAspectRatio(AspectRatio.RATIO_DEFAULT);
     }
 
     /** Gets the {@link QualitySelector}. */
-    @NonNull
-    public abstract QualitySelector getQualitySelector();
+    public abstract @NonNull QualitySelector getQualitySelector();
 
-    /** Gets the frame rate. */
-    @NonNull
-    public abstract Range<Integer> getFrameRate();
+    /** Gets the encode frame rate. */
+    public abstract int getEncodeFrameRate();
 
     /** Gets the bitrate. */
-    @NonNull
-    public abstract Range<Integer> getBitrate();
+    public abstract @NonNull Range<Integer> getBitrate();
 
     /** Gets the aspect ratio. */
     @AspectRatio.Ratio
@@ -99,8 +92,7 @@ public abstract class VideoSpec {
     /**
      * Returns a {@link Builder} instance with the same property values as this instance.
      */
-    @NonNull
-    public abstract Builder toBuilder();
+    public abstract @NonNull Builder toBuilder();
 
     /**
      * The builder of the {@link VideoSpec}.
@@ -118,29 +110,27 @@ public abstract class VideoSpec {
          *
          * <p>Video encoding parameters such as frame rate and bitrate will often be automatically
          * determined according to quality. If video parameters are not set directly (such as
-         * through {@link #setFrameRate(Range)}, the device will choose values calibrated for the
+         * through {@link #setBitrate(Range)}, the device will choose values calibrated for the
          * quality on that device.
          *
          * <p>If not set, defaults to {@link #QUALITY_SELECTOR_AUTO}.
          */
-        @NonNull
-        public abstract Builder setQualitySelector(@NonNull QualitySelector qualitySelector);
+        public abstract @NonNull Builder setQualitySelector(
+                @NonNull QualitySelector qualitySelector);
 
         /**
-         * Sets the frame rate.
+         * Sets the encode frame rate.
          *
-         * <p>If not set, defaults to {@link #FRAME_RATE_RANGE_AUTO}.
+         * <p>If not set, defaults to {@link #ENCODE_FRAME_RATE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setFrameRate(@NonNull Range<Integer> frameRate);
+        public abstract @NonNull Builder setEncodeFrameRate(int frameRate);
 
         /**
          * Sets the bitrate.
          *
          * <p>If not set, defaults to {@link #BITRATE_RANGE_AUTO}.
          */
-        @NonNull
-        public abstract Builder setBitrate(@NonNull Range<Integer> bitrate);
+        public abstract @NonNull Builder setBitrate(@NonNull Range<Integer> bitrate);
 
         /**
          * Sets the aspect ratio.
@@ -150,11 +140,9 @@ public abstract class VideoSpec {
          *
          * <p>If not set, defaults to {@link AspectRatio#RATIO_DEFAULT}.
          */
-        @NonNull
-        abstract Builder setAspectRatio(@AspectRatio.Ratio int aspectRatio);
+        abstract @NonNull Builder setAspectRatio(@AspectRatio.Ratio int aspectRatio);
 
         /** Builds the VideoSpec instance. */
-        @NonNull
-        public abstract VideoSpec build();
+        public abstract @NonNull VideoSpec build();
     }
 }

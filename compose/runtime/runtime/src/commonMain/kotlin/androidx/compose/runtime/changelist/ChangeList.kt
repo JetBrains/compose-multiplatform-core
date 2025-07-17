@@ -25,8 +25,9 @@ import androidx.compose.runtime.ControlledComposition
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MovableContentState
 import androidx.compose.runtime.MovableContentStateReference
+import androidx.compose.runtime.RecomposeScopeImpl
 import androidx.compose.runtime.RememberManager
-import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.RememberObserverHolder
 import androidx.compose.runtime.SlotTable
 import androidx.compose.runtime.SlotWriter
 import androidx.compose.runtime.changelist.Operation.AdvanceSlotsBy
@@ -40,6 +41,7 @@ import androidx.compose.runtime.changelist.Operation.Downs
 import androidx.compose.runtime.changelist.Operation.EndCompositionScope
 import androidx.compose.runtime.changelist.Operation.EndCurrentGroup
 import androidx.compose.runtime.changelist.Operation.EndMovableContentPlacement
+import androidx.compose.runtime.changelist.Operation.EndResumingScope
 import androidx.compose.runtime.changelist.Operation.EnsureGroupStarted
 import androidx.compose.runtime.changelist.Operation.EnsureRootGroupStarted
 import androidx.compose.runtime.changelist.Operation.InsertSlots
@@ -48,11 +50,13 @@ import androidx.compose.runtime.changelist.Operation.MoveCurrentGroup
 import androidx.compose.runtime.changelist.Operation.MoveNode
 import androidx.compose.runtime.changelist.Operation.ReleaseMovableGroupAtCurrent
 import androidx.compose.runtime.changelist.Operation.Remember
+import androidx.compose.runtime.changelist.Operation.RememberPausingScope
 import androidx.compose.runtime.changelist.Operation.RemoveCurrentGroup
 import androidx.compose.runtime.changelist.Operation.RemoveNode
 import androidx.compose.runtime.changelist.Operation.ResetSlots
 import androidx.compose.runtime.changelist.Operation.SideEffect
 import androidx.compose.runtime.changelist.Operation.SkipToEndOfCurrentGroup
+import androidx.compose.runtime.changelist.Operation.StartResumingScope
 import androidx.compose.runtime.changelist.Operation.TrimParentValues
 import androidx.compose.runtime.changelist.Operation.UpdateAnchoredValue
 import androidx.compose.runtime.changelist.Operation.UpdateAuxData
@@ -80,11 +84,30 @@ internal class ChangeList : OperationsDebugStringFormattable() {
     fun executeAndFlushAllPendingChanges(
         applier: Applier<*>,
         slots: SlotWriter,
-        rememberManager: RememberManager
-    ) = operations.executeAndFlushAllPendingOperations(applier, slots, rememberManager)
+        rememberManager: RememberManager,
+        errorContext: OperationErrorContext?,
+    ) =
+        operations.executeAndFlushAllPendingOperations(
+            applier,
+            slots,
+            rememberManager,
+            errorContext,
+        )
 
-    fun pushRemember(value: RememberObserver) {
+    fun pushRemember(value: RememberObserverHolder) {
         operations.push(Remember) { setObject(Remember.Value, value) }
+    }
+
+    fun pushRememberPausingScope(scope: RecomposeScopeImpl) {
+        operations.push(RememberPausingScope) { setObject(RememberPausingScope.Scope, scope) }
+    }
+
+    fun pushStartResumingScope(scope: RecomposeScopeImpl) {
+        operations.push(StartResumingScope) { setObject(StartResumingScope.Scope, scope) }
+    }
+
+    fun pushEndResumingScope(scope: RecomposeScopeImpl) {
+        operations.push(EndResumingScope) { setObject(EndResumingScope.Scope, scope) }
     }
 
     fun pushUpdateValue(value: Any?, groupSlotIndex: Int) {
@@ -96,16 +119,14 @@ internal class ChangeList : OperationsDebugStringFormattable() {
 
     fun pushUpdateAnchoredValue(value: Any?, anchor: Anchor, groupSlotIndex: Int) {
         operations.push(UpdateAnchoredValue) {
-            setObject(UpdateAnchoredValue.Value, value)
-            setObject(UpdateAnchoredValue.Anchor, anchor)
+            setObjects(UpdateAnchoredValue.Value, value, UpdateAnchoredValue.Anchor, anchor)
             setInt(UpdateAnchoredValue.GroupSlotIndex, groupSlotIndex)
         }
     }
 
     fun pushAppendValue(anchor: Anchor, value: Any?) {
         operations.push(AppendValue) {
-            setObject(AppendValue.Anchor, anchor)
-            setObject(AppendValue.Value, value)
+            setObjects(AppendValue.Anchor, anchor, AppendValue.Value, value)
         }
     }
 
@@ -147,16 +168,20 @@ internal class ChangeList : OperationsDebugStringFormattable() {
 
     fun pushInsertSlots(anchor: Anchor, from: SlotTable) {
         operations.push(InsertSlots) {
-            setObject(InsertSlots.Anchor, anchor)
-            setObject(InsertSlots.FromSlotTable, from)
+            setObjects(InsertSlots.Anchor, anchor, InsertSlots.FromSlotTable, from)
         }
     }
 
     fun pushInsertSlots(anchor: Anchor, from: SlotTable, fixups: FixupList) {
         operations.push(InsertSlotsWithFixups) {
-            setObject(InsertSlotsWithFixups.Anchor, anchor)
-            setObject(InsertSlotsWithFixups.FromSlotTable, from)
-            setObject(InsertSlotsWithFixups.Fixups, fixups)
+            setObjects(
+                InsertSlotsWithFixups.Anchor,
+                anchor,
+                InsertSlotsWithFixups.FromSlotTable,
+                from,
+                InsertSlotsWithFixups.Fixups,
+                fixups,
+            )
         }
     }
 
@@ -166,8 +191,12 @@ internal class ChangeList : OperationsDebugStringFormattable() {
 
     fun pushEndCompositionScope(action: (Composition) -> Unit, composition: Composition) {
         operations.push(EndCompositionScope) {
-            setObject(EndCompositionScope.Action, action)
-            setObject(EndCompositionScope.Composition, composition)
+            setObjects(
+                EndCompositionScope.Action,
+                action,
+                EndCompositionScope.Composition,
+                composition,
+            )
         }
     }
 
@@ -179,23 +208,20 @@ internal class ChangeList : OperationsDebugStringFormattable() {
 
     fun <T, V> pushUpdateNode(value: V, block: T.(V) -> Unit) {
         operations.push(UpdateNode) {
-            setObject(UpdateNode.Value, value)
-            @Suppress("UNCHECKED_CAST") setObject(UpdateNode.Block, block as (Any?.(Any?) -> Unit))
+            @Suppress("UNCHECKED_CAST")
+            setObjects(UpdateNode.Value, value, UpdateNode.Block, block as (Any?.(Any?) -> Unit))
         }
     }
 
     fun pushRemoveNode(removeFrom: Int, moveCount: Int) {
         operations.push(RemoveNode) {
-            setInt(RemoveNode.RemoveIndex, removeFrom)
-            setInt(RemoveNode.Count, moveCount)
+            setInts(RemoveNode.RemoveIndex, removeFrom, RemoveNode.Count, moveCount)
         }
     }
 
     fun pushMoveNode(to: Int, from: Int, count: Int) {
         operations.push(MoveNode) {
-            setInt(MoveNode.To, to)
-            setInt(MoveNode.From, from)
-            setInt(MoveNode.Count, count)
+            setInts(MoveNode.To, to, MoveNode.From, from, MoveNode.Count, count)
         }
     }
 
@@ -219,16 +245,24 @@ internal class ChangeList : OperationsDebugStringFormattable() {
 
     fun pushDetermineMovableContentNodeIndex(effectiveNodeIndexOut: IntRef, anchor: Anchor) {
         operations.push(DetermineMovableContentNodeIndex) {
-            setObject(DetermineMovableContentNodeIndex.EffectiveNodeIndexOut, effectiveNodeIndexOut)
-            setObject(DetermineMovableContentNodeIndex.Anchor, anchor)
+            setObjects(
+                DetermineMovableContentNodeIndex.EffectiveNodeIndexOut,
+                effectiveNodeIndexOut,
+                DetermineMovableContentNodeIndex.Anchor,
+                anchor,
+            )
         }
     }
 
     fun pushCopyNodesToNewAnchorLocation(nodes: List<Any?>, effectiveNodeIndex: IntRef) {
         if (nodes.isNotEmpty()) {
             operations.push(CopyNodesToNewAnchorLocation) {
-                setObject(CopyNodesToNewAnchorLocation.Nodes, nodes)
-                setObject(CopyNodesToNewAnchorLocation.EffectiveNodeIndex, effectiveNodeIndex)
+                setObjects(
+                    CopyNodesToNewAnchorLocation.Nodes,
+                    nodes,
+                    CopyNodesToNewAnchorLocation.EffectiveNodeIndex,
+                    effectiveNodeIndex,
+                )
             }
         }
     }
@@ -241,10 +275,16 @@ internal class ChangeList : OperationsDebugStringFormattable() {
         to: MovableContentStateReference,
     ) {
         operations.push(CopySlotTableToAnchorLocation) {
-            setObject(CopySlotTableToAnchorLocation.ResolvedState, resolvedState)
-            setObject(CopySlotTableToAnchorLocation.ParentCompositionContext, parentContext)
-            setObject(CopySlotTableToAnchorLocation.To, to)
-            setObject(CopySlotTableToAnchorLocation.From, from)
+            setObjects(
+                CopySlotTableToAnchorLocation.ResolvedState,
+                resolvedState,
+                CopySlotTableToAnchorLocation.ParentCompositionContext,
+                parentContext,
+                CopySlotTableToAnchorLocation.To,
+                to,
+                CopySlotTableToAnchorLocation.From,
+                from,
+            )
         }
     }
 
@@ -252,12 +292,17 @@ internal class ChangeList : OperationsDebugStringFormattable() {
     fun pushReleaseMovableGroupAtCurrent(
         composition: ControlledComposition,
         parentContext: CompositionContext,
-        reference: MovableContentStateReference
+        reference: MovableContentStateReference,
     ) {
         operations.push(ReleaseMovableGroupAtCurrent) {
-            setObject(ReleaseMovableGroupAtCurrent.Composition, composition)
-            setObject(ReleaseMovableGroupAtCurrent.ParentCompositionContext, parentContext)
-            setObject(ReleaseMovableGroupAtCurrent.Reference, reference)
+            setObjects(
+                ReleaseMovableGroupAtCurrent.Composition,
+                composition,
+                ReleaseMovableGroupAtCurrent.ParentCompositionContext,
+                parentContext,
+                ReleaseMovableGroupAtCurrent.Reference,
+                reference,
+            )
         }
     }
 
@@ -268,8 +313,12 @@ internal class ChangeList : OperationsDebugStringFormattable() {
     fun pushExecuteOperationsIn(changeList: ChangeList, effectiveNodeIndex: IntRef? = null) {
         if (changeList.isNotEmpty()) {
             operations.push(ApplyChangeList) {
-                setObject(ApplyChangeList.Changes, changeList)
-                setObject(ApplyChangeList.EffectiveNodeIndex, effectiveNodeIndex)
+                setObjects(
+                    ApplyChangeList.Changes,
+                    changeList,
+                    ApplyChangeList.EffectiveNodeIndex,
+                    effectiveNodeIndex,
+                )
             }
         }
     }

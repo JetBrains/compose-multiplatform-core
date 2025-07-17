@@ -21,8 +21,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A <code>TransitionPropagation</code> that propagates based on the distance to the side

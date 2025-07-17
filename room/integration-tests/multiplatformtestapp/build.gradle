@@ -15,6 +15,10 @@
  */
 
 import androidx.build.KmpPlatformsKt
+import androidx.build.KotlinTarget
+import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
+import com.android.build.gradle.internal.lint.LintModelWriterTask
+import com.google.devtools.ksp.gradle.KspAATask
 import org.apache.commons.io.FileUtils
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
@@ -22,16 +26,16 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("com.google.devtools.ksp")
     id("androidx.room")
+    alias(libs.plugins.kotlinSerialization)
 }
 
-// Disabled due to https://youtrack.jetbrains.com/issue/KT-65761
-ext["kotlin.native.disableCompilerDaemon"] = 'true'
-
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.room.integration.multiplatformtestapp"
+        androidResources.enable = true
+    }
     ios()
     jvm()
     linux()
@@ -42,10 +46,13 @@ androidXMultiplatform {
                 implementation(libs.kotlinStdlib)
                 implementation(project(":room:room-runtime"))
                 implementation(project(":room:room-testing"))
+                implementation(project(":room:room-paging"))
                 implementation(project(":sqlite:sqlite-bundled"))
                 implementation(project(":kruth:kruth"))
+                implementation(project(":paging:paging-common"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1")
             }
         }
         androidInstrumentedTest {
@@ -93,7 +100,8 @@ androidXMultiplatform {
 // TODO(b/325111583): Create a helper function to configure KSP with KMP targets
 dependencies {
     def roomCompilerDependency = project(":room:room-compiler")
-    add("kspAndroidAndroidTest", roomCompilerDependency)
+    add("kspAndroidInstrumentedTest", roomCompilerDependency) // Android instrumentation test
+    add("kspAndroidUnitTest", roomCompilerDependency) // Android unit test
     add("kspJvmTest", roomCompilerDependency)
     add("kspLinuxX64Test", roomCompilerDependency)
     if (KmpPlatformsKt.enableMac(project)) {
@@ -101,14 +109,6 @@ dependencies {
         add("kspIosX64Test", roomCompilerDependency)
         add("kspMacosX64Test", roomCompilerDependency)
         add("kspMacosArm64Test", roomCompilerDependency)
-    }
-}
-
-android {
-    namespace "androidx.room.integration.multiplatformtestapp"
-    // TODO(b/317909626): Should be configured by Room Gradle Plugin
-    sourceSets {
-        androidTest.assets.srcDirs += files("$projectDir/schemas-ksp".toString())
     }
 }
 
@@ -126,7 +126,28 @@ tasks.withType(KotlinNativeLink).configureEach { task ->
 }
 
 room {
-    schemaDirectory(
-            provider { layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath() }
-    )
+    schemaDirectory(layout.projectDirectory.dir("schemas-ksp").getAsFile().getAbsolutePath())
+}
+
+androidx {
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(AndroidLintAnalysisTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+// TODO(https://github.com/google/ksp/issues/2250) Remove when KSP migrates to the new variants API
+// Without this, dependency introduced between lintAnalyzeAndroidInstrumentedTest and kspAndroidInstrumentedTest
+tasks.withType(LintModelWriterTask).configureEach {
+    mustRunAfter(tasks.withType(KspAATask))
+}
+
+afterEvaluate {
+    // This project has commonTest/ sources, but none of these contain actual tests. This means that
+    // testAndroidHostTest will attempt to run as it has sources, but there will be no tests to run.
+    // Starting Gradle 9.0.0 this is an error, hence we disable this task here.
+    tasks.named("testAndroidHostTest") { it.enabled = false }
 }

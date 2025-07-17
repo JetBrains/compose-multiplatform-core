@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 
 package androidx.compose.ui.unit
 
@@ -21,10 +21,12 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.unit.Dp.Companion.Hairline
+import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.util.packFloats
 import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
+import kotlin.jvm.JvmInline
 import kotlin.math.max
 import kotlin.math.min
 
@@ -81,7 +83,10 @@ value class Dp(val value: Float) : Comparable<Dp> {
         /** Infinite dp dimension. */
         @Stable val Infinity = Dp(Float.POSITIVE_INFINITY)
 
-        /** Constant that means unspecified Dp */
+        /**
+         * Constant that means unspecified Dp. Instead of comparing a [Dp] value to this constant,
+         * consider using [isSpecified] and [isUnspecified] instead.
+         */
         @Stable val Unspecified = Dp(Float.NaN)
     }
 }
@@ -158,7 +163,7 @@ inline fun Dp.coerceAtMost(maximumValue: Dp): Dp = Dp(value.coerceAtMost(maximum
 /** Return `true` when it is finite or `false` when it is [Dp.Infinity] */
 @Stable
 inline val Dp.isFinite: Boolean
-    get() = value != Float.POSITIVE_INFINITY
+    get() = value.fastIsFinite()
 
 /**
  * Linearly interpolate between two [Dp]s.
@@ -180,12 +185,25 @@ fun lerp(start: Dp, stop: Dp, fraction: Float): Dp {
 // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 /** Constructs a [DpOffset] from [x] and [y] position [Dp] values. */
-@Stable fun DpOffset(x: Dp, y: Dp): DpOffset = DpOffset(packFloats(x.value, y.value))
+@Stable inline fun DpOffset(x: Dp, y: Dp): DpOffset = DpOffset(packFloats(x.value, y.value))
 
-/** A two-dimensional offset using [Dp] for units */
+/**
+ * A two-dimensional offset using [Dp] for units.
+ *
+ * To create a [DpOffset], call the top-level function that accepts an x/y pair of coordinates:
+ * ```
+ * val offset = DpOffset(x, y)
+ * ```
+ *
+ * The primary constructor of [DpOffset] is intended to be used with the [packedValue] property to
+ * allow storing offsets in arrays or collections of primitives without boxing.
+ *
+ * @param packedValue [Long] value encoding the [x] and [y] components of the [DpOffset]. Encoded
+ *   values can be obtained by using the [packedValue] property of existing [DpOffset] instances.
+ */
 @Immutable
 @JvmInline
-value class DpOffset internal constructor(@PublishedApi internal val packedValue: Long) {
+value class DpOffset(val packedValue: Long) {
     /** The horizontal aspect of the offset in [Dp] */
     @Stable
     val x: Dp
@@ -261,7 +279,7 @@ fun lerp(start: DpOffset, stop: DpOffset, fraction: Float): DpOffset =
     DpOffset(
         packFloats(
             lerp(start.x.value, stop.x.value, fraction),
-            lerp(start.y.value, stop.y.value, fraction)
+            lerp(start.y.value, stop.y.value, fraction),
         )
     )
 
@@ -378,22 +396,23 @@ fun lerp(start: DpSize, stop: DpSize, fraction: Float): DpSize =
     DpSize(
         packFloats(
             lerp(start.width, stop.width, fraction).value,
-            lerp(start.height, stop.height, fraction).value
+            lerp(start.height, stop.height, fraction).value,
         )
     )
 
 /** A four dimensional bounds using [Dp] for units */
 @Immutable
+@Suppress("DataClassDefinition")
 data class DpRect(
     @Stable val left: Dp,
     @Stable val top: Dp,
     @Stable val right: Dp,
-    @Stable val bottom: Dp
+    @Stable val bottom: Dp,
 ) {
     /** Constructs a [DpRect] from the top-left [origin] and the width and height in [size]. */
     constructor(
         origin: DpOffset,
-        size: DpSize
+        size: DpSize,
     ) : this(origin.x, origin.y, origin.x + size.width, origin.y + size.height)
 
     companion object

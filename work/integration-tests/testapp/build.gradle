@@ -17,7 +17,7 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
@@ -26,6 +26,7 @@ android {
             minifyEnabled = true
         }
     }
+    compileSdk = 35
     defaultConfig {
         javaCompileOptions {
             annotationProcessorOptions {
@@ -39,14 +40,15 @@ android {
             useSupportLibrary = true
         }
     }
-    namespace "androidx.work.integration.testapp"
+    namespace = "androidx.work.integration.testapp"
 }
 
 dependencies {
-    annotationProcessor(projectOrArtifact(":room:room-compiler"))
-    implementation(projectOrArtifact(":room:room-runtime"))
-    implementation(projectOrArtifact(":room:room-ktx"))
+    api(libs.jspecify)
+    annotationProcessor(project(":room:room-compiler"))
+    implementation(project(":room:room-runtime"))
 
+    implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.constraintLayout)
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")

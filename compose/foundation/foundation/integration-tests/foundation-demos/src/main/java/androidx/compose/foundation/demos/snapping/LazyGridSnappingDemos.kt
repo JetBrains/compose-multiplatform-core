@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.snapping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
@@ -42,15 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 val LazyGridSnappingDemos =
-    listOf(
-        ComposableDemo("Single Item - Same Size Items") { GridSingleItemSnapping() },
-    )
+    listOf(ComposableDemo("Single Item - Same Size Items") { GridSingleItemSnapping() })
 
 /**
  * Snapping happens to the next item and items have the same size. We use the top line in the grid
  * as a reference point.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun GridSingleItemSnapping() {
     val lazyGridState = rememberLazyGridState()
@@ -67,13 +63,13 @@ private fun GridSnappingDemoMainLayout(flingBehavior: FlingBehavior, lazyGridSta
                 drawContent()
                 drawAnchor(CenterAnchor)
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         LazyHorizontalGrid(
             modifier = Modifier.fillMaxHeight(0.7f),
             rows = GridCells.Fixed(3),
             state = lazyGridState,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         ) {
             items(100) { GridSinglePageSnappingItem(it) }
         }
@@ -88,7 +84,7 @@ private fun GridSinglePageSnappingItem(position: Int) {
                 drawContent()
                 drawAnchor(CenterAnchor)
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(text = position.toString(), fontSize = 40.sp)
     }

@@ -35,10 +35,8 @@ import androidx.kruth.Fact.Companion.simpleFact
  */
 // Can't be final since MultisetSubject and SortedSetSubject extend it
 open class IterableSubject<T>
-protected constructor(
-    metadata: FailureMetadata,
-    actual: Iterable<T>?,
-) : Subject<Iterable<T>>(actual, metadata = metadata, typeDescriptionOverride = null) {
+protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
+    Subject<Iterable<T>>(actual, metadata = metadata, typeDescriptionOverride = null) {
 
     internal constructor(actual: Iterable<T>?, metadata: FailureMetadata) : this(metadata, actual)
 
@@ -62,33 +60,33 @@ protected constructor(
 
     /** Fails if the subject is not empty. */
     fun isEmpty() {
-        requireNonNull(actual) { "Expected to be empty, but was null" }
+        requireNonNull(actual)
 
         if (!actual.isEmpty()) {
-            failWithoutActual(simpleFact("Expected to be empty"))
+            failWithoutActual(simpleFact("expected to be empty"))
         }
     }
 
     /** Fails if the subject is empty. */
     fun isNotEmpty() {
-        requireNonNull(actual) { "Expected not to be empty, but was null" }
+        requireNonNull(actual)
 
         if (actual.isEmpty()) {
-            failWithoutActual(simpleFact("Expected to be not empty"))
+            failWithoutActual(simpleFact("expected to be not empty"))
         }
     }
 
     /** Fails if the subject does not have the given size. */
     fun hasSize(expectedSize: Int) {
         require(expectedSize >= 0) { "expectedSize($expectedSize) must be >= 0" }
-        requireNonNull(actual) { "Expected to have size $expectedSize, but was null" }
+        requireNonNull(actual)
 
         check("count()").that(actual.count()).isEqualTo(expectedSize)
     }
 
     /** Checks (with a side-effect failure) that the subject contains the supplied item. */
     fun contains(element: Any?) {
-        requireNonNull(actual) { "Expected to contain $element, but was null" }
+        requireNonNull(actual)
 
         if (element !in actual) {
             val matchingItems = actual.retainMatchingToString(listOf(element))
@@ -97,7 +95,7 @@ protected constructor(
                     fact("expected to contain", element),
                     fact("an instance of", element.typeName()),
                     simpleFact("but did not"),
-                    fact("though it did contain", matchingItems)
+                    fact("though it did contain", matchingItems),
                 )
             } else {
                 failWithActual("expected to contain", element)
@@ -107,22 +105,23 @@ protected constructor(
 
     /** Checks (with a side-effect failure) that the subject does not contain the supplied item. */
     fun doesNotContain(element: Any?) {
-        requireNonNull(actual) { "Expected not to contain $element, but was null" }
+        requireNonNull(actual)
 
         if (element in actual) {
-            failWithoutActual(simpleFact("Expected not to contain $element"))
+            failWithActual("expected not to contain", element)
         }
     }
 
     /** Checks that the subject does not contain duplicate elements. */
     fun containsNoDuplicates() {
-        requireNonNull(actual) { "Expected not to contain duplicates, but was null" }
+        requireNonNull(actual)
 
         val duplicates = actual.groupBy { it }.values.filter { it.size > 1 }
-
         if (duplicates.isNotEmpty()) {
             failWithoutActual(
-                simpleFact("Expected not to contain duplicates, but contained $duplicates")
+                simpleFact("expected not to contain duplicates"),
+                fact("but contained", duplicates),
+                fact("full contents", actualCustomStringRepresentation()),
             )
         }
     }
@@ -149,7 +148,7 @@ protected constructor(
             failWithoutActual(
                 fact("expected to contain any of", expected),
                 simpleFact("but did not"),
-                fact("though it did contain", matchingItems)
+                fact("though it did contain", matchingItems),
             )
         } else {
             failWithActual("expected to contain any of", expected)
@@ -226,7 +225,7 @@ protected constructor(
                 simpleFact(""),
                 fact("though it did contain", nearMissing),
                 simpleFact("---"),
-                fact("expected to contain at least", expected)
+                fact("expected to contain at least", expected),
             )
         }
 
@@ -377,7 +376,7 @@ protected constructor(
                     fact("unexpected", extra),
                     simpleFact("---"),
                     fact("expected", required),
-                    fact("but was", actual)
+                    fact("but was", actual),
                 )
             }
 
@@ -392,7 +391,7 @@ protected constructor(
                 fact("unexpected", actualIter.asSequence().toList()),
                 simpleFact("---"),
                 fact("expected", required),
-                fact("but was", actual)
+                fact("but was", actual),
             )
         }
 
@@ -401,7 +400,7 @@ protected constructor(
                 fact("missing", requiredIter.asSequence().toList()),
                 simpleFact("---"),
                 fact("expected", required),
-                fact("but was", actual)
+                fact("but was", actual),
             )
         }
 
@@ -426,11 +425,7 @@ protected constructor(
      * Checks that a actual iterable contains none of the excluded objects or fails. (Duplicates are
      * irrelevant to this test, which fails if any of the actual elements equal any of the excluded)
      */
-    fun containsNoneOf(
-        firstExcluded: Any?,
-        secondExcluded: Any?,
-        vararg restOfExcluded: Any?,
-    ) {
+    fun containsNoneOf(firstExcluded: Any?, secondExcluded: Any?, vararg restOfExcluded: Any?) {
         containsNoneIn(listOf(firstExcluded, secondExcluded, *restOfExcluded))
     }
 
@@ -486,7 +481,7 @@ protected constructor(
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) < 0 },
-            message = { a, b -> "Expected to be in strict order but contained $a followed by $b." }
+            message = { a, b -> "Expected to be in strict order but contained $a followed by $b." },
         )
     }
 
@@ -513,7 +508,7 @@ protected constructor(
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) <= 0 },
-            message = { a, b -> "Expected to be in order but contained $a followed by $b." }
+            message = { a, b -> "Expected to be in order but contained $a followed by $b." },
         )
     }
 

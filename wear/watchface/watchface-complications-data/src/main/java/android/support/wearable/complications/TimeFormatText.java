@@ -19,9 +19,10 @@ package android.support.wearable.complications;
 import android.content.res.Resources;
 import android.os.Parcel;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -57,9 +58,8 @@ public final class TimeFormatText implements TimeDependentText {
         return Objects.hash(mDateFormat, mStyle, mTimeZone, mTimePrecision);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         if (ComplicationData.shouldRedact()) {
             return "TimeFormatText{Redacted}";
         }
@@ -158,8 +158,7 @@ public final class TimeFormatText implements TimeDependentText {
     }
 
     @Override
-    @NonNull
-    public CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
+    public @NonNull CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis) {
         String formattedDate = mDateFormat.format(new Date(dateTimeMillis));
 
         switch (mStyle) {
@@ -209,8 +208,7 @@ public final class TimeFormatText implements TimeDependentText {
         return mTimePrecision;
     }
 
-    @NonNull
-    public String getFormatString() {
+    public @NonNull String getFormatString() {
         return mDateFormat.toPattern();
     }
 
@@ -218,8 +216,7 @@ public final class TimeFormatText implements TimeDependentText {
         return mStyle;
     }
 
-    @Nullable
-    public TimeZone getTimeZone() {
+    public @Nullable TimeZone getTimeZone() {
         return mTimeZone;
     }
 
@@ -231,8 +228,7 @@ public final class TimeFormatText implements TimeDependentText {
         return mTimeZone.getRawOffset();
     }
 
-    @NonNull
-    private String getDateFormatWithoutText(String format) {
+    private @NonNull String getDateFormatWithoutText(String format) {
         StringBuilder result = new StringBuilder();
         boolean isTextPart = false;
         int index = 0;
@@ -277,14 +273,12 @@ public final class TimeFormatText implements TimeDependentText {
     public static final Creator<TimeFormatText> CREATOR =
             new Creator<TimeFormatText>() {
                 @Override
-                @NonNull
-                public TimeFormatText createFromParcel(@NonNull Parcel source) {
+                public @NonNull TimeFormatText createFromParcel(@NonNull Parcel source) {
                     return new TimeFormatText(source);
                 }
 
                 @Override
-                @NonNull
-                public TimeFormatText[] newArray(int size) {
+                public TimeFormatText @NonNull [] newArray(int size) {
                     return new TimeFormatText[size];
                 }
             };

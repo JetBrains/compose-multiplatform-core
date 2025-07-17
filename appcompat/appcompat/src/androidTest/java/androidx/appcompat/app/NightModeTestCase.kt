@@ -38,7 +38,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.testutils.LifecycleOwnerUtils.waitForRecreation
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitForRecreation
 import androidx.testutils.waitForExecution
 import java.util.concurrent.CountDownLatch
 import org.junit.Assert.assertEquals
@@ -61,7 +61,7 @@ class NightModeTestCase(private val setMode: NightSetMode) {
         if (!isSystemNightThemeEnabled(rule.activity)) {
             assertConfigurationNightModeEquals(
                 Configuration.UI_MODE_NIGHT_NO,
-                rule.activity.applicationContext.resources.configuration
+                rule.activity.applicationContext.resources.configuration,
             )
 
             // Force the night mode to be yes (aka night mode)
@@ -69,7 +69,7 @@ class NightModeTestCase(private val setMode: NightSetMode) {
 
             assertConfigurationNightModeEquals(
                 Configuration.UI_MODE_NIGHT_NO,
-                rule.activity.applicationContext.resources.configuration
+                rule.activity.applicationContext.resources.configuration,
             )
         }
     }
@@ -267,7 +267,7 @@ class NightModeTestCase(private val setMode: NightSetMode) {
     private class FakeTwilightManager(context: Context) :
         TwilightManager(
             context,
-            ContextCompat.getSystemService(context, LocationManager::class.java)!!
+            ContextCompat.getSystemService(context, LocationManager::class.java)!!,
         ) {
         var isNightForTest: Boolean = false
 

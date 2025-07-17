@@ -25,21 +25,21 @@ import androidx.room.solver.CodeGenScope
 
 class ByteArrayColumnTypeAdapter private constructor(out: XType) :
     ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             if (out.nullability == XNullability.NONNULL) {
-                addStatement("%L = %L.getBlob(%L)", outVarName, cursorVarName, indexVarName)
+                addStatement("%L = %L.getBlob(%L)", outVarName, stmtVarName, indexVarName)
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName).apply {
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName).apply {
                     addStatement("%L = null", outVarName)
                 }
                 nextControlFlow("else").apply {
-                    addStatement("%L = %L.getBlob(%L)", outVarName, cursorVarName, indexVarName)
+                    addStatement("%L = %L.getBlob(%L)", outVarName, stmtVarName, indexVarName)
                 }
                 endControlFlow()
             }
@@ -50,7 +50,7 @@ class ByteArrayColumnTypeAdapter private constructor(out: XType) :
         stmtName: String,
         indexVarName: String,
         valueVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             if (out.nullability == XNullability.NONNULL) {
@@ -71,7 +71,7 @@ class ByteArrayColumnTypeAdapter private constructor(out: XType) :
             return if (env.backend == XProcessingEnv.Backend.KSP) {
                 listOf(
                     ByteArrayColumnTypeAdapter(arrayType.makeNullable()),
-                    ByteArrayColumnTypeAdapter(arrayType.makeNonNullable())
+                    ByteArrayColumnTypeAdapter(arrayType.makeNonNullable()),
                 )
             } else {
                 listOf(ByteArrayColumnTypeAdapter(out = arrayType))

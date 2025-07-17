@@ -26,11 +26,11 @@ import javax.inject.Singleton
 
 /**
  * A class responsible for reporting camera errors with a particular [CameraId]. When
- * [androidx.camera.camera2.pipe.compat.VirtualCameraManager] processes a camera open request, it
+ * [androidx.camera.camera2.pipe.compat.Camera2DeviceManager] processes a camera open request, it
  * should update CameraErrorProcessor with the [VirtualCameraState] that came with the open request.
  */
 @Singleton
-class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
+public class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
     private val lock = Any()
 
     @GuardedBy("lock")
@@ -39,7 +39,7 @@ class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
     override fun onCameraError(
         cameraId: CameraId,
         cameraError: CameraError,
-        willAttemptRetry: Boolean
+        willAttemptRetry: Boolean,
     ) {
         val virtualCameraState = synchronized(lock) { virtualCameraStateMap[cameraId] } ?: return
         virtualCameraState.graphListener.onGraphError(
@@ -54,6 +54,6 @@ class Camera2ErrorProcessor @Inject constructor() : CameraErrorListener {
      */
     internal fun setActiveVirtualCamera(
         cameraId: CameraId,
-        virtualCameraState: VirtualCameraState
+        virtualCameraState: VirtualCameraState,
     ) = synchronized(lock) { virtualCameraStateMap[cameraId] = virtualCameraState }
 }

@@ -20,10 +20,10 @@ import static android.os.Build.VERSION_CODES.TIRAMISU;
 
 import android.os.Bundle;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 @RequiresApi(TIRAMISU)
 class Api33Impl {
@@ -31,7 +31,6 @@ class Api33Impl {
         // This class is non-instantiable.
     }
 
-    @DoNotInline
     static <T> T getParcelable(@NonNull Bundle in, @Nullable String key,
             @NonNull Class<T> clazz) {
         return in.getParcelable(key, clazz);

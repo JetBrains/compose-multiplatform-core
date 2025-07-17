@@ -72,7 +72,7 @@ class Camera2CameraInfoTest {
                                         CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to
                                             cameraHardwareLevel,
                                         CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to
-                                            Rect(0, 0, 640, 480)
+                                            Rect(0, 0, 640, 480),
                                     )
                             )
                         )
@@ -154,7 +154,7 @@ class Camera2CameraInfoTest {
 
                 override fun addSessionCaptureCallback(
                     executor: Executor,
-                    callback: CameraCaptureCallback
+                    callback: CameraCaptureCallback,
                 ) {
                     throw NotImplementedError("Not used in testing")
                 }
@@ -188,6 +188,34 @@ class Camera2CameraInfoTest {
                 }
 
                 override fun getSupportedDynamicRanges(): MutableSet<DynamicRange> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun isHighSpeedSupported(): Boolean {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedFrameRateRanges(): MutableSet<Range<Int>> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedFrameRateRangesFor(
+                    size: Size
+                ): MutableSet<Range<Int>> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedResolutions(): MutableList<Size> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSupportedHighSpeedResolutionsFor(
+                    fpsRange: Range<Int>
+                ): MutableList<Size> {
+                    throw NotImplementedError("Not used in testing")
+                }
+
+                override fun getSensorRect(): Rect {
                     throw NotImplementedError("Not used in testing")
                 }
 

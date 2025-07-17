@@ -18,10 +18,11 @@ package androidx.camera.video.internal.encoder;
 
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.video.internal.BufferProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -42,12 +43,10 @@ public interface Encoder {
     long NO_TIMESTAMP = -1;
 
     /** Returns the encoder's input instance. */
-    @NonNull
-    EncoderInput getInput();
+    @NonNull EncoderInput getInput();
 
     /** Returns the EncoderInfo which provides encoder's information and capabilities. */
-    @NonNull
-    EncoderInfo getEncoderInfo();
+    @NonNull EncoderInfo getEncoderInfo();
 
     /** Returns target bitrate configured on the encoder */
     int getConfiguredBitrate();
@@ -116,8 +115,7 @@ public interface Encoder {
      *
      * <p>Cancellation on the returned ListenableFuture takes no effect.
      */
-    @NonNull
-    ListenableFuture<Void> getReleasedFuture();
+    @NonNull ListenableFuture<Void> getReleasedFuture();
 
     /**
      * Sets callback to encoder.

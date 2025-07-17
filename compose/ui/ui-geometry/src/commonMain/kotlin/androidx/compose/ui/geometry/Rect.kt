@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE")
+
 package androidx.compose.ui.geometry
 
 import androidx.compose.runtime.Immutable
@@ -29,6 +31,7 @@ import kotlin.math.min
  * given origin.
  */
 @Immutable
+@Suppress("DataClassDefinition")
 data class Rect(
     /** The offset of the left edge of this rectangle from the x axis. */
     @Stable val left: Float,
@@ -40,28 +43,23 @@ data class Rect(
     @Stable val right: Float,
 
     /** The offset of the bottom edge of this rectangle from the y axis. */
-    @Stable val bottom: Float
+    @Stable val bottom: Float,
 ) {
 
     companion object {
-
         /** A rectangle with left, top, right, and bottom edges all at zero. */
         @Stable val Zero: Rect = Rect(0.0f, 0.0f, 0.0f, 0.0f)
     }
 
     /** The distance between the left and right edges of this rectangle. */
     @Stable
-    val width: Float
-        get() {
-            return right - left
-        }
+    inline val width: Float
+        get() = right - left
 
     /** The distance between the top and bottom edges of this rectangle. */
     @Stable
-    val height: Float
-        get() {
-            return bottom - top
-        }
+    inline val height: Float
+        get() = bottom - top
 
     /** The distance between the upper-left corner and the lower-right corner of this rectangle. */
     @Stable
@@ -73,20 +71,24 @@ data class Rect(
     @Stable
     val isInfinite: Boolean
         get() =
-            left >= Float.POSITIVE_INFINITY ||
-                top >= Float.POSITIVE_INFINITY ||
-                right >= Float.POSITIVE_INFINITY ||
-                bottom >= Float.POSITIVE_INFINITY
+            (left == Float.POSITIVE_INFINITY) or
+                (top == Float.POSITIVE_INFINITY) or
+                (right == Float.POSITIVE_INFINITY) or
+                (bottom == Float.POSITIVE_INFINITY)
 
     /** Whether all coordinates of this rectangle are finite. */
     @Stable
     val isFinite: Boolean
-        get() = left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite()
+        get() =
+            ((left.toRawBits() and 0x7fffffff) < FloatInfinityBase) and
+                ((top.toRawBits() and 0x7fffffff) < FloatInfinityBase) and
+                ((right.toRawBits() and 0x7fffffff) < FloatInfinityBase) and
+                ((bottom.toRawBits() and 0x7fffffff) < FloatInfinityBase)
 
     /** Whether this rectangle encloses a non-zero area. Negative areas are considered empty. */
     @Stable
     val isEmpty: Boolean
-        get() = left >= right || top >= bottom
+        get() = (left >= right) or (top >= bottom)
 
     /**
      * Returns a new rectangle translated by the given offset.
@@ -128,7 +130,7 @@ data class Rect(
             max(left, other.left),
             max(top, other.top),
             min(right, other.right),
-            min(bottom, other.bottom)
+            min(bottom, other.bottom),
         )
     }
 
@@ -143,15 +145,16 @@ data class Rect(
             max(left, otherLeft),
             max(top, otherTop),
             min(right, otherRight),
-            min(bottom, otherBottom)
+            min(bottom, otherBottom),
         )
     }
 
     /** Whether `other` has a nonzero area of overlap with this rectangle. */
     fun overlaps(other: Rect): Boolean {
-        if (right <= other.left || other.right <= left) return false
-        if (bottom <= other.top || other.bottom <= top) return false
-        return true
+        return (left < other.right) and
+            (other.left < right) and
+            (top < other.bottom) and
+            (other.top < bottom)
     }
 
     /** The lesser of the magnitudes of the [width] and the [height] of this rectangle. */
@@ -214,7 +217,9 @@ data class Rect(
      * Rectangles include their top and left edges but exclude their bottom and right edges.
      */
     operator fun contains(offset: Offset): Boolean {
-        return offset.x >= left && offset.x < right && offset.y >= top && offset.y < bottom
+        val x = offset.x
+        val y = offset.y
+        return (x >= left) and (x < right) and (y >= top) and (y < bottom)
     }
 
     override fun toString() =
@@ -273,11 +278,10 @@ fun Rect(center: Offset, radius: Float): Rect =
  * `AnimationController`.
  */
 @Stable
-fun lerp(start: Rect, stop: Rect, fraction: Float): Rect {
-    return Rect(
+fun lerp(start: Rect, stop: Rect, fraction: Float): Rect =
+    Rect(
         lerp(start.left, stop.left, fraction),
         lerp(start.top, stop.top, fraction),
         lerp(start.right, stop.right, fraction),
-        lerp(start.bottom, stop.bottom, fraction)
+        lerp(start.bottom, stop.bottom, fraction),
     )
-}

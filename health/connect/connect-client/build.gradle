@@ -21,8 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -32,10 +32,11 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     api(libs.kotlinStdlib)
     // Add dependencies here
     api("androidx.activity:activity:1.2.0")
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     implementation(project(":health:connect:connect-client-proto"))
     implementation(libs.guavaListenableFuture)
     implementation(libs.guavaAndroid)
@@ -48,15 +49,15 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinCoroutinesTest)
-    androidTestImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.espressoCore)
     testImplementation(libs.espressoIntents)
     testImplementation(libs.kotlinReflect)
+    testImplementation(libs.guavaTestlib)
 
+    androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.kotlinReflect)
@@ -67,7 +68,7 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 26
+        minSdk = 26
     }
     buildFeatures {
         aidl = true
@@ -75,18 +76,25 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    testOptions.unitTests.includeAndroidResources = true
-    namespace "androidx.health.connect.client"
-    compileSdk = 34
-    compileSdkExtension = 10
+    namespace = "androidx.health.connect.client"
+    compileSdk = 36
 }
 
 androidx {
     name = "Health Connect Client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "read or write user's health and fitness records."
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
     samples(project(":health:connect:connect-client-samples"))
+    enableRobolectric()
+}
+
+//TODO(b/407717306): Remove this block when RecordConvertersTest passes on API Level 21 and 34 devices
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
+    }
 }

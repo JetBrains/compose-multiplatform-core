@@ -20,12 +20,13 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.mediarouter.media.MediaRouteProvider;
 import androidx.mediarouter.media.MediaRouteProviderService;
 
 import com.example.androidx.mediarouting.providers.SampleDynamicGroupMediaRouteProvider;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Demonstrates how to register a custom media route provider service
@@ -39,16 +40,14 @@ public class SampleDynamicGroupMediaRouteProviderService extends MediaRouteProvi
 
     private SampleDynamicGroupMediaRouteProvider mDynamicGroupMediaRouteProvider;
 
-    @NonNull
     @Override
-    public MediaRouteProvider onCreateMediaRouteProvider() {
+    public @NonNull MediaRouteProvider onCreateMediaRouteProvider() {
         mDynamicGroupMediaRouteProvider = new SampleDynamicGroupMediaRouteProvider(this);
         return mDynamicGroupMediaRouteProvider;
     }
 
-    @Nullable
     @Override
-    public IBinder onBind(@NonNull Intent intent) {
+    public @Nullable IBinder onBind(@NonNull Intent intent) {
         if (intent != null && ACTION_BIND_LOCAL.equals(intent.getAction())) {
             return new LocalBinder();
         } else {
@@ -58,12 +57,16 @@ public class SampleDynamicGroupMediaRouteProviderService extends MediaRouteProvi
 
     /** Reload all routes provided by this service. */
     public void reloadRoutes() {
-        mDynamicGroupMediaRouteProvider.reloadRoutes();
+        if (mDynamicGroupMediaRouteProvider != null) {
+            mDynamicGroupMediaRouteProvider.reloadRoutes();
+        }
     }
 
     /** Reload the flag for isDynamicRouteEnabled. */
     public void reloadDynamicRoutesEnabled() {
-        mDynamicGroupMediaRouteProvider.reloadDynamicRoutesEnabled();
+        if (mDynamicGroupMediaRouteProvider != null) {
+            mDynamicGroupMediaRouteProvider.reloadDynamicRoutesEnabled();
+        }
     }
 
     /**
@@ -71,8 +74,7 @@ public class SampleDynamicGroupMediaRouteProviderService extends MediaRouteProvi
      * bindings within the same process.
      */
     public class LocalBinder extends Binder {
-        @NonNull
-        public SampleDynamicGroupMediaRouteProviderService getService() {
+        public @NonNull SampleDynamicGroupMediaRouteProviderService getService() {
             return SampleDynamicGroupMediaRouteProviderService.this;
         }
     }

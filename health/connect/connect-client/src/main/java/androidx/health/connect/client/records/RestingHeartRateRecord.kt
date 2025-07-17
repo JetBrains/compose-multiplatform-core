@@ -15,8 +15,10 @@
  */
 package androidx.health.connect.client.records
 
+import android.os.Build
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.aggregate.AggregationResult
+import androidx.health.connect.client.impl.platform.records.toPlatformRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Instant
 import java.time.ZoneOffset
@@ -30,11 +32,19 @@ public class RestingHeartRateRecord(
     override val zoneOffset: ZoneOffset?,
     /** Heart beats per minute. Required field. Validation range: 1-300. */
     public val beatsPerMinute: Long,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : InstantaneousRecord {
+    /*
+     * Android U devices and later use the platform's validation instead of Jetpack validation.
+     * See b/400965398 for more context.
+     */
     init {
-        requireNonNegative(value = beatsPerMinute, name = "beatsPerMinute")
-        beatsPerMinute.requireNotMore(other = 300, name = "beatsPerMinute")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            this.toPlatformRecord()
+        } else {
+            requireNonNegative(value = beatsPerMinute, name = "beatsPerMinute")
+            beatsPerMinute.requireNotMore(other = 300, name = "beatsPerMinute")
+        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -58,6 +68,10 @@ public class RestingHeartRateRecord(
         return result
     }
 
+    override fun toString(): String {
+        return "RestingHeartRateRecord(time=$time, zoneOffset=$zoneOffset, beatsPerMinute=$beatsPerMinute, metadata=$metadata)"
+    }
+
     companion object {
         private const val REST_HEART_RATE_TYPE_NAME = "RestingHeartRate"
         private const val BPM_FIELD_NAME = "bpm"
@@ -70,7 +84,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.AVERAGE,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /**
@@ -81,7 +95,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MINIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /**
@@ -92,7 +106,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MAXIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
     }
 }

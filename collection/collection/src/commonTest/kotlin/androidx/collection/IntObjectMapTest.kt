@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -79,50 +80,22 @@ class IntObjectMapTest {
 
     @Test
     fun intObjectMapInitFunction() {
-        val map1 =
-            intObjectMapOf(
-                1,
-                "World",
-            )
+        val map1 = intObjectMapOf(1, "World")
         assertEquals(1, map1.size)
         assertEquals("World", map1[1])
 
-        val map2 =
-            intObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-            )
+        val map2 = intObjectMapOf(1, "World", 2, "Monde")
         assertEquals(2, map2.size)
         assertEquals("World", map2[1])
         assertEquals("Monde", map2[2])
 
-        val map3 =
-            intObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-            )
+        val map3 = intObjectMapOf(1, "World", 2, "Monde", 3, "Welt")
         assertEquals(3, map3.size)
         assertEquals("World", map3[1])
         assertEquals("Monde", map3[2])
         assertEquals("Welt", map3[3])
 
-        val map4 =
-            intObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-                4,
-                "Sekai",
-            )
+        val map4 = intObjectMapOf(1, "World", 2, "Monde", 3, "Welt", 4, "Sekai")
 
         assertEquals(4, map4.size)
         assertEquals("World", map4[1])
@@ -130,19 +103,7 @@ class IntObjectMapTest {
         assertEquals("Welt", map4[3])
         assertEquals("Sekai", map4[4])
 
-        val map5 =
-            intObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-                4,
-                "Sekai",
-                5,
-                "Mondo",
-            )
+        val map5 = intObjectMapOf(1, "World", 2, "Monde", 3, "Welt", 4, "Sekai", 5, "Mondo")
 
         assertEquals(5, map5.size)
         assertEquals("World", map5[1])
@@ -154,50 +115,22 @@ class IntObjectMapTest {
 
     @Test
     fun mutableIntObjectMapInitFunction() {
-        val map1 =
-            mutableIntObjectMapOf(
-                1,
-                "World",
-            )
+        val map1 = mutableIntObjectMapOf(1, "World")
         assertEquals(1, map1.size)
         assertEquals("World", map1[1])
 
-        val map2 =
-            mutableIntObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-            )
+        val map2 = mutableIntObjectMapOf(1, "World", 2, "Monde")
         assertEquals(2, map2.size)
         assertEquals("World", map2[1])
         assertEquals("Monde", map2[2])
 
-        val map3 =
-            mutableIntObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-            )
+        val map3 = mutableIntObjectMapOf(1, "World", 2, "Monde", 3, "Welt")
         assertEquals(3, map3.size)
         assertEquals("World", map3[1])
         assertEquals("Monde", map3[2])
         assertEquals("Welt", map3[3])
 
-        val map4 =
-            mutableIntObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-                4,
-                "Sekai",
-            )
+        val map4 = mutableIntObjectMapOf(1, "World", 2, "Monde", 3, "Welt", 4, "Sekai")
 
         assertEquals(4, map4.size)
         assertEquals("World", map4[1])
@@ -205,19 +138,7 @@ class IntObjectMapTest {
         assertEquals("Welt", map4[3])
         assertEquals("Sekai", map4[4])
 
-        val map5 =
-            mutableIntObjectMapOf(
-                1,
-                "World",
-                2,
-                "Monde",
-                3,
-                "Welt",
-                4,
-                "Sekai",
-                5,
-                "Mondo",
-            )
+        val map5 = mutableIntObjectMapOf(1, "World", 2, "Monde", 3, "Welt", 4, "Sekai", 5, "Mondo")
 
         assertEquals(5, map5.size)
         assertEquals("World", map5[1])
@@ -225,6 +146,36 @@ class IntObjectMapTest {
         assertEquals("Welt", map5[3])
         assertEquals("Sekai", map5[4])
         assertEquals("Mondo", map5[5])
+    }
+
+    @Test
+    fun buildIntObjectMapFunction() {
+        val contract: Boolean
+        val map = buildIntObjectMap {
+            contract = true
+            put(1, "World")
+            put(2, "Monde")
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals("World", map[1])
+        assertEquals("Monde", map[2])
+    }
+
+    @Test
+    fun buildIntObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map =
+            buildIntObjectMap(20) {
+                contract = true
+                put(1, "World")
+                put(2, "Monde")
+            }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals("World", map[1])
+        assertEquals("Monde", map[2])
     }
 
     @Test
@@ -635,27 +586,28 @@ class IntObjectMapTest {
             "${order[0].toInt()}=${order[0]}, ${order[1].toInt()}=${order[1]}, " +
                 "${order[2].toInt()}=${order[2]}, ${order[3].toInt()}=${order[3]}, " +
                 "${order[4].toInt()}=${order[4]}",
-            map.joinToString()
+            map.joinToString(),
         )
         assertEquals(
             "x${order[0].toInt()}=${order[0]}, ${order[1].toInt()}=${order[1]}, " +
-                "${order[2].toInt()}=${order[2]}...",
-            map.joinToString(prefix = "x", postfix = "y", limit = 3)
+                "${order[2].toInt()}=${order[2]}, ...y",
+            map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${order[0].toInt()}=${order[0]}-${order[1].toInt()}=${order[1]}-" +
                 "${order[2].toInt()}=${order[2]}-${order[3].toInt()}=${order[3]}-" +
                 "${order[4].toInt()}=${order[4]}<",
-            map.joinToString(separator = "-", prefix = ">", postfix = "<")
+            map.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] }
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
+            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] },
         )
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableIntObjectMap<String?>()
         map[1] = "World"
@@ -764,5 +716,16 @@ class IntObjectMapTest {
 
         assertTrue(map.all { key, value -> key < 7 && value.isNotEmpty() })
         assertFalse(map.all { key, _ -> key < 6 })
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutableIntObjectMap<String>()
+
+        for (i in 0..1000000) {
+            map[i.toInt()] = i.toString()
+            map.remove(i.toInt())
+            assertTrue(map.capacity < 16, "Map grew larger than 16 after step $i")
+        }
     }
 }

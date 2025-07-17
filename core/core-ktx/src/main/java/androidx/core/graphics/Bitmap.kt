@@ -18,7 +18,6 @@
 
 package androidx.core.graphics
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorSpace
@@ -84,7 +83,7 @@ public inline fun Bitmap.scale(width: Int, height: Int, filter: Boolean = true):
 public inline fun createBitmap(
     width: Int,
     height: Int,
-    config: Bitmap.Config = Bitmap.Config.ARGB_8888
+    config: Bitmap.Config = Bitmap.Config.ARGB_8888,
 ): Bitmap {
     return Bitmap.createBitmap(width, height, config)
 }
@@ -101,14 +100,13 @@ public inline fun createBitmap(
  * @param colorSpace The new bitmap's color space
  * @return A new bitmap with the specified dimensions and config
  */
-@SuppressLint("ClassVerificationFailure") // Inline fun
 @RequiresApi(26)
 public inline fun createBitmap(
     width: Int,
     height: Int,
     config: Bitmap.Config = Bitmap.Config.ARGB_8888,
     hasAlpha: Boolean = true,
-    colorSpace: ColorSpace = ColorSpace.get(ColorSpace.Named.SRGB)
+    colorSpace: ColorSpace = ColorSpace.get(ColorSpace.Named.SRGB),
 ): Bitmap {
     return Bitmap.createBitmap(width, height, config, hasAlpha, colorSpace)
 }

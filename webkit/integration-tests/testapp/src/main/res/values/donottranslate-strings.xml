@@ -18,18 +18,20 @@
     <string name="main_activity_title">WebView AndroidX Demos</string>
     <string name="webkit_api_not_available">This feature is not available. This may be available if you update WebView.</string>
     <string name="safebrowsing_activity_title">Safe Browsing</string>
+    <string name="restricted_content_activity_title">Restricted Content</string>
     <string name="not_updateable_webview">not updatable</string>
     <string name="asset_loader_ajax_activity_title">Asset Loader AJAX Demo</string>
     <string name="asset_loader_internal_storage_activity_title">Load from internal storage</string>
     <string name="asset_loader_list_activity_title">WebView Asset Loader Demos</string>
     <string name="asset_loader_simple_activity_title">Simple Asset Loader</string>
+    <string name="tiny_interstitial_activity_title">Tiny Interstitial</string>
     <string name="small_interstitial_activity_title">Small Interstitial</string>
     <string name="medium_tall_interstitial_activity_title">Medium (Tall) Interstitials</string>
     <string name="medium_wide_interstitial_activity_title">Medium (Wide) Interstitials</string>
     <string name="loud_interstitial_activity_title">Loud (Red) Interstitials</string>
+    <string name="full_page_interstitial_activity_title">Full Page Interstitial</string>
     <string name="giant_interstitial_activity_title">Giant Interstitial</string>
     <string name="per_web_view_enable_activity_title">Per-WebView Enable APIs</string>
-    <string name="cannot_start_safe_browsing">Unable to start Safe Browsing, this is unexpected. Tap for more info.</string>
     <string name="safebrowsing_enabled_caption">Safe Browsing enabled</string>
     <string name="safebrowsing_disabled_caption">Safe Browsing disabled</string>
     <string name="default_safebrowsing_caption">Default Safe Browsing setting</string>
@@ -98,6 +100,11 @@
     <string name="mute_audio_audio_is_muted">Audio is muted.</string>
     <string name="mute_audio_audio_is_unmuted">Audio is unmuted.</string>
 
+    <!-- PaymentRequest -->
+    <string name="payment_request_activity_title">PaymentRequest</string>
+    <string name="payment_request_toggle_label">PaymentRequest enabled:</string>
+    <string name="has_enrolled_instrument_toggle_label">hasEnrolledInstrument enabled:</string>
+
     <!-- Proxy Override -->
     <string name="proxy_override_activity_title">Proxy Override</string>
     <string name="proxy_override_requests_served">Requests served: %d</string>
@@ -122,5 +129,18 @@
     <string name="user_agent_metadata_override_mode">User-Agent Metadata</string>
     <string name="user_agent_metadata_without_override">Without Overrides</string>
     <string name="user_agent_metadata_with_override">With Overrides</string>
+
+    <!-- Async StartUp Metadata -->
+    <string name="async_startup_activity_title">Async StartUp</string>
+
+    <!-- TrafficStats tagging -->
+    <string name="default_trafficstats_tagging_activity">Default TrafficStats Tagging</string>
+    <string name="default_trafficstats_tagging_unsupported">Default TrafficStats tagging is not supported.</string>
+
+    <!-- WebStorage -->
+    <string name="web_storage_activity_title">WebStorage</string>
+    <string name="web_storage_load_page_button">Reload page</string>
+    <string name="web_storage_delete_data_button">Delete page data</string>
+    <string name="web_storage_delete_complete">Data deletion complete</string>
 
 </resources>

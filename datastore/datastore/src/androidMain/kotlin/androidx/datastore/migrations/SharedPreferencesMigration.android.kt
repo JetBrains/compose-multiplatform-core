@@ -19,7 +19,6 @@ package androidx.datastore.migrations
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.datastore.core.DataMigration
 import java.io.File
@@ -34,7 +33,7 @@ private constructor(
     private val shouldRunMigration: suspend (T) -> Boolean = { true },
     private val migrate: suspend (SharedPreferencesView, T) -> T,
     private val context: Context?,
-    private val name: String?
+    private val name: String?,
 ) : DataMigration<T> {
 
     /**
@@ -74,14 +73,14 @@ private constructor(
         produceSharedPreferences: () -> SharedPreferences,
         keysToMigrate: Set<String> = MIGRATE_ALL_KEYS,
         shouldRunMigration: suspend (T) -> Boolean = { true },
-        migrate: suspend (SharedPreferencesView, T) -> T
+        migrate: suspend (SharedPreferencesView, T) -> T,
     ) : this(
         produceSharedPreferences,
         keysToMigrate,
         shouldRunMigration,
         migrate,
         context = null,
-        name = null
+        name = null,
     )
 
     /**
@@ -122,14 +121,14 @@ private constructor(
         sharedPreferencesName: String,
         keysToMigrate: Set<String> = MIGRATE_ALL_KEYS,
         shouldRunMigration: suspend (T) -> Boolean = { true },
-        migrate: suspend (SharedPreferencesView, T) -> T
+        migrate: suspend (SharedPreferencesView, T) -> T,
     ) : this(
         { context.getSharedPreferences(sharedPreferencesName, Context.MODE_PRIVATE) },
         keysToMigrate,
         shouldRunMigration,
         migrate,
         context,
-        sharedPreferencesName
+        sharedPreferencesName,
     )
 
     private val sharedPrefs: SharedPreferences by lazy(produceSharedPreferences)
@@ -205,7 +204,6 @@ private constructor(
     @RequiresApi(24)
     private object Api24Impl {
         @JvmStatic
-        @DoNotInline
         fun deleteSharedPreferences(context: Context, name: String): Boolean {
             return context.deleteSharedPreferences(name)
         }

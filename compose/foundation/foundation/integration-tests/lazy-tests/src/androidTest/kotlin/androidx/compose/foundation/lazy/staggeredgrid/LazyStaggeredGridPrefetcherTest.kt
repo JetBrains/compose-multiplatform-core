@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407927787
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
@@ -57,11 +57,7 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> =
-            arrayOf(
-                Orientation.Vertical,
-                Orientation.Horizontal,
-            )
+        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
     }
 
     val itemsSizePx = 30
@@ -70,16 +66,15 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
     internal lateinit var state: LazyStaggeredGridState
     private val scheduler = TestPrefetchScheduler()
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     fun rememberState(
         initialFirstVisibleItemIndex: Int = 0,
-        initialFirstVisibleItemOffset: Int = 0
+        initialFirstVisibleItemOffset: Int = 0,
     ): LazyStaggeredGridState = remember {
         LazyStaggeredGridState(
             intArrayOf(initialFirstVisibleItemIndex),
             intArrayOf(initialFirstVisibleItemOffset),
-            scheduler
+            scheduler,
         )
     }
 
@@ -343,11 +338,7 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
         val composedItems = mutableListOf<Int>()
         rule.setContent {
             state = rememberState()
-            LazyStaggeredGrid(
-                1,
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyStaggeredGrid(1, Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 items(1000) {
                     composedItems.add(it)
                     Spacer(Modifier.mainAxisSize(itemsSizeDp))
@@ -411,11 +402,7 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
     fun scrollingWithStaggeredItemsPrefetchesCorrectly() {
         rule.setContent {
             state = rememberState()
-            LazyStaggeredGrid(
-                2,
-                Modifier.mainAxisSize(itemsSizeDp * 5f),
-                state,
-            ) {
+            LazyStaggeredGrid(2, Modifier.mainAxisSize(itemsSizeDp * 5f), state) {
                 items(100) {
                     DisposableEffect(it) {
                         activeNodes.add(it)
@@ -448,7 +435,6 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
             }
         }
 
-        waitForPrefetch()
         waitForPrefetch()
 
         // ┌─┬─┐
@@ -491,7 +477,7 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
                     span = {
                         if (it % 10 == 0) StaggeredGridItemSpan.FullLine
                         else StaggeredGridItemSpan.SingleLane
-                    }
+                    },
                 ) {
                     DisposableEffect(it) {
                         activeNodes.add(it)
@@ -535,17 +521,13 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
     fun fullSpanIsPrefetchedCorrectly_scrollingBack() {
         rule.setContent {
             state = rememberState()
-            LazyStaggeredGrid(
-                2,
-                Modifier.mainAxisSize(itemsSizeDp * 5f),
-                state,
-            ) {
+            LazyStaggeredGrid(2, Modifier.mainAxisSize(itemsSizeDp * 5f), state) {
                 items(
                     count = 100,
                     span = {
                         if (it % 10 == 0) StaggeredGridItemSpan.FullLine
                         else StaggeredGridItemSpan.SingleLane
-                    }
+                    },
                 ) {
                     DisposableEffect(it) {
                         activeNodes.add(it)
@@ -592,21 +574,14 @@ class LazyStaggeredGridPrefetcherTest(orientation: Orientation) :
 
     private val activeNodes = mutableSetOf<Int>()
 
-    private fun composeStaggeredGrid(
-        firstItem: Int = 0,
-        itemOffset: Int = 0,
-    ) {
+    private fun composeStaggeredGrid(firstItem: Int = 0, itemOffset: Int = 0) {
         rule.setContent {
             state =
                 rememberState(
                     initialFirstVisibleItemIndex = firstItem,
-                    initialFirstVisibleItemOffset = itemOffset
+                    initialFirstVisibleItemOffset = itemOffset,
                 )
-            LazyStaggeredGrid(
-                2,
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyStaggeredGrid(2, Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 items(100) {
                     DisposableEffect(it) {
                         activeNodes.add(it)

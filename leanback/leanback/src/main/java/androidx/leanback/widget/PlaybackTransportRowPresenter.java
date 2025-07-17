@@ -28,10 +28,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.leanback.R;
 import androidx.leanback.widget.ControlBarPresenter.OnControlClickedListener;
 import androidx.leanback.widget.ControlBarPresenter.OnControlSelectedListener;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -718,7 +719,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
 
     @Override
     protected void onBindRowViewHolder(
-            @NonNull RowPresenter.ViewHolder holder,
+            RowPresenter.@NonNull ViewHolder holder,
             @NonNull Object item
     ) {
         super.onBindRowViewHolder(holder, item);
@@ -760,7 +761,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onUnbindRowViewHolder(@NonNull RowPresenter.ViewHolder holder) {
+    protected void onUnbindRowViewHolder(RowPresenter.@NonNull ViewHolder holder) {
         ViewHolder vh = (ViewHolder) holder;
         PlaybackControlsRow row = (PlaybackControlsRow) vh.getRow();
 
@@ -821,7 +822,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewAttachedToWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewAttachedToWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewAttachedToWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewAttachedToWindow(
@@ -830,7 +831,7 @@ public class PlaybackTransportRowPresenter extends PlaybackRowPresenter {
     }
 
     @Override
-    protected void onRowViewDetachedFromWindow(@NonNull RowPresenter.ViewHolder vh) {
+    protected void onRowViewDetachedFromWindow(RowPresenter.@NonNull ViewHolder vh) {
         super.onRowViewDetachedFromWindow(vh);
         if (mDescriptionPresenter != null) {
             mDescriptionPresenter.onViewDetachedFromWindow(

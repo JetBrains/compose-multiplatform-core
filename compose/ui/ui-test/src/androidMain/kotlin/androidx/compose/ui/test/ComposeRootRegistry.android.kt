@@ -21,6 +21,8 @@ import android.os.Looper
 import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.compose.ui.platform.ViewRootForTest
+import androidx.compose.ui.test.platform.makeSynchronizedObject
+import androidx.compose.ui.test.platform.synchronized
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -39,7 +41,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  */
 internal class ComposeRootRegistry {
 
-    private val lock = Any()
+    private val lock = makeSynchronizedObject()
     private val allRoots = Collections.newSetFromMap(WeakHashMap<ViewRootForTest, Boolean>())
     private val resumedRoots = mutableSetOf<ViewRootForTest>()
     private val registryListeners = mutableSetOf<OnRegistrationChangedListener>()
@@ -131,7 +133,7 @@ internal class ComposeRootRegistry {
         }
     }
 
-    fun <R> withRegistry(block: () -> R): R {
+    inline fun <R> withRegistry(block: () -> R): R {
         try {
             setupRegistry()
             return block()
@@ -240,6 +242,8 @@ private fun ComposeRootRegistry.ensureComposeRootRegistryIsSetUp() {
     }
 }
 
+// TODO(b/356129837): This won't work on Robolectric, where nothing happens while the latch is
+//  awaited. The impact seems limited though, as having to wait for a compose root is quite rare.
 internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boolean) {
     ensureComposeRootRegistryIsSetUp()
 
@@ -249,7 +253,7 @@ internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boo
             object : ComposeRootRegistry.OnRegistrationChangedListener {
                 override fun onRegistrationChanged(
                     composeRoot: ViewRootForTest,
-                    registered: Boolean
+                    registered: Boolean,
                 ) {
                     if (hasComposeRoots) {
                         latch.countDown()
@@ -271,6 +275,8 @@ internal fun ComposeRootRegistry.waitForComposeRoots(atLeastOneRootExpected: Boo
     }
 }
 
+// TODO(b/356129837): This won't work on Robolectric, where nothing happens while we're suspended.
+//  The impact seems limited though, as having to wait for a compose root is quite rare.
 internal suspend fun ComposeRootRegistry.awaitComposeRoots() {
     ensureComposeRootRegistryIsSetUp()
 
@@ -290,7 +296,7 @@ internal suspend fun ComposeRootRegistry.awaitComposeRoots() {
                 object : ComposeRootRegistry.OnRegistrationChangedListener {
                     override fun onRegistrationChanged(
                         composeRoot: ViewRootForTest,
-                        registered: Boolean
+                        registered: Boolean,
                     ) {
                         if (hasComposeRoots) {
                             resume(this)

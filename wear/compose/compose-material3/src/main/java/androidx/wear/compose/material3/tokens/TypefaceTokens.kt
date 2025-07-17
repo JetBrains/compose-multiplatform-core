@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-// VERSION: v0_8
+// VERSION: v0_108
 // GENERATED CODE - DO NOT MODIFY BY HAND
-
 package androidx.wear.compose.material3.tokens
 
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.DeviceFontFamilyName
 import androidx.compose.ui.text.font.FontWeight
 
 internal object TypefaceTokens {
-    val Brand = FontFamily.SansSerif
-    val MediumWeight = FontWeight.Medium
-    val Plain = FontFamily.SansSerif
-    val RegularWeight = FontWeight.Normal
+    val Brand = DeviceFontFamilyName("roboto-flex")
+    val Plain = DeviceFontFamilyName("roboto-flex")
     val WeightBold = FontWeight.Bold
+    val WeightMedium = FontWeight.Medium
+    val WeightRegular = FontWeight.Normal
 }

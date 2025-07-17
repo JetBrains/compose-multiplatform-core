@@ -18,25 +18,61 @@ package androidx.pdf.viewer;
 
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.viewer.password.PasswordDialog;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * This instance requires a {@link #getTargetFragment} to be set to give back the typed password.
- * Currently, this target Fragment must be a {@link PdfViewer}.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressWarnings("deprecation")
 public class PdfPasswordDialog extends PasswordDialog {
 
+    public @Nullable PasswordDialogEventsListener mListener;
+
+    public void setListener(@NonNull PasswordDialogEventsListener listener) {
+        mListener = listener;
+    }
+
     @Override
     public void sendPassword(@NonNull EditText textField) {
-        ((PdfViewer) getTargetFragment()).setPassword(textField.getText().toString());
+        if (mListener != null) {
+            mListener.onPasswordSubmit(textField.getText().toString());
+        }
     }
 
     @Override
     public void showErrorOnDialogCancel() {
-        ((PdfViewer) getTargetFragment()).setPasswordCancelError();
+        if (mListener != null) {
+            mListener.onDialogCancelled();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        if (mListener != null) {
+            mListener.onDialogShown();
+        }
+        super.onResume();
+    }
+
+    public interface PasswordDialogEventsListener {
+        /**
+         * Callback to pass the password to the fragment.
+         */
+        void onPasswordSubmit(@NonNull String password);
+
+        /**
+         * Callback to pass the password to the fragment.
+         */
+        void onDialogShown();
+
+        /**
+         * Callback to handle the cancellation of this dialog.
+         */
+        void onDialogCancelled();
     }
 }

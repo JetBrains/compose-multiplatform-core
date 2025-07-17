@@ -31,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.background
@@ -181,7 +180,6 @@ class WindowRecomposerTest {
         }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     @MediumTest
     fun lifecycleAwareWindowRecomposerAcceptsContextElements(): Unit = runBlocking {
@@ -203,7 +201,6 @@ class WindowRecomposerTest {
         }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     @MediumTest
     fun lifecycleAwareWindowRecomposerJoinsAfterDetach(): Unit = runBlocking {
@@ -224,13 +221,12 @@ class WindowRecomposerTest {
                 assertEquals(
                     "did not unregister LifecycleObserver after detach; lifecycle observer count",
                     0,
-                    lifecycleOwner.lifecycle.observerCount
+                    lifecycleOwner.lifecycle.observerCount,
                 )
             }
         }
     }
 
-    @ExperimentalComposeUiApi
     @Test
     @MediumTest
     fun lifecycleAwareWindowRecomposerJoinsAfterLifecycleDestroy(): Unit = runBlocking {

@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import androidx.build.SdkHelperKt
 import androidx.build.AndroidXConfig
 
@@ -36,11 +37,11 @@ def buildToolsVersion = AndroidXConfig.getDefaultAndroidConfig(project).getBuild
 def compileSdk = AndroidXConfig.getDefaultAndroidConfig(project).getCompileSdk()
 
 dependencies {
+    api(project(":privacysandbox:tools:tools"))
+    api(project(":privacysandbox:tools:tools-core"))
     api(libs.kotlinStdlib)
     implementation(libs.kspApi)
-    implementation(libs.kotlinPoet)
-    implementation project(path: ':privacysandbox:tools:tools')
-    implementation project(path: ':privacysandbox:tools:tools-core')
+    implementation("com.squareup:kotlinpoet:2.0.0")
 
     testImplementation(project(":privacysandbox:tools:tools-testing"))
     testImplementation(project(":room:room-compiler-processing-testing"))
@@ -77,7 +78,7 @@ tasks.withType(Test).configureEach { test ->
 
 androidx {
     name = "androidx.privacysandbox.tools:tools-apicompiler"
-    type = LibraryType.ANNOTATION_PROCESSOR
+    type = SoftwareType.ANNOTATION_PROCESSOR
     inceptionYear = "2022"
     description = "Compiler for Privacy Sandbox API annotations."
 }

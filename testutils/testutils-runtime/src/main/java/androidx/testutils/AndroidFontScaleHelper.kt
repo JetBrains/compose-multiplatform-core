@@ -19,7 +19,6 @@ package androidx.testutils
 import android.app.Activity
 import android.os.Build
 import android.provider.Settings
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -34,7 +33,7 @@ object AndroidFontScaleHelper {
             InstrumentationRegistry.getInstrumentation().context.contentResolver,
             Settings.System.FONT_SCALE,
             /* Must default to 1 because when a test is first spun up it's not initialized. */
-            /* def= */ 1f
+            /* def= */ 1f,
         )
     }
 
@@ -70,10 +69,9 @@ object AndroidFontScaleHelper {
     @RequiresApi(Build.VERSION_CODES.Q)
     private object Api29Impl {
         @JvmStatic
-        @DoNotInline
         fun <A : Activity> setSystemFontScale(
             fontScale: Float,
-            activityScenario: ActivityScenario<A>
+            activityScenario: ActivityScenario<A>,
         ) {
             val instrumentationContext = InstrumentationRegistry.getInstrumentation().context
 
@@ -81,7 +79,7 @@ object AndroidFontScaleHelper {
                 Settings.System.putFloat(
                     instrumentationContext.contentResolver,
                     Settings.System.FONT_SCALE,
-                    fontScale
+                    fontScale,
                 )
             }
 
@@ -101,7 +99,6 @@ object AndroidFontScaleHelper {
 
         /** Runs the given function as root, with all shell permissions granted. */
         @JvmStatic
-        @DoNotInline
         private fun invokeWithShellPermissions(runnable: () -> Unit) {
             val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
             try {

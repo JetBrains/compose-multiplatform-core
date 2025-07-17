@@ -23,7 +23,6 @@ import static java.util.Objects.requireNonNull;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.ImageProcessor;
 import androidx.camera.core.ImageProxy;
@@ -31,6 +30,8 @@ import androidx.camera.core.processing.ImageProcessorRequest;
 import androidx.camera.core.processing.InternalImageProcessor;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Applies effect to a {@link Bitmap} and gets a {@link Bitmap} in return.
@@ -46,9 +47,9 @@ public class BitmapEffect implements Operation<Packet<Bitmap>, Packet<Bitmap>> {
         mProcessor = imageProcessor;
     }
 
-    @NonNull
     @Override
-    public Packet<Bitmap> apply(@NonNull Packet<Bitmap> packet) throws ImageCaptureException {
+    public @NonNull Packet<Bitmap> apply(@NonNull Packet<Bitmap> packet)
+            throws ImageCaptureException {
         // Process the frame.
         ImageProcessor.Response response = mProcessor.safeProcess(new ImageProcessorRequest(
                 new RgbaImageProxy(packet),

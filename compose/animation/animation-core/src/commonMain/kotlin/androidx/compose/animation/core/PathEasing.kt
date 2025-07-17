@@ -47,11 +47,10 @@ import androidx.compose.ui.graphics.findFirstRoot
  * Note: a [PathEasing] instance can be used from any thread, but not concurrently.
  *
  * @sample androidx.compose.animation.core.samples.PathEasingSample
- *
  * @param path The [Path] to use to make the curve representing the easing curve.
  */
 @Immutable
-class PathEasing(private val path: Path) : Easing {
+public class PathEasing(private val path: Path) : Easing {
     private lateinit var intervals: IntervalTree<PathSegment>
 
     override fun transform(fraction: Float): Float {

@@ -16,7 +16,7 @@
 
 package androidx.compose.lint
 
-import kotlinx.metadata.ClassName
+import kotlin.metadata.ClassName
 
 /** Contains common names used for lint checks. */
 object Names {
@@ -56,6 +56,12 @@ object Names {
         val ReusableContent = Name(PackageName, "ReusableContent")
         val Key = Name(PackageName, "key")
         val StructuralEqualityPolicy = Name(PackageName, "structuralEqualityPolicy")
+
+        object Annotation {
+            val PackageName = Package(Runtime.PackageName, "annotation")
+            val FrequentlyChangingValue = Name(PackageName, "FrequentlyChangingValue")
+            val RememberInComposition = Name(PackageName, "RememberInComposition")
+        }
     }
 
     object Ui {
@@ -66,6 +72,12 @@ object Names {
         object Layout {
             val PackageName = Package("androidx.compose.ui.layout")
             val ParentDataModifier = Name(PackageName, "ParentDataModifier")
+        }
+
+        object Platform {
+            val PackageName = Package(Ui.PackageName, "platform")
+            val LocalConfiguration = Name(PackageName, "LocalConfiguration")
+            val LocalResources = Name(PackageName, "LocalResources")
         }
 
         object Pointer {
@@ -82,6 +94,7 @@ object Names {
 
         object Node {
             val PackageName = Package(Ui.PackageName, "node")
+            val ModifierNodeElement = Name(PackageName, "ModifierNodeElement")
             val CurrentValueOf = Name(PackageName, "currentValueOf")
         }
     }
@@ -121,7 +134,7 @@ internal constructor(private val pkg: PackageName, private val nameSegments: Lis
         get() = pkg.segments.joinToString(".", postfix = ".") + nameSegments.joinToString(".")
 
     /**
-     * The [ClassName] for use with kotlinx.metadata. Note that in kotlinx.metadata the actual type
+     * The [ClassName] for use with kotlin.metadata. Note that in kotlin.metadata the actual type
      * might be different from the underlying JVM type, for example: kotlin/Int -> java/lang/Integer
      */
     val kmClassName: ClassName

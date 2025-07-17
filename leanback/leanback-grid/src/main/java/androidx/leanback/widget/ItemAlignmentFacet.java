@@ -17,7 +17,7 @@ package androidx.leanback.widget;
 
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Optional facet provided by {@link androidx.recyclerview.widget.RecyclerView.Adapter} or
@@ -198,7 +198,7 @@ public final class ItemAlignmentFacet {
      * Sets definitions of alignment positions.
      */
     public void setAlignmentDefs(
-            @SuppressWarnings("ArrayReturn") @NonNull ItemAlignmentDef[] defs) {
+            @SuppressWarnings("ArrayReturn") ItemAlignmentDef @NonNull [] defs) {
         if (defs == null || defs.length < 1) {
             throw new IllegalArgumentException();
         }
@@ -209,8 +209,7 @@ public final class ItemAlignmentFacet {
      * Returns read only definitions of alignment positions.
      */
     @SuppressWarnings("ArrayReturn")
-    @NonNull
-    public ItemAlignmentDef[] getAlignmentDefs() {
+    public ItemAlignmentDef @NonNull [] getAlignmentDefs() {
         return mAlignmentDefs;
     }
 }

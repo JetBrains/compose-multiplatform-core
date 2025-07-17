@@ -22,10 +22,11 @@ import android.graphics.RectF;
 import android.util.Rational;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.internal.utils.SizeUtil;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
 

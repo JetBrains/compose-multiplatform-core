@@ -18,10 +18,11 @@ package androidx.camera.testing.impl.fakes;
 
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.SurfaceProcessor;
 import androidx.camera.core.processing.SurfaceProcessorInternal;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -84,9 +85,8 @@ public class FakeSurfaceEffect extends CameraEffect {
         mSurfaceProcessorInternal = surfaceProcessorInternal;
     }
 
-    @NonNull
     @Override
-    public SurfaceProcessorInternal createSurfaceProcessorInternal() {
+    public @NonNull SurfaceProcessorInternal createSurfaceProcessorInternal() {
         if (mSurfaceProcessorInternal != null) {
             return mSurfaceProcessorInternal;
         } else {

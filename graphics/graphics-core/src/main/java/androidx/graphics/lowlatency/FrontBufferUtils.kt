@@ -48,7 +48,7 @@ internal class FrontBufferUtils private constructor() {
         fun configureFrontBufferLayerFrameRate(
             frontBufferSurfaceControl: SurfaceControlCompat,
             frameRate: Float = 1000f,
-            transaction: SurfaceControlCompat.Transaction? = null
+            transaction: SurfaceControlCompat.Transaction? = null,
         ): SurfaceControlCompat.Transaction? {
             var targetTransaction: SurfaceControlCompat.Transaction? = transaction
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -59,7 +59,7 @@ internal class FrontBufferUtils private constructor() {
                     frontBufferSurfaceControl,
                     frameRate,
                     SurfaceControlCompat.FRAME_RATE_COMPATIBILITY_DEFAULT,
-                    SurfaceControlCompat.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
+                    SurfaceControlCompat.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS,
                 )
             }
             return targetTransaction
@@ -85,25 +85,26 @@ internal class UsageFlagsVerificationHelper private constructor() {
         // developer.android.com/ndk/reference/group/a-hardware-buffer#ahardwarebuffer_usageflags
         @SuppressLint("WrongConstant")
         @RequiresApi(Build.VERSION_CODES.Q)
-        @androidx.annotation.DoNotInline
         internal fun isSupported(flag: Long): Boolean =
             HardwareBuffer.isSupported(
                 1, // width
                 1, // height
                 HardwareBuffer.RGBA_8888, // format
                 1, // layers
-                FrontBufferUtils.BaseFlags or flag
+                FrontBufferUtils.BaseFlags or flag,
             )
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-        @androidx.annotation.DoNotInline
         fun obtainUsageFlagsV33(): Long {
             // First verify if the front buffer usage flag is supported along with the
             // "usage composer overlay" flag that was introduced in API level 33
             return if (isSupported(HardwareBuffer.USAGE_FRONT_BUFFER)) {
                 FrontBufferUtils.BaseFlags or HardwareBuffer.USAGE_FRONT_BUFFER
             } else {
-                FrontBufferUtils.BaseFlags
+                // If the front buffer usage flag is not supported, configure the CPU write flag
+                // in order to prevent arm frame buffer compression from causing visual artifacts
+                // on certain devices like the Samsung Galaxy Tab S6 lite. See b/365131024
+                FrontBufferUtils.BaseFlags or HardwareBuffer.USAGE_CPU_WRITE_OFTEN
             }
         }
     }

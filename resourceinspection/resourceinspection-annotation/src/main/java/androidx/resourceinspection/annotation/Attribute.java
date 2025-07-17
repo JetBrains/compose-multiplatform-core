@@ -16,7 +16,7 @@
 
 package androidx.resourceinspection.annotation;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -58,7 +58,7 @@ public @interface Attribute {
      *
      * @return an array of map entries
      */
-    @NonNull IntMap[] intMapping() default {};
+    IntMap @NonNull [] intMapping() default {};
 
     /**
      * One entry in a mapping of int values to enum or flag names.

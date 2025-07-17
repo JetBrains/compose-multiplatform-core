@@ -17,10 +17,13 @@
 package androidx.compose.ui.demos.viewinterop
 
 import android.graphics.Color
+import android.graphics.Color.argb
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -38,25 +41,36 @@ import androidx.compose.integration.demos.common.DemoCategory
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.demos.R
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputFilter
+import androidx.compose.ui.input.pointer.PointerInputModifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlin.random.Random
 
-@OptIn(ExperimentalComposeUiApi::class)
 val AndroidInComposeDemos =
     DemoCategory(
         "Android In Compose Interop",
         listOf(
             ComposableDemo("4 Android tap in Compose") { FourAndroidTapInCompose() },
             ComposableDemo("Android tap in Compose tap") { AndroidTapInComposeTap() },
+            ComposableDemo("Android tap in Compose with Compose sibling") {
+                AndroidTapInComposeWithComposeSibling()
+            },
             ComposableDemo("Android tap in Compose scroll") { AndroidTapInComposeScroll() },
             ComposableDemo("Android scroll in Compose scroll (different orientation)") {
                 AndroidScrollInComposeScrollDifferentOrientation()
@@ -68,7 +82,10 @@ val AndroidInComposeDemos =
                 TwoAndroidScrollViewsInCompose()
             },
             ComposableDemo("MotionEventPointerInputFilter") { PointerInteropFilterDemo() },
-        )
+            ComposableDemo("Sharing event with sibling of parent Demo") {
+                SharingEventWithSiblingOfParent()
+            },
+        ),
     )
 
 @Composable
@@ -145,6 +162,87 @@ private fun AndroidTapInComposeTap() {
     }
 }
 
+private fun randomComposeColor(): ComposeColor {
+    return ComposeColor(
+        red = Random.nextInt(256),
+        green = Random.nextInt(256),
+        blue = Random.nextInt(256),
+    )
+}
+
+private fun randomViewColor(): Int {
+    return argb(255, Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+}
+
+@Composable
+private fun AndroidTapInComposeWithComposeSibling() {
+    var theView: View?
+
+    var backgroundColorForPureComposeBox by remember { mutableStateOf(randomComposeColor()) }
+
+    val onTapPureCompose: (Offset) -> Unit = {
+        backgroundColorForPureComposeBox = randomComposeColor()
+    }
+
+    Box(
+        modifier =
+            Modifier.fillMaxSize()
+                .background(backgroundColorForPureComposeBox)
+                .padding(10.dp)
+                .pointerInput(Unit) { detectTapGestures(onTap = onTapPureCompose) }
+    ) {
+        Text(
+            "Pure Compose Box behind another Box containing an AndroidView.\n\n" +
+                "The grey Box overlaying this box (sibling) contains a View. While the button in " +
+                "that View consumes the input tap event, the rest of the View will not, and, " +
+                "because we are sharing the event with the sibling (see code), it allows the " +
+                "event to pass down to Box below (changing the color)."
+        )
+    }
+
+    Box(
+        Modifier.fillMaxSize()
+            .wrapContentSize(Alignment.Center)
+            .size(240.dp)
+            .background(ComposeColor.Gray)
+            .padding(10.dp)
+            // Shares events with the sibling. If a click on the View inside this Box does not
+            // consume it, the other box (sibling) will take it.
+            .then(
+                object : PointerInputModifier {
+                    override val pointerInputFilter: PointerInputFilter =
+                        object : PointerInputFilter() {
+                            override fun onPointerEvent(
+                                pointerEvent: PointerEvent,
+                                pass: PointerEventPass,
+                                bounds: IntSize,
+                            ) {}
+
+                            override fun onCancel() {}
+
+                            override val shareWithSiblings: Boolean = true
+                        }
+                }
+            )
+    ) {
+        Text("Box containing AndroidView")
+        AndroidView(
+            modifier = Modifier.fillMaxSize().padding(30.dp),
+            factory = { context ->
+                LayoutInflater.from(context)
+                    .inflate(R.layout.android_tap_in_compose_with_compose_sibling, null)
+                    .let { view ->
+                        theView = view
+                        view.findViewById<View>(R.id.myButton).setOnClickListener {
+                            theView?.setBackgroundColor(randomViewColor())
+                        }
+                        view
+                    }
+            },
+        )
+    }
+}
+
 @Composable
 private fun AndroidTapInComposeScroll() {
     Column {
@@ -208,7 +306,7 @@ private fun AndroidScrollInComposeScrollDifferentOrientation() {
                     LayoutInflater.from(context)
                         .inflate(
                             R.layout.android_scroll_in_compose_scroll_different_orientation,
-                            null
+                            null,
                         )
                 })
             }
@@ -263,19 +361,18 @@ private fun TwoAndroidScrollViewsInCompose() {
                 { context ->
                     LayoutInflater.from(context).inflate(R.layout.android_scrollview, null)
                 },
-                Modifier.weight(2f)
+                Modifier.weight(2f),
             )
             AndroidView(
                 { context ->
                     LayoutInflater.from(context).inflate(R.layout.android_scrollview, null)
                 },
-                Modifier.weight(1f)
+                Modifier.weight(1f),
             )
         }
     }
 }
 
-@ExperimentalComposeUiApi
 @Composable
 private fun PointerInteropFilterDemo() {
 
@@ -298,4 +395,65 @@ private fun PointerInteropFilterDemo() {
             Text(motionEventString.value)
         }
     }
+}
+
+@Preview
+@Composable
+fun SharingEventWithSiblingOfParent() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            "Search \"SHARING\" in Logcat to see events (Cyan box is child to parent that " +
+                "is sharing)."
+        )
+        Box {
+            ClickableSurface()
+
+            MyView(
+                0xFFFF0000.toInt(), // Manually created hex for Color.Red,
+                Modifier.align(Alignment.TopStart),
+            )
+
+            // Parent
+            Box(
+                modifier =
+                    Modifier.align(Alignment.BottomEnd)
+                        // This is the part that shares with the sibling...
+                        .then(
+                            object : PointerInputModifier {
+                                override val pointerInputFilter: PointerInputFilter =
+                                    object : PointerInputFilter() {
+                                        override fun onPointerEvent(
+                                            pointerEvent: PointerEvent,
+                                            pass: PointerEventPass,
+                                            bounds: IntSize,
+                                        ) {}
+
+                                        override fun onCancel() {}
+
+                                        override val shareWithSiblings: Boolean = true
+                                    }
+                            }
+                        )
+            ) {
+                // Tapping here with code above will allow ClickableSurface (sibling of a parent)
+                // to get the event.
+                MyView(
+                    0xFF00FFFF.toInt() // Manually created hex for Color.Cyan,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ClickableSurface(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize().clickable { Log.d("SHARING", "onClick") })
+}
+
+@Composable
+fun MyView(color: Int, modifier: Modifier = Modifier) {
+    AndroidView(
+        modifier = modifier.fillMaxSize(0.5f),
+        factory = { context -> View(context).apply { setBackgroundColor(color) } },
+    )
 }

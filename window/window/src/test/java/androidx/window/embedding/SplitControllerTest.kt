@@ -18,7 +18,6 @@ package androidx.window.embedding
 
 import android.app.Activity
 import androidx.core.util.Consumer
-import androidx.window.core.ExperimentalWindowApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -34,7 +33,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-@OptIn(ExperimentalCoroutinesApi::class, ExperimentalWindowApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class SplitControllerTest {
 
     private val mockBackend = mock<EmbeddingBackend>()
@@ -49,8 +48,7 @@ internal class SplitControllerTest {
                     SplitInfo(
                         ActivityStack(emptyList(), true),
                         ActivityStack(emptyList(), true),
-                        SplitAttributes(),
-                        mock()
+                        SplitAttributes.Builder().build(),
                     )
                 )
             doAnswer { invocationOnMock ->
@@ -92,21 +90,14 @@ internal class SplitControllerTest {
 
     @Test
     fun test_updateSplitAttribute_delegates() {
-        val mockSplitAttributes = SplitAttributes()
+        val mockSplitAttributes = SplitAttributes.Builder().build()
         val mockSplitInfo =
             SplitInfo(
                 ActivityStack(emptyList(), true),
                 ActivityStack(emptyList(), true),
                 mockSplitAttributes,
-                mock()
             )
         splitController.updateSplitAttributes(mockSplitInfo, mockSplitAttributes)
         verify(mockBackend).updateSplitAttributes(eq(mockSplitInfo), eq(mockSplitAttributes))
-    }
-
-    @Test
-    fun test_invalidateTopVisibleSplitAttributes_delegates() {
-        splitController.invalidateTopVisibleSplitAttributes()
-        verify(mockBackend).invalidateTopVisibleSplitAttributes()
     }
 }

@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("NOTHING_TO_INLINE")
+
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
 
 package androidx.compose.ui.graphics
 
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.util.fastIsFinite
+import androidx.compose.ui.util.fastMaxOf
+import androidx.compose.ui.util.fastMinOf
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sin
 
 // NOTE: This class contains a number of tests like this:
@@ -55,43 +57,133 @@ value class Matrix(
         // See top-level comment
         if (values.size < 16) return point
 
+        val v00 = this[0, 0]
+        val v01 = this[0, 1]
+        val v03 = this[0, 3]
+        val v10 = this[1, 0]
+        val v11 = this[1, 1]
+        val v13 = this[1, 3]
+        val v30 = this[3, 0]
+        val v31 = this[3, 1]
+        val v33 = this[3, 3]
+
         val x = point.x
         val y = point.y
-        val z = this[0, 3] * x + this[1, 3] * y + this[3, 3]
+        val z = v03 * x + v13 * y + v33
         val inverseZ = 1 / z
-        val pZ = if (inverseZ.isFinite()) inverseZ else 0f
+        val pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
 
-        return Offset(
-            x = pZ * (this[0, 0] * x + this[1, 0] * y + this[3, 0]),
-            y = pZ * (this[0, 1] * x + this[1, 1] * y + this[3, 1])
-        )
+        return Offset(x = pZ * (v00 * x + v10 * y + v30), y = pZ * (v01 * x + v11 * y + v31))
     }
 
     /** Does a 3D transform on [rect] and returns its bounds after the transform. */
     fun map(rect: Rect): Rect {
-        val p0 = map(Offset(rect.left, rect.top))
-        val p1 = map(Offset(rect.left, rect.bottom))
-        val p3 = map(Offset(rect.right, rect.top))
-        val p4 = map(Offset(rect.right, rect.bottom))
+        // See top-level comment
+        if (values.size < 16) return rect
 
-        val left = min(min(p0.x, p1.x), min(p3.x, p4.x))
-        val top = min(min(p0.y, p1.y), min(p3.y, p4.y))
-        val right = max(max(p0.x, p1.x), max(p3.x, p4.x))
-        val bottom = max(max(p0.y, p1.y), max(p3.y, p4.y))
-        return Rect(left, top, right, bottom)
+        val v00 = this[0, 0]
+        val v01 = this[0, 1]
+        val v03 = this[0, 3]
+        val v10 = this[1, 0]
+        val v11 = this[1, 1]
+        val v13 = this[1, 3]
+        val v30 = this[3, 0]
+        val v31 = this[3, 1]
+        val v33 = this[3, 3]
+
+        val l = rect.left
+        val t = rect.top
+        val r = rect.right
+        val b = rect.bottom
+
+        var x = l
+        var y = t
+        var inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        var pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x0 = pZ * (v00 * x + v10 * y + v30)
+        val y0 = pZ * (v01 * x + v11 * y + v31)
+
+        x = l
+        y = b
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x1 = pZ * (v00 * x + v10 * y + v30)
+        val y1 = pZ * (v01 * x + v11 * y + v31)
+
+        x = r
+        y = t
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x2 = pZ * (v00 * x + v10 * y + v30)
+        val y2 = pZ * (v01 * x + v11 * y + v31)
+
+        x = r
+        y = b
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x3 = pZ * (v00 * x + v10 * y + v30)
+        val y3 = pZ * (v01 * x + v11 * y + v31)
+
+        return Rect(
+            fastMinOf(x0, x1, x2, x3),
+            fastMinOf(y0, y1, y2, y3),
+            fastMaxOf(x0, x1, x2, x3),
+            fastMaxOf(y0, y1, y2, y3),
+        )
     }
 
     /** Does a 3D transform on [rect], transforming [rect] with the results. */
     fun map(rect: MutableRect) {
-        val p0 = map(Offset(rect.left, rect.top))
-        val p1 = map(Offset(rect.left, rect.bottom))
-        val p3 = map(Offset(rect.right, rect.top))
-        val p4 = map(Offset(rect.right, rect.bottom))
+        // See top-level comment
+        if (values.size < 16) return
 
-        rect.left = min(min(p0.x, p1.x), min(p3.x, p4.x))
-        rect.top = min(min(p0.y, p1.y), min(p3.y, p4.y))
-        rect.right = max(max(p0.x, p1.x), max(p3.x, p4.x))
-        rect.bottom = max(max(p0.y, p1.y), max(p3.y, p4.y))
+        val v00 = this[0, 0]
+        val v01 = this[0, 1]
+        val v03 = this[0, 3]
+        val v10 = this[1, 0]
+        val v11 = this[1, 1]
+        val v13 = this[1, 3]
+        val v30 = this[3, 0]
+        val v31 = this[3, 1]
+        val v33 = this[3, 3]
+
+        val l = rect.left
+        val t = rect.top
+        val r = rect.right
+        val b = rect.bottom
+
+        var x = l
+        var y = t
+        var inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        var pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x0 = pZ * (v00 * x + v10 * y + v30)
+        val y0 = pZ * (v01 * x + v11 * y + v31)
+
+        x = l
+        y = b
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x1 = pZ * (v00 * x + v10 * y + v30)
+        val y1 = pZ * (v01 * x + v11 * y + v31)
+
+        x = r
+        y = t
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x2 = pZ * (v00 * x + v10 * y + v30)
+        val y2 = pZ * (v01 * x + v11 * y + v31)
+
+        x = r
+        y = b
+        inverseZ = 1.0f / (v03 * x + v13 * y + v33)
+        pZ = if (inverseZ.fastIsFinite()) inverseZ else 0f
+        val x3 = pZ * (v00 * x + v10 * y + v30)
+        val y3 = pZ * (v01 * x + v11 * y + v31)
+
+        rect.left = fastMinOf(x0, x1, x2, x3)
+        rect.top = fastMinOf(y0, y1, y2, y3)
+        rect.right = fastMaxOf(x0, x1, x2, x3)
+        rect.bottom = fastMaxOf(y0, y1, y2, y3)
     }
 
     /** Multiply this matrix by [m] and assign the result to this matrix. */
@@ -260,7 +352,7 @@ value class Matrix(
         // See top-level comment
         if (values.size < 16) return
 
-        val r = degrees * PI / 180.0
+        val r = degrees * (PI / 180.0)
         val s = sin(r).toFloat()
         val c = cos(r).toFloat()
 
@@ -299,7 +391,7 @@ value class Matrix(
         // See top-level comment
         if (values.size < 16) return
 
-        val r = degrees * PI / 180.0
+        val r = degrees * (PI / 180.0)
         val s = sin(r).toFloat()
         val c = cos(r).toFloat()
 
@@ -338,7 +430,7 @@ value class Matrix(
         // See top-level comment
         if (values.size < 16) return
 
-        val r = degrees * PI / 180.0
+        val r = degrees * (PI / 180.0)
         val s = sin(r).toFloat()
         val c = cos(r).toFloat()
 
@@ -441,10 +533,10 @@ value class Matrix(
         rotationZ: Float = 0f,
         scaleX: Float = 1f,
         scaleY: Float = 1f,
-        scaleZ: Float = 1f
+        scaleZ: Float = 1f,
     ) {
         // X
-        val rx = rotationX * PI / 180.0
+        val rx = rotationX * (PI / 180.0)
         val rsx = sin(rx).toFloat()
         val rcx = cos(rx).toFloat()
 
@@ -458,7 +550,7 @@ value class Matrix(
         var v32 = translationY * rsx + translationZ * rcx
 
         // Y
-        val ry = rotationY * PI / 180.0
+        val ry = rotationY * (PI / 180.0)
         val rsy = sin(ry).toFloat()
         val rcy = cos(ry).toFloat()
 
@@ -475,7 +567,7 @@ value class Matrix(
         v32 = -translationX * rsy + v32 * rcy
 
         // Z
-        val rz = rotationZ * PI / 180.0
+        val rz = rotationZ * (PI / 180.0)
         val rsz = sin(rz).toFloat()
         val rcz = cos(rz).toFloat()
 

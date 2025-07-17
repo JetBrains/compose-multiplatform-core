@@ -21,16 +21,16 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api("androidx.lifecycle:lifecycle-runtime:2.2.0")
     api("androidx.arch.core:core-common:2.2.0")
     api("androidx.arch.core:core-runtime:2.2.0")
@@ -52,25 +52,20 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
     androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 androidx {
     name = "Lifecycle Extensions"
-    publish = Publish.NONE
-    runApiTasks = new RunApiTasks.Yes("Need to track API surface before moving to publish")
+    type = SoftwareType.INTERNAL_LIBRARY_WITH_API_TASKS
     inceptionYear = "2017"
     description = "Android Lifecycle Extensions"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.lifecycle.extensions"
+    namespace = "androidx.lifecycle.extensions"
+    testOptions.unitTests.returnDefaultValues = true
 }

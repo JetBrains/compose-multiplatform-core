@@ -16,6 +16,7 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
@@ -61,9 +62,10 @@ import androidx.wear.compose.foundation.sizeIn
  * Additionally, for [color], if [color] is not set, and [style] does not have a color, then
  * [LocalContentColor] will be used.
  *
- * For samples explicitly specifying style see:
+ * For samples using curved text in a [CurvedLayout] see:
  *
- * For examples using CompositionLocal to specify the style, see:
+ * @sample androidx.wear.compose.material3.samples.CurvedTextTop
+ * @sample androidx.wear.compose.material3.samples.CurvedTextBottom
  *
  * For more information, see the
  * [Curved Text](https://developer.android.com/training/wearables/compose/curved-text) guide.
@@ -81,16 +83,19 @@ import androidx.wear.compose.foundation.sizeIn
  * @param fontStyle The typeface variant to use when drawing the letters (e.g. italic).
  * @param fontSynthesis Whether to synthesize font weight and/or style when the requested weight or
  *   style cannot be found in the provided font family.
+ * @param letterSpacing The amount of space (in em or sp) to add between each letter, when text is
+ *   going clockwise.
+ * @param letterSpacingCounterClockwise The amount of space (in em or sp) to add between each
+ *   letter, when text is going counterClockwise. Note that this usually needs to be bigger than
+ *   [letterSpacing] to account for the fact that going clockwise, text fans out from the baseline
+ *   while going counter clockwise text fans in.
  * @param style Specifies the style to use.
  * @param angularDirection Specify if the text is laid out clockwise or anti-clockwise, and if those
  *   needs to be reversed in a Rtl layout. If not specified, it will be inherited from the enclosing
  *   [curvedRow] or [CurvedLayout] See [CurvedDirection.Angular].
  * @param overflow How visual overflow should be handled.
- *
- * TODO(b/283777480): Add CurvedText samples
- * TODO(b/283777480): Add CurvedText samples
  */
-fun CurvedScope.curvedText(
+public fun CurvedScope.curvedText(
     text: String,
     modifier: CurvedModifier = CurvedModifier,
     maxSweepAngle: Float = CurvedTextDefaults.ScrollableContentMaxSweepAngle,
@@ -101,17 +106,19 @@ fun CurvedScope.curvedText(
     fontWeight: FontWeight? = null,
     fontStyle: FontStyle? = null,
     fontSynthesis: FontSynthesis? = null,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
+    letterSpacingCounterClockwise: TextUnit = TextUnit.Unspecified,
     style: CurvedTextStyle? = null,
     angularDirection: CurvedDirection.Angular? = null,
     overflow: TextOverflow = TextOverflow.Clip,
-) =
+): Unit =
     basicCurvedText(
         text = text,
         modifier = modifier.sizeIn(maxSweepDegrees = maxSweepAngle),
         angularDirection = angularDirection,
-        overflow = overflow
+        overflow = overflow,
     ) {
-        val baseStyle = style ?: CurvedTextStyle(LocalTextStyle.current)
+        val baseStyle = style ?: MaterialTheme.typography.arcMedium
         val textColor =
             color.takeOrElse { baseStyle.color.takeOrElse { LocalContentColor.current } }
         baseStyle.merge(
@@ -122,12 +129,14 @@ fun CurvedScope.curvedText(
                 fontWeight = fontWeight,
                 fontStyle = fontStyle,
                 fontSynthesis = fontSynthesis,
-                background = background
+                background = background,
+                letterSpacing = letterSpacing,
+                letterSpacingCounterClockwise = letterSpacingCounterClockwise,
             )
         )
     }
 
-object CurvedTextDefaults {
+public object CurvedTextDefaults {
 
     /**
      * The default maximum sweep angle in degrees used by [curvedText]. This threshold is for the
@@ -136,11 +145,19 @@ object CurvedTextDefaults {
      * This is calculated by keeping the length of the corresponding chord on the circle to be
      * approximately 57% of the screen width.
      */
-    const val ScrollableContentMaxSweepAngle: Float = 70f
+    public val ScrollableContentMaxSweepAngle: Float = 70f
 
     /**
      * The recommended maximum sweep angle in degrees used by [curvedText] for screens without
      * scrollable content.
      */
-    const val StaticContentMaxSweepAngle: Float = 120f
+    public val StaticContentMaxSweepAngle: Float = 120f
+
+    /**
+     * The recommended background color to use when displaying curved text so it is visible on top
+     * of other content.
+     */
+    @Composable
+    public fun backgroundColor(): Color =
+        MaterialTheme.colorScheme.background.let { it.copy(alpha = 0.85f * it.alpha) }
 }

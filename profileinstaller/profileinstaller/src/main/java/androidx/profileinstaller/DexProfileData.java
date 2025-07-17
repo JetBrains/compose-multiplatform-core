@@ -16,23 +16,20 @@
 
 package androidx.profileinstaller;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.TreeMap;
 
 class DexProfileData {
-    @NonNull
-    final String apkName;
-    @NonNull
-    final String dexName;
+    final @NonNull String apkName;
+    final @NonNull String dexName;
     final long dexChecksum;
     long mTypeIdCount;
     int classSetSize;
     final int hotMethodRegionSize;
     final int numMethodIds;
-    @NonNull int[] classes;
-    final @NonNull
-    TreeMap<Integer, Integer> methods;
+    int @NonNull [] classes;
+    final @NonNull TreeMap<Integer, Integer> methods;
 
     DexProfileData(
             @NonNull String apkName,
@@ -42,7 +39,7 @@ class DexProfileData {
             int classSetSize,
             int hotMethodRegionSize,
             int numMethodIds,
-            @NonNull int[] classes,
+            int @NonNull [] classes,
             @NonNull TreeMap<Integer, Integer> methods
     ) {
         this.apkName = apkName;

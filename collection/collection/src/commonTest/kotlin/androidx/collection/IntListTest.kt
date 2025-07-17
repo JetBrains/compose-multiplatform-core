@@ -96,15 +96,15 @@ class IntListTest {
     fun joinToString() {
         assertEquals("${1}, ${2}, ${3}, ${4}, ${5}", list.joinToString())
         assertEquals(
-            "x${1}, ${2}, ${3}...",
-            list.joinToString(prefix = "x", postfix = "y", limit = 3)
+            "x${1}, ${2}, ${3}, ...y",
+            list.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${1}-${2}-${3}-${4}-${5}<",
-            list.joinToString(separator = "-", prefix = ">", postfix = "<")
+            list.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it.toInt()) {
                     1 -> "one"
@@ -112,7 +112,7 @@ class IntListTest {
                     3 -> "three"
                     else -> "whoops"
                 }
-            }
+            },
         )
     }
 
@@ -163,21 +163,21 @@ class IntListTest {
             list.elementAtOrElse(0) {
                 assertEquals(0, it)
                 0
-            }
+            },
         )
         assertEquals(
             0,
             list.elementAtOrElse(-1) {
                 assertEquals(-1, it)
                 0
-            }
+            },
         )
         assertEquals(
             0,
             list.elementAtOrElse(5) {
                 assertEquals(5, it)
                 0
-            }
+            },
         )
     }
 
@@ -366,7 +366,7 @@ class IntListTest {
     fun foldIndexed() {
         assertEquals(
             "01-12-23-34-45-",
-            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" }
+            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -379,7 +379,7 @@ class IntListTest {
     fun foldRightIndexed() {
         assertEquals(
             "45-34-23-12-01-",
-            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" }
+            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -623,6 +623,14 @@ class IntListTest {
     }
 
     @Test
+    fun sortEmpty() {
+        val l = MutableIntList(0)
+        l.sort()
+        l.sortDescending()
+        assertEquals(MutableIntList(0), l)
+    }
+
+    @Test
     fun testEmptyIntList() {
         val l = emptyIntList()
         assertEquals(0, l.size)
@@ -704,5 +712,47 @@ class IntListTest {
         assertEquals(10, l[1])
         assertEquals(-1, l[2])
         assertEquals(10, l[3])
+    }
+
+    @Test
+    fun buildIntListFunction() {
+        val contract: Boolean
+        val l = buildIntList {
+            contract = true
+            add(2)
+            add(10)
+        }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+    }
+
+    @Test
+    fun buildIntListWithCapacityFunction() {
+        val contract: Boolean
+        val l =
+            buildIntList(20) {
+                contract = true
+                add(2)
+                add(10)
+            }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertTrue(l.content.size >= 20)
+        assertEquals(2, l[0])
+        assertEquals(10, l[1])
+    }
+
+    @Test
+    fun binarySearchIntList() {
+        val l = mutableIntListOf(-2, -1, 2, 10, 10)
+        assertEquals(0, l.binarySearch(-2))
+        assertEquals(2, l.binarySearch(2))
+        assertEquals(3, l.binarySearch(10))
+
+        assertEquals(-1, l.binarySearch(-20))
+        assertEquals(-4, l.binarySearch(3))
+        assertEquals(-6, l.binarySearch(20))
     }
 }

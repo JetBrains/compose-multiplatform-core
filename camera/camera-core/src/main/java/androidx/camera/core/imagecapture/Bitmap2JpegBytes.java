@@ -22,14 +22,15 @@ import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.processing.Operation;
 import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
 
@@ -38,11 +39,11 @@ import java.io.ByteArrayOutputStream;
  *
  * <p>The {@link Bitmap} will be recycled and should not be used after the processing.
  */
-class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>> {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>> {
 
-    @NonNull
     @Override
-    public Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
+    public @NonNull Packet<byte[]> apply(@NonNull In in) throws ImageCaptureException {
         Packet<Bitmap> packet = in.getPacket();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         packet.getData().compress(Bitmap.CompressFormat.JPEG, in.getJpegQuality(), outputStream);
@@ -67,7 +68,6 @@ class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>>
 
     @RequiresApi(34)
     private static class Api34Impl {
-        @DoNotInline
         static boolean hasGainmap(@NonNull Bitmap bitmap) {
             return bitmap.hasGainmap();
         }
@@ -81,16 +81,15 @@ class Bitmap2JpegBytes implements Operation<Bitmap2JpegBytes.In, Packet<byte[]>>
      * Input of {@link Bitmap2JpegBytes} processor.
      */
     @AutoValue
-    abstract static class In {
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract static class In {
 
         abstract Packet<Bitmap> getPacket();
 
         abstract int getJpegQuality();
 
-        @NonNull
-        static In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
+        public static @NonNull In of(@NonNull Packet<Bitmap> imagePacket, int jpegQuality) {
             return new AutoValue_Bitmap2JpegBytes_In(imagePacket, jpegQuality);
         }
     }
 }
-

@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -713,7 +712,7 @@ class SnapshotTests {
         parent.apply().check()
         parent.dispose()
         snapshot.enter {
-            // Should se the change of state1
+            // Should see the change of state1
             assertEquals(1, state1)
 
             // But not the state change of state2
@@ -874,7 +873,7 @@ class SnapshotTests {
 
             assertFalse(
                 observerSnapshot.apply().succeeded,
-                "applying observer snapshot with conflicting change"
+                "applying observer snapshot with conflicting change",
             )
         } finally {
             observer.dispose()
@@ -914,7 +913,7 @@ class SnapshotTests {
                 ise.message?.let {
                     it.contains("Snapshot is not open") && it.contains("applied=")
                 } == true,
-                "Incorrect message: ${ise.message}"
+                "Incorrect message: ${ise.message}",
             )
         } finally {
             snapshot.dispose()
@@ -936,7 +935,7 @@ class SnapshotTests {
                 ise.message?.let {
                     it.contains("Snapshot is not open") && it.contains("applied=")
                 } == true,
-                "Incorrect message: ${ise.message}"
+                "Incorrect message: ${ise.message}",
             )
         } finally {
             snapshot.dispose()
@@ -958,7 +957,6 @@ class SnapshotTests {
         mutable1.dispose()
     }
 
-    @OptIn(ExperimentalComposeApi::class)
     @Test
     fun testUnsafeSnapshotEnterAndLeave() {
         val snapshot = takeSnapshot()
@@ -975,7 +973,6 @@ class SnapshotTests {
         }
     }
 
-    @OptIn(ExperimentalComposeApi::class)
     @Test
     fun testUnsafeSnapshotLeaveThrowsIfNotCurrent() {
         val snapshot = takeSnapshot()
@@ -995,10 +992,10 @@ class SnapshotTests {
     fun testNestedWithinTransparentSnapshotDisposedCorrectly() {
         val outerSnapshot =
             TransparentObserverSnapshot(
-                previousSnapshot = currentSnapshot(),
+                parentSnapshot = currentSnapshot(),
                 specifiedReadObserver = null,
                 mergeParentObservers = false,
-                ownsPreviousSnapshot = false
+                ownsParentSnapshot = false,
             )
 
         try {
@@ -1024,7 +1021,7 @@ class SnapshotTests {
                 specifiedReadObserver = null,
                 specifiedWriteObserver = null,
                 mergeParentObservers = false,
-                ownsParentSnapshot = false
+                ownsParentSnapshot = false,
             )
 
         try {
@@ -1050,10 +1047,10 @@ class SnapshotTests {
 
         val outerSnapshot =
             TransparentObserverSnapshot(
-                previousSnapshot = currentSnapshot(),
+                parentSnapshot = currentSnapshot(),
                 specifiedReadObserver = { outerChanges++ },
                 mergeParentObservers = false,
-                ownsPreviousSnapshot = false
+                ownsParentSnapshot = false,
             )
 
         try {
@@ -1089,7 +1086,7 @@ class SnapshotTests {
                 specifiedReadObserver = { outerChanges++ },
                 specifiedWriteObserver = null,
                 mergeParentObservers = false,
-                ownsParentSnapshot = false
+                ownsParentSnapshot = false,
             )
 
         try {
@@ -1216,7 +1213,7 @@ class SnapshotTests {
                 specifiedReadObserver = null,
                 specifiedWriteObserver = null,
                 mergeParentObservers = false,
-                ownsParentSnapshot = false
+                ownsParentSnapshot = false,
             )
         try {
             transparentSnapshot.enter {
@@ -1270,33 +1267,33 @@ class SnapshotTests {
             { mutableIntStateOf(1) },
             { it.value },
             {
-                it.value = 2
+                it.intValue = 2
                 2
-            }
+            },
         )
         test(
             { mutableLongStateOf(1L) },
             { it.value },
             {
-                it.value = 2L
+                it.longValue = 2L
                 2L
-            }
+            },
         )
         test(
             { mutableFloatStateOf(1f) },
             { it.value },
             {
-                it.value = 2f
+                it.floatValue = 2f
                 2f
-            }
+            },
         )
         test(
             { mutableDoubleStateOf(1.0) },
             { it.value },
             {
-                it.value = 2.0
+                it.doubleValue = 2.0
                 2.0
-            }
+            },
         )
         test(
             { mutableStateListOf<Int>() },
@@ -1304,7 +1301,7 @@ class SnapshotTests {
             {
                 it.add(1)
                 it.isEmpty()
-            }
+            },
         )
         test(
             { mutableStateMapOf<Int, Int>() },
@@ -1312,7 +1309,7 @@ class SnapshotTests {
             {
                 it[23] = 42
                 it.isEmpty()
-            }
+            },
         )
     }
 
@@ -1336,6 +1333,60 @@ class SnapshotTests {
         }
 
         assertEquals(listOf(3, 2, 1), result)
+    }
+
+    @Test
+    fun earlyReturnWithMutableSnapshot() {
+        val state = mutableStateOf(0)
+        fun test() {
+            Snapshot.withMutableSnapshot {
+                state.value = 1
+                return
+            }
+        }
+
+        test()
+
+        assertEquals(state.value, 1)
+    }
+
+    @Test
+    fun earlyReturnGlobal() {
+        val state = mutableStateOf(0)
+        fun test() {
+            Snapshot.global {
+                state.value = 1
+                return
+            }
+        }
+
+        val snapshot = takeMutableSnapshot()
+        try {
+            snapshot.enter {
+                test()
+                assertEquals(snapshot, Snapshot.current)
+            }
+        } finally {
+            snapshot.dispose()
+        }
+    }
+
+    @Test
+    fun throwInWithMutableSnapshot() {
+        assertFailsWith<IllegalStateException> {
+            Snapshot.withMutableSnapshot { error("Test error") }
+        }
+    }
+
+    @Test
+    fun throwInApplyWithMutableSnapshot() {
+        assertFailsWith<SnapshotApplyConflictException> {
+            val state = mutableStateOf(0)
+            Snapshot.withMutableSnapshot {
+                Snapshot.global { state.value = 1 }
+                state.value = 2
+            }
+        }
     }
 
     private fun usedRecords(state: StateObject): Int {

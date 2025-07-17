@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -48,7 +49,7 @@ internal const val DefaultMinLines = 1
 internal fun Modifier.heightInLines(
     textStyle: TextStyle,
     minLines: Int = DefaultMinLines,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) =
     composed(
         inspectorInfo =
@@ -76,7 +77,7 @@ internal fun Modifier.heightInLines(
                     resolvedStyle.fontFamily,
                     resolvedStyle.fontWeight ?: FontWeight.Normal,
                     resolvedStyle.fontStyle ?: FontStyle.Normal,
-                    resolvedStyle.fontSynthesis ?: FontSynthesis.All
+                    resolvedStyle.fontSynthesis ?: FontSynthesis.All,
                 )
             }
 
@@ -87,7 +88,7 @@ internal fun Modifier.heightInLines(
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
                         text = EmptyTextReplacement,
-                        maxLines = 1
+                        maxLines = 1,
                     )
                     .height
             }
@@ -100,7 +101,7 @@ internal fun Modifier.heightInLines(
                         density = density,
                         fontFamilyResolver = fontFamilyResolver,
                         text = twoLines,
-                        maxLines = 2
+                        maxLines = 2,
                     )
                     .height
             }
@@ -113,16 +114,16 @@ internal fun Modifier.heightInLines(
         with(density) {
             Modifier.heightIn(
                 min = precomputedMinLinesHeight?.toDp() ?: Dp.Unspecified,
-                max = precomputedMaxLinesHeight?.toDp() ?: Dp.Unspecified
+                max = precomputedMaxLinesHeight?.toDp() ?: Dp.Unspecified,
             )
         }
     }
 
 internal fun validateMinMaxLines(minLines: Int, maxLines: Int) {
-    require(minLines > 0 && maxLines > 0) {
+    requirePrecondition(minLines > 0 && maxLines > 0) {
         "both minLines $minLines and maxLines $maxLines must be greater than zero"
     }
-    require(minLines <= maxLines) {
+    requirePrecondition(minLines <= maxLines) {
         "minLines $minLines must be less than or equal to maxLines $maxLines"
     }
 }

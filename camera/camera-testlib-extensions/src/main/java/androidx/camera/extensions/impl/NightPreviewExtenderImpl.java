@@ -23,8 +23,8 @@ import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -58,9 +58,8 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
         return compensationRange != null && compensationRange.contains(EV_INDEX);
     }
 
-    @NonNull
     @Override
-    public CaptureStageImpl getCaptureStage() {
+    public @NonNull CaptureStageImpl getCaptureStage() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(DEFAULT_STAGE_ID);
@@ -69,21 +68,18 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
         return captureStage;
     }
 
-    @NonNull
     @Override
-    public ProcessorType getProcessorType() {
+    public @NonNull ProcessorType getProcessorType() {
         return ProcessorType.PROCESSOR_TYPE_REQUEST_UPDATE_ONLY;
     }
 
-    @Nullable
     @Override
-    public ProcessorImpl getProcessor() {
+    public @Nullable ProcessorImpl getProcessor() {
         return RequestUpdateProcessorImpls.noUpdateProcessor();
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
@@ -98,27 +94,24 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
 
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -129,4 +122,11 @@ public final class NightPreviewExtenderImpl implements PreviewExtenderImpl {
     public int onSessionType() {
         return SessionConfiguration.SESSION_REGULAR;
     }
+
+    /**
+     * This method is used to check if test lib is running. If OEM implementation exists, invoking
+     * this method will throw {@link NoSuchMethodError}. This can be used to determine if OEM
+     * implementation is used or not.
+     */
+    public static void checkTestlibRunning() {}
 }

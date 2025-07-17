@@ -28,7 +28,6 @@ import android.media.MediaRouter2;
 import android.os.Build;
 import android.provider.Settings;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
@@ -99,11 +98,7 @@ public final class SystemOutputSwitcherDialogController {
             return true;
         }
 
-        if (isRunningOnWear(context) && showBluetoothSettingsFragment(context)) {
-            return true;
-        }
-
-        return false;
+        return isRunningOnWear(context) && showBluetoothSettingsFragment(context);
     }
 
     private static boolean showDialogForAndroidUAndAbove(@NonNull Context context) {
@@ -163,6 +158,7 @@ public final class SystemOutputSwitcherDialogController {
             ApplicationInfo appInfo = activityInfo.applicationInfo;
             if (((ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)
                     & appInfo.flags) != 0) {
+                intent.setPackage(appInfo.packageName);
                 context.startActivity(intent);
                 return true;
             }
@@ -192,6 +188,7 @@ public final class SystemOutputSwitcherDialogController {
             ApplicationInfo appInfo = activityInfo.applicationInfo;
             if (((ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)
                     & appInfo.flags) != 0) {
+                intent.setPackage(appInfo.packageName);
                 context.startActivity(intent);
                 return true;
             }
@@ -218,7 +215,6 @@ public final class SystemOutputSwitcherDialogController {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static MediaRouter2 getInstance(Context context) {
             return MediaRouter2.getInstance(context);
         }
@@ -230,7 +226,6 @@ public final class SystemOutputSwitcherDialogController {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean showSystemOutputSwitcher(MediaRouter2 mediaRouter2) {
             return mediaRouter2.showSystemOutputSwitcher();
         }
@@ -241,7 +236,6 @@ public final class SystemOutputSwitcherDialogController {
         private Api23Impl() {
         }
 
-        @DoNotInline
         public static boolean isSuitableDeviceAlreadyConnectedAsAudioOutput(Context context) {
             AudioManager audioManager = context.getSystemService(AudioManager.class);
             AudioDeviceInfo[] audioDeviceInfos = audioManager.getDevices(

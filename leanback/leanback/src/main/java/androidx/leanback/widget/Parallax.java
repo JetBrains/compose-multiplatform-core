@@ -564,6 +564,7 @@ public abstract class Parallax<PropertyT extends android.util.Property> {
      * Create a new Property object. App does not directly call this method.  See
      * {@link #addProperty(String)}.
      *
+     * @param name   Name of the property in this Parallax object
      * @param index  Index of the property in this Parallax object.
      * @return Newly created Property object.
      */

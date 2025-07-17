@@ -40,8 +40,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.database.DatabaseUtilsCompat;
 import androidx.cursoradapter.widget.SimpleCursorAdapter;
 import androidx.fragment.app.FragmentActivity;
@@ -50,6 +48,9 @@ import androidx.fragment.app.ListFragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 
@@ -490,9 +491,8 @@ public class LoaderThrottleSupport extends FragmentActivity {
             MainTable.COLUMN_NAME_DATA,
         };
 
-        @NonNull
         @Override
-        public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        public @NonNull Loader<Cursor> onCreateLoader(int id, Bundle args) {
             CursorLoader cl = new CursorLoader(getActivity(), MainTable.CONTENT_URI,
                     PROJECTION, null, null, null);
             cl.setUpdateThrottle(2000); // update at most every 2 seconds.

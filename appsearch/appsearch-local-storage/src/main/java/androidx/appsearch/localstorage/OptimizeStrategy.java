@@ -16,10 +16,11 @@
 
 package androidx.appsearch.localstorage;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
 import com.google.android.icing.proto.GetOptimizeInfoResultProto;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface class for implementing a strategy to determine when to trigger

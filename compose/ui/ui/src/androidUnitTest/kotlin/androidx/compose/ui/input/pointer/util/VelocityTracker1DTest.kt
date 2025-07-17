@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.input.pointer.util
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.pointer.util.VelocityTracker1D.Strategy
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -51,7 +50,7 @@ class VelocityTracker1DTest {
                         ExpectedVelocity(Strategy.Impulse, 10000f),
                         // 3 is the minimum number of data points for Lsq2, so expect a 0 velocity.
                         ExpectedVelocity(Strategy.Lsq2, 0f),
-                    )
+                    ),
             )
         )
     }
@@ -62,7 +61,7 @@ class VelocityTracker1DTest {
             VelocityTrackingTestCase(
                 differentialDataPoints = true,
                 dataPoints = listOf(DataPointAtTime(1, 5f), DataPointAtTime(2, 10f)),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 10000f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 10000f)),
             )
         )
     }
@@ -84,7 +83,7 @@ class VelocityTracker1DTest {
                 expectedVelocities =
                     listOf(
                         ExpectedVelocity(Strategy.Lsq2, 0f),
-                        ExpectedVelocity(Strategy.Impulse, 0f)
+                        ExpectedVelocity(Strategy.Impulse, 0f),
                     ),
             )
         )
@@ -121,8 +120,8 @@ class VelocityTracker1DTest {
                         DataPointAtTime(1, 273f),
                         DataPointAtTime(2, 273f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f))
-            ),
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f)),
+            )
         )
     }
 
@@ -132,13 +131,9 @@ class VelocityTracker1DTest {
             VelocityTrackingTestCase(
                 differentialDataPoints = true,
                 dataPoints =
-                    listOf(
-                        DataPointAtTime(0, 0f),
-                        DataPointAtTime(1, 0f),
-                        DataPointAtTime(2, 0f),
-                    ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f))
-            ),
+                    listOf(DataPointAtTime(0, 0f), DataPointAtTime(1, 0f), DataPointAtTime(2, 0f)),
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f)),
+            )
         )
     }
 
@@ -361,8 +356,8 @@ class VelocityTracker1DTest {
                         DataPointAtTime(90, 80f),
                         DataPointAtTime(100, 100f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 2000f))
-            ),
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 2000f)),
+            )
         )
     }
 
@@ -382,7 +377,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(70, 40f),
                         DataPointAtTime(100, 100f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 2018.2f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 2018.2f)),
             )
         )
     }
@@ -407,7 +402,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(90, 50f),
                         DataPointAtTime(100, 50f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f)),
             )
         )
     }
@@ -424,8 +419,8 @@ class VelocityTracker1DTest {
                         DataPointAtTime(50, 50f),
                         DataPointAtTime(100, 50f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f))
-            ),
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 0f)),
+            )
         )
     }
 
@@ -470,7 +465,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(2581181, -0.1503f),
                         DataPointAtTime(2581199, -0.0668f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, -9.73f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, -9.73f)),
             )
         )
     }
@@ -490,9 +485,9 @@ class VelocityTracker1DTest {
                         DataPointAtTime(224687, -1.0354f),
                         DataPointAtTime(224706, -0.4843f),
                         DataPointAtTime(224738, -0.334f),
-                        DataPointAtTime(224754, -0.0835f)
+                        DataPointAtTime(224754, -0.0835f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, -27.86f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, -27.86f)),
             )
         )
     }
@@ -513,7 +508,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(269706, 0.5511f),
                         DataPointAtTime(269722, 0.501f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 31.92f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 31.92f)),
             )
         )
     }
@@ -533,7 +528,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(85, 274.79245f),
                         DataPointAtTime(96, 274.79245f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 623.57f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 623.57f)),
             )
         )
     }
@@ -553,7 +548,7 @@ class VelocityTracker1DTest {
                         DataPointAtTime(85, 428.113159f),
                         DataPointAtTime(96, 428.113159f),
                     ),
-                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 5970.73f))
+                expectedVelocities = listOf(ExpectedVelocity(Strategy.Impulse, 5970.73f)),
             )
         )
     }
@@ -586,7 +581,7 @@ class VelocityTracker1DTest {
                     listOf(
                         ExpectedVelocity(Strategy.Impulse, 764.34f),
                         ExpectedVelocity(Strategy.Lsq2, 951.69f),
-                    )
+                    ),
             )
         )
     }
@@ -619,7 +614,7 @@ class VelocityTracker1DTest {
                     listOf(
                         ExpectedVelocity(Strategy.Impulse, -3604.82f),
                         ExpectedVelocity(Strategy.Lsq2, -3044.96f),
-                    )
+                    ),
             )
         )
     }
@@ -647,7 +642,7 @@ class VelocityTracker1DTest {
                     listOf(
                         ExpectedVelocity(Strategy.Impulse, 5670.32f),
                         ExpectedVelocity(Strategy.Lsq2, 5991.87f),
-                    )
+                    ),
             )
         )
     }
@@ -675,7 +670,7 @@ class VelocityTracker1DTest {
                     listOf(
                         ExpectedVelocity(Strategy.Impulse, -13021.10f),
                         ExpectedVelocity(Strategy.Lsq2, -15094f),
-                    )
+                    ),
             )
         )
     }
@@ -700,8 +695,8 @@ class VelocityTracker1DTest {
                         differentialDataPoints = false,
                         dataPoints = xDataPoints,
                         expectedVelocities =
-                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].first))
-                    ),
+                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].first)),
+                    )
                 )
                 // Check velocity along the Y axis
                 checkTestCase(
@@ -709,8 +704,8 @@ class VelocityTracker1DTest {
                         differentialDataPoints = false,
                         dataPoints = yDataPoints,
                         expectedVelocities =
-                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].second))
-                    ),
+                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].second)),
+                    )
                 )
                 xDataPoints = mutableListOf()
                 yDataPoints = mutableListOf()
@@ -719,7 +714,6 @@ class VelocityTracker1DTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun testsFromThe2DVelocityTrackerTest_noClamping_impulse() {
         val expected2DVelocities =
@@ -736,7 +730,7 @@ class VelocityTracker1DTest {
                 Pair(285.7f, -2929.3f),
                 Pair(322.6f, 2369.8f),
                 Pair(1024.00f, 4477.2f),
-                Pair(629.8f, 3802.5f)
+                Pair(629.8f, 3802.5f),
             )
 
         var xDataPoints: MutableList<DataPointAtTime> = mutableListOf()
@@ -756,8 +750,8 @@ class VelocityTracker1DTest {
                         differentialDataPoints = false,
                         dataPoints = xDataPoints,
                         expectedVelocities =
-                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].first))
-                    ),
+                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].first)),
+                    )
                 )
                 // Check velocity along the Y axis
                 checkTestCase(
@@ -765,8 +759,8 @@ class VelocityTracker1DTest {
                         differentialDataPoints = false,
                         dataPoints = yDataPoints,
                         expectedVelocities =
-                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].second))
-                    ),
+                            listOf(ExpectedVelocity(strategy, expected2DVelocities[i].second)),
+                    )
                 )
                 xDataPoints = mutableListOf()
                 yDataPoints = mutableListOf()
@@ -799,8 +793,8 @@ class VelocityTracker1DTest {
                         dataPoints = xDataPoints,
                         expectedVelocities =
                             listOf(ExpectedVelocity(Strategy.Lsq2, expected2DVelocities[i].first)),
-                        maximumVelocity = maximumVelocity
-                    ),
+                        maximumVelocity = maximumVelocity,
+                    )
                 )
                 // Check velocity along the Y axis
                 checkTestCase(
@@ -809,8 +803,8 @@ class VelocityTracker1DTest {
                         dataPoints = yDataPoints,
                         expectedVelocities =
                             listOf(ExpectedVelocity(Strategy.Lsq2, expected2DVelocities[i].second)),
-                        maximumVelocity = maximumVelocity
-                    ),
+                        maximumVelocity = maximumVelocity,
+                    )
                 )
                 xDataPoints = mutableListOf()
                 yDataPoints = mutableListOf()
@@ -853,5 +847,5 @@ private data class VelocityTrackingTestCase(
     val differentialDataPoints: Boolean,
     val dataPoints: List<DataPointAtTime>,
     val expectedVelocities: List<ExpectedVelocity>,
-    val maximumVelocity: Float = Float.MAX_VALUE
+    val maximumVelocity: Float = Float.MAX_VALUE,
 )

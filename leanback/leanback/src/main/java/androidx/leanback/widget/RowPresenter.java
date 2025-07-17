@@ -16,10 +16,11 @@ package androidx.leanback.widget;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.app.HeadersFragment;
 import androidx.leanback.graphics.ColorOverlayDimmer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An abstract {@link Presenter} that renders an Object in RowsFragment, the object can be
@@ -297,8 +298,7 @@ public abstract class RowPresenter extends Presenter {
          * Return {@link ViewHolder} of currently selected item inside a row ViewHolder.
          * @return The selected item's ViewHolder.
          */
-        @Nullable
-        public Presenter.ViewHolder getSelectedItemViewHolder() {
+        public Presenter.@Nullable ViewHolder getSelectedItemViewHolder() {
             return null;
         }
 
@@ -306,8 +306,7 @@ public abstract class RowPresenter extends Presenter {
          * Return currently selected item inside a row ViewHolder.
          * @return The selected item.
          */
-        @Nullable
-        public Object getSelectedItem() {
+        public @Nullable Object getSelectedItem() {
             return null;
         }
     }
@@ -354,8 +353,7 @@ public abstract class RowPresenter extends Presenter {
      * @param parent The parent View for the Row's view holder.
      * @return A ViewHolder for the Row's View.
      */
-    @NonNull
-    protected abstract ViewHolder createRowViewHolder(@NonNull ViewGroup parent);
+    protected abstract @NonNull ViewHolder createRowViewHolder(@NonNull ViewGroup parent);
 
     /**
      * Returns true if the Row view should clip its children.  The clipChildren
@@ -607,7 +605,7 @@ public abstract class RowPresenter extends Presenter {
 
     @Override
     public final void onBindViewHolder(
-            @NonNull Presenter.ViewHolder viewHolder,
+            Presenter.@NonNull ViewHolder viewHolder,
             @Nullable Object item
     ) {
         onBindRowViewHolder(getRowViewHolder(viewHolder), item);
@@ -628,7 +626,7 @@ public abstract class RowPresenter extends Presenter {
     }
 
     @Override
-    public final void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
+    public final void onUnbindViewHolder(Presenter.@NonNull ViewHolder viewHolder) {
         onUnbindRowViewHolder(getRowViewHolder(viewHolder));
     }
 
@@ -646,7 +644,7 @@ public abstract class RowPresenter extends Presenter {
     }
 
     @Override
-    public final void onViewAttachedToWindow(@NonNull Presenter.ViewHolder holder) {
+    public final void onViewAttachedToWindow(Presenter.@NonNull ViewHolder holder) {
         onRowViewAttachedToWindow(getRowViewHolder(holder));
     }
 
@@ -660,7 +658,7 @@ public abstract class RowPresenter extends Presenter {
     }
 
     @Override
-    public final void onViewDetachedFromWindow(@NonNull Presenter.ViewHolder holder) {
+    public final void onViewDetachedFromWindow(Presenter.@NonNull ViewHolder holder) {
         onRowViewDetachedFromWindow(getRowViewHolder(holder));
     }
 

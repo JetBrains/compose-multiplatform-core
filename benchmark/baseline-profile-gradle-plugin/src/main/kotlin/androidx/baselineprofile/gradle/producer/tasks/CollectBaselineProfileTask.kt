@@ -43,22 +43,32 @@ import org.gradle.work.DisableCachingByDefault
  * Collects the generated baseline profile from the instrumentation results of a previous run of the
  * ui tests.
  */
-@DisableCachingByDefault(because = "Not worth caching.")
+@DisableCachingByDefault(because = "Mostly I/O bound task")
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
 abstract class CollectBaselineProfileTask : DefaultTask() {
 
     companion object {
+
         private const val COLLECT_TASK_NAME = "collect"
+
         private const val PROP_KEY_PREFIX_INSTRUMENTATION_RUNNER_ARG =
             "android.testInstrumentationRunnerArguments."
+
         private const val PROP_KEY_INSTRUMENTATION_RUNNER_ARG_CLASS =
             "${PROP_KEY_PREFIX_INSTRUMENTATION_RUNNER_ARG}class"
+
+        private const val GOOGLE_STORAGE_SCHEMA = "gs:"
+
+        private val PROFILE_NAMES = listOf("-baseline-prof-", "-startup-prof-")
+
+        private val PROFILE_LABELS =
+            listOf("additionaltestoutput.benchmark.trace", "firebase.toolOutput")
 
         internal fun registerForVariant(
             project: Project,
             variant: TestVariant,
             testTaskDependencies: List<InstrumentationTestTaskWrapper>,
-            shouldSkipGeneration: Boolean
+            shouldSkipGeneration: Boolean,
         ): TaskProvider<CollectBaselineProfileTask> {
 
             val flavorName = variant.flavorName
@@ -66,7 +76,7 @@ abstract class CollectBaselineProfileTask : DefaultTask() {
 
             return project.tasks.register(
                 camelCase(COLLECT_TASK_NAME, variant.name, TASK_NAME_SUFFIX),
-                CollectBaselineProfileTask::class.java
+                CollectBaselineProfileTask::class.java,
             ) {
                 var outputDir = project.layout.buildDirectory.dir("$INTERMEDIATES_BASE_FOLDER/")
                 if (!flavorName.isNullOrBlank()) {
@@ -84,9 +94,9 @@ abstract class CollectBaselineProfileTask : DefaultTask() {
 
                 // Sets the project testInstrumentationRunnerArguments
                 it.testInstrumentationRunnerArguments.set(
-                    project.properties.filterKeys { k ->
-                        k.startsWith(PROP_KEY_PREFIX_INSTRUMENTATION_RUNNER_ARG)
-                    }
+                    project.providers.gradlePropertiesPrefixedBy(
+                        PROP_KEY_PREFIX_INSTRUMENTATION_RUNNER_ARG
+                    )
                 )
 
                 // Disables the task if requested
@@ -139,43 +149,33 @@ abstract class CollectBaselineProfileTask : DefaultTask() {
             )
         }
 
-        val profileFiles = mutableSetOf<File>()
-        testResultProtoFiles
-            .map { TestSuiteResultProto.TestSuiteResult.parseFrom(it.readBytes()) }
-            .forEach { testSuiteResult ->
-                for (testResult in testSuiteResult.testResultList) {
-
-                    // Baseline profile files are extracted by the test task. Here we find their
-                    // location checking the test-result.pb proto. Note that the BaselineProfileRule
-                    // produces one baseline profile file per test.
-                    val baselineProfileFiles =
-                        testResult.outputArtifactList
-                            .filter {
-                                // The label for this artifact is
-                                // `additionaltestoutput.benchmark.trace`
-                                // https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:utp/android-test-plugin-host-additional-test-output/src/main/java/com/android/tools/utp/plugins/host/additionaltestoutput/AndroidAdditionalTestOutputPlugin.kt;l=199?q=additionaltestoutput.benchmark.trace
-                                it.label.label == "additionaltestoutput.benchmark.trace"
-                            }
-                            .map { File(it.sourcePath.path) }
-                            .filter {
-                                // NOTE: If the below logic must be changed, be sure to update
-                                // OutputsTest#sanitizeFilename_baselineProfileGradlePlugin
-                                // as that covers library -> plugin file handoff testing
-                                it.extension == "txt" &&
-                                    ("-baseline-prof-" in it.name || "-startup-prof-" in it.name)
-                            }
-
-                    if (baselineProfileFiles.isEmpty()) {
-                        continue
-                    }
-
-                    // Merge each baseline profile file from the test results into the aggregated
-                    // baseline file, removing duplicate lines.
-                    for (baselineProfileFile in baselineProfileFiles) {
-                        profileFiles.add(baselineProfileFile)
-                    }
+        val profileFiles =
+            testResultProtoFiles
+                .asSequence()
+                .onEach { logger.info("Parsing test-result.pb in `${it.absolutePath}`.") }
+                .map { TestSuiteResultProto.TestSuiteResult.parseFrom(it.readBytes()) }
+                .flatMap {
+                    // Artifacts can be per test results (when running locally) or
+                    // global (when running on ftl).
+                    it.testResultList.flatMap { r -> r.outputArtifactList } + it.outputArtifactList
                 }
-            }
+                .filter {
+                    // The label for this artifact is either `additionaltestoutput.benchmark.trace`
+                    // https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:utp/android-test-plugin-host-additional-test-output/src/main/java/com/android/tools/utp/plugins/host/additionaltestoutput/AndroidAdditionalTestOutputPlugin.kt;l=199?q=additionaltestoutput.benchmark.trace
+                    // or "firebase.toolOutput" when using ftl. There could be also artifacts stored
+                    // on google storage when running on ftl, so we need to skip those.
+                    it.label.label in PROFILE_LABELS &&
+                        !it.sourcePath.path.startsWith(GOOGLE_STORAGE_SCHEMA)
+                }
+                .map { File(it.sourcePath.path) }
+                .filter {
+                    // NOTE: If the below logic must be changed, be sure to update
+                    // OutputsTest#sanitizeFilename_baselineProfileGradlePlugin
+                    // as that covers library -> plugin file handoff testing
+                    it.extension == "txt" && PROFILE_NAMES.any { n -> n in it.name }
+                }
+                .onEach { logger.info("Found profile file `$it`.") }
+                .toSet()
 
         // If this is not a partial result delete the content of the output dir.
         if (!isPartialResult) {

@@ -47,14 +47,14 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.filters.MediumTest;
 import androidx.testutils.AnimationDurationScaleRule;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -260,9 +260,8 @@ public class TransitionTest extends BaseTest {
     public void testMatchOrder() throws Throwable {
         showInitialScene();
         final Transition transition = new ChangeBounds() {
-            @Nullable
             @Override
-            public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+            public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
                     @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
                 if (startValues != null && endValues != null) {
                     fail("Match by View ID should be prevented");
@@ -410,16 +409,14 @@ public class TransitionTest extends BaseTest {
                 return ValueAnimator.ofFloat(0f, 100f);
             }
 
-            @Nullable
             @Override
-            public Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+            public @Nullable Animator onDisappear(@NonNull ViewGroup sceneRoot, @NonNull View view,
                     @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
                 return createAnimator();
             }
 
-            @Nullable
             @Override
-            public Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
+            public @Nullable Animator onAppear(@NonNull ViewGroup sceneRoot, @NonNull View view,
                     @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
                 return createAnimator();
             }
@@ -531,9 +528,8 @@ public class TransitionTest extends BaseTest {
         final CountDownLatch startLatch = new CountDownLatch(3);
 
         class CancelingAnimator extends Slide {
-            @Nullable
             @Override
-            public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+            public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
                     @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
                 Animator anim = super.createAnimator(sceneRoot, startValues, endValues);
                 if (anim != null) {
@@ -708,9 +704,8 @@ public class TransitionTest extends BaseTest {
         public void captureValues(@NonNull TransitionValues transitionValues) {
         }
 
-        @Nullable
         @Override
-        public String[] getPropagationProperties() {
+        public String @Nullable [] getPropagationProperties() {
             return new String[0];
         }
     }

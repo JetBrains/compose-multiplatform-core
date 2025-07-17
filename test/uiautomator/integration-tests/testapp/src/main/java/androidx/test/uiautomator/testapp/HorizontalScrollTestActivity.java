@@ -16,16 +16,15 @@
 
 package androidx.test.uiautomator.testapp;
 
-import android.app.Activity;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.view.Display;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
-public class HorizontalScrollTestActivity extends Activity {
+public class HorizontalScrollTestActivity extends TestActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

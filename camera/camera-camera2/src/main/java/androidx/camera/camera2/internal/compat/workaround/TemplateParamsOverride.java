@@ -17,7 +17,9 @@
 package androidx.camera.camera2.internal.compat.workaround;
 
 import static android.hardware.camera2.CameraDevice.TEMPLATE_RECORD;
+import static android.hardware.camera2.CameraDevice.TEMPLATE_VIDEO_SNAPSHOT;
 import static android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_PREVIEW;
+import static android.hardware.camera2.CameraMetadata.CONTROL_CAPTURE_INTENT_STILL_CAPTURE;
 import static android.hardware.camera2.CaptureRequest.CONTROL_CAPTURE_INTENT;
 
 import static androidx.camera.camera2.internal.compat.quirk.CaptureIntentPreviewQuirk.workaroundByCaptureIntentPreview;
@@ -27,12 +29,15 @@ import static java.util.Collections.unmodifiableMap;
 
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
+import androidx.camera.camera2.internal.compat.quirk.AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk;
+import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailedForVideoSnapshotQuirk;
 import androidx.camera.camera2.internal.compat.quirk.ImageCaptureFailedWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.PreviewDelayWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.PreviewStretchWhenVideoCaptureIsBoundQuirk;
 import androidx.camera.camera2.internal.compat.quirk.TemporalNoiseQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,22 +51,30 @@ import java.util.Map;
  * @see PreviewDelayWhenVideoCaptureIsBoundQuirk
  * @see ImageCaptureFailedWhenVideoCaptureIsBoundQuirk
  * @see TemporalNoiseQuirk
+ * @see ImageCaptureFailedForVideoSnapshotQuirk
+ * @see AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk
  */
 public class TemplateParamsOverride {
-    private final Quirks mQuirks;
+    private final boolean mWorkaroundByCaptureIntentPreview;
+    private final boolean mWorkaroundByCaptureIntentStillCapture;
 
     public TemplateParamsOverride(@NonNull Quirks quirks) {
-        mQuirks = quirks;
+        mWorkaroundByCaptureIntentPreview = workaroundByCaptureIntentPreview(quirks);
+        mWorkaroundByCaptureIntentStillCapture = quirks.contains(
+                ImageCaptureFailedForVideoSnapshotQuirk.class);
     }
 
     /**
      * Returns capture parameters used to override the default parameters of the input template.
      */
-    @NonNull
-    public Map<CaptureRequest.Key<?>, Object> getOverrideParams(int template) {
-        if (template == TEMPLATE_RECORD && workaroundByCaptureIntentPreview(mQuirks)) {
+    public @NonNull Map<CaptureRequest.Key<?>, Object> getOverrideParams(int template) {
+        if (template == TEMPLATE_RECORD && mWorkaroundByCaptureIntentPreview) {
             Map<CaptureRequest.Key<?>, Object> params = new HashMap<>();
             params.put(CONTROL_CAPTURE_INTENT, CONTROL_CAPTURE_INTENT_PREVIEW);
+            return unmodifiableMap(params);
+        } else if (template == TEMPLATE_VIDEO_SNAPSHOT && mWorkaroundByCaptureIntentStillCapture) {
+            Map<CaptureRequest.Key<?>, Object> params = new HashMap<>();
+            params.put(CONTROL_CAPTURE_INTENT, CONTROL_CAPTURE_INTENT_STILL_CAPTURE);
             return unmodifiableMap(params);
         }
         return emptyMap();

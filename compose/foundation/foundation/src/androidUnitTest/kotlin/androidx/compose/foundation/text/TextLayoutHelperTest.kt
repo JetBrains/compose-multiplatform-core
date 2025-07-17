@@ -43,35 +43,21 @@ import org.mockito.kotlin.whenever
 @RunWith(JUnit4::class)
 class TextLayoutHelperTest {
 
-    lateinit var fontFamilyResolver: FontFamily.Resolver
-
-    lateinit var referenceResult: TextLayoutResult
+    private val defaultText = AnnotatedString.Builder("Hello, World").toAnnotatedString()
+    private lateinit var fontFamilyResolver: FontFamily.Resolver
+    private lateinit var multiParagraph: MultiParagraph
+    private lateinit var referenceResult: TextLayoutResult
 
     @Before
     fun setUp() {
         fontFamilyResolver = mock()
 
         val intrinsics = mock<MultiParagraphIntrinsics>()
-        val multiParagraph = mock<MultiParagraph>()
+        multiParagraph = mock<MultiParagraph>()
         whenever(multiParagraph.intrinsics).thenReturn(intrinsics)
         whenever(intrinsics.hasStaleResolvedFonts).thenReturn(false)
         referenceResult =
-            TextLayoutResult(
-                TextLayoutInput(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
-                    style = TextStyle(),
-                    placeholders = listOf(),
-                    maxLines = 1,
-                    softWrap = true,
-                    overflow = TextOverflow.Ellipsis,
-                    density = Density(1.0f),
-                    layoutDirection = LayoutDirection.Ltr,
-                    fontFamilyResolver = fontFamilyResolver,
-                    constraints = Constraints.fixedWidth(100)
-                ),
-                multiParagraph = multiParagraph,
-                size = IntSize(50, 50)
-            )
+            TextLayoutResult(text = defaultText, constraints = Constraints.fixedWidth(100))
     }
 
     @Test
@@ -79,7 +65,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -88,7 +74,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isTrue()
@@ -108,7 +94,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -119,7 +105,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(fontSize = 1.5.em),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -128,7 +114,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -139,7 +125,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 2,
@@ -148,7 +134,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -159,7 +145,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -168,7 +154,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -179,7 +165,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -188,7 +174,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -199,7 +185,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -208,7 +194,7 @@ class TextLayoutHelperTest {
                     density = Density(2.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -219,7 +205,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -228,7 +214,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Rtl,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -239,7 +225,7 @@ class TextLayoutHelperTest {
         val constraints = Constraints.fixedWidth(100)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -248,7 +234,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = mock(),
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
@@ -258,7 +244,7 @@ class TextLayoutHelperTest {
     fun testCanReuse_different_constraintsWidth() {
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -267,7 +253,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = Constraints.fixedWidth(200)
+                    constraints = Constraints.fixedWidth(200),
                 )
             )
             .isFalse()
@@ -277,7 +263,7 @@ class TextLayoutHelperTest {
     fun testCanReuse_different_constraintsHeight() {
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -286,7 +272,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = Constraints.fixedHeight(200)
+                    constraints = Constraints.fixedHeight(200),
                 )
             )
             .isFalse()
@@ -296,7 +282,7 @@ class TextLayoutHelperTest {
     fun testCanReuse_different_placeholders() {
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders =
                         listOf(
@@ -305,10 +291,10 @@ class TextLayoutHelperTest {
                                     Placeholder(
                                         10.sp,
                                         20.sp,
-                                        PlaceholderVerticalAlign.AboveBaseline
+                                        PlaceholderVerticalAlign.AboveBaseline,
                                     ),
                                 start = 0,
-                                end = 5
+                                end = 5,
                             )
                         ),
                     maxLines = 1,
@@ -317,7 +303,7 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = Constraints.fixedWidth(200)
+                    constraints = Constraints.fixedWidth(200),
                 )
             )
             .isFalse()
@@ -329,7 +315,7 @@ class TextLayoutHelperTest {
         whenever(referenceResult.multiParagraph.intrinsics.hasStaleResolvedFonts).thenReturn(true)
         assertThat(
                 referenceResult.canReuse(
-                    text = AnnotatedString.Builder("Hello, World").toAnnotatedString(),
+                    text = defaultText,
                     style = TextStyle(),
                     placeholders = emptyList(),
                     maxLines = 1,
@@ -338,9 +324,74 @@ class TextLayoutHelperTest {
                     density = Density(1.0f),
                     layoutDirection = LayoutDirection.Ltr,
                     fontFamilyResolver = fontFamilyResolver,
-                    constraints = constraints
+                    constraints = constraints,
                 )
             )
             .isFalse()
+    }
+
+    @Test
+    fun getLineHeight_valid() {
+        val offset = defaultText.indexOf('W')
+        val line = 1
+
+        whenever(multiParagraph.getLineForOffset(offset)).thenReturn(line)
+        whenever(multiParagraph.getLineHeight(line)).thenReturn(10f)
+        whenever(multiParagraph.getLineEnd(line)).thenReturn(defaultText.length)
+        whenever(multiParagraph.lineCount).thenReturn(5)
+        whenever(multiParagraph.maxLines).thenReturn(5)
+
+        assertThat(referenceResult.getLineHeight(offset)).isEqualTo(10f)
+    }
+
+    @Test
+    fun getLineHeight_zero_length_text_return_zero() {
+        referenceResult = TextLayoutResult(AnnotatedString(""))
+
+        val offset = 0
+        val line = 1
+
+        whenever(multiParagraph.getLineForOffset(offset)).thenReturn(line)
+        whenever(multiParagraph.getLineHeight(line)).thenReturn(10f)
+        whenever(multiParagraph.lineCount).thenReturn(5)
+
+        assertThat(referenceResult.getLineHeight(offset)).isZero()
+    }
+
+    @Test
+    fun getLineHeight_line_index_more_then_lines_limit_should_return_zero() {
+        val offset = defaultText.indexOf('W')
+        val line = 1
+
+        whenever(multiParagraph.getLineForOffset(offset)).thenReturn(line)
+        whenever(multiParagraph.getLineHeight(line)).thenReturn(10f)
+        whenever(multiParagraph.lineCount).thenReturn(5)
+        whenever(multiParagraph.maxLines).thenReturn(1)
+
+        assertThat(referenceResult.getLineHeight(offset)).isZero()
+    }
+
+    private fun TextLayoutResult(
+        text: AnnotatedString,
+        fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver,
+        multiParagraph: MultiParagraph = this.multiParagraph,
+        constraints: Constraints = Constraints(),
+    ): TextLayoutResult {
+        return TextLayoutResult(
+            TextLayoutInput(
+                text = text,
+                style = TextStyle(),
+                placeholders = listOf(),
+                maxLines = 1,
+                softWrap = true,
+                overflow = TextOverflow.Ellipsis,
+                density = Density(1.0f),
+                layoutDirection = LayoutDirection.Ltr,
+                fontFamilyResolver = fontFamilyResolver,
+                constraints = constraints,
+            ),
+            multiParagraph = multiParagraph,
+            size = IntSize(1000, 1000),
+        )
     }
 }

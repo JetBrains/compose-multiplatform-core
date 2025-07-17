@@ -20,10 +20,10 @@ import android.content.Context;
 import android.text.InputFilter;
 import android.util.AttributeSet;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatTextView;
 import androidx.emoji2.viewsintegration.EmojiTextViewHelper;
 
+import org.jspecify.annotations.Nullable;
 
 /**
  * A sample implementation of custom TextView.

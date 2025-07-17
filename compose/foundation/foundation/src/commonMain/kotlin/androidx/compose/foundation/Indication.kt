@@ -23,8 +23,8 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.DrawModifier
@@ -159,7 +159,6 @@ interface IndicationInstance {
  * Draws visual effects for this component when interactions occur.
  *
  * @sample androidx.compose.foundation.samples.IndicationSample
- *
  * @param interactionSource [InteractionSource] that will be used by [indication] to draw visual
  *   effects - this [InteractionSource] represents the stream of [Interaction]s for this component.
  * @param indication [Indication] used to draw visual effects. If `null`, no visual effects will be
@@ -184,7 +183,7 @@ fun Modifier.indication(interactionSource: InteractionSource, indication: Indica
                 name = "indication"
                 properties["interactionSource"] = interactionSource
                 properties["indication"] = indication
-            }
+            },
     )
 }
 
@@ -195,7 +194,7 @@ fun Modifier.indication(interactionSource: InteractionSource, indication: Indica
  *
  * By default this will provide a debug indication, this should always be replaced.
  */
-val LocalIndication = staticCompositionLocalOf<Indication> { DefaultDebugIndication }
+val LocalIndication = compositionLocalOf<Indication> { DefaultDebugIndication }
 
 /** Empty [IndicationInstance] for backwards compatibility - this is not expected to be used. */
 @Suppress("DEPRECATION_ERROR")
@@ -275,7 +274,7 @@ private object DefaultDebugIndication : IndicationNodeFactory {
  */
 private class IndicationModifierElement(
     private val interactionSource: InteractionSource,
-    private val indication: IndicationNodeFactory
+    private val indication: IndicationNodeFactory,
 ) : ModifierNodeElement<IndicationModifierNode>() {
     override fun create(): IndicationModifierNode {
         return IndicationModifierNode(indication.create(interactionSource))

@@ -21,8 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +30,8 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    api("androidx.annotation:annotation:1.8.1")
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -42,13 +42,9 @@ dependencies {
 
 androidx {
     name = "Inspection"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2019"
     description = "Experimental AndroidX Inspection Project"
-    runApiTasks =  new RunApiTasks.Yes(
-            "Interfaces provided in this artifact should be binary compatible to guarantee " +
-                    "that old inspectors are compatible with newer Android Studio versions")
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
     doNotDocumentReason = "Not shipped externally"
 }
@@ -56,14 +52,14 @@ androidx {
 android {
     defaultConfig {
         // studio pipeline works only starting with Android O
-        minSdkVersion 26
+        minSdk = 26
     }
 
     externalNativeBuild {
         cmake {
             path "src/main/native/CMakeLists.txt"
-            version "3.22.1"
+            version = libs.versions.cmake.get()
         }
     }
-    namespace "androidx.inspection"
+    namespace = "androidx.inspection"
 }

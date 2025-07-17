@@ -21,9 +21,10 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_BACK;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -63,7 +64,10 @@ public class CameraNoResponseWhenEnablingFlashQuirk implements UseTorchAsFlashQu
             "SM-N920X",
 
             // Galaxy J5
-            "SM-J510FN"
+            "SM-J510FN",
+
+            // Vivo 1610
+            "VIVO 1610"
     );
 
     static boolean load(@NonNull CameraCharacteristicsCompat characteristics) {

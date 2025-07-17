@@ -17,14 +17,14 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.emoji2.integration.macrobenchmark.disabled"
+    namespace = "androidx.emoji2.integration.macrobenchmark.disabled"
     targetProjectPath = ":emoji2:integration-tests:init-disabled-macrobenchmark-target"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 }
@@ -36,7 +36,7 @@ androidComponents { beforeVariants(selector().all()) { enabled = buildType == 'r
 
 dependencies {
     implementation(project(":benchmark:benchmark-macro-junit4"))
-    implementation(project(":internal-testutils-macrobenchmark"))
+    implementation(project(":internal-testutils-benchmark-macro"))
     implementation(libs.testRules)
     implementation(libs.testExtJunit)
     implementation(libs.testCore)

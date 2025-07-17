@@ -23,8 +23,12 @@ import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
 import androidx.room.Room.LOG_TAG
-import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.launch
 
 /**
  * Handles all the communication from [RoomDatabase] and [InvalidationTracker] to
@@ -32,92 +36,110 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * @param context The Context to be used for binding [IMultiInstanceInvalidationService].
  * @param name The name of the database file.
- * @param serviceIntent The [Intent] used for binding [IMultiInstanceInvalidationService].
  * @param invalidationTracker The [InvalidationTracker]
- * @param executor The background executor.
  */
 internal class MultiInstanceInvalidationClient(
     context: Context,
     val name: String,
-    serviceIntent: Intent,
     val invalidationTracker: InvalidationTracker,
-    val executor: Executor
 ) {
     private val appContext = context.applicationContext
+    private val coroutineScope = invalidationTracker.database.getCoroutineScope()
+
+    private val stopped = AtomicBoolean(true)
 
     /** The client ID assigned by [MultiInstanceInvalidationService]. */
-    var clientId = 0
-    lateinit var observer: InvalidationTracker.Observer
-    var service: IMultiInstanceInvalidationService? = null
+    private var clientId = 0
+    private var invalidationService: IMultiInstanceInvalidationService? = null
 
-    val callback: IMultiInstanceInvalidationCallback =
+    /** The set of tables invalidated from another instance. */
+    private val invalidatedTables =
+        MutableSharedFlow<Set<String>>(
+            replay = 0,
+            extraBufferCapacity = 0,
+            onBufferOverflow = BufferOverflow.SUSPEND,
+        )
+
+    /** All table observer to notify service of changes. */
+    private val observer =
+        object : InvalidationTracker.Observer(invalidationTracker.tableNames) {
+            override fun onInvalidated(tables: Set<String>) {
+                if (stopped.get()) {
+                    return
+                }
+
+                try {
+                    invalidationService?.broadcastInvalidation(clientId, tables.toTypedArray())
+                } catch (e: RemoteException) {
+                    Log.w(LOG_TAG, "Cannot broadcast invalidation", e)
+                }
+            }
+
+            override val isRemote: Boolean
+                get() = true
+        }
+
+    private val invalidationCallback: IMultiInstanceInvalidationCallback =
         object : IMultiInstanceInvalidationCallback.Stub() {
             override fun onInvalidation(tables: Array<out String>) {
-                executor.execute { invalidationTracker.notifyObserversByTableNames(*tables) }
+                coroutineScope.launch {
+                    val invalidatedTablesSet = setOf(*tables)
+                    invalidatedTables.emit(invalidatedTablesSet)
+                    invalidationTracker.notifyObserversByTableNames(invalidatedTablesSet)
+                }
             }
         }
 
-    val stopped = AtomicBoolean(false)
-
-    val serviceConnection: ServiceConnection =
+    private val serviceConnection: ServiceConnection =
         object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName, service: IBinder) {
-                this@MultiInstanceInvalidationClient.service =
-                    IMultiInstanceInvalidationService.Stub.asInterface(service)
-                executor.execute(setUpRunnable)
+                invalidationService = IMultiInstanceInvalidationService.Stub.asInterface(service)
+                registerCallback()
             }
 
             override fun onServiceDisconnected(name: ComponentName) {
-                executor.execute(removeObserverRunnable)
-                service = null
+                invalidationService = null
             }
         }
 
-    val setUpRunnable = Runnable {
+    private fun registerCallback() {
         try {
-            service?.let {
-                clientId = it.registerCallback(callback, name)
-                invalidationTracker.addObserver(observer)
-            }
+            invalidationService?.let { clientId = it.registerCallback(invalidationCallback, name) }
         } catch (e: RemoteException) {
             Log.w(LOG_TAG, "Cannot register multi-instance invalidation callback", e)
         }
     }
 
-    val removeObserverRunnable = Runnable { invalidationTracker.removeObserver(observer) }
-
-    init {
-        // Use all tables names for observer.
-        val tableNames = invalidationTracker.tableNames
-        observer =
-            object : InvalidationTracker.Observer(tableNames) {
-                override fun onInvalidated(tables: Set<String>) {
-                    if (stopped.get()) {
-                        return
-                    }
-
-                    try {
-                        service?.broadcastInvalidation(clientId, tables.toTypedArray())
-                    } catch (e: RemoteException) {
-                        Log.w(LOG_TAG, "Cannot broadcast invalidation", e)
-                    }
-                }
-
-                override val isRemote: Boolean
-                    get() = true
-            }
-        appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+    fun start(serviceIntent: Intent) {
+        if (stopped.compareAndSet(true, false)) {
+            appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            invalidationTracker.addRemoteObserver(observer)
+        }
     }
 
     fun stop() {
         if (stopped.compareAndSet(false, true)) {
             invalidationTracker.removeObserver(observer)
             try {
-                service?.unregisterCallback(callback, clientId)
+                invalidationService?.unregisterCallback(invalidationCallback, clientId)
             } catch (e: RemoteException) {
                 Log.w(LOG_TAG, "Cannot unregister multi-instance invalidation callback", e)
             }
             appContext.unbindService(serviceConnection)
         }
     }
+
+    fun createFlow(resolvedTableNames: Array<out String>): Flow<Set<String>> =
+        invalidatedTables.mapNotNull { invalidatedTables ->
+            buildSet {
+                    resolvedTableNames.forEach { flowTable ->
+                        invalidatedTables.forEach { invalidatedTable ->
+                            if (flowTable.equals(invalidatedTable, ignoreCase = true)) {
+                                add(flowTable)
+                            }
+                        }
+                    }
+                }
+                .ifEmpty { null }
+        }
 }

@@ -27,32 +27,32 @@ import androidx.build.ApkCopyHelperKt
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        applicationId "androidx.camera.integration.extensions"
-        minSdkVersion 21
-        versionCode 1
-        multiDexEnabled true
+        applicationId = "androidx.camera.integration.extensions"
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             testProguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    namespace "androidx.camera.integration.extensions"
+    namespace = "androidx.camera.integration.extensions"
 }
 
 dependencies {
+    api(libs.jspecify)
     // Internal library
     implementation(project(":camera:camera-camera2"))
-    implementation(project(':camera:camera-camera2-pipe-integration'))
+    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation(project(":camera:camera-extensions"))
     implementation(project(":camera:camera-lifecycle"))
     implementation(project(":camera:camera-view"))
@@ -62,7 +62,6 @@ dependencies {
     api(libs.constraintLayout)
     implementation(libs.kotlinStdlib)
     implementation("androidx.appcompat:appcompat:1.2.0")
-    implementation("androidx.activity:activity-ktx:1.2.0")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
@@ -74,11 +73,9 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.0.0")
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.0")
-    androidTestImplementation(project(":concurrent:concurrent-futures"))
+    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
 
-    androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
@@ -92,6 +89,20 @@ dependencies {
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestCompileOnly(project(":camera:camera-extensions-stub"))
 
+    // Transitive dependencies
+    implementation 'androidx.core:core-ktx:1.1.0'
+    implementation 'androidx.fragment:fragment:1.1.0'
+    implementation 'androidx.lifecycle:lifecycle-common:2.3.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-core:2.3.1'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation libs.androidx.annotation
+    implementation libs.androidx.core
+    implementation libs.kotlinCoroutinesCore
+    implementation project(':camera:camera-core')
+    androidTestImplementation libs.hamcrestCore
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.testMonitor
+
     // Testing resource dependency for manifest
     debugImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
@@ -102,6 +113,7 @@ dependencies {
 
 // Copy apks to dist/apks as they are used outside of androidx test infrastructure
 ApkCopyHelperKt.setupAppApkCopy(project, "debug")
+ApkCopyHelperKt.setupAppApkCopy(project, "release")
 ApkCopyHelperKt.setupTestApkCopy(project)
 
 androidx {

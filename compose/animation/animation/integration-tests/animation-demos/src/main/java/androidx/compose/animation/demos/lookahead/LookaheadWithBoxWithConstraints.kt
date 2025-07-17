@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.demos.gesture.pastelColors
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,12 +43,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Suppress("UnusedBoxWithConstraintsScope")
 @Composable
 fun LookaheadWithBoxWithConstraints() {
@@ -62,10 +62,11 @@ fun LookaheadWithBoxWithConstraints() {
                 Column(
                     Modifier.fillMaxHeight()
                         .animateBounds(
-                            if (halfSize) Modifier.fillMaxSize(0.5f) else Modifier.fillMaxWidth()
+                            this@LookaheadScope,
+                            if (halfSize) Modifier.fillMaxSize(0.5f) else Modifier.fillMaxWidth(),
                         )
                         .background(pastelColors[2]),
-                    verticalArrangement = Arrangement.SpaceEvenly
+                    verticalArrangement = Arrangement.SpaceEvenly,
                 ) {
                     Column(
                         Modifier.border(1.dp, Color.Black, RoundedCornerShape(5.dp))
@@ -74,7 +75,7 @@ fun LookaheadWithBoxWithConstraints() {
                         Text("Regular Row: ")
                         Row(
                             Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                            horizontalArrangement = Arrangement.SpaceEvenly,
                         ) {
                             MyButton()
                             MyButton()
@@ -84,14 +85,14 @@ fun LookaheadWithBoxWithConstraints() {
                         var animate by remember { mutableStateOf(false) }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { animate = true }
+                            modifier = Modifier.clickable { animate = true },
                         ) {
                             RadioButton(selected = animate, onClick = { animate = true })
                             Text("Animate Bounds")
                         }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { animate = false }
+                            modifier = Modifier.clickable { animate = false },
                         ) {
                             RadioButton(selected = !animate, onClick = { animate = false })
                             Text("No animation")
@@ -99,19 +100,22 @@ fun LookaheadWithBoxWithConstraints() {
                         BoxWithConstraints {
                             Column(
                                 if (animate) {
-                                        Modifier.animateBounds(Modifier.fillMaxWidth())
+                                        Modifier.animateBounds(
+                                            lookaheadScope = this@LookaheadScope,
+                                            Modifier.fillMaxWidth(),
+                                        )
                                     } else {
                                         Modifier.fillMaxWidth()
                                     }
                                     .then(
                                         Modifier.border(1.dp, Color.Black, RoundedCornerShape(5.dp))
                                             .padding(top = 20.dp, bottom = 20.dp)
-                                    ),
+                                    )
                             ) {
                                 Text("SubcomposeLayout: ")
                                 Row(
                                     Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
                                 ) {
                                     MyButton()
                                     MyButton()
@@ -123,7 +127,7 @@ fun LookaheadWithBoxWithConstraints() {
                             if (maxWidth > 300.dp) {
                                 Row(
                                     Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
                                 ) {
                                     MyButton()
                                     MyButton()
@@ -150,7 +154,7 @@ fun RowScope.MyButton() {
                 .padding(5.dp)
                 .height(40.dp)
                 .background(pastelColors[0], RoundedCornerShape(50)),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text("Button")
     }
@@ -164,7 +168,7 @@ fun MyButton() {
                 .padding(5.dp)
                 .height(40.dp)
                 .background(pastelColors[0], RoundedCornerShape(50)),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text("Button")
     }

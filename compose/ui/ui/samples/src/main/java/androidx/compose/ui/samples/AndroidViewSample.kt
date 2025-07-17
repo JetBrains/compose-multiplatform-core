@@ -37,7 +37,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -88,11 +87,10 @@ fun AndroidViewWithReleaseSample() {
         onRelease = { view ->
             // Need to release the lifecycle to prevent a memory leak
             view.lifecycle = null
-        }
+        },
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun ReusableAndroidViewInLazyColumnSample() {
@@ -122,7 +120,7 @@ fun ReusableAndroidViewInLazyColumnSample() {
                     webView.stopLoading()
                     webView.loadUrl("about:blank")
                     webView.clearHistory()
-                }
+                },
             )
         }
     }

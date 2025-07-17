@@ -18,7 +18,6 @@ package androidx.compose.runtime.internal
 
 import java.util.concurrent.atomic.AtomicInteger
 
-@Suppress("ACTUAL_WITHOUT_EXPECT") // https://youtrack.jetbrains.com/issue/KT-37316
 internal actual typealias AtomicReference<V> = java.util.concurrent.atomic.AtomicReference<V>
 
 internal actual class AtomicInt actual constructor(value: Int) : AtomicInteger(value) {
@@ -29,5 +28,13 @@ internal actual class AtomicInt actual constructor(value: Int) : AtomicInteger(v
 
     override fun toShort(): Short = toInt().toShort()
 
+    @Deprecated(
+        "Direct conversion to Char is deprecated. Use toInt().toChar() or Char " +
+            "constructor instead.\nIf you override toChar() function in your Number inheritor, " +
+            "it's recommended to gradually deprecate the overriding function and then " +
+            "remove it.\nSee https://youtrack.jetbrains.com/issue/KT-46465 for details about " +
+            "the migration",
+        replaceWith = ReplaceWith("this.toInt().toChar()"),
+    )
     override fun toChar(): Char = toInt().toChar()
 }

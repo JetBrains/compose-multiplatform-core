@@ -21,8 +21,11 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
+
+
+import androidx.build.KotlinTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,7 +36,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    api('androidx.paging:paging-rxjava2:3.1.1')
+    api("androidx.paging:paging-rxjava2:3.1.1")
     implementation(project(":room:room-paging"))
     implementation(project(":room:room-rxjava2"))
 
@@ -50,13 +53,13 @@ dependencies {
 
 androidx {
     name = "Room Paging RxJava2"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "RxJava2 integration in Room Paging"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {
-    namespace "androidx.room.paging.rxjava2"
+    namespace = "androidx.room.paging.rxjava2"
 }
+

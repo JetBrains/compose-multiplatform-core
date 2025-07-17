@@ -24,7 +24,7 @@ import kotlin.math.abs
  * recalculating alpha and size parameters of each indicator, and selected indicators as well.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class PagesState(val totalPages: Int, val pagesOnScreen: Int) {
+public class PagesState(public val totalPages: Int, public val pagesOnScreen: Int) {
     // Sizes and alphas of first and last indicators on the screen. Used to show that there're more
     // pages on the left or on the right, and also for smooth transitions
     private var firstAlpha = 1f
@@ -43,15 +43,15 @@ class PagesState(val totalPages: Int, val pagesOnScreen: Int) {
     // visible indicators, used for smooth transitions
 
     // Current visible position on the screen.
-    var visibleDotIndex = 0
+    public var visibleDotIndex: Int = 0
         private set
 
     // A size of a left spacer used for smooth transitions
-    val leftSpacerSizeRatio
+    public val leftSpacerSizeRatio: Float
         get() = 1 - smoothProgress
 
     // A size of a right spacer used for smooth transitions
-    val rightSpacerSizeRatio
+    public val rightSpacerSizeRatio: Float
         get() = smoothProgress
 
     /**
@@ -60,7 +60,7 @@ class PagesState(val totalPages: Int, val pagesOnScreen: Int) {
      * @param page Page index
      * @return An alpha of page index- in range 0..1
      */
-    fun alpha(page: Int): Float =
+    public fun alpha(page: Int): Float =
         when (page) {
             0 -> firstAlpha
             pagesOnScreen -> lastAlpha
@@ -73,7 +73,7 @@ class PagesState(val totalPages: Int, val pagesOnScreen: Int) {
      * @param page Page index
      * @return An size ratio for page index - in range 0..1
      */
-    fun sizeRatio(page: Int): Float =
+    public fun sizeRatio(page: Int): Float =
         when (page) {
             0 -> firstSize
             1 -> secondSize
@@ -86,12 +86,12 @@ class PagesState(val totalPages: Int, val pagesOnScreen: Int) {
      * Returns a value in the range 0..1 where 0 is unselected state, and 1 is selected. Used to
      * show a smooth transition between page indicator items.
      */
-    fun calculateSelectedRatio(targetPage: Int, offset: Float): Float =
+    public fun calculateSelectedRatio(targetPage: Int, offset: Float): Float =
         (1 - abs(visibleDotIndex + offset - targetPage)).coerceAtLeast(0f)
 
     // Main function responsible for recalculation of all parameters regarding
     // to the [selectedPage] and [offset]
-    fun recalculateState(selectedPage: Int, offset: Float) {
+    public fun recalculateState(selectedPage: Int, offset: Float) {
         val pageWithOffset = selectedPage + offset
 
         // Calculating offsetInPages relating to the [selectedPage].

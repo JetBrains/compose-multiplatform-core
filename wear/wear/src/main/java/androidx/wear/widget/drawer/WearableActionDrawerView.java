@@ -37,13 +37,14 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.wear.R;
 import androidx.wear.internal.widget.ResourcesUtil;
 import androidx.wear.widget.drawer.WearableActionDrawerMenu.WearableActionDrawerMenuItem;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Ease of use class for creating a Wearable action drawer. This can be used with {@link
@@ -88,8 +89,8 @@ public class WearableActionDrawerView extends WearableDrawerView {
     final int mLastItemBottomPadding;
     final int mIconRightMargin;
     private final boolean mShowOverflowInPeek;
-    @Nullable private final ImageView mPeekActionIcon;
-    @Nullable private final ImageView mPeekExpandIcon;
+    private final @Nullable ImageView mPeekActionIcon;
+    private final @Nullable ImageView mPeekExpandIcon;
     final RecyclerView.Adapter<RecyclerView.ViewHolder> mActionListAdapter;
     private OnMenuItemClickListener mOnMenuItemClickListener;
     private Menu mMenu;
@@ -401,6 +402,7 @@ public class WearableActionDrawerView extends WearableDrawerView {
                     }
                 };
 
+        @SuppressWarnings("UnusedVariable")
         ActionListAdapter(Menu menu) {
             mActionMenu = getMenu();
         }

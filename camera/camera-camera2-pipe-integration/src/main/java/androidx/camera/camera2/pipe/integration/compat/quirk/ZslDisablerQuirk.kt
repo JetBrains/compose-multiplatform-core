@@ -18,35 +18,38 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.impl.Quirk
 
 /**
  * QuirkSummary
- * - Bug Id: 252818931, 261744070, 319913852
- * - Description: On certain devices, the captured image has color issue for reprocessing. We need
- *   to disable zero-shutter lag and return false for [CameraInfo.isZslSupported].
+ * - Bug Id: 252818931, 261744070, 319913852, 361328838
+ * - Description: On certain devices, the captured image has color or zoom freezing issue for
+ *   reprocessing. We need to disable zero-shutter lag and return false for
+ *   [CameraInfo.isZslSupported].
  * - Device(s): Samsung Fold4, Samsung s22, Xiaomi Mi 8
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO(b/270421716): enable when kotlin is supported.
-class ZslDisablerQuirk : Quirk {
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO(b/270421716): enable when kotlin is supported.
+public class ZslDisablerQuirk : Quirk {
 
-    companion object {
-        private val AFFECTED_SAMSUNG_MODEL = listOf("SM-F936", "SM-S901U", "SM-S908U", "SM-S908U1")
+    public companion object {
+        private val AFFECTED_SAMSUNG_MODEL =
+            listOf("SM-F936", "SM-S901U", "SM-S908U", "SM-S908U1", "SM-F721U1", "SM-S928U1")
 
         private val AFFECTED_XIAOMI_MODEL = listOf("MI 8")
 
-        fun load(): Boolean {
+        public fun load(): Boolean {
             return isAffectedSamsungDevices() || isAffectedXiaoMiDevices()
         }
 
         private fun isAffectedSamsungDevices(): Boolean {
-            return ("samsung".equals(Build.BRAND, ignoreCase = true) &&
-                isAffectedModel(AFFECTED_SAMSUNG_MODEL))
+            return (isSamsungDevice() && isAffectedModel(AFFECTED_SAMSUNG_MODEL))
         }
 
         private fun isAffectedXiaoMiDevices(): Boolean {
-            return ("xiaomi".equals(Build.BRAND, ignoreCase = true) &&
-                isAffectedModel(AFFECTED_XIAOMI_MODEL))
+            return (isXiaomiDevice() && isAffectedModel(AFFECTED_XIAOMI_MODEL))
         }
 
         private fun isAffectedModel(modelList: List<String>): Boolean {

@@ -17,18 +17,37 @@
 package androidx.room.integration.multiplatformtestapp.test
 
 import androidx.room.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.Dispatchers
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 
-class QueryTest : BaseQueryTest() {
+@RunWith(Parameterized::class)
+class QueryTest(private val driver: Driver) : BaseQueryTest() {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
 
     override fun getRoomDatabase(): SampleDatabase {
         return Room.inMemoryDatabaseBuilder<SampleDatabase>(context = instrumentation.targetContext)
-            .setDriver(BundledSQLiteDriver())
+            .setDriver(
+                when (driver) {
+                    Driver.BUNDLED -> BundledSQLiteDriver()
+                    Driver.ANDROID -> AndroidSQLiteDriver()
+                }
+            )
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
+    }
+
+    companion object {
+        @JvmStatic @Parameters(name = "driver={0}") fun drivers() = Driver.entries.toTypedArray()
+    }
+
+    enum class Driver {
+        BUNDLED,
+        ANDROID,
     }
 }

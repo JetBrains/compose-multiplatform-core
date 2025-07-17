@@ -16,14 +16,15 @@
 
 package androidx.car.app.model;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.model.constraints.RowConstraints;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -51,7 +52,8 @@ public final class RowSection extends Section<Row> {
     }
 
     /**
-     * When set to a value that correlates to an index in {@link #getItems()}, this entire row
+     * When set to a value that correlates to an index in {@link #getItemsDelegate()}, this
+     * entire row
      * section should be treated as a selection group (eg. radio group). Otherwise this will be a
      * negative value to denote that this row section should not be transformed into a selection
      * group.
@@ -89,9 +91,8 @@ public final class RowSection extends Section<Row> {
         return Objects.hash(super.hashCode(), mInitialSelectedIndex);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "RowSection { initialSelectedIndex: " + mInitialSelectedIndex + ", "
                 + super.toString() + " }";
     }
@@ -119,12 +120,6 @@ public final class RowSection extends Section<Row> {
             super();
         }
 
-        /** Create a new {@link RowSection} builder, copying values from an existing instance. */
-        public Builder(@NonNull RowSection rowSection) {
-            super(rowSection);
-            mInitialSelectedIndex = rowSection.mInitialSelectedIndex;
-        }
-
         /**
          * Sets this entire {@link RowSection} as a selection group when passed a non-negative
          * integer correlating to a valid index within the list of items added. The UI behaves
@@ -139,9 +134,8 @@ public final class RowSection extends Section<Row> {
          * @param initialSelectedIndex the index of the item to be selected when the template
          *                             is first rendered
          */
-        @NonNull
         @CanIgnoreReturnValue
-        public Builder setAsSelectionGroup(int initialSelectedIndex) {
+        public @NonNull Builder setAsSelectionGroup(int initialSelectedIndex) {
             mInitialSelectedIndex = initialSelectedIndex;
             return this;
         }
@@ -150,9 +144,8 @@ public final class RowSection extends Section<Row> {
          * Unsets this {@link RowSection} from being shown as a selection group. See {@link
          * #setAsSelectionGroup(int)}.
          */
-        @NonNull
         @CanIgnoreReturnValue
-        public Builder clearSelectionGroup() {
+        public @NonNull Builder clearSelectionGroup() {
             mInitialSelectedIndex = -1;
             return this;
         }
@@ -163,8 +156,7 @@ public final class RowSection extends Section<Row> {
          *
          * @see Builder for the list of validation logic
          */
-        @NonNull
-        public RowSection build() {
+        public @NonNull RowSection build() {
             if (mInitialSelectedIndex >= 0) {
                 if (!mItems.isEmpty() && mInitialSelectedIndex >= mItems.size()) {
                     throw new IllegalArgumentException(

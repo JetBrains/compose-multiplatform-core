@@ -30,12 +30,12 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.test.R;
 import androidx.test.filters.MediumTest;
 import androidx.test.rule.ActivityTestRule;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -89,8 +89,8 @@ public class ListViewCompatTest extends BaseInstrumentationTestCase<ListViewTest
         }, false);
     }
 
-    private void runOnMainAndLayoutSync(@NonNull final ActivityTestRule activityTestRule,
-            @NonNull final View view, @Nullable final Runnable runner, final boolean forceLayout)
+    private void runOnMainAndLayoutSync(final @NonNull ActivityTestRule activityTestRule,
+            final @NonNull View view, final @Nullable Runnable runner, final boolean forceLayout)
             throws Throwable {
         final View rootView = view.getRootView();
 

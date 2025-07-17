@@ -19,7 +19,6 @@ package androidx.collection
 import androidx.collection.internal.EMPTY_INTS
 import androidx.collection.internal.EMPTY_OBJECTS
 import androidx.collection.internal.binarySearch
-import kotlin.jvm.JvmOverloads
 
 /** Returns an empty new [ArraySet]. */
 @Suppress("NOTHING_TO_INLINE") // Alias to public API.
@@ -58,7 +57,7 @@ public fun <T> arraySetOf(vararg values: T): ArraySet<T> {
  * @constructor Creates a new empty ArraySet. The default capacity of an array map is 0, and will
  *   grow once items are added to it.
  */
-public expect class ArraySet<E> @JvmOverloads constructor(capacity: Int = 0) :
+public expect class ArraySet<E> constructor(capacity: Int = 0) :
     MutableCollection<E>, MutableSet<E> {
 
     internal var hashes: IntArray
@@ -326,7 +325,8 @@ internal inline fun <E> ArraySet<E>.indexOfInternal(key: Any?): Int {
 
 @Suppress("NOTHING_TO_INLINE")
 internal inline fun <E> ArraySet<E>.valueAtInternal(index: Int): E {
-    @Suppress("UNCHECKED_CAST") return array[index] as E
+    @Suppress("UNCHECKED_CAST")
+    return array[index] as E
 }
 
 @Suppress("NOTHING_TO_INLINE")
@@ -379,13 +379,13 @@ internal inline fun <E> ArraySet<E>.addInternal(element: E): Boolean {
             destination = hashes,
             destinationOffset = index + 1,
             startIndex = index,
-            endIndex = oSize
+            endIndex = oSize,
         )
         array.copyInto(
             destination = array,
             destinationOffset = index + 1,
             startIndex = index,
-            endIndex = oSize
+            endIndex = oSize,
         )
     }
 
@@ -459,13 +459,13 @@ internal inline fun <E> ArraySet<E>.removeAtInternal(index: Int): E {
                     destination = hashes,
                     destinationOffset = index,
                     startIndex = index + 1,
-                    endIndex = nSize + 1
+                    endIndex = nSize + 1,
                 )
                 oarray.copyInto(
                     destination = array,
                     destinationOffset = index,
                     startIndex = index + 1,
-                    endIndex = nSize + 1
+                    endIndex = nSize + 1,
                 )
             }
         } else {
@@ -474,13 +474,13 @@ internal inline fun <E> ArraySet<E>.removeAtInternal(index: Int): E {
                     destination = hashes,
                     destinationOffset = index,
                     startIndex = index + 1,
-                    endIndex = nSize + 1
+                    endIndex = nSize + 1,
                 )
                 array.copyInto(
                     destination = array,
                     destinationOffset = index,
                     startIndex = index + 1,
-                    endIndex = nSize + 1
+                    endIndex = nSize + 1,
                 )
             }
             array[nSize] = null
@@ -490,7 +490,8 @@ internal inline fun <E> ArraySet<E>.removeAtInternal(index: Int): E {
         }
         _size = nSize
     }
-    @Suppress("UNCHECKED_CAST") return old as E
+    @Suppress("UNCHECKED_CAST")
+    return old as E
 }
 
 @Suppress("NOTHING_TO_INLINE")

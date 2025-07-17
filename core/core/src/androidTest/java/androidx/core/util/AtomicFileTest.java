@@ -22,11 +22,11 @@ import static org.junit.Assert.assertTrue;
 import android.app.Instrumentation;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,12 +66,9 @@ public class AtomicFileTest {
     private static final byte[] NEW_BYTES = "new".getBytes(UTF_8);
     private static final byte[] LEGACY_BACKUP_BYTES = "bak".getBytes(UTF_8);
 
-    @Nullable
-    public String[] mExistingFileNames;
-    @Nullable
-    public WriteAction mWriteAction;
-    @Nullable
-    public byte[] mExpectedBytes;
+    public String @Nullable [] mExistingFileNames;
+    public @Nullable WriteAction mWriteAction;
+    public byte @Nullable [] mExpectedBytes;
 
     private final Instrumentation mInstrumentation =
             InstrumentationRegistry.getInstrumentation();
@@ -273,7 +270,7 @@ public class AtomicFileTest {
         }
     }
 
-    private static void writeBytes(@NonNull File file, @NonNull byte[] bytes) throws IOException {
+    private static void writeBytes(@NonNull File file, byte @NonNull [] bytes) throws IOException {
         try (FileOutputStream outputStream = new FileOutputStream(file)) {
             outputStream.write(bytes);
         }
@@ -319,15 +316,12 @@ public class AtomicFileTest {
     // JUnit on API 17 somehow turns null parameters into the string "null". Wrapping the parameters
     // inside a class solves this problem.
     private static class Parameters {
-        @Nullable
-        public String[] existingFileNames;
-        @Nullable
-        public WriteAction writeAction;
-        @Nullable
-        public byte[] expectedBytes;
+        public String @Nullable [] existingFileNames;
+        public @Nullable WriteAction writeAction;
+        public byte @Nullable [] expectedBytes;
 
-        Parameters(@Nullable String[] existingFileNames, @Nullable WriteAction writeAction,
-                @Nullable byte[] expectedBytes) {
+        Parameters(String @Nullable [] existingFileNames, @Nullable WriteAction writeAction,
+                byte @Nullable [] expectedBytes) {
             this.existingFileNames = existingFileNames;
             this.writeAction = writeAction;
             this.expectedBytes = expectedBytes;

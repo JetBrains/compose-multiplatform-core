@@ -22,10 +22,11 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A base class for {@link Preference}s that are dialog-based. When clicked, these
@@ -120,8 +121,7 @@ public abstract class DialogPreference extends Preference {
      *
      * @return The title
      */
-    @Nullable
-    public CharSequence getDialogTitle() {
+    public @Nullable CharSequence getDialogTitle() {
         return mDialogTitle;
     }
 
@@ -152,8 +152,7 @@ public abstract class DialogPreference extends Preference {
      *
      * @return The message
      */
-    @Nullable
-    public CharSequence getDialogMessage() {
+    public @Nullable CharSequence getDialogMessage() {
         return mDialogMessage;
     }
 
@@ -180,8 +179,7 @@ public abstract class DialogPreference extends Preference {
      *
      * @return The icon, as a {@link Drawable}
      */
-    @Nullable
-    public Drawable getDialogIcon() {
+    public @Nullable Drawable getDialogIcon() {
         return mDialogIcon;
     }
 
@@ -207,8 +205,7 @@ public abstract class DialogPreference extends Preference {
      *
      * @return The text of the positive button
      */
-    @Nullable
-    public CharSequence getPositiveButtonText() {
+    public @Nullable CharSequence getPositiveButtonText() {
         return mPositiveButtonText;
     }
 
@@ -234,8 +231,7 @@ public abstract class DialogPreference extends Preference {
      *
      * @return The text of the negative button
      */
-    @Nullable
-    public CharSequence getNegativeButtonText() {
+    public @Nullable CharSequence getNegativeButtonText() {
         return mNegativeButtonText;
     }
 
@@ -278,7 +274,6 @@ public abstract class DialogPreference extends Preference {
          * @see PreferenceGroup#findPreference(CharSequence)
          */
         @SuppressWarnings("TypeParameterUnusedInFormals")
-        @Nullable
-        <T extends Preference> T findPreference(@NonNull CharSequence key);
+        <T extends Preference> @Nullable T findPreference(@NonNull CharSequence key);
     }
 }

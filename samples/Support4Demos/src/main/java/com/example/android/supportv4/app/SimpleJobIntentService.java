@@ -25,8 +25,9 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.JobIntentService;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Example implementation of a JobIntentService.

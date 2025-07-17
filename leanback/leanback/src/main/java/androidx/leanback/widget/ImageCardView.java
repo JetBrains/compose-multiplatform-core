@@ -29,10 +29,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A subclass of {@link BaseCardView} with an {@link ImageView} as its main region. The
@@ -302,8 +303,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the main image view.
      */
-    @Nullable
-    public final ImageView getMainImageView() {
+    public final @Nullable ImageView getMainImageView() {
         return mImageView;
     }
 
@@ -369,8 +369,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the ImageView drawable.
      */
-    @Nullable
-    public Drawable getMainImage() {
+    public @Nullable Drawable getMainImage() {
         if (mImageView == null) {
             return null;
         }
@@ -381,8 +380,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the info area background drawable.
      */
-    @Nullable
-    public Drawable getInfoAreaBackground() {
+    public @Nullable Drawable getInfoAreaBackground() {
         if (mInfoArea != null) {
             return mInfoArea.getBackground();
         }
@@ -420,8 +418,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the title text.
      */
-    @Nullable
-    public CharSequence getTitleText() {
+    public @Nullable CharSequence getTitleText() {
         if (mTitleView == null) {
             return null;
         }
@@ -442,8 +439,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the content text.
      */
-    @Nullable
-    public CharSequence getContentText() {
+    public @Nullable CharSequence getContentText() {
         if (mContentView == null) {
             return null;
         }
@@ -469,8 +465,7 @@ public class ImageCardView extends BaseCardView {
     /**
      * Returns the badge image drawable.
      */
-    @Nullable
-    public Drawable getBadgeImage() {
+    public @Nullable Drawable getBadgeImage() {
         if (mBadgeImage == null) {
             return null;
         }

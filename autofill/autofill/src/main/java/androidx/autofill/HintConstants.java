@@ -16,8 +16,9 @@
 
 package androidx.autofill;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Contains all the officially supported autofill hint constants.
@@ -40,7 +41,7 @@ public final class HintConstants {
      * should be <code>{@value #AUTOFILL_HINT_EMAIL_ADDRESS}</code>).
      *
      * <p>See {@link android.view.View#setAutofillHints(String...)} for more info about autofill
-     * hints.3
+     * hints.
      */
     public static final String AUTOFILL_HINT_EMAIL_ADDRESS = "emailAddress";
 
@@ -613,8 +614,7 @@ public final class HintConstants {
      * @param characterPosition value between 1 and 8 representing the character position of the OTP
      *     code that the service should autofill in the associated view.
      */
-    @NonNull
-    public static String generateSmsOtpHintForCharacterPosition(int characterPosition) {
+    public static @NonNull String generateSmsOtpHintForCharacterPosition(int characterPosition) {
         Preconditions.checkArgumentInRange(characterPosition, 1, 8, "characterPosition");
         return ("smsOTPCode" + characterPosition).intern();
     }

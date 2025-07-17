@@ -18,11 +18,12 @@ package androidx.pdf.viewer.loader;
 
 import android.os.RemoteException;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.PdfDocumentRemote;
-import androidx.pdf.pdflib.PdfDocumentRemoteProto;
+import androidx.pdf.service.PdfDocumentRemoteProto;
 import androidx.pdf.util.ThreadUtils;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Performs one command on the PDF Document asynchronously, like rendering a page's bitmap or
@@ -79,8 +80,7 @@ abstract class AbstractPdfTask<T> {
      * which is run for one task at a time on a dedicated PDF thread. Do not call this from
      * doCallback or cleanUp or anything else that is run on the UI thread.
      */
-    @Nullable
-    protected PdfDocumentRemote getPdfDocument() {
+    protected @Nullable PdfDocumentRemote getPdfDocument() {
         return mPdfLoader.getLoadedPdfDocument(getLogTag());
     }
 

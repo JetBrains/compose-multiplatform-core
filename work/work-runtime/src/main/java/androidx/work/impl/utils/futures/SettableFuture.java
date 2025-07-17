@@ -16,10 +16,11 @@
 
 package androidx.work.impl.utils.futures;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Cloned from concurrent-futures package to avoid AndroidX namespace issues since there is no

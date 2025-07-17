@@ -49,8 +49,6 @@ import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.leanback.test.R;
 import androidx.leanback.testutils.PollingCheck;
@@ -65,6 +63,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.testutils.AnimationActivityTestRule;
 import androidx.testutils.AnimationTest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -3154,6 +3154,29 @@ public class GridWidgetTest {
 
         changeArraySize(200);
         assertTrue(mGridView.getLayoutManager().findViewByPosition(0).hasFocus());
+    }
+
+    @Test
+    public void testFocusFirstFocusable() throws Throwable {
+        Intent intent = new Intent();
+        intent.putExtra(GridActivity.EXTRA_LAYOUT_RESOURCE_ID,
+                R.layout.horizontal_grid);
+        intent.putExtra(GridActivity.EXTRA_NUM_ITEMS, 1);
+        intent.putExtra(GridActivity.EXTRA_ITEMS_FOCUSABLE, new boolean[] {false, true});
+        initActivity(intent);
+
+        humanDelay(500);
+        assertTrue(mGridView.hasFocus());
+
+        performAndWaitForAnimation(new Runnable() {
+            @Override
+            public void run() {
+                mActivity.addItems(1, new int[]{1});
+            }
+        });
+        humanDelay(500);
+
+        assertTrue(mGridView.getLayoutManager().findViewByPosition(1).hasFocus());
     }
 
     @Test

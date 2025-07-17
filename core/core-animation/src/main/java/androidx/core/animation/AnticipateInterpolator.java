@@ -23,8 +23,9 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An interpolator where the change starts backward then flings forward.

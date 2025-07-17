@@ -16,7 +16,10 @@
 
 package androidx.compose.ui.text.input
 
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test
@@ -89,6 +92,28 @@ class EditProcessorTest {
         processor.reset(newTextFieldValue, textInputSession)
 
         assertThat(processor.mBuffer).isNotEqualTo(initialBuffer)
+    }
+
+    @Test
+    fun testNewState_compositionNotLost_ifTextIsSame_butAnnotationsAreDifferent() {
+        val processor = EditProcessor()
+        val textInputSession = mock<TextInputSession>()
+
+        val textFieldValue = TextFieldValue(buildAnnotatedString { append("abc") }, TextRange.Zero)
+        processor.reset(textFieldValue, textInputSession)
+        // first reset call always removes the composing region due to text change
+        processor.apply(listOf(SetComposingRegionCommand(0, 3)))
+        val initialBuffer = processor.mBuffer
+
+        val newTextFieldValue =
+            textFieldValue.copy(
+                buildAnnotatedString { withStyle(SpanStyle()) { append("abc") } },
+                composition = TextRange(0, 3),
+            )
+        processor.reset(newTextFieldValue, textInputSession)
+
+        assertThat(processor.mBuffer).isEqualTo(initialBuffer)
+        assertThat(processor.mBufferState.composition).isEqualTo(TextRange(0, 3))
     }
 
     @Test
@@ -177,7 +202,7 @@ class EditProcessorTest {
         processor.apply(
             listOf(
                 CommitTextCommand("ab", 0),
-                SetComposingRegionCommand(composition.start, composition.end)
+                SetComposingRegionCommand(composition.start, composition.end),
             )
         )
 
@@ -233,7 +258,7 @@ class EditProcessorTest {
             listOf(
                 CommitTextCommand("ab", 0),
                 SetComposingRegionCommand(composition.start, composition.end),
-                SetSelectionCommand(selection.start, selection.end)
+                SetSelectionCommand(selection.start, selection.end),
             )
         )
 
@@ -261,12 +286,7 @@ class EditProcessorTest {
                 mBuffer.setSelection(0, 5)
                 mBuffer.setComposition(5, 7)
             }
-        val batch =
-            listOf(
-                CommitTextCommand("ab", 0),
-                InvalidCommand(),
-                SetSelectionCommand(0, 2),
-            )
+        val batch = listOf(CommitTextCommand("ab", 0), InvalidCommand(), SetSelectionCommand(0, 2))
 
         val error = assertFailsWith<RuntimeException> { processor.apply(batch) }
 

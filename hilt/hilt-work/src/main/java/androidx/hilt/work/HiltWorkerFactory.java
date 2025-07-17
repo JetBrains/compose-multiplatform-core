@@ -18,11 +18,12 @@ package androidx.hilt.work;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.work.ListenableWorker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -45,9 +46,8 @@ public final class HiltWorkerFactory extends androidx.work.WorkerFactory {
         mWorkerFactories = workerFactories;
     }
 
-    @Nullable
     @Override
-    public ListenableWorker createWorker(@NonNull Context appContext,
+    public @Nullable ListenableWorker createWorker(@NonNull Context appContext,
             @NonNull String workerClassName, @NonNull WorkerParameters workerParameters) {
         Provider<WorkerAssistedFactory<? extends ListenableWorker>> factoryProvider =
                 mWorkerFactories.get(workerClassName);

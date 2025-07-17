@@ -24,12 +24,10 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material.ripple.createRippleModifierNode
 import androidx.compose.material3.tokens.StateTokens
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.isSpecified
@@ -76,7 +74,7 @@ import androidx.compose.ui.unit.Dp
 fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified
+    color: Color = Color.Unspecified,
 ): IndicationNodeFactory {
     return if (radius == Dp.Unspecified && color == Color.Unspecified) {
         if (bounded) return DefaultBoundedRipple else DefaultUnboundedRipple
@@ -122,7 +120,7 @@ fun ripple(
 fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
-    radius: Dp = Dp.Unspecified
+    radius: Dp = Dp.Unspecified,
 ): IndicationNodeFactory {
     return RippleNodeFactory(bounded, radius, color)
 }
@@ -138,28 +136,9 @@ object RippleDefaults {
             pressedAlpha = StateTokens.PressedStateLayerOpacity,
             focusedAlpha = StateTokens.FocusStateLayerOpacity,
             draggedAlpha = StateTokens.DraggedStateLayerOpacity,
-            hoveredAlpha = StateTokens.HoverStateLayerOpacity
+            hoveredAlpha = StateTokens.HoverStateLayerOpacity,
         )
 }
-
-/**
- * Temporary CompositionLocal to allow configuring whether the old ripple implementation that uses
- * the deprecated [androidx.compose.material.ripple.RippleTheme] API should be used in Material
- * components and LocalIndication, instead of the new [ripple] API. This flag defaults to false, and
- * will be removed after one stable release: it should only be used to temporarily unblock
- * upgrading.
- *
- * Provide this CompositionLocal before you provide [MaterialTheme] to make sure it is correctly
- * provided through LocalIndication.
- */
-// TODO: b/304985887 - remove after one stable release
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3Api
-@ExperimentalMaterial3Api
-val LocalUseFallbackRippleImplementation: ProvidableCompositionLocal<Boolean> =
-    staticCompositionLocalOf {
-        false
-    }
 
 /**
  * CompositionLocal used for providing [RippleConfiguration] down the tree. This acts as a
@@ -173,9 +152,6 @@ val LocalUseFallbackRippleImplementation: ProvidableCompositionLocal<Boolean> =
  *   own custom ripple that queries your design system theme values directly using
  *   [createRippleModifierNode].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3Api
-@ExperimentalMaterial3Api
 val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
     compositionLocalOf {
         RippleConfiguration()
@@ -194,10 +170,9 @@ val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
  *   will be used instead.
  */
 @Immutable
-@ExperimentalMaterial3Api
 class RippleConfiguration(
     val color: Color = Color.Unspecified,
-    val rippleAlpha: RippleAlpha? = null
+    val rippleAlpha: RippleAlpha? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -220,47 +195,18 @@ class RippleConfiguration(
     }
 }
 
-// TODO: b/304985887 - remove after one stable release
-@Suppress("DEPRECATION_ERROR")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun rippleOrFallbackImplementation(
-    bounded: Boolean = true,
-    radius: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified
-): Indication {
-    return if (LocalUseFallbackRippleImplementation.current) {
-        androidx.compose.material.ripple.rememberRipple(bounded, radius, color)
-    } else {
-        ripple(bounded, radius, color)
-    }
-}
-
-// TODO: b/304985887 - remove after one stable release
-@Suppress("DEPRECATION_ERROR")
-@Immutable
-internal object CompatRippleTheme : androidx.compose.material.ripple.RippleTheme {
-    @Deprecated("Super method is deprecated")
-    @Composable
-    override fun defaultColor() = LocalContentColor.current
-
-    @Deprecated("Super method is deprecated")
-    @Composable
-    override fun rippleAlpha() = RippleDefaults.RippleAlpha
-}
-
 @Stable
 private class RippleNodeFactory
 private constructor(
     private val bounded: Boolean,
     private val radius: Dp,
     private val colorProducer: ColorProducer?,
-    private val color: Color
+    private val color: Color,
 ) : IndicationNodeFactory {
     constructor(
         bounded: Boolean,
         radius: Dp,
-        colorProducer: ColorProducer
+        colorProducer: ColorProducer,
     ) : this(bounded, radius, colorProducer, Color.Unspecified)
 
     constructor(bounded: Boolean, radius: Dp, color: Color) : this(bounded, radius, null, color)
@@ -289,7 +235,6 @@ private constructor(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 private class DelegatingThemeAwareRippleNode(
     private val interactionSource: InteractionSource,
     private val bounded: Boolean,
@@ -353,13 +298,14 @@ private class DelegatingThemeAwareRippleNode(
                     bounded,
                     radius,
                     calculateColor,
-                    calculateRippleAlpha
+                    calculateRippleAlpha,
                 )
             )
     }
 
     private fun removeRipple() {
         rippleNode?.let { undelegate(it) }
+        rippleNode = null
     }
 }
 

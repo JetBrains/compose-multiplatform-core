@@ -31,7 +31,6 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import androidx.annotation.GuardedBy
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -51,6 +50,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ParameterizedTestConfigUtil
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.view.PreviewView.ImplementationMode
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks
@@ -70,8 +70,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -91,9 +89,7 @@ import org.mockito.Mockito
 class PreviewViewDeviceTest(private val implName: String, private val cameraConfig: CameraXConfig) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCamera =
@@ -136,7 +132,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             object : CameraController(context) {
                 override fun attachPreviewSurface(
                     surfaceProvider: Preview.SurfaceProvider,
-                    viewPort: ViewPort
+                    viewPort: ViewPort,
                 ) {
                     if (viewPort.scaleType == ViewPort.FIT) {
                         fitTypeSemaphore.release()
@@ -216,8 +212,9 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         // TODO(b/169058735): investigate and enable on Cuttlefish.
         Assume.assumeFalse(
             "Skip Cuttlefish until further investigation.",
-            Build.MODEL.contains("Cuttlefish")
+            Build.MODEL.contains("Cuttlefish"),
         )
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
 
         // Arrange.
         val countDownLatch = CountDownLatch(1)
@@ -233,6 +230,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 }
             }
         instrumentation.runOnMainSync {
+            fakeController.cameraSelector = cameraSelector
+
             val previewView = PreviewView(context)
             previewView.controller = fakeController
             previewView.implementationMode = ImplementationMode.COMPATIBLE
@@ -259,7 +258,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 public override fun onTapToFocus(
                     meteringPointFactory: MeteringPointFactory,
                     x: Float,
-                    y: Float
+                    y: Float,
                 ) {
                     semaphore.release()
                 }
@@ -273,6 +272,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
         instrumentation.runOnMainSync {
             val previewView = PreviewView(context)
+            // Specifies the content description and uses it to find the view to click
+            previewView.contentDescription = previewView.hashCode().toString()
             clickEventHelper = ClickEventHelper(previewView)
             previewView.setOnTouchListener(clickEventHelper)
             previewView.controller = fakeController
@@ -311,7 +312,6 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         private var uiDevice: UiDevice? = null
         private var limitedRetryCount = 0
         private var retriedCounter = 0
-        private var executor: ExecutorService? = null
 
         override fun onTouch(view: View, event: MotionEvent): Boolean {
             if (view != targetView) {
@@ -337,7 +337,6 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 uiDevice = null
                 limitedRetryCount = 0
                 retriedCounter = 0
-                executor?.shutdown()
                 synchronized(lock) { isPerformingClick = false }
             }
 
@@ -359,34 +358,16 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 }
             }
 
-            executor = Executors.newSingleThreadExecutor()
             limitedRetryCount = retryCount
             retriedCounter = 0
             this.uiDevice = uiDevice
             performSingleClickInternal()
         }
 
-        private fun performSingleClickInternal() {
-            executor!!.execute {
-                var needClearContentDescription = false
-                val originalContentDescription = targetView.contentDescription
-
-                if (originalContentDescription == null || originalContentDescription.isEmpty()) {
-                    needClearContentDescription = true
-                    targetView.contentDescription = targetView.hashCode().toString()
-                }
-
-                uiDevice!!
-                    .findObject(
-                        UiSelector().descriptionContains(targetView.contentDescription.toString())
-                    )
-                    .click()
-
-                if (needClearContentDescription) {
-                    targetView.contentDescription = originalContentDescription
-                }
-            }
-        }
+        private fun performSingleClickInternal() =
+            uiDevice!!
+                .findObject(UiSelector().descriptionContains(targetView.hashCode().toString()))
+                .click()
     }
 
     @Test
@@ -571,7 +552,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             createCameraInfo(
                 90,
                 CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                CameraSelector.LENS_FACING_BACK
+                CameraSelector.LENS_FACING_BACK,
             )
         val countDownLatch = CountDownLatch(1)
         lateinit var previewView: PreviewView
@@ -603,7 +584,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             createCameraInfo(
                 90,
                 CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                CameraSelector.LENS_FACING_BACK
+                CameraSelector.LENS_FACING_BACK,
             )
         lateinit var previewView: PreviewView
         instrumentation.runOnMainSync {
@@ -638,7 +619,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                         oldLeft: Int,
                         oldTop: Int,
                         oldRight: Int,
-                        oldBottom: Int
+                        oldBottom: Int,
                     ) {
                         if (previewView.width == newWidth && previewView.height == newHeight) {
                             latchToWaitForLayoutChange.countDown()
@@ -663,7 +644,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             createCameraInfo(
                 90,
                 CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                CameraSelector.LENS_FACING_BACK
+                CameraSelector.LENS_FACING_BACK,
             )
         lateinit var previewView: PreviewView
         instrumentation.runOnMainSync {
@@ -693,13 +674,13 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
             createCameraInfo(
                 90,
                 CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                CameraSelector.LENS_FACING_BACK
+                CameraSelector.LENS_FACING_BACK,
             )
         val cameraInfo2 =
             createCameraInfo(
                 270,
                 CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                CameraSelector.LENS_FACING_FRONT
+                CameraSelector.LENS_FACING_FRONT,
             )
 
         lateinit var previewView: PreviewView
@@ -734,7 +715,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
     private fun notifyLatchWhenLayoutReady(
         previewView: PreviewView,
-        countDownLatch: CountDownLatch
+        countDownLatch: CountDownLatch,
     ) {
         previewView.addOnLayoutChangeListener(
             object : View.OnLayoutChangeListener {
@@ -747,7 +728,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                     oldLeft: Int,
                     oldTop: Int,
                     oldRight: Int,
-                    oldBottom: Int
+                    oldBottom: Int,
                 ) {
                     if (v.width > 0 && v.height > 0) {
                         countDownLatch.countDown()
@@ -765,7 +746,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                 createCameraInfo(
                     90,
                     CameraInfo.IMPLEMENTATION_TYPE_CAMERA2,
-                    CameraSelector.LENS_FACING_BACK
+                    CameraSelector.LENS_FACING_BACK,
                 )
             val previewView = PreviewView(context)
             val surfaceProvider = previewView.surfaceProvider
@@ -989,14 +970,16 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
     @Test
     fun canSetFrameUpdateListener() {
+        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
         lateinit var previewView: PreviewView
         activityScenario!!.onActivity { activity ->
             previewView = PreviewView(context)
             previewView.implementationMode = ImplementationMode.COMPATIBLE
             activity.setContentView(previewView)
             val preview = Preview.Builder().build()
-            preview.setSurfaceProvider(previewView.surfaceProvider)
-            cameraProvider!!.bindToLifecycle(activity, CameraSelector.DEFAULT_BACK_CAMERA, preview)
+            preview.surfaceProvider = previewView.surfaceProvider
+            cameraProvider!!.bindToLifecycle(activity, cameraSelector, preview)
         }
 
         var executedOnExecutor = false
@@ -1016,9 +999,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         activityScenario!!.onActivity { activity: FakeActivity -> activity.setContentView(view) }
     }
 
-    private fun createSurfaceRequest(
-        cameraInfo: CameraInfoInternal,
-    ): SurfaceRequest {
+    private fun createSurfaceRequest(cameraInfo: CameraInfoInternal): SurfaceRequest {
         val fakeCamera = FakeCamera(/* cameraControl= */ null, cameraInfo)
         val surfaceRequest = SurfaceRequest(DEFAULT_SURFACE_SIZE, fakeCamera) {}
         surfaceRequestList.add(surfaceRequest)
@@ -1034,7 +1015,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
     private fun createCameraInfo(
         rotationDegrees: Int,
         implementationType: String,
-        @CameraSelector.LensFacing lensFacing: Int
+        @CameraSelector.LensFacing lensFacing: Int,
     ): CameraInfoInternal {
         val cameraInfoInternal = FakeCameraInfoInternal(rotationDegrees, lensFacing)
         cameraInfoInternal.implementationType = implementationType
@@ -1050,7 +1031,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
                     Surface.ROTATION_0,
                     /*hasCameraTransform=*/ true,
                     /*sensorToBufferTransform=*/ Matrix(),
-                    /*mirroring=*/ false
+                    /*mirroring=*/ false,
                 )
             )
         }
@@ -1077,7 +1058,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
 
         override fun onSurfaceRequested(
             surfaceRequest: SurfaceRequest,
-            onSurfaceNotInUseListener: OnSurfaceNotInUseListener?
+            onSurfaceNotInUseListener: OnSurfaceNotInUseListener?,
         ) {}
 
         public override fun redrawPreview() {}
@@ -1104,9 +1085,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+            ParameterizedTestConfigUtil.generateCameraXConfigParameterizedTestConfigs(
+                inLabTestRequired = true
             )
     }
 }

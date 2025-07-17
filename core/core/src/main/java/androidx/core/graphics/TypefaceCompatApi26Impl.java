@@ -29,13 +29,14 @@ import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.content.res.FontResourcesParserCompat;
 import androidx.core.content.res.FontResourcesParserCompat.FontFileResourceEntry;
 import androidx.core.provider.FontsContractCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -120,8 +121,7 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
     /**
      * Create a new FontFamily instance
      */
-    @Nullable
-    private Object newFamily() {
+    private @Nullable Object newFamily() {
         try {
             return mFontFamilyCtor.newInstance();
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
@@ -134,7 +134,7 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
      *      boolean isAsset, int ttcIndex, int weight, int isItalic, FontVariationAxis[] axes)
      */
     private boolean addFontFromAssetManager(Context context, Object family, String fileName,
-            int ttcIndex, int weight, int style, @Nullable FontVariationAxis[] axes) {
+            int ttcIndex, int weight, int style, FontVariationAxis @Nullable [] axes) {
         try {
             return (Boolean) mAddFontFromAssetManager.invoke(family,
                     context.getAssets(), fileName, 0 /* cookie */, false /* isAsset */, ttcIndex,
@@ -162,8 +162,7 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
      * Call method Typeface#createFromFamiliesWithDefault(
      *      FontFamily[] families, int weight, int italic)
      */
-    @Nullable
-    protected Typeface createFromFamiliesWithDefault(Object family) {
+    protected @Nullable Typeface createFromFamiliesWithDefault(Object family) {
         try {
             Object familyArray = Array.newInstance(mFontFamily, 1);
             Array.set(familyArray, 0, family);
@@ -195,8 +194,7 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
     }
 
     @Override
-    @Nullable
-    public Typeface createFromFontFamilyFilesResourceEntry(Context context,
+    public @Nullable Typeface createFromFontFamilyFilesResourceEntry(Context context,
             FontResourcesParserCompat.FontFamilyFilesResourceEntry entry, Resources resources,
             int style) {
         if (!isFontFamilyPrivateAPIAvailable()) {
@@ -221,10 +219,9 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
     }
 
     @Override
-    @Nullable
-    public Typeface createFromFontInfo(Context context,
+    public @Nullable Typeface createFromFontInfo(Context context,
             @Nullable CancellationSignal cancellationSignal,
-            @NonNull FontsContractCompat.FontInfo[] fonts, int style) {
+            FontsContractCompat.FontInfo @NonNull [] fonts, int style) {
         if (fonts.length < 1) {
             return null;
         }
@@ -283,9 +280,8 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
     /**
      * Used by Resources to load a font resource of type font file.
      */
-    @Nullable
     @Override
-    public Typeface createFromResourcesFontFile(
+    public @Nullable Typeface createFromResourcesFontFile(
             Context context, Resources resources, int id, String path, int style) {
         if (!isFontFamilyPrivateAPIAvailable()) {
             return super.createFromResourcesFontFile(context, resources, id, path, style);
@@ -351,9 +347,8 @@ public class TypefaceCompatApi26Impl extends TypefaceCompatApi21Impl {
         return m;
     }
 
-    @NonNull
     @Override
-    Typeface createWeightStyle(@NonNull Context context,
+    @NonNull Typeface createWeightStyle(@NonNull Context context,
             @NonNull Typeface base, int weight, boolean italic) {
         Typeface out = null;
         try {

@@ -22,7 +22,6 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
@@ -30,12 +29,13 @@ import androidx.webkit.WebViewFeature;
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteStreams;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 
 public class MuteAudioActivity extends AppCompatActivity {
-    @Nullable
-    private WebView mWebView;
+        private @Nullable WebView mWebView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

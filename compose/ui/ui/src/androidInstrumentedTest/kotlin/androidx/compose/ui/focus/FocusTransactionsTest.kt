@@ -16,12 +16,11 @@
 
 package androidx.compose.ui.focus
 
+import android.os.Build
 import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
 import androidx.compose.ui.focus.FocusStateImpl.ActiveParent
 import androidx.compose.ui.focus.FocusStateImpl.Inactive
 import androidx.compose.ui.input.InputMode.Companion.Keyboard
@@ -46,7 +45,6 @@ import org.junit.runner.RunWith
 class FocusTransactionsTest {
     @get:Rule val rule = createComposeRule()
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun reentrantRequestFocus_byCallingRequestFocusWithinOnFocusChanged() {
         // Arrange.
@@ -89,7 +87,6 @@ class FocusTransactionsTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun reentrantRequestFocus_byCallingRequestFocusWithinOnFocusChanged2() {
         // Arrange.
@@ -166,15 +163,21 @@ class FocusTransactionsTest {
                     assertThat(view.isFocused).isTrue()
                 }
                 Touch -> {
-                    assertThat(root.focusOwner.rootState).isEqualTo(Inactive)
-                    assertThat(view.isFocused).isFalse()
+                    // On devices pre-P, clearFocus() will cause a subsequent requestFocus()
+                    // the causes another request for focus on the ComposeView.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                        assertThat(root.focusOwner.rootState).isEqualTo(ActiveParent)
+                        assertThat(view.isFocused).isTrue()
+                    } else {
+                        assertThat(root.focusOwner.rootState).isEqualTo(Inactive)
+                        assertThat(view.isFocused).isFalse()
+                    }
                 }
                 else -> error("invalid input mode")
             }
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun cancelTakeFocus_fromCustomEnter() {
         // Arrange.
@@ -182,7 +185,7 @@ class FocusTransactionsTest {
         val focusRequester = FocusRequester()
         rule.setFocusableContent {
             view = LocalView.current
-            Box(Modifier.focusProperties { enter = { Cancel } }.focusTarget()) {
+            Box(Modifier.focusProperties { onEnter = { cancelFocusChange() } }.focusTarget()) {
                 Box(Modifier.focusRequester(focusRequester).focusTarget())
             }
         }

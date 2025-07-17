@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -46,11 +47,12 @@ dependencies {
 
 androidx {
     name = "Compose UI Animation Graphics Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2021"
     description = "Contains the sample code for the Androidx Compose UI Animation Graphics Library"
 }
 
 android {
-    namespace "androidx.compose.animation.graphics.samples"
+    compileSdk = 35
+    namespace = "androidx.compose.animation.graphics.samples"
 }

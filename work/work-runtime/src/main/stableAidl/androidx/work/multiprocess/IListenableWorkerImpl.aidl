@@ -29,6 +29,11 @@ oneway interface IListenableWorkerImpl {
 
    // interrupt request.
    // request is a ParcelableWorkerParameters instance.
-   // callback gets an empty result
+   // callback gets an empty result.
    oneway void interrupt(in byte[] request, IWorkManagerImplCallback callback);
+
+   // getForegroundInfoAsync request.
+   // request is a ParcelablelRemoteRequest instance.
+   // callback gets a parcelized representation of ForegroundInfo.
+   oneway void getForegroundInfoAsync(in byte[] request, IWorkManagerImplCallback callback);
 }

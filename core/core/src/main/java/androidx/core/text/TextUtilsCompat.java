@@ -18,9 +18,10 @@ package androidx.core.text;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -35,8 +36,7 @@ public final class TextUtilsCompat {
      * @param s the string to be encoded
      * @return the encoded string
      */
-    @NonNull
-    public static String htmlEncode(@NonNull String s) {
+    public static @NonNull String htmlEncode(@NonNull String s) {
         return TextUtils.htmlEncode(s);
     }
 

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
@@ -32,7 +33,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -48,43 +49,46 @@ class LazyGridSpanTest {
         val columns = 4
         val columnWidth = with(rule.density) { 5.toDp() }
         val itemHeight = with(rule.density) { 10.toDp() }
+        lateinit var state: LazyGridState
         rule.setContent {
+            state = rememberLazyGridState()
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3)
+                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3),
+                state = state,
             ) {
                 items(
                     count = 6,
                     span = { index ->
                         when (index) {
                             0 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
                                 GridItemSpan(3)
                             }
                             1 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(1)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(1)
                                 GridItemSpan(1)
                             }
                             2 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
                                 GridItemSpan(1)
                             }
                             3 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(3)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(3)
                                 GridItemSpan(3)
                             }
                             4 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
                                 GridItemSpan(1)
                             }
                             5 -> {
-                                Truth.assertThat(maxLineSpan).isEqualTo(4)
-                                Truth.assertThat(maxCurrentLineSpan).isEqualTo(3)
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(3)
                                 GridItemSpan(1)
                             }
                             else -> error("Out of index span queried")
@@ -120,6 +124,104 @@ class LazyGridSpanTest {
             .onNodeWithTag("5")
             .assertTopPositionInRootIsEqualTo(itemHeight * 2)
             .assertLeftPositionInRootIsEqualTo(columnWidth)
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.visibleItemsInfo[0].span).isEqualTo(3)
+            assertThat(state.layoutInfo.visibleItemsInfo[1].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[2].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[3].span).isEqualTo(3)
+            assertThat(state.layoutInfo.visibleItemsInfo[4].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[5].span).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun spansInHorizontalGrid() {
+        val rows = 4
+        val rowHeight = with(rule.density) { 5.toDp() }
+        val itemWidth = with(rule.density) { 10.toDp() }
+        lateinit var state: LazyGridState
+        rule.setContent {
+            state = rememberLazyGridState()
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(rows),
+                modifier = Modifier.requiredSize(itemWidth * 3, rowHeight * rows),
+                state = state,
+            ) {
+                items(
+                    count = 6,
+                    span = { index ->
+                        when (index) {
+                            0 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                GridItemSpan(3)
+                            }
+                            1 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(1)
+                                GridItemSpan(1)
+                            }
+                            2 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                GridItemSpan(1)
+                            }
+                            3 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(3)
+                                GridItemSpan(3)
+                            }
+                            4 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(4)
+                                GridItemSpan(1)
+                            }
+                            5 -> {
+                                assertThat(maxLineSpan).isEqualTo(4)
+                                assertThat(maxCurrentLineSpan).isEqualTo(3)
+                                GridItemSpan(1)
+                            }
+                            else -> error("Out of index span queried")
+                        }
+                    },
+                ) {
+                    Box(Modifier.width(itemWidth).testTag("$it"))
+                }
+            }
+        }
+
+        rule
+            .onNodeWithTag("0")
+            .assertTopPositionInRootIsEqualTo(0.dp)
+            .assertLeftPositionInRootIsEqualTo(0.dp)
+        rule
+            .onNodeWithTag("1")
+            .assertTopPositionInRootIsEqualTo(rowHeight * 3)
+            .assertLeftPositionInRootIsEqualTo(0.dp)
+        rule
+            .onNodeWithTag("2")
+            .assertTopPositionInRootIsEqualTo(0.dp)
+            .assertLeftPositionInRootIsEqualTo(itemWidth)
+        rule
+            .onNodeWithTag("3")
+            .assertTopPositionInRootIsEqualTo(rowHeight)
+            .assertLeftPositionInRootIsEqualTo(itemWidth)
+        rule
+            .onNodeWithTag("4")
+            .assertTopPositionInRootIsEqualTo(0.dp)
+            .assertLeftPositionInRootIsEqualTo(itemWidth * 2)
+        rule
+            .onNodeWithTag("5")
+            .assertTopPositionInRootIsEqualTo(rowHeight)
+            .assertLeftPositionInRootIsEqualTo(itemWidth * 2)
+        rule.runOnIdle {
+            assertThat(state.layoutInfo.visibleItemsInfo[0].span).isEqualTo(3)
+            assertThat(state.layoutInfo.visibleItemsInfo[1].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[2].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[3].span).isEqualTo(3)
+            assertThat(state.layoutInfo.visibleItemsInfo[4].span).isEqualTo(1)
+            assertThat(state.layoutInfo.visibleItemsInfo[5].span).isEqualTo(1)
+        }
     }
 
     @Test
@@ -134,9 +236,9 @@ class LazyGridSpanTest {
                 modifier =
                     Modifier.requiredSize(
                         columnWidth * columns + spacing * (columns - 1),
-                        itemHeight
+                        itemHeight,
                     ),
-                horizontalArrangement = Arrangement.spacedBy(spacing)
+                horizontalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 items(
                     count = 2,
@@ -146,7 +248,7 @@ class LazyGridSpanTest {
                             1 -> GridItemSpan(3)
                             else -> error("Out of index span queried")
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.height(itemHeight).testTag("$it"))
                 }
@@ -173,7 +275,7 @@ class LazyGridSpanTest {
         rule.setContent {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight)
+                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight),
             ) {
                 items(
                     count = 1,
@@ -182,7 +284,7 @@ class LazyGridSpanTest {
                             0 -> GridItemSpan(1)
                             else -> error("Out of index span queried")
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.height(itemHeight).testTag("0"))
                 }
@@ -201,7 +303,7 @@ class LazyGridSpanTest {
                             error("Wrong span calculation parameters")
                         }
                         GridItemSpan(1)
-                    }
+                    },
                 ) {
                     if (it != 0) error("Wrong index")
                     Box(Modifier.height(itemHeight).testTag("2"))
@@ -234,7 +336,7 @@ class LazyGridSpanTest {
         rule.setContent {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3)
+                modifier = Modifier.requiredSize(columnWidth * columns, itemHeight * 3),
             ) {
                 item(
                     span = {
@@ -259,7 +361,7 @@ class LazyGridSpanTest {
                         )
                             error("Wrong maxSpan")
                         GridItemSpan(listOf(2, 1, 2, 2)[index])
-                    }
+                    },
                 ) {
                     Box(Modifier.height(itemHeight).testTag((it + 1).toString()))
                 }
@@ -302,7 +404,7 @@ class LazyGridSpanTest {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 state = state,
-                modifier = Modifier.size(100.dp)
+                modifier = Modifier.size(100.dp),
             ) {
                 repeat(100) {
                     item(span = { GridItemSpan(maxLineSpan) }) {

@@ -33,16 +33,17 @@ import androidx.camera.integration.extensions.utils.Camera2ExtensionsUtil.isCame
 import androidx.camera.integration.extensions.utils.CameraIdExtensionModePair
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
-import androidx.camera.testing.impl.LabTestRule
+import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.StressTestRule
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.espresso.idling.CountingIdlingResource
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
+import androidx.testutils.withActivity
 import org.junit.After
 import org.junit.Assume
 import org.junit.Assume.assumeTrue
@@ -69,12 +70,11 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
     @get:Rule
     val permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
-    @get:Rule val labTest: LabTestRule = LabTestRule()
-
     @Before
     fun setup() {
         Assume.assumeTrue(CameraUtil.deviceHasCamera())
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
+        assumeTrue(isCamera2ExtensionModeSupported(context, config.cameraId, config.extensionMode))
         // Clears the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
         CoreAppTestUtil.prepareDeviceUI(InstrumentationRegistry.getInstrumentation())
@@ -94,6 +94,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
     }
 
     companion object {
+        val context = ApplicationProvider.getApplicationContext<Context>()
         @ClassRule @JvmField val stressTest = StressTestRule()
 
         @Parameterized.Parameters(name = "config = {0}")
@@ -101,7 +102,6 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         fun parameters() = Camera2ExtensionsTestUtil.getAllCameraIdExtensionModeCombinations()
     }
 
-    @LabTestRule.LabTestOnly
     @Test
     fun checkPreviewUpdated() {
         val activityScenario =
@@ -114,9 +114,9 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         }
     }
 
-    @LabTestRule.LabTestOnly
     @Test
     fun canCaptureSingleImage() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity
@@ -127,7 +127,6 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         }
     }
 
-    @LabTestRule.LabTestOnly
     @Test
     fun checkPreviewUpdated_afterPauseResume() {
         val activityScenario =
@@ -138,8 +137,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
                 waitForPreviewIdle()
 
                 // Pauses and resumes the activity
-                moveToState(Lifecycle.State.CREATED)
-                moveToState(Lifecycle.State.RESUMED)
+                launchAutoClosedForegroundActivity(activityScenario)
 
                 // Waits for preview to receive enough frames again
                 waitForPreviewIdle()
@@ -147,9 +145,9 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         }
     }
 
-    @LabTestRule.LabTestOnly
     @Test
     fun canCaptureImage_afterPauseResume() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity
@@ -158,8 +156,7 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
                 waitForImageSavedIdle()
 
                 // Pauses and resumes the activity
-                moveToState(Lifecycle.State.CREATED)
-                moveToState(Lifecycle.State.RESUMED)
+                launchAutoClosedForegroundActivity(activityScenario)
 
                 // Waits for the capture session configured again after resuming the activity
                 waitForCaptureSessionConfiguredIdle()
@@ -170,9 +167,21 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         }
     }
 
-    @LabTestRule.LabTestOnly
+    private fun launchAutoClosedForegroundActivity(
+        activityScenario: ActivityScenario<Camera2ExtensionsActivity>
+    ) {
+        var countingIdlingResource: CountingIdlingResource? = null
+        activityScenario.withActivity { countingIdlingResource = getCameraClosedIdlingResource() }
+        CoreAppTestUtil.launchAutoClosedForegroundActivity(
+            context,
+            InstrumentationRegistry.getInstrumentation(),
+            countingIdlingResource,
+        )
+    }
+
     @Test
     fun canCaptureMultipleImages() {
+        assumePcsSupportedForImageCapture(context)
         val activityScenario =
             launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
         with(activityScenario) { // Launches activity
@@ -190,7 +199,6 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
     ): ActivityScenario<Camera2ExtensionsActivity> {
         val (cameraId, extensionMode) = config
         val context = ApplicationProvider.getApplicationContext<Context>()
-        assumeTrue(isCamera2ExtensionModeSupported(context, cameraId, extensionMode))
         val intent =
             context.packageManager.getLaunchIntentForPackage(BASIC_SAMPLE_PACKAGE)!!.apply {
                 putExtra(INTENT_EXTRA_KEY_CAMERA_ID, cameraId)
@@ -206,5 +214,22 @@ class Camera2ExtensionsActivityTest(private val config: CameraIdExtensionModePai
         activityScenario.waitForCaptureSessionConfiguredIdle()
 
         return activityScenario
+    }
+
+    @Test
+    fun checkPreviewUpdated_afterSwitchCamera() {
+        val activityScenario =
+            launchCamera2ExtensionsActivityAndWaitForCaptureSessionConfigured(config)
+        with(activityScenario) { // Launches activity
+            use { // Ensures that ActivityScenario is cleaned up properly
+                // Waits for preview to receive enough frames for its IdlingResource to idle.
+                waitForPreviewIdle()
+
+                withActivity { switchCamera() }
+
+                // Waits for preview to receive enough frames again after switching camera
+                waitForPreviewIdle()
+            }
+        }
     }
 }

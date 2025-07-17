@@ -22,8 +22,6 @@ import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
@@ -35,6 +33,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A controller that provides most of the CameraX features.
@@ -63,8 +64,7 @@ public final class LifecycleCameraController extends CameraController {
 
     private static final String TAG = "CamLifecycleController";
 
-    @Nullable
-    private LifecycleOwner mLifecycleOwner;
+    private @Nullable LifecycleOwner mLifecycleOwner;
 
     public LifecycleCameraController(@NonNull Context context) {
         super(context);
@@ -119,8 +119,7 @@ public final class LifecycleCameraController extends CameraController {
      */
     @RequiresPermission(Manifest.permission.CAMERA)
     @Override
-    @Nullable
-    Camera startCamera() {
+    @Nullable Camera startCamera() {
         if (mLifecycleOwner == null) {
             Log.d(TAG, "Lifecycle is not set.");
             return null;

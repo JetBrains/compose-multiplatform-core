@@ -18,10 +18,11 @@ package androidx.camera.core.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.Config;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -74,7 +75,7 @@ public final class ImageCaptureRotationOptionQuirk implements Quirk {
     /**
      * Returns true if the capture config option can be supported.
      */
-    public boolean isSupported(@NonNull Config.Option<?> option) {
+    public boolean isSupported(Config.@NonNull Option<?> option) {
         return option != CaptureConfig.OPTION_ROTATION;
     }
 }

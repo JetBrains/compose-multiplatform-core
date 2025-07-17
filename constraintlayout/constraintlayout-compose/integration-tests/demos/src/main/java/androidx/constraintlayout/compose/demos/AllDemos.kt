@@ -16,8 +16,8 @@
 
 package androidx.constraintlayout.compose.demos
 
-import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +68,7 @@ val AllComposeConstraintLayoutDemos: List<ComposeDemo> =
         ComposeDemo("Animated Graphs") { AnimateGraphsOnRevealDemo() },
         ComposeDemo("Animated Reactions Selector") { ReactionSelectorDemo() },
         ComposeDemo("Animated Puzzle Pieces") { AnimatedPuzzlePiecesDemo() },
-        ComposeDemo("Simple Staggered") { SimpleStaggeredDemo() }
+        ComposeDemo("Simple Staggered") { SimpleStaggeredDemo() },
     )
 
 /** Main screen to explore and interact with all demos from [AllComposeConstraintLayoutDemos]. */
@@ -96,18 +95,18 @@ fun ComposeConstraintLayoutDemos() {
                                 .background(Color.White)
                                 .graphicsLayer(shadowElevation = 2f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Row(
                             modifier =
                                 Modifier.fillMaxHeight().weight(1f, true).clickable {
                                     displayedDemoIndex = -1
                                 },
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Default.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                             Text(text = composeDemo.title)
                         }
@@ -159,7 +158,7 @@ fun ComposeConstraintLayoutDemos() {
         }
     }
 
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     // If there's a demo being displayed, return to demo list, otherwise, exit app
     BackHandler {
         if (displayedDemoIndex >= 0) {
@@ -182,7 +181,7 @@ private fun ComposeDemoItem(title: String, modifier: Modifier = Modifier, onClic
                 .background(Color.White)
                 .clickable(onClick = onClick)
                 .padding(start = 8.dp),
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.CenterStart,
     ) {
         Text(text = title, modifier = Modifier, fontSize = 16.sp)
     }

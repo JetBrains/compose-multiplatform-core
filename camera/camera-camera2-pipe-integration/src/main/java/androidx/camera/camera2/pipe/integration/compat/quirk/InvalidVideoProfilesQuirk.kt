@@ -19,6 +19,9 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 import android.annotation.SuppressLint
 import android.media.EncoderProfiles
 import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isRedmiDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isXiaomiDevice
 import androidx.camera.core.impl.Quirk
 
 /**
@@ -37,9 +40,9 @@ import androidx.camera.core.impl.Quirk
  * TODO: enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class InvalidVideoProfilesQuirk : Quirk {
+public class InvalidVideoProfilesQuirk : Quirk {
 
-    companion object {
+    public companion object {
         private val AFFECTED_PIXEL_MODELS: List<String> =
             listOf(
                 "pixel 4",
@@ -52,19 +55,14 @@ class InvalidVideoProfilesQuirk : Quirk {
                 "pixel 6a",
                 "pixel 6 pro",
                 "pixel 7",
-                "pixel 7 pro"
+                "pixel 7 pro",
             )
 
         private val AFFECTED_ONE_PLUS_MODELS: List<String> = listOf("cph2417", "cph2451")
 
-        private val AFFECTED_OPPO_MODELS: List<String> =
-            listOf(
-                "cph2437",
-                "cph2525",
-                "pht110",
-            )
+        private val AFFECTED_OPPO_MODELS: List<String> = listOf("cph2437", "cph2525", "pht110")
 
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             return isAffectedSamsungDevices() ||
                 isAffectedPixelDevices() ||
                 isAffectedXiaomiDevices() ||
@@ -73,7 +71,7 @@ class InvalidVideoProfilesQuirk : Quirk {
         }
 
         private fun isAffectedSamsungDevices(): Boolean {
-            return "samsung".equals(Build.BRAND, true) && isTp1aBuild()
+            return isSamsungDevice() && isTp1aBuild()
         }
 
         private fun isAffectedPixelDevices(): Boolean {
@@ -81,8 +79,7 @@ class InvalidVideoProfilesQuirk : Quirk {
         }
 
         private fun isAffectedXiaomiDevices(): Boolean {
-            return ("redmi".equals(Build.BRAND, true) || "xiaomi".equals(Build.BRAND, true)) &&
-                (isTkq1Build() || isTp1aBuild())
+            return (isRedmiDevice() or isXiaomiDevice()) && (isTkq1Build() || isTp1aBuild())
         }
 
         private fun isAffectedOnePlusDevices(): Boolean {

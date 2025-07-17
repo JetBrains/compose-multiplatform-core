@@ -18,16 +18,19 @@ package androidx.camera.view;
 
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.Rect;
+import android.util.Rational;
 import android.util.Size;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.impl.utils.Threads;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * {@link MeteringPointFactory} for {@link PreviewView}.
@@ -38,21 +41,20 @@ class PreviewViewMeteringPointFactory extends MeteringPointFactory {
 
     static final PointF INVALID_POINT = new PointF(2F, 2F);
 
-    @NonNull
-    private final PreviewTransformation mPreviewTransformation;
+    private final @NonNull PreviewTransformation mPreviewTransformation;
+    @GuardedBy("this")
+    private @Nullable Rect mSensorRect = null;
 
     @GuardedBy("this")
-    @Nullable
-    private Matrix mMatrix;
+    private @Nullable Matrix mMatrix;
 
     PreviewViewMeteringPointFactory(@NonNull PreviewTransformation previewTransformation) {
         mPreviewTransformation = previewTransformation;
     }
 
     @AnyThread
-    @NonNull
     @Override
-    protected PointF convertPoint(float x, float y) {
+    protected @NonNull PointF convertPoint(float x, float y) {
         float[] point = new float[]{x, y};
         synchronized (this) {
             if (mMatrix == null) {
@@ -63,17 +65,26 @@ class PreviewViewMeteringPointFactory extends MeteringPointFactory {
         return new PointF(point[0], point[1]);
     }
 
+    public void setSensorRect(Rect sensorRect) {
+        setSurfaceAspectRatio(new Rational(sensorRect.width(), sensorRect.height()));
+        synchronized (this) {
+            mSensorRect = sensorRect;
+        }
+    }
+
     @UiThread
     void recalculate(@NonNull Size previewViewSize, int layoutDirection) {
         Threads.checkMainThread();
         synchronized (this) {
-            if (previewViewSize.getWidth() == 0 || previewViewSize.getHeight() == 0) {
+            if (previewViewSize.getWidth() == 0 || previewViewSize.getHeight() == 0
+                    || mSensorRect == null) {
                 mMatrix = null;
                 return;
             }
-            mMatrix = mPreviewTransformation.getPreviewViewToNormalizedSurfaceMatrix(
+            mMatrix = mPreviewTransformation.getPreviewViewToNormalizedSensorMatrix(
                     previewViewSize,
-                    layoutDirection);
+                    layoutDirection,
+                    mSensorRect);
         }
     }
 }

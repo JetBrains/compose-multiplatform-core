@@ -35,8 +35,8 @@ class SectionedItemTemplateTest {
             GridSection.Builder()
                 .addItem(GridItem.Builder().setImage(CarIcon.COMPOSE_MESSAGE).build())
                 .setTitle(CarText.Builder("Section 2").build())
-                .setItemSize(GridSection.ITEM_SIZE_LARGE)
-                .build()
+                .setItemSize(GridSection.ITEM_SIZE_EXTRA_LARGE)
+                .build(),
         )
     private val testActions =
         listOf(
@@ -47,7 +47,7 @@ class SectionedItemTemplateTest {
             Action.Builder()
                 .setIcon(CarIcon.COMPOSE_MESSAGE)
                 .setBackgroundColor(CarColor.BLUE)
-                .build()
+                .build(),
         )
     private val testHeader = Header.Builder().setTitle("My title").build()
 
@@ -77,6 +77,34 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().setLoading(true).build()
 
         assertThat(template.isLoading).isTrue()
+    }
+
+    @Test
+    fun isAlphabeticalIndexingAllowed() {
+        val template = SectionedItemTemplate.Builder().setAlphabeticalIndexingAllowed(true).build()
+
+        assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    @Test
+    fun getScrollStatePersistenceStrategy() {
+        val template =
+            SectionedItemTemplate.Builder()
+                .setScrollStatePersistenceStrategy(
+                    SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX
+                )
+                .build()
+
+        assertThat(template.scrollStatePersistenceStrategy)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
+    }
+
+    @Test
+    fun getScrollStatePersistenceStrategy_defaultValue_returnsResetToTop() {
+        val template = SectionedItemTemplate.Builder().build()
+
+        assertThat(template.scrollStatePersistenceStrategy)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
     }
 
     @Test
@@ -114,76 +142,90 @@ class SectionedItemTemplateTest {
     }
 
     @Test
+    fun createInstance_addMediaPlaybackActionAsRowSecondaryAction() {
+        val sections = listOf(RowSection.Builder().addItem(createRowWithMediaAction()).build())
+        val template = SectionedItemTemplate.Builder().setSections(sections).build()
+
+        assertThat(template.sections).containsExactlyElementsIn(sections)
+    }
+
+    @Test
     fun setActions_throwsException_whenNotFabConstrained() {
         try {
             // Cannot have more than 3 actions
-            val actions =
-                listOf(
-                    Action.Builder().setTitle("Action 1").setIcon(CarIcon.COMPOSE_MESSAGE).build(),
-                    Action.Builder().setTitle("Action 1").setIcon(CarIcon.COMPOSE_MESSAGE).build(),
-                    Action.Builder().setTitle("Action 1").setIcon(CarIcon.COMPOSE_MESSAGE).build()
+            SectionedItemTemplate.Builder()
+                .setActions(
+                    List(3) {
+                        Action.Builder()
+                            .setTitle("Action $it")
+                            .setIcon(CarIcon.COMPOSE_MESSAGE)
+                            .build()
+                    }
                 )
-            SectionedItemTemplate.Builder().setActions(actions)
         } catch (e: IllegalArgumentException) {
             assertThat(e.message).contains("list exceeded max number")
         }
     }
 
     @Test
-    fun equals_returnsFalse_whenPassedNull() {
-        val template = SectionedItemTemplate.Builder().build()
-
-        assertThat(template.equals(null)).isFalse()
+    fun equals_null_returnsFalse() {
+        assertThat(buildTemplate().equals(null)).isFalse()
     }
 
     @Test
-    fun equals_isReflexive() {
-        val template =
-            SectionedItemTemplate.Builder()
-                .setSections(testSections)
-                .setHeader(testHeader)
-                .setActions(testActions)
-                .build()
+    fun equals_sameInstance_returnsTrue() {
+        val template = createFullyPopulatedTemplate()
 
-        @Suppress("ReplaceCallWithBinaryOperator") assertThat(template.equals(template)).isTrue()
+        assertEqual(template, template)
     }
 
     @Test
-    fun equals_returnsTrue_whenSectionsHaveTheSameContent() {
-        val template1 =
-            SectionedItemTemplate.Builder()
-                .setSections(testSections)
-                .setHeader(testHeader)
-                .setActions(testActions)
-                .build()
-        val template2 =
-            SectionedItemTemplate.Builder()
-                .setSections(testSections)
-                .setHeader(testHeader)
-                .setActions(testActions)
-                .build()
-
-        assertThat(template1).isEqualTo(template2)
-        assertThat(template2).isEqualTo(template1)
+    fun equals_differentTemplatesSameContent_returnsTrue() {
+        assertEqual(createFullyPopulatedTemplate(), createFullyPopulatedTemplate())
     }
 
     @Test
-    fun equals_returnsFalse_whenNotEqual() {
-        val templates =
-            listOf(
-                SectionedItemTemplate.Builder().setSections(testSections).build(),
-                SectionedItemTemplate.Builder().setHeader(testHeader).build(),
-                SectionedItemTemplate.Builder().setActions(testActions).build()
-            )
+    fun equals_oneDifferingField_returnsFalse() {
+        val minimalTemplate = buildTemplate()
 
-        // Test all different sections against each other
-        for (i in templates.indices) {
-            for (j in templates.indices) {
-                if (i == j) {
-                    continue
-                }
-                assertThat(templates[i]).isNotEqualTo(templates[j])
-            }
-        }
+        assertNotEqual(minimalTemplate, buildTemplate { setSections(testSections) })
+        assertNotEqual(minimalTemplate, buildTemplate { setHeader(testHeader) })
+        assertNotEqual(minimalTemplate, buildTemplate { setActions(testActions) })
+        assertNotEqual(minimalTemplate, buildTemplate { setLoading(true) })
+        assertNotEqual(minimalTemplate, buildTemplate { setAlphabeticalIndexingAllowed(true) })
     }
+
+    @Test
+    fun toBuilder_build_returnsEquivalentObject() {
+        val template = createFullyPopulatedTemplate()
+
+        assertEqual(template, SectionedItemTemplate.Builder(template).build())
+    }
+
+    private fun assertEqual(obj1: Any, obj2: Any) {
+        assertThat(obj1).isEqualTo(obj2)
+        assertThat(obj2).isEqualTo(obj1)
+        assertThat(obj1.hashCode()).isEqualTo(obj2.hashCode())
+    }
+
+    private fun assertNotEqual(obj1: Any, obj2: Any) {
+        assertThat(obj1).isNotEqualTo(obj2)
+        assertThat(obj2).isNotEqualTo(obj1)
+        assertThat(obj1.hashCode()).isNotEqualTo(obj2.hashCode())
+    }
+
+    private fun createFullyPopulatedTemplate() =
+        SectionedItemTemplate.Builder()
+            .setSections(testSections)
+            .setHeader(testHeader)
+            .setActions(testActions)
+            .setAlphabeticalIndexingAllowed(true)
+            .setScrollStatePersistenceStrategy(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
+            .build()
+
+    private fun buildTemplate(block: SectionedItemTemplate.Builder.() -> Unit = {}) =
+        SectionedItemTemplate.Builder().apply { block() }.build()
+
+    private fun createRowWithMediaAction(): Row =
+        Row.Builder().setTitle("Bananas").addAction(Action.MEDIA_PLAYBACK).build()
 }

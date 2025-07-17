@@ -16,8 +16,8 @@ package androidx.leanback.widget;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -123,8 +123,7 @@ public class GuidedDatePickerAction extends GuidedAction {
          * Builds the GuidedDatePickerAction corresponding to this Builder.
          * @return The GuidedDatePickerAction as configured through this Builder.
          */
-        @NonNull
-        public GuidedDatePickerAction build() {
+        public @NonNull GuidedDatePickerAction build() {
             GuidedDatePickerAction action = new GuidedDatePickerAction();
             applyDatePickerValues(action);
             return action;
@@ -143,8 +142,7 @@ public class GuidedDatePickerAction extends GuidedAction {
      * be used.
      * @return Format of showing Date, e.g. "YMD".  Returns null if using current locale's default.
      */
-    @Nullable
-    public String getDatePickerFormat() {
+    public @Nullable String getDatePickerFormat() {
         return mDatePickerFormat;
     }
 

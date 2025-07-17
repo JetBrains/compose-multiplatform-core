@@ -23,11 +23,12 @@ import static java.io.File.createTempFile;
 
 import android.graphics.ImageFormat;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.utils.Exif;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -51,8 +52,7 @@ public class ExifUtil {
     /**
      * Create a fake {@link Exif} instance from the given JPEG bytes.
      */
-    @NonNull
-    public static Exif createExif(@NonNull byte[] jpegBytes) throws IOException {
+    public static @NonNull Exif createExif(byte @NonNull [] jpegBytes) throws IOException {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(jpegBytes);
         return createFromInputStream(byteArrayInputStream);
     }
@@ -60,9 +60,8 @@ public class ExifUtil {
     /**
      * Updates the exif info of the given JPEG and return a new JPEG byte array.
      */
-    @NonNull
-    public static byte[] updateExif(@NonNull byte[] jpegBytes, @NonNull Consumer<Exif> exifUpdater)
-            throws IOException {
+    public static byte @NonNull [] updateExif(byte @NonNull [] jpegBytes,
+            @NonNull Consumer<Exif> exifUpdater) throws IOException {
         File tempFile = saveBytesToFile(jpegBytes);
         tempFile.deleteOnExit();
         Exif exif = createFromFile(tempFile);
@@ -71,7 +70,7 @@ public class ExifUtil {
         return readBytesFromFile(tempFile);
     }
 
-    private static File saveBytesToFile(@NonNull byte[] jpegBytes) throws IOException {
+    private static File saveBytesToFile(byte @NonNull [] jpegBytes) throws IOException {
         File file = createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
         try (FileOutputStream output = new FileOutputStream(file)) {
             output.write(jpegBytes);
@@ -96,8 +95,7 @@ public class ExifUtil {
     /**
      * Gets the {@link Exif} instance from the {@link ImageProxy}.
      */
-    @Nullable
-    public static Exif getExif(@NonNull ImageProxy image) {
+    public static @Nullable Exif getExif(@NonNull ImageProxy image) {
         if (image.getFormat() == ImageFormat.JPEG) {
             ImageProxy.PlaneProxy[] planes = image.getPlanes();
             ByteBuffer buffer = planes[0].getBuffer();

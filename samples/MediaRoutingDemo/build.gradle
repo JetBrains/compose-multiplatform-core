@@ -11,6 +11,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":appcompat:appcompat"))
     implementation(project(":mediarouter:mediarouter"))
     implementation(project(":recyclerview:recyclerview"))
@@ -18,7 +19,6 @@ dependencies {
     implementation(project(":swiperefreshlayout:swiperefreshlayout"))
 
     implementation(libs.material)
-    implementation(libs.multidex)
     implementation(libs.guava)
 }
 
@@ -29,12 +29,12 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
+    compileSdk = 35
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
-        multiDexEnabled true
     }
     lint {
         baseline = file("lint-baseline.xml")
     }
-    namespace "com.example.androidx.mediarouting"
+    namespace = "com.example.androidx.mediarouting"
 }

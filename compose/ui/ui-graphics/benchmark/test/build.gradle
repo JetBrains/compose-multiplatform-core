@@ -23,17 +23,18 @@ plugins {
 
 dependencies {
 
-    androidTestImplementation project(":compose:foundation:foundation")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:test-utils")
-    androidTestImplementation project(":compose:ui:ui")
-    androidTestImplementation project(":compose:ui:ui-graphics")
-    androidTestImplementation project(":compose:ui:ui-graphics:ui-graphics-benchmark")
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:test-utils"))
+    androidTestImplementation(project(":compose:ui:ui"))
+    androidTestImplementation(project(":compose:ui:ui-graphics"))
+    androidTestImplementation(project(":compose:ui:ui-graphics:ui-graphics-benchmark"))
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
 }
 
 android {
-    namespace "androidx.compose.ui.graphics.benchmark.test"
+    compileSdk = 35
+    namespace = "androidx.compose.ui.graphics.benchmark.test"
 }

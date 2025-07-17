@@ -21,6 +21,8 @@ import android.graphics.ImageFormat.PRIVATE
 import android.graphics.ImageFormat.YUV_420_888
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
+import android.hardware.camera2.CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
 import android.util.Size
@@ -28,6 +30,7 @@ import androidx.camera.camera2.internal.ZslControlImpl.MAX_IMAGES
 import androidx.camera.camera2.internal.ZslControlImpl.RING_BUFFER_CAPACITY
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat
 import androidx.camera.core.impl.SessionConfig
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -70,8 +73,9 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -84,6 +88,7 @@ class ZslControlImplTest {
         assertThat(zslControl.mReprocessingImageReader.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControl.mImageRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     @Test
@@ -94,13 +99,15 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControl.mReprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -111,13 +118,15 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = true,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = false
-                )
+                    isJpegValidOutputFormat = false,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControl.mReprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -128,13 +137,15 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = false,
-                    isJpegValidOutputFormat = false
-                )
+                    isJpegValidOutputFormat = false,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControl.mReprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -145,14 +156,16 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
         zslControl.isZslDisabledByUserCaseConfig = true
 
         zslControl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControl.mReprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -163,8 +176,9 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
         zslControl.isZslDisabledByFlashMode = true
 
@@ -178,6 +192,7 @@ class ZslControlImplTest {
         assertThat(zslControl.mReprocessingImageReader.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControl.mImageRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     @Test
@@ -188,8 +203,9 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -211,13 +227,15 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
 
         assertThat(zslControl.mReprocessingImageReader).isNull()
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_PREVIEW)
     }
 
     @Test
@@ -231,8 +249,9 @@ class ZslControlImplTest {
                     hasCapabilities = true,
                     isYuvReprocessingSupported = false,
                     isPrivateReprocessingSupported = true,
-                    isJpegValidOutputFormat = true
-                )
+                    isJpegValidOutputFormat = true,
+                ),
+                CameraXExecutors.mainThreadExecutor(),
             )
 
         zslControl.addZslConfig(sessionConfigBuilder)
@@ -245,13 +264,14 @@ class ZslControlImplTest {
         assertThat(zslControl.mReprocessingImageReader.height)
             .isEqualTo(PRIVATE_REPROCESSING_MAXIMUM_SIZE.height)
         assertThat(zslControl.mImageRingBuffer.maxCapacity).isEqualTo(RING_BUFFER_CAPACITY)
+        assertThat(sessionConfigBuilder.build().templateType).isEqualTo(TEMPLATE_ZERO_SHUTTER_LAG)
     }
 
     private fun createCameraCharacteristicsCompat(
         hasCapabilities: Boolean,
         isYuvReprocessingSupported: Boolean,
         isPrivateReprocessingSupported: Boolean,
-        isJpegValidOutputFormat: Boolean
+        isJpegValidOutputFormat: Boolean,
     ): CameraCharacteristicsCompat {
         val characteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         val shadowCharacteristics = Shadow.extract<ShadowCameraCharacteristics>(characteristics)
@@ -269,7 +289,7 @@ class ZslControlImplTest {
         if (hasCapabilities) {
             shadowCharacteristics.set(
                 CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES,
-                capabilities.toIntArray()
+                capabilities.toIntArray(),
             )
 
             // Input formats
@@ -305,13 +325,13 @@ class ZslControlImplTest {
 
             shadowCharacteristics.set(
                 CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP,
-                streamConfigurationMap
+                streamConfigurationMap,
             )
         }
 
         return CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
             characteristics,
-            CAMERA_ID_0
+            CAMERA_ID_0,
         )
     }
 }

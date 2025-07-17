@@ -21,10 +21,11 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -42,8 +43,7 @@ import java.util.Set;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 class VersionedParcelStream extends VersionedParcel {
 
-    @NonNull
-    private static final Charset UTF_16 = Charset.forName("UTF-16");
+    private static final @NonNull Charset UTF_16 = Charset.forName("UTF-16");
 
     // Supported types held inside a bundle. These cannot be added to or changed once shipped.
     private static final int TYPE_NULL = 0;
@@ -62,17 +62,12 @@ class VersionedParcelStream extends VersionedParcel {
     private static final int TYPE_FLOAT = 13;
     private static final int TYPE_FLOAT_ARRAY = 14;
 
-    @Nullable
-    private final DataInputStream mMasterInput;
-    @Nullable
-    private final DataOutputStream mMasterOutput;
+    private final @Nullable DataInputStream mMasterInput;
+    private final @Nullable DataOutputStream mMasterOutput;
 
-    @Nullable
-    private DataInputStream mCurrentInput;
-    @Nullable
-    private DataOutputStream mCurrentOutput;
-    @Nullable
-    private FieldBuffer mFieldBuffer;
+    private @Nullable DataInputStream mCurrentInput;
+    private @Nullable DataOutputStream mCurrentOutput;
+    private @Nullable FieldBuffer mFieldBuffer;
     private boolean mIgnoreParcelables;
 
     int mCount = 0;
@@ -204,7 +199,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    public void writeByteArray(@Nullable byte[] b) {
+    public void writeByteArray(byte @Nullable [] b) {
         try {
             if (b != null) {
                 mCurrentOutput.writeInt(b.length);
@@ -218,7 +213,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    public void writeByteArray(@Nullable byte[] b, int offset, int len) {
+    public void writeByteArray(byte @Nullable [] b, int offset, int len) {
         try {
             if (b != null) {
                 mCurrentOutput.writeInt(len);
@@ -323,15 +318,13 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    public IBinder readStrongBinder() {
+    public @Nullable IBinder readStrongBinder() {
         return null;
     }
 
     @Override
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    public <T extends Parcelable> T readParcelable() {
+    public <T extends Parcelable> @Nullable T readParcelable() {
         return null;
     }
 
@@ -372,8 +365,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    public String readString() {
+    public @Nullable String readString() {
         try {
             int len = mCurrentInput.readInt();
             if (len > 0) {
@@ -389,8 +381,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    public byte[] readByteArray() {
+    public byte @Nullable [] readByteArray() {
         try {
             int len = mCurrentInput.readInt();
             if (len > 0) {
@@ -406,8 +397,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    protected CharSequence readCharSequence() {
+    protected @Nullable CharSequence readCharSequence() {
         return null;
     }
 
@@ -441,8 +431,7 @@ class VersionedParcelStream extends VersionedParcel {
     }
 
     @Override
-    @Nullable
-    public Bundle readBundle() {
+    public @Nullable Bundle readBundle() {
         int size = readInt();
         if (size < 0) {
             return null;
@@ -558,13 +547,10 @@ class VersionedParcelStream extends VersionedParcel {
     // TODO: Use less buffers
     private static class FieldBuffer {
 
-        @NonNull
-        final ByteArrayOutputStream mOutput = new ByteArrayOutputStream();
-        @NonNull
-        final DataOutputStream mDataStream = new DataOutputStream(mOutput);
+        final @NonNull ByteArrayOutputStream mOutput = new ByteArrayOutputStream();
+        final @NonNull DataOutputStream mDataStream = new DataOutputStream(mOutput);
         private final int mFieldId;
-        @NonNull
-        private final DataOutputStream mTarget;
+        private final @NonNull DataOutputStream mTarget;
 
         FieldBuffer(int fieldId, @NonNull DataOutputStream target) {
             mFieldId = fieldId;

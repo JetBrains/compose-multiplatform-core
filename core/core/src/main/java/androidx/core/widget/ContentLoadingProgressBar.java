@@ -21,9 +21,10 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.ProgressBar;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ContentLoadingProgressBar implements a ProgressBar that waits a minimum time to be

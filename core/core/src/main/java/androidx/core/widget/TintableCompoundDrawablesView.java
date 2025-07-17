@@ -19,7 +19,7 @@ package androidx.core.widget;
 import android.content.res.ColorStateList;
 import android.graphics.PorterDuff;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface which allows {@link android.widget.TextView} and subclasses to tint compound drawables
@@ -50,8 +50,7 @@ public interface TintableCompoundDrawablesView {
      *
      * @return the tint applied to the compound drawables
      */
-    @Nullable
-    ColorStateList getSupportCompoundDrawablesTintList();
+    @Nullable ColorStateList getSupportCompoundDrawablesTintList();
 
     /**
      * Specifies the blending mode used to apply the tint specified by
@@ -63,7 +62,7 @@ public interface TintableCompoundDrawablesView {
      * @see #getSupportCompoundDrawablesTintMode()
      * @see #setSupportCompoundDrawablesTintList(ColorStateList)
      */
-    void setSupportCompoundDrawablesTintMode(@Nullable PorterDuff.Mode tintMode);
+    void setSupportCompoundDrawablesTintMode(PorterDuff.@Nullable Mode tintMode);
 
     /**
      * Returns the blending mode used to apply the tint to the compound
@@ -73,6 +72,5 @@ public interface TintableCompoundDrawablesView {
      * drawables
      * @see #setSupportCompoundDrawablesTintMode(PorterDuff.Mode)
      */
-    @Nullable
-    PorterDuff.Mode getSupportCompoundDrawablesTintMode();
+    PorterDuff.@Nullable Mode getSupportCompoundDrawablesTintMode();
 }

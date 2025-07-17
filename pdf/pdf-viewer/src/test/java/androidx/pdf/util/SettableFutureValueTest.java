@@ -21,17 +21,15 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.fail;
 
-import androidx.annotation.NonNull;
 import androidx.pdf.data.FutureValue.Callback;
 import androidx.pdf.data.FutureValues;
 import androidx.pdf.data.FutureValues.SettableFutureValue;
-import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class SettableFutureValueTest {
 

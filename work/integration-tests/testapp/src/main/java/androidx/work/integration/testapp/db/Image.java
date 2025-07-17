@@ -17,10 +17,11 @@ package androidx.work.integration.testapp.db;
 
 import android.graphics.Bitmap;
 
-import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A POJO for a processed image
@@ -28,8 +29,7 @@ import androidx.room.PrimaryKey;
 @Entity
 public class Image {
     @PrimaryKey
-    @NonNull
-    public String mOriginalAssetName;
+    public @NonNull String mOriginalAssetName;
 
     public String mProcessedFilePath;
 

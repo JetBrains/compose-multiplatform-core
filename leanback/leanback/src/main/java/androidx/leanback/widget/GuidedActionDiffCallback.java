@@ -17,7 +17,7 @@ package androidx.leanback.widget;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * DiffCallback used for GuidedActions, see {@link
@@ -31,8 +31,7 @@ public class GuidedActionDiffCallback extends DiffCallback<GuidedAction> {
      * Returns the singleton GuidedActionDiffCallback.
      * @return The singleton GuidedActionDiffCallback.
      */
-    @NonNull
-    public static GuidedActionDiffCallback getInstance() {
+    public static @NonNull GuidedActionDiffCallback getInstance() {
         return sInstance;
     }
 

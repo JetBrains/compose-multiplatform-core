@@ -24,10 +24,11 @@ import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.webkit.WebViewCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -71,8 +72,7 @@ public abstract class StartupApiFeature {
         sValues.add(this);
     }
 
-    @NonNull
-    public String getPublicFeatureName() {
+    public @NonNull String getPublicFeatureName() {
         return mPublicFeatureValue;
     }
 
@@ -112,8 +112,7 @@ public abstract class StartupApiFeature {
     /**
      * Get all instantiated values of this class as if it was an enum.
      */
-    @NonNull
-    public static Set<StartupApiFeature> values() {
+    public static @NonNull Set<StartupApiFeature> values() {
         return Collections.unmodifiableSet(sValues);
     }
 

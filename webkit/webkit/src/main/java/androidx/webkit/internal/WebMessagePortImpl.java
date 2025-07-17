@@ -20,14 +20,14 @@ import android.os.Handler;
 import android.webkit.WebMessage;
 import android.webkit.WebMessagePort;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 
 import org.chromium.support_lib_boundary.WebMessagePortBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -98,7 +98,7 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
     }
 
     @Override
-    public void setWebMessageCallback(@NonNull final WebMessageCallbackCompat callback) {
+    public void setWebMessageCallback(final @NonNull WebMessageCallbackCompat callback) {
         final ApiFeature.M feature = WebViewFeatureInternal.WEB_MESSAGE_PORT_SET_MESSAGE_CALLBACK;
         if (feature.isSupportedByWebView()) {
             // We prefer use WebView impl, since the impl in framework does not support
@@ -115,7 +115,7 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
 
     @Override
     public void setWebMessageCallback(@Nullable Handler handler,
-            @NonNull final WebMessageCallbackCompat callback) {
+            final @NonNull WebMessageCallbackCompat callback) {
         final ApiFeature.M feature = WebViewFeatureInternal.CREATE_WEB_MESSAGE_CHANNEL;
         if (feature.isSupportedByWebView()) {
             // We prefer use WebView impl, since the impl in framework does not support
@@ -130,16 +130,14 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
         }
     }
 
-    @NonNull
     @RequiresApi(23)
     @Override
-    public WebMessagePort getFrameworkPort() {
+    public @NonNull WebMessagePort getFrameworkPort() {
         return getFrameworksImpl();
     }
 
-    @NonNull
     @Override
-    public InvocationHandler getInvocationHandler() {
+    public @NonNull InvocationHandler getInvocationHandler() {
         return Proxy.getInvocationHandler(getBoundaryInterface());
     }
 
@@ -147,8 +145,8 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
      * Convert an array of {@link WebMessagePort} objects into an array containing objects of the
      * corresponding support library class {@link WebMessagePortCompat}.
      */
-    @Nullable
-    public static WebMessagePortCompat[] portsToCompat(@Nullable WebMessagePort[] ports) {
+    public static WebMessagePortCompat @Nullable [] portsToCompat(
+            WebMessagePort @Nullable [] ports) {
         if (ports == null) return null;
         WebMessagePortCompat[] compatPorts = new WebMessagePortCompat[ports.length];
         for (int n = 0; n < ports.length; n++) {
@@ -162,8 +160,8 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
      * the corresponding framework class {@link WebMessagePort}.
      */
     @RequiresApi(23)
-    @Nullable
-    public static WebMessagePort[] compatToPorts(@Nullable WebMessagePortCompat[] compatPorts) {
+    public static WebMessagePort @Nullable [] compatToPorts(
+            WebMessagePortCompat @Nullable [] compatPorts) {
         if (compatPorts == null) return null;
         WebMessagePort[] ports = new WebMessagePort[compatPorts.length];
         for (int n = 0; n < ports.length; n++) {
@@ -176,8 +174,7 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
      * Convert a {@link WebMessageCompat} into the corresponding framework class {@link WebMessage}.
      */
     @RequiresApi(23)
-    @NonNull
-    public static WebMessage compatToFrameworkMessage(@NonNull WebMessageCompat message) {
+    public static @NonNull WebMessage compatToFrameworkMessage(@NonNull WebMessageCompat message) {
         return ApiHelperForM.createWebMessage(message);
     }
 
@@ -186,8 +183,7 @@ public class WebMessagePortImpl extends WebMessagePortCompat {
      * {@link WebMessageCompat}.
      */
     @RequiresApi(23)
-    @NonNull
-    public static WebMessageCompat frameworkMessageToCompat(@NonNull WebMessage message) {
+    public static @NonNull WebMessageCompat frameworkMessageToCompat(@NonNull WebMessage message) {
         return ApiHelperForM.createWebMessageCompat(message);
     }
 }

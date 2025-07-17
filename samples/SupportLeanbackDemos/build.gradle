@@ -11,6 +11,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":leanback:leanback"))
     implementation(project(":leanback:leanback-preference"))
     implementation(project(":leanback:leanback-paging"))
@@ -19,14 +20,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation(libs.constraintLayout)
 
-    implementation(projectOrArtifact(":room:room-paging"))
-    implementation(projectOrArtifact(":room:room-runtime"))
-    annotationProcessor(projectOrArtifact(":room:room-compiler"))
+    implementation(project(":room:room-paging"))
+    implementation(project(":room:room-runtime"))
+    annotationProcessor(project(":room:room-compiler"))
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-    namespace "com.example.android.leanback"
+    compileSdk = 35
+    namespace = "com.example.android.leanback"
 }

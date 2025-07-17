@@ -19,7 +19,7 @@ package androidx.room
 import kotlin.reflect.KClass
 
 /**
- * Marks a class as a RoomDatabase.
+ * Marks a class as a [androidx.room.RoomDatabase].
  *
  * The class should be an abstract class and extend [androidx.room.RoomDatabase].
  *
@@ -62,6 +62,7 @@ import kotlin.reflect.KClass
  * @see [Entity]
  * @see [AutoMigration]
  * @see [androidx.room.RoomDatabase]
+ * @see [ConstructedBy]
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
@@ -72,7 +73,7 @@ public annotation class Database(
      *
      * @return The list of entities in the database.
      */
-    val entities: Array<KClass<*>> = [],
+    @Suppress("KotlinDefaultParameterOrder") val entities: Array<KClass<*>> = [],
 
     /**
      * The list of database views included in the database. Each class turns into a view in the
@@ -80,7 +81,7 @@ public annotation class Database(
      *
      * @return The list of database views.
      */
-    val views: Array<KClass<*>> = [],
+    @Suppress("KotlinDefaultParameterOrder") val views: Array<KClass<*>> = [],
 
     /**
      * The database version.
@@ -117,5 +118,5 @@ public annotation class Database(
      *
      * @return List of [AutoMigration] annotations.
      */
-    val autoMigrations: Array<AutoMigration> = []
+    val autoMigrations: Array<AutoMigration> = [],
 )

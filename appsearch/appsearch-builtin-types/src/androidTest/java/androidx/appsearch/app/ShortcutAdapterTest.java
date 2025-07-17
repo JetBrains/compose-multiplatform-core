@@ -22,7 +22,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.builtintypes.Timer;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.core.content.pm.ShortcutInfoCompat;
@@ -32,6 +31,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

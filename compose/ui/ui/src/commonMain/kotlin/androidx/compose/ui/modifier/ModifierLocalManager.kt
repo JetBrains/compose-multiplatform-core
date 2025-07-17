@@ -17,7 +17,6 @@
 package androidx.compose.ui.modifier
 
 import androidx.compose.runtime.collection.mutableVectorOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.BackwardsCompatNode
 import androidx.compose.ui.node.LayoutNode
@@ -38,7 +37,6 @@ import androidx.compose.ui.node.visitSubtreeIf
  * I think we need to have a bigger discussion around what modifier locals should look like in the
  * Modifer.Node world.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 internal class ModifierLocalManager(val owner: Owner) {
     private val inserted = mutableVectorOf<BackwardsCompatNode>()
     private val insertedLocal = mutableVectorOf<ModifierLocal<*>>()
@@ -87,7 +85,7 @@ internal class ModifierLocalManager(val owner: Owner) {
     private fun invalidateConsumersOfNodeForKey(
         node: Modifier.Node,
         key: ModifierLocal<*>,
-        set: MutableSet<BackwardsCompatNode>
+        set: MutableSet<BackwardsCompatNode>,
     ) {
         node.visitSubtreeIf(Nodes.Locals) {
             if (it is BackwardsCompatNode && it.element is ModifierLocalConsumer) {

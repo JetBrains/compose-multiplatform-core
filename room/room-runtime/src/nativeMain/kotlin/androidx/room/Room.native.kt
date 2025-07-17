@@ -16,11 +16,13 @@
 
 package androidx.room
 
+import androidx.room.util.findDatabaseConstructorAndInitDatabaseImpl
+
 /** Entry point for building and initializing a [RoomDatabase]. */
-actual object Room {
+public actual object Room {
 
     /** The master table name where Room keeps its metadata information. */
-    actual const val MASTER_TABLE_NAME = RoomMasterTable.TABLE_NAME
+    public actual const val MASTER_TABLE_NAME: String = RoomMasterTable.TABLE_NAME
 
     /**
      * Creates a RoomDatabase.Builder for an in memory database. Information stored in an in memory
@@ -28,12 +30,14 @@ actual object Room {
      * reference to it and re-use it.
      *
      * @param T The type of the database class.
-     * @param factory The lambda calling `initializeImpl()` on the database class which returns the
-     *   generated database implementation.
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then the associated
+     *   [RoomDatabaseConstructor] is searched via the [ConstructedBy] annotation and is used to
+     *   instantiate the database implementation class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
-    inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
-        noinline factory: () -> T
+    public inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
+        noinline factory: () -> T = { findDatabaseConstructorAndInitDatabaseImpl(T::class) }
     ): RoomDatabase.Builder<T> {
         return RoomDatabase.Builder(T::class, null, factory)
     }
@@ -44,13 +48,15 @@ actual object Room {
      *
      * @param T The type of the database class.
      * @param name The name of the database file.
-     * @param factory The lambda calling `initializeImpl()` on the database class which returns the
-     *   generated database implementation.
+     * @param factory An optional lambda calling [RoomDatabaseConstructor.initialize] corresponding
+     *   to the database class of this builder. If not provided then the associated
+     *   [RoomDatabaseConstructor] is searched via the [ConstructedBy] annotation and is used to
+     *   instantiate the database implementation class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
-    inline fun <reified T : RoomDatabase> databaseBuilder(
+    public inline fun <reified T : RoomDatabase> databaseBuilder(
         name: String,
-        noinline factory: () -> T
+        noinline factory: () -> T = { findDatabaseConstructorAndInitDatabaseImpl(T::class) },
     ): RoomDatabase.Builder<T> {
         require(name.isNotBlank()) {
             "Cannot build a database with empty name." +

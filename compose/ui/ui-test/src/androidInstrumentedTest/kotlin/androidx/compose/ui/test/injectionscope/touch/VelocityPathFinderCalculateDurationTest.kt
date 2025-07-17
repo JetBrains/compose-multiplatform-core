@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalVelocityTrackerApi::class)
+
 package androidx.compose.ui.test.injectionscope.touch
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isFinite
+import androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.VelocityTrackerStrategyUseImpulse
 import androidx.compose.ui.test.InputDispatcher.Companion.eventPeriodMillis
@@ -48,7 +50,7 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
         val expectedDurationMillis: Long? = null,
         val expectSuggestions: Boolean = false,
         val expectedError: Regex? = if (expectSuggestions) errorWithSuggestions else null,
-        val tolerance: Float = 0.1f
+        val tolerance: Float = 0.1f,
     )
 
     companion object {
@@ -70,7 +72,6 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
                     "2\\. increase the distance between the start and end to (.*) or higher"
             )
 
-        @OptIn(ExperimentalComposeUiApi::class)
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun params() =
@@ -125,7 +126,7 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
                         Distance100,
                         2480f,
                         expectedDurationMillis = 80L,
-                        tolerance = 1f
+                        tolerance = 1f,
                     ), // d ≈ 80.65
 
                     /*
@@ -181,7 +182,7 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
                     TestConfig(Distance100, 2000f, expectedDurationMillis = 100L), // d = 100
                     TestConfig(Distance100, 2480f, expectedDurationMillis = 80L), // d ≈ 80.65
                     TestConfig(Distance100, 5000f, expectedDurationMillis = 40L), // d = 40
-                    TestConfig(Distance100, 5001f, expectSuggestions = true) // d < 40
+                    TestConfig(Distance100, 5001f, expectSuggestions = true), // d < 40
                 )
             }
     }
@@ -195,13 +196,12 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun testWithoutExpectedError(config: TestConfig) {
         val actualDuration =
             VelocityPathFinder.calculateDefaultDuration(
                 start = Offset.Zero,
                 end = config.end,
-                endVelocity = config.requestedVelocity
+                endVelocity = config.requestedVelocity,
             )
         assertThat(actualDuration).isEqualTo(config.expectedDurationMillis)
 
@@ -210,7 +210,7 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
                 startPosition = Offset.Zero,
                 endPosition = config.end,
                 endVelocity = config.requestedVelocity,
-                durationMillis = actualDuration
+                durationMillis = actualDuration,
             )
 
         val f: (Long) -> Offset = { pathFinder.calculateOffsetForTime(it) }
@@ -242,7 +242,7 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
             VelocityPathFinder.calculateDefaultDuration(
                 start = Offset.Zero,
                 end = config.end,
-                endVelocity = config.requestedVelocity
+                endVelocity = config.requestedVelocity,
             )
             fail("Expected an IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
@@ -261,14 +261,14 @@ class VelocityPathFinderCalculateDurationTest(private val config: TestConfig) {
                     config.copy(
                         requestedVelocity = maxVelocity * 0.999f,
                         // suggestions are designed to hit the 40L boundary
-                        expectedDurationMillis = 40L
+                        expectedDurationMillis = 40L,
                     )
                 )
                 testWithoutExpectedError(
                     config.copy(
                         end = Offset(minDistance * 1.001f, 0f),
                         // suggestions are designed to hit the 40L boundary
-                        expectedDurationMillis = 40L
+                        expectedDurationMillis = 40L,
                     )
                 )
 

@@ -23,9 +23,10 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -43,7 +44,7 @@ class CameraManagerCompatApi28Impl extends CameraManagerCompatBaseImpl {
 
     @Override
     public void registerAvailabilityCallback(@NonNull Executor executor,
-            @NonNull CameraManager.AvailabilityCallback callback) {
+            CameraManager.@NonNull AvailabilityCallback callback) {
 
         // Pass through directly to the executor API that exists on this API level.
         mCameraManager.registerAvailabilityCallback(executor, callback);
@@ -51,7 +52,7 @@ class CameraManagerCompatApi28Impl extends CameraManagerCompatBaseImpl {
 
     @Override
     public void unregisterAvailabilityCallback(
-            @NonNull CameraManager.AvailabilityCallback callback) {
+            CameraManager.@NonNull AvailabilityCallback callback) {
 
         // Pass through directly to override behavior defined by API 21
         mCameraManager.unregisterAvailabilityCallback(callback);
@@ -60,7 +61,7 @@ class CameraManagerCompatApi28Impl extends CameraManagerCompatBaseImpl {
     @RequiresPermission(android.Manifest.permission.CAMERA)
     @Override
     public void openCamera(@NonNull String cameraId, @NonNull Executor executor,
-            @NonNull CameraDevice.StateCallback callback) throws CameraAccessExceptionCompat {
+            CameraDevice.@NonNull StateCallback callback) throws CameraAccessExceptionCompat {
 
         try {
             // Pass through directly to the executor API that exists on this API level.
@@ -78,9 +79,8 @@ class CameraManagerCompatApi28Impl extends CameraManagerCompatBaseImpl {
         }
     }
 
-    @NonNull
     @Override
-    public CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
+    public @NonNull CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
             throws CameraAccessExceptionCompat {
         CameraCharacteristics cameraCharacteristics;
         try {

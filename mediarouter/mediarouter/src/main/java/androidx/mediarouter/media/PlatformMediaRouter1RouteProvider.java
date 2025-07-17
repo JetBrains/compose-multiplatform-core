@@ -16,16 +16,21 @@
 
 package androidx.mediarouter.media;
 
+import static android.media.MediaRouter.RouteInfo.DEVICE_TYPE_BLUETOOTH;
+import static android.media.MediaRouter.RouteInfo.DEVICE_TYPE_SPEAKER;
+import static android.media.MediaRouter.RouteInfo.DEVICE_TYPE_TV;
+import static android.media.MediaRouter.RouteInfo.DEVICE_TYPE_UNKNOWN;
+
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.os.Build;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.mediarouter.R;
@@ -307,7 +312,7 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
 
             UserRouteRecord userRouteRecord = getUserRouteRecord(route);
             if (userRouteRecord != null) {
-                userRouteRecord.mRoute.select();
+                userRouteRecord.mRoute.select(/* syncMediaRoute1Provider= */ false);
             } else {
                 // Select the route if it already exists in the compat media router.
                 // If not, we will select it instead when the route is added.
@@ -377,7 +382,7 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
                 if (index >= 0) {
                     SystemRouteRecord record = mSystemRouteRecords.get(index);
                     if (record.mRouteDescriptorId.equals(route.getDescriptorId())) {
-                        route.select();
+                        route.select(/* syncMediaRoute1Provider= */ false);
                     }
                 }
             }
@@ -492,15 +497,41 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
         }
 
         protected String getRouteName(android.media.MediaRouter.RouteInfo route) {
-            // Routes should not have null names but it may happen for badly configured
-            // user routes.  We tolerate this by using an empty name string here but
-            // such unnamed routes will be discarded by the media router upstream
-            // (with a log message so we can track down the problem).
-            CharSequence name = route.getName(getContext());
-            return name != null ? name.toString() : "";
+            // Routes with null or empty names are discarded by MediaRouter as not valid. This may
+            // happen for badly configured user routes, or for system routes (which are not
+            // guaranteed to have a non-empty name). For system routes, we replace the empty name
+            // with a placeholder one so that the route is not swallowed. Otherwise, that can mean
+            // that media router thinks no bluetooth route is available, and selects the default
+            // route instead. See b/294968421.
+            CharSequence routeInfoName = route.getName(getContext());
+            if (!TextUtils.isEmpty(routeInfoName)) {
+                return routeInfoName.toString();
+            } else if ((route.getSupportedTypes() & ROUTE_TYPE_USER) == 0) {
+                int fallbackRouteNameResourceId =
+                        getStringResourceIdForType(
+                                Build.VERSION.SDK_INT >= 24
+                                        ? route.getDeviceType()
+                                        : DEVICE_TYPE_UNKNOWN);
+                return getContext().getString(fallbackRouteNameResourceId);
+            } else {
+                return "";
+            }
         }
 
-        @DoNotInline
+        private static int getStringResourceIdForType(int deviceType) {
+            switch (deviceType) {
+                case DEVICE_TYPE_BLUETOOTH:
+                    return R.string.mr_route_name_bluetooth;
+                case DEVICE_TYPE_TV:
+                    return R.string.mr_route_name_tv;
+                case DEVICE_TYPE_SPEAKER:
+                    return R.string.mr_route_name_speaker;
+                case DEVICE_TYPE_UNKNOWN:
+                default:
+                    return R.string.mr_route_name_unknown;
+            }
+        }
+
         protected void onBuildSystemRouteDescriptor(SystemRouteRecord record,
                 MediaRouteDescriptor.Builder builder) {
             int supportedTypes = record.mRoute.getSupportedTypes();
@@ -557,18 +588,15 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
             }
         }
 
-        @DoNotInline
         protected void selectRoute(android.media.MediaRouter.RouteInfo route) {
             mRouter.selectRoute(ALL_ROUTE_TYPES, route);
         }
 
-        @DoNotInline
         protected android.media.MediaRouter.RouteInfo getDefaultRoute() {
             return mRouter.getDefaultRoute();
         }
 
         @SuppressLint("WrongConstant") // False positive. See b/310913043.
-        @DoNotInline
         protected void updateUserRouteProperties(UserRouteRecord record) {
             android.media.MediaRouter.UserRouteInfo userRoute = record.mUserRoute;
             MediaRouter.RouteInfo routeInfo = record.mRoute;
@@ -581,7 +609,6 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
             userRoute.setDescription(routeInfo.getDescription());
         }
 
-        @DoNotInline
         protected void updateCallback() {
             if (mCallbackRegistered) {
                 mRouter.removeCallback(mCallback);
@@ -593,7 +620,6 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
             mRouter.addCallback(mRouteTypes, mCallback, flags);
         }
 
-        @DoNotInline
         protected boolean isConnecting(SystemRouteRecord record) {
             return record.mRoute.isConnecting();
         }
@@ -658,7 +684,6 @@ abstract class PlatformMediaRouter1RouteProvider extends MediaRouteProvider {
 
         @SuppressLint("WrongConstant") // False positive. See b/283059575.
         @Override
-        @DoNotInline
         protected void onBuildSystemRouteDescriptor(SystemRouteRecord record,
                 MediaRouteDescriptor.Builder builder) {
             super.onBuildSystemRouteDescriptor(record, builder);

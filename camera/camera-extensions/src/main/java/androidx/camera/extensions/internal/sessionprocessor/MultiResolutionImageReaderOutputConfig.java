@@ -16,10 +16,10 @@
 
 package androidx.camera.extensions.internal.sessionprocessor;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 

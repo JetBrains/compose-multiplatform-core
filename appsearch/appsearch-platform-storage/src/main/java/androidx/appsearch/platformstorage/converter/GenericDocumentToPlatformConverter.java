@@ -16,13 +16,22 @@
 
 package androidx.appsearch.platformstorage.converter;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.DoNotInline;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchBlobHandle;
+import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
@@ -38,8 +47,8 @@ public final class GenericDocumentToPlatformConverter {
      * Translates a jetpack {@link androidx.appsearch.app.GenericDocument} into a platform
      * {@link android.app.appsearch.GenericDocument}.
      */
-    @NonNull
-    public static android.app.appsearch.GenericDocument toPlatformGenericDocument(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static android.app.appsearch.@NonNull GenericDocument toPlatformGenericDocument(
             @NonNull GenericDocument jetpackDocument) {
         Preconditions.checkNotNull(jetpackDocument);
         android.app.appsearch.GenericDocument.Builder<
@@ -87,6 +96,19 @@ public final class GenericDocumentToPlatformConverter {
                     platformSubDocuments[j] = toPlatformGenericDocument(documentValues[j]);
                 }
                 platformBuilder.setPropertyDocument(propertyName, platformSubDocuments);
+            } else if (property instanceof EmbeddingVector[]) {
+                if (!AppSearchVersionUtil.isAtLeastB()) {
+                    throw new UnsupportedOperationException(
+                            Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
+                                    + " is not available on this AppSearch implementation.");
+                }
+                EmbeddingVector[] embeddingVectors = (EmbeddingVector[]) property;
+                ApiHelperForB.setPlatformPropertyEmbedding(platformBuilder, propertyName,
+                        embeddingVectors);
+            } else if (property instanceof AppSearchBlobHandle[]) {
+                // TODO(b/273591938): Remove this once blob APIs are available.
+                throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                        + " is not available on this AppSearch implementation.");
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -100,9 +122,9 @@ public final class GenericDocumentToPlatformConverter {
      * Translates a platform {@link android.app.appsearch.GenericDocument} into a jetpack
      * {@link androidx.appsearch.app.GenericDocument}.
      */
-    @NonNull
-    public static GenericDocument toJetpackGenericDocument(
-            @NonNull android.app.appsearch.GenericDocument platformDocument) {
+    @SuppressWarnings("deprecation")
+    public static @NonNull GenericDocument toJetpackGenericDocument(
+            android.app.appsearch.@NonNull GenericDocument platformDocument) {
         Preconditions.checkNotNull(platformDocument);
         GenericDocument.Builder<GenericDocument.Builder<?>> jetpackBuilder =
                 new GenericDocument.Builder<>(
@@ -142,6 +164,12 @@ public final class GenericDocumentToPlatformConverter {
                     jetpackSubDocuments[j] = toJetpackGenericDocument(documentValues[j]);
                 }
                 jetpackBuilder.setPropertyDocument(propertyName, jetpackSubDocuments);
+            } else if (AppSearchVersionUtil.isAtLeastB()
+                    && property instanceof android.app.appsearch.EmbeddingVector[]) {
+                android.app.appsearch.EmbeddingVector[] embeddingVectors =
+                        (android.app.appsearch.EmbeddingVector[]) property;
+                ApiHelperForB.setJetpackPropertyEmbedding(jetpackBuilder, propertyName,
+                        embeddingVectors);
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -152,4 +180,43 @@ public final class GenericDocumentToPlatformConverter {
     }
 
     private GenericDocumentToPlatformConverter() {}
+
+    @RequiresApi(36)
+    private static class ApiHelperForB {
+        private ApiHelperForB() {
+        }
+
+        @SuppressLint("NewApi") // EmbeddingVector is incorrectly flagged as needing 34-ext16
+        @DoNotInline
+        static void setPlatformPropertyEmbedding(
+                android.app.appsearch.GenericDocument.@NonNull Builder<
+                        android.app.appsearch.GenericDocument.Builder<?>> platformBuilder,
+                @NonNull String propertyName,
+                EmbeddingVector @NonNull [] jetpackEmbeddingVectors) {
+            android.app.appsearch.EmbeddingVector[] platformEmbeddingVectors =
+                    new android.app.appsearch.EmbeddingVector[jetpackEmbeddingVectors.length];
+            for (int i = 0; i < jetpackEmbeddingVectors.length; i++) {
+                platformEmbeddingVectors[i] = new android.app.appsearch.EmbeddingVector(
+                        jetpackEmbeddingVectors[i].getValues(),
+                        jetpackEmbeddingVectors[i].getModelSignature());
+            }
+            platformBuilder.setPropertyEmbedding(propertyName, platformEmbeddingVectors);
+        }
+
+        @SuppressLint("NewApi") // getValues() is incorrectly flagged as needing 34-ext16
+        @DoNotInline
+        static void setJetpackPropertyEmbedding(
+                GenericDocument.@NonNull Builder<GenericDocument.Builder<?>> jetpackBuilder,
+                @NonNull String propertyName,
+                android.app.appsearch.EmbeddingVector @NonNull [] platformEmbeddingVectors) {
+            EmbeddingVector[] jetpackEmbeddingVectors =
+                    new EmbeddingVector[platformEmbeddingVectors.length];
+            for (int i = 0; i < platformEmbeddingVectors.length; i++) {
+                jetpackEmbeddingVectors[i] = new EmbeddingVector(
+                        platformEmbeddingVectors[i].getValues(),
+                        platformEmbeddingVectors[i].getModelSignature());
+            }
+            jetpackBuilder.setPropertyEmbedding(propertyName, jetpackEmbeddingVectors);
+        }
+    }
 }

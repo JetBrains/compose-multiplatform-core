@@ -16,8 +16,9 @@
 
 package androidx.camera.core.imagecapture;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CaptureConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -35,8 +36,7 @@ public final class CameraRequest {
         mCallback = callback;
     }
 
-    @NonNull
-    List<CaptureConfig> getCaptureConfigs() {
+    @NonNull List<CaptureConfig> getCaptureConfigs() {
         return mCaptureConfigs;
     }
 

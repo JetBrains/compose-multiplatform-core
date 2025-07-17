@@ -24,6 +24,7 @@ import androidx.camera.integration.uiwidgets.rotations.CameraActivity.Companion.
 import androidx.camera.integration.uiwidgets.rotations.CameraActivity.Companion.IMAGE_CAPTURE_MODE_OUTPUT_STREAM
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.After
 import org.junit.Before
@@ -38,7 +39,7 @@ class ImageCaptureUnlockedOrientationTest(
     private val captureMode: Int,
     private val cameraXConfig: String,
     private val rotation: RotationUnlocked,
-    private val testName: String
+    private val testName: String,
 ) : ImageCaptureBaseTest<UnlockedOrientationActivity>(cameraXConfig) {
 
     companion object {
@@ -71,7 +72,7 @@ class ImageCaptureUnlockedOrientationTest(
                                     mode,
                                     cameraXConfig,
                                     RotationUnlocked.Natural,
-                                    "$lensName - $captureModeName - Natural"
+                                    "$lensName - $captureModeName - Natural",
                                 )
                             )
                             add(
@@ -80,7 +81,7 @@ class ImageCaptureUnlockedOrientationTest(
                                     mode,
                                     cameraXConfig,
                                     RotationUnlocked.Left,
-                                    "$lensName - $captureModeName - Left"
+                                    "$lensName - $captureModeName - Left",
                                 )
                             )
                             add(
@@ -89,7 +90,7 @@ class ImageCaptureUnlockedOrientationTest(
                                     mode,
                                     cameraXConfig,
                                     RotationUnlocked.Right,
-                                    "$lensName - $captureModeName - Right"
+                                    "$lensName - $captureModeName - Right",
                                 )
                             )
                         }
@@ -110,6 +111,7 @@ class ImageCaptureUnlockedOrientationTest(
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun verifyRotation() {
         verifyRotation<UnlockedOrientationActivity>(lensFacing, captureMode, cameraXConfig) {
             if (rotation.shouldRotate) {
@@ -123,12 +125,12 @@ class ImageCaptureUnlockedOrientationTest(
             Instrumentation.ActivityMonitor(
                 UnlockedOrientationActivity::class.java.name,
                 null,
-                false
+                false,
             )
         InstrumentationRegistry.getInstrumentation().addMonitor(monitor)
 
         // Rotate
-        rotation.rotate(mDevice)
+        rotation.rotate(device)
 
         // Wait for the activity to be recreated after rotation
         InstrumentationRegistry.getInstrumentation().waitForMonitorWithTimeout(monitor, 2000L)

@@ -23,10 +23,10 @@ package androidx.sqlite.db
  * @param bindArgs The bind argument value that will replace the placeholders in the query.
  * @constructor Creates an SQL query with the sql string and the bind arguments.
  */
-class SimpleSQLiteQuery(
+public class SimpleSQLiteQuery(
     private val query: String,
     @Suppress("ArrayReturn") // Due to legacy API
-    private val bindArgs: Array<out Any?>?
+    private val bindArgs: Array<out Any?>?,
 ) : SupportSQLiteQuery {
 
     /**
@@ -34,7 +34,7 @@ class SimpleSQLiteQuery(
      *
      * @param query The SQL query to execute. Cannot include bind parameters.
      */
-    constructor(query: String) : this(query, null)
+    public constructor(query: String) : this(query, null)
 
     override val sql: String
         get() = this.query
@@ -51,7 +51,7 @@ class SimpleSQLiteQuery(
     override val argCount: Int
         get() = bindArgs?.size ?: 0
 
-    companion object {
+    public companion object {
         /**
          * Binds the given arguments into the given sqlite statement.
          *
@@ -59,10 +59,10 @@ class SimpleSQLiteQuery(
          * @param [bindArgs] The list of bind arguments
          */
         @JvmStatic
-        fun bind(
+        public fun bind(
             statement: SupportSQLiteProgram,
             @Suppress("ArrayReturn") // Due to legacy API
-            bindArgs: Array<out Any?>?
+            bindArgs: Array<out Any?>?,
         ) {
             if (bindArgs == null) {
                 return

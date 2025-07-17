@@ -18,21 +18,21 @@ package androidx.core.view;
 
 import static android.os.Build.VERSION.SDK_INT;
 
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Build;
 import android.view.DisplayCutout;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.Insets;
 import androidx.core.util.ObjectsCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 
 /**
  * Represents the area of the display that is not functional for displaying content.
@@ -74,13 +74,43 @@ public final class DisplayCutoutCompat {
             @Nullable Rect boundTop, @Nullable Rect boundRight, @Nullable Rect boundBottom,
             @NonNull Insets waterfallInsets) {
         this(constructDisplayCutout(safeInsets, boundLeft, boundTop, boundRight, boundBottom,
-                waterfallInsets));
+                waterfallInsets, null));
+    }
+
+    /**
+     * Creates a DisplayCutout instance.
+     *
+     * @param safeInsets the insets from each edge which avoid the display cutout as returned by
+     *                   {@link #getSafeInsetTop()} etc.
+     * @param boundLeft the left bounding rect of the display cutout in pixels. If null is passed,
+     *                  it's treated as an empty rectangle (0,0)-(0,0).
+     * @param boundTop the top bounding rect of the display cutout in pixels. If null is passed,
+     *                  it's treated as an empty rectangle (0,0)-(0,0).
+     * @param boundRight the right bounding rect of the display cutout in pixels. If null is
+     *                  passed, it's treated as an empty rectangle (0,0)-(0,0).
+     * @param boundBottom the bottom bounding rect of the display cutout in pixels. If null is
+     *                   passed, it's treated as an empty rectangle (0,0)-(0,0).
+     * @param waterfallInsets the insets for the curved areas in waterfall display.
+     * @param cutoutPath the path of the display cutout. Specifying a path with this
+     *                   constructor is only supported on API 33 and above, even though a real
+     *                   DisplayCutout can have a cutout path on API 31 and above. On API 32 and
+     *                   below, this path is ignored.
+     */
+    public DisplayCutoutCompat(@NonNull Insets safeInsets, @Nullable Rect boundLeft,
+            @Nullable Rect boundTop, @Nullable Rect boundRight, @Nullable Rect boundBottom,
+            @NonNull Insets waterfallInsets, @Nullable Path cutoutPath) {
+        this(constructDisplayCutout(safeInsets, boundLeft, boundTop, boundRight, boundBottom,
+                waterfallInsets, cutoutPath));
     }
 
     private static DisplayCutout constructDisplayCutout(@NonNull Insets safeInsets,
             @Nullable Rect boundLeft, @Nullable Rect boundTop, @Nullable Rect boundRight,
-            @Nullable Rect boundBottom, @NonNull Insets waterfallInsets) {
-        if (SDK_INT >= 30) {
+            @Nullable Rect boundBottom, @NonNull Insets waterfallInsets,
+            @Nullable Path cutoutPath) {
+        if (SDK_INT >= 33) {
+            return Api33Impl.createDisplayCutout(safeInsets.toPlatformInsets(), boundLeft, boundTop,
+                    boundRight, boundBottom, waterfallInsets.toPlatformInsets(), cutoutPath);
+        } else if (SDK_INT >= 30) {
             return Api30Impl.createDisplayCutout(safeInsets.toPlatformInsets(), boundLeft, boundTop,
                     boundRight, boundBottom, waterfallInsets.toPlatformInsets());
         } else if (SDK_INT >= Build.VERSION_CODES.Q) {
@@ -157,8 +187,7 @@ public final class DisplayCutoutCompat {
      *
      * @return a list of bounding {@code Rect}s, one for each display cutout area.
      */
-    @NonNull
-    public List<Rect> getBoundingRects() {
+    public @NonNull List<Rect> getBoundingRects() {
         if (SDK_INT >= 28) {
             return Api28Impl.getBoundingRects(mDisplayCutout);
         } else {
@@ -176,12 +205,27 @@ public final class DisplayCutoutCompat {
      * @return the insets for the curved areas of a waterfall display in pixels or {@code
      * Insets.NONE} if there are no curved areas or they don't overlap with the window.
      */
-    @NonNull
-    public Insets getWaterfallInsets() {
+    public @NonNull Insets getWaterfallInsets() {
         if (SDK_INT >= 30) {
             return Insets.toCompatInsets(Api30Impl.getWaterfallInsets(mDisplayCutout));
         } else {
             return Insets.NONE;
+        }
+    }
+
+    /**
+     * Returns a Path that contains the cutout paths of all sides on the display.
+     * To get a cutout path for one specific side, apps can intersect the Path with the Rect
+     * obtained from getBoundingRectLeft(), getBoundingRectTop(), getBoundingRectRight() or
+     * getBoundingRectBottom().
+     *
+     * @return the path corresponding to the cutout, or null if there is no cutout on the display.
+     */
+    public @Nullable Path getCutoutPath() {
+        if (SDK_INT >= 31) {
+            return Api31Impl.getCutoutPath(mDisplayCutout);
+        } else {
+            return null;
         }
     }
 
@@ -202,9 +246,8 @@ public final class DisplayCutoutCompat {
         return mDisplayCutout == null ? 0 : mDisplayCutout.hashCode();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "DisplayCutoutCompat{" + mDisplayCutout + "}";
     }
 
@@ -223,54 +266,29 @@ public final class DisplayCutoutCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
-        static DisplayCutout createDisplayCutout(Rect safeInsets, List<Rect> boundingRects) {
+        static DisplayCutout createDisplayCutout(
+                @Nullable Rect safeInsets, @Nullable List<Rect> boundingRects) {
             return new DisplayCutout(safeInsets, boundingRects);
         }
 
-        @DoNotInline
         static int getSafeInsetTop(DisplayCutout displayCutout) {
             return displayCutout.getSafeInsetTop();
         }
 
-        @DoNotInline
         static int getSafeInsetBottom(DisplayCutout displayCutout) {
             return displayCutout.getSafeInsetBottom();
         }
 
-        @DoNotInline
         static int getSafeInsetLeft(DisplayCutout displayCutout) {
             return displayCutout.getSafeInsetLeft();
         }
 
-        @DoNotInline
         static int getSafeInsetRight(DisplayCutout displayCutout) {
             return displayCutout.getSafeInsetRight();
         }
 
-        @DoNotInline
         static List<Rect> getBoundingRects(DisplayCutout displayCutout) {
             return displayCutout.getBoundingRects();
-        }
-    }
-
-    @RequiresApi(30)
-    static class Api30Impl {
-        private Api30Impl() {
-            // This class is not instantiable.
-        }
-
-        @DoNotInline
-        static DisplayCutout createDisplayCutout(android.graphics.Insets safeInsets, Rect boundLeft,
-                Rect boundTop, Rect boundRight, Rect boundBottom,
-                android.graphics.Insets waterfallInsets) {
-            return new DisplayCutout(safeInsets, boundLeft, boundTop, boundRight, boundBottom,
-                    waterfallInsets);
-        }
-
-        @DoNotInline
-        static android.graphics.Insets getWaterfallInsets(DisplayCutout displayCutout) {
-            return displayCutout.getWaterfallInsets();
         }
     }
 
@@ -280,10 +298,73 @@ public final class DisplayCutoutCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
-        static DisplayCutout createDisplayCutout(android.graphics.Insets safeInsets, Rect boundLeft,
-                Rect boundTop, Rect boundRight, Rect boundBottom) {
+        static DisplayCutout createDisplayCutout(android.graphics.@NonNull Insets safeInsets,
+                @Nullable Rect boundLeft, @Nullable Rect boundTop, @Nullable Rect boundRight,
+                @Nullable Rect boundBottom) {
             return new DisplayCutout(safeInsets, boundLeft, boundTop, boundRight, boundBottom);
+        }
+    }
+
+    @RequiresApi(30)
+    static class Api30Impl {
+        private Api30Impl() {
+            // This class is not instantiable.
+        }
+
+        static DisplayCutout createDisplayCutout(
+                android.graphics.@NonNull Insets safeInsets, @Nullable Rect boundLeft,
+                @Nullable Rect boundTop, @Nullable Rect boundRight, @Nullable Rect boundBottom,
+                android.graphics.@NonNull Insets waterfallInsets) {
+            return new DisplayCutout(safeInsets, boundLeft, boundTop, boundRight, boundBottom,
+                    waterfallInsets);
+        }
+
+        static android.graphics.Insets getWaterfallInsets(DisplayCutout displayCutout) {
+            return displayCutout.getWaterfallInsets();
+        }
+    }
+
+    @RequiresApi(31)
+    static class Api31Impl {
+        private Api31Impl() {
+            // This class is not instantiable.
+        }
+
+        static @Nullable Path getCutoutPath(DisplayCutout displayCutout) {
+            return displayCutout.getCutoutPath();
+        }
+    }
+
+    @RequiresApi(33)
+    static class Api33Impl {
+        private Api33Impl() {
+            // This class is not instantiable.
+        }
+
+        static DisplayCutout createDisplayCutout(
+                android.graphics.@NonNull Insets safeInsets, @Nullable Rect boundLeft,
+                @Nullable Rect boundTop, @Nullable Rect boundRight, @Nullable Rect boundBottom,
+                android.graphics.@NonNull Insets waterfallInsets, @Nullable Path cutoutPath) {
+            DisplayCutout.Builder builder = new DisplayCutout.Builder()
+                    .setSafeInsets(safeInsets)
+                    .setWaterfallInsets(waterfallInsets);
+
+            if (boundLeft != null) {
+                builder.setBoundingRectLeft(boundLeft);
+            }
+            if (boundTop != null) {
+                builder.setBoundingRectTop(boundTop);
+            }
+            if (boundRight != null) {
+                builder.setBoundingRectRight(boundRight);
+            }
+            if (boundBottom != null) {
+                builder.setBoundingRectBottom(boundBottom);
+            }
+            if (cutoutPath != null) {
+                builder.setCutoutPath(cutoutPath);
+            }
+            return builder.build();
         }
     }
 }

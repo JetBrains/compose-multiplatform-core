@@ -16,10 +16,11 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.ImageProcessor;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 

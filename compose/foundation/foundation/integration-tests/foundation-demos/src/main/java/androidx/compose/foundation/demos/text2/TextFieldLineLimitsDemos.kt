@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.demos.text.TagLine
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,7 +53,6 @@ fun TextFieldLineLimitsDemos() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DefaultLineLimits() {
     Text("Default")
@@ -63,11 +61,10 @@ fun DefaultLineLimits() {
         state = rememberTextFieldState(),
         lineLimits = TextFieldLineLimits.Default,
         textStyle = LocalTextStyle.current,
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SingleLineLimits() {
     Text("Single Line")
@@ -76,11 +73,10 @@ fun SingleLineLimits() {
         state = rememberTextFieldState(),
         lineLimits = TextFieldLineLimits.SingleLine,
         textStyle = LocalTextStyle.current,
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MultiLineLimits() {
     Text("Multi Line")
@@ -94,7 +90,7 @@ fun MultiLineLimits() {
             value = minLines.toFloat(),
             onValueChange = { minLines = it.roundToInt() },
             valueRange = 1f..10f,
-            steps = 9
+            steps = 9,
         )
     }
 
@@ -104,7 +100,7 @@ fun MultiLineLimits() {
             value = maxLines.toFloat(),
             onValueChange = { maxLines = it.roundToInt() },
             valueRange = 1f..10f,
-            steps = 9
+            steps = 9,
         )
     }
 
@@ -115,6 +111,6 @@ fun MultiLineLimits() {
         lineLimits =
             TextFieldLineLimits.MultiLine(minHeightInLines = minLines, maxHeightInLines = maxLines),
         textStyle = LocalTextStyle.current,
-        modifier = demoTextFieldModifiers
+        modifier = demoTextFieldModifiers,
     )
 }

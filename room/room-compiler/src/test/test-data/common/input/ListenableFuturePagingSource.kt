@@ -15,10 +15,10 @@
  */
 package androidx.paging
 
-import android.database.Cursor
 import androidx.paging.PagingState
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
+import androidx.sqlite.SQLiteStatement
 
 @Suppress("UNUSED_PARAMETER")
 abstract class ListenableFuturePagingSource<K : Any, T : Any>(
@@ -33,5 +33,6 @@ abstract class ListenableFuturePagingSource<K : Any, T : Any>(
     override public suspend fun load(params: LoadParams<K>): LoadResult<K, T> {
         return LoadResult.Invalid()
     }
-    protected abstract fun convertRows(cursor: Cursor): List<T>
+
+    protected abstract fun convertRows(statement: SQLiteStatement): List<T>
 }

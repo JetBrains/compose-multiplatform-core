@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -45,7 +49,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
@@ -54,7 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Preview
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LookaheadWithFlowRowDemo() {
     Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -62,7 +65,7 @@ fun LookaheadWithFlowRowDemo() {
 
         Button(
             modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
-            onClick = { isHorizontal = !isHorizontal }
+            onClick = { isHorizontal = !isHorizontal },
         ) {
             Text("Toggle")
         }
@@ -77,17 +80,26 @@ fun LookaheadWithFlowRowDemo() {
                 ) {
                     Box(
                         Modifier.height(50.dp)
-                            .animateBounds(Modifier.fillMaxWidth(if (isHorizontal) 0.4f else 1f))
+                            .animateBounds(
+                                lookaheadScope = this@LookaheadScope,
+                                Modifier.fillMaxWidth(if (isHorizontal) 0.4f else 1f),
+                            )
                             .background(colors[0], RoundedCornerShape(10))
                     )
                     Box(
                         Modifier.height(50.dp)
-                            .animateBounds(Modifier.fillMaxWidth(if (isHorizontal) 0.2f else 0.4f))
+                            .animateBounds(
+                                lookaheadScope = this@LookaheadScope,
+                                Modifier.fillMaxWidth(if (isHorizontal) 0.2f else 0.4f),
+                            )
                             .background(colors[1], RoundedCornerShape(10))
                     )
                     Box(
                         Modifier.height(50.dp)
-                            .animateBounds(Modifier.fillMaxWidth(if (isHorizontal) 0.2f else 0.4f))
+                            .animateBounds(
+                                lookaheadScope = this@LookaheadScope,
+                                Modifier.fillMaxWidth(if (isHorizontal) 0.2f else 0.4f),
+                            )
                             .background(colors[2], RoundedCornerShape(10))
                     )
                 }
@@ -123,7 +135,7 @@ fun LookaheadWithFlowRowDemo() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Preview
 @Composable
 fun NestedFlowRowDemo() {
@@ -132,17 +144,24 @@ fun NestedFlowRowDemo() {
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.Center,
             verticalArrangement = Arrangement.Center,
-            maxItemsInEachRow = 3
+            maxItemsInEachRow = 3,
         ) {
             var expanded by remember { mutableStateOf(false) }
             Box(
                 modifier =
-                    Modifier.animateBounds(Modifier.widthIn(max = 600.dp)).background(Color.Red)
+                    Modifier.animateBounds(
+                            lookaheadScope = this@LookaheadScope,
+                            Modifier.widthIn(max = 600.dp),
+                        )
+                        .background(Color.Red)
             ) {
                 val height = animateDpAsState(targetValue = if (expanded) 500.dp else 300.dp)
                 Box(
                     modifier =
-                        Modifier.animateBounds(Modifier.fillMaxWidth().height(height.value))
+                        Modifier.animateBounds(
+                                lookaheadScope = this@LookaheadScope,
+                                Modifier.fillMaxWidth().height(height.value),
+                            )
                             .clickable { expanded = !expanded }
                 )
             }
@@ -156,8 +175,8 @@ fun NestedFlowRowDemo() {
                     modifier =
                         Modifier.size(200.dp)
                             .animateBounds(
+                                lookaheadScope = this@LookaheadScope,
                                 Modifier.wrapContentWidth().heightIn(min = 156.dp),
-                                debug = true
                             )
                             .background(Color.Blue)
                 ) {
@@ -167,8 +186,8 @@ fun NestedFlowRowDemo() {
                     modifier =
                         Modifier.size(200.dp)
                             .animateBounds(
+                                lookaheadScope = this@LookaheadScope,
                                 Modifier.wrapContentWidth().heightIn(min = 156.dp),
-                                debug = true
                             )
                             .background(Color.Yellow)
                 ) {

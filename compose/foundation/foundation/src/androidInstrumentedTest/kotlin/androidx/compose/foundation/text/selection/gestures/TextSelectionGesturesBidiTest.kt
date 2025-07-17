@@ -29,14 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import org.junit.Test
 
-@OptIn(ExperimentalTestApi::class)
 internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesturesTest() {
 
     override val pointerAreaTag = "selectionContainer"
@@ -53,7 +51,7 @@ internal abstract class TextSelectionGesturesBidiTest : AbstractSelectionGesture
         SelectionContainer(
             selection = selection.value,
             onSelectionChange = { selection.value = it },
-            modifier = Modifier.testTag(pointerAreaTag)
+            modifier = Modifier.testTag(pointerAreaTag),
         ) {
             TextContent()
         }

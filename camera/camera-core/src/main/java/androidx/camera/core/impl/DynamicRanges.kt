@@ -19,7 +19,7 @@ import androidx.camera.core.DynamicRange
 import androidx.core.util.Preconditions
 
 /** Utility methods for handling dynamic range. */
-object DynamicRanges {
+public object DynamicRanges {
 
     /**
      * Returns `true` if the test dynamic range can resolve to the fully specified dynamic range
@@ -30,7 +30,7 @@ object DynamicRanges {
      * specified dynamic range.
      */
     @JvmStatic
-    fun canResolve(
+    public fun canResolve(
         dynamicRangeToTest: DynamicRange,
         fullySpecifiedDynamicRanges: Set<DynamicRange>,
     ): Boolean {
@@ -52,9 +52,9 @@ object DynamicRanges {
      * fully specified dynamic range.
      */
     @JvmStatic
-    fun findAllPossibleMatches(
+    public fun findAllPossibleMatches(
         dynamicRangesToTest: Set<DynamicRange>,
-        fullySpecifiedDynamicRanges: Set<DynamicRange>
+        fullySpecifiedDynamicRanges: Set<DynamicRange>,
     ): Set<DynamicRange> {
         if (dynamicRangesToTest.isEmpty()) {
             throw IllegalArgumentException(
@@ -83,7 +83,7 @@ object DynamicRanges {
 
     private fun canResolveUnderSpecifiedTo(
         underSpecifiedDynamicRange: DynamicRange,
-        fullySpecifiedDynamicRange: DynamicRange
+        fullySpecifiedDynamicRange: DynamicRange,
     ): Boolean {
         return canMatchBitDepth(underSpecifiedDynamicRange, fullySpecifiedDynamicRange) &&
             canMatchEncoding(underSpecifiedDynamicRange, fullySpecifiedDynamicRange)
@@ -91,11 +91,11 @@ object DynamicRanges {
 
     private fun canMatchBitDepth(
         dynamicRangeToTest: DynamicRange,
-        fullySpecifiedDynamicRange: DynamicRange
+        fullySpecifiedDynamicRange: DynamicRange,
     ): Boolean {
         Preconditions.checkState(
             fullySpecifiedDynamicRange.isFullySpecified,
-            "Fully specified " + "range is not actually fully specified."
+            "Fully specified " + "range is not actually fully specified.",
         )
         return if (dynamicRangeToTest.bitDepth == DynamicRange.BIT_DEPTH_UNSPECIFIED) {
             true
@@ -106,11 +106,11 @@ object DynamicRanges {
 
     private fun canMatchEncoding(
         dynamicRangeToTest: DynamicRange,
-        fullySpecifiedDynamicRange: DynamicRange
+        fullySpecifiedDynamicRange: DynamicRange,
     ): Boolean {
         Preconditions.checkState(
             fullySpecifiedDynamicRange.isFullySpecified,
-            "Fully specified " + "range is not actually fully specified."
+            "Fully specified " + "range is not actually fully specified.",
         )
         val encodingToTest = dynamicRangeToTest.encoding
         if (encodingToTest == DynamicRange.ENCODING_UNSPECIFIED) {

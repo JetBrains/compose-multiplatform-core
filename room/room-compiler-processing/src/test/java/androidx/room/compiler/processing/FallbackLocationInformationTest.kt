@@ -41,7 +41,7 @@ class FallbackLocationInformationTest {
                 suspend fun suspendFun(arg1:Int): String = ""
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val javaSource =
@@ -58,7 +58,7 @@ class FallbackLocationInformationTest {
                 void method1(int p0) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         // add a placeholder to not run tests w/ javac since we depend on compiled kotlin
         // sources and javac fails to resolve metadata
@@ -87,7 +87,13 @@ class FallbackLocationInformationTest {
                 assertThat(propSetter.fallbackLocationText)
                     .isEqualTo("foo.bar.KotlinSubject.setProp(java.lang.String)")
                 assertThat(propSetter.parameters.first().fallbackLocationText)
-                    .isEqualTo("p0 in foo.bar.KotlinSubject.setProp(java.lang.String)")
+                    .isEqualTo(
+                        if (invocation.isKsp2) {
+                            "value in foo.bar.KotlinSubject.setProp(java.lang.String)"
+                        } else {
+                            "p0 in foo.bar.KotlinSubject.setProp(java.lang.String)"
+                        }
+                    )
             }
 
             kotlinSubject.getMethodByJvmName("setPropWithAccessors").let { propSetter ->

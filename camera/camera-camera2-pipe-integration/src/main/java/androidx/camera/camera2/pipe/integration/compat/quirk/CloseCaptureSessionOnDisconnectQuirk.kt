@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.annotation.SuppressLint
 import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isInfinixDevice
 import androidx.camera.core.impl.Quirk
 import java.util.Locale
 
@@ -35,17 +36,14 @@ import java.util.Locale
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class CloseCaptureSessionOnDisconnectQuirk : Quirk {
+public class CloseCaptureSessionOnDisconnectQuirk : Quirk {
 
-    companion object {
+    public companion object {
         private val androidTOrNewerSm8150Devices =
-            mapOf(
-                "google" to setOf("pixel 4", "pixel 4 xl"),
-                "samsung" to setOf("sm-g770f"),
-            )
+            mapOf("google" to setOf("pixel 4", "pixel 4 xl"), "samsung" to setOf("sm-g770f"))
 
         @JvmStatic
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             if (CameraQuirks.isImmediateSurfaceReleaseAllowed()) {
                 // If we can release Surfaces immediately, we'll finalize the session when the
                 // camera graph is closed (through FinalizeSessionOnCloseQuirk), and thus we won't
@@ -84,7 +82,7 @@ class CloseCaptureSessionOnDisconnectQuirk : Quirk {
                 // significant memory, including the _foreground_ test applications. Closing the
                 // capture session ensures that we finalize every CameraGraph session, slightly
                 // lowering the peak memory.
-                Build.BRAND.lowercase(Locale.getDefault()) == "infinix"
+                isInfinixDevice()
             }
         }
     }

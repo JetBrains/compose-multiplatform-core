@@ -24,7 +24,6 @@ import android.hardware.camera2.CameraCharacteristics.REQUEST_AVAILABLE_CAPABILI
 import android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.hardware.camera2.params.MeteringRectangle
 import android.os.Build
 import android.os.Trace
 import androidx.camera.camera2.pipe.CameraGraph
@@ -32,10 +31,10 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 
 /** Internal debug utilities, constants, and checks. */
-object Debug {
+public object Debug {
     internal val systemTimeSource = SystemTimeSource()
-    const val ENABLE_LOGGING: Boolean = true
-    const val ENABLE_TRACING: Boolean = true
+    public const val ENABLE_LOGGING: Boolean = true
+    public const val ENABLE_TRACING: Boolean = true
 
     /**
      * Wrap the specified [block] in calls to [Trace.beginSection] (with the supplied [label]) and
@@ -44,7 +43,7 @@ object Debug {
      * @param label A name of the code section to appear in the trace.
      * @param block A block of code which is being traced.
      */
-    inline fun <T> trace(label: String, crossinline block: () -> T): T {
+    public inline fun <T> trace(label: String, crossinline block: () -> T): T {
         try {
             traceStart { label }
             return block()
@@ -67,14 +66,14 @@ object Debug {
     }
 
     /** Forwarding call to [Trace.beginSection] that can be statically disabled at compile time. */
-    inline fun traceStart(crossinline label: () -> String) {
+    public inline fun traceStart(crossinline label: () -> String) {
         if (ENABLE_TRACING) {
             Trace.beginSection(label())
         }
     }
 
     /** Forwarding call to [Trace.endSection] that can be statically disabled at compile time. */
-    inline fun traceStop() {
+    public inline fun traceStop() {
         if (ENABLE_TRACING) {
             Trace.endSection()
         }
@@ -98,11 +97,30 @@ object Debug {
      *
      * Example: `[abc.xyz=1, abc.zyx=something]`
      */
-    fun formatParameterMap(parameters: Map<*, Any?>, limit: Int = -1): String {
+    public fun formatParameterMap(parameters: Map<*, Any?>, limit: Int = -1): String {
         return parametersToSortedStringPairs(parameters).joinToString(
             prefix = "{",
             postfix = "}",
-            limit = limit
+            limit = limit,
+        ) {
+            "${it.first}=${it.second}"
+        }
+    }
+
+    /**
+     * Format a map of parameters as a line separated list.
+     *
+     * Example: `[<\n>abc.xyz=1,<\n>abc.zyx=something<\n>]`
+     */
+    public fun formatParameterMapToLineSeparatedList(
+        parameters: Map<*, Any?>,
+        limit: Int = -1,
+    ): String {
+        return parametersToSortedStringPairs(parameters).joinToString(
+            separator = ",\n",
+            prefix = "{\n",
+            postfix = "\n}",
+            limit = limit,
         ) {
             "${it.first}=${it.second}"
         }
@@ -124,16 +142,14 @@ object Debug {
     /* Utility for cleaning up some verbose value types for logs */
     private fun valueToString(value: Any?): String =
         when (value) {
-            is MeteringRectangle ->
-                "[x=${value.x}, y=${value.y}, " +
-                    "w=${value.width}, h=${value.height}, weight=${value.meteringWeight}"
+            is Array<*> -> value.joinToString(prefix = "[", postfix = "]") { valueToString(it) }
             else -> value.toString()
         }
 
-    fun formatCameraGraphProperties(
+    public fun formatCameraGraphProperties(
         metadata: CameraMetadata,
         graphConfig: CameraGraph.Config,
-        cameraGraph: CameraGraph
+        cameraGraph: CameraGraph,
     ): String {
         val sharedCameraIds = graphConfig.sharedCameraIds.joinToString()
 
@@ -222,27 +238,32 @@ object Debug {
  *
  * Example: checkApi(Build.VERSION_CODES.LOLLIPOP, "createCameraDevice")
  */
-inline fun checkApi(requiredApi: Int, methodName: String) {
+public inline fun checkApi(requiredApi: Int, methodName: String) {
     check(Build.VERSION.SDK_INT >= requiredApi) {
         "$methodName is not supported on API ${Build.VERSION.SDK_INT} (requires API $requiredApi)"
     }
 }
 
 /** Asserts that this method was invoked on Android L (API 21) or higher. */
-inline fun checkLOrHigher(methodName: String): Unit =
+public inline fun checkLOrHigher(methodName: String): Unit =
     checkApi(Build.VERSION_CODES.LOLLIPOP, methodName)
 
 /** Asserts that this method was invoked on Android M (API 23) or higher. */
-inline fun checkMOrHigher(methodName: String): Unit = checkApi(Build.VERSION_CODES.M, methodName)
+public inline fun checkMOrHigher(methodName: String): Unit =
+    checkApi(Build.VERSION_CODES.M, methodName)
 
 /** Asserts that this method was invoked on Android N (API 24) or higher. */
-inline fun checkNOrHigher(methodName: String): Unit = checkApi(Build.VERSION_CODES.N, methodName)
+public inline fun checkNOrHigher(methodName: String): Unit =
+    checkApi(Build.VERSION_CODES.N, methodName)
 
 /** Asserts that this method was invoked on Android O (API 26) or higher. */
-inline fun checkOOrHigher(methodName: String): Unit = checkApi(Build.VERSION_CODES.O, methodName)
+public inline fun checkOOrHigher(methodName: String): Unit =
+    checkApi(Build.VERSION_CODES.O, methodName)
 
 /** Asserts that this method was invoked on Android P (API 28) or higher. */
-inline fun checkPOrHigher(methodName: String): Unit = checkApi(Build.VERSION_CODES.P, methodName)
+public inline fun checkPOrHigher(methodName: String): Unit =
+    checkApi(Build.VERSION_CODES.P, methodName)
 
 /** Asserts that this method was invoked on Android Q (API 29) or higher. */
-inline fun checkQOrHigher(methodName: String): Unit = checkApi(Build.VERSION_CODES.Q, methodName)
+public inline fun checkQOrHigher(methodName: String): Unit =
+    checkApi(Build.VERSION_CODES.Q, methodName)

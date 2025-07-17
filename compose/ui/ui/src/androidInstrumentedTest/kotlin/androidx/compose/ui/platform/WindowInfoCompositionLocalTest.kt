@@ -18,24 +18,32 @@ package androidx.compose.ui.platform
 
 import android.view.KeyEvent
 import android.view.View
+import android.widget.FrameLayout
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.setFocusableContent
+import androidx.compose.ui.graphics.toComposeIntRect
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
 import androidx.test.filters.MediumTest
+import androidx.window.layout.WindowMetricsCalculator
+import com.google.common.collect.Range
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit.SECONDS
+import kotlin.math.roundToInt
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +51,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class WindowInfoCompositionLocalTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @FlakyTest(bugId = 173088588)
     @Test
@@ -80,7 +88,7 @@ class WindowInfoCompositionLocalTest {
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
-                    onDismissRequest = { showPopup.value = false }
+                    onDismissRequest = { showPopup.value = false },
                 ) {
                     BasicText("Popup Window")
                     popupWindowInfo = LocalWindowInfo.current
@@ -114,7 +122,7 @@ class WindowInfoCompositionLocalTest {
             if (showPopup.value) {
                 Popup(
                     properties = PopupProperties(focusable = true),
-                    onDismissRequest = { showPopup.value = false }
+                    onDismissRequest = { showPopup.value = false },
                 ) {
                     BasicText(text = "Popup Window")
                     WindowFocusObserver { if (it) popupFocusGain.countDown() }
@@ -221,7 +229,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_CTRL_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON
+                    KeyEvent.META_CTRL_ON,
                 )
             ownerView.dispatchKeyEvent(ctrlPressed)
         }
@@ -237,7 +245,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_DOWN,
                     KeyEvent.KEYCODE_ALT_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON or KeyEvent.META_ALT_ON
+                    KeyEvent.META_CTRL_ON or KeyEvent.META_ALT_ON,
                 )
             ownerView.dispatchKeyEvent(altAndCtrlPressed)
         }
@@ -254,7 +262,7 @@ class WindowInfoCompositionLocalTest {
                     KeyEvent.ACTION_UP,
                     KeyEvent.KEYCODE_ALT_LEFT,
                     0,
-                    KeyEvent.META_CTRL_ON
+                    KeyEvent.META_CTRL_ON,
                 )
             ownerView.dispatchKeyEvent(altUnpressed)
         }
@@ -269,5 +277,86 @@ class WindowInfoCompositionLocalTest {
 
         rule.waitForIdle()
         assertThat(keyModifiers.packedValue).isEqualTo(0)
+    }
+
+    @Test
+    fun windowInfo_containerSize() {
+        // Arrange.
+        var containerSize = IntSize.Zero
+        var recompositions = 0
+        rule.setContent {
+            BasicText("Main Window")
+            val windowInfo = LocalWindowInfo.current
+            containerSize = windowInfo.containerSize
+            recompositions++
+        }
+
+        // Act.
+        rule.waitForIdle()
+
+        val expectedWindowSize =
+            WindowMetricsCalculator.getOrCreate()
+                .computeCurrentWindowMetrics(rule.activity)
+                .bounds
+                .toComposeIntRect()
+                .size
+
+        // Assert.
+        assertThat(containerSize).isEqualTo(expectedWindowSize)
+        assertThat(recompositions).isEqualTo(1)
+    }
+
+    // Regression test for b/360343819
+    @Test
+    fun windowInfo_containerSize_viewCreatedWithApplicationContext() {
+        // Arrange.
+        var containerSize = IntSize.Zero
+        var drawCount = 0
+        var recompositions = 0
+        val activity = rule.activity
+
+        rule.runOnUiThread {
+            val composeView =
+                ComposeView(activity.applicationContext).apply {
+                    setContent {
+                        BasicText("Main Window", Modifier.drawBehind { drawCount++ })
+                        val windowInfo = LocalWindowInfo.current
+                        containerSize = windowInfo.containerSize
+                        recompositions++
+                    }
+                }
+
+            val frameLayout = FrameLayout(activity).apply { addView(composeView) }
+
+            rule.activity.setContentView(frameLayout)
+        }
+
+        rule.waitUntil { drawCount == 1 }
+
+        val expectedWindowSize =
+            WindowMetricsCalculator.getOrCreate()
+                .computeCurrentWindowMetrics(activity)
+                .bounds
+                .toComposeIntRect()
+
+        // For applicationContext we cannot accurately calculate window size (there will be
+        // differences
+        // in terms of including / excluding some insets), so just roughly assert we are in the
+        // correct range
+        val widthRange =
+            Range.closed(
+                (expectedWindowSize.width * 0.8).roundToInt(),
+                (expectedWindowSize.width * 1.2).roundToInt(),
+            )
+        val heightRange =
+            Range.closed(
+                (expectedWindowSize.height * 0.8).roundToInt(),
+                (expectedWindowSize.height * 1.2).roundToInt(),
+            )
+
+        // Assert.
+        assertThat(containerSize.width).isIn(widthRange)
+        assertThat(containerSize.height).isIn(heightRange)
+        assertThat(recompositions).isEqualTo(1)
     }
 }

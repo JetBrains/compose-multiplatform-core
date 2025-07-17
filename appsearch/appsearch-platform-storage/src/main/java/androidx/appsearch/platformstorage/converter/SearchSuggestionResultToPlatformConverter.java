@@ -18,11 +18,12 @@ package androidx.appsearch.platformstorage.converter;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.SearchSuggestionResult;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,8 +39,7 @@ public class SearchSuggestionResultToPlatformConverter {
     private SearchSuggestionResultToPlatformConverter() {}
 
     /** Translates from Platform to Jetpack versions of {@linkSearchSuggestionResult}   */
-    @NonNull
-    public static List<SearchSuggestionResult> toJetpackSearchSuggestionResults(
+    public static @NonNull List<SearchSuggestionResult> toJetpackSearchSuggestionResults(
             @NonNull List<android.app.appsearch.SearchSuggestionResult>
                     platformSearchSuggestionResults) {
         Preconditions.checkNotNull(platformSearchSuggestionResults);

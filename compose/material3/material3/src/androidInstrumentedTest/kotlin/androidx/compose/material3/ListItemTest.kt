@@ -91,7 +91,7 @@ class ListItemTest {
             .setMaterialContentForSizeAssertions {
                 ListItem(
                     headlineContent = { Text("Primary text") },
-                    leadingContent = { Icon(icon24x24, null) }
+                    leadingContent = { Icon(icon24x24, null) },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightSmallIcon)
@@ -105,7 +105,7 @@ class ListItemTest {
             .setMaterialContentForSizeAssertions {
                 ListItem(
                     headlineContent = { Text("Primary text") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightNoIcon)
@@ -121,7 +121,7 @@ class ListItemTest {
                 ListItem(
                     headlineContent = { Text("Primary text") },
                     supportingContent = { Text("Secondary text") },
-                    leadingContent = { Icon(icon24x24, null) }
+                    leadingContent = { Icon(icon24x24, null) },
                 )
             }
             .assertHeightIsEqualTo(expectedHeightWithIcon)
@@ -136,7 +136,7 @@ class ListItemTest {
                 ListItem(
                     overlineContent = { Text("OVERLINE") },
                     headlineContent = { Text("Primary text") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
             }
             .assertHeightIsEqualTo(expectedHeight)
@@ -235,10 +235,7 @@ class ListItemTest {
                     modifier = Modifier.fillMaxHeight().testTag(ListTag),
                     headlineContent = { Text("Primary text") },
                     supportingContent = {
-                        Text(
-                            "Very very very very very very long supporting text " +
-                                "which will span at least two lines"
-                        )
+                        Text("Long supporting text\nwhich will span at least two lines")
                     },
                     leadingContent = { Box(Modifier.fillMaxHeight().testTag(LeadingTag)) },
                     trailingContent = { Box(Modifier.fillMaxHeight().testTag(TrailingTag)) },
@@ -282,7 +279,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -304,6 +301,24 @@ class ListItemTest {
     }
 
     @Test
+    fun listItem_threeLine_overlineAndSupporting_constraintsDoNotCrash() {
+        rule.setMaterialContent(lightColorScheme()) {
+            ListItem(
+                // Extremely small width to test limits of constraints arithmetic
+                modifier = Modifier.width(10.dp),
+                headlineContent = { Text(".") },
+                overlineContent = { Text(".") },
+                supportingContent = { Text("Supporting") },
+                leadingContent = { Icon(icon24x24, null) },
+                trailingContent = { Icon(icon24x24, null) },
+            )
+        }
+
+        rule.waitForIdle()
+        // should not have crashed
+    }
+
+    @Test
     fun listItem_oneLine_positioning_withIcon() {
         val listItemHeight = ListTokens.ListItemOneLineContainerHeight
         val expectedStartPadding = ListItemStartPadding
@@ -321,7 +336,7 @@ class ListItemTest {
                     },
                     leadingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(iconPosition, iconSize))
-                    }
+                    },
                 )
             }
         }
@@ -368,12 +383,12 @@ class ListItemTest {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -423,12 +438,12 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     trailingContent = {
                         Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -476,12 +491,12 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(iconPosition, iconSize))
-                    }
+                    },
                 )
             }
         }
@@ -542,19 +557,19 @@ class ListItemTest {
                 supportingContent = {
                     Text(
                         "Secondary text",
-                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                     )
                 },
                 leadingContent = {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -619,9 +634,8 @@ class ListItemTest {
                     },
                     supportingContent = {
                         Text(
-                            "Very very very very very very long supporting text " +
-                                "which will span at least two lines",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            "Long supporting text\nwhich will span at least two lines",
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
@@ -629,7 +643,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Image(icon24x24, null, Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -688,7 +702,7 @@ class ListItemTest {
                     overlineContent = {
                         Text(
                             "OVERLINE",
-                            Modifier.saveLayout(overlineTextPosition, overlineTextSize)
+                            Modifier.saveLayout(overlineTextPosition, overlineTextSize),
                         )
                     },
                     headlineContent = {
@@ -697,7 +711,7 @@ class ListItemTest {
                     supportingContent = {
                         Text(
                             "Secondary text",
-                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                            Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                         )
                     },
                     leadingContent = {
@@ -705,7 +719,7 @@ class ListItemTest {
                     },
                     trailingContent = {
                         Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                    }
+                    },
                 )
             }
         }
@@ -788,19 +802,19 @@ class ListItemTest {
                 supportingContent = {
                     Text(
                         "Secondary text",
-                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize)
+                        Modifier.saveLayout(secondaryTextPosition, secondaryTextSize),
                     )
                 },
                 leadingContent = {
                     Image(
                         icon24x24,
                         null,
-                        Modifier.saveLayout(leadingIconPosition, leadingIconSize)
+                        Modifier.saveLayout(leadingIconPosition, leadingIconSize),
                     )
                 },
                 trailingContent = {
                     Text("meta", Modifier.saveLayout(trailingPosition, trailingSize))
-                }
+                },
             )
         }
         rule.runOnIdleWithDensity {
@@ -851,11 +865,9 @@ class ListItemTest {
 
     private fun Dp.toIntPx() = (this.value * rule.density.density).roundToInt()
 
-    private fun Modifier.saveLayout(
-        coords: Ref<Offset>,
-        size: Ref<IntSize>,
-    ): Modifier = onGloballyPositioned { coordinates: LayoutCoordinates ->
-        coords.value = coordinates.positionInRoot()
-        size.value = coordinates.size
-    }
+    private fun Modifier.saveLayout(coords: Ref<Offset>, size: Ref<IntSize>): Modifier =
+        onGloballyPositioned { coordinates: LayoutCoordinates ->
+            coords.value = coordinates.positionInRoot()
+            size.value = coordinates.size
+        }
 }

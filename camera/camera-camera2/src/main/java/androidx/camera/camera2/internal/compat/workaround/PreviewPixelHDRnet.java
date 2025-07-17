@@ -20,13 +20,14 @@ import android.hardware.camera2.CaptureRequest;
 import android.util.Rational;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.PreviewPixelHDRnetQuirk;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.impl.SessionConfig;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Workaround that handles turning on the WYSIWYG preview on Pixel devices.
@@ -46,7 +47,7 @@ public class PreviewPixelHDRnet {
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     public static void setHDRnet(
             @NonNull Size resolution,
-            @NonNull SessionConfig.Builder sessionBuilder) {
+            SessionConfig.@NonNull Builder sessionBuilder) {
         final PreviewPixelHDRnetQuirk quirk = DeviceQuirks.get(PreviewPixelHDRnetQuirk.class);
         if (quirk == null) {
             return;

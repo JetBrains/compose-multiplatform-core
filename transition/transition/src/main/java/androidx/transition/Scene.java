@@ -23,8 +23,9 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A scene represents the collection of values that various properties in the
@@ -56,9 +57,8 @@ public class Scene {
      *                  the layout resource.
      * @return The scene for the given root and layout id
      */
-    @NonNull
-    public static Scene getSceneForLayout(@NonNull ViewGroup sceneRoot, @LayoutRes int layoutId,
-            @NonNull Context context) {
+    public static @NonNull Scene getSceneForLayout(@NonNull ViewGroup sceneRoot,
+            @LayoutRes int layoutId, @NonNull Context context) {
         @SuppressWarnings("unchecked")
         SparseArray<Scene> scenes =
                 (SparseArray<Scene>) sceneRoot.getTag(R.id.transition_scene_layoutid_cache);
@@ -133,8 +133,7 @@ public class Scene {
      *
      * @return The root of the view hierarchy affected by this scene.
      */
-    @NonNull
-    public ViewGroup getSceneRoot() {
+    public @NonNull ViewGroup getSceneRoot() {
         return mSceneRoot;
     }
 
@@ -204,8 +203,7 @@ public class Scene {
      * @return The current Scene set on this ViewGroup. A value of null indicates that
      * no Scene is currently set.
      */
-    @Nullable
-    public static Scene getCurrentScene(@NonNull ViewGroup sceneRoot) {
+    public static @Nullable Scene getCurrentScene(@NonNull ViewGroup sceneRoot) {
         return (Scene) sceneRoot.getTag(R.id.transition_current_scene);
     }
 

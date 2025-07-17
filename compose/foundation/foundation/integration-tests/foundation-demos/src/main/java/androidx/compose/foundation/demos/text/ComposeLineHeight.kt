@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.demos.text
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,7 @@ fun TextLineHeightDemo() {
         val lineHeightStyleEnabled = remember { mutableStateOf(false) }
         var lineHeightAlignment = remember { mutableStateOf(LineHeightStyle.Default.alignment) }
         var lineHeightTrim = remember { mutableStateOf(LineHeightStyle.Default.trim) }
+        var lineHeightMode = remember { mutableStateOf(LineHeightStyle.Default.mode) }
         val includeFontPadding = remember { mutableStateOf(false) }
         val applyMaxLines = remember { mutableStateOf(false) }
         val ellipsize = remember { mutableStateOf(false) }
@@ -93,7 +95,8 @@ fun TextLineHeightDemo() {
             LineHeightStyleConfiguration(
                 lineHeightStyleEnabled,
                 lineHeightTrim,
-                lineHeightAlignment
+                lineHeightAlignment,
+                lineHeightMode,
             )
             Spacer(Modifier.padding(16.dp))
             TextWithLineHeight(
@@ -103,7 +106,8 @@ fun TextLineHeightDemo() {
                 if (lineHeightStyleEnabled.value) {
                     LineHeightStyle(
                         alignment = lineHeightAlignment.value,
-                        trim = lineHeightTrim.value
+                        trim = lineHeightTrim.value,
+                        mode = lineHeightMode.value,
                     )
                 } else null,
                 includeFontPadding.value,
@@ -111,7 +115,7 @@ fun TextLineHeightDemo() {
                 ellipsize.value,
                 useSizedSpan.value,
                 singleLine.value,
-                useTallScript.value
+                useTallScript.value,
             )
         }
     }
@@ -121,19 +125,19 @@ fun TextLineHeightDemo() {
 private fun LineHeightConfiguration(
     lineHeightSp: MutableState<Float>,
     lineHeightEm: MutableState<Float>,
-    lineHeightEnabled: MutableState<Boolean>
+    lineHeightEnabled: MutableState<Boolean>,
 ) {
     Column {
         val density = LocalDensity.current
         val lineHeightInPx = with(density) { lineHeightSp.value.sp.toPx() }
         Text(
             "Line height: ${lineHeightSp.value.format()}.sp [$lineHeightInPx px, $density]",
-            style = HintStyle
+            style = HintStyle,
         )
         Row {
             Checkbox(
                 checked = lineHeightEnabled.value,
-                onCheckedChange = { lineHeightEnabled.value = it }
+                onCheckedChange = { lineHeightEnabled.value = it },
             )
             SnappingSlider(
                 value = lineHeightSp.value,
@@ -143,7 +147,7 @@ private fun LineHeightConfiguration(
                     lineHeightEnabled.value = true
                 },
                 steps = 11,
-                valueRange = 0f..120f
+                valueRange = 0f..120f,
             )
         }
 
@@ -151,12 +155,12 @@ private fun LineHeightConfiguration(
         val lineHeightEmInPx = lineHeightEm.value * fontSizeInPx
         Text(
             "Line height: ${lineHeightEm.value.format()}.em [$lineHeightEmInPx px]",
-            style = HintStyle
+            style = HintStyle,
         )
         Row {
             Checkbox(
                 checked = lineHeightEnabled.value,
-                onCheckedChange = { lineHeightEnabled.value = it }
+                onCheckedChange = { lineHeightEnabled.value = it },
             )
             SnappingSlider(
                 value = lineHeightEm.value,
@@ -166,7 +170,7 @@ private fun LineHeightConfiguration(
                     lineHeightEnabled.value = true
                 },
                 steps = 5,
-                valueRange = 0f..3f
+                valueRange = 0f..3f,
             )
         }
     }
@@ -176,19 +180,21 @@ private fun LineHeightConfiguration(
 private fun LineHeightStyleConfiguration(
     lineHeightStyleEnabled: MutableState<Boolean>,
     lineHeightTrim: MutableState<Trim>,
-    lineHeightAlignment: MutableState<LineHeightStyle.Alignment>
+    lineHeightAlignment: MutableState<LineHeightStyle.Alignment>,
+    lineHeightMode: MutableState<LineHeightStyle.Mode>,
 ) {
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = lineHeightStyleEnabled.value,
-                onCheckedChange = { lineHeightStyleEnabled.value = it }
+                onCheckedChange = { lineHeightStyleEnabled.value = it },
             )
             Text("LineHeightStyle", style = HintStyle)
         }
         Column(Modifier.padding(horizontal = 16.dp)) {
             LineHeightTrimOptions(lineHeightTrim, lineHeightStyleEnabled.value)
             LineHeightAlignmentOptions(lineHeightAlignment, lineHeightStyleEnabled.value)
+            LineHeightModeOptions(lineHeightMode, lineHeightStyleEnabled.value)
         }
     }
 }
@@ -196,14 +202,14 @@ private fun LineHeightStyleConfiguration(
 @Composable
 private fun LineHeightAlignmentOptions(
     lineHeightAlignment: MutableState<LineHeightStyle.Alignment>,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     val options =
         listOf(
             LineHeightStyle.Alignment.Proportional,
             LineHeightStyle.Alignment.Top,
             LineHeightStyle.Alignment.Center,
-            LineHeightStyle.Alignment.Bottom
+            LineHeightStyle.Alignment.Bottom,
         )
 
     Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
@@ -215,14 +221,14 @@ private fun LineHeightAlignmentOptions(
                         selected = (option == lineHeightAlignment.value),
                         onClick = { lineHeightAlignment.value = option },
                         role = Role.RadioButton,
-                        enabled = enabled
+                        enabled = enabled,
                     ),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(
                     selected = (option == lineHeightAlignment.value),
                     onClick = null,
-                    enabled = enabled
+                    enabled = enabled,
                 )
                 Text(text = option.toString().split(".").last(), style = HintStyle)
             }
@@ -243,14 +249,48 @@ private fun LineHeightTrimOptions(lineHeightTrim: MutableState<Trim>, enabled: B
                         selected = (option == lineHeightTrim.value),
                         onClick = { lineHeightTrim.value = option },
                         role = Role.RadioButton,
-                        enabled = enabled
+                        enabled = enabled,
                     ),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(
                     selected = (option == lineHeightTrim.value),
                     onClick = null,
-                    enabled = enabled
+                    enabled = enabled,
+                )
+                Text(text = option.toString().split(".").last(), style = HintStyle)
+            }
+        }
+    }
+}
+
+@Composable
+private fun LineHeightModeOptions(
+    lineHeightMode: MutableState<LineHeightStyle.Mode>,
+    enabled: Boolean,
+) {
+    // Unable to use IntArray because of private value class ctor/accessors.
+    @SuppressLint("PrimitiveInCollection")
+    val options =
+        listOf(LineHeightStyle.Mode.Fixed, LineHeightStyle.Mode.Minimum, LineHeightStyle.Mode.Tight)
+
+    Row(modifier = Modifier.selectableGroup(), verticalAlignment = Alignment.CenterVertically) {
+        Text(text = "mode:", style = HintStyle)
+        options.forEach { option ->
+            Row(
+                Modifier.height(56.dp)
+                    .selectable(
+                        selected = (option == lineHeightMode.value),
+                        onClick = { lineHeightMode.value = option },
+                        role = Role.RadioButton,
+                        enabled = enabled,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RadioButton(
+                    selected = (option == lineHeightMode.value),
+                    onClick = null,
+                    enabled = enabled,
                 )
                 Text(text = option.toString().split(".").last(), style = HintStyle)
             }
@@ -262,7 +302,7 @@ private fun LineHeightTrimOptions(lineHeightTrim: MutableState<Trim>, enabled: B
 private fun StringConfiguration(
     useSizeSpan: MutableState<Boolean>,
     singleLine: MutableState<Boolean>,
-    useTallScript: MutableState<Boolean>
+    useTallScript: MutableState<Boolean>,
 ) {
     Column(Modifier.horizontalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -286,7 +326,7 @@ private fun FontPaddingAndMaxLinesConfiguration(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = includeFontPadding.value,
-                onCheckedChange = { includeFontPadding.value = it }
+                onCheckedChange = { includeFontPadding.value = it },
             )
             Text("IncludeFontPadding", style = HintStyle)
             Checkbox(checked = applyMaxLines.value, onCheckedChange = { applyMaxLines.value = it })
@@ -305,7 +345,7 @@ private fun SnappingSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     snap: Boolean = true,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     var lastValue by remember(value) { mutableFloatStateOf(value) }
     val increment = valueRange.endInclusive / (steps + 1).toFloat()
@@ -324,7 +364,7 @@ private fun SnappingSlider(
         onValueChange = onValueChange,
         valueRange = valueRange,
         steps = steps,
-        enabled = enabled
+        enabled = enabled,
     )
 }
 
@@ -340,7 +380,7 @@ private fun TextWithLineHeight(
     ellipsize: Boolean,
     useSizeSpan: Boolean,
     singleLine: Boolean,
-    useTallScript: Boolean
+    useTallScript: Boolean,
 ) {
     val width = with(LocalDensity.current) { (FontSize.toPx() * 5).toDp() }
 
@@ -387,7 +427,7 @@ private fun TextWithLineHeight(
                 } else {
                     TextUnit.Unspecified
                 },
-            platformStyle = PlatformTextStyle(includeFontPadding = includeFontPadding)
+            platformStyle = PlatformTextStyle(includeFontPadding = includeFontPadding),
         )
 
     val overflow = if (ellipsize) TextOverflow.Ellipsis else TextOverflow.Clip
@@ -398,7 +438,7 @@ private fun TextWithLineHeight(
                 style = style,
                 maxLines = maxLines,
                 overflow = overflow,
-                softWrap = !singleLine
+                softWrap = !singleLine,
             )
         }
         Spacer(Modifier.padding(16.dp))
@@ -411,7 +451,7 @@ private fun TextWithLineHeight(
                 onValueChange = { textFieldValue = it },
                 style = style,
                 maxLines = maxLines,
-                softWrap = !singleLine
+                softWrap = !singleLine,
             )
         }
         Spacer(Modifier.padding(16.dp))

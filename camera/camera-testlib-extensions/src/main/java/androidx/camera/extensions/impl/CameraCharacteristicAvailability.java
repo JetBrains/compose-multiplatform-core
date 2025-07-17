@@ -19,7 +19,7 @@ package androidx.camera.extensions.impl;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 

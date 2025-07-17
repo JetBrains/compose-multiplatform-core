@@ -31,9 +31,10 @@ import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -82,9 +83,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return CameraCharacteristicAvailability.isEffectAvailable(cameraCharacteristics, EFFECT);
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         // Placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(DEFAULT_STAGE_ID);
         captureStage.addCaptureRequestParameters(CaptureRequest.CONTROL_EFFECT_MODE, EFFECT);
@@ -93,9 +93,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return captureStages;
     }
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             mCaptureProcessor = new BokehImageCaptureExtenderCaptureProcessorImpl();
             return mCaptureProcessor;
@@ -118,9 +117,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         }
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         // The CaptureRequest parameters will be set via SessionConfiguration#setSessionParameters
         // (CaptureRequest) which only supported from API level 28.
         if (Build.VERSION.SDK_INT < 28) {
@@ -135,9 +133,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -146,9 +143,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -162,15 +158,13 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return 3;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
         return new Range<>(300L, 1000L);
     }
 
@@ -179,9 +173,9 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return SessionConfiguration.SESSION_REGULAR;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         return null;
     }
 
@@ -190,9 +184,8 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         return false;
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         return null;
     }
 
@@ -336,15 +329,13 @@ public final class BokehImageCaptureExtenderImpl implements ImageCaptureExtender
         }
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         return null;
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         // return a non-empty list here to indicate that ProcessResultImpl#onCaptureCompleted will
         // be invoked.
         return Arrays.asList(CaptureResult.SENSOR_TIMESTAMP);

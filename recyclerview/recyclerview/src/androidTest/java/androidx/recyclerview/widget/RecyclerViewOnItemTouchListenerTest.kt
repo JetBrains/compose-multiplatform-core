@@ -116,7 +116,7 @@ class RecyclerViewOnItemTouchListenerTest {
                     ActionDown to true,
                     ActionDown to false,
                     ActionMove1 to false,
-                    ActionUp to false
+                    ActionUp to false,
                 )
             )
     }
@@ -129,6 +129,18 @@ class RecyclerViewOnItemTouchListenerTest {
     @Test
     fun listenerInterceptsMove_rvChildClicks_correctListenerCalls() {
         listenerInterceptsMove_correctListenerCalls(true)
+    }
+
+    @Test
+    fun listenerInterceptsMove_rvChildClicks_correctListenerCallsAndSendsCancel() {
+        val actionCancelFromMove1 = MotionEventItem(100, ACTION_CANCEL, 500f, 400f)
+        val secondOnItemTouchListener = MyOnItemTouchListener()
+        recyclerView.addOnItemTouchListener(secondOnItemTouchListener)
+
+        listenerInterceptsMove_correctListenerCalls(true)
+
+        assertThat(secondOnItemTouchListener.motionEventItems)
+            .isEqualTo(listOf(ActionDown to true, actionCancelFromMove1 to true))
     }
 
     private fun listenerInterceptsMove_correctListenerCalls(childClickable: Boolean) {
@@ -146,7 +158,7 @@ class RecyclerViewOnItemTouchListenerTest {
                     ActionDown to true,
                     ActionMove1 to true,
                     ActionMove2 to false,
-                    ActionUp to false
+                    ActionUp to false,
                 )
             )
     }
@@ -203,7 +215,7 @@ class RecyclerViewOnItemTouchListenerTest {
                     ActionDown to true,
                     ActionMove1 to true,
                     ActionMove2 to false,
-                    ActionMove3.toCancelledVersion() to false
+                    ActionMove3.toCancelledVersion() to false,
                 )
             )
     }
@@ -262,7 +274,7 @@ private class MyView : View {
     constructor(
         context: Context?,
         attrs: AttributeSet?,
-        defStyleAttr: Int
+        defStyleAttr: Int,
     ) : super(context, attrs, defStyleAttr)
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

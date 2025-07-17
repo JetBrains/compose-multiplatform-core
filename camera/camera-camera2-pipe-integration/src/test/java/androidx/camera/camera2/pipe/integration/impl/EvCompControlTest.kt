@@ -27,7 +27,7 @@ import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.EvCompImpl
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
-import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCamera
+import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
@@ -58,18 +58,14 @@ class EvCompControlTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(
-            cameraScope,
-            executor,
-            dispatcher,
-        )
+        UseCaseThreads(cameraScope, executor, dispatcher)
     }
     private val metadata =
         FakeCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_COMPENSATION_RANGE to Range.create(-4, 4),
                 CameraCharacteristics.CONTROL_AE_COMPENSATION_STEP to Rational.parseRational("1/2"),
-            ),
+            )
         )
     private val comboRequestListener = ComboRequestListener()
     private lateinit var exposureControl: EvCompControl
@@ -80,7 +76,7 @@ class EvCompControlTest {
             EvCompControl(
                 EvCompImpl(FakeCameraProperties(metadata), fakeUseCaseThreads, comboRequestListener)
             )
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
     }
 
     @Test
@@ -112,7 +108,7 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(1)
 
         // Act. Simulate control inactive by set useCaseCamera to null & call reset().
-        exposureControl.useCaseCamera = null
+        exposureControl.requestControl = null
         exposureControl.reset()
 
         // Assert. The exposure control has been set to inactive. It should throw an exception.
@@ -133,10 +129,10 @@ class EvCompControlTest {
                 // Fake CameraProperties without CONTROL_AE_COMPENSATION related properties.
                 FakeCameraProperties(),
                 fakeUseCaseThreads,
-                comboRequestListener
+                comboRequestListener,
             )
         exposureControl = EvCompControl(evCompCompat)
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
 
         // Act.
         val deferred = exposureControl.updateAsync(1)
@@ -151,7 +147,7 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(targetEv)
 
         // Act. Simulate the UseCaseCamera is recreated.
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
         comboRequestListener.simulateAeConverge(exposureValue = targetEv)
 
         // Assert. The setEV task should be completed.
@@ -164,7 +160,7 @@ class EvCompControlTest {
         val deferred = exposureControl.updateAsync(1)
 
         // Act. Simulate the UseCaseCamera is recreated,
-        exposureControl.useCaseCamera = FakeUseCaseCamera()
+        exposureControl.requestControl = FakeUseCaseCameraRequestControl()
         // Act. Submits a new EV value.
         val deferred2 = exposureControl.updateAsync(targetEv)
         comboRequestListener.simulateAeConverge(exposureValue = targetEv)
@@ -187,7 +183,7 @@ class EvCompControlTest {
             FakeRequestMetadata(
                 requestParameters =
                     mapOf(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION to exposureValue),
-                requestNumber = RequestNumber(1)
+                requestNumber = RequestNumber(1),
             )
         val resultMetaData =
             FakeFrameMetadata(
@@ -202,10 +198,7 @@ class EvCompControlTest {
             onComplete(
                 requestMetadata,
                 frameNumber,
-                FakeFrameInfo(
-                    metadata = resultMetaData,
-                    requestMetadata = requestMetadata,
-                )
+                FakeFrameInfo(metadata = resultMetaData, requestMetadata = requestMetadata),
             )
         }
     }

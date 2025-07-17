@@ -19,12 +19,14 @@ package androidx.compose.ui.platform
 import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +36,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.res.ImageVectorCache
 import androidx.compose.ui.res.ResourceIdCache
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
  * The Android [Configuration]. The [Configuration] is useful for determining how to organize the
@@ -48,25 +50,44 @@ val LocalConfiguration =
 /** Provides a [Context] that can be used by Android applications. */
 val LocalContext = staticCompositionLocalOf<Context> { noLocalProvidedFor("LocalContext") }
 
+/**
+ * The Android [Resources]. This will be updated when [LocalConfiguration] changes, to ensure that
+ * calls to APIs such as [Resources.getString] return updated values.
+ */
+val LocalResources =
+    compositionLocalWithComputedDefaultOf<Resources> {
+        // Read LocalConfiguration here to invalidate callers of LocalResources when the
+        // configuration changes. This is preferable to explicitly providing the resources object
+        // because the resources object can still have the same instance, even though the
+        // configuration changed, which would mean that callers would not get invalidated. To
+        // resolve that we would need to use neverEqualPolicy to force an invalidation even though
+        // the Resources didn't change, but then that would cause invalidations every time the
+        // providing Composable is recomposed, regardless of whether a configuration change happened
+        // or not.
+        LocalConfiguration.currentValue
+        LocalContext.currentValue.resources
+    }
+
 internal val LocalImageVectorCache =
     staticCompositionLocalOf<ImageVectorCache> { noLocalProvidedFor("LocalImageVectorCache") }
 
 internal val LocalResourceIdCache =
     staticCompositionLocalOf<ResourceIdCache> { noLocalProvidedFor("LocalResourceIdCache") }
 
-/** The CompositionLocal containing the current [LifecycleOwner]. */
 @Deprecated(
     "Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.",
     ReplaceWith("androidx.lifecycle.compose.LocalLifecycleOwner"),
 )
-val LocalLifecycleOwner
+actual val LocalLifecycleOwner
     get() = LocalLifecycleOwner
 
 /** The CompositionLocal containing the current [SavedStateRegistryOwner]. */
-val LocalSavedStateRegistryOwner =
-    staticCompositionLocalOf<SavedStateRegistryOwner> {
-        noLocalProvidedFor("LocalSavedStateRegistryOwner")
-    }
+@Deprecated(
+    "Moved to savedstate-compose library in androidx.savedstate.compose package.",
+    ReplaceWith("androidx.savedstate.compose.LocalSavedStateRegistryOwner"),
+)
+val LocalSavedStateRegistryOwner
+    get() = LocalSavedStateRegistryOwner
 
 /** The CompositionLocal containing the current Compose [View]. */
 val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView") }
@@ -75,7 +96,7 @@ val LocalView = staticCompositionLocalOf<View> { noLocalProvidedFor("LocalView")
 @OptIn(ExperimentalComposeUiApi::class)
 internal fun ProvideAndroidCompositionLocals(
     owner: AndroidComposeView,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = owner
     val context = view.context
@@ -97,6 +118,14 @@ internal fun ProvideAndroidCompositionLocals(
     }
     DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
 
+    val hapticFeedback = remember {
+        if (HapticDefaults.isPremiumVibratorEnabled(context)) {
+            DefaultHapticFeedback(owner.view)
+        } else {
+            NoHapticFeedback()
+        }
+    }
+
     val imageVectorCache = obtainImageVectorCache(context, configuration)
     val resourceIdCache = obtainResourceIdCache(context)
     val scrollCaptureInProgress =
@@ -111,6 +140,7 @@ internal fun ProvideAndroidCompositionLocals(
         LocalImageVectorCache provides imageVectorCache,
         LocalResourceIdCache provides resourceIdCache,
         LocalProvidableScrollCaptureInProgress provides scrollCaptureInProgress,
+        LocalHapticFeedback provides hapticFeedback,
     ) {
         ProvideCommonCompositionLocals(owner = owner, uriHandler = uriHandler, content = content)
     }
@@ -126,6 +156,7 @@ private fun obtainResourceIdCache(context: Context): ResourceIdCache {
                 resourceIdCache.clear()
             }
 
+            @Deprecated("This callback is superseded by onTrimMemory")
             override fun onLowMemory() {
                 resourceIdCache.clear()
             }
@@ -146,7 +177,7 @@ private fun obtainResourceIdCache(context: Context): ResourceIdCache {
 @Composable
 private fun obtainImageVectorCache(
     context: Context,
-    configuration: Configuration?
+    configuration: Configuration?,
 ): ImageVectorCache {
     val imageVectorCache = remember { ImageVectorCache() }
     val currentConfiguration: Configuration = remember {
@@ -160,6 +191,7 @@ private fun obtainImageVectorCache(
                 currentConfiguration.setTo(configuration)
             }
 
+            @Deprecated("This callback is superseded by onTrimMemory")
             override fun onLowMemory() {
                 imageVectorCache.clear()
             }

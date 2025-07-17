@@ -18,10 +18,11 @@ package androidx.work.integration.testapp.sherlockholmes;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import androidx.work.integration.testapp.db.TestDatabase;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Worker that deletes the final results file.

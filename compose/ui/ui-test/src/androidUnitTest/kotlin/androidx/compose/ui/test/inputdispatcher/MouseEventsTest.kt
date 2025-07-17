@@ -34,7 +34,6 @@ import android.view.MotionEvent.BUTTON_TERTIARY
 import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.AndroidInputDispatcher
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InputDispatcher.Companion.eventPeriodMillis
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.RobolectricMinSdk
@@ -46,6 +45,7 @@ import androidx.compose.ui.test.util.verifyTouchPointer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.collections.removeFirst as removeFirstKt
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -53,7 +53,6 @@ import org.robolectric.annotation.Config
 /** Tests if [AndroidInputDispatcher.enqueueMousePress] and friends work. */
 @RunWith(AndroidJUnit4::class)
 @Config(minSdk = RobolectricMinSdk)
-@OptIn(ExperimentalTestApi::class)
 class MouseEventsTest : InputDispatcherTest() {
     companion object {
         // Positions
@@ -817,6 +816,6 @@ class MouseEventsTest : InputDispatcherTest() {
     }
 
     private fun <E> MutableList<E>.removeFirst(n: Int): List<E> {
-        return mutableListOf<E>().also { result -> repeat(n) { result.add(removeFirst()) } }
+        return mutableListOf<E>().also { result -> repeat(n) { result.add(removeFirstKt()) } }
     }
 }

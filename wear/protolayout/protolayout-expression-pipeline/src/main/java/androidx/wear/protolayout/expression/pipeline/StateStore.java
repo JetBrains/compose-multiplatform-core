@@ -20,8 +20,6 @@ import static java.util.stream.Collectors.toMap;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.collection.ArrayMap;
@@ -30,6 +28,9 @@ import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicDataBuilders;
 import androidx.wear.protolayout.expression.DynamicDataKey;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.Map;
@@ -50,12 +51,11 @@ public final class StateStore extends DataStore {
 
     private static final String TAG = "ProtoLayoutStateStore";
 
-    @NonNull private final Map<AppDataKey<?>, DynamicDataValue> mCurrentAppState
+    private final @NonNull Map<AppDataKey<?>, DynamicDataValue> mCurrentAppState
             = new ArrayMap<>();
 
-    @NonNull
     private final
-    Map<DynamicDataKey<?>,
+            @NonNull Map<DynamicDataKey<?>,
             Set<DynamicTypeValueReceiverWithPreUpdate<DynamicDataValue>>>
             mRegisteredCallbacks = new ArrayMap<>();
 
@@ -65,8 +65,7 @@ public final class StateStore extends DataStore {
      * @throws IllegalStateException if number of initialState entries is greater than
      * {@link StateStore#getMaxStateEntryCount()}.
      */
-    @NonNull
-    public static StateStore create(
+    public static @NonNull StateStore create(
             @NonNull Map<AppDataKey<?>, DynamicDataBuilders.DynamicDataValue<?>>
                     initialState) {
         return new StateStore(toProto(initialState));
@@ -148,9 +147,8 @@ public final class StateStore extends DataStore {
     /** Gets dynamic value with the given {@code key}. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @UiThread
-    @Nullable
     @Override
-    public DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key) {
+    public @Nullable DynamicDataValue getDynamicDataValuesProto(@NonNull DynamicDataKey<?> key) {
         return mCurrentAppState.get(key);
     }
 
@@ -192,23 +190,20 @@ public final class StateStore extends DataStore {
         return MAX_STATE_ENTRY_COUNT;
     }
 
-    @NonNull
-    private static Map<AppDataKey<?>, DynamicDataValue> toProto(
+    private static @NonNull Map<AppDataKey<?>, DynamicDataValue> toProto(
             @NonNull Map<AppDataKey<?>, DynamicDataBuilders.DynamicDataValue<?>> value) {
         return value.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().toDynamicDataValueProto()));
     }
 
-    @NonNull
-    private Set<AppDataKey<?>> getRemovedAppKeys(
+    private @NonNull Set<AppDataKey<?>> getRemovedAppKeys(
             @NonNull Map<AppDataKey<?>, DynamicDataValue> newState) {
         Set<AppDataKey<?>> result = new ArraySet<>(mCurrentAppState.keySet());
         result.removeAll(newState.keySet());
         return result;
     }
 
-    @NonNull
-    private Map<AppDataKey<?>, DynamicDataValue> getChangedAppEntries(
+    private @NonNull Map<AppDataKey<?>, DynamicDataValue> getChangedAppEntries(
             @NonNull Map<AppDataKey<?>, DynamicDataValue> newState) {
         Map<AppDataKey<?>, DynamicDataValue> result = new ArrayMap<>();
         for (Entry<AppDataKey<?>, DynamicDataValue> newEntry

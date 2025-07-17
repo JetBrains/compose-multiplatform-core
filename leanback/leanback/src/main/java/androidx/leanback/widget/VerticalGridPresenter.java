@@ -19,11 +19,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
 import androidx.leanback.system.Settings;
 import androidx.leanback.transition.TransitionHelper;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A presenter that renders objects in a {@link VerticalGridView}.
@@ -88,8 +89,7 @@ public class VerticalGridPresenter extends Presenter {
             mGridView = view;
         }
 
-        @NonNull
-        public VerticalGridView getGridView() {
+        public @NonNull VerticalGridView getGridView() {
             return mGridView;
         }
     }
@@ -233,9 +233,8 @@ public class VerticalGridPresenter extends Presenter {
         return mUseFocusDimmer;
     }
 
-    @NonNull
     @Override
-    public final ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+    public final @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
         ViewHolder vh = createGridViewHolder(parent);
         vh.mInitialized = false;
         vh.mItemBridgeAdapter = new VerticalGridItemBridgeAdapter();
@@ -249,8 +248,7 @@ public class VerticalGridPresenter extends Presenter {
     /**
      * Subclass may override this to inflate a different layout.
      */
-    @NonNull
-    protected ViewHolder createGridViewHolder(@NonNull ViewGroup parent) {
+    protected @NonNull ViewHolder createGridViewHolder(@NonNull ViewGroup parent) {
         View root = LayoutInflater.from(parent.getContext()).inflate(
                 R.layout.lb_vertical_grid, parent, false);
         return new ViewHolder((VerticalGridView) root.findViewById(R.id.browse_grid));
@@ -336,13 +334,12 @@ public class VerticalGridPresenter extends Presenter {
      *
      * @return   The options to be used for shadow, overlay and rounded corner.
      */
-    @NonNull
-    protected ShadowOverlayHelper.Options createShadowOverlayOptions() {
+    protected ShadowOverlayHelper.@NonNull Options createShadowOverlayOptions() {
         return ShadowOverlayHelper.Options.DEFAULT;
     }
 
     @Override
-    public void onBindViewHolder(@NonNull Presenter.ViewHolder viewHolder, @Nullable Object item) {
+    public void onBindViewHolder(Presenter.@NonNull ViewHolder viewHolder, @Nullable Object item) {
         if (DEBUG) Log.v(TAG, "onBindViewHolder " + item);
         ViewHolder vh = (ViewHolder) viewHolder;
         vh.mItemBridgeAdapter.setAdapter((ObjectAdapter) item);
@@ -350,7 +347,7 @@ public class VerticalGridPresenter extends Presenter {
     }
 
     @Override
-    public void onUnbindViewHolder(@NonNull Presenter.ViewHolder viewHolder) {
+    public void onUnbindViewHolder(Presenter.@NonNull ViewHolder viewHolder) {
         if (DEBUG) Log.v(TAG, "onUnbindViewHolder");
         ViewHolder vh = (ViewHolder) viewHolder;
         vh.mItemBridgeAdapter.setAdapter(null);
@@ -368,8 +365,7 @@ public class VerticalGridPresenter extends Presenter {
     /**
      * Returns the item selected listener.
      */
-    @Nullable
-    public final OnItemViewSelectedListener getOnItemViewSelectedListener() {
+    public final @Nullable OnItemViewSelectedListener getOnItemViewSelectedListener() {
         return mOnItemViewSelectedListener;
     }
 
@@ -386,8 +382,7 @@ public class VerticalGridPresenter extends Presenter {
     /**
      * Returns the item clicked listener.
      */
-    @Nullable
-    public final OnItemViewClickedListener getOnItemViewClickedListener() {
+    public final @Nullable OnItemViewClickedListener getOnItemViewClickedListener() {
         return mOnItemViewClickedListener;
     }
 

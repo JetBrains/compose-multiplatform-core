@@ -28,10 +28,11 @@ import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.SimpleArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -39,7 +40,12 @@ import java.lang.reflect.InvocationTargetException;
  * The holder for callbacks that are tagged with {@link RemoteCallable}.
  * Note: This should only be referenced by generated code, there is no reason to reference this
  * otherwise.
+ *
+ * @deprecated Slice framework has been deprecated, it will not receive any updates moving
+ * forward. If you are looking for a framework that handles communication across apps,
+ * consider using {@link android.app.appsearch.AppSearchManager}.
  */
+@Deprecated
 public class CallbackHandlerRegistry {
     /**
      */
@@ -51,10 +57,9 @@ public class CallbackHandlerRegistry {
 
     /**
      */
-    @NonNull
     @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked"})
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public <T extends CallbackReceiver> T getAndResetStub(
+    public <T extends CallbackReceiver> @NonNull T getAndResetStub(
             @NonNull Class<? extends CallbackReceiver> cls,
             @NonNull Context context, @Nullable String authority) {
         ensureInitialized(cls);
@@ -198,10 +203,9 @@ public class CallbackHandlerRegistry {
      * Note: This should only be called by generated code, there is no reason to reference this
      * otherwise.
      */
-    @Nullable
     @SuppressWarnings("unchecked")
     @SuppressLint("LambdaLast")
-    public static RemoteCallback stubToRemoteCallback(@NonNull CallbackReceiver receiver,
+    public static @Nullable RemoteCallback stubToRemoteCallback(@NonNull CallbackReceiver receiver,
             @NonNull Class<? extends CallbackReceiver> cls, @NonNull Bundle args,
             @Nullable String method) {
         if (!(receiver instanceof CallbackBase)) {

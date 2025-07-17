@@ -15,7 +15,7 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Optional interface that implemented by
@@ -35,6 +35,5 @@ public interface FacetProviderAdapter {
      * @param type type of the item.
      * @return Facet provider for the type.
      */
-    @Nullable
-    FacetProvider getFacetProvider(int type);
+    @Nullable FacetProvider getFacetProvider(int type);
 }

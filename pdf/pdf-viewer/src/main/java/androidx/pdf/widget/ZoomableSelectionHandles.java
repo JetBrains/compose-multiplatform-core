@@ -16,6 +16,8 @@
 
 package androidx.pdf.widget;
 
+import android.content.Context;
+import android.content.res.Resources;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -23,12 +25,13 @@ import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.ObservableValue.ValueObserver;
 import androidx.pdf.widget.ZoomView.ZoomScroll;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Base class for selection handles on content inside a ZoomView.
@@ -40,7 +43,7 @@ import androidx.pdf.widget.ZoomView.ZoomScroll;
 @SuppressWarnings("deprecation")
 public abstract class ZoomableSelectionHandles<S> {
     private static final float SCALE_OFFSET = 0.5f;
-    private static final float HANDLE_ALPHA = 0.75f;
+    private static final float HANDLE_ALPHA = 1.0f;
     private static final float RIGHT_HANDLE_X_MARGIN = -0.25f;
     private static final float LEFT_HANDLE_X_MARGIN = -0.75f;
     protected final ZoomView mZoomView;
@@ -64,15 +67,18 @@ public abstract class ZoomableSelectionHandles<S> {
 
         this.mOnTouchListener = new HandleTouchListener();
 
-        this.mStartHandle = createHandle(handleParent, false);
-        this.mStopHandle = createHandle(handleParent, true);
+        Resources resources = handleParent.getContext().getResources();
+        String packageName = handleParent.getContext().getPackageName();
+        int startHandleId = resources.getIdentifier("start_drag_handle", "id", packageName);
+        int stopHandleId = resources.getIdentifier("stop_drag_handle", "id", packageName);
+        this.mStartHandle = createHandle(handleParent, false, startHandleId);
+        this.mStopHandle = createHandle(handleParent, true, stopHandleId);
 
         mSelectionObserverKey = createSelectionObserver();
         mZoomViewObserverKey = createZoomViewObserver();
     }
 
-    @NonNull
-    protected Object createSelectionObserver() {
+    protected @NonNull Object createSelectionObserver() {
         return mSelectionObservable.addObserver(new ValueObserver<S>() {
             @Override
             public void onChange(S oldSelection, S newSelection) {
@@ -80,16 +86,14 @@ public abstract class ZoomableSelectionHandles<S> {
                 updateHandles();
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "ZoomableSelectionHandles#selectionObserver";
             }
         });
     }
 
-    @NonNull
-    protected Object createZoomViewObserver() {
+    protected @NonNull Object createZoomViewObserver() {
         return mZoomView.zoomScroll().addObserver(new ValueObserver<ZoomScroll>() {
             @Override
             public void onChange(ZoomScroll oldValue, ZoomScroll newValue) {
@@ -98,9 +102,8 @@ public abstract class ZoomableSelectionHandles<S> {
                 }
             }
 
-            @NonNull
             @Override
-            public String toString() {
+            public @NonNull String toString() {
                 return "ZoomableSelectionHandles#zoomViewObserver";
             }
         });
@@ -128,8 +131,8 @@ public abstract class ZoomableSelectionHandles<S> {
 
     protected void showHandle(@NonNull ImageView handle, float rawX, float rawY, boolean isRight) {
         int resId = isRight
-                ? R.drawable.text_select_handle_right
-                : R.drawable.text_select_handle_left;
+                ? R.drawable.selection_drag_handle_right
+                : R.drawable.selection_drag_handle_left;
         handle.setImageResource(resId);
 
         // The sharp point of the handle is found at a particular point in the image -
@@ -161,17 +164,18 @@ public abstract class ZoomableSelectionHandles<S> {
     /**
      * Creates a new text selection handle ImageView and adds it to the parent. Returns the handle.
      */
-    @NonNull
-    protected ImageView createHandle(@NonNull ViewGroup parent, boolean isStop) {
-        ImageView handle = new ImageView(parent.getContext());
+    protected @NonNull ImageView createHandle(@NonNull ViewGroup parent, boolean isStop, int id) {
+        Context context = parent.getContext();
+        ImageView handle = new ImageView(context);
+        handle.setId(id);
         handle.setLayoutParams(
                 new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         handle.setColorFilter(
-                parent.getContext().getResources().getColor(R.color.selection_handles));
+                context.getResources().getColor(R.color.pdf_viewer_selection_handles));
         handle.setAlpha(HANDLE_ALPHA);
 
         int descId = isStop ? R.string.desc_selection_stop : R.string.desc_selection_start;
-        handle.setContentDescription(parent.getContext().getString(descId));
+        handle.setContentDescription(context.getString(descId));
         handle.setVisibility(View.GONE);
         parent.addView(handle);
         handle.setOnTouchListener(mOnTouchListener);

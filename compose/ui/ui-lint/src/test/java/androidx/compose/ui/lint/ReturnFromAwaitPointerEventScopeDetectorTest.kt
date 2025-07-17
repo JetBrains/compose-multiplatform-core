@@ -75,7 +75,7 @@ class ReturnFromAwaitPointerEventScopeDetectorTest : LintDetectorTest() {
         w6e0JsC2k7TlIeEMhTKaSSSxTmiuHwAf4nYvwRRyuENpDJrDXfL+zBwC8v68
         Hwkp+j+i70aMhHSP09vVwhe9dRVf0n+TtB8R3/k9xFzkXXzs4hPcc7GARRdL
         WN4DC3EfK3tIhxgJ8SDE7RC5EE6Iuz2xECLxLyV8urHMBgAA
-        """
+        """,
         )
 
     private val stubs =
@@ -87,6 +87,8 @@ class ReturnFromAwaitPointerEventScopeDetectorTest : LintDetectorTest() {
             UiStubs.PointerEvent,
             ForEachGestureStub,
             UiStubs.Alignment,
+            CoroutineStubs.coroutineContextTestFile,
+            CoroutineStubs.coroutineScopeTestFile,
         )
 
     @Test
@@ -106,6 +108,126 @@ class ReturnFromAwaitPointerEventScopeDetectorTest : LintDetectorTest() {
                         }
                     }
                 }
+            """
+        )
+    }
+
+    // Current way to create a handler for the pointer input type
+    @Test
+    fun awaitPointerEventScope_assignedFromContainingPointerInputEventHandler_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.input.pointer.PointerInputEventHandler
+
+                @Composable
+                fun SomeFunction() {
+                        val blockNew = PointerInputEventHandler {
+                            awaitPointerEventScope { }
+                        }
+                }
+            """
+        )
+    }
+
+    // Current way to create a handler for the pointer input type
+    @Test
+    fun awaitPointerEventScope_assignedFromContainingPointerInputEventHandlerAfter_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.input.pointer.PointerInputEventHandler
+
+                @Composable
+                fun SomeFunction() {
+                        val blockNew = PointerInputEventHandler {
+                            awaitPointerEventScope { }
+                            val something = "hello"
+                        }
+                }
+            """
+        )
+    }
+
+    // Current way to create a handler for the pointer input type with variables above
+    // awaitPointerEventScope.
+    @Test
+    fun awaitPointerEventScope_assignedFromContainingPointerInputEventHandlerVars_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.input.pointer.PointerInputEventHandler
+
+                @Composable
+                fun SomeFunction() {
+                        val blockNew = PointerInputEventHandler {
+                            var variable1 = 0
+                            var variable2 = "hello"
+                            var variable3 = 0.0
+                            var variable4 = "hello2"
+                            awaitPointerEventScope { }
+                        }
+                }
+            """
+        )
+    }
+
+    @Test
+    fun awaitPointerEventScope_assignedFromContainingLambdaMethod_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.input.pointer.PointerInputScope
+
+                @Composable
+                fun SomeFunction() {
+                        val block: suspend PointerInputScope.() -> Unit = {
+                            awaitPointerEventScope { }
+                        }
+                }
+            """
+        )
+    }
+
+    @Test
+    fun awaitPointerEventScope_inCoroutineScopeStandaloneExtensionFunction_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import androidx.compose.ui.input.pointer.PointerInputScope
+                import kotlinx.coroutines.coroutineScope
+
+                suspend fun PointerInputScope.detectMoves() = coroutineScope {
+                    awaitPointerEventScope { }
+                }
+            """
+        )
+    }
+
+    // Pointer input handler implicitly using PointerInputEventHandler for pointer input handler.
+    @Test
+    fun awaitPointerEventScope_standaloneExtensionFunction_shouldNotWarn() {
+        expectClean(
+            """
+                package test
+                import android.view.MotionEvent
+                import androidx.compose.ui.Modifier
+                import androidx.compose.ui.input.pointer.pointerInput
+
+                fun Modifier.motionEventSpy(watcher: (motionEvent: MotionEvent) -> Unit): Modifier =
+                    this.pointerInput(watcher) {
+                        interceptOutOfBoundsChildEvents = true
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                event.motionEvent?.let(watcher)
+                            }
+                        }
+                    }
             """
         )
     }

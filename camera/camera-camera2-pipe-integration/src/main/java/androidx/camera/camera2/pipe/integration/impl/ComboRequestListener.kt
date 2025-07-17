@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
+import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameMetadata
@@ -35,12 +36,15 @@ import javax.inject.Inject
  * propagate to the registered [Request.Listener]s.
  */
 @CameraScope
-class ComboRequestListener @Inject constructor() : Request.Listener {
+public class ComboRequestListener @Inject constructor() : Request.Listener {
     private val requestListeners = mutableMapOf<Request.Listener, Executor>()
 
-    @Volatile private var listeners: Map<Request.Listener, Executor> = mapOf()
+    @Volatile
+    public var listeners: Map<Request.Listener, Executor> = mapOf()
+        @VisibleForTesting get
+        private set
 
-    fun addListener(listener: Request.Listener, executor: Executor) {
+    public fun addListener(listener: Request.Listener, executor: Executor) {
         check(!listeners.contains(listener)) { "$listener was already registered!" }
         synchronized(requestListeners) {
             requestListeners[listener] = executor
@@ -48,7 +52,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
         }
     }
 
-    fun removeListener(listener: Request.Listener) {
+    public fun removeListener(listener: Request.Listener) {
         synchronized(requestListeners) {
             requestListeners.remove(listener)
             listeners = requestListeners.toMap()
@@ -64,7 +68,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onBufferLost(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        stream: StreamId
+        stream: StreamId,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute { listener.onBufferLost(requestMetadata, frameNumber, stream) }
@@ -74,7 +78,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onComplete(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        result: FrameInfo
+        result: FrameInfo,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute { listener.onComplete(requestMetadata, frameNumber, result) }
@@ -84,7 +88,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onFailed(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        requestFailure: RequestFailure
+        requestFailure: RequestFailure,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute { listener.onFailed(requestMetadata, frameNumber, requestFailure) }
@@ -94,7 +98,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onPartialCaptureResult(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        captureResult: FrameMetadata
+        captureResult: FrameMetadata,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute {
@@ -111,7 +115,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
 
     override fun onRequestSequenceCompleted(
         requestMetadata: RequestMetadata,
-        frameNumber: FrameNumber
+        frameNumber: FrameNumber,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute { listener.onRequestSequenceCompleted(requestMetadata, frameNumber) }
@@ -133,7 +137,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onStarted(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        timestamp: CameraTimestamp
+        timestamp: CameraTimestamp,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute { listener.onStarted(requestMetadata, frameNumber, timestamp) }
@@ -143,7 +147,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     override fun onTotalCaptureResult(
         requestMetadata: RequestMetadata,
         frameNumber: FrameNumber,
-        totalCaptureResult: FrameInfo
+        totalCaptureResult: FrameInfo,
     ) {
         listeners.forEach { (listener, executor) ->
             executor.execute {
@@ -153,7 +157,7 @@ class ComboRequestListener @Inject constructor() : Request.Listener {
     }
 }
 
-fun RequestMetadata.containsTag(tagKey: String, tagValue: Any): Boolean =
+public fun RequestMetadata.containsTag(tagKey: String, tagValue: Any): Boolean =
     getOrDefault(CAMERAX_TAG_BUNDLE, TagBundle.emptyBundle()).getTag(tagKey).let {
         return it == tagValue
     }

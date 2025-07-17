@@ -21,6 +21,7 @@ import android.os.Build
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.layoutId
@@ -60,12 +64,14 @@ import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -152,12 +158,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -213,12 +219,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -274,12 +280,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -288,7 +294,7 @@ class ConstraintLayoutTest {
                 // which in turns is given by the size of the aspect ratio box.
                 assertEquals(
                     (aspectRatioBoxSize.value!!.height * 0.8f).roundToInt(),
-                    dividerSize.value!!.height
+                    dividerSize.value!!.height,
                 )
             }
         }
@@ -351,14 +357,14 @@ class ConstraintLayoutTest {
                         "${aspectRatioBoxSize.value!!.height}, " +
                         "divider: ${dividerSize.value!!.height}",
                     (aspectRatioBoxSize.value!!.height * 0.8f).roundToInt(),
-                    dividerSize.value!!.height
+                    dividerSize.value!!.height,
                 )
                 assertEquals(
                     "broken, aspect height ${aspectRatioBoxSize.value!!.width}x" +
                         "${aspectRatioBoxSize.value!!.height}," +
                         " divider: ${dividerSize.value!!.height}",
                     aspectRatioBoxSize.value!!.width,
-                    540
+                    540,
                 )
             }
         }
@@ -474,12 +480,12 @@ class ConstraintLayoutTest {
                 assertEquals(
                     Offset(((displayWidth - boxSize) / 2f), ((displayHeight - boxSize) / 2f))
                         .round(),
-                    position[0]
+                    position[0],
                 )
                 assertEquals(
                     Offset((displayWidth / 2f + offset), ((displayHeight - boxSize) / 2f - boxSize))
                         .round(),
-                    position[1]
+                    position[1],
                 )
                 assertEquals(IntOffset(offset, (displayHeight - boxSize - offset)), position[2])
             }
@@ -515,7 +521,7 @@ class ConstraintLayoutTest {
                                 bottom.linkTo(parent.bottom, margin = offset.toDp())
                             }
                         },
-                    modifier = Modifier.fillMaxSize().onGloballyPositioned { rootSize = it.size }
+                    modifier = Modifier.fillMaxSize().onGloballyPositioned { rootSize = it.size },
                 ) {
                     for (i in 0..2) {
                         Box(
@@ -533,12 +539,12 @@ class ConstraintLayoutTest {
             rule.runOnIdle {
                 assertEquals(
                     Offset((displayWidth - boxSize) / 2f, (displayHeight - boxSize) / 2f).round(),
-                    position[0]
+                    position[0],
                 )
                 assertEquals(
                     Offset((displayWidth / 2f + offset), ((displayHeight - boxSize) / 2f - boxSize))
                         .round(),
-                    position[1]
+                    position[1],
                 )
                 assertEquals(IntOffset(offset, (displayHeight - boxSize - offset)), position[2])
             }
@@ -589,21 +595,21 @@ class ConstraintLayoutTest {
             rule.runOnIdle {
                 assertEquals(
                     Offset((displayWidth - boxSize) / 2f, (displayHeight - boxSize) / 2f),
-                    position[0].value
+                    position[0].value,
                 )
                 assertEquals(
                     Offset(
                         (displayWidth / 2 - offset - boxSize).toFloat(),
-                        ((displayHeight - boxSize) / 2 - boxSize).toFloat()
+                        ((displayHeight - boxSize) / 2 - boxSize).toFloat(),
                     ),
-                    position[1].value
+                    position[1].value,
                 )
                 assertEquals(
                     Offset(
                         (displayWidth - offset - boxSize).toFloat(),
-                        (displayHeight - boxSize - offset).toFloat()
+                        (displayHeight - boxSize - offset).toFloat(),
                     ),
-                    position[2].value
+                    position[2].value,
                 )
             }
         }
@@ -626,7 +632,7 @@ class ConstraintLayoutTest {
                             createGuidelineFromStart(0.25f),
                             createGuidelineFromAbsoluteLeft(0.25f),
                             createGuidelineFromEnd(0.25f),
-                            createGuidelineFromAbsoluteRight(0.25f)
+                            createGuidelineFromAbsoluteRight(0.25f),
                         )
 
                     guidelines.forEachIndexed { index, guideline ->
@@ -653,7 +659,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonGuidelinesContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     position.forEachIndexed { index, _ ->
                         Box(
@@ -687,7 +693,7 @@ class ConstraintLayoutTest {
                                 createGuidelineFromStart(0.25f),
                                 createGuidelineFromAbsoluteLeft(0.25f),
                                 createGuidelineFromEnd(0.25f),
-                                createGuidelineFromAbsoluteRight(0.25f)
+                                createGuidelineFromAbsoluteRight(0.25f),
                             )
 
                         guidelines.forEachIndexed { index, guideline ->
@@ -718,7 +724,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonGuidelinesContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         position.forEachIndexed { index, _ ->
                             Box(
@@ -762,7 +768,7 @@ class ConstraintLayoutTest {
                             createStartBarrier(box1, box2),
                             createAbsoluteLeftBarrier(box1, box2),
                             createEndBarrier(box1, box2),
-                            createAbsoluteRightBarrier(box1, box2)
+                            createAbsoluteRightBarrier(box1, box2),
                         )
 
                     barriers.forEachIndexed { index, barrier ->
@@ -789,7 +795,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonBarriersContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     Box(Modifier.size(1.toDp()).layoutId("boxA"))
                     Box(Modifier.size(1.toDp()).layoutId("boxB"))
@@ -835,7 +841,7 @@ class ConstraintLayoutTest {
                                 createStartBarrier(box1, box2),
                                 createAbsoluteLeftBarrier(box1, box2),
                                 createEndBarrier(box1, box2),
-                                createAbsoluteRightBarrier(box1, box2)
+                                createAbsoluteRightBarrier(box1, box2),
                             )
 
                         barriers.forEachIndexed { index, barrier ->
@@ -866,7 +872,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonBarriersContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         Box(Modifier.size(1.toDp()).layoutId("boxA"))
                         Box(Modifier.size(1.toDp()).layoutId("boxB"))
@@ -923,7 +929,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonAnchorsContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     Box(Modifier.size(1.toDp()).layoutId("box"))
                     position.forEachIndexed { index, _ ->
@@ -987,7 +993,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonAnchorsContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         Box(Modifier.size(1.toDp()).layoutId("box"))
                         position.forEachIndexed { index, _ ->
@@ -1170,7 +1176,7 @@ class ConstraintLayoutTest {
         rule.setContent {
             ConstraintLayout(
                 modifier = if (first.value) Modifier else Modifier.padding(10.dp),
-                constraintSet = ConstraintSet {}
+                constraintSet = ConstraintSet {},
             ) {
                 Box(if (first.value) Modifier else Modifier.size(20.dp))
             }
@@ -1567,7 +1573,7 @@ class ConstraintLayoutTest {
             }
             ConstraintLayout(
                 modifier = Modifier.size(200.dp),
-                constraintSet = if (startOrEnd) start else end
+                constraintSet = if (startOrEnd) start else end,
             ) {
                 Box(modifier = Modifier.background(Color.Red).testTag(boxTag).layoutId(boxTag))
             }
@@ -1614,7 +1620,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    constraintSet = constraintSet
+                    constraintSet = constraintSet,
                 ) {
                     Box(
                         modifier =
@@ -1711,7 +1717,7 @@ class ConstraintLayoutTest {
                             horizontalBias = horBias
                             verticalBias = verBias
                         }
-                    }
+                    },
             ) {
                 Box(modifier = Modifier.background(Color.Red).layoutTestId("box"))
             }
@@ -1780,7 +1786,7 @@ class ConstraintLayoutTest {
                                 start.linkTo(box0.end)
                             }
                         },
-                    Modifier.size(rootSize.toDp())
+                    Modifier.size(rootSize.toDp()),
                 ) {
                     Box(
                         Modifier.layoutId("box0").onGloballyPositioned {
@@ -1850,7 +1856,7 @@ class ConstraintLayoutTest {
                                             endMargin = 0.dp,
                                             startGoneMargin = 0.dp,
                                             endGoneMargin = 0.dp,
-                                            bias = box2Bias // affected by Rtl
+                                            bias = box2Bias, // affected by Rtl
                                         )
                                     }
                                     .onGloballyPositioned {
@@ -2053,7 +2059,7 @@ class ConstraintLayoutTest {
                     layout(
                         width = placeable.width,
                         height = placeable.height,
-                        alignmentLines = mapOf(FirstBaseline to halfHeight)
+                        alignmentLines = mapOf(FirstBaseline to halfHeight),
                     ) {
                         placeable.place(0, 0)
                     }
@@ -2198,7 +2204,7 @@ class ConstraintLayoutTest {
                             (rootSizePx - boxSizePx) / 2f + translationYPx,
                         )
                         .round(),
-                    position
+                    position,
                 )
             }
         }
@@ -2230,7 +2236,7 @@ class ConstraintLayoutTest {
                 """
                                 .trimIndent()
                         ),
-                    Modifier.size(rootSizePx.toDp())
+                    Modifier.size(rootSizePx.toDp()),
                 ) {
                     Box(
                         Modifier.layoutId("box").onPlaced {
@@ -2248,7 +2254,7 @@ class ConstraintLayoutTest {
                             (rootSizePx - boxSizePx) / 2f + translationYPx,
                         )
                         .round(),
-                    position
+                    position,
                 )
             }
         }
@@ -2329,7 +2335,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    animateChangesSpec = tween(durationMs)
+                    animateChangesSpec = tween(durationMs),
                 ) {
                     val boxRef = createRef()
                     Box(
@@ -2365,6 +2371,220 @@ class ConstraintLayoutTest {
             rule.mainClock.autoAdvance = true
             rule.waitForIdle()
             assertEquals(expectedEndPosition, box0Position)
+        }
+
+    @Test
+    fun testEmptyConstraintLayoutSize() =
+        with(rule.density) {
+            val rootSizePx = 200f
+
+            // Mutable state to trigger invalidations. By default simply passes original
+            // constraints.
+            // But we'll use this to test empty ConstraintLayout under different constraints
+            var transformConstraints: ((Constraints) -> Constraints) by
+                mutableStateOf({ constraints -> constraints })
+
+            // To capture measured ConstraintLayout size
+            var layoutSize = IntSize(-1, -1)
+
+            rule.setContent {
+                Column(Modifier.size(rootSizePx.toDp()).verticalScroll(rememberScrollState())) {
+                    ConstraintLayout(
+                        modifier =
+                            Modifier.layout { measurable, constraints ->
+                                    // Measure policy to test ConstraintLayout under different
+                                    // constraints
+                                    val placeable =
+                                        measurable.measure(transformConstraints(constraints))
+                                    layout(placeable.width, placeable.height) {
+                                        placeable.place(0, 0)
+                                    }
+                                }
+                                .onGloballyPositioned { layoutSize = it.size }
+                    ) {
+                        // Empty content
+                    }
+                }
+            }
+            // For this case, the default behavior should be a ConstraintLayout of size 0x0
+            rule.waitForIdle()
+            assertEquals(IntSize.Zero, layoutSize)
+
+            // Test with min constraints
+            transformConstraints = { constraints ->
+                // Demonstrate that vertical scroll constraints propagate
+                assert(constraints.maxHeight == Constraints.Infinity)
+                constraints.copy(minWidth = 123, minHeight = 321)
+            }
+            rule.waitForIdle()
+
+            // Minimum size is preferred for empty layouts. Should not crash :)
+            assertEquals(IntSize(width = 123, height = 321), layoutSize)
+
+            // Transform to an equivalent of fillMaxSize(), which fills bounded constraints only
+            transformConstraints = { constraints ->
+                val minWidth: Int
+                val maxWidth: Int
+                val minHeight: Int
+                val maxHeight: Int
+
+                if (constraints.hasBoundedWidth) {
+                    minWidth = constraints.maxWidth
+                    maxWidth = constraints.maxWidth
+                } else {
+                    minWidth = constraints.minWidth
+                    maxWidth = constraints.maxWidth
+                }
+                if (constraints.hasBoundedHeight) {
+                    minHeight = constraints.maxHeight
+                    maxHeight = constraints.maxHeight
+                } else {
+                    minHeight = constraints.minHeight
+                    maxHeight = constraints.maxHeight
+                }
+                Constraints(
+                    minWidth = minWidth,
+                    maxWidth = maxWidth,
+                    minHeight = minHeight,
+                    maxHeight = maxHeight,
+                )
+            }
+            rule.waitForIdle()
+
+            // Vertical is infinity, fillMaxSize behavior should pin it to minimum height (Zero)
+            assertEquals(IntSize(rootSizePx.fastRoundToInt(), 0), layoutSize)
+        }
+
+    @Test
+    fun testToggleVisibilityWithFillConstraintsWidth() =
+        with(rule.density) {
+            val rootSizePx = 100f
+
+            var toggleVisibility by mutableStateOf(false)
+
+            rule.setContent {
+                // Regression test, modify only dimensions if necessary
+                ConstraintLayout(modifier = Modifier.size(rootSizePx.toDp())) {
+                    val (titleRef, detailRef) = createRefs()
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Cyan).testTag("box1").constrainAs(detailRef) {
+                                centerHorizontallyTo(parent)
+
+                                width = Dimension.fillToConstraints
+                                height = rootSizePx.toDp().asDimension()
+
+                                visibility =
+                                    if (!toggleVisibility) Visibility.Gone else Visibility.Visible
+                            }
+                    )
+                    Box(
+                        modifier =
+                            Modifier.background(Color.Red).testTag("box2").constrainAs(titleRef) {
+                                centerHorizontallyTo(parent)
+
+                                width = Dimension.fillToConstraints
+                                height = rootSizePx.toDp().asDimension()
+
+                                visibility =
+                                    if (toggleVisibility) Visibility.Gone else Visibility.Visible
+                            }
+                    )
+                }
+            }
+            rule.waitForIdle()
+
+            rule.onNodeWithTag("box1").apply {
+                assertWidthIsEqualTo(Dp.Unspecified)
+                assertHeightIsEqualTo(Dp.Unspecified)
+            }
+            rule.onNodeWithTag("box2").apply {
+                assertWidthIsEqualTo(rootSizePx.toDp())
+                assertHeightIsEqualTo(rootSizePx.toDp())
+            }
+
+            toggleVisibility = !toggleVisibility
+            rule.waitForIdle()
+
+            rule.onNodeWithTag("box1").apply {
+                assertWidthIsEqualTo(rootSizePx.toDp())
+                assertHeightIsEqualTo(rootSizePx.toDp())
+            }
+            rule.onNodeWithTag("box2").apply {
+                assertWidthIsEqualTo(Dp.Unspecified)
+                assertHeightIsEqualTo(Dp.Unspecified)
+            }
+            Unit // Test expects to return Unit
+        }
+
+    @Test
+    fun testToggleVisibilityWithFillConstraintsWidth_underLookahead() =
+        with(rule.density) {
+            val rootSizePx = 100f
+
+            var toggleVisibility by mutableStateOf(false)
+
+            rule.setContent {
+                LookaheadScope {
+                    // Regression test, modify only dimensions if necessary
+                    ConstraintLayout(modifier = Modifier.size(rootSizePx.toDp())) {
+                        val (titleRef, detailRef) = createRefs()
+                        Box(
+                            modifier =
+                                Modifier.background(Color.Cyan).testTag("box1").constrainAs(
+                                    detailRef
+                                ) {
+                                    centerHorizontallyTo(parent)
+
+                                    width = Dimension.fillToConstraints
+                                    height = rootSizePx.toDp().asDimension()
+
+                                    visibility =
+                                        if (!toggleVisibility) Visibility.Gone
+                                        else Visibility.Visible
+                                }
+                        )
+                        Box(
+                            modifier =
+                                Modifier.background(Color.Red).testTag("box2").constrainAs(
+                                    titleRef
+                                ) {
+                                    centerHorizontallyTo(parent)
+
+                                    width = Dimension.fillToConstraints
+                                    height = rootSizePx.toDp().asDimension()
+
+                                    visibility =
+                                        if (toggleVisibility) Visibility.Gone
+                                        else Visibility.Visible
+                                }
+                        )
+                    }
+                }
+            }
+            rule.waitForIdle()
+
+            rule.onNodeWithTag("box1").apply {
+                assertWidthIsEqualTo(Dp.Unspecified)
+                assertHeightIsEqualTo(Dp.Unspecified)
+            }
+            rule.onNodeWithTag("box2").apply {
+                assertWidthIsEqualTo(rootSizePx.toDp())
+                assertHeightIsEqualTo(rootSizePx.toDp())
+            }
+
+            toggleVisibility = !toggleVisibility
+            rule.waitForIdle()
+
+            rule.onNodeWithTag("box1").apply {
+                assertWidthIsEqualTo(rootSizePx.toDp())
+                assertHeightIsEqualTo(rootSizePx.toDp())
+            }
+            rule.onNodeWithTag("box2").apply {
+                assertWidthIsEqualTo(Dp.Unspecified)
+                assertHeightIsEqualTo(Dp.Unspecified)
+            }
+            Unit // Test expects to return Unit
         }
 
     /**

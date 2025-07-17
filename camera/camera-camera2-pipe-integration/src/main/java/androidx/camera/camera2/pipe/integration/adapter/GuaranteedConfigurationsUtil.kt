@@ -17,17 +17,39 @@
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CameraDevice.CameraDeviceSetup
 import android.os.Build
+import android.util.Size
 import androidx.annotation.RequiresApi
+import androidx.camera.core.impl.ImageFormatConstants
+import androidx.camera.core.impl.StreamUseCase
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize
 import androidx.camera.core.impl.SurfaceConfig.ConfigType
+import androidx.camera.core.impl.SurfaceConfig.ConfigType.JPEG
+import androidx.camera.core.impl.SurfaceConfig.ConfigType.JPEG_R
+import androidx.camera.core.impl.SurfaceConfig.ConfigType.PRIV
+import androidx.camera.core.impl.SurfaceSizeDefinition
 
-object GuaranteedConfigurationsUtil {
+public object GuaranteedConfigurationsUtil {
+    /**
+     * The list of [SurfaceCombination] that are guaranteed to be queryable with feature combination
+     * query APIs.
+     *
+     * Note that these stream combinations are not guaranteed to be always supported, but rather
+     * guaranteed to provide a valid result via feature combination query (i.e.
+     * [CameraDeviceSetup.isSessionConfigurationSupported] API).
+     *
+     * These combinations are generated based on the documentation of
+     * [CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION].
+     */
+    public val QUERYABLE_FCQ_COMBINATIONS: List<SurfaceCombination> by lazy {
+        generateQueryableFcqCombinations()
+    }
+
     @JvmStatic
-    fun getLegacySupportedCombinationList(): List<SurfaceCombination> {
+    public fun getLegacySupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
 
         // (PRIV, MAXIMUM)
@@ -84,7 +106,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getLimitedSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getLimitedSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
 
         // (PRIV, PREVIEW) + (PRIV, RECORD)
@@ -139,7 +161,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getFullSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getFullSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
 
         // (PRIV, PREVIEW) + (PRIV, MAXIMUM)
@@ -194,7 +216,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getRAWSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getRAWSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
 
         // (RAW, MAXIMUM)
@@ -259,7 +281,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getBurstSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getBurstSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
         // (PRIV, PREVIEW) + (PRIV, MAXIMUM)
         SurfaceCombination()
@@ -286,7 +308,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getLevel3SupportedCombinationList(): List<SurfaceCombination> {
+    public fun getLevel3SupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
         // (PRIV, PREVIEW) + (PRIV, VGA) + (YUV, MAXIMUM) + (RAW, MAXIMUM)
         SurfaceCombination()
@@ -310,7 +332,7 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getUltraHighResolutionSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getUltraHighResolutionSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
 
         // (YUV, ULTRA_MAXIMUM) + (PRIV, PREVIEW) + (PRIV, RECORD)
@@ -430,76 +452,107 @@ object GuaranteedConfigurationsUtil {
         return combinationList
     }
 
+    /** Returns the minimally guaranteed stream combinations for Ultra HDR. */
     @JvmStatic
-    fun getConcurrentSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getUltraHdrSupportedCombinationList(): List<SurfaceCombination> {
+        // Due to the unique characteristics of JPEG/R, some devices might configure an extra 8-bit
+        // JPEG stream internally in addition to the 10-bit YUV stream. The 10-bit mandatory
+        // stream combination table is actually not suitable for use. Adds only (PRIV, PREVIEW) +
+        // (JPEG_R, MAXIMUM), which is guaranteed by CTS test, as the supported combination.
+
+        val combinationList: MutableList<SurfaceCombination> = ArrayList()
+
+        // (JPEG_R, MAXIMUM)
+        SurfaceCombination()
+            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG_R, ConfigSize.MAXIMUM)) }
+            .also { combinationList.add(it) }
+
+        // (PRIV, PREVIEW) + (JPEG_R, MAXIMUM)
+        SurfaceCombination()
+            .apply {
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG_R, ConfigSize.MAXIMUM))
+            }
+            .also { combinationList.add(it) }
+
+        return combinationList
+    }
+
+    @JvmStatic
+    public fun getConcurrentSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
         // (YUV, s1440p)
         SurfaceCombination()
-            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p)) }
+            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3)) }
             .also { combinationList.add(it) }
         // (PRIV, s1440p)
         SurfaceCombination()
-            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p)) }
+            .apply {
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
+            }
             .also { combinationList.add(it) }
         // (JPEG, s1440p)
         SurfaceCombination()
-            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p)) }
+            .apply {
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3))
+            }
             .also { combinationList.add(it) }
         // (YUV, s720p) + (JPEG, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (PRIV, s720p) + (JPEG, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (YUV, s720p) + (YUV, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (YUV, s720p) + (PRIV, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (PRIV, s720p) + (YUV, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (PRIV, s720p) + (PRIV, s1440p)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s720p))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S720P_16_9))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         return combinationList
     }
 
     @JvmStatic
-    fun generateSupportedCombinationList(
+    public fun generateSupportedCombinationList(
         hardwareLevel: Int,
         isRawSupported: Boolean,
-        isBurstCaptureSupported: Boolean
+        isBurstCaptureSupported: Boolean,
     ): List<SurfaceCombination> {
         val surfaceCombinations: MutableList<SurfaceCombination> = arrayListOf()
         surfaceCombinations.addAll(getLegacySupportedCombinationList())
         if (
             hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED ||
+                hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL ||
                 hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL ||
                 hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3
         ) {
@@ -532,7 +585,7 @@ object GuaranteedConfigurationsUtil {
      * as a 10-bit input.
      */
     @JvmStatic
-    fun get10BitSupportedCombinationList(): List<SurfaceCombination> {
+    public fun get10BitSupportedCombinationList(): List<SurfaceCombination> {
         return listOf(
             // (PRIV, MAXIMUM)
             SurfaceCombination().apply {
@@ -581,16 +634,15 @@ object GuaranteedConfigurationsUtil {
      * Returns the entire supported stream combinations for devices with Stream Use Case capability
      */
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    fun getStreamUseCaseSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getStreamUseCaseSupportedCombinationList(): List<SurfaceCombination> {
         return listOf<SurfaceCombination>(
             // (PRIV, s1440p, PREVIEW_VIDEO_STILL)
             SurfaceCombination().apply {
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.PRIV,
-                        ConfigSize.s1440p,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL
-                            .toLong()
+                        ConfigSize.S1440P_4_3,
+                        StreamUseCase.PREVIEW_VIDEO_STILL,
                     )
                 )
             },
@@ -599,9 +651,8 @@ object GuaranteedConfigurationsUtil {
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
-                        ConfigSize.s1440p,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW_VIDEO_STILL
-                            .toLong()
+                        ConfigSize.S1440P_4_3,
+                        StreamUseCase.PREVIEW_VIDEO_STILL,
                     )
                 )
             },
@@ -611,7 +662,7 @@ object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
@@ -621,7 +672,7 @@ object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
@@ -631,7 +682,7 @@ object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
@@ -641,117 +692,89 @@ object GuaranteedConfigurationsUtil {
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (JPEG, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (PRIV, RECORD, VIDEO_RECORD)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, RECORD, VIDEO_RECORD)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, PREVIEW, PREVIEW)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.YUV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (PRIV, RECORD, VIDEO_RECORD) +
             // (JPEG, RECORD, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.PRIV,
                         ConfigSize.RECORD,
-                        CameraMetadata.CONTROL_CAPTURE_INTENT_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
@@ -759,48 +782,36 @@ object GuaranteedConfigurationsUtil {
             // (JPEG, RECORD, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.YUV,
                         ConfigSize.RECORD,
-                        CameraMetadata.CONTROL_CAPTURE_INTENT_VIDEO_RECORD.toLong()
+                        StreamUseCase.VIDEO_RECORD,
                     )
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.RECORD,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
             // (PRIV, PREVIEW, PREVIEW) + (YUV, PREVIEW, PREVIEW) + (JPEG, MAXIMUM, STILL_CAPTURE)
             SurfaceCombination().apply {
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.PRIV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
-                    SurfaceConfig.create(
-                        ConfigType.YUV,
-                        ConfigSize.PREVIEW,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_PREVIEW.toLong()
-                    )
+                    SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW, StreamUseCase.PREVIEW)
                 )
                 addSurfaceConfig(
                     SurfaceConfig.create(
                         ConfigType.JPEG,
                         ConfigSize.MAXIMUM,
-                        CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES_STILL_CAPTURE.toLong()
+                        StreamUseCase.STILL_CAPTURE,
                     )
                 )
             },
@@ -808,41 +819,43 @@ object GuaranteedConfigurationsUtil {
     }
 
     @JvmStatic
-    fun getPreviewStabilizationSupportedCombinationList(): List<SurfaceCombination> {
+    public fun getPreviewStabilizationSupportedCombinationList(): List<SurfaceCombination> {
         val combinationList: MutableList<SurfaceCombination> = ArrayList()
         // (PRIV, s1440p)
         SurfaceCombination()
-            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p)) }
+            .apply {
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
+            }
             .also { combinationList.add(it) }
         // (YUV, s1440p)
         SurfaceCombination()
-            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p)) }
+            .apply { addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3)) }
             .also { combinationList.add(it) }
         // (PRIV, s1440p) + (JPEG, MAXIMUM)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM))
             }
             .also { combinationList.add(it) }
         // (YUV, s1440p) + (JPEG, MAXIMUM)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM))
             }
             .also { combinationList.add(it) }
         // (PRIV, s1440p) + (YUV, MAXIMUM)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.MAXIMUM))
             }
             .also { combinationList.add(it) }
         // (YUV, s1440p) + (YUV, MAXIMUM)
         SurfaceCombination()
             .apply {
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.MAXIMUM))
             }
             .also { combinationList.add(it) }
@@ -850,30 +863,162 @@ object GuaranteedConfigurationsUtil {
         SurfaceCombination()
             .apply {
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (YUV, PREVIEW) + (PRIV, s1440)
         SurfaceCombination()
             .apply {
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (PRIV, PREVIEW) + (YUV, s1440)
         SurfaceCombination()
             .apply {
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.PRIV, ConfigSize.PREVIEW))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
         // (YUV, PREVIEW) + (YUV, s1440)
         SurfaceCombination()
             .apply {
                 addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW))
-                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.s1440p))
+                addSurfaceConfig(SurfaceConfig.create(ConfigType.YUV, ConfigSize.S1440P_4_3))
             }
             .also { combinationList.add(it) }
+        return combinationList
+    }
+
+    /** Returns the supported stream combinations for high-speed sessions. */
+    @JvmStatic
+    public fun generateHighSpeedSupportedCombinationList(
+        maxSupportedSize: Size,
+        surfaceSizeDefinition: SurfaceSizeDefinition,
+    ): List<SurfaceCombination> {
+        val surfaceCombinations = mutableListOf<SurfaceCombination>()
+
+        // Find the closest SurfaceConfig that can contain the max supported size. Ultimately,
+        // the target resolution still needs to be verified by the StreamConfigurationMap API for
+        // high-speed.
+        val surfaceConfig =
+            SurfaceConfig.transformSurfaceConfig(
+                ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
+                maxSupportedSize,
+                surfaceSizeDefinition,
+            )
+
+        // Create high-speed supported combinations based on the constraints:
+        // - Only support preview and/or video surface.
+        // - Maximum 2 surfaces.
+        // - All surfaces must have the same size.
+
+        // PRIV
+        SurfaceCombination()
+            .apply { addSurfaceConfig(surfaceConfig) }
+            .also { surfaceCombinations.add(it) }
+
+        // PRIV + PRIV
+        SurfaceCombination()
+            .apply {
+                addSurfaceConfig(surfaceConfig)
+                addSurfaceConfig(surfaceConfig)
+            }
+            .also { surfaceCombinations.add(it) }
+
+        return surfaceCombinations
+    }
+
+    /**
+     * Generates queryable FCQ combinations based on the documentation of
+     * [CameraCharacteristics.INFO_SESSION_CONFIGURATION_QUERY_VERSION].
+     *
+     * @see QUERYABLE_FCQ_COMBINATIONS
+     */
+    private fun generateQueryableFcqCombinations(): List<SurfaceCombination> {
+        val combinations = mutableListOf<SurfaceCombination>()
+
+        // (PRIV, S1080P)
+        combinations.add(
+            SurfaceCombination().apply {
+                addSurfaceConfig(SurfaceConfig.create(PRIV, ConfigSize.S1080P_16_9))
+            }
+        )
+
+        // (PRIV, S720P)
+        combinations.add(
+            SurfaceCombination().apply {
+                addSurfaceConfig(SurfaceConfig.create(PRIV, ConfigSize.S720P_16_9))
+            }
+        )
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, MAX_16_9)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S1080P_16_9, ConfigSize.MAXIMUM_16_9)
+        )
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, UHD)
+        combinations.addAll(createPrivJpegXCombinations(ConfigSize.S1080P_16_9, ConfigSize.UHD))
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, S1440P)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S1080P_16_9, ConfigSize.S1440P_16_9)
+        )
+
+        // (PRIV, S1080P) + (JPEG/JPEG_R, S1080P)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S1080P_16_9, ConfigSize.S1080P_16_9)
+        )
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, MAX_16_9)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S720P_16_9, ConfigSize.MAXIMUM_16_9)
+        )
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, UHD)
+        combinations.addAll(createPrivJpegXCombinations(ConfigSize.S720P_16_9, ConfigSize.UHD))
+
+        // (PRIV, S720P) + (JPEG/JPEG_R, S1080P)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S720P_16_9, ConfigSize.S1080P_16_9)
+        )
+
+        // (PRIV, XVGA) + (JPEG/JPEG_R, MAX_4_3)
+        combinations.addAll(createPrivJpegXCombinations(ConfigSize.X_VGA, ConfigSize.MAXIMUM_4_3))
+
+        // (PRIV, S1080P_4_3) + (JPEG/JPEG_R, MAX_4_3)
+        combinations.addAll(
+            createPrivJpegXCombinations(ConfigSize.S1080P_4_3, ConfigSize.MAXIMUM_4_3)
+        )
+
+        // TODO: Add the combinations for Android 16
+
+        return combinations
+    }
+
+    /**
+     * Creates a list of [SurfaceCombination] based on the input PRIV size and JPEG_X (i.e. JPEG and
+     * JPEG_R) size.
+     */
+    private fun createPrivJpegXCombinations(
+        privSize: ConfigSize,
+        jpegXSize: ConfigSize,
+    ): List<SurfaceCombination> {
+        val combinationList = mutableListOf<SurfaceCombination>()
+
+        combinationList.add(
+            SurfaceCombination().apply {
+                addSurfaceConfig(SurfaceConfig.create(PRIV, privSize))
+                addSurfaceConfig(SurfaceConfig.create(JPEG, jpegXSize))
+            }
+        )
+        combinationList.add(
+            SurfaceCombination().apply {
+                addSurfaceConfig(SurfaceConfig.create(PRIV, privSize))
+                addSurfaceConfig(SurfaceConfig.create(JPEG_R, jpegXSize))
+            }
+        )
+
         return combinationList
     }
 }

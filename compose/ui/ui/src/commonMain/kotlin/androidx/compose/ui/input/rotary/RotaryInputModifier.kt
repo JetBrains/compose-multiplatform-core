@@ -61,7 +61,6 @@ fun Modifier.onRotaryScrollEvent(onRotaryScrollEvent: (RotaryScrollEvent) -> Boo
  * Return true to indicate that you consumed the event and want to stop propagation of this event.
  *
  * @return true if the event is consumed, false otherwise.
- *
  * @sample androidx.compose.ui.samples.PreRotaryEventSample
  */
 fun Modifier.onPreRotaryScrollEvent(
@@ -70,12 +69,12 @@ fun Modifier.onPreRotaryScrollEvent(
     this then
         RotaryInputElement(
             onRotaryScrollEvent = null,
-            onPreRotaryScrollEvent = onPreRotaryScrollEvent
+            onPreRotaryScrollEvent = onPreRotaryScrollEvent,
         )
 
-private data class RotaryInputElement(
+private class RotaryInputElement(
     val onRotaryScrollEvent: ((RotaryScrollEvent) -> Boolean)?,
-    val onPreRotaryScrollEvent: ((RotaryScrollEvent) -> Boolean)?
+    val onPreRotaryScrollEvent: ((RotaryScrollEvent) -> Boolean)?,
 ) : ModifierNodeElement<RotaryInputNode>() {
     override fun create() =
         RotaryInputNode(onEvent = onRotaryScrollEvent, onPreEvent = onPreRotaryScrollEvent)
@@ -95,11 +94,27 @@ private data class RotaryInputElement(
             properties["onPreRotaryScrollEvent"] = it
         }
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RotaryInputElement) return false
+
+        if (onRotaryScrollEvent !== other.onRotaryScrollEvent) return false
+        if (onPreRotaryScrollEvent !== other.onPreRotaryScrollEvent) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = onRotaryScrollEvent?.hashCode() ?: 0
+        result = 31 * result + (onPreRotaryScrollEvent?.hashCode() ?: 0)
+        return result
+    }
 }
 
 private class RotaryInputNode(
     var onEvent: ((RotaryScrollEvent) -> Boolean)?,
-    var onPreEvent: ((RotaryScrollEvent) -> Boolean)?
+    var onPreEvent: ((RotaryScrollEvent) -> Boolean)?,
 ) : RotaryInputModifierNode, Modifier.Node() {
     override fun onRotaryScrollEvent(event: RotaryScrollEvent) = onEvent?.invoke(event) ?: false
 

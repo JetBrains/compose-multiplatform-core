@@ -21,19 +21,22 @@ import android.media.ImageWriter;
 import android.view.Surface;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.camera.core.impl.utils.MainThreadAsyncHandler;
+
+import org.jspecify.annotations.NonNull;
+
+import java.util.concurrent.Executor;
 
 @RequiresApi(23)
 final class ImageWriterCompatApi23Impl {
 
-    @NonNull
-    static ImageWriter newInstance(@NonNull Surface surface, @IntRange(from = 1) int maxImages) {
+    static @NonNull ImageWriter newInstance(@NonNull Surface surface,
+            @IntRange(from = 1) int maxImages) {
         return ImageWriter.newInstance(surface, maxImages);
     }
 
-    @NonNull
-    static Image dequeueInputImage(@NonNull ImageWriter imageWriter) {
+    static @NonNull Image dequeueInputImage(@NonNull ImageWriter imageWriter) {
         return imageWriter.dequeueInputImage();
     }
 
@@ -43,6 +46,14 @@ final class ImageWriterCompatApi23Impl {
 
     static void close(ImageWriter imageWriter) {
         imageWriter.close();
+    }
+
+    static void setOnImageReleasedListener(@NonNull ImageWriter imageWriter,
+            ImageWriter.@NonNull OnImageReleasedListener releasedListener,
+            @NonNull Executor executor) {
+        imageWriter.setOnImageReleasedListener(
+                writer -> executor.execute(() -> releasedListener.onImageReleased(writer)),
+                MainThreadAsyncHandler.getInstance());
     }
 
     // Class should not be instantiated.

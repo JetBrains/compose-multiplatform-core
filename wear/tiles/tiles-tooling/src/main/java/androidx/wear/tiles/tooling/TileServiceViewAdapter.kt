@@ -21,6 +21,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.FrameLayout
+import androidx.annotation.RestrictTo
 import androidx.core.content.ContextCompat
 import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
@@ -31,6 +32,8 @@ import androidx.wear.protolayout.expression.PlatformDataValues
 import androidx.wear.protolayout.expression.PlatformHealthSources
 import androidx.wear.protolayout.expression.PlatformHealthSources.DynamicHeartRateAccuracy
 import androidx.wear.protolayout.expression.PlatformHealthSources.HEART_RATE_ACCURACY_MEDIUM
+import androidx.wear.protolayout.expression.VersionBuilders
+import androidx.wear.protolayout.expression.pipeline.DynamicTypeAnimator
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.RequestBuilders.ResourcesRequest
 import androidx.wear.tiles.renderer.TileRenderer
@@ -47,7 +50,7 @@ private val defaultPlatformDataValues =
         .put(PlatformHealthSources.Keys.HEART_RATE_BPM, DynamicDataValue.fromFloat(80f))
         .put(
             PlatformHealthSources.Keys.HEART_RATE_ACCURACY,
-            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM)
+            DynamicHeartRateAccuracy.dynamicDataValueOf(HEART_RATE_ACCURACY_MEDIUM),
         )
         .put(PlatformHealthSources.Keys.DAILY_STEPS, DynamicDataValue.fromInt(4710))
         .put(PlatformHealthSources.Keys.DAILY_FLOORS, DynamicDataValue.fromFloat(12.5f))
@@ -61,7 +64,7 @@ private val defaultPlatformDataValues =
  */
 internal fun Class<out Any>.findMethod(
     name: String,
-    vararg parameterTypes: Class<out Any>
+    vararg parameterTypes: Class<out Any>,
 ): Method {
     var currentClass: Class<out Any>? = this
     while (currentClass != null) {
@@ -80,10 +83,12 @@ internal fun Class<out Any>.findMethod(
  * View adapter that renders a tile preview from a [TilePreviewData]. The preview data is found by
  * invoking the method whose FQN is set in the `tools:tilePreviewMethodFqn` attribute.
  */
-internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
-    FrameLayout(context, attrs) {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayout(context, attrs) {
 
     private val executor = ContextCompat.getMainExecutor(context)
+
+    private lateinit var tileRenderer: TileRenderer
 
     init {
         init(attrs)
@@ -100,14 +105,13 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
         val tilePreview = getTilePreview(tilePreviewMethodFqn) ?: return
         val platformDataValues = getPlatformDataValues(tilePreview)
 
-        lateinit var tileRenderer: TileRenderer
         tileRenderer =
             TileRenderer.Builder(context, executor) { newState ->
                     tileRenderer.previewTile(tilePreview, newState)
                 }
                 .addPlatformDataProvider(
                     StaticPlatformDataProvider(platformDataValues),
-                    *platformDataValues.all.keys.toTypedArray()
+                    *platformDataValues.all.keys.toTypedArray(),
                 )
                 .build()
 
@@ -116,7 +120,7 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
 
     private fun TileRenderer.previewTile(
         tilePreview: TilePreviewData,
-        currentState: StateBuilders.State? = null
+        currentState: StateBuilders.State? = null,
     ) {
         val deviceParams = context.buildDeviceParameters()
         val tileRequest =
@@ -145,8 +149,12 @@ internal class TileServiceViewAdapter(context: Context, attrs: AttributeSet) :
                     (it.layoutParams as LayoutParams).gravity = Gravity.CENTER
                 }
             },
-            executor
+            executor,
         )
+    }
+
+    fun getAnimations(): List<DynamicTypeAnimator> {
+        return tileRenderer.animations
     }
 
     @SuppressLint("BanUncheckedReflection")
@@ -216,5 +224,6 @@ internal fun Context.buildDeviceParameters(): DeviceParametersBuilders.DevicePar
         )
         .setDevicePlatform(DeviceParametersBuilders.DEVICE_PLATFORM_WEAR_OS)
         .setFontScale(resources.configuration.fontScale)
+        .setRendererSchemaVersion(VersionBuilders.VersionInfo.CURRENT)
         .build()
 }

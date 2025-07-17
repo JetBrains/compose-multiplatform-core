@@ -25,8 +25,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.OutputSurface;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
@@ -35,7 +33,11 @@ import androidx.camera.extensions.impl.ProcessResultImpl;
 import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.Version;
+import androidx.camera.extensions.internal.compat.workaround.CaptureOutputSurfaceForCaptureProcessor;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,15 +61,14 @@ import java.util.Map;
  */
 class StillCaptureProcessor {
     private static final String TAG = "StillCaptureProcessor";
-    @NonNull
-    final CaptureProcessorImpl mCaptureProcessorImpl;
-    @NonNull
-    final CaptureResultImageMatcher mCaptureResultImageMatcher = new CaptureResultImageMatcher();
+    private static final long UNSPECIFIED_TIMESTAMP = -1;
+    final @NonNull CaptureProcessorImpl mCaptureProcessorImpl;
+    final @NonNull CaptureResultImageMatcher mCaptureResultImageMatcher =
+            new CaptureResultImageMatcher();
     private boolean mIsPostviewConfigured;
     final Object mLock = new Object();
     @GuardedBy("mLock")
-    @NonNull
-    HashMap<Integer, Pair<ImageReference, TotalCaptureResult>> mCaptureResults =
+    @NonNull HashMap<Integer, Pair<ImageReference, TotalCaptureResult>> mCaptureResults =
             new HashMap<>();
 
     @GuardedBy("mLock")
@@ -75,15 +76,23 @@ class StillCaptureProcessor {
     // Stores the first capture result for injecting into the output JPEG ImageProxy.
     @GuardedBy("mLock")
     TotalCaptureResult mSourceCaptureResult = null;
+    CaptureOutputSurfaceForCaptureProcessor mCaptureOutputSurface;
     @GuardedBy("mLock")
     boolean mIsClosed = false;
+    long mTimeStampForOutputImage = UNSPECIFIED_TIMESTAMP;
 
     StillCaptureProcessor(@NonNull CaptureProcessorImpl captureProcessorImpl,
-            @NonNull Surface captureOutputSurface,
+            @NonNull Surface outputSurface,
             @NonNull Size surfaceSize,
-            @Nullable OutputSurface postviewOutputSurface) {
+            @Nullable OutputSurface postviewOutputSurface,
+            boolean needOverrideTimestamp) {
         mCaptureProcessorImpl = captureProcessorImpl;
-        mCaptureProcessorImpl.onOutputSurface(captureOutputSurface, ImageFormat.YUV_420_888);
+
+        mCaptureOutputSurface = new CaptureOutputSurfaceForCaptureProcessor(
+                outputSurface, surfaceSize, needOverrideTimestamp);
+
+        mCaptureProcessorImpl.onOutputSurface(
+                mCaptureOutputSurface.getSurface(), ImageFormat.YUV_420_888);
         mCaptureProcessorImpl.onImageFormatUpdate(ImageFormat.YUV_420_888);
 
         mIsPostviewConfigured = (postviewOutputSurface != null);
@@ -124,6 +133,7 @@ class StillCaptureProcessor {
     void startCapture(boolean enablePostview, @NonNull List<Integer> captureIdList,
             @NonNull OnCaptureResultCallback onCaptureResultCallback) {
         Logger.d(TAG, "Start the capture: enablePostview=" + enablePostview);
+        mTimeStampForOutputImage = UNSPECIFIED_TIMESTAMP;
         synchronized (mLock) {
             Preconditions.checkState(!mIsClosed, "StillCaptureProcessor is closed. Can't invoke "
                     + "startCapture()");
@@ -249,6 +259,14 @@ class StillCaptureProcessor {
             int captureStageId) {
         mCaptureResultImageMatcher.captureResultIncoming(captureResult,
                 captureStageId);
+        // Fetch the timestamp for the 1st captureResult received.
+        if (mTimeStampForOutputImage == UNSPECIFIED_TIMESTAMP) {
+            Long timestamp = captureResult.get(CaptureResult.SENSOR_TIMESTAMP);
+            if (timestamp != null) {
+                mTimeStampForOutputImage = timestamp;
+                mCaptureOutputSurface.setOutputImageTimestamp(mTimeStampForOutputImage);
+            }
+        }
 
         synchronized (mLock) {
             if (mSourceCaptureResult == null) {
@@ -272,6 +290,7 @@ class StillCaptureProcessor {
             clearCaptureResults();
             mCaptureResultImageMatcher.clearImageReferenceListener();
             mCaptureResultImageMatcher.clear();
+            mCaptureOutputSurface.close();
         }
     }
 }

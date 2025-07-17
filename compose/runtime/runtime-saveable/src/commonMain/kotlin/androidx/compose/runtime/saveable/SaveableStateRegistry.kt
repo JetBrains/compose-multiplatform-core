@@ -16,18 +16,21 @@
 
 package androidx.compose.runtime.saveable
 
+import androidx.collection.MutableScatterMap
+import androidx.collection.mutableScatterMapOf
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.saveable.SaveableStateRegistry.Entry
 import androidx.compose.runtime.staticCompositionLocalOf
 
 /** Allows components to save and restore their state using the saved instance state mechanism. */
-interface SaveableStateRegistry {
+public interface SaveableStateRegistry {
     /**
      * Returns the restored value for the given key. Once being restored the value is cleared, so
      * you can't restore the same key twice.
      *
      * @param key Key used to save the value
      */
-    fun consumeRestored(key: String): Any?
+    public fun consumeRestored(key: String): Any?
 
     /**
      * Registers the value provider.
@@ -45,7 +48,7 @@ interface SaveableStateRegistry {
      *   triggered to collect all the registered values
      * @return the registry entry which you can use to unregister the provider
      */
-    fun registerProvider(key: String, valueProvider: () -> Any?): Entry
+    public fun registerProvider(key: String, valueProvider: () -> Any?): Entry
 
     /**
      * Returns true if the value can be saved using this Registry. The default implementation will
@@ -53,18 +56,18 @@ interface SaveableStateRegistry {
      *
      * @param value The value which we want to save using this Registry
      */
-    fun canBeSaved(value: Any): Boolean
+    public fun canBeSaved(value: Any): Boolean
 
     /**
      * Executes all the registered value providers and combines these values into a map. We have a
      * list of values for each key as it is allowed to have multiple providers for the same key.
      */
-    fun performSave(): Map<String, List<Any?>>
+    public fun performSave(): Map<String, List<Any?>>
 
     /** The registry entry which you get when you use [registerProvider]. */
-    interface Entry {
+    public interface Entry {
         /** Unregister previously registered entry. */
-        fun unregister()
+        public fun unregister()
     }
 }
 
@@ -74,13 +77,14 @@ interface SaveableStateRegistry {
  * @param restoredValues The map of the restored values
  * @param canBeSaved Function which returns true if the given value can be saved by the registry
  */
-fun SaveableStateRegistry(
+public fun SaveableStateRegistry(
     restoredValues: Map<String, List<Any?>>?,
-    canBeSaved: (Any) -> Boolean
+    canBeSaved: (Any) -> Boolean,
 ): SaveableStateRegistry = SaveableStateRegistryImpl(restoredValues, canBeSaved)
 
 /** CompositionLocal with a current [SaveableStateRegistry] instance. */
-val LocalSaveableStateRegistry = staticCompositionLocalOf<SaveableStateRegistry?> { null }
+public val LocalSaveableStateRegistry: ProvidableCompositionLocal<SaveableStateRegistry?> =
+    staticCompositionLocalOf<SaveableStateRegistry?> { null }
 
 // CharSequence.isBlank() allocates an iterator because it calls indices.all{}
 private fun CharSequence.fastIsBlank(): Boolean {
@@ -94,22 +98,27 @@ private fun CharSequence.fastIsBlank(): Boolean {
     return blank
 }
 
+private fun <K, V> Map<K, V>.toMutableScatterMap(): MutableScatterMap<K, V> {
+    return MutableScatterMap<K, V>(size).also { it += this }
+}
+
 private class SaveableStateRegistryImpl(
     restored: Map<String, List<Any?>>?,
-    private val canBeSaved: (Any) -> Boolean
+    private val canBeSaved: (Any) -> Boolean,
 ) : SaveableStateRegistry {
 
-    private val restored: MutableMap<String, List<Any?>> =
-        restored?.toMutableMap() ?: mutableMapOf()
-    private val valueProviders = mutableMapOf<String, MutableList<() -> Any?>>()
+    private val restored: MutableScatterMap<String, List<Any?>>? =
+        if (!restored.isNullOrEmpty()) restored.toMutableScatterMap() else null
+
+    private var valueProviders: MutableScatterMap<String, MutableList<() -> Any?>>? = null
 
     override fun canBeSaved(value: Any): Boolean = canBeSaved.invoke(value)
 
     override fun consumeRestored(key: String): Any? {
-        val list = restored.remove(key)
-        return if (list != null && list.isNotEmpty()) {
+        val list = restored?.remove(key)
+        return if (!list.isNullOrEmpty()) {
             if (list.size > 1) {
-                restored[key] = list.subList(1, list.size)
+                restored?.put(key, list.subList(1, list.size))
             }
             list[0]
         } else {
@@ -119,13 +128,17 @@ private class SaveableStateRegistryImpl(
 
     override fun registerProvider(key: String, valueProvider: () -> Any?): Entry {
         require(!key.fastIsBlank()) { "Registered key is empty or blank" }
-        @Suppress("UNCHECKED_CAST")
+        val valueProviders =
+            valueProviders
+                ?: mutableScatterMapOf<String, MutableList<() -> Any?>>().also {
+                    valueProviders = it
+                }
         valueProviders.getOrPut(key) { mutableListOf() }.add(valueProvider)
         return object : Entry {
             override fun unregister() {
                 val list = valueProviders.remove(key)
                 list?.remove(valueProvider)
-                if (list != null && list.isNotEmpty()) {
+                if (!list.isNullOrEmpty()) {
                     // if there are other providers for this key return list back to the map
                     valueProviders[key] = list
                 }
@@ -134,8 +147,17 @@ private class SaveableStateRegistryImpl(
     }
 
     override fun performSave(): Map<String, List<Any?>> {
-        val map = restored.toMutableMap()
-        valueProviders.forEach { (key, list) ->
+        if (restored == null && valueProviders == null) {
+            return emptyMap()
+        }
+        // TODO: Use a MutableScatterMap.asMap(), but we first need to make that map wrapper
+        //  serializable
+        val expectedMapSize = (restored?.size ?: 0) + (valueProviders?.size ?: 0)
+        val map =
+            HashMap<String, List<Any?>>(expectedMapSize).apply {
+                restored?.forEach { k, v -> this[k] = v }
+            }
+        valueProviders?.forEach { key, list ->
             if (list.size == 1) {
                 val value = list[0].invoke()
                 if (value != null) {

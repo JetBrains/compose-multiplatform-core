@@ -33,7 +33,6 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsEqualTo
@@ -59,7 +58,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class ContextMenuAreaTest {
@@ -81,7 +79,7 @@ class ContextMenuAreaTest {
             state = state,
             onDismiss = onDismiss,
             contextMenuBuilderBlock = contextMenuBuilderBlock,
-            modifier = modifier.testTag(tag)
+            modifier = modifier.testTag(tag),
         )
     }
 
@@ -131,7 +129,7 @@ class ContextMenuAreaTest {
                     TestMenu(
                         state = state,
                         modifier =
-                            Modifier.testTag(menuTag).onGloballyPositioned { menuLayout = it }
+                            Modifier.testTag(menuTag).onGloballyPositioned { menuLayout = it },
                     )
                 }
             }
@@ -213,7 +211,7 @@ class ContextMenuAreaTest {
             contextMenuBuilderBlock = contextMenuBuilderBlock,
             enabled = enabled,
             content = content,
-            modifier = modifier.testTag(tag)
+            modifier = modifier.testTag(tag),
         )
     }
 
@@ -280,7 +278,7 @@ class ContextMenuAreaTest {
             TestArea(
                 state = state,
                 contextMenuBuilderBlock = { testItem(modifier = Modifier.testTag(itemTag)) },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
             )
         }
 
@@ -297,7 +295,7 @@ class ContextMenuAreaTest {
                 contextMenuBuilderBlock = {
                     testItem(modifier = Modifier.testTag(itemTag)) { state.close() }
                 },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
             )
         }
 
@@ -320,7 +318,7 @@ class ContextMenuAreaTest {
                 contextMenuBuilderBlock = {
                     testItem(modifier = Modifier.testTag(itemTag)) { state.close() }
                 },
-                modifier = Modifier.background(Color.LightGray).size(100.dp)
+                modifier = Modifier.background(Color.LightGray).size(100.dp),
             )
         }
 

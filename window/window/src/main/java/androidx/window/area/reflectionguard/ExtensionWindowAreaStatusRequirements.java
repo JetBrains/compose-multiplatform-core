@@ -18,9 +18,10 @@ package androidx.window.area.reflectionguard;
 
 import android.util.DisplayMetrics;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.area.ExtensionWindowAreaStatus;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * API requirements for [ExtensionWindowAreaStatus]
@@ -31,6 +32,5 @@ public interface ExtensionWindowAreaStatusRequirements {
     int getWindowAreaStatus();
 
     /** @see ExtensionWindowAreaStatus#getWindowAreaDisplayMetrics */
-    @NonNull
-    DisplayMetrics getWindowAreaDisplayMetrics();
+    @NonNull DisplayMetrics getWindowAreaDisplayMetrics();
 }

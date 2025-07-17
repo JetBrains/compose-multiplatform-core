@@ -31,8 +31,6 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.concurrent.futures.ResolvableFuture;
@@ -40,6 +38,9 @@ import androidx.core.content.FileProvider;
 import androidx.core.util.AtomicFile;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileDescriptor;
@@ -220,10 +221,9 @@ public final class BrowserServiceFileProvider extends FileProvider {
      *         file writing has completed or an IOException describing the reason for failure.
      */
     @UiThread
-    @NonNull
     @SuppressWarnings("deprecation") /* AsyncTask */
-    public static ResolvableFuture<Uri> saveBitmap(@NonNull Context context, @NonNull Bitmap bitmap,
-            @NonNull String name, int version) {
+    public static @NonNull ResolvableFuture<Uri> saveBitmap(@NonNull Context context,
+            @NonNull Bitmap bitmap, @NonNull String name, int version) {
         String filename = name + "_" + Integer.toString(version);
         Uri uri = generateUri(context, filename);
 
@@ -268,10 +268,9 @@ public final class BrowserServiceFileProvider extends FileProvider {
      * @return A {@link ListenableFuture} that will be fulfilled with the Bitmap once the load has
      *         completed or with an IOException describing the reason for failure.
      */
-    @NonNull
     @SuppressWarnings("deprecation") /* AsyncTask */
-    public static ListenableFuture<Bitmap> loadBitmap(@NonNull final ContentResolver resolver,
-            @NonNull final Uri uri) {
+    public static @NonNull ListenableFuture<Bitmap> loadBitmap(
+            final @NonNull ContentResolver resolver, final @NonNull Uri uri) {
         final ResolvableFuture<Bitmap> result = ResolvableFuture.create();
 
         android.os.AsyncTask.THREAD_POOL_EXECUTOR.execute(new Runnable() {

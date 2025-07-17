@@ -16,8 +16,8 @@
 
 package androidx.core.content;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -44,7 +44,7 @@ public final class MimeTypeFilter {
     }
 
     private static boolean mimeTypeAgainstFilter(
-            @NonNull String[] mimeTypeParts, @NonNull String[] filterParts) {
+            String @NonNull [] mimeTypeParts, String @NonNull [] filterParts) {
         if (filterParts.length != 2) {
             throw new IllegalArgumentException(
                     "Ill-formatted MIME type filter. Must be type/subtype.");
@@ -87,9 +87,8 @@ public final class MimeTypeFilter {
      * Matches one nullable MIME type against an array of MIME type filters.
      * @return The first matching filter, or null if nothing matches.
      */
-    @Nullable
-    public static String matches(
-            @Nullable String mimeType, @NonNull String[] filters) {
+    public static @Nullable String matches(
+            @Nullable String mimeType, String @NonNull [] filters) {
         if (mimeType == null) {
             return null;
         }
@@ -109,9 +108,8 @@ public final class MimeTypeFilter {
      * Matches multiple MIME types against an array of MIME type filters.
      * @return The first matching MIME type, or null if nothing matches.
      */
-    @Nullable
-    public static String matches(
-            @Nullable String[] mimeTypes, @NonNull String filter) {
+    public static @Nullable String matches(
+            String @Nullable [] mimeTypes, @NonNull String filter) {
         if (mimeTypes == null) {
             return null;
         }
@@ -131,9 +129,8 @@ public final class MimeTypeFilter {
      * Matches multiple MIME types against an array of MIME type filters.
      * @return The list of matching MIME types, or empty array if nothing matches.
      */
-    @NonNull
-    public static String[] matchesMany(
-            @Nullable String[] mimeTypes, @NonNull String filter) {
+    public static String @NonNull [] matchesMany(
+            String @Nullable [] mimeTypes, @NonNull String filter) {
         if (mimeTypes == null) {
             return new String[] {};
         }

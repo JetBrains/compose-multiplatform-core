@@ -16,11 +16,13 @@
 
 package androidx.camera.camera2.pipe.config
 
+import android.hardware.camera2.CameraManager
 import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.CameraStatusMonitor
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.StreamGraph
+import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
 import androidx.camera.camera2.pipe.compat.AudioRestrictionControllerImpl
 import androidx.camera.camera2.pipe.compat.Camera2Backend
@@ -32,20 +34,26 @@ import androidx.camera.camera2.pipe.compat.Camera2CaptureSequenceProcessorFactor
 import androidx.camera.camera2.pipe.compat.Camera2CaptureSessionsModule
 import androidx.camera.camera2.pipe.compat.Camera2DeviceCloser
 import androidx.camera.camera2.pipe.compat.Camera2DeviceCloserImpl
+import androidx.camera.camera2.pipe.compat.Camera2DeviceManager
 import androidx.camera.camera2.pipe.compat.Camera2ErrorProcessor
 import androidx.camera.camera2.pipe.compat.Camera2MetadataCache
 import androidx.camera.camera2.pipe.compat.Camera2MetadataProvider
 import androidx.camera.camera2.pipe.compat.CameraAvailabilityMonitor
 import androidx.camera.camera2.pipe.compat.CameraOpener
+import androidx.camera.camera2.pipe.compat.PruningCamera2DeviceManager
+import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpener
+import androidx.camera.camera2.pipe.compat.RetryingCameraStateOpenerImpl
 import androidx.camera.camera2.pipe.compat.StandardCamera2CaptureSequenceProcessorFactory
 import androidx.camera.camera2.pipe.core.Threads
 import androidx.camera.camera2.pipe.graph.GraphListener
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.internal.CameraErrorListener
+import androidx.camera.camera2.pipe.internal.CameraStatusMonitor
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
+import javax.inject.Provider
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -56,7 +64,17 @@ internal abstract class Camera2Module {
     @DefaultCameraBackend
     abstract fun bindCameraPipeCameraBackend(camera2Backend: Camera2Backend): CameraBackend
 
+    @Binds
+    abstract fun bindCamera2DeviceManager(
+        camera2DeviceManager: PruningCamera2DeviceManager
+    ): Camera2DeviceManager
+
     @Binds abstract fun bindCameraOpener(camera2CameraOpener: Camera2CameraOpener): CameraOpener
+
+    @Binds
+    abstract fun bindRetryingCameraStateOpener(
+        retryingCameraStateOpenerImpl: RetryingCameraStateOpenerImpl
+    ): RetryingCameraStateOpener
 
     @Binds
     abstract fun bindCameraMetadataProvider(
@@ -72,11 +90,6 @@ internal abstract class Camera2Module {
     abstract fun bindCameraAvailabilityMonitor(
         camera2CameraAvailabilityMonitor: Camera2CameraAvailabilityMonitor
     ): CameraAvailabilityMonitor
-
-    @Binds
-    abstract fun bindCameraStatusMonitor(
-        camera2CameraStatusMonitor: Camera2CameraStatusMonitor
-    ): CameraStatusMonitor
 
     @Binds
     abstract fun bindCamera2DeviceCloser(
@@ -97,7 +110,7 @@ internal abstract class Camera2Module {
         [
             Camera2ControllerConfig::class,
             Camera2ControllerModule::class,
-            Camera2CaptureSessionsModule::class
+            Camera2CaptureSessionsModule::class,
         ]
 )
 internal interface Camera2ControllerComponent {
@@ -114,17 +127,26 @@ internal interface Camera2ControllerComponent {
 @Module
 internal class Camera2ControllerConfig(
     private val cameraBackend: CameraBackend,
+    private val graphId: CameraGraphId,
     private val graphConfig: CameraGraph.Config,
     private val graphListener: GraphListener,
     private val streamGraph: StreamGraph,
+    private val surfaceTracker: SurfaceTracker,
+    private val shutdownListener: Camera2CameraController.ShutdownListener,
 ) {
     @Provides fun provideCameraGraphConfig() = graphConfig
+
+    @Provides fun provideCameraGraphId() = graphId
 
     @Provides fun provideCameraBackend() = cameraBackend
 
     @Provides fun provideStreamGraph() = streamGraph as StreamGraphImpl
 
     @Provides fun provideGraphListener() = graphListener
+
+    @Provides fun provideSurfaceGraph() = surfaceTracker
+
+    @Provides fun provideShutdownListener() = shutdownListener
 }
 
 @Module
@@ -146,6 +168,16 @@ internal abstract class Camera2ControllerModule {
             return CoroutineScope(
                 threads.lightweightDispatcher.plus(CoroutineName("CXCP-Camera2Controller"))
             )
+        }
+
+        @Camera2ControllerScope
+        @Provides
+        fun provideCameraStatusMonitor(
+            cameraManager: Provider<CameraManager>,
+            threads: Threads,
+            graphConfig: CameraGraph.Config,
+        ): CameraStatusMonitor {
+            return Camera2CameraStatusMonitor(cameraManager, threads, graphConfig.camera)
         }
     }
 }

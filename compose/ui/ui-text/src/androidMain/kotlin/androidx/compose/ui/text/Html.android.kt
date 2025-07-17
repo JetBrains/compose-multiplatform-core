@@ -50,10 +50,44 @@ import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
 import org.xml.sax.XMLReader
 
-actual fun AnnotatedString.Companion.fromHtml(
+/**
+ * Converts a string with HTML tags into [AnnotatedString].
+ *
+ * If you define your string in the resources, make sure to use HTML-escaped opening brackets
+ * <code>&amp;lt;</code> instead of <code><</code>.
+ *
+ * For a list of supported tags go check
+ * [Styling with HTML markup](https://developer.android.com/guide/topics/resources/string-resource#StylingWithHTML)
+ * guide.
+ *
+ * To support nested bullet list, the nested sub-list wrapped in <ul> tag MUST be placed inside a
+ * list item with a tag <li>. In other words, you must add wrapped sub-list in between opening and
+ * closing <li> tag of the wrapping sub-list. This is due to the specificities of the underlying
+ * XML/HTML parser.
+ *
+ * @param htmlString HTML-tagged string to be parsed to construct AnnotatedString
+ * @param linkStyles style configuration to be applied to links present in the string in different
+ *   styles
+ * @param linkInteractionListener a listener that will be attached to links that are present in the
+ *   string and triggered when user clicks on those links. When set to null, which is a default, the
+ *   system will try to open the corresponding links with the
+ *   [androidx.compose.ui.platform.UriHandler] composition local
+ *
+ * Note that any link style passed directly to this method will be merged with the styles set
+ * directly on a HTML-tagged string. For example, if you set a color of the link via the span
+ * annotation to "red" but also pass a green color via the [linkStyles], the link will be displayed
+ * as green. If, however, you pass a green background via the [linkStyles] instead, the link will be
+ * displayed as red on a green background.
+ *
+ * Example of displaying styled string from resources
+ *
+ * @sample androidx.compose.ui.text.samples.AnnotatedStringFromHtml
+ * @see LinkAnnotation
+ */
+fun AnnotatedString.Companion.fromHtml(
     htmlString: String,
-    linkStyles: TextLinkStyles?,
-    linkInteractionListener: LinkInteractionListener?
+    linkStyles: TextLinkStyles? = null,
+    linkInteractionListener: LinkInteractionListener? = null,
 ): AnnotatedString {
     // Check ContentHandlerReplacementTag kdoc for more details
     val stringToParse = "<$ContentHandlerReplacementTag />$htmlString"
@@ -65,7 +99,7 @@ actual fun AnnotatedString.Companion.fromHtml(
 @VisibleForTesting
 internal fun Spanned.toAnnotatedString(
     linkStyles: TextLinkStyles? = null,
-    linkInteractionListener: LinkInteractionListener? = null
+    linkInteractionListener: LinkInteractionListener? = null,
 ): AnnotatedString {
     return AnnotatedString.Builder(capacity = length)
         .append(this)
@@ -76,7 +110,7 @@ internal fun Spanned.toAnnotatedString(
 private fun AnnotatedString.Builder.addSpans(
     spanned: Spanned,
     linkStyles: TextLinkStyles?,
-    linkInteractionListener: LinkInteractionListener?
+    linkInteractionListener: LinkInteractionListener?,
 ) {
     spanned.getSpans(0, length, Any::class.java).forEach { span ->
         val range = TextRange(spanned.getSpanStart(span), spanned.getSpanEnd(span))
@@ -89,7 +123,7 @@ private fun AnnotatedString.Builder.addSpan(
     start: Int,
     end: Int,
     linkStyles: TextLinkStyles?,
-    linkInteractionListener: LinkInteractionListener?
+    linkInteractionListener: LinkInteractionListener?,
 ) {
     when (span) {
         is AbsoluteSizeSpan -> {
@@ -103,6 +137,14 @@ private fun AnnotatedString.Builder.addSpan(
         }
         is BackgroundColorSpan -> {
             addStyle(SpanStyle(background = Color(span.backgroundColor)), start, end)
+        }
+        is BulletSpanWithLevel -> {
+            addBullet(
+                start = start,
+                end = end,
+                indentation = Bullet.DefaultIndentation * span.indentationLevel,
+                bullet = span.bullet,
+            )
         }
         is ForegroundColorSpan -> {
             addStyle(SpanStyle(color = Color(span.foregroundColor)), start, end)
@@ -203,7 +245,7 @@ private val TagHandler =
             opening: Boolean,
             tag: String?,
             output: Editable?,
-            xmlReader: XMLReader?
+            xmlReader: XMLReader?,
         ) {
             if (xmlReader == null || output == null) return
 
@@ -216,21 +258,29 @@ private val TagHandler =
 
 private class AnnotationContentHandler(
     private val contentHandler: ContentHandler,
-    private val output: Editable
+    private val output: Editable,
 ) : ContentHandler by contentHandler {
+
+    // We handle the ul/li tags manually since default implementation will add newlines but we
+    // instead want to add the ParagraphStyle
+    private var bulletIndentation = 0
+    private var currentBulletSpan: BulletSpanWithLevel? = null
+
     override fun startElement(uri: String?, localName: String?, qName: String?, atts: Attributes?) {
-        if (localName == AnnotationTag) {
-            atts?.let { handleAnnotationStart(it) }
-        } else {
-            contentHandler.startElement(uri, localName, qName, atts)
+        when (localName) {
+            AnnotationTag -> atts?.let { handleAnnotationStart(it) }
+            Ul -> handleUlStart()
+            Li -> handleLiStart()
+            else -> contentHandler.startElement(uri, localName, qName, atts)
         }
     }
 
     override fun endElement(uri: String?, localName: String?, qName: String?) {
-        if (localName == AnnotationTag) {
-            handleAnnotationEnd()
-        } else {
-            contentHandler.endElement(uri, localName, qName)
+        when (localName) {
+            AnnotationTag -> handleAnnotationEnd()
+            Ul -> handleUlEnd()
+            Li -> handleLiEnd()
+            else -> contentHandler.endElement(uri, localName, qName)
         }
     }
 
@@ -267,9 +317,50 @@ private class AnnotationContentHandler(
                 }
             }
     }
+
+    private fun handleUlStart() {
+        commitCurrentBulletSpan()
+        bulletIndentation++
+    }
+
+    private fun handleUlEnd() {
+        commitCurrentBulletSpan()
+        bulletIndentation--
+    }
+
+    private fun handleLiStart() {
+        // unlike default HtmlCompat, this does not handle styling inside the li tag, for example,
+        // <li style="color:red"> is a no-op in terms of applying color. This needs to be handled
+        // manually since we can't use default implementation which adds unwanted new lines for us.
+        commitCurrentBulletSpan()
+        currentBulletSpan = BulletSpanWithLevel(Bullet.Default, bulletIndentation, output.length)
+    }
+
+    private fun handleLiEnd() {
+        commitCurrentBulletSpan()
+    }
+
+    private fun commitCurrentBulletSpan() {
+        currentBulletSpan?.let {
+            val start = it.start
+            val end = output.length
+            output.setSpan(it, start, end, SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
+        currentBulletSpan = null
+    }
 }
 
 private class AnnotationSpan(val key: String, val value: String)
+
+/**
+ * A temporary bullet span that holds a [bullet] object, it [start] position and the
+ * [indentationLevel] that starts always from 1
+ */
+internal data class BulletSpanWithLevel(
+    val bullet: Bullet,
+    val indentationLevel: Int,
+    val start: Int,
+)
 
 /**
  * This tag is added at the beginning of a string fed to the HTML parser in order to trigger a
@@ -282,3 +373,5 @@ private class AnnotationSpan(val key: String, val value: String)
  */
 private const val ContentHandlerReplacementTag = "ContentHandlerReplacementTag"
 private const val AnnotationTag = "annotation"
+private const val Li = "li"
+private const val Ul = "ul"

@@ -17,21 +17,22 @@
 package androidx.camera.camera2.pipe.integration.interop
 
 import android.hardware.camera2.CameraCharacteristics
+import android.util.Pair
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter
-import androidx.camera.camera2.pipe.integration.adapter.PhysicalCameraInfoAdapter
+import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter.Companion.unwrapAs
 import androidx.camera.camera2.pipe.integration.compat.workaround.getSafely
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.core.CameraInfo
-import androidx.camera.core.impl.CameraInfoInternal
-import androidx.core.util.Preconditions
+import androidx.camera.core.impl.AdapterCameraInfo
 
 /** An interface for retrieving Camera2-related camera information. */
 @ExperimentalCamera2Interop
-class Camera2CameraInfo
+public class Camera2CameraInfo
 private constructor(
     private val cameraProperties: CameraProperties,
+    private val extensionsSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = null,
 ) {
+    @JvmSynthetic @JvmField public val cameraId: String = cameraProperties.cameraId.value
 
     /**
      * Gets a camera characteristic value.
@@ -43,7 +44,13 @@ private constructor(
      * @param key The [CameraCharacteristics.Key] of the characteristic.
      * @return the value of the characteristic. </T>
      */
-    fun <T> getCameraCharacteristic(key: CameraCharacteristics.Key<T>): T? {
+    public fun <T> getCameraCharacteristic(key: CameraCharacteristics.Key<T>): T? {
+        extensionsSpecificChars?.forEach {
+            if (it.first == key) {
+                @Suppress("UNCHECKED_CAST")
+                return it.second as T
+            }
+        }
         return cameraProperties.metadata.getSafely(key)
     }
 
@@ -63,12 +70,16 @@ private constructor(
      * @throws IllegalStateException if the camera info does not contain the camera 2 camera ID
      *   (e.g., if CameraX was not initialized with a [androidx.camera.camera2.Camera2Config]).
      */
-    fun getCameraId(): String = cameraProperties.cameraId.value
+    public fun getCameraId(): String = cameraId
 
-    companion object {
+    public companion object {
 
         /**
          * Gets the [Camera2CameraInfo] from a [CameraInfo].
+         *
+         * If the [CameraInfo] is retrieved by an Extensions-enabled
+         * [androidx.camera.core.CameraSelector], calling [getCameraCharacteristic] will return any
+         * available Extensions-specific characteristics if exists.
          *
          * @param cameraInfo The [CameraInfo] to get from.
          * @return The camera information with Camera2 implementation.
@@ -77,24 +88,28 @@ private constructor(
          *   [androidx.camera.camera2.Camera2Config]).
          */
         @JvmStatic
-        fun from(@Suppress("UNUSED_PARAMETER") cameraInfo: CameraInfo): Camera2CameraInfo {
-            // Physical camera
-            if (cameraInfo is PhysicalCameraInfoAdapter) {
-                return cameraInfo.unwrapAs(Camera2CameraInfo::class)!!
+        public fun from(cameraInfo: CameraInfo): Camera2CameraInfo {
+            var camera2CameraInfo = cameraInfo.unwrapAs(Camera2CameraInfo::class)
+            requireNotNull(camera2CameraInfo) {
+                "Could not unwrap $cameraInfo as Camera2CameraInfo!"
             }
 
-            // Logical camera
-            var cameraInfoImpl = (cameraInfo as CameraInfoInternal).implementation
-            Preconditions.checkArgument(
-                cameraInfoImpl is CameraInfoAdapter,
-                "CameraInfo doesn't contain Camera2 implementation."
-            )
-            return (cameraInfoImpl as CameraInfoAdapter).camera2CameraInfo
+            if (cameraInfo is AdapterCameraInfo) {
+                if (cameraInfo.sessionProcessor != null) {
+                    camera2CameraInfo =
+                        Camera2CameraInfo(
+                            camera2CameraInfo.cameraProperties,
+                            cameraInfo.sessionProcessor?.availableCharacteristicsKeyValues,
+                        )
+                }
+            }
+            return camera2CameraInfo
         }
 
         /** This is the workaround to prevent constructor from being added to public API. */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
         @JvmStatic
-        fun create(cameraProperties: CameraProperties) = Camera2CameraInfo(cameraProperties)
+        public fun create(cameraProperties: CameraProperties): Camera2CameraInfo =
+            Camera2CameraInfo(cameraProperties)
     }
 }

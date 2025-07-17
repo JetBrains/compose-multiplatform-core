@@ -21,12 +21,12 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -38,14 +38,14 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 23
+        minSdk = 23
     }
-    namespace "androidx.wear.remote.interactions.samples"
+    namespace = "androidx.wear.remote.interactions.samples"
 }
 
 androidx {
     name = "Android Wear Remote Interactions Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     mavenVersion = LibraryVersions.WEAR_REMOTE_INTERACTIONS
     inceptionYear = "2023"
     description = "Contains the sample code for the Android Wear Remote Interactions Classes"

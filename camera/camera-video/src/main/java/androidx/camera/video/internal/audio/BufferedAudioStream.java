@@ -24,11 +24,12 @@ import static androidx.core.util.Preconditions.checkState;
 import android.annotation.SuppressLint;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.annotation.ExecutedBy;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 import java.util.Queue;
@@ -65,8 +66,7 @@ public class BufferedAudioStream implements AudioStream {
             CameraXExecutors.audioExecutor());
     private final Object mLock = new Object();
     @GuardedBy("mLock")
-    @Nullable
-    private AudioData mAudioDataNotFullyRead = null;
+    private @Nullable AudioData mAudioDataNotFullyRead = null;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //                      Members only accessed on mProducerExecutor                            //
@@ -82,7 +82,7 @@ public class BufferedAudioStream implements AudioStream {
             @NonNull AudioSettings audioSettings) {
         mAudioStream = audioStream;
         mBytesPerFrame = audioSettings.getBytesPerFrame();
-        mSampleRate = audioSettings.getSampleRate();
+        mSampleRate = audioSettings.getCaptureSampleRate();
 
         checkArgument(mBytesPerFrame > 0L, "mBytesPerFrame must be greater than 0.");
         checkArgument(mSampleRate > 0L, "mSampleRate must be greater than 0.");
@@ -153,9 +153,8 @@ public class BufferedAudioStream implements AudioStream {
     }
 
     @SuppressLint("BanThreadSleep")
-    @NonNull
     @Override
-    public PacketInfo read(@NonNull ByteBuffer byteBuffer) {
+    public @NonNull PacketInfo read(@NonNull ByteBuffer byteBuffer) {
         checkNotReleasedOrThrow();
         checkStartedOrThrow();
 

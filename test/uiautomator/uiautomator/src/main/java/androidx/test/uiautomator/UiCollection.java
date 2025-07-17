@@ -16,7 +16,7 @@
 
 package androidx.test.uiautomator;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Used to enumerate a container's UI elements for the purpose of counting,
@@ -47,9 +47,8 @@ public class UiCollection extends UiObject {
      * @return {@link UiObject} pointing at and instance of <code>childPattern</code>
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getChildByDescription(@NonNull UiSelector childPattern, @NonNull String text)
-            throws UiObjectNotFoundException {
+    public @NonNull UiObject getChildByDescription(@NonNull UiSelector childPattern,
+            @NonNull String text) throws UiObjectNotFoundException {
         if (text != null) {
             int count = getChildCount(childPattern);
             for (int x = 0; x < count; x++) {
@@ -80,8 +79,7 @@ public class UiCollection extends UiObject {
      * @param instance int the desired matched instance of this <code>childPattern</code>
      * @return {@link UiObject} pointing at and instance of <code>childPattern</code>
      */
-    @NonNull
-    public UiObject getChildByInstance(@NonNull UiSelector childPattern, int instance)
+    public @NonNull UiObject getChildByInstance(@NonNull UiSelector childPattern, int instance)
             throws UiObjectNotFoundException {
         UiSelector patternSelector = UiSelector.patternBuilder(getSelector(),
                 UiSelector.patternBuilder(childPattern).instance(instance));
@@ -103,8 +101,7 @@ public class UiCollection extends UiObject {
      * @return {@link UiObject} pointing at and instance of <code>childPattern</code>
      * @throws UiObjectNotFoundException
      */
-    @NonNull
-    public UiObject getChildByText(@NonNull UiSelector childPattern, @NonNull String text)
+    public @NonNull UiObject getChildByText(@NonNull UiSelector childPattern, @NonNull String text)
             throws UiObjectNotFoundException {
         if (text != null) {
             int count = getChildCount(childPattern);

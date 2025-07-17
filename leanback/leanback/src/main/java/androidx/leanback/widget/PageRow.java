@@ -13,7 +13,7 @@
  */
 package androidx.leanback.widget;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Used to represent content spanning full page.

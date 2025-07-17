@@ -16,9 +16,9 @@
 
 package androidx.appsearch.compiler;
 
-import androidx.annotation.NonNull;
-
 import com.squareup.javapoet.CodeBlock;
+
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.type.ArrayType;

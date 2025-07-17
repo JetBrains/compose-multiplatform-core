@@ -46,10 +46,7 @@ import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StyleableRes;
@@ -63,6 +60,8 @@ import androidx.core.util.ObjectsCompat;
 import androidx.core.view.TintableBackgroundView;
 import androidx.resourceinspection.annotation.AppCompatShadowedAttributes;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link Spinner} which supports compatible features on older versions of the platform,
@@ -183,7 +182,7 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
      * @see #MODE_DROPDOWN
      */
     public AppCompatSpinner(
-            @NonNull Context context, @Nullable  AttributeSet attrs, int defStyleAttr, int mode) {
+            @NonNull Context context,  @Nullable AttributeSet attrs, int defStyleAttr, int mode) {
         this(context, attrs, defStyleAttr, mode, null);
     }
 
@@ -511,8 +510,7 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    @Nullable
-    public ColorStateList getSupportBackgroundTintList() {
+    public @Nullable ColorStateList getSupportBackgroundTintList() {
         return mBackgroundTintHelper != null
                 ? mBackgroundTintHelper.getSupportBackgroundTintList() : null;
     }
@@ -525,7 +523,7 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    public void setSupportBackgroundTintMode(@Nullable PorterDuff.Mode tintMode) {
+    public void setSupportBackgroundTintMode(PorterDuff.@Nullable Mode tintMode) {
         if (mBackgroundTintHelper != null) {
             mBackgroundTintHelper.setSupportBackgroundTintMode(tintMode);
         }
@@ -538,8 +536,7 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    @Nullable
-    public PorterDuff.Mode getSupportBackgroundTintMode() {
+    public PorterDuff.@Nullable Mode getSupportBackgroundTintMode() {
         return mBackgroundTintHelper != null
                 ? mBackgroundTintHelper.getSupportBackgroundTintMode() : null;
     }
@@ -690,7 +687,7 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
          *                      views, may be {@null} to use default theme
          */
         public DropDownAdapter(@Nullable SpinnerAdapter adapter,
-                @Nullable Resources.Theme dropDownTheme) {
+                Resources.@Nullable Theme dropDownTheme) {
             mAdapter = adapter;
 
             if (adapter instanceof ListAdapter) {
@@ -1103,10 +1100,9 @@ public class AppCompatSpinner extends Spinner implements TintableBackgroundView 
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setDropDownViewTheme(
-                @NonNull android.widget.ThemedSpinnerAdapter themedSpinnerAdapter,
-                @Nullable Resources.Theme theme
+                android.widget.@NonNull ThemedSpinnerAdapter themedSpinnerAdapter,
+                Resources.@Nullable Theme theme
         ) {
             if (!ObjectsCompat.equals(themedSpinnerAdapter.getDropDownViewTheme(), theme)) {
                 themedSpinnerAdapter.setDropDownViewTheme(theme);

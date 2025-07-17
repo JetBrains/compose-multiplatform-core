@@ -82,6 +82,14 @@ class ImageAppWidget : GlanceAppWidget() {
             Scaffold(titleBar = { Header() }, content = { BodyContent(imageUri = imageUri) })
         }
     }
+
+    override suspend fun providePreview(context: Context, widgetCategory: Int) {
+        val imageUri: Uri = getShareableImageUri(context)
+
+        provideContent {
+            Scaffold(titleBar = { Header() }, content = { BodyContent(imageUri = imageUri) })
+        }
+    }
 }
 
 @Composable
@@ -92,7 +100,7 @@ private fun Header() {
     Row(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = GlanceModifier.fillMaxWidth().background(Color.White)
+        modifier = GlanceModifier.fillMaxWidth().background(Color.White),
     ) {
         // Demonstrates toggling application of color filter on an image
         Image(
@@ -104,7 +112,7 @@ private fun Header() {
                 } else {
                     null
                 },
-            modifier = GlanceModifier.clickable { shouldTintHeaderIcon = !shouldTintHeaderIcon }
+            modifier = GlanceModifier.clickable { shouldTintHeaderIcon = !shouldTintHeaderIcon },
         )
         Text(
             text = context.getString(R.string.image_widget_name),
@@ -128,7 +136,7 @@ private fun BodyContent(imageUri: Uri) {
                         ContentScale.FillBounds -> ContentScale.Fit
                         else -> ContentScale.Crop
                     }
-            }
+            },
         )
         Spacer(GlanceModifier.size(4.dp))
 
@@ -178,7 +186,7 @@ private fun ResourceImage(contentScale: ContentScale, modifier: GlanceModifier =
         provider = ImageProvider(R.drawable.compose),
         contentDescription = "Content Scale image sample (value: ${contentScale.asString()})",
         contentScale = contentScale,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -198,13 +206,13 @@ private fun ResourceImage(contentScale: ContentScale, modifier: GlanceModifier =
 private fun UriImage(
     contentScale: ContentScale,
     modifier: GlanceModifier = GlanceModifier,
-    uri: Uri
+    uri: Uri,
 ) {
     Image(
         provider = ImageProvider(uri),
         contentDescription = "Content Scale image sample (value: ${contentScale.asString()})",
         contentScale = contentScale,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -234,7 +242,7 @@ private fun BitmapImage(contentScale: ContentScale, modifier: GlanceModifier = G
         provider = ImageProvider(makeBitmap()),
         contentDescription = "An image with an in-memory bitmap provider",
         contentScale = contentScale,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -256,7 +264,7 @@ private fun IconImage(contentScale: ContentScale, modifier: GlanceModifier) {
             provider = ImageProvider(bitmap),
             contentDescription = "An image with an in-memory bitmap provider",
             contentScale = contentScale,
-            modifier = modifier
+            modifier = modifier,
         )
     }
 }
@@ -356,7 +364,7 @@ class ImageAppWidgetImageContentProvider : ContentProvider() {
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? {
         return null // unused
     }
@@ -377,7 +385,7 @@ class ImageAppWidgetImageContentProvider : ContentProvider() {
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int {
         return 0 // unused
     }

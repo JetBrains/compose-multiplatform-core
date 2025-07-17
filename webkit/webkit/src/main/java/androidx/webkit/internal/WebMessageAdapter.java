@@ -18,8 +18,6 @@ package androidx.webkit.internal;
 
 import static org.chromium.support_lib_boundary.WebMessagePayloadBoundaryInterface.WebMessagePayloadType;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebMessagePortCompat;
 
@@ -27,6 +25,8 @@ import org.chromium.support_lib_boundary.WebMessageBoundaryInterface;
 import org.chromium.support_lib_boundary.WebMessagePayloadBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationHandler;
 import java.util.Objects;
@@ -51,14 +51,12 @@ public class WebMessageAdapter implements WebMessageBoundaryInterface {
      */
     @Deprecated
     @Override
-    @Nullable
-    public String getData() {
+    public @Nullable String getData() {
         return mWebMessageCompat.getData();
     }
 
     @Override
-    @Nullable
-    public InvocationHandler getMessagePayload() {
+    public @Nullable InvocationHandler getMessagePayload() {
         final WebMessagePayloadAdapter adapter;
         switch (mWebMessageCompat.getType()) {
             case WebMessageCompat.TYPE_STRING:
@@ -76,8 +74,7 @@ public class WebMessageAdapter implements WebMessageBoundaryInterface {
     }
 
     @Override
-    @Nullable
-    public InvocationHandler[] getPorts() {
+    public InvocationHandler @Nullable [] getPorts() {
         WebMessagePortCompat[] ports = mWebMessageCompat.getPorts();
         if (ports == null) return null;
 
@@ -89,8 +86,7 @@ public class WebMessageAdapter implements WebMessageBoundaryInterface {
     }
 
     @Override
-    @NonNull
-    public String[] getSupportedFeatures() {
+    public String @NonNull [] getSupportedFeatures() {
         // getData() and getPorts() are not covered by feature flags.
         return sFeatures;
     }
@@ -115,8 +111,7 @@ public class WebMessageAdapter implements WebMessageBoundaryInterface {
      * Return null when the WebMessageCompat payload type is not supported by AndroidX now.
      */
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static WebMessageCompat webMessageCompatFromBoundaryInterface(
+    public static @Nullable WebMessageCompat webMessageCompatFromBoundaryInterface(
             @NonNull WebMessageBoundaryInterface boundaryInterface) {
         final WebMessagePortCompat[] ports = toWebMessagePortCompats(
                 boundaryInterface.getPorts());
@@ -139,8 +134,8 @@ public class WebMessageAdapter implements WebMessageBoundaryInterface {
         return new WebMessageCompat(boundaryInterface.getData(), ports);
     }
 
-    @NonNull
-    private static WebMessagePortCompat[] toWebMessagePortCompats(InvocationHandler[] ports) {
+    private static WebMessagePortCompat @NonNull [] toWebMessagePortCompats(
+            InvocationHandler[] ports) {
         WebMessagePortCompat[] compatPorts = new WebMessagePortCompat[ports.length];
         for (int n = 0; n < ports.length; n++) {
             compatPorts[n] = new WebMessagePortImpl(ports[n]);

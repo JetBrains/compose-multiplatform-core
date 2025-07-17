@@ -15,10 +15,11 @@ package androidx.leanback.widget;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListUpdateCallback;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,9 +69,8 @@ public class ArrayObjectAdapter extends ObjectAdapter {
         return mItems.size();
     }
 
-    @Nullable
     @Override
-    public Object get(int index) {
+    public @Nullable Object get(int index) {
         return mItems.get(index);
     }
 
@@ -215,9 +215,8 @@ public class ArrayObjectAdapter extends ObjectAdapter {
     /**
      * Gets a read-only view of the list of object of this ArrayObjectAdapter.
      */
-    @NonNull
     @SuppressWarnings("unchecked")
-    public <E> List<E> unmodifiableList() {
+    public <E> @NonNull List<E> unmodifiableList() {
 
         // The mUnmodifiableItems will only be created once as long as the content of mItems has not
         // been changed.
@@ -280,9 +279,8 @@ public class ArrayObjectAdapter extends ObjectAdapter {
                         itemList.get(newItemPosition));
             }
 
-            @Nullable
             @Override
-            public Object getChangePayload(int oldItemPosition, int newItemPosition) {
+            public @Nullable Object getChangePayload(int oldItemPosition, int newItemPosition) {
                 return callback.getChangePayload(mOldItems.get(oldItemPosition),
                         itemList.get(newItemPosition));
             }

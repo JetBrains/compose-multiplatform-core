@@ -27,7 +27,7 @@ import static androidx.core.util.Preconditions.checkArgument;
 import android.media.AudioFormat;
 import android.media.AudioTimestamp;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.TimeUnit;
 

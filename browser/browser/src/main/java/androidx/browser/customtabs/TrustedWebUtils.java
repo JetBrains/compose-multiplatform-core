@@ -26,11 +26,12 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.core.content.FileProvider;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 

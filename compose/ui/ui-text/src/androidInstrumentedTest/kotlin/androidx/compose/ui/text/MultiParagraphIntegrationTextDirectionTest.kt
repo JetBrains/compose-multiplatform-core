@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.toFontFamily
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
@@ -83,7 +84,7 @@ class MultiParagraphIntegrationTextDirectionTest {
             multiParagraph(
                 text = AnnotatedString(""),
                 textDirection = TextDirection.Unspecified,
-                localeList = ltrLocaleList
+                localeList = ltrLocaleList,
             )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Ltr)
@@ -95,7 +96,7 @@ class MultiParagraphIntegrationTextDirectionTest {
             multiParagraph(
                 text = AnnotatedString(""),
                 textDirection = TextDirection.Unspecified,
-                localeList = rtlLocaleList
+                localeList = rtlLocaleList,
             )
 
         assertThat(paragraph.getParagraphDirection(0)).isEqualTo(ResolvedTextDirection.Rtl)
@@ -120,7 +121,7 @@ class MultiParagraphIntegrationTextDirectionTest {
                     fontSize = fontSize,
                     textDirection = TextDirection.Content,
                     localeList = ltrLocaleList,
-                    width = width
+                    width = width,
                 )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
@@ -154,7 +155,7 @@ class MultiParagraphIntegrationTextDirectionTest {
                     fontSize = fontSize,
                     textDirection = TextDirection.Content,
                     localeList = rtlLocaleList,
-                    width = width
+                    width = width,
                 )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
@@ -187,7 +188,7 @@ class MultiParagraphIntegrationTextDirectionTest {
                     text = text,
                     fontSize = fontSize,
                     textDirection = TextDirection.Ltr,
-                    width = width
+                    width = width,
                 )
 
             // First paragraph should be rendered as: "a .", dot is visually after "a ".
@@ -220,7 +221,7 @@ class MultiParagraphIntegrationTextDirectionTest {
                     text = text,
                     fontSize = fontSize,
                     textDirection = TextDirection.Rtl,
-                    width = width
+                    width = width,
                 )
 
             // First paragraph should be rendered as: ". a", dot is visually before " a".
@@ -257,14 +258,14 @@ class MultiParagraphIntegrationTextDirectionTest {
     private fun multiParagraphIntrinsics(
         text: AnnotatedString,
         fontSize: TextUnit = TextUnit.Unspecified,
-        placeholders: List<AnnotatedString.Range<Placeholder>> = listOf()
+        placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
     ): MultiParagraphIntrinsics {
         return MultiParagraphIntrinsics(
             text,
             style = TextStyle(fontFamily = fontFamilyMeasureFont, fontSize = fontSize),
             placeholders = placeholders,
             density = defaultDensity,
-            fontFamilyResolver = UncachedFontFamilyResolver(context)
+            fontFamilyResolver = UncachedFontFamilyResolver(context),
         )
     }
 
@@ -273,7 +274,7 @@ class MultiParagraphIntegrationTextDirectionTest {
         localeList: LocaleList? = null,
         textDirection: TextDirection = TextDirection.Unspecified,
         fontSize: TextUnit = TextUnit.Unspecified,
-        width: Float = Float.MAX_VALUE
+        width: Float = Float.MAX_VALUE,
     ): MultiParagraph {
         return MultiParagraph(
             annotatedString = text,
@@ -282,11 +283,12 @@ class MultiParagraphIntegrationTextDirectionTest {
                     fontFamily = fontFamilyMeasureFont,
                     fontSize = fontSize,
                     localeList = localeList,
-                    textDirection = textDirection
+                    textDirection = textDirection,
                 ),
             constraints = Constraints(maxWidth = width.ceilToInt()),
             density = defaultDensity,
-            fontFamilyResolver = UncachedFontFamilyResolver(context)
+            fontFamilyResolver = UncachedFontFamilyResolver(context),
+            overflow = TextOverflow.Clip,
         )
     }
 }

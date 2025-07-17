@@ -30,7 +30,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import android.content.Context;
 import android.database.Cursor;
 
-import androidx.annotation.NonNull;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
@@ -50,6 +49,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.common.truth.Truth;
 
 import org.hamcrest.MatcherAssert;
+import org.jspecify.annotations.NonNull;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -829,6 +829,8 @@ public class MigrationTest {
     @Test
     public void dropAllTablesDuringDestructiveMigrations() throws IOException {
         SupportSQLiteDatabase database = helper.createDatabase(TEST_DB, MigrationDb.MAX_VERSION);
+        database.execSQL("CREATE TABLE ExtraTable (id INTEGER PRIMARY KEY)");
+        database.execSQL("CREATE VIEW ExtraView AS SELECT * FROM sqlite_master");
         database.close();
 
         final boolean[] onDestructiveMigrationInvoked = { false };
@@ -844,16 +846,19 @@ public class MigrationTest {
                 })
                 .build();
         Set<String> tableNames = new HashSet<>();
-        Cursor c = db.query("SELECT name FROM sqlite_master WHERE type = 'table'", new Object[0]);
+        Cursor c = db.query("SELECT name FROM sqlite_master", new Object[0]);
         while (c.moveToNext()) {
             tableNames.add(c.getString(0));
         }
         c.close();
         db.close();
+
         // Extra table is no longer present
-        assertThat(tableNames.contains("Extra"), is(false));
+        assertThat(tableNames.contains("ExtraTable"), is(false));
         // Android special table is present
         assertThat(tableNames.contains("android_metadata"), is(true));
+        // Extra view is no longer present
+        assertThat(tableNames.contains("ExtraView"), is(false));
 
         assertThat(onDestructiveMigrationInvoked[0], is(true));
     }

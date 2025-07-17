@@ -19,7 +19,7 @@ package androidx.camera.core;
 import android.util.Range;
 import android.util.Rational;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * An interface which contains the camera exposure related information.
@@ -63,8 +63,7 @@ public interface ExposureState {
      * #isExposureCompensationSupported()} is false, return Range [0,0].
      * @see android.hardware.camera2.CameraCharacteristics#CONTROL_AE_COMPENSATION_RANGE
      */
-    @NonNull
-    Range<Integer> getExposureCompensationRange();
+    @NonNull Range<Integer> getExposureCompensationRange();
 
     /**
      * Get the smallest step by which the exposure compensation can be changed.
@@ -73,8 +72,7 @@ public interface ExposureState {
      * #isExposureCompensationSupported()} is false, return {@link Rational#ZERO}.
      * @see android.hardware.camera2.CameraCharacteristics#CONTROL_AE_COMPENSATION_STEP
      */
-    @NonNull
-    Rational getExposureCompensationStep();
+    @NonNull Rational getExposureCompensationStep();
 
     /**
      * Whether exposure compensation is supported for this camera.

@@ -19,31 +19,31 @@
 
 package androidx.compose.foundation.relocation
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.TraversableNode
-import androidx.compose.ui.node.findNearestAncestor
 import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.relocation.BringIntoViewModifierNode
+import androidx.compose.ui.relocation.bringIntoView
+import kotlin.jvm.JvmMultifileClass
+import kotlin.jvm.JvmName
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * A parent that can respond to [bringChildIntoView] requests from its children, and scroll so that
- * the item is visible on screen. To apply a responder to an element, pass it to the
- * [bringIntoViewResponder] modifier.
+ * A parent that can respond to [bringChildIntoView] requests from its children, and bring its
+ * content so that the item is visible on the screen. To apply a responder to an element, pass it to
+ * the [bringIntoViewResponder] modifier.
  *
  * When a component calls [BringIntoViewRequester.bringIntoView], the nearest
  * [BringIntoViewResponder] is found, which is responsible for, in order:
  * 1. Calculating a rectangle that its parent responder should bring into view by returning it from
  *    [calculateRectForParent].
- * 2. Performing any scroll or other layout adjustments needed to ensure the requested rectangle is
- *    brought into view in [bringChildIntoView].
+ * 2. Performing any layout adjustments needed to ensure the requested rectangle is brought into
+ *    view in [bringChildIntoView].
  *
  * Here is a sample where a composable is brought into view:
  *
@@ -52,13 +52,9 @@ import kotlinx.coroutines.launch
  * Here is a sample where a part of a composable is brought into view:
  *
  * @sample androidx.compose.foundation.samples.BringPartOfComposableIntoViewSample
- *
  * @see BringIntoViewRequester
- *
- * Note: this API is experimental while we optimise the performance and find the right API shape for
- * it
  */
-@ExperimentalFoundationApi
+@Deprecated(message = "Use BringIntoViewModifierNode instead")
 interface BringIntoViewResponder {
 
     /**
@@ -70,15 +66,15 @@ interface BringIntoViewResponder {
      * @param localRect The rectangle that should be brought into view, relative to this node. This
      *   will be the same rectangle passed to [bringChildIntoView].
      * @return The rectangle in this node that should be brought into view itself, relative to this
-     *   node. If this node needs to scroll to bring [localRect] into view, the returned rectangle
+     *   node. If this node needs to adjust to bring [localRect] into view, the returned rectangle
      *   should be the destination rectangle that [localRect] will eventually occupy, once the
-     *   scrolling animation is finished.
+     *   adjusting animation is finished.
      */
-    @ExperimentalFoundationApi fun calculateRectForParent(localRect: Rect): Rect
+    fun calculateRectForParent(localRect: Rect): Rect
 
     /**
-     * Bring this specified rectangle into bounds by making this scrollable parent scroll
-     * appropriately.
+     * Bring this specified rectangle into bounds by making this parent to move or adjust its
+     * content appropriately.
      *
      * This method should ensure that only one call is being handled at a time. If you use Compose's
      * `Animatable` you get this for free, since it will cancel the previous animation when a new
@@ -90,27 +86,24 @@ interface BringIntoViewResponder {
      *   bounds of the request change while the request is being processed. If the rectangle cannot
      *   be calculated, e.g. because the [LayoutCoordinates] are not attached, return null.
      */
-    @ExperimentalFoundationApi suspend fun bringChildIntoView(localRect: () -> Rect?)
+    suspend fun bringChildIntoView(localRect: () -> Rect?)
 }
 
 /**
- * A parent that can respond to [BringIntoViewRequester] requests from its children, and scroll so
- * that the item is visible on screen. See [BringIntoViewResponder] for more details about how this
- * mechanism works.
+ * A parent that can respond to [BringIntoViewRequester] requests from its children, and adjust
+ * itself so that the item is visible on screen. See [BringIntoViewResponder] for more details about
+ * how this mechanism works.
  *
  * @sample androidx.compose.foundation.samples.BringIntoViewSample
- *
  * @see BringIntoViewRequester
- *
- * Note: this API is experimental while we optimise the performance and find the right API shape for
- * it
  */
 @Suppress("ModifierInspectorInfo")
-@ExperimentalFoundationApi
-fun Modifier.bringIntoViewResponder(responder: BringIntoViewResponder): Modifier =
-    this.then(BringIntoViewResponderElement(responder))
+@Deprecated(message = "Use BringIntoViewModifierNode instead")
+fun Modifier.bringIntoViewResponder(
+    @Suppress("DEPRECATION") responder: BringIntoViewResponder
+): Modifier = this.then(BringIntoViewResponderElement(responder))
 
-@ExperimentalFoundationApi
+@Suppress("DEPRECATION")
 private class BringIntoViewResponderElement(private val responder: BringIntoViewResponder) :
     ModifierNodeElement<BringIntoViewResponderNode>() {
     override fun create(): BringIntoViewResponderNode = BringIntoViewResponderNode(responder)
@@ -136,16 +129,14 @@ private class BringIntoViewResponderElement(private val responder: BringIntoView
 
 /**
  * A modifier that holds state and modifier implementations for [bringIntoViewResponder]. It has
- * access to the next [BringIntoViewParent] via [findBringIntoViewParent] and additionally provides
- * itself as the [BringIntoViewParent] for subsequent modifiers. This class is responsible for
- * recursively propagating requests up the responder chain.
+ * parent access to the next [BringIntoViewModifierNode] via
+ * [androidx.compose.ui.relocation.bringIntoView] and additionally provides itself as the
+ * [BringIntoViewModifierNode] for subsequent modifiers. This class is responsible for recursively
+ * propagating requests up the responder chain.
  */
-@OptIn(ExperimentalFoundationApi::class)
-internal class BringIntoViewResponderNode(var responder: BringIntoViewResponder) :
-    Modifier.Node(), BringIntoViewParent, LayoutAwareModifierNode, TraversableNode {
-
-    override val traverseKey: Any
-        get() = TraverseKey
+internal class BringIntoViewResponderNode(
+    @Suppress("DEPRECATION") var responder: BringIntoViewResponder
+) : Modifier.Node(), BringIntoViewModifierNode, LayoutAwareModifierNode {
 
     override val shouldAutoInvalidate: Boolean = false
 
@@ -161,9 +152,9 @@ internal class BringIntoViewResponderNode(var responder: BringIntoViewResponder)
      * [LayoutCoordinates] and then, concurrently, calling the [responder] and the [parent] to
      * handle the request.
      */
-    override suspend fun bringChildIntoView(
+    override suspend fun bringIntoView(
         childCoordinates: LayoutCoordinates,
-        boundsProvider: () -> Rect?
+        boundsProvider: () -> Rect?,
     ) {
         @Suppress("NAME_SHADOWING")
         fun localRect(): Rect? {
@@ -197,29 +188,9 @@ internal class BringIntoViewResponderNode(var responder: BringIntoViewResponder)
             // bringChildIntoView directly without launching, if that function throws a
             // CancellationException, it will cancel this coroutineScope, which will also cancel the
             // responder's coroutine.
-            launch {
-                if (isAttached) {
-                    val parent = findBringIntoViewParent()
-                    parent?.bringChildIntoView(
-                        childCoordinates = requireLayoutCoordinates(),
-                        boundsProvider = parentRect
-                    )
-                }
-            }
+            launch { bringIntoView(parentRect) }
         }
     }
-
-    companion object TraverseKey
-}
-
-/**
- * Finds the nearest ancestor [BringIntoViewResponderNode], or returns [defaultBringIntoViewParent]
- * if none can be found. Returns null if the node is not attached.
- */
-internal fun DelegatableNode.findBringIntoViewParent(): BringIntoViewParent? {
-    if (!node.isAttached) return null
-    return (findNearestAncestor(BringIntoViewResponderNode) as BringIntoViewParent?)
-        ?: defaultBringIntoViewParent()
 }
 
 /** Translates [rect], specified in [sourceCoordinates], into this [LayoutCoordinates]. */

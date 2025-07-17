@@ -25,13 +25,13 @@ internal fun finalConstraints(
     constraints: Constraints,
     softWrap: Boolean,
     overflow: TextOverflow,
-    maxIntrinsicWidth: Float
+    maxIntrinsicWidth: Float,
 ): Constraints =
-    Constraints(
+    Constraints.fitPrioritizingWidth(
         minWidth = 0,
         maxWidth = finalMaxWidth(constraints, softWrap, overflow, maxIntrinsicWidth),
         minHeight = 0,
-        maxHeight = constraints.maxHeight
+        maxHeight = constraints.maxHeight,
     )
 
 /** Find the final max width a Paragraph would use based on all parameters. */
@@ -39,9 +39,9 @@ internal fun finalMaxWidth(
     constraints: Constraints,
     softWrap: Boolean,
     overflow: TextOverflow,
-    maxIntrinsicWidth: Float
+    maxIntrinsicWidth: Float,
 ): Int {
-    val widthMatters = softWrap || overflow == TextOverflow.Ellipsis
+    val widthMatters = softWrap || overflow.isEllipsis
     val maxWidth =
         if (widthMatters && constraints.hasBoundedWidth) {
             constraints.maxWidth
@@ -81,6 +81,13 @@ internal fun finalMaxLines(softWrap: Boolean, overflow: TextOverflow, maxLinesIn
     //     AA…
     // Here we assume there won't be any '\n' character when softWrap is false. And make
     // maxLines 1 to implement the similar behavior.
-    val overwriteMaxLines = !softWrap && overflow == TextOverflow.Ellipsis
+    val overwriteMaxLines = !softWrap && overflow.isEllipsis
     return if (overwriteMaxLines) 1 else maxLinesIn.coerceAtLeast(1)
 }
+
+internal val TextOverflow.isEllipsis: Boolean
+    get() {
+        return this == TextOverflow.Ellipsis ||
+            this == TextOverflow.StartEllipsis ||
+            this == TextOverflow.MiddleEllipsis
+    }

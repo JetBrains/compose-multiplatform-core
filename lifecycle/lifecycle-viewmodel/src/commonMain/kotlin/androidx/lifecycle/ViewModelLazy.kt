@@ -20,8 +20,8 @@ import kotlin.jvm.JvmOverloads
 import kotlin.reflect.KClass
 
 /**
- * An implementation of [Lazy] used by [androidx.fragment.app.Fragment.viewModels] and
- * [androidx.activity.ComponentActivity.viewmodels].
+ * An implementation of [Lazy] used by [androidx.fragment.app.viewModels] and
+ * [androidx.activity.viewModels].
  *
  * [storeProducer] is a lambda that will be called during initialization, [VM] will be created in
  * the scope of returned [ViewModelStore].
@@ -38,7 +38,7 @@ constructor(
     private val viewModelClass: KClass<VM>,
     private val storeProducer: () -> ViewModelStore,
     private val factoryProducer: () -> ViewModelProvider.Factory,
-    private val extrasProducer: () -> CreationExtras = { CreationExtras.Empty }
+    private val extrasProducer: () -> CreationExtras = { CreationExtras.Empty },
 ) : Lazy<VM> {
     private var cached: VM? = null
 

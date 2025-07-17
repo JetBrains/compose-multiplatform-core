@@ -18,7 +18,6 @@ package androidx.compose.foundation.anchoredDraggable
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.DecayAnimationSpec
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableMinFlingVelocity
@@ -40,7 +39,6 @@ import org.junit.Rule
  * Test helper that allows to test either old or new anchored draggable overloads before/after
  * aosp/3012013.
  */
-@OptIn(ExperimentalFoundationApi::class)
 abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehavior: Boolean) {
 
     @get:Rule val rule = createComposeRule()
@@ -62,6 +60,7 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
         snapAnimationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.SnapAnimationSpec,
         decayAnimationSpec: DecayAnimationSpec<Float> =
             AnchoredDraggableDefaults.DecayAnimationSpec,
+        shouldCreateFling: Boolean = true,
     ): Pair<AnchoredDraggableState<T>, Modifier> {
         val state =
             createAnchoredDraggableState(
@@ -71,19 +70,21 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                 positionalThreshold = positionalThreshold,
                 velocityThreshold = velocityThreshold,
                 snapAnimationSpec = snapAnimationSpec,
-                decayAnimationSpec = decayAnimationSpec
+                decayAnimationSpec = decayAnimationSpec,
             )
-        // This won't work for snapshot observation but should be ok for tests
-        val resolvedStartDragImmediately = startDragImmediately ?: state.isAnimationRunning
         val modifier =
             if (testNewBehavior) {
                 val flingBehavior =
-                    anchoredDraggableFlingBehavior(
-                        state,
-                        density = rule.density,
-                        positionalThreshold = positionalThreshold,
-                        snapAnimationSpec = snapAnimationSpec
-                    )
+                    if (shouldCreateFling) {
+                        anchoredDraggableFlingBehavior(
+                            state,
+                            density = rule.density,
+                            positionalThreshold = positionalThreshold,
+                            snapAnimationSpec = snapAnimationSpec,
+                        )
+                    } else {
+                        null
+                    }
                 createAnchoredDraggableModifier(
                     state = state,
                     reverseDirection = reverseDirection,
@@ -91,8 +92,8 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                     enabled = enabled,
                     interactionSource = interactionSource,
                     overscrollEffect = overscrollEffect,
-                    startDragImmediately = resolvedStartDragImmediately,
-                    flingBehavior = flingBehavior
+                    startDragImmediately = startDragImmediately,
+                    flingBehavior = flingBehavior,
                 )
             } else {
                 createAnchoredDraggableModifier(
@@ -102,8 +103,8 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                     enabled = enabled,
                     interactionSource = interactionSource,
                     overscrollEffect = overscrollEffect,
-                    startDragImmediately = resolvedStartDragImmediately,
-                    flingBehavior = null
+                    startDragImmediately = startDragImmediately,
+                    flingBehavior = null,
                 )
             }
         return state to modifier
@@ -118,8 +119,7 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
             with(rule.density) { AnchoredDraggableMinFlingVelocity.toPx() }
         },
         snapAnimationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.SnapAnimationSpec,
-        decayAnimationSpec: DecayAnimationSpec<Float> =
-            AnchoredDraggableDefaults.DecayAnimationSpec,
+        decayAnimationSpec: DecayAnimationSpec<Float> = AnchoredDraggableDefaults.DecayAnimationSpec,
     ) =
         if (testNewBehavior) {
             val resolvedVelocityThreshold = velocityThreshold()
@@ -130,12 +130,9 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                 "The velocity threshold resolved to $resolvedVelocityThreshold, but velocity " +
                     "thresholds are not configurable with testNewBehavior=true."
             }
+            @Suppress("DEPRECATION") /* confirmValueChange is deprecated */
             when (anchors) {
-                null ->
-                    AnchoredDraggableState(
-                        initialValue,
-                        confirmValueChange,
-                    )
+                null -> AnchoredDraggableState(initialValue, confirmValueChange)
                 else -> AnchoredDraggableState(initialValue, anchors, confirmValueChange)
             }
         } else {
@@ -148,7 +145,7 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                         positionalThreshold = positionalThreshold,
                         velocityThreshold = velocityThreshold,
                         snapAnimationSpec = snapAnimationSpec,
-                        decayAnimationSpec = decayAnimationSpec
+                        decayAnimationSpec = decayAnimationSpec,
                     )
                 else ->
                     AnchoredDraggableState(
@@ -158,7 +155,7 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
                         positionalThreshold = positionalThreshold,
                         velocityThreshold = velocityThreshold,
                         snapAnimationSpec = snapAnimationSpec,
-                        decayAnimationSpec = decayAnimationSpec
+                        decayAnimationSpec = decayAnimationSpec,
                     )
             }
         }
@@ -170,31 +167,58 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
         enabled: Boolean = true,
         interactionSource: MutableInteractionSource? = null,
         overscrollEffect: OverscrollEffect? = null,
-        startDragImmediately: Boolean = state.isAnimationRunning,
-        flingBehavior: FlingBehavior? = null
-    ) =
+        startDragImmediately: Boolean? = null,
+        flingBehavior: FlingBehavior? = null,
+    ): Modifier =
         when (reverseDirection) {
             null ->
-                Modifier.anchoredDraggable(
-                    state = state,
-                    orientation = orientation,
-                    enabled = enabled,
-                    interactionSource = interactionSource,
-                    overscrollEffect = overscrollEffect,
-                    startDragImmediately = startDragImmediately,
-                    flingBehavior = flingBehavior
-                )
+                when (startDragImmediately) {
+                    null ->
+                        Modifier.anchoredDraggable(
+                            state = state,
+                            orientation = orientation,
+                            enabled = enabled,
+                            interactionSource = interactionSource,
+                            overscrollEffect = overscrollEffect,
+                            flingBehavior = flingBehavior,
+                        )
+                    else ->
+                        @Suppress("DEPRECATION")
+                        Modifier.anchoredDraggable(
+                            state = state,
+                            orientation = orientation,
+                            enabled = enabled,
+                            interactionSource = interactionSource,
+                            overscrollEffect = overscrollEffect,
+                            startDragImmediately = startDragImmediately,
+                            flingBehavior = flingBehavior,
+                        )
+                }
             else ->
-                Modifier.anchoredDraggable(
-                    state = state,
-                    reverseDirection = reverseDirection,
-                    orientation = orientation,
-                    enabled = enabled,
-                    interactionSource = interactionSource,
-                    overscrollEffect = overscrollEffect,
-                    startDragImmediately = startDragImmediately,
-                    flingBehavior = flingBehavior
-                )
+                when (startDragImmediately) {
+                    null ->
+                        Modifier.anchoredDraggable(
+                            state = state,
+                            reverseDirection = reverseDirection,
+                            orientation = orientation,
+                            enabled = enabled,
+                            interactionSource = interactionSource,
+                            overscrollEffect = overscrollEffect,
+                            flingBehavior = flingBehavior,
+                        )
+                    else ->
+                        @Suppress("DEPRECATION")
+                        Modifier.anchoredDraggable(
+                            state = state,
+                            reverseDirection = reverseDirection,
+                            orientation = orientation,
+                            enabled = enabled,
+                            interactionSource = interactionSource,
+                            overscrollEffect = overscrollEffect,
+                            startDragImmediately = startDragImmediately,
+                            flingBehavior = flingBehavior,
+                        )
+                }
         }
 
     /**
@@ -208,22 +232,23 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
         density: Density,
         positionalThreshold: (totalDistance: Float) -> Float =
             AnchoredDraggableDefaults.PositionalThreshold,
-        snapAnimationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.SnapAnimationSpec
+        snapAnimationSpec: AnimationSpec<Float> = AnchoredDraggableDefaults.SnapAnimationSpec,
     ) =
         if (testNewBehavior) {
             anchoredDraggableFlingBehavior(
                 state = state,
                 density = density,
                 positionalThreshold = positionalThreshold,
-                snapAnimationSpec = snapAnimationSpec
+                snapAnimationSpec = snapAnimationSpec,
             )
         } else {
             object : TargetedFlingBehavior {
                 override suspend fun ScrollScope.performFling(
                     initialVelocity: Float,
-                    onRemainingDistanceUpdated: (Float) -> Unit
+                    onRemainingDistanceUpdated: (Float) -> Unit,
                 ): Float {
-                    @Suppress("DEPRECATION") return state.settle(initialVelocity)
+                    @Suppress("DEPRECATION")
+                    return state.settle(initialVelocity)
                 }
             }
         }
@@ -231,7 +256,7 @@ abstract class AnchoredDraggableBackwardsCompatibleTest(private val testNewBehav
     internal suspend inline fun performFling(
         flingBehavior: FlingBehavior,
         state: AnchoredDraggableState<*>,
-        velocity: Float
+        velocity: Float,
     ) {
         if (testNewBehavior) {
             with(flingBehavior) {

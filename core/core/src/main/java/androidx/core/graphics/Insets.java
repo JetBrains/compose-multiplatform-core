@@ -20,10 +20,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 
 import android.graphics.Rect;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An Insets instance holds four integer offsets which describe changes to the four
@@ -33,8 +33,7 @@ import androidx.annotation.RestrictTo;
  * Insets are immutable so may be treated as values.
  */
 public final class Insets {
-    @NonNull
-    public static final Insets NONE = new Insets(0, 0, 0, 0);
+    public static final @NonNull Insets NONE = new Insets(0, 0, 0, 0);
 
     public final int left;
     public final int top;
@@ -59,8 +58,7 @@ public final class Insets {
      * @param bottom the bottom inset
      * @return Insets instance with the appropriate values
      */
-    @NonNull
-    public static Insets of(int left, int top, int right, int bottom) {
+    public static @NonNull Insets of(int left, int top, int right, int bottom) {
         if (left == 0 && top == 0 && right == 0 && bottom == 0) {
             return NONE;
         }
@@ -73,8 +71,7 @@ public final class Insets {
      * @param r the rectangle from which to take the values
      * @return an Insets instance with the appropriate values
      */
-    @NonNull
-    public static Insets of(@NonNull Rect r) {
+    public static @NonNull Insets of(@NonNull Rect r) {
         return of(r.left, r.top, r.right, r.bottom);
     }
 
@@ -85,8 +82,7 @@ public final class Insets {
      * @param b The second Insets to add.
      * @return a + b, i. e. all insets on every side are added together.
      */
-    @NonNull
-    public static Insets add(@NonNull Insets a, @NonNull Insets b) {
+    public static @NonNull Insets add(@NonNull Insets a, @NonNull Insets b) {
         return Insets.of(a.left + b.left, a.top + b.top, a.right + b.right, a.bottom + b.bottom);
     }
 
@@ -98,8 +94,7 @@ public final class Insets {
      * @return a - b, i. e. all insets on every side are subtracted from each other.
      */
     @SuppressWarnings("unused")
-    @NonNull
-    public static Insets subtract(@NonNull Insets a, @NonNull Insets b) {
+    public static @NonNull Insets subtract(@NonNull Insets a, @NonNull Insets b) {
         return Insets.of(a.left - b.left, a.top - b.top, a.right - b.right, a.bottom - b.bottom);
     }
 
@@ -111,8 +106,7 @@ public final class Insets {
      * @return an {@code Insets} instance where the inset on each side is the larger of
      *         the insets on that side from {@code a} and {@code b}.
      */
-    @NonNull
-    public static Insets max(@NonNull Insets a, @NonNull Insets b) {
+    public static @NonNull Insets max(@NonNull Insets a, @NonNull Insets b) {
         return Insets.of(Math.max(a.left, b.left), Math.max(a.top, b.top),
                 Math.max(a.right, b.right), Math.max(a.bottom, b.bottom));
     }
@@ -125,8 +119,7 @@ public final class Insets {
      * @return an {@code Insets} instance where the inset on each side is the smaller of
      *         the insets on that side from {@code a} and {@code b}.
      */
-    @NonNull
-    public static Insets min(@NonNull Insets a, @NonNull Insets b) {
+    public static @NonNull Insets min(@NonNull Insets a, @NonNull Insets b) {
         return Insets.of(Math.min(a.left, b.left), Math.min(a.top, b.top),
                 Math.min(a.right, b.right), Math.min(a.bottom, b.bottom));
     }
@@ -163,9 +156,8 @@ public final class Insets {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "Insets{left=" + left + ", top=" + top
                 + ", right=" + right + ", bottom=" + bottom + '}';
     }
@@ -174,10 +166,9 @@ public final class Insets {
      * @deprecated Use {@link #toCompatInsets(android.graphics.Insets)} instead.
      */
     @RequiresApi(api = 29)
-    @NonNull
     @Deprecated
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public static Insets wrap(@NonNull android.graphics.Insets insets) {
+    public static @NonNull Insets wrap(android.graphics.@NonNull Insets insets) {
         return toCompatInsets(insets);
     }
 
@@ -186,8 +177,7 @@ public final class Insets {
      * {@link Insets} instance from AndroidX.
      */
     @RequiresApi(api = 29)
-    @NonNull
-    public static Insets toCompatInsets(@NonNull android.graphics.Insets insets) {
+    public static @NonNull Insets toCompatInsets(android.graphics.@NonNull Insets insets) {
         return Insets.of(insets.left, insets.top, insets.right, insets.bottom);
     }
 
@@ -196,8 +186,7 @@ public final class Insets {
      * from the platform.
      */
     @RequiresApi(29)
-    @NonNull
-    public android.graphics.Insets toPlatformInsets() {
+    public android.graphics.@NonNull Insets toPlatformInsets() {
         return Api29Impl.of(left, top, right, bottom);
     }
 
@@ -207,7 +196,6 @@ public final class Insets {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static android.graphics.Insets of(int left, int top, int right, int bottom) {
             return android.graphics.Insets.of(left, top, right, bottom);
         }

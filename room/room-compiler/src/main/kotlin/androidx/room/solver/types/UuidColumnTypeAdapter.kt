@@ -24,14 +24,13 @@ import androidx.room.ext.RoomTypeNames
 import androidx.room.parser.SQLTypeAffinity
 import androidx.room.solver.CodeGenScope
 
-class UuidColumnTypeAdapter(
-    out: XType,
-) : ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
+class UuidColumnTypeAdapter(out: XType) :
+    ColumnTypeAdapter(out = out, typeAffinity = SQLTypeAffinity.BLOB) {
     override fun bindToStmt(
         stmtName: String,
         indexVarName: String,
         valueVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             fun XCodeBlock.Builder.addBindBlobStatement() {
@@ -55,11 +54,11 @@ class UuidColumnTypeAdapter(
         }
     }
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             fun XCodeBlock.Builder.addGetBlobStatement() {
@@ -67,14 +66,14 @@ class UuidColumnTypeAdapter(
                     "%L = %M(%L.getBlob(%L))",
                     outVarName,
                     RoomTypeNames.UUID_UTIL.packageMember("convertByteToUUID"),
-                    cursorVarName,
-                    indexVarName
+                    stmtVarName,
+                    indexVarName,
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addGetBlobStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addGetBlobStatement()
                 endControlFlow()

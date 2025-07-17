@@ -17,6 +17,8 @@
 package androidx.compose.foundation.layout
 
 import androidx.annotation.FloatRange
+import androidx.compose.foundation.layout.internal.JvmDefaultWithCompatibility
+import androidx.compose.foundation.layout.internal.requirePrecondition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -81,10 +83,10 @@ import androidx.compose.ui.unit.LayoutDirection
  * See example of using Texts inside the Row:
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleAlignByInRow
- *
  * @param modifier The modifier to be applied to the Row.
  * @param horizontalArrangement The horizontal arrangement of the layout's children.
  * @param verticalAlignment The vertical alignment of the layout's children.
+ * @param content The content of the Row
  * @see Column
  * @see [androidx.compose.foundation.lazy.LazyRow]
  */
@@ -93,29 +95,26 @@ inline fun Row(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val measurePolicy = rowMeasurePolicy(horizontalArrangement, verticalAlignment)
     Layout(
         content = { RowScopeInstance.content() },
         measurePolicy = measurePolicy,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
 /** MeasureBlocks to use when horizontalArrangement and verticalAlignment are not provided. */
 @PublishedApi
 internal val DefaultRowMeasurePolicy: MeasurePolicy =
-    RowMeasurePolicy(
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.Top,
-    )
+    RowMeasurePolicy(horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.Top)
 
 @PublishedApi
 @Composable
 internal fun rowMeasurePolicy(
     horizontalArrangement: Arrangement.Horizontal,
-    verticalAlignment: Alignment.Vertical
+    verticalAlignment: Alignment.Vertical,
 ): MeasurePolicy =
     if (horizontalArrangement == Arrangement.Start && verticalAlignment == Alignment.Top) {
         DefaultRowMeasurePolicy
@@ -130,7 +129,7 @@ internal fun rowMeasurePolicy(
 
 internal data class RowMeasurePolicy(
     private val horizontalArrangement: Arrangement.Horizontal,
-    private val verticalAlignment: Alignment.Vertical
+    private val verticalAlignment: Alignment.Vertical,
 ) : MeasurePolicy, RowColumnMeasurePolicy {
     override fun Placeable.mainAxisSize() = width
 
@@ -138,7 +137,7 @@ internal data class RowMeasurePolicy(
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return measure(
             constraints.minWidth,
@@ -150,7 +149,7 @@ internal data class RowMeasurePolicy(
             measurables,
             arrayOfNulls(measurables.size),
             0,
-            measurables.size
+            measurables.size,
         )
     }
 
@@ -158,14 +157,14 @@ internal data class RowMeasurePolicy(
         mainAxisLayoutSize: Int,
         childrenMainAxisSize: IntArray,
         mainAxisPositions: IntArray,
-        measureScope: MeasureScope
+        measureScope: MeasureScope,
     ) {
         with(horizontalArrangement) {
             measureScope.arrange(
                 mainAxisLayoutSize,
                 childrenMainAxisSize,
                 measureScope.layoutDirection,
-                mainAxisPositions
+                mainAxisPositions,
             )
         }
     }
@@ -180,7 +179,7 @@ internal data class RowMeasurePolicy(
         crossAxisOffset: IntArray?,
         currentLineIndex: Int,
         startIndex: Int,
-        endIndex: Int
+        endIndex: Int,
     ): MeasureResult {
         return with(measureScope) {
             layout(mainAxisLayoutSize, crossAxisLayoutSize) {
@@ -190,7 +189,7 @@ internal data class RowMeasurePolicy(
                             placeable!!,
                             placeable.rowColumnParentData,
                             crossAxisLayoutSize,
-                            beforeCrossAxisAlignmentLine
+                            beforeCrossAxisAlignmentLine,
                         )
                     placeable.place(mainAxisPositions[i], crossAxisPosition)
                 }
@@ -203,14 +202,14 @@ internal data class RowMeasurePolicy(
         crossAxisMin: Int,
         mainAxisMax: Int,
         crossAxisMax: Int,
-        isPrioritizing: Boolean
+        isPrioritizing: Boolean,
     ): Constraints {
         return createRowConstraints(
             isPrioritizing,
             mainAxisMin,
             crossAxisMin,
             mainAxisMax,
-            crossAxisMax
+            crossAxisMax,
         )
     }
 
@@ -218,20 +217,20 @@ internal data class RowMeasurePolicy(
         placeable: Placeable,
         parentData: RowColumnParentData?,
         crossAxisLayoutSize: Int,
-        beforeCrossAxisAlignmentLine: Int
+        beforeCrossAxisAlignmentLine: Int,
     ): Int {
         val childCrossAlignment = parentData?.crossAxisAlignment
         return childCrossAlignment?.align(
             size = crossAxisLayoutSize - placeable.height,
             layoutDirection = LayoutDirection.Ltr,
             placeable = placeable,
-            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine
-        ) ?: verticalAlignment.align(0, crossAxisLayoutSize - placeable.height)
+            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine,
+        ) ?: verticalAlignment.align(placeable.height, crossAxisLayoutSize)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         IntrinsicMeasureBlocks.HorizontalMinWidth(
             measurables,
@@ -241,7 +240,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         IntrinsicMeasureBlocks.HorizontalMinHeight(
             measurables,
@@ -251,7 +250,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ) =
         IntrinsicMeasureBlocks.HorizontalMaxWidth(
             measurables,
@@ -261,7 +260,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ) =
         IntrinsicMeasureBlocks.HorizontalMaxHeight(
             measurables,
@@ -275,21 +274,21 @@ internal fun createRowConstraints(
     mainAxisMin: Int,
     crossAxisMin: Int,
     mainAxisMax: Int,
-    crossAxisMax: Int
+    crossAxisMax: Int,
 ): Constraints {
     return if (!isPrioritizing) {
         Constraints(
             maxWidth = mainAxisMax,
             maxHeight = crossAxisMax,
             minWidth = mainAxisMin,
-            minHeight = crossAxisMin
+            minHeight = crossAxisMin,
         )
     } else {
         Constraints.fitPrioritizingWidth(
             maxWidth = mainAxisMax,
             maxHeight = crossAxisMax,
             minWidth = mainAxisMin,
-            minHeight = crossAxisMin
+            minHeight = crossAxisMin,
         )
     }
 }
@@ -314,7 +313,7 @@ interface RowScope {
     @Stable
     fun Modifier.weight(
         @FloatRange(from = 0.0, fromInclusive = false) weight: Float,
-        fill: Boolean = true
+        fill: Boolean = true,
     ): Modifier
 
     /**
@@ -329,47 +328,45 @@ interface RowScope {
 
     /**
      * Position the element vertically such that its [alignmentLine] aligns with sibling elements
-     * also configured to [alignBy]. [alignBy] is a form of [align], so both modifiers will not work
-     * together if specified for the same layout. [alignBy] can be used to align two layouts by
+     * also configured to `alignBy`. `alignBy` is a form of [align], so both modifiers will not work
+     * together if specified for the same layout. `alignBy` can be used to align two layouts by
      * baseline inside a [Row], using `alignBy(FirstBaseline)`. Within a [Row], all components with
-     * [alignBy] will align vertically using the specified [HorizontalAlignmentLine]s or values
-     * provided using the other [alignBy] overload, forming a sibling group. At least one element of
+     * `alignBy` will align vertically using the specified [HorizontalAlignmentLine]s or values
+     * provided using the other `alignBy` overload, forming a sibling group. At least one element of
      * the sibling group will be placed as it had [Alignment.Top] align in [Row], and the alignment
      * of the other siblings will be then determined such that the alignment lines coincide. Note
-     * that if only one element in a [Row] has the [alignBy] modifier specified the element will be
+     * that if only one element in a [Row] has the `alignBy` modifier specified the element will be
      * positioned as if it had [Alignment.Top] align.
-     *
-     * @see alignByBaseline
      *
      * Example usage:
      *
      * @sample androidx.compose.foundation.layout.samples.SimpleAlignByInRow
+     * @see alignByBaseline
      */
     @Stable fun Modifier.alignBy(alignmentLine: HorizontalAlignmentLine): Modifier
 
     /**
      * Position the element vertically such that its first baseline aligns with sibling elements
-     * also configured to [alignByBaseline] or [alignBy]. This modifier is a form of [align], so
-     * both modifiers will not work together if specified for the same layout. [alignByBaseline] is
-     * a particular case of [alignBy]. See [alignBy] for more details.
-     *
-     * @see alignBy
+     * also configured to `alignByBaseline` or `alignBy`. This modifier is a form of [align], so
+     * both modifiers will not work together if specified for the same layout. `alignByBaseline` is
+     * a particular case of `alignBy`. See `alignBy` for more details.
      *
      * Example usage:
      *
      * @sample androidx.compose.foundation.layout.samples.SimpleAlignByInRow
+     * @see alignBy
      */
     @Stable fun Modifier.alignByBaseline(): Modifier
 
     /**
      * Position the element vertically such that the alignment line for the content as determined by
-     * [alignmentLineBlock] aligns with sibling elements also configured to [alignBy]. [alignBy] is
+     * [alignmentLineBlock] aligns with sibling elements also configured to `alignBy`. `alignBy` is
      * a form of [align], so both modifiers will not work together if specified for the same layout.
-     * Within a [Row], all components with [alignBy] will align vertically using the specified
+     * Within a [Row], all components with `alignBy` will align vertically using the specified
      * [HorizontalAlignmentLine]s or values obtained from [alignmentLineBlock], forming a sibling
      * group. At least one element of the sibling group will be placed as it had [Alignment.Top]
      * align in [Row], and the alignment of the other siblings will be then determined such that the
-     * alignment lines coincide. Note that if only one element in a [Row] has the [alignBy] modifier
+     * alignment lines coincide. Note that if only one element in a [Row] has the `alignBy` modifier
      * specified the element will be positioned as if it had [Alignment.Top] align.
      *
      * Example usage:
@@ -382,12 +379,12 @@ interface RowScope {
 internal object RowScopeInstance : RowScope {
     @Stable
     override fun Modifier.weight(weight: Float, fill: Boolean): Modifier {
-        require(weight > 0.0) { "invalid weight $weight; must be greater than zero" }
+        requirePrecondition(weight > 0.0) { "invalid weight; must be greater than zero" }
         return this.then(
             LayoutWeightElement(
                 // Coerce Float.POSITIVE_INFINITY to Float.MAX_VALUE to avoid errors
                 weight = weight.coerceAtMost(Float.MAX_VALUE),
-                fill = fill
+                fill = fill,
             )
         )
     }

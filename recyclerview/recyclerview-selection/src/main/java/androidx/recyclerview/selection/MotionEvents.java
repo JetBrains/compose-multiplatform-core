@@ -17,10 +17,11 @@
 package androidx.recyclerview.selection;
 
 import android.graphics.Point;
+import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility methods for working with {@link MotionEvent} instances.
@@ -28,6 +29,14 @@ import androidx.annotation.NonNull;
 final class MotionEvents {
 
     private MotionEvents() {
+    }
+
+    static boolean isTouchpadEvent(@NonNull MotionEvent e) {
+        // ChromeOS ARC devices with touchpads emit their events with
+        // {@link MotionEvent#TOOL_TYPE_MOUSE}, so this is specifically capturing non-ARC devices
+        // with touchpads (e.g. attachable keyboards with touchpads on Android tablets).
+        return e.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                && e.getSource() == InputDevice.SOURCE_MOUSE;
     }
 
     static boolean isMouseEvent(@NonNull MotionEvent e) {
@@ -102,16 +111,8 @@ final class MotionEvents {
     static boolean isTouchpadScroll(@NonNull MotionEvent e) {
         // Touchpad inputs are treated as mouse inputs, and when scrolling, there are no buttons
         // returned.
-        return isMouseEvent(e) && isActionMove(e) && e.getButtonState() == 0;
-    }
-
-    /**
-     * Returns true if the event is a drag event (which is presumbaly, but not
-     * explicitly required to be a mouse event).
-     */
-    static boolean isPointerDragEvent(MotionEvent e) {
-        return isPrimaryMouseButtonPressed(e)
-                && isActionMove(e);
+        return (isTouchpadEvent(e) || isMouseEvent(e)) && isActionMove(e)
+                && e.getButtonState() == 0;
     }
 
     private static boolean hasBit(int metaState, int bit) {

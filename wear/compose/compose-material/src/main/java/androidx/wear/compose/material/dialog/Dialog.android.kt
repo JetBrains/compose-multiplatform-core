@@ -16,16 +16,12 @@
 
 package androidx.wear.compose.material.dialog
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.Transition
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
@@ -48,7 +44,6 @@ import androidx.wear.compose.material.QUICK
 import androidx.wear.compose.material.RAPID
 import androidx.wear.compose.material.STANDARD_IN
 import androidx.wear.compose.material.STANDARD_OUT
-import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.SwipeToDismissBox
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
@@ -67,10 +62,9 @@ import androidx.wear.compose.material.VignettePosition
  * Example of content using [Dialog] to trigger a confirmation dialog using [Confirmation]:
  *
  * @sample androidx.wear.compose.material.samples.ConfirmationDialogSample
- *
  * @param showDialog Controls whether to display the [Dialog]. Set to true initially to trigger an
  *   'intro' animation and display the [Dialog]. Subsequently, setting to false triggers an 'outro'
- *   animation, then [Dialog] calls [onDismissRequest] and hides itself.
+ *   animation, then [Dialog] hides itself.
  * @param onDismissRequest Executes when the user dismisses the dialog. Must remove the dialog from
  *   the composition.
  * @param modifier Modifier to be applied to the dialog.
@@ -93,7 +87,7 @@ public fun Dialog(
         modifier = modifier,
         properties = properties,
         positionIndicator = { if (scrollState != null) PositionIndicator(scrollState) },
-        content = content
+        content = content,
     )
 }
 
@@ -111,10 +105,9 @@ public fun Dialog(
  * Example of content using [Dialog] to trigger a confirmation dialog using [Confirmation]:
  *
  * @sample androidx.wear.compose.material.samples.ConfirmationDialogSample
- *
  * @param showDialog Controls whether to display the [Dialog]. Set to true initially to trigger an
  *   'intro' animation and display the [Dialog]. Subsequently, setting to false triggers an 'outro'
- *   animation, then [Dialog] calls [onDismissRequest] and hides itself.
+ *   animation, then [Dialog] hides itself.
  * @param onDismissRequest Executes when the user dismisses the dialog. Must remove the dialog from
  *   the composition.
  * @param modifier Modifier to be applied to the dialog.
@@ -127,7 +120,7 @@ public fun Dialog(
     "This overload is provided for backwards compatibility with Compose for Wear OS 1.1." +
         "A newer overload is available which uses ScalingLazyListState from " +
         "wear.compose.foundation.lazy package",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun Dialog(
@@ -145,7 +138,7 @@ public fun Dialog(
         modifier = modifier,
         properties = properties,
         positionIndicator = { if (scrollState != null) PositionIndicator(scrollState) },
-        content = content
+        content = content,
     )
 }
 
@@ -171,56 +164,35 @@ private fun Dialog(
     var pendingOnDismissCall by remember { mutableStateOf(false) }
 
     if (showDialog || transition.currentState == DialogVisibility.Display) {
-        Dialog(
-            onDismissRequest = onDismissRequest,
-            properties = properties,
-        ) {
+        Dialog(onDismissRequest = onDismissRequest, properties = properties) {
             val backgroundScrimAlpha by animateBackgroundScrimAlpha(transition)
             val contentAlpha by animateContentAlpha(transition)
             val scale by animateDialogScale(transition)
-            Scaffold(
-                vignette = {
-                    AnimatedVisibility(
-                        visible = transition.targetState == DialogVisibility.Display,
-                        enter =
-                            fadeIn(
-                                animationSpec =
-                                    TweenSpec(durationMillis = CASUAL, easing = STANDARD_IN)
-                            ),
-                        exit =
-                            fadeOut(
-                                animationSpec =
-                                    TweenSpec(durationMillis = CASUAL, easing = STANDARD_OUT)
-                            ),
-                    ) {
-                        Vignette(vignettePosition = VignettePosition.TopAndBottom)
-                    }
-                },
-                modifier = modifier,
-            ) {
+            Box(modifier = modifier) {
                 SwipeToDismissBox(
                     state = rememberSwipeToDismissBoxState(),
                     modifier =
-                        Modifier.graphicsLayer(
-                            alpha = backgroundScrimAlpha,
-                            scaleX = scale,
-                            scaleY = scale,
-                        ),
+                        Modifier.graphicsLayer {
+                            alpha = backgroundScrimAlpha
+                            scaleX = scale
+                            scaleY = scale
+                        },
                     onDismissed = {
                         onDismissRequest()
                         // Reset state for the next time this dialog is shown.
                         transitionState = MutableTransitionState(DialogVisibility.Hide)
-                    }
+                    },
                 ) { isBackground ->
                     if (!isBackground) {
                         Box(
                             modifier =
                                 Modifier.matchParentSize()
-                                    .graphicsLayer(alpha = contentAlpha)
+                                    .graphicsLayer { alpha = contentAlpha }
                                     .background(MaterialTheme.colors.background)
                         ) {
                             content()
                             positionIndicator()
+                            Vignette(vignettePosition = VignettePosition.TopAndBottom)
                         }
                     }
                 }
@@ -268,7 +240,7 @@ private fun animateBackgroundScrimAlpha(transition: Transition<DialogVisibility>
                     }
             }
         },
-        label = "background-scrim-alpha"
+        label = "background-scrim-alpha",
     ) { stage ->
         when (stage) {
             DialogVisibility.Hide -> 0f
@@ -293,7 +265,7 @@ private fun animateContentAlpha(transition: Transition<DialogVisibility>) =
                     tween(durationMillis = (RAPID / 0.9f).toInt(), easing = STANDARD_OUT)
             }
         },
-        label = "content-alpha"
+        label = "content-alpha",
     ) { stage ->
         when (stage) {
             DialogVisibility.Hide -> 0f
@@ -310,7 +282,7 @@ private fun animateDialogScale(transition: Transition<DialogVisibility>) =
                 DialogVisibility.Hide -> tween(durationMillis = CASUAL, easing = STANDARD_OUT)
             }
         },
-        label = "scale"
+        label = "scale",
     ) { stage ->
         when (stage) {
             DialogVisibility.Hide -> 1.25f
@@ -320,5 +292,5 @@ private fun animateDialogScale(transition: Transition<DialogVisibility>) =
 
 private enum class DialogVisibility {
     Hide,
-    Display
+    Display,
 }

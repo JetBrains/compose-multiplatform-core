@@ -19,10 +19,11 @@ package androidx.work.impl;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.os.HandlerCompat;
 import androidx.work.RunnableScheduler;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The default implementation of the {@link androidx.work.RunnableScheduler} used by
@@ -38,8 +39,7 @@ public class DefaultRunnableScheduler implements RunnableScheduler {
         mHandler = HandlerCompat.createAsync(Looper.getMainLooper());
     }
 
-    @NonNull
-    public Handler getHandler() {
+    public @NonNull Handler getHandler() {
         return mHandler;
     }
 

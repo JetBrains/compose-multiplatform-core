@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.graphics
 
 import androidx.annotation.RestrictTo
@@ -23,6 +25,7 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastMaxOf
 import androidx.compose.ui.util.fastMinOf
 import androidx.compose.ui.util.lerp
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.cos
@@ -31,12 +34,13 @@ import kotlin.math.min
 import kotlin.math.sign
 import kotlin.math.sqrt
 
-private const val Tau = Math.PI * 2.0
+private const val Tau = PI * 2.0
 private const val Epsilon = 1e-7
 // We use a fairly high epsilon here because it's post double->float conversion
 // and because we use a fast approximation of cbrt(). The epsilon we use here is
-// the max error of fastCbrt() in the -1f..1f range.
-private const val FloatEpsilon = 8.3446500e-7f
+// slightly larger than the max error of fastCbrt() in the -1f..1f range
+// (8.3446500e-7f) but smaller than 1.0f.ulp * 10.
+private const val FloatEpsilon = 1.05e-6f
 
 /**
  * Evaluate the specified [segment] at position [t] and returns the X coordinate of the segment's
@@ -53,14 +57,11 @@ private fun evaluateX(segment: PathSegment, t: Float): Float {
         PathSegment.Type.Quadratic -> {
             evaluateQuadratic(points[0], points[2], points[4], t)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> Float.NaN
         PathSegment.Type.Cubic -> {
             evaluateCubic(points[0], points[2], points[4], points[6], t)
         }
-        PathSegment.Type.Close -> Float.NaN
-        PathSegment.Type.Done -> Float.NaN
+        // Conic (converted to Cubic), Close, Done
+        else -> Float.NaN
     }
 }
 
@@ -80,14 +81,11 @@ fun evaluateY(segment: PathSegment, t: Float): Float {
         PathSegment.Type.Quadratic -> {
             evaluateQuadratic(points[1], points[3], points[5], t)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> Float.NaN
         PathSegment.Type.Cubic -> {
             evaluateCubic(points[1], points[3], points[5], points[7], t)
         }
-        PathSegment.Type.Close -> Float.NaN
-        PathSegment.Type.Done -> Float.NaN
+        // Conic (converted to Cubic), Close, Done
+        else -> Float.NaN
     }
 }
 
@@ -130,10 +128,7 @@ fun findFirstRoot(segment: PathSegment, fraction: Float): Float {
     return when (segment.type) {
         PathSegment.Type.Move -> Float.NaN
         PathSegment.Type.Line -> {
-            findFirstLineRoot(
-                points[0] - fraction,
-                points[2] - fraction,
-            )
+            findFirstLineRoot(points[0] - fraction, points[2] - fraction)
         }
         PathSegment.Type.Quadratic ->
             findFirstQuadraticRoot(points[0] - fraction, points[2] - fraction, points[4] - fraction)
@@ -145,14 +140,13 @@ fun findFirstRoot(segment: PathSegment, fraction: Float): Float {
                 points[0] - fraction,
                 points[2] - fraction,
                 points[4] - fraction,
-                points[6] - fraction
+                points[6] - fraction,
             )
         PathSegment.Type.Close -> Float.NaN
         PathSegment.Type.Done -> Float.NaN
     }
 }
 
-@Suppress("NOTHING_TO_INLINE")
 private inline fun findFirstLineRoot(p0: Float, p1: Float) =
     clampValidRootInUnitRange(-p0 / (p1 - p0))
 
@@ -272,7 +266,6 @@ fun findFirstCubicRoot(p0: Float, p1: Float, p2: Float, p3: Float): Float {
  * points. The root, if any, is written in the [roots] array at [index]. Returns 1 if a root was
  * found, 0 otherwise.
  */
-@Suppress("NOTHING_TO_INLINE")
 private inline fun findLineRoot(p0: Float, p1: Float, roots: FloatArray, index: Int = 0) =
     writeValidRootInUnitRange(-p0 / (p1 - p0), roots, index)
 
@@ -291,7 +284,7 @@ private fun findQuadraticRoots(
     p1: Float,
     p2: Float,
     roots: FloatArray,
-    index: Int = 0
+    index: Int = 0,
 ): Int {
     val a = p0.toDouble()
     val b = p1.toDouble()
@@ -337,13 +330,11 @@ private fun findDerivativeRoots(
     segment: PathSegment,
     horizontal: Boolean,
     roots: FloatArray,
-    index: Int
+    index: Int,
 ): Int {
     val offset = if (horizontal) 0 else 1
     val points = segment.points
     return when (segment.type) {
-        PathSegment.Type.Move -> 0
-        PathSegment.Type.Line -> 0
         PathSegment.Type.Quadratic -> {
             // Line derivative of a quadratic function
             // We do the computation inline to avoid using arrays of other data
@@ -352,9 +343,6 @@ private fun findDerivativeRoots(
             val d1 = 2 * (points[offset + 4] - points[offset + 2])
             findLineRoot(d0, d1, roots, index)
         }
-
-        // We convert all conics to cubics, won't happen
-        PathSegment.Type.Conic -> 0
         PathSegment.Type.Cubic -> {
             // Quadratic derivative of a cubic function
             // We do the computation inline to avoid using arrays of other data
@@ -370,8 +358,7 @@ private fun findDerivativeRoots(
             // Return the sum of the roots count
             count + findLineRoot(dd0, dd1, roots, index + count)
         }
-        PathSegment.Type.Close -> 0
-        PathSegment.Type.Done -> 0
+        else -> 0
     }
 }
 
@@ -385,7 +372,7 @@ private fun findDerivativeRoots(
 fun computeHorizontalBounds(
     segment: PathSegment,
     roots: FloatArray,
-    index: Int = 0
+    index: Int = 0,
 ): FloatFloatPair {
     val count = findDerivativeRoots(segment, true, roots, index)
     var minX = min(segment.startX, segment.endX)
@@ -410,7 +397,7 @@ fun computeHorizontalBounds(
 internal fun computeVerticalBounds(
     segment: PathSegment,
     roots: FloatArray,
-    index: Int = 0
+    index: Int = 0,
 ): FloatFloatPair {
     val count = findDerivativeRoots(segment, false, roots, index)
     var minY = min(segment.startY, segment.endY)
@@ -433,7 +420,7 @@ fun computeCubicVerticalBounds(
     p2y: Float,
     p3y: Float,
     roots: FloatArray,
-    index: Int = 0
+    index: Int = 0,
 ): FloatFloatPair {
     // Quadratic derivative of a cubic function
     // We do the computation inline to avoid using arrays of other data
@@ -461,10 +448,8 @@ fun computeCubicVerticalBounds(
     return FloatFloatPair(minY, maxY)
 }
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun Double.closeTo(b: Double) = abs(this - b) < Epsilon
 
-@Suppress("NOTHING_TO_INLINE")
 internal inline fun Float.closeTo(b: Float) = abs(this - b) < FloatEpsilon
 
 /**
@@ -472,15 +457,18 @@ internal inline fun Float.closeTo(b: Float) = abs(this - b) < FloatEpsilon
  * imprecision in computations, values in the [-FloatEpsilon..1+FloatEpsilon] range are considered
  * to be in the [0..1] range and clamped appropriately.
  */
-@Suppress("NOTHING_TO_INLINE")
-private inline fun clampValidRootInUnitRange(r: Float): Float =
-    if (r < 0.0f) {
-        if (r >= -FloatEpsilon) 0.0f else Float.NaN
-    } else if (r > 1.0f) {
-        if (r <= 1.0f + FloatEpsilon) 1.0f else Float.NaN
-    } else {
-        r
-    }
+private inline fun clampValidRootInUnitRange(r: Float): Float {
+    // The code below is a branchless version of:
+    // if (r < 0.0f) {
+    //     if (r >= -FloatEpsilon) 0.0f else Float.NaN
+    // } else if (r > 1.0f) {
+    //     if (r <= 1.0f + FloatEpsilon) 1.0f else Float.NaN
+    // } else {
+    //     r
+    // }
+    val s = r.fastCoerceIn(0f, 1f)
+    return if (abs(s - r) > FloatEpsilon) Float.NaN else s
+}
 
 /**
  * Writes [r] in the [roots] array at [index], if it's in the [0..1] range. To account for numerical
@@ -500,6 +488,8 @@ private fun writeValidRootInUnitRange(r: Float, roots: FloatArray, index: Int): 
  * x/y coordinates.
  */
 internal fun lineWinding(points: FloatArray, x: Float, y: Float): Int {
+    if (points.size < 4) return 0
+
     val x0 = points[0]
     var y0 = points[1]
     val yo = y0
@@ -558,7 +548,7 @@ internal fun quadraticWinding(
     x: Float,
     y: Float,
     tmpQuadratics: FloatArray,
-    tmpRoots: FloatArray
+    tmpRoots: FloatArray,
 ): Int {
     val y0 = points[1]
     val y1 = points[3]
@@ -591,7 +581,7 @@ private fun monotonicQuadraticWinding(
     offset: Int,
     x: Float,
     y: Float,
-    tmpRoots: FloatArray
+    tmpRoots: FloatArray,
 ): Int {
     var y0 = points[offset + 1]
     var y2 = points[offset + 5]
@@ -644,6 +634,9 @@ private fun monotonicQuadraticWinding(
  * quadratic curve, if 1 is returned, the array contains 2 curves with a shared point.
  */
 private fun quadraticToMonotonicQuadratics(quadratic: FloatArray, dst: FloatArray): Int {
+    if (quadratic.size < 6) return 0
+    if (dst.size < 6) return 0
+
     val y0 = quadratic[1]
     var y1 = quadratic[3]
     val y2 = quadratic[5]
@@ -670,6 +663,9 @@ private fun quadraticToMonotonicQuadratics(quadratic: FloatArray, dst: FloatArra
  * floats. See [quadraticToMonotonicQuadratics] for more details.
  */
 private fun splitQuadraticAt(src: FloatArray, dst: FloatArray, t: Float) {
+    if (src.size < 6) return
+    if (dst.size < 10) return
+
     val p0x = src[0]
     val p0y = src[1]
     val p1x = src[2]
@@ -741,7 +737,7 @@ internal fun cubicWinding(
     x: Float,
     y: Float,
     tmpCubics: FloatArray,
-    tmpRoots: FloatArray
+    tmpRoots: FloatArray,
 ): Int {
     val splits = cubicToMonotonicCubics(points, tmpCubics, tmpRoots)
 
@@ -793,13 +789,7 @@ private fun monotonicCubicWinding(points: FloatArray, offset: Int, x: Float, y: 
     val y2 = points[offset + 5]
     y3 = points[offset + 7]
 
-    val root =
-        findFirstCubicRoot(
-            y0 - y,
-            y1 - y,
-            y2 - y,
-            y3 - y,
-        )
+    val root = findFirstCubicRoot(y0 - y, y1 - y, y2 - y, y3 - y)
     if (root.isNaN()) return 0
 
     val xt = evaluateCubic(x0, x1, x2, x3, root)
@@ -833,6 +823,7 @@ private fun cubicToMonotonicCubics(cubic: FloatArray, dst: FloatArray, tmpRoot: 
 
     // Split the curve at the extrema
     if (rootCount == 0) {
+        if (dst.size < 8) return 0
         // The cubic segment is already monotonic, copy it as-is
         cubic.copyInto(dst, 0, 0, 8)
     } else {
@@ -885,8 +876,11 @@ private fun splitCubicAt(
     srcOffset: Int,
     dst: FloatArray,
     dstOffset: Int,
-    t: Float
+    t: Float,
 ) {
+    if (src.size < srcOffset + 8) return
+    if (dst.size < dstOffset + 14) return
+
     if (t >= 1.0f) {
         src.copyInto(dst, dstOffset, srcOffset, 8)
         val x = src[srcOffset + 6]
@@ -969,7 +963,7 @@ internal fun cubicArea(
     x2: Float,
     y2: Float,
     x3: Float,
-    y3: Float
+    y3: Float,
 ): Float {
     // See "Computing the area and winding number for a Bézier curve", Jackowski 2012
     // https://tug.org/TUGboat/tb33-1/tb103jackowski.pdf
@@ -984,13 +978,11 @@ private val PathSegment.endX: Float
     get() =
         points[
             when (type) {
-                PathSegment.Type.Move -> 0
                 PathSegment.Type.Line -> 2
                 PathSegment.Type.Quadratic -> 4
                 PathSegment.Type.Conic -> 4
                 PathSegment.Type.Cubic -> 6
-                PathSegment.Type.Close -> 0
-                PathSegment.Type.Done -> 0
+                else -> 0
             }]
 
 private inline val PathSegment.startY: Float
@@ -1000,11 +992,9 @@ private val PathSegment.endY: Float
     get() =
         points[
             when (type) {
-                PathSegment.Type.Move -> 0
                 PathSegment.Type.Line -> 3
                 PathSegment.Type.Quadratic -> 5
                 PathSegment.Type.Conic -> 5
                 PathSegment.Type.Cubic -> 7
-                PathSegment.Type.Close -> 0
-                PathSegment.Type.Done -> 0
+                else -> 0
             }]

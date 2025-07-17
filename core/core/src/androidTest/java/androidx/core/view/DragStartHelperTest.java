@@ -34,14 +34,15 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
 import androidx.core.test.R;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -64,16 +65,14 @@ public class DragStartHelperTest {
         boolean onDragStart(View view, DragStartHelper helper, Point touchPosition);
     }
 
-    @NonNull
-    private DragStartListener createListener(boolean returnValue) {
+    private @NonNull DragStartListener createListener(boolean returnValue) {
         final DragStartListener listener = mock(DragStartListener.class);
         when(listener.onDragStart(any(View.class), any(DragStartHelper.class), any(Point.class)))
                 .thenReturn(returnValue);
         return listener;
     }
 
-    @NonNull
-    private DragStartHelper createDragStartHelper(final DragStartListener listener) {
+    private @NonNull DragStartHelper createDragStartHelper(final DragStartListener listener) {
         return new DragStartHelper(mDragSource, new DragStartHelper.OnDragStartListener() {
             @Override
             public boolean onDragStart(@NonNull View v, @NonNull DragStartHelper helper) {
@@ -376,6 +375,7 @@ public class DragStartHelperTest {
         verifyNoMoreInteractions(listener);
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427258999
     @LargeTest
     @Test
     public void mouseDragThenLongPress() throws Throwable {

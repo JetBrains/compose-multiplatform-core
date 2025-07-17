@@ -106,10 +106,7 @@ class TextStringSimpleNodeTest {
         rule.setContent {
             val state = rememberScrollState()
             Column(Modifier.verticalScroll(state)) {
-                BasicText(
-                    text = "text\n".repeat(10_000),
-                    style = TextStyle(fontSize = 50.sp),
-                )
+                BasicText(text = "text\n".repeat(10_000), style = TextStyle(fontSize = 50.sp))
             }
         }
     }
@@ -124,7 +121,7 @@ class TextStringSimpleNodeTest {
                     BoxWithConstraints {
                         BasicText(
                             text = if (!flag) "" else "LOADED",
-                            modifier = Modifier.testTag("target")
+                            modifier = Modifier.testTag("target"),
                         )
                     }
                 }
@@ -142,7 +139,7 @@ class TextStringSimpleNodeTest {
         assertNotEquals(0, textLayout2.size.width)
     }
 
-    @Ignore("b/279797016 drawBehind is currently broken in tot")
+    @Ignore("b/346810857")
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun asyncTextResolution_causesRedraw() {
@@ -154,7 +151,7 @@ class TextStringSimpleNodeTest {
             TextStringSimpleElement(
                 "til",
                 TextStyle.Default.copy(fontFamily = asyncFont.toFontFamily()),
-                createFontFamilyResolver(context)
+                createFontFamilyResolver(context),
             )
 
         val modifier =

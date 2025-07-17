@@ -21,7 +21,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import androidx.credentials.CreateCredentialRequest.Companion.createFrom
 import androidx.credentials.CreateCredentialRequest.DisplayInfo
-import androidx.credentials.internal.FrameworkImplHelper.Companion.getFinalCreateCredentialData
+import androidx.credentials.internal.getFinalCreateCredentialData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -100,7 +100,7 @@ class CreatePasswordRequestTest {
                 preferDefaultProvider = defaultProviderExpected,
                 preferImmediatelyAvailableCredentials =
                     preferImmediatelyAvailableCredentialsExpected,
-                isAutoSelectAllowed = isAutoSelectAllowedExpected
+                isAutoSelectAllowed = isAutoSelectAllowedExpected,
             )
 
         assertThat(request.displayInfo.preferDefaultProvider).isEqualTo(defaultProviderExpected)
@@ -126,7 +126,7 @@ class CreatePasswordRequestTest {
         assertThat(request.password).isEqualTo(passwordExpected)
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @Suppress("DEPRECATION") // bundle.get(key)
     @Test
     fun getter_frameworkProperties() {
@@ -138,20 +138,20 @@ class CreatePasswordRequestTest {
         expectedCredentialData.putString(CreatePasswordRequest.BUNDLE_KEY_ID, idExpected)
         expectedCredentialData.putString(
             CreatePasswordRequest.BUNDLE_KEY_PASSWORD,
-            passwordExpected
+            passwordExpected,
         )
         expectedCredentialData.putBoolean(
             CreateCredentialRequest.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED,
-            expectedAutoSelect
+            expectedAutoSelect,
         )
         expectedCredentialData.putBoolean(
             CreateCredentialRequest.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS,
-            preferImmediatelyAvailableCredentialsExpected
+            preferImmediatelyAvailableCredentialsExpected,
         )
         val expectedCandidateData = Bundle()
         expectedCandidateData.putBoolean(
             CreateCredentialRequest.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED,
-            expectedAutoSelect
+            expectedAutoSelect,
         )
 
         val request =
@@ -160,7 +160,7 @@ class CreatePasswordRequestTest {
                 passwordExpected,
                 /*origin=*/ null,
                 preferImmediatelyAvailableCredentialsExpected,
-                expectedAutoSelect
+                expectedAutoSelect,
             )
 
         assertThat(request.type).isEqualTo(PasswordCredential.TYPE_PASSWORD_CREDENTIAL)
@@ -186,7 +186,7 @@ class CreatePasswordRequestTest {
                     ) as Icon?)!!
                     .resId
             )
-            .isEqualTo(R.drawable.ic_password)
+            .isEqualTo(R.drawable.adx_ic_password)
     }
 
     @SdkSuppress(minSdkVersion = 28)
@@ -205,7 +205,7 @@ class CreatePasswordRequestTest {
                 originExpected,
                 defaultProviderExpected,
                 preferImmediatelyAvailableCredentialsExpected,
-                isAutoSelectAllowedExpected
+                isAutoSelectAllowedExpected,
             )
         // Add additional data to the request data and candidate query data to make sure
         // they persist after the conversion
@@ -226,7 +226,7 @@ class CreatePasswordRequestTest {
                 credentialData,
                 candidateQueryData,
                 request.isSystemProviderRequired,
-                request.origin
+                request.origin,
             )
 
         assertThat(convertedRequest).isInstanceOf(CreatePasswordRequest::class.java)
@@ -241,7 +241,71 @@ class CreatePasswordRequestTest {
         val displayInfo = convertedCreatePasswordRequest.displayInfo
         assertThat(displayInfo.userDisplayName).isNull()
         assertThat(displayInfo.userId).isEqualTo(idExpected)
-        assertThat(displayInfo.credentialTypeIcon!!.resId).isEqualTo(R.drawable.ic_password)
+        assertThat(displayInfo.credentialTypeIcon!!.resId).isEqualTo(R.drawable.adx_ic_password)
+        assertThat(displayInfo.preferDefaultProvider).isEqualTo(defaultProviderExpected)
+        assertThat(convertedRequest.credentialData.getString(customRequestDataKey))
+            .isEqualTo(customRequestDataValue)
+        assertThat(convertedRequest.candidateQueryData.getBoolean(customCandidateQueryDataKey))
+            .isEqualTo(customCandidateQueryDataValue)
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun frameworkConversion_frameworkClass_success() {
+        val idExpected = "id"
+        val passwordExpected = "pwd"
+        val preferImmediatelyAvailableCredentialsExpected = true
+        val isAutoSelectAllowedExpected = true
+        val originExpected = "origin"
+        val defaultProviderExpected = "com.test/com.test.TestProviderComponent"
+        val request =
+            CreatePasswordRequest(
+                idExpected,
+                passwordExpected,
+                originExpected,
+                defaultProviderExpected,
+                preferImmediatelyAvailableCredentialsExpected,
+                isAutoSelectAllowedExpected,
+            )
+        // Add additional data to the request data and candidate query data to make sure
+        // they persist after the conversion
+        // Add additional data to the request data and candidate query data to make sure
+        // they persist after the conversion
+        val credentialData = getFinalCreateCredentialData(request, mContext)
+        val customRequestDataKey = "customRequestDataKey"
+        val customRequestDataValue = "customRequestDataValue"
+        credentialData.putString(customRequestDataKey, customRequestDataValue)
+        request.credentialData.putAll(credentialData)
+        val candidateQueryData = request.candidateQueryData
+        val customCandidateQueryDataKey = "customRequestDataKey"
+        val customCandidateQueryDataValue = true
+        candidateQueryData.putBoolean(customCandidateQueryDataKey, customCandidateQueryDataValue)
+
+        val convertedRequest =
+            createFrom(
+                android.credentials.CreateCredentialRequest.Builder(
+                        request.type,
+                        credentialData,
+                        candidateQueryData,
+                    )
+                    .setOrigin(originExpected)
+                    .setIsSystemProviderRequired(request.isSystemProviderRequired)
+                    .build()
+            )
+
+        assertThat(convertedRequest).isInstanceOf(CreatePasswordRequest::class.java)
+        val convertedCreatePasswordRequest = convertedRequest as CreatePasswordRequest
+        assertThat(convertedCreatePasswordRequest.password).isEqualTo(passwordExpected)
+        assertThat(convertedCreatePasswordRequest.id).isEqualTo(idExpected)
+        assertThat(convertedCreatePasswordRequest.preferImmediatelyAvailableCredentials)
+            .isEqualTo(preferImmediatelyAvailableCredentialsExpected)
+        assertThat(convertedCreatePasswordRequest.origin).isEqualTo(originExpected)
+        assertThat(convertedCreatePasswordRequest.isAutoSelectAllowed)
+            .isEqualTo(isAutoSelectAllowedExpected)
+        val displayInfo = convertedCreatePasswordRequest.displayInfo
+        assertThat(displayInfo.userDisplayName).isNull()
+        assertThat(displayInfo.userId).isEqualTo(idExpected)
+        assertThat(displayInfo.credentialTypeIcon!!.resId).isEqualTo(R.drawable.adx_ic_password)
         assertThat(displayInfo.preferDefaultProvider).isEqualTo(defaultProviderExpected)
         assertThat(convertedRequest.credentialData.getString(customRequestDataKey))
             .isEqualTo(customRequestDataValue)

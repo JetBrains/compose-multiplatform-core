@@ -26,9 +26,10 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fragment for displaying an error indication.
@@ -84,8 +85,7 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
     /**
      * Returns the background drawable.  May be null if a default is used.
      */
-    @Nullable
-    public Drawable getBackgroundDrawable() {
+    public @Nullable Drawable getBackgroundDrawable() {
         return mBackgroundDrawable;
     }
 
@@ -102,8 +102,7 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
     /**
      * Returns the drawable used for the error image.
      */
-    @Nullable
-    public Drawable getImageDrawable() {
+    public @Nullable Drawable getImageDrawable() {
         return mDrawable;
     }
 
@@ -120,8 +119,7 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
     /**
      * Returns the error message.
      */
-    @Nullable
-    public CharSequence getMessage() {
+    public @Nullable CharSequence getMessage() {
         return mMessage;
     }
 
@@ -138,8 +136,7 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
     /**
      * Returns the button text.
      */
-    @Nullable
-    public String getButtonText() {
+    public @Nullable String getButtonText() {
         return mButtonText;
     }
 
@@ -148,7 +145,7 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
      *
      * @param clickListener The click listener for the button.
      */
-    public void setButtonClickListener(@Nullable View.OnClickListener clickListener) {
+    public void setButtonClickListener(View.@Nullable OnClickListener clickListener) {
         mButtonClickListener = clickListener;
         updateButton();
     }
@@ -156,15 +153,13 @@ public class ErrorSupportFragment extends BrandedSupportFragment {
     /**
      * Returns the button click listener.
      */
-    @Nullable
-    public View.OnClickListener getButtonClickListener() {
+    public View.@Nullable OnClickListener getButtonClickListener() {
         return mButtonClickListener;
     }
 
     @Override
-    @Nullable
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.lb_error_fragment, container, false);
 
         mErrorFrame = (ViewGroup) root.findViewById(R.id.error_frame);

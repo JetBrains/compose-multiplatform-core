@@ -23,8 +23,10 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.lerp as lerpColor
+import androidx.compose.ui.text.internal.requirePrecondition
 import androidx.compose.ui.text.lerpDiscrete
 import androidx.compose.ui.util.lerp
+import kotlin.jvm.JvmName
 
 /**
  * An internal interface to represent possible ways to draw Text e.g. color, brush. This interface
@@ -88,7 +90,7 @@ internal interface TextForegroundStyle {
 
 private data class ColorStyle(val value: Color) : TextForegroundStyle {
     init {
-        require(value.isSpecified) {
+        requirePrecondition(value.isSpecified) {
             "ColorStyle value must be specified, use TextForegroundStyle.Unspecified instead."
         }
     }
@@ -119,14 +121,14 @@ private data class BrushStyle(val value: ShaderBrush, override val alpha: Float)
 internal fun lerp(
     start: TextForegroundStyle,
     stop: TextForegroundStyle,
-    fraction: Float
+    fraction: Float,
 ): TextForegroundStyle {
     return if ((start !is BrushStyle && stop !is BrushStyle)) {
         TextForegroundStyle.from(lerpColor(start.color, stop.color, fraction))
     } else if (start is BrushStyle && stop is BrushStyle) {
         TextForegroundStyle.from(
             lerpDiscrete(start.brush, stop.brush, fraction),
-            lerp(start.alpha, stop.alpha, fraction)
+            lerp(start.alpha, stop.alpha, fraction),
         )
     } else {
         lerpDiscrete(start, stop, fraction)

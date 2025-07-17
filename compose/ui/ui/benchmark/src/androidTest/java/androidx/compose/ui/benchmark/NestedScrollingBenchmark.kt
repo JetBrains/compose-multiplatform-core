@@ -34,6 +34,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.internal.runner.junit4.statement.UiThreadStatement.runOnUiThread
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +53,7 @@ class NestedScrollingBenchmark {
 
             benchmarkRule.measureRepeatedOnUiThread {
                 getTestCase().toggleState()
-                runWithTimingDisabled {
+                runWithMeasurementDisabled {
                     assertNoPendingChanges()
                     getTestCase().assertPostToggle()
                 }
@@ -97,7 +98,6 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     private val noOpConnection = object : NestedScrollConnection {}
     private val delta = Offset(200f, 200f)
     private val velocity = Velocity(2000f, 200f)
-    private var scrollResult = Offset.Zero
     private var velocityResult = Velocity.Zero
     private val IntermediateConnection = object : NestedScrollConnection {}
 
@@ -125,9 +125,8 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     }
 
     override fun toggleState() {
-        scrollResult = dispatcher.dispatchPreScroll(delta, NestedScrollSource.UserInput)
-        scrollResult =
-            dispatcher.dispatchPostScroll(delta, scrollResult, NestedScrollSource.UserInput)
+        val scrollResult = dispatcher.dispatchPreScroll(delta, NestedScrollSource.UserInput)
+        dispatcher.dispatchPostScroll(delta, scrollResult, NestedScrollSource.UserInput)
 
         runBlocking {
             velocityResult = dispatcher.dispatchPreFling(velocity)
@@ -136,12 +135,9 @@ class NestedScrollingTestCase : LayeredComposeTestCase(), ToggleableTestCase {
     }
 
     fun assertPostToggle() {
-        assert(collectedDeltasOuter != Offset.Zero)
-        assert(collectedDeltasMiddle != Offset.Zero)
-        assert(collectedVelocityOuter != Velocity.Zero)
-        assert(collectedVelocityMiddle != Velocity.Zero)
-
-        assert(collectedDeltasOuter == scrollResult)
-        assert(collectedVelocityOuter == velocityResult)
+        assertNotEquals(collectedDeltasOuter, Offset.Zero)
+        assertNotEquals(collectedDeltasMiddle, Offset.Zero)
+        assertNotEquals(collectedVelocityOuter, Velocity.Zero)
+        assertNotEquals(collectedVelocityMiddle, Velocity.Zero)
     }
 }

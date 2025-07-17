@@ -21,8 +21,7 @@ import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.FlingBehavior
@@ -83,7 +82,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(minSdk = 21)
+@Config(minSdk = RobolectricMinSdk)
 @OptIn(ExperimentalTestApi::class)
 class RobolectricComposeTest {
     private var masterTimeout: IdlingPolicy? = null
@@ -192,7 +191,6 @@ class RobolectricComposeTest {
      * Check that scrolling and controlling the clock works: a scrollable receives a swipe while the
      * clock is paused, when the clock is resumed it performs the fling.
      */
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun testControlledScrolling() = runComposeUiTest {
         // Define constants used in the test
@@ -205,7 +203,7 @@ class RobolectricComposeTest {
         setContent {
             WithTouchSlop(touchSlop = touchSlop) {
                 // turn off visual overscroll for calculation correctness
-                CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+                CompositionLocalProvider(LocalOverscrollFactory provides null) {
                     Box(Modifier.fillMaxSize()) {
                         Column(
                             Modifier.requiredSize(200.dp)
@@ -361,7 +359,7 @@ class RobolectricComposeTest {
                                         ++composableTapCount
                                     },
                                     onDoubleTap = { ++composableDoubleTapCount },
-                                    onLongPress = { ++composableLongTapCount }
+                                    onLongPress = { ++composableLongTapCount },
                                 )
                             }
                             .onGloballyPositioned { setupLatch.countDown() }
@@ -426,7 +424,7 @@ class RobolectricComposeTest {
                                     doubleTapLatch.countDown()
                                     ++composableDoubleTapCount
                                 },
-                                onLongPress = { ++composableLongTapCount }
+                                onLongPress = { ++composableLongTapCount },
                             )
                         }
                         .onGloballyPositioned { setupLatch.countDown() }
@@ -498,7 +496,7 @@ class RobolectricComposeTest {
                                     ++composableTapCount
                                 },
                                 onDoubleTap = { ++composableDoubleTapCount },
-                                onLongPress = { ++composableLongTapCount }
+                                onLongPress = { ++composableLongTapCount },
                             )
                         }
                         .onGloballyPositioned {
@@ -585,7 +583,7 @@ class RobolectricComposeTest {
                                     doubleTapLatch.countDown()
                                     ++composableDoubleTapCount
                                 },
-                                onLongPress = { ++composableLongTapCount }
+                                onLongPress = { ++composableLongTapCount },
                             )
                         }
                         .onGloballyPositioned {

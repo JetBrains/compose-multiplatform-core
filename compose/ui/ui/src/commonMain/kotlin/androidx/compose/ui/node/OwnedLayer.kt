@@ -82,7 +82,7 @@ internal interface OwnedLayer {
      */
     fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
     )
 
     /**
@@ -90,6 +90,15 @@ internal interface OwnedLayer {
      * the transform.
      */
     fun transform(matrix: Matrix)
+
+    /** The matrix associated with the affine transform of this layer */
+    val underlyingMatrix: Matrix
+
+    /** The preferred frame rate that the content should be rendered at */
+    var frameRate: Float
+
+    /** Whether the preferred frame rate comes from the parent layer */
+    var isFrameRateFromParent: Boolean
 
     /**
      * Calculates the transform from the layer to the parent and multiplies [matrix] by the

@@ -21,15 +21,18 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":work:work-runtime"))
     api(libs.rxjava3)
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
@@ -41,13 +44,13 @@ dependencies {
 
 androidx {
     name = "WorkManager RxJava3"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2020"
     description = "Android WorkManager RxJava3 interoperatibility library"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.work.rxjava3"
+    compileSdk = 35
+    namespace = "androidx.work.rxjava3"
 }

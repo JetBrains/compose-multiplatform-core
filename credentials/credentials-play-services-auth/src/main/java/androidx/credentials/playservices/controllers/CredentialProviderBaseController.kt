@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package androidx.credentials.playservices.controllers
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.os.Parcel
 import android.os.ResultReceiver
 import androidx.credentials.exceptions.CreateCredentialCancellationException
@@ -40,11 +41,11 @@ internal open class CredentialProviderBaseController(private val context: Contex
         val retryables: Set<Int> =
             setOf(
                 CommonStatusCodes.NETWORK_ERROR,
-                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL
+                CommonStatusCodes.CONNECTION_SUSPENDED_DURING_CALL,
             )
 
         // Generic controller request code used by all controllers
-        @JvmStatic protected val CONTROLLER_REQUEST_CODE: Int = 1
+        @JvmStatic internal val CONTROLLER_REQUEST_CODE: Int = 1
 
         /** -- Used to avoid reflection, these constants map errors from HiddenActivity -- */
         const val GET_CANCELED = "GET_CANCELED_TAG"
@@ -79,6 +80,14 @@ internal open class CredentialProviderBaseController(private val context: Contex
         // Key for the result intent to send back to the controller
         const val RESULT_DATA_TAG = "RESULT_DATA"
 
+        // Key for the actual parcelable type sent to the hidden activity, regardless of API flow.
+        const val EXTRA_FLOW_PENDING_INTENT = "EXTRA_FLOW_PENDING_INTENT"
+
+        const val EXTRA_DIGITAL_CREDENTIAL_INTENT = "EXTRA_DIGITAL_CREDENTIAL_INTENT"
+
+        // Key for the error name to be used in the activity error reporting.
+        const val EXTRA_ERROR_NAME = "EXTRA_ERROR_NAME"
+
         // Key for the failure boolean sent back from hidden activity to controller
         const val FAILURE_RESPONSE_TAG = "FAILURE_RESPONSE"
 
@@ -97,7 +106,7 @@ internal open class CredentialProviderBaseController(private val context: Contex
         /** Shuttles back exceptions only related to the hidden activity that can't be parceled */
         internal fun getCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): GetCredentialException {
             return when (typeName) {
                 GET_CANCELED -> {
@@ -115,9 +124,25 @@ internal open class CredentialProviderBaseController(private val context: Contex
             }
         }
 
+        internal fun ResultReceiver.reportError(errName: String, errMsg: String) {
+            val bundle = Bundle()
+            bundle.putBoolean(FAILURE_RESPONSE_TAG, true)
+            bundle.putString(EXCEPTION_TYPE_TAG, errName)
+            bundle.putString(EXCEPTION_MESSAGE_TAG, errMsg)
+            this.send(Integer.MAX_VALUE, bundle)
+        }
+
+        internal fun ResultReceiver.reportResult(requestCode: Int, resultCode: Int, data: Intent?) {
+            val bundle = Bundle()
+            bundle.putBoolean(FAILURE_RESPONSE_TAG, false)
+            bundle.putInt(ACTIVITY_REQUEST_CODE_TAG, requestCode)
+            bundle.putParcelable(RESULT_DATA_TAG, data)
+            this.send(resultCode, bundle)
+        }
+
         internal fun createCredentialExceptionTypeToException(
             typeName: String?,
-            msg: String?
+            msg: String?,
         ): CreateCredentialException {
             return when (typeName) {
                 CREATE_CANCELED -> {
@@ -142,10 +167,10 @@ internal open class CredentialProviderBaseController(private val context: Contex
         return ipcFriendly
     }
 
-    protected fun generateHiddenActivityIntent(
+    fun generateHiddenActivityIntent(
         resultReceiver: ResultReceiver,
         hiddenIntent: Intent,
-        typeTag: String
+        typeTag: String,
     ) {
         hiddenIntent.putExtra(TYPE_TAG, typeTag)
         hiddenIntent.putExtra(ACTIVITY_REQUEST_CODE_TAG, CONTROLLER_REQUEST_CODE)

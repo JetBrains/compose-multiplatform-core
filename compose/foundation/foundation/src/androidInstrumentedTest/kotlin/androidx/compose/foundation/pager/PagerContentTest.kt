@@ -17,7 +17,6 @@
 package androidx.compose.foundation.pager
 
 import android.os.Build
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -54,7 +53,6 @@ class PagerContentTest {
 
     @get:Rule val rule = createComposeRule()
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun pageContent_makeSureContainerOwnsOutsideModifiers() {
         // Arrange
@@ -65,7 +63,7 @@ class PagerContentTest {
                 contentPadding = PaddingValues(horizontal = 32.dp),
                 pageSpacing = 4.dp,
                 modifier = Modifier.fillMaxSize().testTag("pager"),
-                pageSize = PageSize.Fill
+                pageSize = PageSize.Fill,
             ) { page ->
                 Box(
                     modifier =
@@ -81,7 +79,6 @@ class PagerContentTest {
         rule.runOnIdle { assertTrue { state.currentPage != 0 } }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun pageContent_makeSureInnerModifiersAreAppliedToPages() {
@@ -91,7 +88,7 @@ class PagerContentTest {
             HorizontalPager(
                 state = rememberPagerState { colors.size },
                 modifier = Modifier.width(6.dp).testTag(PagerTestTag),
-                pageSize = PageSize.Fixed(2.dp)
+                pageSize = PageSize.Fixed(2.dp),
             ) { page ->
                 val color = colors[page]
                 Box(
@@ -104,7 +101,7 @@ class PagerContentTest {
                                 drawRect(
                                     color,
                                     topLeft = Offset(-10.dp.toPx(), -10.dp.toPx()),
-                                    size = Size(20.dp.toPx(), 20.dp.toPx())
+                                    size = Size(20.dp.toPx(), 20.dp.toPx()),
                                 )
                             }
                 )
@@ -114,7 +111,6 @@ class PagerContentTest {
         rule.onNodeWithTag(PagerTestTag).captureToImage().assertPixels { Color.Green }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun scrollableState_isScrollableWhenChangingPages() {
         val states = mutableMapOf<Int, ScrollState>()
@@ -123,7 +119,7 @@ class PagerContentTest {
         rule.setContent {
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier.testTag("pager").fillMaxSize()
+                modifier = Modifier.testTag("pager").fillMaxSize(),
             ) { page ->
                 Column(
                     modifier =

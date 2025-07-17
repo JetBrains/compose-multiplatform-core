@@ -23,8 +23,6 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.SuppressLint;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.IOnDoneCallback;
 import androidx.car.app.OnDoneCallback;
@@ -33,17 +31,19 @@ import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.model.ItemList.OnItemVisibilityChangedListener;
 import androidx.car.app.utils.RemoteUtils;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
- * Implementation class for {@link OnItemVisibilityChangedDelegate}.
- *
+ * Implementation class for {@link OnItemVisibilityChangedDelegate} that uses the {@link
+ * IOnItemVisibilityChangedListener} binder interface.
  */
 @RestrictTo(LIBRARY)
 @CarProtocol
 @KeepFields
 public class OnItemVisibilityChangedDelegateImpl implements
         OnItemVisibilityChangedDelegate {
-    @Nullable
-    private final IOnItemVisibilityChangedListener mStub;
+    private final @Nullable IOnItemVisibilityChangedListener mStub;
 
     @Override
     public void sendItemVisibilityChanged(int startIndex, int rightIndex,
@@ -66,10 +66,9 @@ public class OnItemVisibilityChangedDelegateImpl implements
         mStub = null;
     }
 
-    @NonNull
     // This listener relates to UI event and is expected to be triggered on the main thread.
     @SuppressLint("ExecutorRegistration")
-    public static OnItemVisibilityChangedDelegate create(
+    public static @NonNull OnItemVisibilityChangedDelegate create(
             @NonNull OnItemVisibilityChangedListener listener) {
         return new OnItemVisibilityChangedDelegateImpl(listener);
     }

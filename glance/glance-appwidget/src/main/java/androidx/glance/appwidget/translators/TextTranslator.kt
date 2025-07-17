@@ -32,7 +32,6 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.widget.RemoteViewsCompat.setTextViewGravity
@@ -57,7 +56,7 @@ import androidx.glance.unit.ResourceColorProvider
 
 internal fun RemoteViews.translateEmittableText(
     translationContext: TranslationContext,
-    element: EmittableText
+    element: EmittableText,
 ) {
     val viewDef = insertView(translationContext, LayoutType.Text, element.modifier)
     setText(
@@ -123,7 +122,7 @@ internal fun RemoteViews.setText(
             TextTranslatorApi31Impl.setTextViewGravity(
                 this,
                 resId,
-                align.toGravity() or verticalTextGravity
+                align.toGravity() or verticalTextGravity,
             )
         } else {
             spans.add(AlignmentSpan.Standard(align.toAlignment(translationContext.isRtl)))
@@ -146,7 +145,7 @@ internal fun RemoteViews.setText(
                 setTextViewTextColor(
                     resId,
                     notNight = colorProvider.day.toArgb(),
-                    night = colorProvider.night.toArgb()
+                    night = colorProvider.night.toArgb(),
                 )
             } else {
                 setTextColor(resId, colorProvider.getColor(translationContext.context).toArgb())
@@ -184,7 +183,6 @@ private fun TextAlign.toAlignment(isRtl: Boolean): Alignment =
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object TextTranslatorApi31Impl {
-    @DoNotInline
     fun setTextViewGravity(rv: RemoteViews, viewId: Int, gravity: Int) {
         rv.setTextViewGravity(viewId, gravity)
     }

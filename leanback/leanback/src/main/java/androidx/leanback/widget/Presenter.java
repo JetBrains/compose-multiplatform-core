@@ -16,9 +16,10 @@ package androidx.leanback.widget;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.collection.ArrayMap;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -122,8 +123,7 @@ public abstract class Presenter implements FacetProvider {
     /**
      * Creates a new {@link View}.
      */
-    @NonNull
-    public abstract ViewHolder onCreateViewHolder(@NonNull ViewGroup parent);
+    public abstract @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent);
 
     /**
      * Binds a {@link View} to an item.

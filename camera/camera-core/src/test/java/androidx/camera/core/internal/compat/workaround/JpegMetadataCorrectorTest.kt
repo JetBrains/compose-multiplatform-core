@@ -47,6 +47,20 @@ class JpegMetadataCorrectorTest {
     }
 
     @Test
+    fun needCorrectJpegMetadataOnSamsungS10e() {
+        ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
+        ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "beyond0")
+        assertThat(JpegMetadataCorrector(DeviceQuirks.getAll()).needCorrectJpegMetadata()).isTrue()
+    }
+
+    @Test
+    fun needCorrectJpegMetadataOnSamsungS10Plus() {
+        ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
+        ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "beyond2")
+        assertThat(JpegMetadataCorrector(DeviceQuirks.getAll()).needCorrectJpegMetadata()).isTrue()
+    }
+
+    @Test
     fun doesNotNeedCorrectJpegMetadataOnSamsungA23() {
         ReflectionHelpers.setStaticField(Build::class.java, "BRAND", "SAMSUNG")
         ReflectionHelpers.setStaticField(Build::class.java, "DEVICE", "a23")
@@ -68,7 +82,7 @@ class JpegMetadataCorrectorTest {
                 FakeImageInfo(),
                 brokenJpegByteArray,
                 WIDTH,
-                HEIGHT
+                HEIGHT,
             )
         val correctedJpegByteArray =
             JpegMetadataCorrector(DeviceQuirks.getAll()).jpegImageToJpegByteArray(fakeImageProxy)
@@ -76,7 +90,7 @@ class JpegMetadataCorrectorTest {
                 BitmapFactory.decodeByteArray(
                     correctedJpegByteArray,
                     0,
-                    correctedJpegByteArray.size
+                    correctedJpegByteArray.size,
                 )
             )
             .isNotNull()

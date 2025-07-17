@@ -18,7 +18,7 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.ext.CommonTypeNames
@@ -28,24 +28,24 @@ import androidx.room.ext.RoomTypeNames
 import androidx.room.parser.ParsedQuery
 import androidx.room.parser.Section
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.QueryMethod
+import androidx.room.vo.QueryFunction
 import androidx.room.vo.QueryParameter
 
 /** Writes the SQL query and arguments for a QueryMethod. */
 class QueryWriter(
     val parameters: List<QueryParameter>,
     val sectionToParamMapping: List<Pair<Section, QueryParameter?>>,
-    val query: ParsedQuery
+    val query: ParsedQuery,
 ) {
 
     constructor(
-        queryMethod: QueryMethod
-    ) : this(queryMethod.parameters, queryMethod.sectionToParamMapping, queryMethod.query)
+        queryFunction: QueryFunction
+    ) : this(queryFunction.parameters, queryFunction.sectionToParamMapping, queryFunction.query)
 
     fun prepareReadAndBind(
         outSqlQueryName: String,
         outRoomSQLiteQueryVar: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         val listSizeVars = createSqlQueryAndArgs(outSqlQueryName, outRoomSQLiteQueryVar, scope)
         bindArgs(outRoomSQLiteQueryVar, listSizeVars, scope)
@@ -53,7 +53,7 @@ class QueryWriter(
 
     fun prepareQuery(
         outSqlQueryName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ): List<Pair<QueryParameter, String>> {
         return createSqlQueryAndArgs(outSqlQueryName, null, scope)
     }
@@ -61,7 +61,7 @@ class QueryWriter(
     private fun createSqlQueryAndArgs(
         outSqlQueryName: String,
         outArgsName: String?,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ): List<Pair<QueryParameter, String>> {
         val listSizeVars = arrayListOf<Pair<QueryParameter, String>>()
         val varargParams = parameters.filter { it.queryParamAdapter?.isMultiple ?: false }
@@ -73,16 +73,18 @@ class QueryWriter(
         scope.builder.apply {
             if (varargParams.isNotEmpty()) {
                 val stringBuilderVar = scope.getTmpVar("_stringBuilder")
-                val stringBuilderTypeName =
-                    when (language) {
-                        CodeLanguage.JAVA -> CommonTypeNames.STRING_BUILDER
-                        CodeLanguage.KOTLIN -> KotlinTypeNames.STRING_BUILDER
-                    }
-                addLocalVariable(
-                    name = stringBuilderVar,
-                    typeName = stringBuilderTypeName,
-                    assignExpr = XCodeBlock.ofNewInstance(language, stringBuilderTypeName)
-                )
+                applyTo { language ->
+                    val stringBuilderType =
+                        when (language) {
+                            CodeLanguage.JAVA -> CommonTypeNames.STRING_BUILDER
+                            CodeLanguage.KOTLIN -> KotlinTypeNames.STRING_BUILDER
+                        }
+                    addLocalVariable(
+                        name = stringBuilderVar,
+                        typeName = stringBuilderType,
+                        assignExpr = XCodeBlock.ofNewInstance(stringBuilderType),
+                    )
+                }
                 query.sections.forEach { section ->
                     when (section) {
                         is Section.Text ->
@@ -100,7 +102,7 @@ class QueryWriter(
                                         param.queryParamAdapter.getArgCount(
                                             param.name,
                                             tmpCount,
-                                            scope
+                                            scope,
                                         )
                                         addStatement(
                                             "%M(%L, %L)",
@@ -108,7 +110,7 @@ class QueryWriter(
                                                 "appendPlaceholders"
                                             ),
                                             stringBuilderVar,
-                                            tmpCount
+                                            tmpCount,
                                         )
                                     } else {
                                         addStatement("%L.append(%S)", stringBuilderVar, "?")
@@ -121,7 +123,7 @@ class QueryWriter(
                     outSqlQueryName,
                     CommonTypeNames.STRING,
                     "%L.toString()",
-                    stringBuilderVar
+                    stringBuilderVar,
                 )
                 if (outArgsName != null) {
                     val argCount = scope.getTmpVar("_argCount")
@@ -130,19 +132,18 @@ class QueryWriter(
                         XTypeName.PRIMITIVE_INT,
                         "%L%L",
                         knownQueryArgsCount,
-                        listSizeVars.joinToString("") { " + ${it.second}" }
+                        listSizeVars.joinToString("") { " + ${it.second}" },
                     )
                     addLocalVariable(
                         name = outArgsName,
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
                         assignExpr =
                             XCodeBlock.of(
-                                language,
                                 "%M(%L, %L)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
                                 outSqlQueryName,
-                                argCount
-                            )
+                                argCount,
+                            ),
                     )
                 }
             } else {
@@ -150,7 +151,7 @@ class QueryWriter(
                     outSqlQueryName,
                     CommonTypeNames.STRING,
                     "%S",
-                    query.queryWithReplacedBindParams
+                    query.queryWithReplacedBindParams,
                 )
                 if (outArgsName != null) {
                     addLocalVariable(
@@ -158,12 +159,11 @@ class QueryWriter(
                         typeName = RoomTypeNames.ROOM_SQL_QUERY,
                         assignExpr =
                             XCodeBlock.of(
-                                language,
                                 "%M(%L, %L)",
                                 RoomMemberNames.ROOM_SQL_QUERY_ACQUIRE,
                                 outSqlQueryName,
-                                knownQueryArgsCount
-                            )
+                                knownQueryArgsCount,
+                            ),
                     )
                 }
             }
@@ -174,7 +174,7 @@ class QueryWriter(
     fun bindArgs(
         outArgsName: String,
         listSizeVars: List<Pair<QueryParameter, String>>,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         if (parameters.isEmpty()) {
             return
@@ -185,7 +185,7 @@ class QueryWriter(
                 name = argIndex,
                 typeName = XTypeName.PRIMITIVE_INT,
                 isMutable = true,
-                assignExpr = XCodeBlock.of(language, "%L", 1)
+                assignExpr = XCodeBlock.of("%L", 1),
             )
             // # of bindings with 1 placeholder
             var constInputs = 0
@@ -202,7 +202,7 @@ class QueryWriter(
                         } else {
                             "1"
                         },
-                        varInputs.joinToString("") { " + $it" }
+                        varInputs.joinToString("") { " + $it" },
                     )
                 }
                 param?.let {

@@ -16,19 +16,21 @@
 
 package androidx.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -40,7 +42,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ProgressIndicatorScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -83,7 +85,7 @@ class ProgressIndicatorScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) {
                 LinearProgressIndicator(
                     modifier = Modifier.size(240.dp, 16.dp),
-                    progress = { 0.5f }
+                    progress = { 0.5f },
                 )
             }
         }
@@ -96,7 +98,7 @@ class ProgressIndicatorScreenshotTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { LinearProgressIndicator() }
         }
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(LinearAnimationDuration / 2L)
         assertIndicatorAgainstGolden("linearProgressIndicator_lightTheme_indeterminate")
     }
 
@@ -116,7 +118,7 @@ class ProgressIndicatorScreenshotTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { LinearProgressIndicator(gapSize = 0.dp) }
         }
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(LinearAnimationDuration / 2L)
         assertIndicatorAgainstGolden("linearProgressIndicator_lightTheme_indeterminate_no_gap")
     }
 
@@ -136,6 +138,16 @@ class ProgressIndicatorScreenshotTest {
             }
         }
         assertIndicatorAgainstGolden("linearProgressIndicator_lightTheme_determinate_customCap")
+    }
+
+    @Test
+    fun linearProgressIndicator_lightTheme_determinate_rtl() {
+        rule.setMaterialContent(lightColorScheme()) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Box(wrap.testTag(wrapperTestTag)) { LinearProgressIndicator(progress = { 0.5f }) }
+            }
+        }
+        assertIndicatorAgainstGolden("linearProgressIndicator_lightTheme_determinate_rtl")
     }
 
     @Test
@@ -172,8 +184,35 @@ class ProgressIndicatorScreenshotTest {
         rule.setMaterialContent(lightColorScheme()) {
             Box(wrap.testTag(wrapperTestTag)) { CircularProgressIndicator() }
         }
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(CircularAnimationProgressDuration / 3L * 4L)
         assertIndicatorAgainstGolden("circularProgressIndicator_lightTheme_indeterminate")
+    }
+
+    @Test
+    fun circularProgressIndicator_lightTheme_indeterminate_with_track() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                CircularProgressIndicator(trackColor = MaterialTheme.colorScheme.secondaryContainer)
+            }
+        }
+        assertIndicatorAgainstGolden(
+            "circularProgressIndicator_lightTheme_indeterminate_with_track"
+        )
+    }
+
+    @Test
+    fun circularProgressIndicator_lightTheme_indeterminate_with_track_no_gap() {
+        rule.setMaterialContent(lightColorScheme()) {
+            Box(wrap.testTag(wrapperTestTag)) {
+                CircularProgressIndicator(
+                    trackColor = MaterialTheme.colorScheme.secondaryContainer,
+                    gapSize = 0.dp,
+                )
+            }
+        }
+        assertIndicatorAgainstGolden(
+            "circularProgressIndicator_lightTheme_indeterminate_with_track_no_gap"
+        )
     }
 
     @Test
@@ -183,6 +222,7 @@ class ProgressIndicatorScreenshotTest {
             Box(wrap.testTag(wrapperTestTag)) { CircularProgressIndicator() }
         }
         rule.mainClock.advanceTimeBy(0)
+        // Expecting about 10% of a circle, as defined by the CircularIndeterminateMinProgress.
         assertIndicatorAgainstGolden("circularProgressIndicator_lightTheme_indeterminate_start")
     }
 
@@ -201,7 +241,7 @@ class ProgressIndicatorScreenshotTest {
                 CircularProgressIndicator(
                     progress = { 0.5f },
                     trackColor = Color.Gray,
-                    strokeCap = StrokeCap.Butt
+                    strokeCap = StrokeCap.Butt,
                 )
             }
         }

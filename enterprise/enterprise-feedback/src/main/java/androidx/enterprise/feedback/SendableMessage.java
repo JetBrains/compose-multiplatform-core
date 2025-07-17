@@ -23,8 +23,8 @@ import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 final class SendableMessage {
     private static final String LOG_TAG = "SendableMessage";
@@ -40,8 +40,7 @@ final class SendableMessage {
         this.mImmediate = immediate;
     }
 
-    @Nullable
-    KeyedAppStatesCallback getCallback() {
+    @Nullable KeyedAppStatesCallback getCallback() {
         return mCallback;
     }
 

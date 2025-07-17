@@ -35,9 +35,10 @@ package androidx.work.integration.testapp;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Worker} which always returns a {@link Result#retry()}.
@@ -51,9 +52,8 @@ public class RetryWorker extends Worker {
         super(context, parameters);
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
+    public @NonNull Result doWork() {
         Log.e(TAG, "Requesting retry (" + getRunAttemptCount() + ")");
         return Result.retry();
     }

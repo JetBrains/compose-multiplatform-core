@@ -18,6 +18,9 @@ package androidx.build
 
 import java.io.File
 
+// NOTE: This class is symlinked to
+// playground-common/playground-plugin/src/main/kotlin/androidx/build
+// Please test playground when modifying it.
 /**
  * Helper class to parse the settings.gradle file from the main build and extract a list of
  * projects.
@@ -33,22 +36,22 @@ object SettingsParser {
     private val includeProjectPattern =
         Regex(
                 """^[\n\r\s]*includeProject\("(?<name>[a-z0-9-:]*)"(,[\n\r\s]*"(?<path>[a-z0-9-/]+))?.*\).*$""",
-                setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE)
+                setOf(RegexOption.MULTILINE, RegexOption.IGNORE_CASE),
             )
             .toPattern()
 
-    fun findProjects(
-        settingsFile: File,
-    ): List<IncludedProject> {
+    fun findProjects(settingsFile: File): List<IncludedProject> {
         return findProjects(fileContents = settingsFile.readText(Charsets.UTF_8))
     }
 
-    fun findProjects(
-        fileContents: String,
-    ): List<IncludedProject> {
+    fun findProjects(fileContents: String): List<IncludedProject> {
         val matcher = includeProjectPattern.matcher(fileContents)
         val includedProjects = mutableListOf<IncludedProject>()
         while (matcher.find()) {
+            if (matcher.group().contains("new File")) {
+                // we don't support explicit project paths in playground
+                continue
+            }
             // check if is an include project line, if so, extract project gradle path and
             // file system path and call the filter
             val projectGradlePath =
@@ -64,12 +67,4 @@ object SettingsParser {
     private fun createFilePathFromGradlePath(gradlePath: String): String {
         return gradlePath.trimStart(':').replace(':', '/')
     }
-
-    /** Represents an included project from the main settings.gradle file. */
-    data class IncludedProject(
-        /** Gradle path of the project (using : as separator) */
-        val gradlePath: String,
-        /** File path for the project, relative to support root folder. */
-        val filePath: String
-    )
 }

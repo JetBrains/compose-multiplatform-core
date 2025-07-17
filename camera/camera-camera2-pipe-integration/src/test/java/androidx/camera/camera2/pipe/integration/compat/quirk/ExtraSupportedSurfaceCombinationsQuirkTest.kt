@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
-import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import androidx.camera.core.impl.SurfaceCombination
 import androidx.camera.core.impl.SurfaceConfig
@@ -55,7 +54,7 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
 
         // Gets the extra supported surface combinations on the device
         val extraSurfaceCombinations: List<SurfaceCombination> =
-            quirk.getExtraSupportedSurfaceCombinations(config.cameraId, config.hardwareLevel)
+            quirk.getExtraSupportedSurfaceCombinations(config.cameraId)
         for (expectedSupportedSurfaceCombination in config.expectedSupportedSurfaceCombinations) {
             var isSupported = false
 
@@ -80,159 +79,135 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
         @ParameterizedRobolectricTestRunner.Parameters(name = "{0}")
         fun data() =
             listOf(
-                Config(
-                    null,
-                    "heroqltevzw",
-                    null,
-                    "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
-                ),
-                Config(
-                    null,
-                    "heroqltevzw",
-                    null,
-                    "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-                    createFullLevelYPYSupportedCombinations()
-                ),
+                Config(null, "heroqltevzw", null, "0"),
+                Config(null, "heroqltevzw", null, "1", createFullLevelYPYSupportedCombinations()),
                 // Tests for Samsung S7 case
-                Config(
-                    null,
-                    "heroqltetmo",
-                    null,
-                    "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
-                ),
-                Config(
-                    null,
-                    "heroqltetmo",
-                    null,
-                    "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-                    createFullLevelYPYSupportedCombinations()
-                ),
-                // Tests for Samsung limited device case
-                Config(
-                    "samsung",
-                    null,
-                    "sm-g9860",
-                    "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL
-                ),
-                Config(
-                    "samsung",
-                    null,
-                    "sm-g9860",
-                    "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED,
-                    createFullLevelYPYAndYYYSupportedCombinations()
-                ),
+                Config(null, "heroqltetmo", null, "0"),
+                Config(null, "heroqltetmo", null, "1", createFullLevelYPYSupportedCombinations()),
                 // Tests for FULL Pixel devices
                 Config(
                     "Google",
                     null,
                     "Pixel 6",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 6",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 6 Pro",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 6 Pro",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 7",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
-                    "Pixel 6 Pro",
+                    "Pixel 7",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 7 Pro",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Google",
                     null,
                     "Pixel 7 Pro",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 8",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 8",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 8 Pro",
+                    "0",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
+                Config(
+                    "Google",
+                    null,
+                    "Pixel 8 Pro",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 // Tests for FULL Samsung devices
+                Config("Samsung", null, "SCG25", "0", createLevel3PrivPrivYuvSubsetConfiguration()),
+                Config(
+                    "Samsung",
+                    null,
+                    "SM-S9210",
+                    "1",
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
+                ),
                 Config(
                     "Samsung",
                     null,
                     "SM-S926B",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Samsung",
                     null,
-                    "SM-S926B",
+                    "SM-S926U",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Samsung",
                     null,
-                    "SM-S928U",
+                    "SM-S928U1",
                     "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 Config(
                     "Samsung",
                     null,
-                    "SM-S928U",
+                    "SM-S928B",
                     "1",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
-                    createLevel3PrivPrivYuvSubsetConfiguration()
+                    createLevel3PrivPrivYuvSubsetConfiguration(),
                 ),
                 // Other cases
-                Config(
-                    null,
-                    null,
-                    null,
-                    "0",
-                    CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED
-                )
+                Config(null, null, null, "0"),
             )
 
         private fun createFullLevelYPYSupportedCombinations(): Array<SurfaceCombination> {
@@ -244,7 +219,7 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
             surfaceCombination.addSurfaceConfig(
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
+                    SurfaceConfig.ConfigSize.PREVIEW,
                 )
             )
             surfaceCombination.addSurfaceConfig(
@@ -262,7 +237,7 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
             surfaceCombination1.addSurfaceConfig(
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
+                    SurfaceConfig.ConfigSize.PREVIEW,
                 )
             )
             surfaceCombination1.addSurfaceConfig(
@@ -289,7 +264,7 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
             surfaceCombination.addSurfaceConfig(
                 SurfaceConfig.create(
                     SurfaceConfig.ConfigType.PRIV,
-                    SurfaceConfig.ConfigSize.PREVIEW
+                    SurfaceConfig.ConfigSize.PREVIEW,
                 )
             )
             surfaceCombination.addSurfaceConfig(
@@ -307,7 +282,6 @@ class ExtraSupportedSurfaceCombinationsQuirkTest(private val config: Config) {
         val device: String?,
         val model: String?,
         val cameraId: String,
-        val hardwareLevel: Int,
-        val expectedSupportedSurfaceCombinations: Array<SurfaceCombination> = arrayOf()
+        val expectedSupportedSurfaceCombinations: Array<SurfaceCombination> = arrayOf(),
     )
 }

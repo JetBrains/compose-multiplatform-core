@@ -16,14 +16,26 @@
 
 package androidx.core.telecom.internal
 
+import android.net.Uri
+import android.util.Log
+import androidx.core.telecom.CallException
+import androidx.core.telecom.extensions.Extensions
 import androidx.core.telecom.extensions.IActionsResultCallback
 import androidx.core.telecom.extensions.ICallDetailsListener
+import androidx.core.telecom.extensions.ICallIconStateListener
 import androidx.core.telecom.extensions.ICapabilityExchange
 import androidx.core.telecom.extensions.ICapabilityExchangeListener
+import androidx.core.telecom.extensions.ILocalSilenceActions
+import androidx.core.telecom.extensions.ILocalSilenceStateListener
+import androidx.core.telecom.extensions.IMeetingSummaryStateListener
 import androidx.core.telecom.extensions.IParticipantActions
 import androidx.core.telecom.extensions.IParticipantStateListener
 import androidx.core.telecom.extensions.Participant
+import androidx.core.telecom.extensions.ParticipantParcelable
 import androidx.core.telecom.util.ExperimentalAppActions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /** Remote interface for communicating back to the remote interface the result of an Action. */
 @ExperimentalAppActions
@@ -32,24 +44,57 @@ internal class ActionsResultCallbackRemote(binder: IActionsResultCallback) :
 
 /**
  * Implements the binder interface that is used by the remote InCallService in order to perform an
- * Action.
- *
- * @param setHandRaised The method invoked when the remote InCallService requests to raise this
- *   user's hand
- * @param kickParticipant The method invoked when the remote InCAllService requests that a
- *   participant is kicked
+ * Action and calls the delegate callback function if an action has registered to listen.
  */
 @ExperimentalAppActions
-internal class ParticipantActions(
-    private val setHandRaised: (state: Boolean, cb: ActionsResultCallbackRemote) -> Unit,
-    private val kickParticipant: (participant: Participant, cb: ActionsResultCallbackRemote) -> Unit
-) : IParticipantActions.Stub() {
-    override fun setHandRaised(handRaisedState: Boolean, cb: IActionsResultCallback?) {
-        cb?.let { setHandRaised.invoke(handRaisedState, ActionsResultCallbackRemote(cb)) }
+internal class ParticipantActionCallbackRepository(coroutineScope: CoroutineScope) {
+    companion object {
+        private const val LOG_TAG = Extensions.LOG_TAG + "(PACR)"
     }
 
-    override fun kickParticipant(participant: Participant, cb: IActionsResultCallback?) {
-        cb?.let { kickParticipant.invoke(participant, ActionsResultCallbackRemote(cb)) }
+    /**
+     * The callback that is called when the remote InCallService changes the raised hand state of
+     * this user.
+     */
+    var raiseHandStateCallback: (suspend (Boolean) -> Unit)? = null
+
+    /**
+     * The callback that is called when the remote InCallService requests to kick a participant
+     * using its id.
+     */
+    var kickParticipantCallback: (suspend (String) -> Unit)? = null
+
+    /** Listener used to handle event callbacks from the remote. */
+    val eventListener =
+        object : IParticipantActions.Stub() {
+            override fun setHandRaised(handRaisedState: Boolean, cb: IActionsResultCallback?) {
+                cb?.let {
+                    coroutineScope.launch {
+                        Log.i(LOG_TAG, "from remote: raiseHandStateChanged=$handRaisedState")
+                        raiseHandStateCallback?.invoke(handRaisedState)
+                        ActionsResultCallbackRemote(cb).onSuccess()
+                    }
+                }
+            }
+
+            override fun kickParticipant(participantId: String, cb: IActionsResultCallback?) {
+                cb?.let {
+                    coroutineScope.launch {
+                        Log.i(LOG_TAG, "from remote: kickParticipant=$participantId")
+                        kickParticipantCallback?.invoke(participantId)
+                        ActionsResultCallbackRemote(cb).onSuccess()
+                    }
+                }
+            }
+        }
+}
+
+/** Remote interface used by InCallServices to send action events to the VOIP application. */
+@ExperimentalAppActions
+internal class ParticipantActionsRemote(binder: IParticipantActions) :
+    IParticipantActions by binder {
+    fun kickParticipant(participant: Participant, cb: IActionsResultCallback?) {
+        kickParticipant(participant.id, cb)
     }
 }
 
@@ -59,8 +104,143 @@ internal class ParticipantActions(
  * @param binder The remote binder interface to wrap
  */
 @ExperimentalAppActions
-internal class ParticipantStateListenerRemote(binder: IParticipantStateListener) :
-    IParticipantStateListener by binder
+internal class ParticipantStateListenerRemote(private val binder: IParticipantStateListener) {
+    fun updateParticipants(participants: List<Participant>) {
+        binder.updateParticipants(
+            participants.map(Participant::toParticipantParcelable).toTypedArray()
+        )
+    }
+
+    fun updateActiveParticipant(activeParticipant: Participant?) {
+        binder.updateActiveParticipant(activeParticipant?.id)
+    }
+
+    fun updateRaisedHandsAction(participants: List<Participant>) {
+        binder.updateRaisedHandsAction(participants.map { it.id }.toTypedArray())
+    }
+
+    fun finishSync(actions: IParticipantActions) {
+        binder.finishSync(actions)
+    }
+}
+
+@ExperimentalAppActions
+internal class CallIconStateListenerRemote(val binder: ICallIconStateListener) {
+    fun updateCallIconUri(uri: Uri) {
+        binder.updateCallIconUri(uri)
+    }
+
+    fun finishSync() {
+        binder.finishSync()
+    }
+}
+
+@ExperimentalAppActions
+internal class CallIconStateListener(
+    private val callIconUriUpdater: (Uri) -> Unit,
+    private val finishSync: (Unit) -> Unit,
+) : ICallIconStateListener.Stub() {
+    override fun updateCallIconUri(uri: Uri) {
+        callIconUriUpdater.invoke(uri)
+    }
+
+    override fun finishSync() {
+        finishSync.invoke(Unit)
+    }
+}
+
+@ExperimentalAppActions
+internal class MeetingSummaryStateListenerRemote(val binder: IMeetingSummaryStateListener) {
+
+    fun updateCurrentSpeaker(speakerName: String) {
+        binder.updateCurrentSpeaker(speakerName)
+    }
+
+    fun updateParticipantCount(participantCount: Int) {
+        binder.updateParticipantCount(participantCount)
+    }
+
+    fun finishSync() {
+        binder.finishSync()
+    }
+}
+
+@ExperimentalAppActions
+internal class MeetingSummaryStateListener(
+    private val updateCurrentSpeaker: (String) -> Unit,
+    private val updateParticipantCount: (Int) -> Unit,
+    private val finishSync: (Unit) -> Unit,
+) : IMeetingSummaryStateListener.Stub() {
+
+    override fun updateCurrentSpeaker(speakerName: String) {
+        updateCurrentSpeaker.invoke(speakerName)
+    }
+
+    override fun updateParticipantCount(participantCount: Int) {
+        updateParticipantCount.invoke(participantCount)
+    }
+
+    override fun finishSync() {
+        finishSync.invoke(Unit)
+    }
+}
+
+@ExperimentalAppActions
+internal class LocalCallSilenceActionsRemote(binder: ILocalSilenceActions) :
+    ILocalSilenceActions by binder
+
+@ExperimentalAppActions
+internal class LocalCallSilenceStateListenerRemote(val binder: ILocalSilenceStateListener) {
+    fun updateIsLocallySilenced(isLocallySilenced: Boolean) {
+        binder.updateIsLocallySilenced(isLocallySilenced)
+    }
+
+    fun finishSync(actions: ILocalSilenceActions) {
+        binder.finishSync(actions)
+    }
+}
+
+@ExperimentalAppActions
+internal class LocalCallSilenceCallbackRepository(coroutineScope: CoroutineScope) {
+    var localCallSilenceCallback: (suspend (Boolean) -> Unit)? = null
+
+    val eventListener =
+        object : ILocalSilenceActions.Stub() {
+            override fun setIsLocallySilenced(
+                isLocallySilenced: Boolean,
+                cb: IActionsResultCallback?,
+            ) {
+                cb?.let {
+                    coroutineScope.launch {
+                        if (localCallSilenceCallback == null) {
+                            ActionsResultCallbackRemote(cb)
+                                .onFailure(
+                                    CallException.ERROR_UNKNOWN,
+                                    "localCallSilenceCallback is NULL",
+                                )
+                        } else {
+                            localCallSilenceCallback?.invoke(isLocallySilenced)
+                            ActionsResultCallbackRemote(cb).onSuccess()
+                        }
+                    }
+                }
+            }
+        }
+}
+
+@ExperimentalAppActions
+internal class LocalCallSilenceStateListener(
+    private val updateLocalCallSilence: (Boolean) -> Unit,
+    private val finishSync: (LocalCallSilenceActionsRemote?) -> Unit,
+) : ILocalSilenceStateListener.Stub() {
+    override fun updateIsLocallySilenced(isLocallySilenced: Boolean) {
+        updateLocalCallSilence.invoke(isLocallySilenced)
+    }
+
+    override fun finishSync(cb: ILocalSilenceActions?) {
+        finishSync.invoke(cb?.let { LocalCallSilenceActionsRemote(it) })
+    }
+}
 
 /**
  * The remote interface used to begin capability exchange with the InCallService.
@@ -72,44 +252,144 @@ internal class CapabilityExchangeRemote(binder: ICapabilityExchange) :
     ICapabilityExchange by binder
 
 /**
- * The implementation of the capability exchange listener, which is used by the InCallService to
- * create and remove extensions.
- *
- * @param onCreateParticipantExtension The method called when the remote InCallService is creating a
- *   participant extension.
- * @param onRemoveExtensions The method called when the remote InCallService is being removed.
+ * Remote interface for [ICapabilityExchangeListener] that InCallServices use to communicate with
+ * the remote VOIP application.
  */
 @ExperimentalAppActions
-internal class CapabilityExchangeListener(
-    val onCreateParticipantExtension:
-        (actions: Set<Int>, binder: ParticipantStateListenerRemote) -> Unit =
-        { _, _ ->
-        },
-    val onRemoveExtensions: () -> Unit = {}
-) : ICapabilityExchangeListener.Stub() {
-    override fun onCreateParticipantExtension(
-        version: Int,
-        actions: IntArray?,
-        l: IParticipantStateListener?
-    ) {
-        l?.let {
-            onCreateParticipantExtension.invoke(
-                actions?.toSet() ?: emptySet(),
-                ParticipantStateListenerRemote(l)
-            )
+internal class CapabilityExchangeListenerRemote(binder: ICapabilityExchangeListener) :
+    ICapabilityExchangeListener by binder
+
+/**
+ * Adapter class that implements [IParticipantStateListener] AIDL and calls the associated callbacks
+ */
+@ExperimentalAppActions
+internal class ParticipantStateListener(
+    private val updateParticipants: (Set<Participant>) -> Unit,
+    private val updateActiveParticipantId: (String?) -> Unit,
+    private val updateRaisedHandIds: (List<String>) -> Unit,
+    private val finishSync: (ParticipantActionsRemote?) -> Unit,
+) : IParticipantStateListener.Stub() {
+    override fun updateParticipants(participants: Array<out ParticipantParcelable>?) {
+        updateParticipants.invoke(
+            participants?.map { Participant(it.id, it.name) }?.toSet() ?: emptySet()
+        )
+    }
+
+    override fun updateActiveParticipant(activeParticipantId: String?) {
+        updateActiveParticipantId.invoke(activeParticipantId)
+    }
+
+    override fun updateRaisedHandsAction(participants: Array<out String>?) {
+        updateRaisedHandIds.invoke(participants?.toList() ?: emptyList())
+    }
+
+    override fun finishSync(cb: IParticipantActions?) {
+        if (cb == null) {
+            Log.w("AidlExtensions", "finishSync returned null actions!")
         }
+        finishSync.invoke(cb?.let { ParticipantActionsRemote(it) })
     }
+}
 
-    override fun onCreateCallDetailsExtension(
-        version: Int,
-        actions: IntArray?,
-        l: ICallDetailsListener?,
-        packageName: String?
-    ) {
-        TODO("Not yet implemented")
-    }
+/**
+ * The repository containing the methods used during capability exchange to create each extension.
+ * Extensions will use this to register themselves as handlers of these callbacks.
+ *
+ * @param connectionScope The [CoroutineScope] that governs this connection to the remote. This
+ *   scope will be cancelled by this class when the remote notifies us that the connection is being
+ *   torn down.
+ */
+@ExperimentalAppActions
+internal class CapabilityExchangeRepository(private val connectionScope: CoroutineScope) {
 
-    override fun onRemoveExtensions() {
-        onRemoveExtensions.invoke()
-    }
+    /** A request to create the ParticipantExtension has been received */
+    var onCreateParticipantExtension:
+        ((CoroutineScope, Set<Int>, ParticipantStateListenerRemote) -> Unit)? =
+        null
+
+    // This is set in LocalSilenceExtensionImpl (VoIP side) in onExchangeStarted(...)
+    // callbacks.onCreateLocalCallSilenceExtension = // current impl
+    var onCreateLocalCallSilenceExtension:
+        ((CoroutineScope, Set<Int>, LocalCallSilenceStateListenerRemote) -> Unit)? =
+        null
+
+    var onCreateCallIconExtension:
+        ((CoroutineScope, Set<Int>, String, CallIconStateListenerRemote) -> Unit)? =
+        null
+
+    var onMeetingSummaryExtension: ((CoroutineScope, MeetingSummaryStateListenerRemote) -> Unit)? =
+        null
+
+    val listener =
+        object : ICapabilityExchangeListener.Stub() {
+            override fun onCreateParticipantExtension(
+                version: Int,
+                actions: IntArray?,
+                l: IParticipantStateListener?,
+            ) {
+                l?.let {
+                    onCreateParticipantExtension?.invoke(
+                        connectionScope,
+                        actions?.toSet() ?: emptySet(),
+                        ParticipantStateListenerRemote(l),
+                    )
+                }
+            }
+
+            override fun onCreateLocalCallSilenceExtension(
+                version: Int,
+                actions: IntArray?,
+                l: ILocalSilenceStateListener?,
+            ) {
+                l?.let {
+                    // called by the LocalSilenceExtensionImpl (VoIP side)
+                    onCreateLocalCallSilenceExtension?.invoke(
+                        connectionScope,
+                        actions?.toSet() ?: emptySet(),
+                        LocalCallSilenceStateListenerRemote(l),
+                    )
+                }
+            }
+
+            override fun onCreateCallIconExtension(
+                version: Int,
+                actions: IntArray?,
+                remoteName: String,
+                l: ICallIconStateListener?,
+            ) {
+                l?.let {
+                    onCreateCallIconExtension?.invoke(
+                        connectionScope,
+                        actions?.toSet() ?: emptySet(),
+                        remoteName,
+                        CallIconStateListenerRemote(l),
+                    )
+                }
+            }
+
+            override fun onCreateMeetingSummaryExtension(
+                version: Int,
+                l: IMeetingSummaryStateListener?,
+            ) {
+                l?.let {
+                    onMeetingSummaryExtension?.invoke(
+                        connectionScope,
+                        MeetingSummaryStateListenerRemote(l),
+                    )
+                }
+            }
+
+            override fun onCreateCallDetailsExtension(
+                version: Int,
+                actions: IntArray?,
+                l: ICallDetailsListener?,
+                packageName: String?,
+            ) {
+                TODO("Not yet implemented")
+            }
+
+            override fun onRemoveExtensions() {
+                connectionScope.cancel("remote has removed extensions")
+            }
+        }
 }

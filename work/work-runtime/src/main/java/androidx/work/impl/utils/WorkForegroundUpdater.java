@@ -16,15 +16,14 @@
 
 package androidx.work.impl.utils;
 
+import static androidx.work.ListenableFutureKt.executeAsync;
 import static androidx.work.impl.foreground.SystemForegroundDispatcher.createNotifyIntent;
 import static androidx.work.impl.model.WorkSpecKt.generationalId;
-import static androidx.work.ListenableFutureKt.executeAsync;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
 import androidx.work.ForegroundUpdater;
@@ -37,8 +36,9 @@ import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.UUID;
+import org.jspecify.annotations.NonNull;
 
+import java.util.UUID;
 
 /**
  * Transitions a {@link androidx.work.ListenableWorker} to run in the context of a foreground
@@ -70,12 +70,11 @@ public class WorkForegroundUpdater implements ForegroundUpdater {
         mWorkSpecDao = workDatabase.workSpecDao();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setForegroundAsync(
-            @NonNull final Context context,
-            @NonNull final UUID id,
-            @NonNull final ForegroundInfo foregroundInfo) {
+    public @NonNull ListenableFuture<Void> setForegroundAsync(
+            final @NonNull Context context,
+            final @NonNull UUID id,
+            final @NonNull ForegroundInfo foregroundInfo) {
         return executeAsync(mTaskExecutor.getSerialTaskExecutor(), "setForegroundAsync",
                 () -> {
                     String workSpecId = id.toString();

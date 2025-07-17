@@ -25,7 +25,7 @@ import org.gradle.api.file.FileCollection
 
 /** AndroidX configuration backed by Gradle properties. */
 abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
-    override val buildToolsVersion: String = "35.0.0-rc1"
+    override val buildToolsVersion: String = "36.0.0"
 
     override val compileSdk: Int by lazy {
         val sdkString = project.extraPropertyOrNull(COMPILE_SDK)?.toString()
@@ -33,8 +33,13 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
         sdkString.toInt()
     }
 
+    override val latestStableCompileSdk: Int by lazy {
+        val sdkString = project.extraPropertyOrNull(LATEST_STABLE_COMPILE_SDK)?.toString()
+        check(sdkString != null) { "$LATEST_STABLE_COMPILE_SDK is unset" }
+        sdkString.toInt()
+    }
+
     override val minSdk: Int = 21
-    override val ndkVersion: String = "25.2.9519653"
 
     override val targetSdk: Int by lazy {
         project.providers.gradleProperty(TARGET_SDK_VERSION).get().toInt()
@@ -42,17 +47,14 @@ abstract class AndroidConfigImpl(private val project: Project) : AndroidConfig {
 
     companion object {
         private const val COMPILE_SDK = "androidx.compileSdk"
+        private const val LATEST_STABLE_COMPILE_SDK = "androidx.latestStableCompileSdk"
         private const val TARGET_SDK_VERSION = "androidx.targetSdkVersion"
 
         /**
          * Implementation detail. This should only be used by AndroidXGradleProperties for property
          * validation.
          */
-        val GRADLE_PROPERTIES =
-            listOf(
-                COMPILE_SDK,
-                TARGET_SDK_VERSION,
-            )
+        val GRADLE_PROPERTIES = listOf(COMPILE_SDK, LATEST_STABLE_COMPILE_SDK, TARGET_SDK_VERSION)
     }
 }
 
@@ -71,11 +73,15 @@ interface AndroidConfig {
      */
     val compileSdk: Int
 
+    /**
+     * The latest stable compile SDK version that is available to use for AndroidX projects.
+     *
+     * This may be specified in `gradle.properties` using `androidx.latestStableCompileSdk`.
+     */
+    val latestStableCompileSdk: Int
+
     /** Default minimum SDK version used for AndroidX projects. */
     val minSdk: Int
-
-    /** NDK version used for AndroidX projects. */
-    val ndkVersion: String
 
     /**
      * Default target SDK version used for AndroidX projects.
@@ -104,8 +110,8 @@ fun Project.getPrebuiltsRoot(): File {
 }
 
 /** @return the project's Android SDK stub JAR as a File. */
-fun Project.getAndroidJar(): FileCollection {
-    val compileSdk = "android-${project.defaultAndroidConfig.compileSdk}"
+fun Project.getAndroidJar(sdkNum: Int = project.defaultAndroidConfig.compileSdk): FileCollection {
+    val compileSdk = "android-${sdkNum}"
     return files(
         arrayOf(
             File(getSdkPath(), "platforms/$compileSdk/android.jar"),
@@ -114,7 +120,7 @@ fun Project.getAndroidJar(): FileCollection {
             // Allow using optional android.test APIs
             File(getSdkPath(), "platforms/$compileSdk/optional/android.test.base.jar"),
             File(getSdkPath(), "platforms/$compileSdk/optional/android.test.mock.jar"),
-            File(getSdkPath(), "platforms/$compileSdk/optional/android.test.runner.jar")
+            File(getSdkPath(), "platforms/$compileSdk/optional/android.test.runner.jar"),
         )
     )
 }

@@ -23,9 +23,10 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helpers with {@link Uri}s
@@ -75,8 +76,7 @@ public class Uris {
      * Extract a content-type from the given {@link Uri} by mapping its file extension to a known
      * mime-type. This is based on the Uri only, it doesn't open any connection.
      */
-    @Nullable
-    public static String extractContentType(@NonNull Uri uri) {
+    public static @Nullable String extractContentType(@NonNull Uri uri) {
         // Note: MimeTypeMap.getFileExtensionFromUrl(path); fails on unusual characters in path.
         String name = uri.getLastPathSegment();
         if (name != null) {
@@ -93,8 +93,7 @@ public class Uris {
      * Extracts a file name from the given {@link Uri} - either its last segment of the whole Uri.
      * This is based on the Uri only, it doesn't open any connection.
      */
-    @NonNull
-    public static String extractFileName(@NonNull Uri uri) {
+    public static @NonNull String extractFileName(@NonNull Uri uri) {
         String name = uri.getLastPathSegment();
         if (name == null) {
             name = uri.toString();
@@ -107,8 +106,8 @@ public class Uris {
      * content
      * Uris, the name must be queried from the contentResolver.
      */
-    @NonNull
-    public static String extractName(@NonNull Uri uri, @NonNull ContentResolver contentResolver) {
+    public static @NonNull String extractName(@NonNull Uri uri,
+            @NonNull ContentResolver contentResolver) {
         if (Uris.isContentUri(uri)) {
             return ContentUriOpener.extractContentName(contentResolver, uri);
         } else {

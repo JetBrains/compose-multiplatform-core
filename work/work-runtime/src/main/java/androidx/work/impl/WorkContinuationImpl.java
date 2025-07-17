@@ -20,8 +20,6 @@ import static androidx.work.OperationKt.launchOperation;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.lifecycle.LiveData;
 import androidx.work.ArrayCreatingInputMerger;
@@ -39,6 +37,9 @@ import androidx.work.impl.workers.CombineContinuationsWorker;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import kotlin.Unit;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,33 +66,27 @@ public class WorkContinuationImpl extends WorkContinuation {
     private boolean mEnqueued;
     private Operation mOperation;
 
-    @NonNull
-    public WorkManagerImpl getWorkManagerImpl() {
+    public @NonNull WorkManagerImpl getWorkManagerImpl() {
         return mWorkManagerImpl;
     }
 
-    @Nullable
-    public String getName() {
+    public @Nullable String getName() {
         return mName;
     }
 
-    @NonNull
-    public ExistingWorkPolicy getExistingWorkPolicy() {
+    public @NonNull ExistingWorkPolicy getExistingWorkPolicy() {
         return mExistingWorkPolicy;
     }
 
-    @NonNull
-    public List<? extends WorkRequest> getWork() {
+    public @NonNull List<? extends WorkRequest> getWork() {
         return mWork;
     }
 
-    @NonNull
-    public List<String> getIds() {
+    public @NonNull List<String> getIds() {
         return mIds;
     }
 
-    @NonNull
-    public List<String> getAllIds() {
+    public @NonNull List<String> getAllIds() {
         return mAllIds;
     }
 
@@ -106,8 +101,7 @@ public class WorkContinuationImpl extends WorkContinuation {
         mEnqueued = true;
     }
 
-    @Nullable
-    public List<WorkContinuationImpl> getParents() {
+    public @Nullable List<WorkContinuationImpl> getParents() {
         return mParents;
     }
 
@@ -180,9 +174,8 @@ public class WorkContinuationImpl extends WorkContinuation {
         return mWorkManagerImpl.getWorkInfosById(mAllIds);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<List<WorkInfo>> getWorkInfos() {
+    public @NonNull ListenableFuture<List<WorkInfo>> getWorkInfos() {
         return StatusRunnable.forStringIds(mWorkManagerImpl.getWorkDatabase(),
                 mWorkManagerImpl.getWorkTaskExecutor(), mAllIds);
     }
@@ -194,6 +187,8 @@ public class WorkContinuationImpl extends WorkContinuation {
             // The runnable walks the hierarchy of the continuations
             // and marks them enqueued using the markEnqueued() method, parent first.
             mOperation = launchOperation(
+                    mWorkManagerImpl.getConfiguration().getTracer(),
+                    "EnqueueRunnable_" + getExistingWorkPolicy().name(),
                     mWorkManagerImpl.getWorkTaskExecutor().getSerialTaskExecutor(),
                     () -> {
                         EnqueueRunnable.enqueue(this);
@@ -279,9 +274,9 @@ public class WorkContinuationImpl extends WorkContinuation {
     /**
      * @return the {@link Set} of pre-requisites for a given {@link WorkContinuationImpl}.
      */
-    @NonNull
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static Set<String> prerequisitesFor(@NonNull WorkContinuationImpl continuation) {
+    public static @NonNull Set<String> prerequisitesFor(
+            @NonNull WorkContinuationImpl continuation) {
         Set<String> preRequisites = new HashSet<>();
         List<WorkContinuationImpl> parents = continuation.getParents();
         if (parents != null && !parents.isEmpty()) {

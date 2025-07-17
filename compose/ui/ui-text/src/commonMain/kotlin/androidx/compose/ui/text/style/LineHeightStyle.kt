@@ -17,6 +17,8 @@
 package androidx.compose.ui.text.style
 
 import androidx.compose.ui.text.PlatformParagraphStyle
+import androidx.compose.ui.text.internal.checkPrecondition
+import kotlin.jvm.JvmInline
 
 /**
  * The configuration for line height such as alignment of the line in the provided line height,
@@ -33,16 +35,32 @@ import androidx.compose.ui.text.PlatformParagraphStyle
  * @param trim defines whether the space that would be added to the top of first line, and bottom of
  *   the last line should be trimmed or not. This feature is available only when
  *   [PlatformParagraphStyle.includeFontPadding] is false.
+ * @param mode defines the behavior when the specified line height is smaller than system preferred
+ *   line height. By specifying [Mode.Fixed], the line height is always set to the specified value.
+ *   This is the default value. By specifying [Mode.Minimum], the specified line height is smaller
+ *   than the system preferred value, the system preferred one is used instead.
  */
-class LineHeightStyle(val alignment: Alignment, val trim: Trim) {
+class LineHeightStyle(val alignment: Alignment, val trim: Trim, val mode: Mode) {
+
+    constructor(alignment: Alignment, trim: Trim) : this(alignment, trim, Mode.Fixed)
+
     companion object {
         /**
          * The default configuration for [LineHeightStyle]:
          * - alignment = [Alignment.Proportional]
          * - trim = [Trim.Both]
+         * - mode = [Mode.Fixed]
          */
-        val Default = LineHeightStyle(alignment = Alignment.Proportional, trim = Trim.Both)
+        val Default =
+            LineHeightStyle(alignment = Alignment.Proportional, trim = Trim.Both, mode = Mode.Fixed)
     }
+
+    /** Returns a copy of this [LineHeightStyle], optionally overriding some of the values. */
+    fun copy(
+        alignment: Alignment = this.alignment,
+        trim: Trim = this.trim,
+        mode: Mode = this.mode,
+    ) = LineHeightStyle(alignment, trim, mode)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,6 +68,7 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim) {
 
         if (alignment != other.alignment) return false
         if (trim != other.trim) return false
+        if (mode != other.mode) return false
 
         return true
     }
@@ -57,20 +76,38 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim) {
     override fun hashCode(): Int {
         var result = alignment.hashCode()
         result = 31 * result + trim.hashCode()
+        result = 31 * result + mode.hashCode()
         return result
     }
 
     override fun toString(): String {
-        return "LineHeightStyle(" + "alignment=$alignment, " + "trim=$trim" + ")"
+        return "LineHeightStyle(" + "alignment=$alignment, " + "trim=$trim," + "mode=$mode" + ")"
     }
 
     /**
-     * Defines whether the space that would be added to the top of first line, and bottom of the
-     * last line should be trimmed or not. This feature is available only when
-     * [PlatformParagraphStyle.includeFontPadding] is false.
+     * Defines whether to trim the extra space from the top of the first line and the bottom of the
+     * last line of text.
+     *
+     * This setting only takes effect when [PlatformParagraphStyle.includeFontPadding] is set to
+     * `false`.
+     *
+     * The behavior of [Trim] depends on the selected [Mode].
+     *
+     * ### [Mode.Fixed] (Default), or [Mode.Minimum]
+     * Trims extra vertical space only when the configured line height is *taller* than the font's
+     * default. This prevents clipping of glyphs by ensuring trimming only removes extra space.
+     *
+     * ### [Mode.Tight]
+     * Trimming is applied even when the configured line height is *shorter* than the font's
+     * default. This offers more aggressive trimming but carries a risk of clipping tall glyphs that
+     * extend beyond the shortened line height.
+     *
+     * **Warning:** Use [Mode.Tight] with caution, as it can lead to parts of characters being cut
+     * off. Ensure you have tested your text with various glyphs before using this mode in
+     * production.
      */
     @kotlin.jvm.JvmInline
-    value class Trim private constructor(private val value: Int) {
+    value class Trim internal constructor(internal val value: Int) {
 
         override fun toString(): String {
             return when (value) {
@@ -188,7 +225,7 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim) {
     value class Alignment constructor(internal val topRatio: Float) {
 
         init {
-            check(topRatio in 0f..1f || topRatio == -1f) {
+            checkPrecondition(topRatio in 0f..1f || topRatio == -1f) {
                 "topRatio should be in [0..1] range or -1"
             }
         }
@@ -277,6 +314,55 @@ class LineHeightStyle(val alignment: Alignment, val trim: Trim) {
              * </pre>
              */
             val Bottom = Alignment(topRatio = 1f)
+        }
+    }
+
+    /**
+     * Defines if the specified line height value should be enforced.
+     *
+     * The line height is determined by the font file used in the text. So, sometimes the specified
+     * text height can be too tight to show the given text. By using `Adjustment.Minimum` the line
+     * height can be adjusted to the system provided value if the specified line height is too
+     * tight. This is useful for supporting languages that use tall glyphs, e.g. Arabic, Myanmar,
+     * etc.
+     */
+    @JvmInline
+    value class Mode internal constructor(internal val value: Int) {
+
+        override fun toString(): String {
+            return when (this) {
+                Fixed -> "LineHeightStyle.Mode.Fixed"
+                Minimum -> "LineHeightStyle.Mode.Minimum"
+                Tight -> "LineHeightStyle.Mode.Tight"
+                else -> "Invalid"
+            }
+        }
+
+        companion object {
+            /**
+             * Always use the specified line height on every line but add the necessary paddings on
+             * text layout's top and bottom when the system preferred line height is larger. This
+             * guarantees that taller glyphs won't be trimmed at the boundaries. On the other hand,
+             * middle lines respect the specified line height at all times and tall glyphs can
+             * overflow to upper or lower lines.
+             */
+            val Fixed = Mode(0)
+
+            /**
+             * By specifying [Mode.Minimum], when the specified line height is smaller than the
+             * system preferred value, the system preferred one is used instead on all lines. Top
+             * and bottom paddings are also added. This prevents the overflow of tall glyphs in
+             * middle lines.
+             */
+            val Minimum = Mode(1)
+
+            /**
+             * Be able to use the specified line height at *all* lines, including the first and
+             * last. This configuration basically gets rid of the safety rails that are added by
+             * [Mode.Fixed]. Tall glyphs might get trimmed at top, bottom, or both when used in
+             * conjunction with the corresponding [Trim] value.
+             */
+            val Tight = Mode(2)
         }
     }
 }

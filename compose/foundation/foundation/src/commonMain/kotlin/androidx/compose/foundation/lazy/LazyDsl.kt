@@ -16,12 +16,13 @@
 
 package androidx.compose.foundation.lazy
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.internal.JvmDefaultWithCompatibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +50,7 @@ interface LazyListScope {
     fun item(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyItemScope.() -> Unit
+        content: @Composable LazyItemScope.() -> Unit,
     ) {
         error("The method is not implemented")
     }
@@ -79,7 +80,7 @@ interface LazyListScope {
         count: Int,
         key: ((index: Int) -> Any)? = null,
         contentType: (index: Int) -> Any? = { null },
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     ) {
         error("The method is not implemented")
     }
@@ -88,7 +89,7 @@ interface LazyListScope {
     fun items(
         count: Int,
         key: ((index: Int) -> Any)? = null,
-        itemContent: @Composable LazyItemScope.(index: Int) -> Unit
+        itemContent: @Composable LazyItemScope.(index: Int) -> Unit,
     ) {
         items(count, key, { null }, itemContent)
     }
@@ -97,8 +98,7 @@ interface LazyListScope {
      * Adds a sticky header item, which will remain pinned even when scrolling after it. The header
      * will remain pinned until the next header will take its place.
      *
-     * @sample androidx.compose.foundation.samples.StickyHeaderSample
-     *
+     * @sample androidx.compose.foundation.samples.StickyHeaderListSample
      * @param key a stable and unique key representing the item. Using the same key for multiple
      *   items in the list is not allowed. Type of the key should be saveable via Bundle on Android.
      *   If null is passed the position in the list will represent the key. When you specify the key
@@ -110,16 +110,44 @@ interface LazyListScope {
      *   type could be reused more efficiently. Note that null is a valid type and items of such
      *   type will be considered compatible.
      * @param content the content of the header
-     *
-     * Note: More investigations needed to make sure sticky headers API is suitable for various more
-     * generic usecases, e.g. in grids. This API is experimental until the answer is found.
      */
-    @ExperimentalFoundationApi
+    @Deprecated(
+        "Please use the overload with indexing capabilities.",
+        level = DeprecationLevel.HIDDEN,
+        replaceWith = ReplaceWith("stickyHeader(key, contentType, { _ -> content() })"),
+    )
     fun stickyHeader(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyItemScope.() -> Unit
-    )
+        content: @Composable LazyItemScope.() -> Unit,
+    ) = stickyHeader(key, contentType) { _ -> content() }
+
+    /**
+     * Adds a sticky header item, which will remain pinned even when scrolling after it. The header
+     * will remain pinned until the next header will take its place.
+     *
+     * @sample androidx.compose.foundation.samples.StickyHeaderListSample
+     * @sample androidx.compose.foundation.samples.StickyHeaderHeaderIndexSample
+     * @param key a stable and unique key representing the item. Using the same key for multiple
+     *   items in the list is not allowed. Type of the key should be saveable via Bundle on Android.
+     *   If null is passed the position in the list will represent the key. When you specify the key
+     *   the scroll position will be maintained based on the key, which means if you add/remove
+     *   items before the current visible item the item with the given key will be kept as the first
+     *   visible one. This can be overridden by calling 'requestScrollToItem' on the
+     *   'LazyListState'.
+     * @param contentType the type of the content of this item. The item compositions of the same
+     *   type could be reused more efficiently. Note that null is a valid type and items of such
+     *   type will be considered compatible.
+     * @param content the content of the header, the header index is provided, this is the item
+     *   position within the total set of items in this lazy list (the global index).
+     */
+    fun stickyHeader(
+        key: Any? = null,
+        contentType: Any? = null,
+        content: @Composable LazyItemScope.(Int) -> Unit,
+    ) {
+        item(key, contentType) { content.invoke(this, 0) }
+    }
 }
 
 /**
@@ -141,12 +169,12 @@ inline fun <T> LazyListScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
-        contentType = { index: Int -> contentType(items[index]) }
+        contentType = { index: Int -> contentType(items[index]) },
     ) {
         itemContent(items[it])
     }
@@ -155,7 +183,7 @@ inline fun <T> LazyListScope.items(
 inline fun <T> LazyListScope.items(
     items: List<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) = items(items, key, itemContent = itemContent)
 
 /**
@@ -177,12 +205,12 @@ inline fun <T> LazyListScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
 ) =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
-        contentType = { index -> contentType(index, items[index]) }
+        contentType = { index -> contentType(index, items[index]) },
     ) {
         itemContent(it, items[it])
     }
@@ -191,7 +219,7 @@ inline fun <T> LazyListScope.itemsIndexed(
 inline fun <T> LazyListScope.itemsIndexed(
     items: List<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
 ) = itemsIndexed(items, key, itemContent = itemContent)
 
 /**
@@ -213,12 +241,12 @@ inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(items[index]) } else null,
-        contentType = { index: Int -> contentType(items[index]) }
+        contentType = { index: Int -> contentType(items[index]) },
     ) {
         itemContent(items[it])
     }
@@ -227,7 +255,7 @@ inline fun <T> LazyListScope.items(
 inline fun <T> LazyListScope.items(
     items: Array<T>,
     noinline key: ((item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(item: T) -> Unit,
 ) = items(items, key, itemContent = itemContent)
 
 /**
@@ -249,12 +277,12 @@ inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
 ) =
     items(
         count = items.size,
         key = if (key != null) { index: Int -> key(index, items[index]) } else null,
-        contentType = { index -> contentType(index, items[index]) }
+        contentType = { index -> contentType(index, items[index]) },
     ) {
         itemContent(it, items[it])
     }
@@ -263,7 +291,7 @@ inline fun <T> LazyListScope.itemsIndexed(
 inline fun <T> LazyListScope.itemsIndexed(
     items: Array<T>,
     noinline key: ((index: Int, item: T) -> Any)? = null,
-    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
+    crossinline itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit,
 ) = itemsIndexed(items, key, itemContent = itemContent)
 
 /**
@@ -273,7 +301,6 @@ inline fun <T> LazyListScope.itemsIndexed(
  * items.
  *
  * @sample androidx.compose.foundation.samples.LazyRowSample
- *
  * @param modifier the modifier to apply to this layout
  * @param state the state object to be used to control or observe the list's state
  * @param contentPadding a padding around the whole content. This will add padding for the content
@@ -291,6 +318,9 @@ inline fun <T> LazyListScope.itemsIndexed(
  * @param flingBehavior logic describing fling behavior.
  * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
  *   allowed. You can still scroll programmatically using the state even when it is disabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param content a block which describes the content. Inside this block you can use methods like
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
@@ -305,7 +335,8 @@ fun LazyRow(
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyListScope.() -> Unit
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -317,7 +348,8 @@ fun LazyRow(
         flingBehavior = flingBehavior,
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
-        content = content
+        overscrollEffect = overscrollEffect,
+        content = content,
     )
 }
 
@@ -328,7 +360,6 @@ fun LazyRow(
  * items.
  *
  * @sample androidx.compose.foundation.samples.LazyColumnSample
- *
  * @param modifier the modifier to apply to this layout.
  * @param state the state object to be used to control or observe the list's state.
  * @param contentPadding a padding around the whole content. This will add padding for the. content
@@ -347,6 +378,9 @@ fun LazyRow(
  * @param flingBehavior logic describing fling behavior.
  * @param userScrollEnabled whether the scrolling via the user gestures or accessibility actions is
  *   allowed. You can still scroll programmatically using the state even when it is disabled
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param content a block which describes the content. Inside this block you can use methods like
  *   [LazyListScope.item] to add a single item or [LazyListScope.items] to add a list of items.
  */
@@ -361,7 +395,8 @@ fun LazyColumn(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyListScope.() -> Unit
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    content: LazyListScope.() -> Unit,
 ) {
     LazyList(
         modifier = modifier,
@@ -373,7 +408,8 @@ fun LazyColumn(
         isVertical = true,
         reverseLayout = reverseLayout,
         userScrollEnabled = userScrollEnabled,
-        content = content
+        overscrollEffect = overscrollEffect,
+        content = content,
     )
 }
 
@@ -388,7 +424,35 @@ fun LazyColumn(
         if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
-    content: LazyListScope.() -> Unit
+    userScrollEnabled: Boolean = true,
+    content: LazyListScope.() -> Unit,
+) {
+    LazyColumn(
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        verticalArrangement = verticalArrangement,
+        horizontalAlignment = horizontalAlignment,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = rememberOverscrollEffect(),
+        content = content,
+    )
+}
+
+@Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
+@Composable
+fun LazyColumn(
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    content: LazyListScope.() -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
@@ -399,7 +463,7 @@ fun LazyColumn(
         horizontalAlignment = horizontalAlignment,
         flingBehavior = flingBehavior,
         userScrollEnabled = true,
-        content = content
+        content = content,
     )
 }
 
@@ -414,7 +478,35 @@ fun LazyRow(
         if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
-    content: LazyListScope.() -> Unit
+    userScrollEnabled: Boolean = true,
+    content: LazyListScope.() -> Unit,
+) {
+    LazyRow(
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = verticalAlignment,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        overscrollEffect = rememberOverscrollEffect(),
+        content = content,
+    )
+}
+
+@Deprecated("Use the non deprecated overload", level = DeprecationLevel.HIDDEN)
+@Composable
+fun LazyRow(
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    horizontalArrangement: Arrangement.Horizontal =
+        if (!reverseLayout) Arrangement.Start else Arrangement.End,
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    content: LazyListScope.() -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
@@ -425,6 +517,6 @@ fun LazyRow(
         verticalAlignment = verticalAlignment,
         flingBehavior = flingBehavior,
         userScrollEnabled = true,
-        content = content
+        content = content,
     )
 }

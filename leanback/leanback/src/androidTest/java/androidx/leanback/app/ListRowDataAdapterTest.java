@@ -29,7 +29,6 @@ import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.SectionRow;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.filters.SmallTest;
 
 import org.junit.Before;
 import org.junit.Test;

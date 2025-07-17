@@ -21,32 +21,29 @@ import androidx.room.solver.CodeGenScope
 import androidx.room.vo.ColumnIndexVar
 
 /**
- * Converts a row of a cursor result into an object or a primitive.
+ * Converts a row of a statement result into an object or a primitive.
  *
  * An instance of this is created for each usage so that it can keep local variables.
  */
 abstract class RowAdapter(val out: XType) {
 
     /**
-     * Called when cursor variable along with column indices variables are ready.
+     * Called when statement variable along with column indices variables are ready.
      *
-     * @param indices the list of index variables to use when getting columns from the cursor to
+     * @param indices the list of index variables to use when getting columns from the statement to
      *   convert the row.
-     * @param cursorVarName the name of the cursor local variable
+     * @param stmtVarName the name of the statement local variable
      */
-    open fun onCursorReady(
-        cursorVarName: String,
+    open fun onStatementReady(
+        stmtVarName: String,
         scope: CodeGenScope,
         indices: List<ColumnIndexVar> =
-            getDefaultIndexAdapter().apply { onCursorReady(cursorVarName, scope) }.getIndexVars(),
+            getDefaultIndexAdapter().apply { onStatementReady(stmtVarName, scope) }.getIndexVars(),
     ) {}
 
     /** Called to convert a single row. */
-    abstract fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope)
+    abstract fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope)
 
     /** Gets the default index adapter for the implementation */
     abstract fun getDefaultIndexAdapter(): IndexAdapter
-
-    // TODO(b/319660042): Remove once migration to driver API is done.
-    open fun isMigratedToDriver(): Boolean = false
 }

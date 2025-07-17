@@ -17,6 +17,7 @@
 package androidx.compose.ui.focus
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
 
@@ -32,7 +33,7 @@ interface FocusEventModifier : Modifier.Element {
 fun Modifier.onFocusEvent(onFocusEvent: (FocusState) -> Unit): Modifier =
     this then FocusEventElement(onFocusEvent)
 
-private data class FocusEventElement(val onFocusEvent: (FocusState) -> Unit) :
+private class FocusEventElement(val onFocusEvent: (FocusState) -> Unit) :
     ModifierNodeElement<FocusEventNode>() {
     override fun create() = FocusEventNode(onFocusEvent)
 
@@ -43,6 +44,19 @@ private data class FocusEventElement(val onFocusEvent: (FocusState) -> Unit) :
     override fun InspectorInfo.inspectableProperties() {
         name = "onFocusEvent"
         properties["onFocusEvent"] = onFocusEvent
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is FocusEventElement) return false
+
+        if (onFocusEvent !== other.onFocusEvent) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return onFocusEvent.hashCode()
     }
 }
 

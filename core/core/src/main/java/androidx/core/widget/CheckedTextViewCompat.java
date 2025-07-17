@@ -23,10 +23,11 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.widget.CheckedTextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.drawable.DrawableCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing {@link CheckedTextView}.
@@ -62,8 +63,7 @@ public final class CheckedTextViewCompat {
      *
      * @see #setCheckMarkTintList(CheckedTextView, ColorStateList)
      */
-    @Nullable
-    public static ColorStateList getCheckMarkTintList(@NonNull CheckedTextView textView) {
+    public static @Nullable ColorStateList getCheckMarkTintList(@NonNull CheckedTextView textView) {
         if (SDK_INT >= 21) {
             return Api21Impl.getCheckMarkTintList(textView);
         }
@@ -85,7 +85,7 @@ public final class CheckedTextViewCompat {
      * @see DrawableCompat#setTintMode(Drawable, PorterDuff.Mode)
      */
     public static void setCheckMarkTintMode(@NonNull CheckedTextView textView,
-            @Nullable PorterDuff.Mode tintMode) {
+            PorterDuff.@Nullable Mode tintMode) {
         if (SDK_INT >= 21) {
             Api21Impl.setCheckMarkTintMode(textView, tintMode);
         } else if (textView instanceof TintableCheckedTextView) {
@@ -98,8 +98,8 @@ public final class CheckedTextViewCompat {
      * @attr name android:checkMarkTintMode
      * @see #setCheckMarkTintMode(CheckedTextView, PorterDuff.Mode)
      */
-    @Nullable
-    public static PorterDuff.Mode getCheckMarkTintMode(@NonNull CheckedTextView textView) {
+    public static PorterDuff.@Nullable Mode getCheckMarkTintMode(
+            @NonNull CheckedTextView textView) {
         if (SDK_INT >= 21) {
             return Api21Impl.getCheckMarkTintMode(textView);
         }
@@ -117,8 +117,7 @@ public final class CheckedTextViewCompat {
      */
     @Deprecated
     @androidx.annotation.ReplaceWith(expression = "textView.getCheckMarkDrawable()")
-    @Nullable
-    public static Drawable getCheckMarkDrawable(@NonNull CheckedTextView textView) {
+    public static @Nullable Drawable getCheckMarkDrawable(@NonNull CheckedTextView textView) {
         return textView.getCheckMarkDrawable();
     }
 
@@ -133,18 +132,16 @@ public final class CheckedTextViewCompat {
             textView.setCheckMarkTintList(tint);
         }
 
-        @Nullable
-        static ColorStateList getCheckMarkTintList(@NonNull CheckedTextView textView) {
+        static @Nullable ColorStateList getCheckMarkTintList(@NonNull CheckedTextView textView) {
             return textView.getCheckMarkTintList();
         }
 
         static void setCheckMarkTintMode(@NonNull CheckedTextView textView,
-                @Nullable PorterDuff.Mode tintMode) {
+                PorterDuff.@Nullable Mode tintMode) {
             textView.setCheckMarkTintMode(tintMode);
         }
 
-        @Nullable
-        static PorterDuff.Mode getCheckMarkTintMode(@NonNull CheckedTextView textView) {
+        static PorterDuff.@Nullable Mode getCheckMarkTintMode(@NonNull CheckedTextView textView) {
             return textView.getCheckMarkTintMode();
         }
     }

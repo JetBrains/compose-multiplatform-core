@@ -38,30 +38,22 @@ private const val DEFAULT_EXPOSURE_COMPENSATION = 0
  * [CameraControl.OperationCanceledException] if the camera is closed.
  */
 @CameraScope
-class EvCompControl
-@Inject
-constructor(
-    private val compat: EvCompCompat,
-) : UseCaseCameraControl {
+public class EvCompControl @Inject constructor(private val compat: EvCompCompat) :
+    UseCaseCameraControl {
     private var evCompIndex = DEFAULT_EXPOSURE_COMPENSATION
         set(value) {
             field = value
             exposureState = exposureState.updateIndex(value)
         }
 
-    var exposureState =
-        EvCompValue(
-            compat.supported,
-            evCompIndex,
-            compat.range,
-            compat.step,
-        )
+    public var exposureState: EvCompValue =
+        EvCompValue(compat.supported, evCompIndex, compat.range, compat.step)
 
-    private var _useCaseCamera: UseCaseCamera? = null
-    override var useCaseCamera: UseCaseCamera?
-        get() = _useCaseCamera
+    private var _requestControl: UseCaseCameraRequestControl? = null
+    override var requestControl: UseCaseCameraRequestControl?
+        get() = _requestControl
         set(value) {
-            _useCaseCamera = value
+            _requestControl = value
             updateAsync(evCompIndex, cancelPreviousTask = false)
         }
 
@@ -70,7 +62,7 @@ constructor(
         updateAsync(DEFAULT_EXPOSURE_COMPENSATION)
     }
 
-    fun updateAsync(exposureIndex: Int, cancelPreviousTask: Boolean = true): Deferred<Int> {
+    public fun updateAsync(exposureIndex: Int, cancelPreviousTask: Boolean = true): Deferred<Int> {
         if (!compat.supported) {
             return createFailureResult(
                 IllegalArgumentException("ExposureCompensation is not supported")
@@ -86,9 +78,9 @@ constructor(
             )
         }
 
-        return useCaseCamera?.let { camera ->
+        return requestControl?.let { requestControl ->
             evCompIndex = exposureIndex
-            compat.applyAsync(exposureIndex, camera, cancelPreviousTask)
+            compat.applyAsync(exposureIndex, requestControl, cancelPreviousTask)
         }
             ?: run {
                 CameraControl.OperationCanceledException("Camera is not active.").let { cancelResult
@@ -103,9 +95,9 @@ constructor(
         CompletableDeferred<Int>().apply { completeExceptionally(exception) }
 
     @Module
-    abstract class Bindings {
+    public abstract class Bindings {
         @Binds
         @IntoSet
-        abstract fun provideControls(evCompControl: EvCompControl): UseCaseCameraControl
+        public abstract fun provideControls(evCompControl: EvCompControl): UseCaseCameraControl
     }
 }

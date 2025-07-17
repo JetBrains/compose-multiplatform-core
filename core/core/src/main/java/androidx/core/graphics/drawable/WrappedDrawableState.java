@@ -22,8 +22,8 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 final class WrappedDrawableState extends Drawable.ConstantState {
     int mChangingConfigurations;
@@ -41,15 +41,13 @@ final class WrappedDrawableState extends Drawable.ConstantState {
         }
     }
 
-    @NonNull
     @Override
-    public Drawable newDrawable() {
+    public @NonNull Drawable newDrawable() {
         return newDrawable(null);
     }
 
-    @NonNull
     @Override
-    public Drawable newDrawable(@Nullable Resources res) {
+    public @NonNull Drawable newDrawable(@Nullable Resources res) {
         if (Build.VERSION.SDK_INT >= 21) {
             return new WrappedDrawableApi21(this, res);
         }

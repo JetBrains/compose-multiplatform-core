@@ -127,7 +127,7 @@ class ScaffoldPaddingDetectorTest : LintDetectorTest() {
         5DFFqRQsIk1VKYS3TvYQdzGqbI6e3fCs0d1rVFUjCvs5mnTWCWSFwt/dRVzH
         PR3v6XgfH+j4EB/p+BjVXTAPG/hkF1Mekh7ue1A9zHnIefjUg+xhxsOsh888
         bL4EoWeehRwJAAA=
-        """
+        """,
         )
 
     @Test
@@ -136,7 +136,7 @@ class ScaffoldPaddingDetectorTest : LintDetectorTest() {
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.material3.*
                 import androidx.compose.runtime.*
@@ -156,27 +156,27 @@ class ScaffoldPaddingDetectorTest : LintDetectorTest() {
                 ScaffoldStub,
                 Stubs.Modifier,
                 Stubs.PaddingValues,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expect(
                 """
-src/foo/test.kt:10: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:10: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold { /**/ }
                              ~~~~~~~~
-src/foo/test.kt:11: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:11: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier) { /**/ }
                                        ~~~~~~~~
-src/foo/test.kt:12: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:12: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier, topBar = {}, bottomBar = {}) { /**/ }
                                                                     ~~~~~~~~
-src/foo/test.kt:13: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:13: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier, topBar = {}, bottomBar = {}, content = { /**/ })
                                                                               ~~~~~~~~
-src/foo/test.kt:14: Error: Content padding parameter _ is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:14: Error: Content padding parameter _ is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier, topBar = {}, bottomBar = {}) { _ -> /**/ }
                                                                       ~
-src/foo/test.kt:15: Error: Content padding parameter innerPadding is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:15: Error: Content padding parameter innerPadding is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier, topBar = {}, bottomBar = {}) { innerPadding -> /**/ }
                                                                       ~~~~~~~~~~~~
 6 errors, 0 warnings
@@ -190,7 +190,7 @@ src/foo/test.kt:15: Error: Content padding parameter innerPadding is not used [U
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.material3.*
                 import androidx.compose.runtime.*
@@ -224,15 +224,15 @@ src/foo/test.kt:15: Error: Content padding parameter innerPadding is not used [U
                 ScaffoldStub,
                 Stubs.Modifier,
                 Stubs.PaddingValues,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expect(
                 """
-src/foo/test.kt:12: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:12: Error: Content padding parameter it is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold {
                              ^
-src/foo/test.kt:21: Error: Content padding parameter innerPadding is not used [UnusedMaterial3ScaffoldPaddingParameter]
+src/test/foo/test.kt:21: Error: Content padding parameter innerPadding is not used [UnusedMaterial3ScaffoldPaddingParameter]
                     Scaffold(Modifier, topBar = {}, bottomBar = {}) { innerPadding ->
                                                                       ~~~~~~~~~~~~
 2 errors, 0 warnings
@@ -246,7 +246,7 @@ src/foo/test.kt:21: Error: Content padding parameter innerPadding is not used [U
             .files(
                 kotlin(
                     """
-                package foo
+                package test.foo
 
                 import androidx.compose.material3.*
                 import androidx.compose.runtime.*
@@ -266,7 +266,7 @@ src/foo/test.kt:21: Error: Content padding parameter innerPadding is not used [U
                 ScaffoldStub,
                 Stubs.Modifier,
                 Stubs.PaddingValues,
-                Stubs.Composable
+                Stubs.Composable,
             )
             .run()
             .expectClean()

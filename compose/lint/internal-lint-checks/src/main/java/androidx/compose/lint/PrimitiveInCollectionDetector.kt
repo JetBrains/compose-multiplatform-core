@@ -34,6 +34,7 @@ import com.intellij.psi.PsiPrimitiveType
 import com.intellij.psi.PsiWildcardType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import java.util.EnumSet
+import org.jetbrains.kotlin.asJava.elements.KtLightField
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.uast.UElement
@@ -75,7 +76,7 @@ class PrimitiveInCollectionDetector : Detector(), SourceCodeScanner {
                         node,
                         target,
                         "return type ${node.returnType?.presentableText} of ${node.name}:" +
-                            " replace with $primitiveCollection"
+                            " replace with $primitiveCollection",
                     )
                 }
             }
@@ -119,7 +120,7 @@ class PrimitiveInCollectionDetector : Detector(), SourceCodeScanner {
                         // easy to do and still catch all uses.
                         if (
                             context.evaluator.isOverride(parent) ||
-                                (context.evaluator.isData(parent) && parent.name.startsWith("copy"))
+                                parent.isDataClassGeneratedMethod(context)
                         ) {
                             return
                         }
@@ -172,8 +173,8 @@ class PrimitiveInCollectionDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         PrimitiveInCollectionDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE)
-                    )
+                        EnumSet.of(Scope.JAVA_FILE),
+                    ),
             )
     }
 }
@@ -255,20 +256,29 @@ private fun JvmType.primitiveName(): String? =
 private fun PsiClassReferenceType.toPrimitiveName(): String? {
     val resolvedType = resolve() ?: return null
     if (hasJvmInline(resolvedType)) {
-        val constructorParam =
-            resolvedType.constructors.firstOrNull { it.parameters.size == 1 }?.parameters?.first()
+        // Depending on where the inline class is coming from, there are a couple places to check
+        // for what the value is.
+        val valueType =
+            // For value classes in this compilation, find the field which corresponds to the value
+            // class constructor parameter (the constructor is not modeled in k2 psi). There may be
+            // other fields (a companion object and companion object fields).
+            resolvedType.fields
+                .singleOrNull { (it as? KtLightField)?.kotlinOrigin is KtParameter }
+                ?.type
+                // For value classes from a different compilation, the fields may not have a kotlin
+                // origin attached, so there's nothing to differentiate companion fields and the
+                // value class field. Instead find the "constructor-impl" method (which is not
+                // present for value classes from this compilation).
                 ?: resolvedType.methods
                     .firstOrNull { it.parameters.size == 1 && it.name == "constructor-impl" }
                     ?.parameters
                     ?.first()
-        if (constructorParam != null) {
-            val type = constructorParam.type
-            if (type is PsiPrimitiveType) {
-                return BoxedTypeToSuggestedPrimitive[type.boxedTypeName]
-            }
-            if (type is PsiClassReferenceType) {
-                return type.toPrimitiveName()
-            }
+                    ?.type
+        if (valueType is PsiPrimitiveType) {
+            return BoxedTypeToSuggestedPrimitive[valueType.boxedTypeName]
+        }
+        if (valueType is PsiClassReferenceType) {
+            return valueType.toPrimitiveName()
         }
     }
     return BoxedTypeToSuggestedPrimitive[resolvedType.qualifiedName]

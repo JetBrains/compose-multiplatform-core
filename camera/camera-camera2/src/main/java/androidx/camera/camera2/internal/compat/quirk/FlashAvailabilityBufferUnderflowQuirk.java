@@ -20,8 +20,9 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 import android.util.Pair;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.BufferUnderflowException;
 import java.util.HashSet;

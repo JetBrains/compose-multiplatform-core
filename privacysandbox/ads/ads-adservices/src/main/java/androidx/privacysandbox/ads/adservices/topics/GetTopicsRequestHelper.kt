@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ads.adservices.topics
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.ext.SdkExtensions
 import androidx.annotation.RequiresExtension
@@ -24,8 +23,7 @@ import androidx.annotation.RestrictTo
 
 /** Helper class to consolidate conversion logic for GetTopicsRequest. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-@SuppressLint("ClassVerificationFailure")
-object GetTopicsRequestHelper {
+public object GetTopicsRequestHelper {
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
     internal fun convertRequestWithRecordObservation(

@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricPrompt
 import java.security.KeyStore
@@ -47,7 +46,7 @@ private const val KEYSTORE_INSTANCE = "AndroidKeyStore"
 @RequiresApi(Build.VERSION_CODES.M)
 internal fun createCryptoObject(
     allowBiometricAuth: Boolean,
-    allowDeviceCredentialAuth: Boolean
+    allowDeviceCredentialAuth: Boolean,
 ): BiometricPrompt.CryptoObject {
     // Create a spec for the key to be generated.
     val keyPurpose = KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
@@ -63,7 +62,7 @@ internal fun createCryptoObject(
                     this,
                     timeout = 0,
                     allowBiometricAuth,
-                    allowDeviceCredentialAuth
+                    allowDeviceCredentialAuth,
                 )
             } else {
                 Api23Impl.setUserAuthenticationValidityDurationSeconds(this, -1)
@@ -104,12 +103,11 @@ private fun getSecretKey(): SecretKey {
 /** Nested class to avoid verification errors for methods introduced in Android 11 (API 30). */
 @RequiresApi(Build.VERSION_CODES.R)
 private object Api30Impl {
-    @DoNotInline
     fun setUserAuthenticationParameters(
         builder: KeyGenParameterSpec.Builder,
         timeout: Int,
         allowBiometricAuth: Boolean,
-        allowDeviceCredentialAuth: Boolean
+        allowDeviceCredentialAuth: Boolean,
     ) {
         // Set the key type according to the allowed auth types.
         var keyType = 0
@@ -127,42 +125,36 @@ private object Api30Impl {
 /** Nested class to avoid verification errors for methods introduced in Android 6.0 (API 23). */
 @RequiresApi(Build.VERSION_CODES.M)
 private object Api23Impl {
-    @DoNotInline
     fun createKeyGenParameterSpecBuilder(
         keyName: String,
-        keyPurpose: Int
+        keyPurpose: Int,
     ): KeyGenParameterSpec.Builder = KeyGenParameterSpec.Builder(keyName, keyPurpose)
 
-    @DoNotInline
     fun setBlockModeCBC(builder: KeyGenParameterSpec.Builder) {
         builder.setBlockModes(KeyProperties.BLOCK_MODE_CBC)
     }
 
-    @DoNotInline
     fun setEncryptionPaddingPKCS7(builder: KeyGenParameterSpec.Builder) {
         builder.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
     }
 
-    @DoNotInline
     fun setUserAuthenticationRequired(
         builder: KeyGenParameterSpec.Builder,
-        userAuthenticationRequired: Boolean
+        userAuthenticationRequired: Boolean,
     ) {
         builder.setUserAuthenticationRequired(userAuthenticationRequired)
     }
 
     @Suppress("DEPRECATION")
-    @DoNotInline
     fun setUserAuthenticationValidityDurationSeconds(
         builder: KeyGenParameterSpec.Builder,
-        userAuthenticationValidityDurationSeconds: Int
+        userAuthenticationValidityDurationSeconds: Int,
     ) {
         builder.setUserAuthenticationValidityDurationSeconds(
             userAuthenticationValidityDurationSeconds
         )
     }
 
-    @DoNotInline
     fun buildKeyGenParameterSpec(builder: KeyGenParameterSpec.Builder): KeyGenParameterSpec {
         return builder.build()
     }

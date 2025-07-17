@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,23 +32,20 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.5.0")
-    api("androidx.compose.ui:ui-tooling-preview:1.7.0-beta02")
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.compose.ui:ui-tooling-preview:1.7.4")
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.wear:wear-tooling-preview:1.0.0")
 }
 
 android {
-    namespace "androidx.wear.compose.ui.tooling"
+    namespace = "androidx.wear.compose.ui.tooling"
 }
 
 androidx {
     name = "Wear Compose Tools"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2023"
     description = "Tools for Wear Composable"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:compose:compose-material-samples"))
 }

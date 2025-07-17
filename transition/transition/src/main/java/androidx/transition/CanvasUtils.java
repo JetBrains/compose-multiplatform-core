@@ -20,9 +20,9 @@ import android.annotation.SuppressLint;
 import android.graphics.Canvas;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -88,12 +88,10 @@ class CanvasUtils {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void enableZ(Canvas canvas) {
             canvas.enableZ();
         }
 
-        @DoNotInline
         static void disableZ(Canvas canvas) {
             canvas.disableZ();
         }

@@ -24,8 +24,8 @@ import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,9 +57,8 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return true;
     }
 
-    @NonNull
     @Override
-    public List<CaptureStageImpl> getCaptureStages() {
+    public @NonNull List<CaptureStageImpl> getCaptureStages() {
         // Placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(DEFAULT_STAGE_ID);
         List<CaptureStageImpl> captureStages = new ArrayList<>();
@@ -67,9 +66,8 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return captureStages;
     }
 
-    @Nullable
     @Override
-    public CaptureProcessorImpl getCaptureProcessor() {
+    public @Nullable CaptureProcessorImpl getCaptureProcessor() {
         return null;
     }
 
@@ -83,15 +81,13 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
     public void onDeInit() {
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onPresetSession() {
+    public @Nullable CaptureStageImpl onPresetSession() {
         return null;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onEnableSession() {
+    public @Nullable CaptureStageImpl onEnableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -99,9 +95,8 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return captureStage;
     }
 
-    @Nullable
     @Override
-    public CaptureStageImpl onDisableSession() {
+    public @Nullable CaptureStageImpl onDisableSession() {
         // Set the necessary CaptureRequest parameters via CaptureStage, here we use some
         // placeholder set of CaptureRequest.Key values
         SettableCaptureStage captureStage = new SettableCaptureStage(SESSION_STAGE_ID);
@@ -113,16 +108,14 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return 1;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedResolutions() {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedResolutions() {
         return null;
     }
 
     @SuppressWarnings("ConstantConditions") // Super method is nullable.
-    @Nullable
     @Override
-    public Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
+    public @Nullable Range<Long> getEstimatedCaptureLatencyRange(@Nullable Size captureOutputSize) {
         return new Range<>(300L, 800L);
     }
 
@@ -131,9 +124,9 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return SessionConfiguration.SESSION_REGULAR;
     }
 
-    @Nullable
     @Override
-    public List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(@NonNull Size captureSize) {
+    public @Nullable List<Pair<Integer, Size[]>> getSupportedPostviewResolutions(
+            @NonNull Size captureSize) {
         return null;
     }
 
@@ -142,9 +135,8 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return false;
     }
 
-    @Nullable
     @Override
-    public Pair<Long, Long> getRealtimeCaptureLatency() {
+    public @Nullable Pair<Long, Long> getRealtimeCaptureLatency() {
         return null;
     }
 
@@ -153,15 +145,13 @@ public final class AutoImageCaptureExtenderImpl implements ImageCaptureExtenderI
         return false;
     }
 
-    @NonNull
     @Override
-    public List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
+    public @NonNull List<CaptureRequest.Key> getAvailableCaptureRequestKeys() {
         return null;
     }
 
-    @NonNull
     @Override
-    public List<CaptureResult.Key> getAvailableCaptureResultKeys() {
+    public @NonNull List<CaptureResult.Key> getAvailableCaptureResultKeys() {
         return null;
     }
 

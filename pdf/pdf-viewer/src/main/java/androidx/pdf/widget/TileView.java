@@ -24,10 +24,11 @@ import android.graphics.Matrix;
 import android.graphics.Point;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.util.TileBoard.TileInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -65,13 +66,11 @@ public class TileView extends View {
         return mBitmap != null;
     }
 
-    @NonNull
-    public Point getOffset() {
+    public @NonNull Point getOffset() {
         return mTileInfo != null ? mTileInfo.getOffset() : ZERO;
     }
 
-    @NonNull
-    public TileInfo getTileInfo() {
+    public @NonNull TileInfo getTileInfo() {
         return mTileInfo;
     }
 

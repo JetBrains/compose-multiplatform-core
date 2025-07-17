@@ -27,15 +27,20 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
+import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class InfiniteTransitionTest {
+    private val rule = createComposeRule()
 
-    @get:Rule val rule = createComposeRule()
+    // Detect leaks BEFORE and AFTER compose rule work
+    @get:Rule
+    val ruleChain: RuleChain = RuleChain.outerRule(DetectLeaksAfterTestSuccess()).around(rule)
 
     @Test
     fun transitionTest() {
@@ -47,7 +52,7 @@ class InfiniteTransitionTest {
                 tween(1000),
                 Color.VectorConverter(Color.Red.colorSpace),
                 Color.Red,
-                Color.Green
+                Color.Green,
             )
 
         // Animate from 0f to 0f for 1000ms
@@ -69,7 +74,7 @@ class InfiniteTransitionTest {
                     transition.animateFloat(
                         0f,
                         0f,
-                        infiniteRepeatable(keyframes, repeatMode = RepeatMode.Reverse)
+                        infiniteRepeatable(keyframes, repeatMode = RepeatMode.Reverse),
                     )
 
                 val animColor =

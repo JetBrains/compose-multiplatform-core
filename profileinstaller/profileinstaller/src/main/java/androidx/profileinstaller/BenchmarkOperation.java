@@ -19,8 +19,9 @@ package androidx.profileinstaller;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 
@@ -29,7 +30,7 @@ class BenchmarkOperation {
 
     static void dropShaderCache(
             @NonNull Context context,
-            @NonNull ProfileInstallReceiver.ResultDiagnostics callback
+            ProfileInstallReceiver.@NonNull ResultDiagnostics callback
     ) {
         File shaderDirectory;
         if (Build.VERSION.SDK_INT >= 34) {

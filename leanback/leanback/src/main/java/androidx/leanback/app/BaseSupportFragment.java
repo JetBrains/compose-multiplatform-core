@@ -18,14 +18,15 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.transition.TransitionHelper;
 import androidx.leanback.transition.TransitionListener;
 import androidx.leanback.util.StateMachine;
 import androidx.leanback.util.StateMachine.Condition;
 import androidx.leanback.util.StateMachine.Event;
 import androidx.leanback.util.StateMachine.State;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for leanback Fragments. This class is not intended to be subclassed by apps.

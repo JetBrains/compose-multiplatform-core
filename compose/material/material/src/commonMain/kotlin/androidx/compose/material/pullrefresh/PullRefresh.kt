@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.Velocity
  * order to receive scroll events. For example:
  *
  * @sample androidx.compose.material.samples.PullRefreshSample
- *
  * @param state The [PullRefreshState] associated with this pull-to-refresh component. The state
  *   will be updated by this modifier.
  * @param enabled If not enabled, all scroll delta and fling velocity will be ignored.
@@ -49,7 +48,6 @@ fun Modifier.pullRefresh(state: PullRefreshState, enabled: Boolean = true) =
  * order to receive scroll events. For example:
  *
  * @sample androidx.compose.material.samples.CustomPullRefreshSample
- *
  * @param onPull Callback for dispatching vertical scroll delta, takes float pullDelta as argument.
  *   Positive delta (pulling down) is dispatched only if the child does not consume it (i.e. pulling
  *   down despite being at the top of a scrollable component), whereas negative delta (swiping up)
@@ -67,13 +65,13 @@ fun Modifier.pullRefresh(state: PullRefreshState, enabled: Boolean = true) =
 fun Modifier.pullRefresh(
     onPull: (pullDelta: Float) -> Float,
     onRelease: suspend (flingVelocity: Float) -> Float,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) = nestedScroll(PullRefreshNestedScrollConnection(onPull, onRelease, enabled))
 
 private class PullRefreshNestedScrollConnection(
     private val onPull: (pullDelta: Float) -> Float,
     private val onRelease: suspend (flingVelocity: Float) -> Float,
-    private val enabled: Boolean
+    private val enabled: Boolean,
 ) : NestedScrollConnection {
 
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
@@ -87,7 +85,7 @@ private class PullRefreshNestedScrollConnection(
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset =
         when {
             !enabled -> Offset.Zero

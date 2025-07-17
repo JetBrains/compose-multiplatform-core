@@ -32,8 +32,6 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
@@ -41,6 +39,9 @@ import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 import androidx.webkit.WebViewRenderProcess;
 import androidx.webkit.WebViewRenderProcessClient;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** An activity demonstrating the behaviour of renderer APIs. */
 public class RendererTerminationActivity extends AppCompatActivity {
@@ -85,16 +86,14 @@ public class RendererTerminationActivity extends AppCompatActivity {
     /** A renderer terminated {@link DialogFragment}. */
     public static class RendererTerminatedDialogFragment extends DialogFragment {
         /** Creates a new RendererTerminatedDialogFragment instance. */
-        @NonNull
-        public static RendererTerminatedDialogFragment newInstance() {
+        public static @NonNull RendererTerminatedDialogFragment newInstance() {
             RendererTerminatedDialogFragment dialog = new RendererTerminatedDialogFragment();
             dialog.setCancelable(false);
             return dialog;
         }
 
         @Override
-        @NonNull
-        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
             View v = LayoutInflater.from(getActivity())
                     .inflate(R.layout.fragment_renderer_terminated, null);
             final Dialog dialog = new AlertDialog.Builder(getActivity())
@@ -111,16 +110,14 @@ public class RendererTerminationActivity extends AppCompatActivity {
     /** A renderer unresponsive {@link DialogFragment}. */
     public static class RendererUnresponsiveDialogFragment extends DialogFragment {
         /** Creates a new RendererUnresponsiveDialogFragment instance. */
-        @NonNull
-        public static RendererUnresponsiveDialogFragment newInstance() {
+        public static @NonNull RendererUnresponsiveDialogFragment newInstance() {
             RendererUnresponsiveDialogFragment dialog = new RendererUnresponsiveDialogFragment();
             dialog.setCancelable(false);
             return dialog;
         }
 
         @Override
-        @NonNull
-        public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
             View v = LayoutInflater.from(getActivity())
                     .inflate(R.layout.fragment_renderer_unresponsive, null);
             final Dialog dialog = new AlertDialog.Builder(getActivity())

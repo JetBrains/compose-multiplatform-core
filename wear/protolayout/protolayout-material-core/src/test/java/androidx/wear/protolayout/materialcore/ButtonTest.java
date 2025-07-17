@@ -31,20 +31,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.graphics.Color;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ActionBuilders.LaunchAction;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
 import androidx.wear.protolayout.LayoutElementBuilders.Box;
 import androidx.wear.protolayout.LayoutElementBuilders.Column;
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement;
+import androidx.wear.protolayout.ModifiersBuilders;
 import androidx.wear.protolayout.ModifiersBuilders.Clickable;
 import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -269,6 +270,8 @@ public class ButtonTest {
 
         assertThat(actualButton.getContent().toLayoutElementProto())
                 .isEqualTo(expectedContent.toLayoutElementProto());
+        assertThat(actualButton.getSemantics().getRole())
+                .isEqualTo(ModifiersBuilders.SEMANTICS_ROLE_BUTTON);
     }
 
     private void assertFromLayoutElementButtonIsEqual(

@@ -17,11 +17,12 @@
 package androidx.wear.tiles.timeline.internal;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.proto.TimelineProto.TimeInterval;
 import androidx.wear.protolayout.proto.TimelineProto.Timeline;
 import androidx.wear.protolayout.proto.TimelineProto.TimelineEntry;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Timeline cache for Tiles. This will take in a full timeline, and return the appropriate entry for
@@ -45,8 +46,7 @@ public final class TilesTimelineCacheInternal {
      *     none are valid.
      */
     @MainThread
-    @Nullable
-    public TimelineEntry findTimelineEntryForTime(long timeMillis) {
+    public @Nullable TimelineEntry findTimelineEntryForTime(long timeMillis) {
         TimelineEntry currentEntry = null;
         long currentEntryLength = Long.MAX_VALUE;
 
@@ -93,8 +93,7 @@ public final class TilesTimelineCacheInternal {
      * @return The timeline entry with validity period closest to {@code timeMillis}.
      */
     @MainThread
-    @Nullable
-    public TimelineEntry findClosestTimelineEntry(long timeMillis) {
+    public @Nullable TimelineEntry findClosestTimelineEntry(long timeMillis) {
         long currentEntryError = Long.MAX_VALUE;
         TimelineEntry currentEntry = null;
 

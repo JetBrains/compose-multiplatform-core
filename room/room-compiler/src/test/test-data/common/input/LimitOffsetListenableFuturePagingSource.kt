@@ -15,9 +15,9 @@
  */
 package androidx.room.paging.guava
 
-import android.database.Cursor
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
+import androidx.sqlite.SQLiteStatement
 
 abstract class LimitOffsetListenableFuturePagingSource<T : Any>(
     private val sourceQuery: RoomSQLiteQuery,
@@ -28,5 +28,5 @@ abstract class LimitOffsetListenableFuturePagingSource<T : Any>(
         db,
         *tables
     ) {
-    protected abstract override fun convertRows(cursor: Cursor): List<T>
+    protected override abstract fun convertRows(statement: SQLiteStatement): List<T>
 }

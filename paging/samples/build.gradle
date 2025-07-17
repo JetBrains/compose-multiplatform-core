@@ -21,27 +21,25 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.paging.samples"
+    namespace = "androidx.paging.samples"
 }
 
 dependencies {
+    api(libs.jspecify)
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation("androidx.appcompat:appcompat:1.2.0")
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.fragment:fragment-ktx:1.3.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0")
     implementation("androidx.recyclerview:recyclerview:1.2.0")
@@ -55,13 +53,12 @@ dependencies {
     implementation(project(":paging:paging-rxjava2"))
 
     implementation(libs.guavaAndroid)
-    implementation(libs.multidex)
     implementation(libs.retrofit)
 }
 
 androidx {
     name = "Paging Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2019"
     description = "Contains the sample code for the Androidx Paging library"
 }

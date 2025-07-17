@@ -16,7 +16,9 @@
 
 package androidx.build.studio
 
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.util.Locale
 import org.gradle.process.ExecOperations
 
@@ -140,7 +142,10 @@ private class MacOsUtilities(projectRoot: File, studioInstallationDir: File) :
                 it.redirectError(ProcessBuilder.Redirect.INHERIT)
                 it.start()
             }
-        val stdout = process.inputReader().lines().toList()
+        val stdout =
+            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                reader.lineSequence().toList()
+            }
         process.waitFor()
         val projectRootPath = projectRoot.absolutePath
         return stdout
@@ -160,8 +165,8 @@ private class LinuxUtilities(projectRoot: File, studioInstallationDir: File) :
 
     override val StudioTask.launchCommandArguments: List<String>
         get() {
-            val studioScript = File(binaryDirectory, "bin/studio.sh")
-            return listOf("sh", studioScript.absolutePath, projectRoot.absolutePath)
+            val studioBinary = File(binaryDirectory, "bin/studio")
+            return listOf(studioBinary.absolutePath, projectRoot.absolutePath)
         }
 
     override val StudioTask.pluginsDirectory: File
@@ -190,7 +195,10 @@ private class LinuxUtilities(projectRoot: File, studioInstallationDir: File) :
                 it.redirectError(ProcessBuilder.Redirect.INHERIT)
                 it.start()
             }
-        val stdout = process.inputReader().lines().toList()
+        val stdout =
+            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                reader.lineSequence().toList()
+            }
         process.waitFor()
         val projectRootPath = projectRoot.absolutePath
         return stdout

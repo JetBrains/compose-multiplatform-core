@@ -43,17 +43,16 @@ import androidx.lifecycle.LifecycleOwner
  * in response to state changes.
  *
  * @sample androidx.lifecycle.compose.samples.lifecycleEventEffectSample
- *
  * @param event The [Lifecycle.Event] to listen for
  * @param lifecycleOwner The lifecycle owner to attach an observer
  * @param onEvent The effect to be launched when we receive an [event] callback
  * @throws IllegalArgumentException if attempting to listen for [Lifecycle.Event.ON_DESTROY]
  */
 @Composable
-fun LifecycleEventEffect(
+public fun LifecycleEventEffect(
     event: Lifecycle.Event,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    onEvent: () -> Unit
+    onEvent: () -> Unit,
 ) {
     if (event == Lifecycle.Event.ON_DESTROY) {
         throw IllegalArgumentException(
@@ -124,10 +123,10 @@ fun LifecycleEventEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleStartEffect(
+public fun LifecycleStartEffect(
     key1: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ) {
     val lifecycleStartStopEffectScope =
         remember(key1, lifecycleOwner) { LifecycleStartStopEffectScope(lifecycleOwner.lifecycle) }
@@ -181,11 +180,11 @@ fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleStartEffect(
+public fun LifecycleStartEffect(
     key1: Any?,
     key2: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ) {
     val lifecycleStartStopEffectScope =
         remember(key1, key2, lifecycleOwner) {
@@ -243,12 +242,12 @@ fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleStartEffect(
+public fun LifecycleStartEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ) {
     val lifecycleStartStopEffectScope =
         remember(key1, key2, key3, lifecycleOwner) {
@@ -303,10 +302,10 @@ fun LifecycleStartEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleStartEffect(
+public fun LifecycleStartEffect(
     vararg keys: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ) {
     val lifecycleStartStopEffectScope =
         remember(*keys, lifecycleOwner) { LifecycleStartStopEffectScope(lifecycleOwner.lifecycle) }
@@ -329,23 +328,26 @@ private const val LifecycleStartEffectNoParamError =
 @Deprecated(LifecycleStartEffectNoParamError, level = DeprecationLevel.ERROR)
 @Composable
 @Suppress("UNUSED_PARAMETER")
-fun LifecycleStartEffect(
+public fun LifecycleStartEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ): Unit = error(LifecycleStartEffectNoParamError)
 
 @Composable
 private fun LifecycleStartEffectImpl(
     lifecycleOwner: LifecycleOwner,
     scope: LifecycleStartStopEffectScope,
-    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult
+    effects: LifecycleStartStopEffectScope.() -> LifecycleStopOrDisposeEffectResult,
 ) {
     DisposableEffect(lifecycleOwner, scope) {
         var effectResult: LifecycleStopOrDisposeEffectResult? = null
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> with(scope) { effectResult = effects() }
-                Lifecycle.Event.ON_STOP -> effectResult?.runStopOrDisposeEffect()
+                Lifecycle.Event.ON_STOP -> {
+                    effectResult?.runStopOrDisposeEffect()
+                    effectResult = null
+                }
                 else -> {}
             }
         }
@@ -364,8 +366,8 @@ private fun LifecycleStartEffectImpl(
  * when an (ON_STOP)[Lifecycle.Event.ON_STOP] event is received or when cleanup is needed for the
  * work that was kicked off in the ON_START effect.
  */
-interface LifecycleStopOrDisposeEffectResult {
-    fun runStopOrDisposeEffect()
+public interface LifecycleStopOrDisposeEffectResult {
+    public fun runStopOrDisposeEffect()
 }
 
 /**
@@ -377,12 +379,12 @@ interface LifecycleStopOrDisposeEffectResult {
  *
  * @param lifecycle The lifecycle being observed by this receiver scope
  */
-class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : LifecycleOwner {
+public class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : LifecycleOwner {
     /**
      * Provide the [onStopOrDisposeEffect] to the [LifecycleStartEffect] to run when the observer
      * receives an (ON_STOP)[Lifecycle.Event.ON_STOP] event or must undergo cleanup.
      */
-    inline fun onStopOrDispose(
+    public inline fun onStopOrDispose(
         crossinline onStopOrDisposeEffect: LifecycleOwner.() -> Unit
     ): LifecycleStopOrDisposeEffectResult =
         object : LifecycleStopOrDisposeEffectResult {
@@ -439,10 +441,10 @@ class LifecycleStartStopEffectScope(override val lifecycle: Lifecycle) : Lifecyc
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleResumeEffect(
+public fun LifecycleResumeEffect(
     key1: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ) {
     val lifecycleResumePauseEffectScope =
         remember(key1, lifecycleOwner) { LifecycleResumePauseEffectScope(lifecycleOwner.lifecycle) }
@@ -497,11 +499,11 @@ fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleResumeEffect(
+public fun LifecycleResumeEffect(
     key1: Any?,
     key2: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ) {
     val lifecycleResumePauseEffectScope =
         remember(key1, key2, lifecycleOwner) {
@@ -560,12 +562,12 @@ fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleResumeEffect(
+public fun LifecycleResumeEffect(
     key1: Any?,
     key2: Any?,
     key3: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ) {
     val lifecycleResumePauseEffectScope =
         remember(key1, key2, key3, lifecycleOwner) {
@@ -621,10 +623,10 @@ fun LifecycleResumeEffect(
  * @param effects The effects to be launched when we receive the respective event callbacks
  */
 @Composable
-fun LifecycleResumeEffect(
+public fun LifecycleResumeEffect(
     vararg keys: Any?,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ) {
     val lifecycleResumePauseEffectScope =
         remember(*keys, lifecycleOwner) {
@@ -649,23 +651,26 @@ private const val LifecycleResumeEffectNoParamError =
 @Deprecated(LifecycleResumeEffectNoParamError, level = DeprecationLevel.ERROR)
 @Composable
 @Suppress("UNUSED_PARAMETER")
-fun LifecycleResumeEffect(
+public fun LifecycleResumeEffect(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ): Unit = error(LifecycleResumeEffectNoParamError)
 
 @Composable
 private fun LifecycleResumeEffectImpl(
     lifecycleOwner: LifecycleOwner,
     scope: LifecycleResumePauseEffectScope,
-    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult
+    effects: LifecycleResumePauseEffectScope.() -> LifecyclePauseOrDisposeEffectResult,
 ) {
     DisposableEffect(lifecycleOwner, scope) {
         var effectResult: LifecyclePauseOrDisposeEffectResult? = null
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> with(scope) { effectResult = effects() }
-                Lifecycle.Event.ON_PAUSE -> effectResult?.runPauseOrOnDisposeEffect()
+                Lifecycle.Event.ON_PAUSE -> {
+                    effectResult?.runPauseOrOnDisposeEffect()
+                    effectResult = null
+                }
                 else -> {}
             }
         }
@@ -684,8 +689,8 @@ private fun LifecycleResumeEffectImpl(
  * when an (ON_PAUSE)[Lifecycle.Event.ON_PAUSE] event is received or when cleanup is
  * * needed for the work that was kicked off in the ON_RESUME effect.
  */
-interface LifecyclePauseOrDisposeEffectResult {
-    fun runPauseOrOnDisposeEffect()
+public interface LifecyclePauseOrDisposeEffectResult {
+    public fun runPauseOrOnDisposeEffect()
 }
 
 /**
@@ -697,12 +702,12 @@ interface LifecyclePauseOrDisposeEffectResult {
  *
  * @param lifecycle The lifecycle being observed by this receiver scope
  */
-class LifecycleResumePauseEffectScope(override val lifecycle: Lifecycle) : LifecycleOwner {
+public class LifecycleResumePauseEffectScope(override val lifecycle: Lifecycle) : LifecycleOwner {
     /**
      * Provide the [onPauseOrDisposeEffect] to the [LifecycleResumeEffect] to run when the observer
      * receives an (ON_PAUSE)[Lifecycle.Event.ON_PAUSE] event or must undergo cleanup.
      */
-    inline fun onPauseOrDispose(
+    public inline fun onPauseOrDispose(
         crossinline onPauseOrDisposeEffect: LifecycleOwner.() -> Unit
     ): LifecyclePauseOrDisposeEffectResult =
         object : LifecyclePauseOrDisposeEffectResult {

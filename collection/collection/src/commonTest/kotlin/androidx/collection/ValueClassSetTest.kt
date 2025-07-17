@@ -20,6 +20,7 @@ import androidx.collection.template.TestValueClassSet
 import androidx.collection.template.emptyTestValueClassSet
 import androidx.collection.template.mutableTestValueClassSetOf
 import androidx.collection.template.testValueClassSetOf
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -238,7 +239,7 @@ class ValueClassSetTest {
                 mutableTestValueClassSetOf(
                     TestValueClass(3UL),
                     TestValueClass(1UL),
-                    TestValueClass(5UL)
+                    TestValueClass(5UL),
                 )
             )
         )
@@ -255,7 +256,7 @@ class ValueClassSetTest {
             mutableTestValueClassSetOf(
                 TestValueClass(3UL),
                 TestValueClass(1UL),
-                TestValueClass(5UL)
+                TestValueClass(5UL),
             )
         assertEquals(1, set.size)
         assertFalse(TestValueClass(1UL) in set)
@@ -320,6 +321,7 @@ class ValueClassSetTest {
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val set = MutableTestValueClassSet()
         set += TestValueClass(1UL)
@@ -508,7 +510,7 @@ class ValueClassSetTest {
             mutableTestValueClassSetOf(
                 TestValueClass(1UL),
                 TestValueClass(2UL),
-                TestValueClass(3UL)
+                TestValueClass(3UL),
             )
         assertEquals(3, set.size)
         assertTrue(TestValueClass(1UL) in set)
@@ -521,7 +523,7 @@ class ValueClassSetTest {
     fun asTestValueClassSet() {
         assertEquals(
             testValueClassSetOf(TestValueClass(1UL)),
-            mutableTestValueClassSetOf(TestValueClass(1UL)).asTestValueClassSet()
+            mutableTestValueClassSetOf(TestValueClass(1UL)).asTestValueClassSet(),
         )
     }
 }

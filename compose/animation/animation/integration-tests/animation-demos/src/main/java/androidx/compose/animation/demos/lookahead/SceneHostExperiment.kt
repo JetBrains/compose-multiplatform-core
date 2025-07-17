@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.animation.demos.lookahead
 
 import androidx.compose.animation.core.AnimationVector2D
 import androidx.compose.animation.core.DeferredTargetAnimation
 import androidx.compose.animation.core.ExperimentalAnimatableApi
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
@@ -31,7 +30,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
@@ -39,6 +37,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.approachLayout
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -46,6 +45,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun SceneHost(modifier: Modifier = Modifier, content: @Composable SceneScope.() -> Unit) {
@@ -79,7 +79,7 @@ class SceneScope internal constructor(lookaheadScope: LookaheadScope) :
                         color = Color.Black,
                         style = Stroke(2f),
                         topLeft = (offsetAnimation.pendingTarget!! - placementOffset).toOffset(),
-                        size = sizeAnimation.pendingTarget!!.toSize()
+                        size = sizeAnimation.pendingTarget!!.toSize(),
                     )
                 }
             }
@@ -92,20 +92,23 @@ class SceneScope internal constructor(lookaheadScope: LookaheadScope) :
                     val target = lookaheadScopeCoordinates.localLookaheadPositionOf(it)
                     offsetAnimation.updateTarget(target.round(), coroutineScope, spring())
                     !offsetAnimation.isIdle
-                }
+                },
             ) { measurable, _ ->
                 with(coroutineScope) {
                     val (width, height) =
                         sizeAnimation.updateTarget(
                             lookaheadSize,
                             coroutineScope,
-                            spring(stiffness = Spring.StiffnessMediumLow)
+                            spring(stiffness = Spring.StiffnessMediumLow),
                         )
                     val animatedConstraints = Constraints.fixed(width, height)
                     val placeable = measurable.measure(animatedConstraints)
                     layout(placeable.width, placeable.height) {
                         val (x, y) =
                             offsetAnimation.updateTargetBasedOnCoordinates(
+                                this@SceneScope,
+                                this@layout,
+                                this@with,
                                 spring(stiffness = Spring.StiffnessMediumLow),
                             )
                         coordinates?.let {
@@ -130,7 +133,7 @@ fun Modifier.animateSizeAndSkipToFinalLayout() = composed {
                     color = Color.Black,
                     style = Stroke(2f),
                     topLeft = Offset.Zero,
-                    size = targetSize!!.toSize()
+                    size = targetSize!!.toSize(),
                 )
             }
         }
@@ -151,4 +154,30 @@ fun Modifier.animateSizeAndSkipToFinalLayout() = composed {
                 placeable.place(-(wrapperWidth - width) / 2, -(wrapperHeight - height) / 2)
             }
         }
+}
+
+@OptIn(ExperimentalAnimatableApi::class)
+internal fun DeferredTargetAnimation<IntOffset, AnimationVector2D>.updateTargetBasedOnCoordinates(
+    lookaheadScope: LookaheadScope,
+    placementScope: Placeable.PlacementScope,
+    coroutineScope: CoroutineScope,
+    animationSpec: FiniteAnimationSpec<IntOffset>,
+): IntOffset {
+    with(lookaheadScope) {
+        with(placementScope) {
+            coordinates?.let { coordinates ->
+                with(placementScope) {
+                    val targetOffset =
+                        lookaheadScopeCoordinates.localLookaheadPositionOf(coordinates)
+                    val animOffset =
+                        updateTarget(targetOffset.round(), coroutineScope, animationSpec)
+                    val current =
+                        lookaheadScopeCoordinates.localPositionOf(coordinates, Offset.Zero).round()
+                    return (animOffset - current)
+                }
+            }
+
+            return IntOffset.Zero
+        }
+    }
 }

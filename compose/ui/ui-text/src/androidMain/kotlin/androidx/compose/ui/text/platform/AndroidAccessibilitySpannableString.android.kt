@@ -25,7 +25,6 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.compose.ui.text.AnnotatedString
@@ -69,7 +68,7 @@ fun AnnotatedString.toAccessibilitySpannableString(
             ttsAnnotation.toSpan(),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
 
@@ -79,26 +78,28 @@ fun AnnotatedString.toAccessibilitySpannableString(
             urlSpanCache.toURLSpan(urlAnnotation),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
 
     getLinkAnnotations(0, length).fastForEach { linkRange ->
-        val link = linkRange.item
-        if (link is LinkAnnotation.Url && link.linkInteractionListener == null) {
-            spannableString.setSpan(
-                urlSpanCache.toURLSpan(linkRange.toUrlLink()),
-                linkRange.start,
-                linkRange.end,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-        } else {
-            spannableString.setSpan(
-                urlSpanCache.toClickableSpan(linkRange),
-                linkRange.start,
-                linkRange.end,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+        if (linkRange.start != linkRange.end) {
+            val link = linkRange.item
+            if (link is LinkAnnotation.Url && link.linkInteractionListener == null) {
+                spannableString.setSpan(
+                    urlSpanCache.toURLSpan(linkRange.toUrlLink()),
+                    linkRange.start,
+                    linkRange.end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+            } else {
+                spannableString.setSpan(
+                    urlSpanCache.toClickableSpan(linkRange),
+                    linkRange.start,
+                    linkRange.end,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                )
+            }
         }
     }
     return spannableString
@@ -110,7 +111,7 @@ private fun SpannableString.setSpanStyle(
     start: Int,
     end: Int,
     density: Density,
-    fontFamilyResolver: FontFamily.Resolver
+    fontFamilyResolver: FontFamily.Resolver,
 ) {
     setColor(spanStyle.color, start, end)
 
@@ -126,7 +127,7 @@ private fun SpannableString.setSpanStyle(
             StyleSpan(getAndroidTypefaceStyle(fontWeight, fontStyle)),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
 
@@ -139,7 +140,7 @@ private fun SpannableString.setSpanStyle(
                 TypefaceSpan(spanStyle.fontFamily.name),
                 start,
                 end,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
             )
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -148,14 +149,14 @@ private fun SpannableString.setSpanStyle(
                     fontFamilyResolver
                         .resolve(
                             fontFamily = spanStyle.fontFamily,
-                            fontSynthesis = spanStyle.fontSynthesis ?: FontSynthesis.All
+                            fontSynthesis = spanStyle.fontSynthesis ?: FontSynthesis.All,
                         )
                         .value as Typeface
                 setSpan(
                     Api28Impl.createTypefaceSpan(typeface),
                     start,
                     end,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                 )
             }
         }
@@ -178,7 +179,7 @@ private fun SpannableString.setSpanStyle(
             ScaleXSpan(spanStyle.textGeometricTransform.scaleX),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
 
@@ -189,7 +190,7 @@ private fun SpannableString.setSpanStyle(
 
 @RequiresApi(28)
 private object Api28Impl {
-    @DoNotInline fun createTypefaceSpan(typeface: Typeface): TypefaceSpan = TypefaceSpan(typeface)
+    fun createTypefaceSpan(typeface: Typeface): TypefaceSpan = TypefaceSpan(typeface)
 }
 
 private fun AnnotatedString.Range<LinkAnnotation>.toUrlLink() =

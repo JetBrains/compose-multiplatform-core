@@ -18,8 +18,9 @@ package androidx.work;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The class that handles logging requests for {@link WorkManager}.  Currently, this class is not
@@ -43,7 +44,11 @@ public abstract class Logger {
      */
     public static void setLogger(@NonNull Logger logger) {
         synchronized (sLock) {
-            sLogger = logger;
+            // Don't override the logger if one has been defined already.
+            // The application might have overridden the logger using the @Restricted API.
+            if (sLogger == null) {
+                sLogger = logger;
+            }
         }
     }
 
@@ -51,8 +56,7 @@ public abstract class Logger {
      * @param tag The {@link String} tag to use when logging
      * @return The prefixed {@link String} tag to use when logging
      */
-    @NonNull
-    public static String tagWithPrefix(@NonNull String tag) {
+    public static @NonNull String tagWithPrefix(@NonNull String tag) {
         int length = tag.length();
         StringBuilder withPrefix = new StringBuilder(MAX_TAG_LENGTH);
         withPrefix.append(TAG_PREFIX);
@@ -68,8 +72,7 @@ public abstract class Logger {
     /**
      * @return The current {@link Logger}.
      */
-    @NonNull
-    public static Logger get() {
+    public static @NonNull Logger get() {
         // Logger may not be explicitly initialized by some tests which do not instantiate
         // WorkManagerImpl directly.
         //

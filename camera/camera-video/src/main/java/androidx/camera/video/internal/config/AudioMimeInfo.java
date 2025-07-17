@@ -16,12 +16,13 @@
 
 package androidx.camera.video.internal.config;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.EncoderProfilesProxy;
 import androidx.camera.video.internal.encoder.EncoderConfig;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Data class containing information about a audio mime.
@@ -40,12 +41,10 @@ public abstract class AudioMimeInfo extends MimeInfo {
      *
      * <p>If no AudioProfileProxy is provided, returns {@code null}.
      */
-    @Nullable
-    public abstract EncoderProfilesProxy.AudioProfileProxy getCompatibleAudioProfile();
+    public abstract EncoderProfilesProxy.@Nullable AudioProfileProxy getCompatibleAudioProfile();
 
     /** Creates a builder for the given mime type */
-    @NonNull
-    public static AudioMimeInfo.Builder builder(@NonNull String mimeType) {
+    public static AudioMimeInfo.@NonNull Builder builder(@NonNull String mimeType) {
         return new AutoValue_AudioMimeInfo.Builder()
                 .setMimeType(mimeType)
                 .setProfile(EncoderConfig.CODEC_PROFILE_NONE);
@@ -56,13 +55,11 @@ public abstract class AudioMimeInfo extends MimeInfo {
     @AutoValue.Builder
     public abstract static class Builder extends MimeInfo.Builder<Builder> {
         /** Sets a compatible {@link EncoderProfilesProxy.AudioProfileProxy} */
-        @NonNull
-        public abstract Builder setCompatibleAudioProfile(
-                @Nullable EncoderProfilesProxy.AudioProfileProxy audioProfile);
+        public abstract @NonNull Builder setCompatibleAudioProfile(
+                EncoderProfilesProxy.@Nullable AudioProfileProxy audioProfile);
 
         /** Builds a AudioMimeInfo. */
         @Override
-        @NonNull
-        public abstract AudioMimeInfo build();
+        public abstract @NonNull AudioMimeInfo build();
     }
 }

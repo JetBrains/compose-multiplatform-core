@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.Density
@@ -54,12 +55,12 @@ interface StaggeredGridCells {
      */
     class Fixed(private val count: Int) : StaggeredGridCells {
         init {
-            require(count > 0) { "grid with no rows/columns" }
+            requirePrecondition(count > 0) { "grid with no rows/columns" }
         }
 
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int
+            spacing: Int,
         ): IntArray {
             return calculateCellsCrossAxisSizeImpl(availableSize, count, spacing)
         }
@@ -84,12 +85,12 @@ interface StaggeredGridCells {
      */
     class Adaptive(private val minSize: Dp) : StaggeredGridCells {
         init {
-            require(minSize > 0.dp) { "invalid minSize" }
+            requirePrecondition(minSize > 0.dp) { "invalid minSize" }
         }
 
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int
+            spacing: Int,
         ): IntArray {
             val count = maxOf((availableSize + spacing) / (minSize.roundToPx() + spacing), 1)
             return calculateCellsCrossAxisSizeImpl(availableSize, count, spacing)
@@ -118,7 +119,7 @@ interface StaggeredGridCells {
     class FixedSize(private val size: Dp) : StaggeredGridCells {
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int
+            spacing: Int,
         ): IntArray {
             val cellSize = size.roundToPx()
             return if (cellSize + spacing < availableSize + spacing) {

@@ -20,13 +20,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.leanback.R;
 import androidx.leanback.widget.SearchOrbView;
 import androidx.leanback.widget.TitleHelper;
 import androidx.leanback.widget.TitleViewAdapter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Fragment class for managing search and branding using a view that implements
@@ -62,9 +63,8 @@ public class BrandedSupportFragment extends Fragment {
      * @return Title view which must have a descendant with id browse_title_group that implements
      * {@link TitleViewAdapter.Provider}, or null for no title view.
      */
-    @NonNull
-    public View onInflateTitleView(@NonNull LayoutInflater inflater, @Nullable ViewGroup parent,
-            @Nullable Bundle savedInstanceState) {
+    public @NonNull View onInflateTitleView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup parent, @Nullable Bundle savedInstanceState) {
         TypedValue typedValue = new TypedValue();
         boolean found = parent != null && parent.getContext().getTheme().resolveAttribute(
                 R.attr.browseTitleViewLayout, typedValue, true);
@@ -121,8 +121,7 @@ public class BrandedSupportFragment extends Fragment {
      * Returns the view that implements {@link TitleViewAdapter.Provider}.
      * @return The view that implements {@link TitleViewAdapter.Provider}.
      */
-    @Nullable
-    public View getTitleView() {
+    public @Nullable View getTitleView() {
         return mTitleView;
     }
 
@@ -130,8 +129,7 @@ public class BrandedSupportFragment extends Fragment {
      * Returns the {@link TitleViewAdapter} implemented by title view.
      * @return The {@link TitleViewAdapter} implemented by title view.
      */
-    @Nullable
-    public TitleViewAdapter getTitleViewAdapter() {
+    public @Nullable TitleViewAdapter getTitleViewAdapter() {
         return mTitleViewAdapter;
     }
 
@@ -216,8 +214,7 @@ public class BrandedSupportFragment extends Fragment {
      * Returns the badge drawable used in the fragment title.
      * @return The badge drawable used in the fragment title.
      */
-    @Nullable
-    public Drawable getBadgeDrawable() {
+    public @Nullable Drawable getBadgeDrawable() {
         return mBadgeDrawable;
     }
 
@@ -237,8 +234,7 @@ public class BrandedSupportFragment extends Fragment {
      * Returns the title text for the fragment.
      * @return Title text for the fragment.
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         return mTitle;
     }
 
@@ -254,7 +250,7 @@ public class BrandedSupportFragment extends Fragment {
      *
      * @param listener The listener to call when the search element is clicked.
      */
-    public void setOnSearchClickedListener(@Nullable View.OnClickListener listener) {
+    public void setOnSearchClickedListener(View.@Nullable OnClickListener listener) {
         mExternalOnSearchClickedListener = listener;
         if (mTitleViewAdapter != null) {
             mTitleViewAdapter.setOnSearchClickedListener(listener);
@@ -267,7 +263,7 @@ public class BrandedSupportFragment extends Fragment {
      *
      * @param colors Colors used to draw search affordance.
      */
-    public void setSearchAffordanceColors(@NonNull SearchOrbView.Colors colors) {
+    public void setSearchAffordanceColors(SearchOrbView.@NonNull Colors colors) {
         mSearchAffordanceColors = colors;
         mSearchAffordanceColorSet = true;
         if (mTitleViewAdapter != null) {
@@ -279,8 +275,7 @@ public class BrandedSupportFragment extends Fragment {
      * Returns the {@link androidx.leanback.widget.SearchOrbView.Colors}
      * used to draw the search affordance.
      */
-    @Nullable
-    public SearchOrbView.Colors getSearchAffordanceColors() {
+    public SearchOrbView.@Nullable Colors getSearchAffordanceColors() {
         if (mSearchAffordanceColorSet) {
             return mSearchAffordanceColors;
         }

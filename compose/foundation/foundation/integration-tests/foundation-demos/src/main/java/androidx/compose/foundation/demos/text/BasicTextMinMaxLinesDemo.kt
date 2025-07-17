@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.text
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -60,7 +59,7 @@ fun BasicTextMinMaxLinesDemo() {
                     withStyle(SpanStyle(fontSize = fontSize8)) { append("Line 2\n") }
                     append("Line 3")
                 },
-            maxLines = 2
+            maxLines = 2,
         )
 
         TagLine("minLines == line count")
@@ -87,7 +86,7 @@ fun BasicTextMinMaxLinesDemo() {
                     append("Line 3")
                     if (diffLineHeightsHasExtraLine) append("\nLine 4")
                 },
-            minLines = 4
+            minLines = 4,
         )
         Button(onClick = { diffLineHeightsHasExtraLine = !diffLineHeightsHasExtraLine }) {
             Text(text = "Toggle last line")
@@ -98,18 +97,17 @@ fun BasicTextMinMaxLinesDemo() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TextWithMinMaxLines(
     text: AnnotatedString,
     minLines: Int = 1,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     BasicText(
         text = text,
         modifier = Modifier.border(1.dp, Color.Gray).padding(2.dp),
         maxLines = maxLines,
-        minLines = minLines
+        minLines = minLines,
     )
 }
 
@@ -117,7 +115,7 @@ private fun TextWithMinMaxLines(
 private fun TextWithMinMaxLines(
     text: String = "",
     minLines: Int = 1,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     TextWithMinMaxLines(text = AnnotatedString(text), minLines = minLines, maxLines = maxLines)
 }

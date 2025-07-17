@@ -36,27 +36,27 @@ internal val TEMPLATE_TYPE_OPTION: Config.Option<Int> =
 internal val DEVICE_STATE_CALLBACK_OPTION: Config.Option<CameraDevice.StateCallback> =
     Config.Option.create(
         "camera2.cameraDevice.stateCallback",
-        CameraDevice.StateCallback::class.java
+        CameraDevice.StateCallback::class.java,
     )
 internal val SESSION_STATE_CALLBACK_OPTION: Config.Option<CameraCaptureSession.StateCallback> =
     Config.Option.create(
         "camera2.cameraCaptureSession.stateCallback",
-        CameraCaptureSession.StateCallback::class.java
+        CameraCaptureSession.StateCallback::class.java,
     )
 internal val SESSION_CAPTURE_CALLBACK_OPTION: Config.Option<CaptureCallback> =
     Config.Option.create(
         "camera2.cameraCaptureSession.captureCallback",
-        CaptureCallback::class.java
+        CaptureCallback::class.java,
     )
 internal val STREAM_USE_CASE_OPTION: Config.Option<Long> =
     Config.Option.create(
         "camera2.cameraCaptureSession.streamUseCase",
-        Long::class.javaPrimitiveType!!
+        Long::class.javaPrimitiveType!!,
     )
 internal val STREAM_USE_HINT_OPTION: Config.Option<Long> =
     Config.Option.create(
         "camera2.cameraCaptureSession.streamUseHint",
-        Long::class.javaPrimitiveType!!
+        Long::class.javaPrimitiveType!!,
     )
 internal val CAPTURE_REQUEST_TAG_OPTION: Config.Option<Any> =
     Config.Option.create("camera2.captureRequest.tag", Any::class.java)
@@ -66,15 +66,15 @@ internal val SESSION_PHYSICAL_CAMERA_ID_OPTION: Config.Option<String> =
 /**
  * Internal shared implementation details for camera 2 interop.
  *
- * @constructor Creates a Camera2ImplConfig for reading Camera2 options from the given config.
  * @property config The config that potentially contains Camera2 options.
+ * @constructor Creates a Camera2ImplConfig for reading Camera2 options from the given config.
  */
 @OptIn(ExperimentalCamera2Interop::class)
-class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
+public class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
 
     /** Returns all capture request options contained in this configuration. */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
-    val captureRequestOptions: CaptureRequestOptions
+    public val captureRequestOptions: CaptureRequestOptions
         get() = from(config).build()
 
     /**
@@ -86,7 +86,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getCaptureRequestTemplate(valueIfMissing: Int): Int {
+    public fun getCaptureRequestTemplate(valueIfMissing: Int): Int {
         return config.retrieveOption(TEMPLATE_TYPE_OPTION, valueIfMissing)!!
     }
 
@@ -100,7 +100,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @see [android.hardware.camera2.params.OutputConfiguration] to see how camera2 framework uses
      *   this.
      */
-    fun getStreamUseCase(valueIfMissing: Long? = null): Long? {
+    public fun getStreamUseCase(valueIfMissing: Long? = null): Long? {
         return config.retrieveOption(STREAM_USE_CASE_OPTION, valueIfMissing)
     }
 
@@ -114,7 +114,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @see [android.hardware.camera2.params.OutputConfiguration] to see how camera2 framework uses
      *   this.
      */
-    fun getStreamUseHint(valueIfMissing: Long? = null): Long? {
+    public fun getStreamUseHint(valueIfMissing: Long? = null): Long? {
         return config.retrieveOption(STREAM_USE_HINT_OPTION, valueIfMissing)
     }
 
@@ -126,7 +126,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getDeviceStateCallback(
+    public fun getDeviceStateCallback(
         valueIfMissing: CameraDevice.StateCallback? = null
     ): CameraDevice.StateCallback? {
         return config.retrieveOption(DEVICE_STATE_CALLBACK_OPTION, valueIfMissing)
@@ -140,7 +140,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getSessionStateCallback(
+    public fun getSessionStateCallback(
         valueIfMissing: CameraCaptureSession.StateCallback? = null
     ): CameraCaptureSession.StateCallback? {
         return config.retrieveOption(SESSION_STATE_CALLBACK_OPTION, valueIfMissing)
@@ -154,7 +154,9 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getSessionCaptureCallback(valueIfMissing: CaptureCallback? = null): CaptureCallback? {
+    public fun getSessionCaptureCallback(
+        valueIfMissing: CaptureCallback? = null
+    ): CaptureCallback? {
         return config.retrieveOption(SESSION_CAPTURE_CALLBACK_OPTION, valueIfMissing)
     }
 
@@ -166,7 +168,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getCaptureRequestTag(valueIfMissing: Any? = null): Any? {
+    public fun getCaptureRequestTag(valueIfMissing: Any? = null): Any? {
         return config.retrieveOption(CAPTURE_REQUEST_TAG_OPTION, valueIfMissing)
     }
 
@@ -178,7 +180,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * @return The stored value or `valueIfMissing` if the value does not exist in this
      *   configuration.
      */
-    fun getPhysicalCameraId(valueIfMissing: String? = null): String? {
+    public fun getPhysicalCameraId(valueIfMissing: String? = null): String? {
         return config.retrieveOption(SESSION_PHYSICAL_CAMERA_ID_OPTION, valueIfMissing)
     }
 
@@ -189,7 +191,7 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
      * [androidx.camera.camera2.pipe.integration.interop.Camera2Interop.Extender] to add Camera2
      * options on existing other [ExtendableBuilder].
      */
-    class Builder : ExtendableBuilder<Camera2ImplConfig?> {
+    public class Builder : ExtendableBuilder<Camera2ImplConfig?> {
 
         private val mutableOptionsBundle = MutableOptionsBundle.create()
 
@@ -198,9 +200,9 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
         }
 
         /** Inserts new capture request option with specific [CaptureRequest.Key] setting. */
-        fun <ValueT> setCaptureRequestOption(
+        public fun <ValueT> setCaptureRequestOption(
             key: CaptureRequest.Key<ValueT>,
-            value: ValueT
+            value: ValueT,
         ): Builder {
             val opt = key.createCaptureRequestOption()
             mutableOptionsBundle.insertOption(opt, value)
@@ -211,10 +213,10 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
          * Inserts new capture request option with specific [CaptureRequest.Key] setting and
          * [Config.OptionPriority].
          */
-        fun <ValueT> setCaptureRequestOptionWithPriority(
+        public fun <ValueT> setCaptureRequestOptionWithPriority(
             key: CaptureRequest.Key<ValueT>,
             value: ValueT,
-            priority: Config.OptionPriority
+            priority: Config.OptionPriority,
         ): Builder {
             val opt = key.createCaptureRequestOption()
             mutableOptionsBundle.insertOption(opt, priority, value)
@@ -225,9 +227,9 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
          * Inserts all capture request options in the map to the setting with
          * [Config.OptionPriority].
          */
-        fun addAllCaptureRequestOptionsWithPriority(
+        public fun addAllCaptureRequestOptionsWithPriority(
             values: Map<CaptureRequest.Key<*>, Any>,
-            priority: Config.OptionPriority
+            priority: Config.OptionPriority,
         ): Builder {
             values.forEach { (key, value) ->
                 val opt = key.createCaptureRequestOption()
@@ -237,14 +239,14 @@ class Camera2ImplConfig(config: Config) : CaptureRequestOptions(config) {
         }
 
         /** Inserts options from other [Config] objects. */
-        fun insertAllOptions(config: Config): Builder {
+        public fun insertAllOptions(config: Config): Builder {
             for (option in config.listOptions()) {
                 // Options/values and priority are being copied directly
                 @Suppress("UNCHECKED_CAST") val objectOpt = option as Config.Option<Any>
                 mutableOptionsBundle.insertOption(
                     objectOpt,
                     config.getOptionPriority(option),
-                    config.retrieveOption(objectOpt)
+                    config.retrieveOption(objectOpt),
                 )
             }
             return this
@@ -271,7 +273,7 @@ internal fun CaptureRequest.Key<*>.createCaptureRequestOption(): Config.Option<A
 }
 
 /** Convert the Config to the CaptureRequest key-value map. */
-fun Config.toParameters(): Map<CaptureRequest.Key<*>, Any> {
+public fun Config.toParameters(): Map<CaptureRequest.Key<*>, Any> {
     val parameters = mutableMapOf<CaptureRequest.Key<*>, Any>()
     for (configOption in listOptions()) {
         val requestKey = configOption.token as? CaptureRequest.Key<*> ?: continue

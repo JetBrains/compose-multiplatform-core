@@ -16,12 +16,10 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.testutils.assertAgainstGolden
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isDialog
@@ -38,8 +36,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalComposeUiApi::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AlertDialogScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -55,7 +52,7 @@ class AlertDialogScreenshotTest {
                 text = { Text("Some content") },
                 confirmButton = { TextButton(onClick = {}) { Text("Confirm") } },
                 dismissButton = { TextButton(onClick = {}) { Text("Dismiss") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -74,7 +71,7 @@ class AlertDialogScreenshotTest {
                 text = { Text("Some content") },
                 confirmButton = { TextButton(onClick = {}) { Text("Very long confirm button") } },
                 dismissButton = { TextButton(onClick = {}) { Text("Very long dismiss button") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -91,7 +88,7 @@ class AlertDialogScreenshotTest {
                 onDismissRequest = {},
                 title = { Text("Title") },
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -108,7 +105,7 @@ class AlertDialogScreenshotTest {
                 onDismissRequest = {},
                 text = { Text("Text") },
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -124,7 +121,7 @@ class AlertDialogScreenshotTest {
             AlertDialog(
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -146,7 +143,7 @@ class AlertDialogScreenshotTest {
                 },
                 text = { Text("Text") },
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -169,7 +166,7 @@ class AlertDialogScreenshotTest {
                     )
                 },
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 
@@ -196,7 +193,7 @@ class AlertDialogScreenshotTest {
                     )
                 },
                 confirmButton = { TextButton(onClick = {}) { Text("Ok") } },
-                properties = DialogProperties(usePlatformDefaultWidth = true)
+                properties = DialogProperties(usePlatformDefaultWidth = true),
             )
         }
 

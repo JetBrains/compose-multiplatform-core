@@ -62,6 +62,7 @@ public class PropertyPathCtsTest {
 
         e = Assert.assertThrows(IllegalArgumentException.class, () -> new PropertyPath("a[0]b"));
         assertThat(e.getMessage()).startsWith("Malformed path (']' not followed by '.')");
+
     }
 
     @Test
@@ -78,6 +79,19 @@ public class PropertyPathCtsTest {
         assertThat(path.size()).isEqualTo(10);
         assertThat(path.get(4).getPropertyName()).isEqualTo("e");
         assertThat(path.get(9).getPropertyName()).isEqualTo("j");
+    }
+
+    @Test
+    public void testPropertyPathCJKTValid() {
+        PropertyPath path = new PropertyPath("我.每天.走路.上班[2]");
+        assertThat(path.size()).isEqualTo(4);
+        assertThat(path.get(0).getPropertyName()).isEqualTo("我");
+        assertThat(path.get(0).getPropertyIndex())
+                .isEqualTo(NON_REPEATED_CARDINALITY);
+        assertThat(path.get(1).getPropertyName()).isEqualTo("每天");
+        assertThat(path.get(2).getPropertyName()).isEqualTo("走路");
+        assertThat(path.get(3).getPropertyName()).isEqualTo("上班");
+        assertThat(path.get(3).getPropertyIndex()).isEqualTo(2);
     }
 
     @Test

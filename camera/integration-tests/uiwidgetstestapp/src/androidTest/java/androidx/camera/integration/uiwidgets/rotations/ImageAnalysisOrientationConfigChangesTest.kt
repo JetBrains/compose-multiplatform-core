@@ -21,6 +21,7 @@ import android.view.Surface
 import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.withActivity
 import com.google.common.truth.Truth.assertThat
@@ -38,7 +39,7 @@ import org.junit.runners.Parameterized
 class ImageAnalysisOrientationConfigChangesTest(
     private val lensFacing: Int,
     private val rotation: Int,
-    private val cameraXConfig: String
+    private val cameraXConfig: String,
 ) : ImageAnalysisBaseTest<OrientationConfigChangesOverriddenActivity>(cameraXConfig) {
 
     companion object {
@@ -48,7 +49,7 @@ class ImageAnalysisOrientationConfigChangesTest(
                 Surface.ROTATION_0,
                 Surface.ROTATION_90,
                 Surface.ROTATION_180,
-                Surface.ROTATION_270
+                Surface.ROTATION_270,
             )
 
         @JvmStatic
@@ -74,9 +75,9 @@ class ImageAnalysisOrientationConfigChangesTest(
                     "redmi note 8",
                     "m2003j15sc", // Redmi Note 9
                     "m2006c3lg", // Redmi 9A
-                    "m2006c3mg" // Redmi 9C
+                    "m2006c3mg", // Redmi 9C
                 )
-                .contains(Build.MODEL.lowercase(Locale.US)) && rotation == Surface.ROTATION_180
+                .contains(Build.MODEL.lowercase(Locale.US)) && rotation == Surface.ROTATION_180,
         )
         setUp(lensFacing)
     }
@@ -87,6 +88,7 @@ class ImageAnalysisOrientationConfigChangesTest(
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun verifyRotation() {
         verifyRotation<OrientationConfigChangesOverriddenActivity>(lensFacing, cameraXConfig) {
             if (rotate(rotation)) {

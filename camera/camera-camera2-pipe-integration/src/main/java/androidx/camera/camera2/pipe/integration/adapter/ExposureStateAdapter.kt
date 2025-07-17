@@ -28,9 +28,9 @@ internal val EMPTY_RANGE: Range<Int> = Range(0, 0)
 
 /** Adapt [ExposureState] to a [CameraMetadata] instance. */
 @SuppressLint("UnsafeOptInUsageError")
-class ExposureStateAdapter(
+public class ExposureStateAdapter(
     private val cameraProperties: CameraProperties,
-    private val exposureCompensation: Int
+    private val exposureCompensation: Int,
 ) : ExposureState {
     override fun isExposureCompensationSupported(): Boolean {
         val range = exposureCompensationRange

@@ -25,36 +25,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertContentDescriptionContains
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onChild
-import androidx.compose.ui.test.onChildAt
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.wear.compose.material3.internal.Strings
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalWearMaterial3Api::class)
-public class SliderTest {
-    @get:Rule public val rule = createComposeRule()
+class SliderTest {
+    @get:Rule val rule = createComposeRule()
 
     @Test
-    public fun supports_testtag() {
+    fun supports_testtag() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 1f,
                 onValueChange = {},
                 valueRange = 0f..10f,
                 steps = 5,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -62,16 +66,16 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_top_limit() {
+    fun coerces_value_top_limit() {
         val state = mutableStateOf(4f)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20f }
@@ -79,16 +83,16 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_lower_limit() {
+    fun coerces_value_lower_limit() {
         val state = mutableStateOf(4f)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 0f..10f,
                 steps = 4,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20f }
@@ -96,24 +100,24 @@ public class SliderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    public fun throws_when_steps_negative() {
+    fun throws_when_steps_negative() {
         rule.setContent {
-            DefaultInlineSlider(value = 0f, valueRange = 0f..10f, onValueChange = {}, steps = -1)
+            DefaultSlider(value = 0f, valueRange = 0f..10f, onValueChange = {}, steps = -1)
         }
     }
 
     @Test
-    public fun coerces_value_exactly() {
+    fun coerces_value_exactly() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -123,17 +127,17 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_to_previous() {
+    fun coerces_value_to_previous() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -143,17 +147,17 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_to_next() {
+    fun coerces_value_to_next() {
         val state = mutableStateOf(0f)
         val range = 0f..1f
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 steps = 4,
-                valueRange = range
+                valueRange = range,
             )
         }
 
@@ -163,15 +167,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun decreases_value_by_clicking_left() {
+    fun decreases_value_by_clicking_left() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -180,15 +184,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun increases_value_by_clicking_right() {
+    fun increases_value_by_clicking_right() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -197,30 +201,16 @@ public class SliderTest {
     }
 
     @Test
-    public fun ignores_left_click_when_disabled() {
+    fun ignores_left_click_when_disabled() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -229,30 +219,16 @@ public class SliderTest {
     }
 
     @Test
-    public fun ignores_right_click_when_disabled() {
+    fun ignores_right_click_when_disabled() {
         val state = mutableStateOf(2f)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
                 onValueChange = { state.value = it },
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -261,15 +237,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun reaches_min_clicking_left() {
+    fun reaches_min_clicking_left() {
         val state = mutableStateOf(1f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -278,15 +254,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun reaches_max_clicking_right() {
+    fun reaches_max_clicking_right() {
         val state = mutableStateOf(4f)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueRange = 1f..4f,
-                steps = 2
+                steps = 2,
             )
         }
 
@@ -295,29 +271,22 @@ public class SliderTest {
     }
 
     @Test
-    public fun sets_custom_decrease_icon() {
+    fun sets_custom_decrease_icon() {
         val iconTag = "iconTag_test"
 
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 decreaseIcon = {
                     Icon(
-                        modifier = Modifier.testTag(iconTag).size(InlineSliderDefaults.IconSize),
+                        modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
+                        contentDescription = "",
                     )
-                }
+                },
             )
         }
 
@@ -329,27 +298,20 @@ public class SliderTest {
     }
 
     @Test
-    public fun sets_custom_increase_icon() {
+    fun sets_custom_increase_icon() {
         val iconTag = "iconTag_test"
 
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = 0f,
                 steps = 5,
                 onValueChange = {},
                 increaseIcon = {
                     Icon(
-                        modifier = Modifier.testTag(iconTag).size(InlineSliderDefaults.IconSize),
+                        modifier = Modifier.testTag(iconTag).size(SliderDefaults.IconSize),
                         imageVector = Icons.Default.Star,
-                        contentDescription = ""
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
+                        contentDescription = "",
                     )
                 },
             )
@@ -366,85 +328,41 @@ public class SliderTest {
     }
 
     @Test
-    public fun sets_custom_description_for_decrease_icon() {
-        val testContentDescription = "testContentDescription"
-
-        rule.setContentWithTheme {
-            InlineSlider(
-                modifier = Modifier.testTag(TEST_TAG),
-                value = 0f,
-                steps = 5,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        testContentDescription,
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                onValueChange = {},
-            )
-        }
+    fun sets_custom_description_for_decrease_icon() {
+        rule.setContentWithTheme { Slider(value = 0f, steps = 5, onValueChange = {}) }
 
         rule.waitForIdle()
         rule
-            .onNodeWithTag(TEST_TAG, true)
-            // 0 is the index of decrease button, 1 - increase button
-            .onChildAt(0)
-            .onChild()
-            .assertContentDescriptionContains(testContentDescription)
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            // The decrease button is first, the increase button is last
+            .onFirst()
+            .assertContentDescriptionContains(
+                getString(Strings.SliderDecreaseIconContentDescription)
+            )
     }
 
     @Test
-    public fun sets_custom_description_for_increase_icon() {
-        val testContentDescription = "testContentDescription"
-
-        rule.setContentWithTheme {
-            InlineSlider(
-                modifier = Modifier.testTag(TEST_TAG),
-                value = 0f,
-                steps = 5,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        testContentDescription,
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                onValueChange = {},
-            )
-        }
+    fun sets_custom_description_for_increase_icon() {
+        rule.setContentWithTheme { Slider(value = 0f, steps = 5, onValueChange = {}) }
 
         rule.waitForIdle()
         rule
-            .onNodeWithTag(TEST_TAG, true)
-            // 0 is the index of decrease button, 1 - increase button
-            .onChildAt(1)
-            .onChild()
-            .assertContentDescriptionContains(testContentDescription)
+            .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            // The decrease button is first, the increase button is last
+            .onLast()
+            .assertContentDescriptionContains(
+                getString(Strings.SliderIncreaseIconContentDescription)
+            )
     }
 
     @Test
-    public fun supports_testtag_in_integer_slider() {
+    fun supports_testtag_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 1,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -452,13 +370,13 @@ public class SliderTest {
     }
 
     @Test
-    public fun default_step_in_valueProgression_in_integer_slider() {
+    fun default_step_in_valueProgression_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 2,
                 onValueChange = {},
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -466,13 +384,13 @@ public class SliderTest {
     }
 
     @Test
-    public fun custom_valueProgression_in_integer_slider() {
+    fun custom_valueProgression_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 2,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 10, 2),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -480,13 +398,13 @@ public class SliderTest {
     }
 
     @Test
-    public fun valueProgression_trimmed_in_integer_slider() {
+    fun valueProgression_trimmed_in_integer_slider() {
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = 6,
                 onValueChange = {},
                 valueProgression = IntProgression.fromClosedRange(0, 16, 6),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -494,15 +412,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_top_limit_in_integer_slider() {
+    fun coerces_value_top_limit_in_integer_slider() {
         val state = mutableStateOf(4)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = 20 }
@@ -510,15 +428,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_lower_limit_in_integer_slider() {
+    fun coerces_value_lower_limit_in_integer_slider() {
         val state = mutableStateOf(4)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 value = state.value,
                 onValueChange = { state.value = it },
                 valueProgression = 0..10,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.runOnIdle { state.value = -20 }
@@ -526,15 +444,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_exactly_in_integer_slider() {
+    fun coerces_value_exactly_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -544,15 +462,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_to_previous_in_integer_slider() {
+    fun coerces_value_to_previous_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -562,15 +480,15 @@ public class SliderTest {
     }
 
     @Test
-    public fun coerces_value_to_next_in_integer_slider() {
+    fun coerces_value_to_next_in_integer_slider() {
         val state = mutableStateOf(0)
 
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
-                valueProgression = IntProgression.fromClosedRange(0, 12, 3)
+                valueProgression = IntProgression.fromClosedRange(0, 12, 3),
             )
         }
 
@@ -580,10 +498,10 @@ public class SliderTest {
     }
 
     @Test
-    public fun decreases_value_by_clicking_left_in_integer_slider() {
+    fun decreases_value_by_clicking_left_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -596,10 +514,10 @@ public class SliderTest {
     }
 
     @Test
-    public fun increases_value_by_clicking_right_in_integer_slider() {
+    fun increases_value_by_clicking_right_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -612,27 +530,13 @@ public class SliderTest {
     }
 
     @Test
-    public fun ignores_left_click_when_disabled_in_integer_slider() {
+    fun ignores_left_click_when_disabled_in_integer_slider() {
         val state = mutableStateOf(2)
         rule.setContentWithTheme {
-            InlineSlider(
+            Slider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 enabled = false,
-                increaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Increase,
-                        "Increase",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
-                decreaseIcon = {
-                    Icon(
-                        InlineSliderDefaults.Decrease,
-                        "Decrease",
-                        Modifier.size(InlineSliderDefaults.IconSize)
-                    )
-                },
                 onValueChange = { state.value = it },
                 valueProgression = 1..4,
             )
@@ -643,10 +547,10 @@ public class SliderTest {
     }
 
     @Test
-    public fun reaches_min_clicking_left_in_integer_slider() {
+    fun reaches_min_clicking_left_in_integer_slider() {
         val state = mutableStateOf(1)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -659,10 +563,10 @@ public class SliderTest {
     }
 
     @Test
-    public fun reaches_max_clicking_right_in_integer_slider() {
+    fun reaches_max_clicking_right_in_integer_slider() {
         val state = mutableStateOf(4)
         rule.setContentWithTheme {
-            DefaultInlineSlider(
+            DefaultSlider(
                 modifier = Modifier.testTag(TEST_TAG),
                 value = state.value,
                 onValueChange = { state.value = it },
@@ -675,65 +579,40 @@ public class SliderTest {
     }
 
     @Composable
-    private fun DefaultInlineSlider(
+    private fun DefaultSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
         modifier: Modifier = Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
-        steps: Int
+        steps: Int,
     ) {
-        InlineSlider(
+        Slider(
             modifier = modifier,
             value = value,
-            increaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Increase,
-                    "Increase",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
-            decreaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Decrease,
-                    "Decrease",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
             onValueChange = onValueChange,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
         )
     }
 
     @Composable
-    private fun DefaultInlineSlider(
+    private fun DefaultSlider(
         value: Int,
         onValueChange: (Int) -> Unit,
         modifier: Modifier = Modifier,
-        valueProgression: IntProgression
+        valueProgression: IntProgression,
     ) {
-        InlineSlider(
+        Slider(
             modifier = modifier,
             value = value,
-            increaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Increase,
-                    "Increase",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
-            decreaseIcon = {
-                Icon(
-                    InlineSliderDefaults.Decrease,
-                    "Decrease",
-                    Modifier.size(InlineSliderDefaults.IconSize)
-                )
-            },
             onValueChange = onValueChange,
             valueProgression = valueProgression,
         )
     }
 
-    private val IconsOuterHorizontalMargin = 6.dp
+    private fun getString(string: Strings) =
+        InstrumentationRegistry.getInstrumentation().context.resources.getString(string.value)
+
+    private val IconsOuterHorizontalMargin = 12.dp
     private val DefaultIconWidth = 24.dp
 }

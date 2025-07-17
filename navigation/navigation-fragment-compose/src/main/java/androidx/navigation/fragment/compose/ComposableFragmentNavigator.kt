@@ -35,14 +35,14 @@ import androidx.navigation.get
  * Internally, this uses a [ComposableFragment] to implement the reflection call.
  */
 @Navigator.Name("composable")
-class ComposableFragmentNavigator(private val fragmentNavigator: FragmentNavigator) :
+public class ComposableFragmentNavigator(private val fragmentNavigator: FragmentNavigator) :
     Navigator<FragmentNavigator.Destination>() {
 
     /**
      * Construct a [ComposableFragmentNavigator] by retrieving the associated [FragmentNavigator]
      * from [provider].
      */
-    constructor(provider: NavigatorProvider) : this(provider[FragmentNavigator::class])
+    public constructor(provider: NavigatorProvider) : this(provider[FragmentNavigator::class])
 
     override fun createDestination(): FragmentNavigator.Destination {
         // Note how we associate the destination with the given

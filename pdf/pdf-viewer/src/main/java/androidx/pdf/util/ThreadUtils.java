@@ -19,13 +19,9 @@ package androidx.pdf.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import org.jspecify.annotations.NonNull;
 
 /** Thread-related utilities. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -34,11 +30,6 @@ public final class ThreadUtils {
     private static final Thread UI_THREAD = Looper.getMainLooper().getThread();
 
     public static final Handler UI_THREAD_HANDLER = new Handler(Looper.getMainLooper());
-
-    /** The executor for background tasks. Makes it easier to test if it's sequential. */
-    private static final Executor BACKGROUND_EXECUTOR =
-            Executors.newSingleThreadExecutor(
-                    new ThreadFactoryBuilder().setNameFormat("PdfViewerThreadUtils-%d").build());
 
     /**
      * Checks if the running thread is the UI thread.
@@ -59,11 +50,6 @@ public final class ThreadUtils {
         } else {
             UI_THREAD_HANDLER.post(r);
         }
-    }
-
-    /** Runs the given {@link Runnable} on a background thread. */
-    public static void runInBackground(@NonNull Runnable r) {
-        BACKGROUND_EXECUTOR.execute(r);
     }
 
     /**

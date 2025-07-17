@@ -23,18 +23,22 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.safeparcel.GenericDocumentParcel;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Util methods for Document <-> shortcut conversion.
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+@ExperimentalAppSearchApi
 public class ShortcutAdapter {
 
     private ShortcutAdapter() {
@@ -60,6 +64,9 @@ public class ShortcutAdapter {
             + "not match androidx.appsearch.app.ShortcutAdapter.DEFAULT_NAMESPACE."
             + "Please use androidx.appsearch.app.ShortcutAdapter.DEFAULT_NAMESPACE as the "
             + "namespace of the document if it will be used to create a shortcut.";
+
+    private static final String APPSEARCH_GENERIC_DOC_PARCEL_NAME_IN_BUNDLE =
+            "appsearch_generic_doc_parcel";
 
     /**
      * Converts given document to a {@link ShortcutInfoCompat.Builder}, which can be used to
@@ -95,6 +102,7 @@ public class ShortcutAdapter {
      * published. i.e. Any shortcut returned from queries toward
      * {@link androidx.core.content.pm.ShortcutManagerCompat} would not carry any document at all.
      *
+     * @param context the context used to provide the package and resources
      * @param document a document object annotated with
      *                 {@link androidx.appsearch.annotation.Document} that carries structured
      *                 data in a pre-defined format.
@@ -107,9 +115,8 @@ public class ShortcutAdapter {
      *                            encountered an unexpected error during the conversion to
      *                            {@link GenericDocument}.
      */
-    @NonNull
-    public static ShortcutInfoCompat.Builder createShortcutBuilderFromDocument(
-            @NonNull final Context context, @NonNull Object document) throws AppSearchException {
+    public static ShortcutInfoCompat.@NonNull Builder createShortcutBuilderFromDocument(
+            final @NonNull Context context, @NonNull Object document) throws AppSearchException {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(document);
         final GenericDocument doc = GenericDocument.fromDocumentClass(document);
@@ -117,27 +124,44 @@ public class ShortcutAdapter {
             throw new IllegalArgumentException(NAMESPACE_CHECK_ERROR_MESSAGE);
         }
         final String name = doc.getPropertyString(FIELD_NAME);
+        final Bundle extras = new Bundle();
+        extras.putParcelable(APPSEARCH_GENERIC_DOC_PARCEL_NAME_IN_BUNDLE, doc.getDocumentParcel());
         return new ShortcutInfoCompat.Builder(context, doc.getId())
                 .setShortLabel(!TextUtils.isEmpty(name) ? name : doc.getId())
                 .setIntent(new Intent(Intent.ACTION_VIEW, getDocumentUri(doc)))
                 .setExcludedFromSurfaces(ShortcutInfoCompat.SURFACE_LAUNCHER)
-                .setTransientExtras(doc.getBundle());
+                .setTransientExtras(extras);
     }
 
     /**
      * Extracts {@link GenericDocument} from given {@link ShortcutInfoCompat} if applicable.
      * Returns null if document cannot be found in the given shortcut.
+     *
      * @exportToFramework:hide
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public static GenericDocument extractDocument(@NonNull final ShortcutInfoCompat shortcut) {
+    public static @Nullable GenericDocument extractDocument(
+            final @NonNull ShortcutInfoCompat shortcut) {
         Preconditions.checkNotNull(shortcut);
         final Bundle extras = shortcut.getTransientExtras();
         if (extras == null) {
             return null;
         }
-        return new GenericDocument(extras);
+
+        GenericDocumentParcel genericDocParcel;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            genericDocParcel = Api33Impl.getParcelableFromBundle(extras,
+                    APPSEARCH_GENERIC_DOC_PARCEL_NAME_IN_BUNDLE, GenericDocumentParcel.class);
+        } else {
+            @SuppressWarnings("deprecation")
+            GenericDocumentParcel tmp = (GenericDocumentParcel) extras.getParcelable(
+                    APPSEARCH_GENERIC_DOC_PARCEL_NAME_IN_BUNDLE);
+            genericDocParcel = tmp;
+        }
+        if (genericDocParcel == null) {
+            return null;
+        }
+        return new GenericDocument(genericDocParcel);
     }
 
     /**
@@ -150,15 +174,13 @@ public class ShortcutAdapter {
      *                            {@link androidx.appsearch.annotation.Document} or encountered an
      *                            unexpected error during the conversion to {@link GenericDocument}.
      */
-    @NonNull
-    public static Uri getDocumentUri(@NonNull final Object document)
+    public static @NonNull Uri getDocumentUri(final @NonNull Object document)
             throws AppSearchException {
         Preconditions.checkNotNull(document);
         return getDocumentUri(GenericDocument.fromDocumentClass(document));
     }
 
-    @NonNull
-    private static Uri getDocumentUri(@NonNull final GenericDocument obj) {
+    private static @NonNull Uri getDocumentUri(final @NonNull GenericDocument obj) {
         Preconditions.checkNotNull(obj);
         return getDocumentUri(obj.getId());
     }
@@ -168,13 +190,29 @@ public class ShortcutAdapter {
      *
      * @param id id of the document.
      */
-    @NonNull
-    public static Uri getDocumentUri(@NonNull final String id) {
+    public static @NonNull Uri getDocumentUri(final @NonNull String id) {
         Preconditions.checkNotNull(id);
         return new Uri.Builder()
                 .scheme(SCHEME_APPSEARCH)
                 .authority(DEFAULT_DATABASE)
                 .path(DEFAULT_NAMESPACE + "/" + id)
                 .build();
+    }
+    @RequiresApi(33)
+    static class Api33Impl {
+        private Api33Impl() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static <T> T getParcelableFromBundle(
+                @NonNull Bundle bundle,
+                @NonNull String key,
+                @NonNull Class<T> clazz) {
+            Preconditions.checkNotNull(bundle);
+            Preconditions.checkNotNull(key);
+            Preconditions.checkNotNull(clazz);
+            return bundle.getParcelable(key, clazz);
+        }
     }
 }

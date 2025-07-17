@@ -19,10 +19,11 @@ package androidx.core.appdigest;
 import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -139,7 +140,7 @@ public final class Checksum {
     /**
      * Checksum value.
      */
-    private final @NonNull byte[] mValue;
+    private final byte @NonNull [] mValue;
     /**
      * For Installer-provided checksums, package name of the Installer.
      */
@@ -147,20 +148,20 @@ public final class Checksum {
     /**
      * For Installer-provided checksums, certificate of the Installer.
      */
-    private final @Nullable byte[] mInstallerCertificate;
+    private final byte @Nullable [] mInstallerCertificate;
 
     /**
      * Constructor, internal use only.
      */
     Checksum(@Nullable String splitName, @Checksum.Type int type,
-            @NonNull byte[] value) {
+            byte @NonNull [] value) {
         this(splitName, type, value, (String) null, (byte[]) null);
     }
 
     /**
      * Constructor, internal use only.
      */
-    Checksum(@Nullable String splitName, @Checksum.Type int type, @NonNull byte[] value,
+    Checksum(@Nullable String splitName, @Checksum.Type int type, byte @NonNull [] value,
             @Nullable String installerPackageName, @Nullable Certificate installerCertificate)
             throws CertificateEncodingException {
         this(splitName, type, value, installerPackageName,
@@ -184,9 +185,9 @@ public final class Checksum {
     Checksum(
             @Nullable String splitName,
             @Type int type,
-            @NonNull byte[] value,
+            byte @NonNull [] value,
             @Nullable String installerPackageName,
-            @Nullable byte[] installerCertificate) {
+            byte @Nullable [] installerCertificate) {
         Preconditions.checkNotNull(value);
         this.mSplitName = splitName;
         this.mType = type;
@@ -219,7 +220,7 @@ public final class Checksum {
     /**
      * Checksum value.
      */
-    public @NonNull byte[] getValue() {
+    public byte @NonNull [] getValue() {
         return mValue;
     }
 

@@ -121,13 +121,24 @@ available in our repo.
 It will create a new project with the proper structure and configuration based
 on your project needs!
 
-To use it:
+To use it, first install the virtualenv if it is not already installed
+
+*   (Linux) `sudo apt-get install virtualenv python3-venv`
+*   (Mac) `pip3 install virtualenv`
+*   (Mac homebrew) `brew install virtualenv`
+
+Then run the script:
 
 ```sh
 cd ~/androidx-main/frameworks/support && \
-cd development/project-creator && \
-./create_project.py androidx.foo foo-bar
+./development/project-creator/create_project.sh androidx.foo foo-bar
 ```
+
+If the module you are creating is an application (not a library), such as you
+might want for integration-tests, edit the project's `build.gradle` file and
+replace the plugin `id("com.android.library")` with
+`id("com.android.application")`. This allows you to run activities in that
+module from within Android Studio.
 
 If you are creating an unpublished module such as an integration test app with \
 the project creator script, it may not make sense to follow the same naming \
@@ -135,28 +146,6 @@ conventions as published libraries. In this situation it is safe to comment out
 \
 the `artifact_id` validation from the script or rename the module after it has \
 been created.
-
-If you see an error message `No module named 'toml'` try the following steps.
-
-*   Install necessary tools if they are not already installed
-    *   (Linux) `sudo apt-get install virtualenv python3-venv`
-    *   (Mac) `pip3 install virtualenv`
-*   Create a virtual environment with `virtualenv androidx_project_creator` (you
-    can choose another name for your virtualenv if you wish).
-*   Install the `toml` library in your virtual env with
-    `androidx_project_creator/bin/pip3 install toml`
-*   Run the project creator script from your virtual env with
-    `androidx_project_creator/bin/python3
-    ../../development/project-creator/create_project.py androidx.foo foo-bar`
-*   Delete your virtual env with `rm -rf ./androidx-project_creator`
-    *   virtualenv will automatically .gitignore itself, but you may want to to
-        remove it anyway.
-
-Note: if the module you are creating is an application (not a library), such as
-you might want for integration-tests, edit the project's `build.gradle` file and
-replace the plugin `id("com.android.library")` with
-`id("com.android.application")`. This allows you to run activities in that
-module from within Android Studio.
 
 #### Common sub-feature names {#module-naming-subfeature}
 
@@ -184,9 +173,9 @@ as appropriate.
 
 #### Splitting existing modules
 
-Existing modules *should not* be split into smaller modules; doing so creates
-the potential for class duplication issues when a developer depends on a new
-sub-module alongside the older top-level module. Consider the following
+Use caution when splitting existing modules into smaller modules; doing so
+creates the potential for class duplication issues when a developer depends on a
+new sub-module alongside the older top-level module. Consider the following
 scenario:
 
 *   `androidx.library:1.0.0`
@@ -205,16 +194,18 @@ A developer writes an app that depends directly on `androidx.library.util:1.1.0`
 and also transitively pulls in `androidx.library:1.0.0`. Their app will no
 longer compile due to class duplication of `androidx.library.util.B`.
 
-While it is possible for the developer to fix this by manually specifying a
-dependency on `androidx.library:1.1.0`, there is no easy way for the developer
-to discover this solution from the class duplication error raised at compile
-time.
+To avoid this issue make sure to define a
+[dependency constraint](/docs/api_guidelines/index.md#dependencies-constraints)
+on`androidx.library:1.1.0` from inside `androidx.library.util:1.1.0`. This
+ensures that if a developer depends on `androidx.library.util:1.1.0`, the
+minimum version of `androidx.library` will be `1.1.0`, avoiding the class
+duplication.
 
-Same-version groups are a special case for this rule. Existing modules that are
-already in a same-version group may be split into sub-modules provided that (a)
-the sub-modules are also in the same-version group and (b) the full API surface
-of the existing module is preserved through transitive dependencies, e.g. the
-sub-modules are added as dependencies of the existing module.
+Same-version groups already have constraints defined, so existing modules that
+are already in a same-version group may be split into sub-modules provided that
+(a) the sub-modules are also in the same-version group and (b) the full API
+surface of the existing module is preserved through transitive dependencies,
+e.g. the sub-modules are added as dependencies of the existing module.
 
 #### Same-version (atomic) groups {#modules-atomic}
 
@@ -313,7 +304,7 @@ DATASTORE = { group = "androidx.datastore", atomicGroupVersion = "versions.DATAS
 Note that you can specify a `multiplatformGroupVersion` if and only if you are
 also specifying a `atomicGroupVersion`.
 
-##### Non atomic Kotlin Multiplatform versions
+##### Non-atomic Kotlin Multiplatform versions
 
 If your Kotlin Multiplatform Library does not have atomic version groups, you
 can specify a KMP specifc version in the `build gradle` file:

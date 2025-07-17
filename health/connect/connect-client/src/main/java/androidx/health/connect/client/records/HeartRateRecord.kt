@@ -28,7 +28,7 @@ public class HeartRateRecord(
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val samples: List<Sample>,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : SeriesRecord<HeartRateRecord.Sample> {
 
     init {
@@ -65,6 +65,10 @@ public class HeartRateRecord(
         return result
     }
 
+    override fun toString(): String {
+        return "HeartRateRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
+    }
+
     companion object {
         private const val HEART_RATE_TYPE_NAME = "HeartRateSeries"
         private const val BPM_FIELD_NAME = "bpm"
@@ -75,7 +79,7 @@ public class HeartRateRecord(
             AggregateMetric.longMetric(
                 HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.AVERAGE,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /** Metric identifier to retrieve the minimum heart rate from [AggregationResult]. */
@@ -84,7 +88,7 @@ public class HeartRateRecord(
             AggregateMetric.longMetric(
                 HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MINIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /** Metric identifier to retrieve the maximum heart rate from [AggregationResult]. */
@@ -93,7 +97,7 @@ public class HeartRateRecord(
             AggregateMetric.longMetric(
                 HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MAXIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /**
@@ -142,6 +146,10 @@ public class HeartRateRecord(
             var result = time.hashCode()
             result = 31 * result + beatsPerMinute.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, beatsPerMinute=$beatsPerMinute)"
         }
     }
 }

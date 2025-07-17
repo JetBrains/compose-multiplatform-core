@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package androidx.compose.animation.demos.lookahead
 
-import androidx.compose.animation.core.DeferredTargetAnimation
-import androidx.compose.animation.core.ExperimentalAnimatableApi
-import androidx.compose.animation.core.VectorConverter
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.animation.demos.fancy.AnimatedDotsDemo
 import androidx.compose.animation.demos.statetransition.InfiniteProgress
 import androidx.compose.animation.demos.statetransition.InfinitePulsingHeart
@@ -43,24 +39,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentWithReceiverOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.LookaheadScope
-import androidx.compose.ui.layout.approachLayout
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.round
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
 fun LookaheadWithMovableContentDemo() {
@@ -69,18 +57,18 @@ fun LookaheadWithMovableContentDemo() {
 
         Column(
             Modifier.padding(100.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(
                 modifier = Modifier.clickable { isSingleColumn = true },
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(isSingleColumn, { isSingleColumn = true })
                 Text("Single Column")
             }
             Row(
                 modifier = Modifier.clickable { isSingleColumn = false },
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 RadioButton(!isSingleColumn, { isSingleColumn = false })
                 Text("Double Column")
@@ -94,9 +82,9 @@ fun LookaheadWithMovableContentDemo() {
                         Modifier.padding(15.dp)
                             .height(80.dp)
                             .fillMaxWidth(weight)
-                            .animateBoundsInScope()
+                            .animateBounds(lookaheadScope = this@movableContentWithReceiverOf)
                             .background(color, RoundedCornerShape(20)),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         when (id) {
                             0 -> CircularProgressIndicator(color = Color.White)
@@ -130,7 +118,7 @@ fun LookaheadWithMovableContentDemo() {
                 if (isSingleColumn) {
                     Column(
                         Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         items.forEach { it(0.8f) }
                     }
@@ -152,38 +140,6 @@ fun LookaheadWithMovableContentDemo() {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-context(LookaheadScope)
-@OptIn(ExperimentalAnimatableApi::class)
-fun Modifier.animateBoundsInScope(): Modifier = composed {
-    val sizeAnim = remember { DeferredTargetAnimation(IntSize.VectorConverter) }
-    val offsetAnim = remember { DeferredTargetAnimation(IntOffset.VectorConverter) }
-    val scope = rememberCoroutineScope()
-    this.approachLayout(
-        isMeasurementApproachInProgress = {
-            sizeAnim.updateTarget(it, scope)
-            !sizeAnim.isIdle
-        },
-        isPlacementApproachInProgress = {
-            val target = lookaheadScopeCoordinates.localLookaheadPositionOf(it)
-            offsetAnim.updateTarget(target.round(), scope, spring())
-            !offsetAnim.isIdle
-        }
-    ) { measurable, _ ->
-        val (animWidth, animHeight) = sizeAnim.updateTarget(lookaheadSize, scope, spring())
-        measurable.measure(Constraints.fixed(animWidth, animHeight)).run {
-            layout(width, height) {
-                coordinates?.let {
-                    val target = lookaheadScopeCoordinates.localLookaheadPositionOf(it).round()
-                    val animOffset = offsetAnim.updateTarget(target, scope, spring())
-                    val current = lookaheadScopeCoordinates.localPositionOf(it, Offset.Zero).round()
-                    val (x, y) = animOffset - current
-                    place(x, y)
-                } ?: place(0, 0)
             }
         }
     }

@@ -24,11 +24,19 @@ import androidx.sqlite.driver.bundled.ResultCode.SQLITE_MISUSE
 import androidx.sqlite.throwSQLiteException
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-actual class BundledSQLiteConnection(private val connectionPointer: Long) : SQLiteConnection {
+public actual class BundledSQLiteConnection(private val connectionPointer: Long) :
+    SQLiteConnection {
 
     @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
 
-    override fun prepare(sql: String): SQLiteStatement {
+    actual override fun inTransaction(): Boolean {
+        if (isClosed) {
+            throwSQLiteException(SQLITE_MISUSE, "connection is closed")
+        }
+        return nativeInTransaction(connectionPointer)
+    }
+
+    actual override fun prepare(sql: String): SQLiteStatement {
         if (isClosed) {
             throwSQLiteException(SQLITE_MISUSE, "connection is closed")
         }
@@ -36,13 +44,15 @@ actual class BundledSQLiteConnection(private val connectionPointer: Long) : SQLi
         return BundledSQLiteStatement(connectionPointer, statementPointer)
     }
 
-    override fun close() {
+    actual override fun close() {
         if (!isClosed) {
             nativeClose(connectionPointer)
         }
         isClosed = true
     }
 }
+
+private external fun nativeInTransaction(pointer: Long): Boolean
 
 private external fun nativePrepare(pointer: Long, sql: String): Long
 

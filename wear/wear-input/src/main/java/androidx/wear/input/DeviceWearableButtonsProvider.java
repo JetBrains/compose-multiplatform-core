@@ -19,10 +19,10 @@ package androidx.wear.input;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.android.wearable.input.WearableInputDevice;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Default implementation of {@link WearableButtonsProvider}, that reads the button locations from
@@ -30,9 +30,8 @@ import com.google.android.wearable.input.WearableInputDevice;
  */
 public final class DeviceWearableButtonsProvider implements WearableButtonsProvider {
 
-    @NonNull
     @Override
-    public Bundle getButtonInfo(@NonNull Context context, int keycode) {
+    public @NonNull Bundle getButtonInfo(@NonNull Context context, int keycode) {
         if (!isSharedLibAvailable()) {
             return null;
         }
@@ -40,9 +39,8 @@ public final class DeviceWearableButtonsProvider implements WearableButtonsProvi
         return WearableInputDevice.getButtonInfo(context, keycode);
     }
 
-    @Nullable
     @Override
-    public int[] getAvailableButtonKeyCodes(@NonNull Context context) {
+    public int @Nullable [] getAvailableButtonKeyCodes(@NonNull Context context) {
         if (!isSharedLibAvailable()) {
             return null;
         }

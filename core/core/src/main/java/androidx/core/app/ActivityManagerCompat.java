@@ -18,7 +18,7 @@ package androidx.core.app;
 
 import android.app.ActivityManager;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link android.app.ActivityManager} in a backwards compatible

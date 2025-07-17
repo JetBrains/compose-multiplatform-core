@@ -61,7 +61,6 @@ interface ImageBitmap {
      * critical code paths
      *
      * @sample androidx.compose.ui.graphics.samples.ImageBitmapReadPixelsSample
-     *
      * @param buffer The array to store the [ImageBitmap]'s colors. By default this allocates an
      *   [IntArray] large enough to store all the pixel information. Consumers of this API are
      *   advised to use the smallest [IntArray] necessary to extract relevant pixel information,
@@ -80,7 +79,7 @@ interface ImageBitmap {
         width: Int = this.width,
         height: Int = this.height,
         bufferOffset: Int = 0,
-        stride: Int = width
+        stride: Int = width,
     )
 
     /**
@@ -101,7 +100,6 @@ interface ImageBitmap {
  * code paths
  *
  * @sample androidx.compose.ui.graphics.samples.ImageBitmapToPixelMapSample
- *
  * @param startX The x-coordinate of the first pixel to read from the [ImageBitmap]
  * @param startY The y-coordinate of the first pixel to read from the [ImageBitmap]
  * @param width The number of pixels to read from each row
@@ -120,7 +118,7 @@ fun ImageBitmap.toPixelMap(
     height: Int = this.height,
     buffer: IntArray = IntArray(width * height),
     bufferOffset: Int = 0,
-    stride: Int = width
+    stride: Int = width,
 ): PixelMap {
     readPixels(buffer, startX, startY, width, height, bufferOffset, stride)
     return PixelMap(buffer, width, height, bufferOffset, stride)
@@ -225,7 +223,7 @@ internal expect fun ActualImageBitmap(
     height: Int,
     config: ImageBitmapConfig,
     hasAlpha: Boolean,
-    colorSpace: ColorSpace
+    colorSpace: ColorSpace,
 ): ImageBitmap
 
 fun ImageBitmap(
@@ -233,5 +231,14 @@ fun ImageBitmap(
     height: Int,
     config: ImageBitmapConfig = ImageBitmapConfig.Argb8888,
     hasAlpha: Boolean = true,
-    colorSpace: ColorSpace = ColorSpaces.Srgb
+    colorSpace: ColorSpace = ColorSpaces.Srgb,
 ): ImageBitmap = ActualImageBitmap(width, height, config, hasAlpha, colorSpace)
+
+/**
+ * Decodes a byte array of a Bitmap to an ImageBitmap.
+ *
+ * @return The converted ImageBitmap.
+ */
+fun ByteArray.decodeToImageBitmap(): ImageBitmap = createImageBitmap(this)
+
+internal expect fun createImageBitmap(bytes: ByteArray): ImageBitmap

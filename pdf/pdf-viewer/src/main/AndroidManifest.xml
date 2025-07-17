@@ -16,11 +16,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <application android:label="PdfViewer">
-
+    <application>
         <service
-            android:name="androidx.pdf.pdflib.PdfDocumentService"
+            android:name="androidx.pdf.service.PdfDocumentService"
             android:isolatedProcess="true"
+            android:exported="false"
             tools:ignore="MissingServiceExportedEqualsTrue" />
 
     </application>

@@ -18,9 +18,10 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.SmallDisplaySizeQuirk;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Provides the correct display size for the problematic devices which might return abnormally
@@ -28,8 +29,7 @@ import androidx.camera.camera2.internal.compat.quirk.SmallDisplaySizeQuirk;
  */
 public class DisplaySizeCorrector {
 
-    @Nullable
-    private final SmallDisplaySizeQuirk mSmallDisplaySizeQuirk;
+    private final @Nullable SmallDisplaySizeQuirk mSmallDisplaySizeQuirk;
 
     /**
      * Constructor.
@@ -41,8 +41,7 @@ public class DisplaySizeCorrector {
     /**
      * Returns the device's correct display size if it is included in the SmallDisplaySizeQuirk.
      */
-    @Nullable
-    public Size getDisplaySize() {
+    public @Nullable Size getDisplaySize() {
         return mSmallDisplaySizeQuirk != null ? mSmallDisplaySizeQuirk.getDisplaySize() : null;
     }
 }

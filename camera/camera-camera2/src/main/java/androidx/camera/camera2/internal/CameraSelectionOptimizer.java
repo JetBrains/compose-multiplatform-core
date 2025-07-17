@@ -19,8 +19,6 @@ package androidx.camera.camera2.internal;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.core.CameraInfo;
@@ -28,6 +26,9 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUnavailableException;
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.impl.CameraInfoInternal;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,12 +40,25 @@ class CameraSelectionOptimizer {
 
     static List<String> getSelectedAvailableCameraIds(
             @NonNull Camera2CameraFactory cameraFactory,
-            @Nullable CameraSelector availableCamerasSelector)
+            @Nullable CameraSelector availableCamerasSelector) throws InitializationException {
+        try {
+            return getSelectedAvailableCameraIds(
+                    cameraFactory,
+                    availableCamerasSelector,
+                    Arrays.asList(cameraFactory.getCameraManager().getCameraIdList())
+            );
+        } catch (CameraAccessExceptionCompat e) {
+            throw new InitializationException(CameraUnavailableExceptionHelper.createFrom(e));
+        }
+    }
+
+    static List<String> getSelectedAvailableCameraIds(
+            @NonNull Camera2CameraFactory cameraFactory,
+            @Nullable CameraSelector availableCamerasSelector,
+            @NonNull List<String> cameraIdList)
             throws InitializationException {
         try {
             List<String> availableCameraIds = new ArrayList<>();
-            List<String> cameraIdList =
-                    Arrays.asList(cameraFactory.getCameraManager().getCameraIdList());
             if (availableCamerasSelector == null) {
                 for (String id : cameraIdList) {
                     availableCameraIds.add(id);

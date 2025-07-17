@@ -49,6 +49,13 @@ object Devices {
     const val PIXEL_7 = "id:pixel_7"
     const val PIXEL_7_PRO = "id:pixel_7_pro"
     const val PIXEL_7A = "id:pixel_7a"
+    const val PIXEL_8 = "id:pixel_8"
+    const val PIXEL_8_PRO = "id:pixel_8_pro"
+    const val PIXEL_8A = "id:pixel_8a"
+    const val PIXEL_9 = "id:pixel_9"
+    const val PIXEL_9_PRO = "id:pixel_9_pro"
+    const val PIXEL_9_PRO_FOLD = "id:pixel_9_pro_fold"
+    const val PIXEL_9_PRO_XL = "id:pixel_9_pro_xl"
     const val PIXEL_FOLD = "id:pixel_fold"
     const val PIXEL_TABLET = "id:pixel_tablet"
 
@@ -76,16 +83,14 @@ object Devices {
     const val WEAR_OS_RECT = "id:wearos_rect"
 
     // Reference devices
-    const val PHONE = "spec:id=reference_phone,shape=Normal,width=411,height=891,unit=dp,dpi=420"
-    const val FOLDABLE =
-        "spec:id=reference_foldable,shape=Normal,width=673,height=841,unit=dp,dpi=420"
-    const val TABLET = "spec:id=reference_tablet,shape=Normal,width=1280,height=800,unit=dp,dpi=240"
-    const val DESKTOP =
-        "spec:id=reference_desktop,shape=Normal,width=1920,height=1080,unit=dp,dpi=160"
+    const val PHONE = "spec:width=411dp,height=891dp"
+    const val FOLDABLE = "spec:width=673dp,height=841dp"
+    const val TABLET = "spec:width=1280dp,height=800dp,dpi=240"
+    const val DESKTOP = "spec:width=1920dp,height=1080dp,dpi=160"
 
     // TV devices (not adding 4K since it will be very heavy for preview)
-    const val TV_720p = "spec:shape=Normal,width=1280,height=720,unit=dp,dpi=420"
-    const val TV_1080p = "spec:shape=Normal,width=1920,height=1080,unit=dp,dpi=420"
+    const val TV_720p = "spec:width=1280dp,height=720dp"
+    const val TV_1080p = "spec:width=1920dp,height=1080dp"
 }
 
 /** Annotation for defining the [Preview] device to use. */
@@ -123,6 +128,13 @@ object Devices {
             Devices.PIXEL_7,
             Devices.PIXEL_7_PRO,
             Devices.PIXEL_7A,
+            Devices.PIXEL_8,
+            Devices.PIXEL_8_PRO,
+            Devices.PIXEL_8A,
+            Devices.PIXEL_9,
+            Devices.PIXEL_9_PRO,
+            Devices.PIXEL_9_PRO_XL,
+            Devices.PIXEL_9_PRO_FOLD,
             Devices.PIXEL_FOLD,
             Devices.PIXEL_TABLET,
             Devices.AUTOMOTIVE_1024p,
@@ -136,6 +148,6 @@ object Devices {
             Devices.DESKTOP,
             Devices.TV_720p,
             Devices.TV_1080p,
-        ]
+        ],
 )
 internal annotation class Device

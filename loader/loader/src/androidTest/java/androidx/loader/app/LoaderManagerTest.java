@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import android.content.Context;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelStore;
 import androidx.lifecycle.testing.TestLifecycleOwner;
 import androidx.loader.app.test.DelayLoaderCallbacks;
@@ -35,6 +34,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,9 +61,8 @@ public class LoaderManagerTest {
             public void run() {
                 mLoaderManager.initLoader(65, null,
                         new ImmediateLoaderCallbacks(mock(Context.class)) {
-                            @NonNull
                             @Override
-                            public Loader<Boolean> onCreateLoader(int id, Bundle args) {
+                            public @NonNull Loader<Boolean> onCreateLoader(int id, Bundle args) {
                                 try {
                                     mLoaderManager.destroyLoader(65);
                                     fail("Calling destroyLoader in onCreateLoader should throw an "
@@ -275,9 +274,8 @@ public class LoaderManagerTest {
     public void enforceNonNullLoader() {
         mLoaderManager.initLoader(-1, null, new LoaderManager.LoaderCallbacks<Object>() {
             @SuppressWarnings("ConstantConditions")
-            @NonNull
             @Override
-            public Loader<Object> onCreateLoader(int id, Bundle args) {
+            public @NonNull Loader<Object> onCreateLoader(int id, Bundle args) {
                 return null;
             }
 

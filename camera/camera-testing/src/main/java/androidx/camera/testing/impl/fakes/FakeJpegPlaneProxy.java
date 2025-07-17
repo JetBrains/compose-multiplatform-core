@@ -15,9 +15,10 @@
  */
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.ImageProxy;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -32,7 +33,7 @@ public class FakeJpegPlaneProxy implements ImageProxy.PlaneProxy {
 
     private final ByteBuffer mByteBuffer;
 
-    public FakeJpegPlaneProxy(@NonNull byte[] jpegBytes) {
+    public FakeJpegPlaneProxy(byte @NonNull [] jpegBytes) {
         mByteBuffer = ByteBuffer.allocateDirect(jpegBytes.length);
         mByteBuffer.put(jpegBytes);
     }
@@ -47,9 +48,8 @@ public class FakeJpegPlaneProxy implements ImageProxy.PlaneProxy {
         return 0;
     }
 
-    @NonNull
     @Override
-    public ByteBuffer getBuffer() {
+    public @NonNull ByteBuffer getBuffer() {
         return mByteBuffer;
     }
 }

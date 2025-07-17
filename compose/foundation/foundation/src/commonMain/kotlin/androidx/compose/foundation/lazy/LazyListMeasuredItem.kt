@@ -16,7 +16,8 @@
 
 package androidx.compose.foundation.lazy
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.requirePrecondition
+import androidx.compose.foundation.internal.requirePreconditionNotNull
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimation.Companion.NotInitialized
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasuredItem
@@ -34,7 +35,6 @@ import androidx.compose.ui.util.fastForEachIndexed
  * the user emit multiple layout nodes in the item callback.
  */
 internal class LazyListMeasuredItem
-@ExperimentalFoundationApi
 constructor(
     override val index: Int,
     private val placeables: List<Placeable>,
@@ -58,7 +58,7 @@ constructor(
     override val key: Any,
     override val contentType: Any?,
     private val animator: LazyLayoutItemAnimator<LazyListMeasuredItem>,
-    override val constraints: Constraints
+    override val constraints: Constraints,
 ) : LazyListItemInfo, LazyLayoutMeasuredItem {
     override var offset: Int = 0
         private set
@@ -113,12 +113,8 @@ constructor(
         mainAxisOffset: Int,
         crossAxisOffset: Int,
         layoutWidth: Int,
-        layoutHeight: Int
+        layoutHeight: Int,
     ) {
-        require(crossAxisOffset == 0) {
-            "positioning a list item with non zero crossAxisOffset is not supported." +
-                "$crossAxisOffset was passed."
-        }
         position(mainAxisOffset, layoutWidth, layoutHeight)
     }
 
@@ -134,7 +130,7 @@ constructor(
             val indexInArray = index * 2
             if (isVertical) {
                 placeableOffsets[indexInArray] =
-                    requireNotNull(horizontalAlignment) {
+                    requirePreconditionNotNull(horizontalAlignment) {
                             "null horizontalAlignment when isVertical == true"
                         }
                         .align(placeable.width, layoutWidth, layoutDirection)
@@ -143,7 +139,7 @@ constructor(
             } else {
                 placeableOffsets[indexInArray] = mainAxisOffset
                 placeableOffsets[indexInArray + 1] =
-                    requireNotNull(verticalAlignment) {
+                    requirePreconditionNotNull(verticalAlignment) {
                             "null verticalAlignment when isVertical == false"
                         }
                         .align(placeable.height, layoutHeight)
@@ -164,7 +160,11 @@ constructor(
     }
 
     override fun getOffset(index: Int) =
-        IntOffset(placeableOffsets[index * 2], placeableOffsets[index * 2 + 1])
+        if (index == 0 && placeablesCount == 0) {
+            if (isVertical) IntOffset(0, offset) else IntOffset(offset, 0)
+        } else {
+            IntOffset(placeableOffsets[index * 2], placeableOffsets[index * 2 + 1])
+        }
 
     fun applyScrollDelta(delta: Int, updateAnimations: Boolean) {
         if (nonScrollableItem) {
@@ -174,7 +174,9 @@ constructor(
         repeat(placeableOffsets.size) { index ->
             // placeableOffsets consist of x and y pairs for each placeable.
             // if isVertical is true then the main axis offsets are located at indexes 1, 3, 5 etc.
-            if ((isVertical && index % 2 == 1) || (!isVertical && index % 2 == 0)) {
+            // 1 when odd, 0 when even
+            val oddEven = index and 1
+            if ((isVertical && oddEven != 0) || (!isVertical && oddEven == 0)) {
                 placeableOffsets[index] += delta
             }
         }
@@ -190,7 +192,7 @@ constructor(
 
     fun place(scope: Placeable.PlacementScope, isLookingAhead: Boolean) =
         with(scope) {
-            require(mainAxisLayoutSize != Unset) { "position() should be called first" }
+            requirePrecondition(mainAxisLayoutSize != Unset) { "position() should be called first" }
             repeat(placeablesCount) { index ->
                 val placeable = placeables[index]
                 val minOffset = minMainAxisOffset - placeable.mainAxisSize
@@ -259,7 +261,7 @@ constructor(
         get() = if (isVertical) height else width
 
     private inline fun IntOffset.copy(mainAxisMap: (Int) -> Int): IntOffset =
-        IntOffset(if (isVertical) x else mainAxisMap(x), if (isVertical) mainAxisMap(y) else y)
+        if (isVertical) IntOffset(x, mainAxisMap(y)) else IntOffset(mainAxisMap(x), y)
 }
 
 private const val Unset = Int.MIN_VALUE

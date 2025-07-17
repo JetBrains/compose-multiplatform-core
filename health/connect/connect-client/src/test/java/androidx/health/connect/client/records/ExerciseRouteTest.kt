@@ -17,6 +17,7 @@
 package androidx.health.connect.client.records
 
 import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.meters
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
 import kotlin.test.assertFailsWith
@@ -33,7 +34,7 @@ class ExerciseRouteTest {
                     longitude = -34.5,
                     horizontalAccuracy = Length.meters(0.4),
                     verticalAccuracy = Length.meters(1.3),
-                    altitude = Length.meters(23.4)
+                    altitude = Length.meters(23.4),
                 )
             )
             .isEqualTo(
@@ -43,7 +44,7 @@ class ExerciseRouteTest {
                     longitude = -34.5,
                     horizontalAccuracy = Length.meters(0.4),
                     verticalAccuracy = Length.meters(1.3),
-                    altitude = Length.meters(23.4)
+                    altitude = Length.meters(23.4),
                 )
             )
     }
@@ -57,7 +58,7 @@ class ExerciseRouteTest {
                 longitude = -34.5,
                 horizontalAccuracy = Length.meters(0.4),
                 verticalAccuracy = Length.meters(1.3),
-                altitude = Length.meters(23.4)
+                altitude = Length.meters(23.4),
             )
         }
         assertFailsWith<IllegalArgumentException> {
@@ -67,7 +68,7 @@ class ExerciseRouteTest {
                 longitude = 189.5,
                 horizontalAccuracy = Length.meters(0.4),
                 verticalAccuracy = Length.meters(1.3),
-                altitude = Length.meters(23.4)
+                altitude = Length.meters(23.4),
             )
         }
     }
@@ -86,7 +87,7 @@ class ExerciseRouteTest {
                 longitude = -34.5,
                 horizontalAccuracy = Length.meters(0.4),
                 verticalAccuracy = Length.meters(1.3),
-                altitude = Length.meters(23.4)
+                altitude = Length.meters(23.4),
             )
         val location2 =
             ExerciseRoute.Location(
@@ -113,5 +114,27 @@ class ExerciseRouteTest {
                 longitude = -34.8,
             )
         assertFailsWith<IllegalArgumentException> { ExerciseRoute(listOf(location1, location2)) }
+    }
+
+    @Test
+    fun toString_containsMembers() {
+        assertThat(
+                ExerciseRoute(
+                        listOf(
+                            ExerciseRoute.Location(
+                                time = Instant.ofEpochMilli(1234L),
+                                latitude = 34.8,
+                                longitude = -34.8,
+                                horizontalAccuracy = 2.0.meters,
+                                verticalAccuracy = 3.0.meters,
+                                altitude = 120.0.meters,
+                            )
+                        )
+                    )
+                    .toString()
+            )
+            .isEqualTo(
+                "ExerciseRoute(route=[Location(time=1970-01-01T00:00:01.234Z, latitude=34.8, longitude=-34.8, horizontalAccuracy=2.0 meters, verticalAccuracy=3.0 meters, altitude=120.0 meters)])"
+            )
     }
 }

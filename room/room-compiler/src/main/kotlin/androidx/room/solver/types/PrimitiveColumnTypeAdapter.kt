@@ -26,6 +26,7 @@ import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_FLOAT
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_INT
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_LONG
 import androidx.room.compiler.codegen.XTypeName.Companion.PRIMITIVE_SHORT
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.XType
 import androidx.room.parser.SQLTypeAffinity
@@ -73,7 +74,7 @@ class PrimitiveColumnTypeAdapter(
                 PrimitiveColumnTypeAdapter(
                     out = processingEnvironment.requireType(it.typeName),
                     typeAffinity = getAffinity(it),
-                    primitive = it
+                    primitive = it,
                 )
             }
         }
@@ -87,7 +88,7 @@ class PrimitiveColumnTypeAdapter(
         stmtName: String,
         indexVarName: String,
         valueVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         // These primitives don't have an exact statement setter.
         val castFunction =
@@ -99,71 +100,53 @@ class PrimitiveColumnTypeAdapter(
                 Primitive.FLOAT -> "toDouble"
                 else -> null
             }
-        val valueExpr =
-            when (scope.language) {
-                CodeLanguage.JAVA -> {
-                    // For Java, with the language's primitive type casting, value variable can be
-                    // used as bind argument directly.
-                    XCodeBlock.of(scope.language, "%L", valueVarName)
-                }
+        val valueExpr = buildCodeBlock { language ->
+            when (language) {
+                // For Java, with the language's primitive type casting, value variable can be
+                // used as bind argument directly.
+                CodeLanguage.JAVA -> add("%L", valueVarName)
+                // For Kotlin, a converter function is emitted when a cast is needed.
                 CodeLanguage.KOTLIN -> {
-                    // For Kotlin, a converter function is emitted when a cast is needed.
                     if (castFunction != null) {
-                        XCodeBlock.of(scope.language, "%L.%L()", valueVarName, castFunction)
+                        add("%L.%L()", valueVarName, castFunction)
                     } else {
-                        XCodeBlock.of(scope.language, "%L", valueVarName)
+                        add("%L", valueVarName)
                     }
                 }
             }
+        }
         scope.builder.addStatement("%L.%L(%L, %L)", stmtName, stmtSetter, indexVarName, valueExpr)
     }
 
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.addStatement(
             "%L = %L",
             outVarName,
-            XCodeBlock.of(
-                    scope.language,
-                    "%L.%L(%L)",
-                    cursorVarName,
-                    if (scope.useDriverApi) stmtGetter else cursorGetter,
-                    indexVarName
-                )
-                .let {
-                    // These primitives don't have an exact cursor / statement getter.
-                    val castFunction =
-                        if (scope.useDriverApi) {
-                            when (primitive) {
-                                Primitive.INT -> "toInt"
-                                Primitive.SHORT -> "toShort"
-                                Primitive.BYTE -> "toByte"
-                                Primitive.CHAR -> "toChar"
-                                Primitive.FLOAT -> "toFloat"
-                                else -> null
-                            }
-                        } else {
-                            when (primitive) {
-                                Primitive.BYTE -> "toByte"
-                                Primitive.CHAR -> "toChar"
-                                else -> null
-                            }
-                        } ?: return@let it
-                    when (it.language) {
+            XCodeBlock.of("%L.%L(%L)", stmtVarName, stmtGetter, indexVarName).let {
+                // These primitives don't have an exact cursor / statement getter.
+                val castFunction =
+                    when (primitive) {
+                        Primitive.INT -> "toInt"
+                        Primitive.SHORT -> "toShort"
+                        Primitive.BYTE -> "toByte"
+                        Primitive.CHAR -> "toChar"
+                        Primitive.FLOAT -> "toFloat"
+                        else -> null
+                    } ?: return@let it
+                buildCodeBlock { language ->
+                    when (language) {
                         // For Java a cast will suffice
-                        CodeLanguage.JAVA -> {
-                            XCodeBlock.ofCast(it.language, out.asTypeName(), it)
-                        }
+                        CodeLanguage.JAVA -> add(XCodeBlock.ofCast(out.asTypeName(), it))
                         // For Kotlin a converter function is emitted
-                        CodeLanguage.KOTLIN -> {
-                            XCodeBlock.of(it.language, "%L.%L()", it, castFunction)
-                        }
+                        CodeLanguage.KOTLIN -> add(XCodeBlock.of("%L.%L()", it, castFunction))
                     }
                 }
+            },
         )
     }
 }
