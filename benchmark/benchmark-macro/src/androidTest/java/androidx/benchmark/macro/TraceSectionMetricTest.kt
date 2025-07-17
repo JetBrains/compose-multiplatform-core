@@ -17,7 +17,7 @@
 package androidx.benchmark.macro
 
 import androidx.benchmark.perfetto.PerfettoHelper
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.filters.MediumTest
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -29,8 +29,19 @@ class TraceSectionMetricTest {
         createTempFileFromAsset(prefix = "api24_startup_cold", suffix = ".perfetto-trace")
             .absolutePath
 
+    private val api31ColdStart =
+        createTempFileFromAsset(prefix = "api31_startup_cold", suffix = ".perfetto-trace")
+            .absolutePath
+
     private val commasInSliceNames =
         createTempFileFromAsset(prefix = "api24_commas_in_slice_names", suffix = ".perfetto-trace")
+            .absolutePath
+
+    private val truncatedProcessName =
+        createTempFileFromAsset(
+                prefix = "api29_cold_startup_processname_truncated",
+                suffix = ".perfetto-trace",
+            )
             .absolutePath
 
     @Test
@@ -39,7 +50,7 @@ class TraceSectionMetricTest {
             tracePath = api24ColdStart,
             packageName = Packages.TARGET,
             sectionName = "ActivityThreadMain",
-            expectedFirstMs = 12.639
+            expectedFirstMs = 12.639,
         )
 
     @Test
@@ -48,7 +59,7 @@ class TraceSectionMetricTest {
             tracePath = api24ColdStart,
             packageName = Packages.TARGET,
             sectionName = "activityStart",
-            expectedFirstMs = 81.979
+            expectedFirstMs = 81.979,
         )
 
     @Test
@@ -67,7 +78,7 @@ class TraceSectionMetricTest {
             packageName = Packages.TARGET,
             sectionName = "launching: androidx.benchmark.integration.macrobenchmark.target",
             expectedFirstMs = 269.947,
-            targetPackageOnly = false // slice from system_server
+            targetPackageOnly = false, // slice from system_server
         )
 
     @Test
@@ -76,7 +87,7 @@ class TraceSectionMetricTest {
             tracePath = commasInSliceNames,
             packageName = Packages.TARGET,
             sectionName = "section1,2",
-            expectedFirstMs = 0.006615
+            expectedFirstMs = 0.006615,
         )
 
     @Test
@@ -107,6 +118,34 @@ class TraceSectionMetricTest {
             targetPackageOnly = false,
         )
 
+    @Test
+    fun filterNonTerminatingSlices() =
+        verifyFirstSum(
+            tracePath = api31ColdStart, // arbitrary trace which includes non-termination slices
+            packageName = Packages.TARGET, // ignored
+            sectionName = "wait",
+            expectedFirstMs = 0.00724,
+            expectedMinMs = 0.001615, // filtered out non-terminating -1 duration
+            expectedMaxMs = 357.761234,
+            expectedSumMs = 811.865025,
+            expectedSumCount = 226, // filtered out single case where dur = -1
+            targetPackageOnly = false,
+        )
+
+    @Test
+    fun truncatedProcessName() =
+        verifyFirstSum(
+            tracePath = truncatedProcessName, // trace with truncated target process name
+            packageName = Packages.TARGET,
+            sectionName = "Choreographer#doFrame",
+            expectedFirstMs = 30.819014,
+            expectedMinMs = 0.122031,
+            expectedMaxMs = 30.81901,
+            expectedSumMs = 31.983701,
+            expectedSumCount = 3,
+            targetPackageOnly = true,
+        )
+
     companion object {
         private fun verifyMetric(
             tracePath: String,
@@ -115,27 +154,26 @@ class TraceSectionMetricTest {
             mode: TraceSectionMetric.Mode,
             expectedMs: Double,
             expectedCount: Int,
-            targetPackageOnly: Boolean
+            targetPackageOnly: Boolean,
         ) {
             assumeTrue(PerfettoHelper.isAbiSupported())
 
             val metric = TraceSectionMetric(sectionName, mode, "testLabel", targetPackageOnly)
-            metric.configure(packageName = packageName)
+
+            // note that most args are incorrect here, but currently
+            // only targetPackageName matters in this context
+            val captureInfo =
+                Metric.CaptureInfo(
+                    targetPackageName = packageName,
+                    testPackageName = Packages.TEST,
+                    startupMode = StartupMode.COLD,
+                    apiLevel = 24,
+                )
+            metric.configure(captureInfo)
 
             val result =
-                PerfettoTraceProcessor.runSingleSessionServer(tracePath) {
-                    metric.getMeasurements(
-                        // note that most args are incorrect here, but currently
-                        // only targetPackageName matters in this context
-                        captureInfo =
-                            Metric.CaptureInfo(
-                                targetPackageName = packageName,
-                                testPackageName = Packages.TEST,
-                                startupMode = StartupMode.COLD,
-                                apiLevel = 24
-                            ),
-                        traceSession = this
-                    )
+                TraceProcessor.runSingleSessionServer(tracePath) {
+                    metric.getMeasurements(captureInfo = captureInfo, traceSession = this)
                 }
 
             var measurements =

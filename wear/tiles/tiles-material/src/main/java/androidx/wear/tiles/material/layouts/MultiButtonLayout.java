@@ -17,12 +17,13 @@
 package androidx.wear.tiles.material.layouts;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -81,17 +82,16 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
     @IntDef({FIVE_BUTTON_DISTRIBUTION_TOP_HEAVY, FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY})
     public @interface ButtonDistribution {}
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Box mElement;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mElement;
 
-    MultiButtonLayout(@NonNull androidx.wear.tiles.LayoutElementBuilders.Box mElement) {
+    MultiButtonLayout(androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mElement) {
         this.mElement = mElement;
     }
 
     /** Builder class for {@link MultiButtonLayout}. */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull
-        private final List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+        private final @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
                 mButtonsContent = new ArrayList<>();
 
         private @ButtonDistribution int mFiveButtonDistribution =
@@ -109,12 +109,11 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
          * to add a {@link Button} as the layout is optimized for it. Any button added after {@link
          * LayoutDefaults#MULTI_BUTTON_MAX_NUMBER} is reached will be discarded.
          */
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // There is no direct matching getter for this setter, but there is a getter that gets all
         // added buttons.
-        public Builder addButtonContent(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement buttonContent) {
+        public @NonNull Builder addButtonContent(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement buttonContent) {
             mButtonsContent.add(buttonContent);
             return this;
         }
@@ -124,16 +123,15 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
          * there is 5 buttons in the layout to determine whether the 3 buttons row is at the top or
          * bottom.
          */
-        @NonNull
-        public Builder setFiveButtonDistribution(@ButtonDistribution int fiveButtonDistribution) {
+        public @NonNull Builder setFiveButtonDistribution(
+                @ButtonDistribution int fiveButtonDistribution) {
             this.mFiveButtonDistribution = fiveButtonDistribution;
             return this;
         }
 
         /** Constructs and returns {@link MultiButtonLayout} with the provided content and look. */
-        @NonNull
         @Override
-        public MultiButtonLayout build() {
+        public @NonNull MultiButtonLayout build() {
             int buttonNum = mButtonsContent.size();
             if (buttonNum > LayoutDefaults.MULTI_BUTTON_MAX_NUMBER) {
                 throw new IllegalArgumentException(
@@ -162,8 +160,7 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
             return new MultiButtonLayout(elementBuilder.build());
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.LayoutElement buildButtons(
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement buildButtons(
                 int buttonNum) {
             switch (buttonNum) {
                 case 1:
@@ -255,11 +252,10 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
             return new androidx.wear.tiles.LayoutElementBuilders.Box.Builder().build();
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.Row build3ButtonRow(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button1,
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button2,
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button3) {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull Row build3ButtonRow(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button1,
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button2,
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button3) {
             return new androidx.wear.tiles.LayoutElementBuilders.Row.Builder()
                     .setWidth(androidx.wear.tiles.DimensionBuilders.wrap())
                     .setHeight(androidx.wear.tiles.DimensionBuilders.wrap())
@@ -271,11 +267,10 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
                     .build();
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.Row build2ButtonRow(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button1,
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button2,
-                @NonNull androidx.wear.tiles.DimensionBuilders.DpProp size) {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull Row build2ButtonRow(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button1,
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button2,
+                androidx.wear.tiles.DimensionBuilders.@NonNull DpProp size) {
             return new androidx.wear.tiles.LayoutElementBuilders.Row.Builder()
                     .setWidth(androidx.wear.tiles.DimensionBuilders.wrap())
                     .setHeight(androidx.wear.tiles.DimensionBuilders.wrap())
@@ -285,24 +280,21 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
                     .build();
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.Spacer buildHorizontalSpacer() {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull Spacer buildHorizontalSpacer() {
             return new androidx.wear.tiles.LayoutElementBuilders.Spacer.Builder()
                     .setWidth(LayoutDefaults.MULTI_BUTTON_SPACER_WIDTH)
                     .build();
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.Spacer buildVerticalSpacer() {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull Spacer buildVerticalSpacer() {
             return new androidx.wear.tiles.LayoutElementBuilders.Spacer.Builder()
                     .setHeight(LayoutDefaults.MULTI_BUTTON_SPACER_HEIGHT)
                     .build();
         }
 
-        @NonNull
-        private androidx.wear.tiles.LayoutElementBuilders.Box wrapButton(
-                @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement button,
-                @NonNull androidx.wear.tiles.DimensionBuilders.DpProp size) {
+        private androidx.wear.tiles.LayoutElementBuilders.@NonNull Box wrapButton(
+                androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement button,
+                androidx.wear.tiles.DimensionBuilders.@NonNull DpProp size) {
             return new androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
                     .setWidth(size)
                     .setHeight(size)
@@ -312,8 +304,8 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Gets the content from this layout, containing all buttons that were added. */
-    @NonNull
-    public List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> getButtonContents() {
+    public @NonNull List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement>
+            getButtonContents() {
         List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> buttons = new ArrayList<>();
         List<androidx.wear.tiles.LayoutElementBuilders.LayoutElement> contents =
                 mElement.getContents();
@@ -343,8 +335,7 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
     }
 
     /** Returns metadata tag set to this MultiButtonLayouts. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return androidx.wear.tiles.material.Helper.getMetadataTagName(
                 androidx.wear.tiles.material.Helper.checkNotNull(
                         androidx.wear.tiles.material.Helper.checkNotNull(mElement.getModifiers())
@@ -405,9 +396,8 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to MultiButtonLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static MultiButtonLayout fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable MultiButtonLayout fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof MultiButtonLayout) {
             return (MultiButtonLayout) element;
         }
@@ -424,17 +414,15 @@ public class MultiButtonLayout implements androidx.wear.tiles.LayoutElementBuild
         return new MultiButtonLayout(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

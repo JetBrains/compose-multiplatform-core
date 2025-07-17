@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,30 +37,28 @@ dependencies {
 
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(project(":compose:ui:ui"))
     implementation(project(":tv:tv-foundation"))
     implementation(project(":tv:tv-material"))
-}
 
-androidx {
-    name = "TV-Compose Test App"
-    type = LibraryType.SAMPLES
-    mavenVersion = LibraryVersions.TV
-    inceptionYear = "2022"
-    description = "Test application for TV libraries"
+    var media3Version = "1.5.0"
+    implementation("androidx.media3:media3-common-ktx:$media3Version")
+    implementation("androidx.media3:media3-exoplayer:$media3Version")
+    implementation("androidx.media3:media3-ui:$media3Version")
 }
 
 android {
+    compileSdk = 35
     defaultConfig {
-        minSdkVersion 28
+        minSdk = 28
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android.txt')
-            signingConfig signingConfigs.debug
         }
     }
-    namespace "androidx.tv.integration.playground"
+    namespace = "androidx.tv.integration.playground"
 }

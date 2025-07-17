@@ -23,8 +23,11 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.credentials.ClearCredentialStateRequest.Companion.TYPE_CLEAR_RESTORE_CREDENTIAL
+import androidx.credentials.internal.FormFactorHelper
 
 /** Factory that returns the credential provider to be used by Credential Manager. */
+@OptIn(ExperimentalDigitalCredentialApi::class)
 internal class CredentialProviderFactory(val context: Context) {
 
     @set:VisibleForTesting
@@ -57,25 +60,62 @@ internal class CredentialProviderFactory(val context: Context) {
     }
 
     /**
+     * Returns the best available provider. The best available provider is determined by the
+     * provided [request]. If the provided request is for the use-case of [RestoreCredential], then
+     * the pre-U provider is used. If not, then the provider is determined by the API level.
+     *
+     * @param request is a credential request of either [CreateRestoreCredentialRequest],
+     *   [TYPE_CLEAR_RESTORE_CREDENTIAL], or [GetCredentialRequest] that can determine
+     *   [CredentialProvider] type.
+     * @return the best available provider, or null if no provider is available.
+     */
+    fun getBestAvailableProvider(
+        request: Any,
+        shouldFallbackToPreU: Boolean = true,
+    ): CredentialProvider? {
+        if (request is CreateRestoreCredentialRequest || request == TYPE_CLEAR_RESTORE_CREDENTIAL) {
+            return tryCreateClosedSourceProviderFromManifest()
+        } else if (request is GetCredentialRequest) {
+            for (option in request.credentialOptions) {
+                if (option is GetRestoreCredentialOption || option is GetDigitalCredentialOption) {
+                    return tryCreateClosedSourceProviderFromManifest()
+                }
+            }
+        } else if (
+            request is SignalCredentialStateRequest ||
+                (request is CreatePublicKeyCredentialRequest && request.isConditional)
+        ) {
+            return tryCreateClosedSourceProviderFromManifest()
+        } else if (request is CreateDigitalCredentialRequest) {
+            return tryCreateClosedSourceProviderFromManifest()
+        }
+        return getBestAvailableProvider(shouldFallbackToPreU)
+    }
+
+    /**
      * Returns the best available provider. Pre-U, the provider is determined by the provider
      * library that the developer includes in the app. Developer must not add more than one provider
      * library. Post-U, providers will be registered with the framework, and enabled by the user.
      */
     fun getBestAvailableProvider(shouldFallbackToPreU: Boolean = true): CredentialProvider? {
+        if (FormFactorHelper.isTV(context) || FormFactorHelper.isAuto(context)) {
+            return tryCreateClosedSourceProviderFromManifest()
+        }
+
         if (Build.VERSION.SDK_INT >= 34) { // Android U
             val postUProvider = tryCreatePostUProvider()
             if (postUProvider == null && shouldFallbackToPreU) {
-                return tryCreatePreUOemProvider()
+                return tryCreateClosedSourceProviderFromManifest()
             }
             return postUProvider
         } else if (Build.VERSION.SDK_INT <= MAX_CRED_MAN_PRE_FRAMEWORK_API_LEVEL) {
-            return tryCreatePreUOemProvider()
+            return tryCreateClosedSourceProviderFromManifest()
         } else {
             return null
         }
     }
 
-    private fun tryCreatePreUOemProvider(): CredentialProvider? {
+    private fun tryCreateClosedSourceProviderFromManifest(): CredentialProvider? {
         if (testMode) {
             if (testPreUProvider == null) {
                 return null
@@ -88,10 +128,10 @@ internal class CredentialProviderFactory(val context: Context) {
         }
 
         val classNames = getAllowedProvidersFromManifest(context)
-        if (classNames.isEmpty()) {
-            return null
+        return if (classNames.isEmpty()) {
+            null
         } else {
-            return instantiatePreUProvider(classNames, context)
+            instantiatePreUProvider(classNames, context)
         }
     }
 
@@ -117,7 +157,7 @@ internal class CredentialProviderFactory(val context: Context) {
 
     private fun instantiatePreUProvider(
         classNames: List<String>,
-        context: Context
+        context: Context,
     ): CredentialProvider? {
         var provider: CredentialProvider? = null
         for (className in classNames) {
@@ -143,12 +183,12 @@ internal class CredentialProviderFactory(val context: Context) {
         val packageInfo =
             context.packageManager.getPackageInfo(
                 context.packageName,
-                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES
+                PackageManager.GET_META_DATA or PackageManager.GET_SERVICES,
             )
 
         val classNames = mutableListOf<String>()
         if (packageInfo.services != null) {
-            for (serviceInfo in packageInfo.services) {
+            for (serviceInfo in packageInfo.services!!) {
                 if (serviceInfo.metaData != null) {
                     val className = serviceInfo.metaData.getString(CREDENTIAL_PROVIDER_KEY)
                     if (className != null) {

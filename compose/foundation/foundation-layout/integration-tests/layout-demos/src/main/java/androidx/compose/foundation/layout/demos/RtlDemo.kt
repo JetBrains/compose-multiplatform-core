@@ -65,12 +65,12 @@ fun RtlDemo() {
         TestSiblings()
         Text(
             "PLACE WITH AUTO RTL SUPPORT IN CUSTOM LAYOUT",
-            Modifier.align(Alignment.CenterHorizontally)
+            Modifier.align(Alignment.CenterHorizontally),
         )
         CustomLayout(true)
         Text(
             "PLACE WITHOUT RTL SUPPORT IN CUSTOM LAYOUT",
-            Modifier.align(Alignment.CenterHorizontally)
+            Modifier.align(Alignment.CenterHorizontally),
         )
         CustomLayout(false)
         Text("WITH CONSTRAINTS", Modifier.align(Alignment.CenterHorizontally))
@@ -92,7 +92,7 @@ private fun TestPlacementInLimitedSpace() {
         Box(modifier = Modifier.padding(12.dp).size(56.dp).background(Color.Yellow)) {
             IconButton( // adds minimumTouchTargetSize
                 modifier = Modifier.padding(horizontal = 12.dp),
-                onClick = {}
+                onClick = {},
             ) {
                 Icon(Icons.Filled.Info, null)
             }
@@ -171,12 +171,11 @@ private fun TestSiblings() {
 @Composable
 private fun CustomLayout(rtlSupport: Boolean) {
     Layout(
-        content =
-            @Composable {
-                Box(boxSize.background(color = Color.Red)) {}
-                Box(boxSize.background(color = Color.Green)) {}
-                Box(boxSize.background(color = Color.Blue)) {}
-            }
+        content = {
+            Box(boxSize.background(color = Color.Red)) {}
+            Box(boxSize.background(color = Color.Green)) {}
+            Box(boxSize.background(color = Color.Blue)) {}
+        }
     ) { measurables, constraints ->
         val p = measurables.map { e -> e.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
         val w = p.fold(0) { sum, e -> sum + e.width }

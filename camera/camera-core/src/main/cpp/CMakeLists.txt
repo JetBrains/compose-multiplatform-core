@@ -22,6 +22,11 @@ add_library(
         SHARED
         image_processing_util_jni.cc)
 
+add_library(
+        surface_util_jni
+        SHARED
+        surface_util_jni.cc)
+
 find_library(log-lib log)
 find_library(jnigraphics-lib jnigraphics)
 find_library(android-lib android)
@@ -30,6 +35,13 @@ find_package(libyuv REQUIRED)
 target_link_libraries(image_processing_util_jni PRIVATE ${log-lib} ${android-lib} ${jnigraphics-lib} libyuv::yuv)
 target_link_options(
         image_processing_util_jni
+        PRIVATE
+        "-Wl,-z,max-page-size=16384"
+)
+
+target_link_libraries(surface_util_jni  ${android-lib})
+target_link_options(
+        surface_util_jni
         PRIVATE
         "-Wl,-z,max-page-size=16384"
 )

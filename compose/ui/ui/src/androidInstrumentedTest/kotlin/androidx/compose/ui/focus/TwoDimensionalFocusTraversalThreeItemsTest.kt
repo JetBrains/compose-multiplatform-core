@@ -56,19 +56,31 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * __________ __________ * __________ | Next | | Closer | * ^ | Next | | Item | | Item | * | |
-     * Item | |_________| |_________| * Direction |_________| ____________ * of Search | focused | *
-     * | | Item | * | |___________| * ____________
-     * * | focused | __________
-     * * | Item | | Closer | <---- Direction of Search --- * |___________| | Item |
-     * * |_________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ _________ * __________ | Closer | | Next | * | Closer | | Item | | Item | *
-     * ____________ | Item | |_________| |________| * | focused | |_________| ____________ * | Item
-     * | | focused | * |___________| | Item | * |___________| * | _________
-     * * Direction | Next | ---- Direction of Search ---> * of Search | Item |
-     * * | |________|
-     * * V
+     *     __________                    __________       *                            __________
+     *    |   Next  |                   |  Closer |       *              ^            |   Next  |
+     *    |   Item  |                   |   Item  |       *              |            |   Item  |
+     *    |_________|                   |_________|       *          Direction        |_________|
+     *                          ____________              *          of Search
+     *                         |  focused  |              *              |
+     *                         |    Item   |              *              |
+     *                         |___________|              *         ____________
+     *                                                    *        |  focused  |       __________
+     *                                                    *        |    Item   |      |  Closer |
+     *            <---- Direction of Search ---           *        |___________|      |  Item   |
+     *                                                    *                           |_________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     __________                    _________        *                            __________
+     *    |  Closer |                   |  Next  |        *                           |  Closer |
+     *    |   Item  |                   |  Item  |        *         ____________      |   Item  |
+     *    |_________|                   |________|        *        |  focused  |      |_________|
+     *             ____________                           *        |    Item   |
+     *            |  focused  |                           *        |___________|
+     *            |    Item   |                           *
+     *            |___________|                           *              |              _________
+     *                                                    *          Direction         |  Next  |
+     *            ---- Direction of Search --->           *          of Search         |  Item  |
+     *                                                    *              |             |________|
+     *                                                    *              V
      */
     @MediumTest
     @Test
@@ -125,13 +137,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *  |________|                    |_________|       *       |  Closer |    |    Item   |
      *          <---- Direction of Search ---           *       |  Item   |    |___________|
      *                                                  *       |_________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * __________ | focused | * | Closer | | Item | * | Item | ____________
-     * |___________| * |_________| | focused | __________ _________ * | Item | | Closer | | Next | *
-     * |___________| | Item | | Item | * |_________| |________| * _________ |
-     * * | Next | Direction ---- Direction of Search ---> * | Item | of Search
-     * * |________| |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *           ____________                           *         __________
+     *          |  focused  |                           *        |  Closer |
+     *          |    Item   |                           *        |   Item  |     ____________
+     *          |___________|                           *        |_________|    |  focused  |
+     *    __________                    _________       *                       |    Item   |
+     *   |  Closer |                   |  Next  |       *                       |___________|
+     *   |   Item  |                   |  Item  |       *
+     *   |_________|                   |________|       *          _________          |
+     *                                                  *         |  Next  |      Direction
+     *          ---- Direction of Search --->           *         |  Item  |      of Search
+     *                                                  *         |________|          |
+     *                                                  *                             V
      */
     @LargeTest
     @Test
@@ -176,18 +194,34 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * _________ * _________ | Next | * | Next | ^ | Item | * | Item | | |________| * |________|
-     * Direction ____________ * of Search | focused | * | | Item | * | |___________| * ____________
-     * __________ * | focused | | Closer | * | Item | __________ | Item | * |___________| | Closer |
-     * |_________| * | Item | <---- Direction of Search --- * |_________|
-     * *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * __________ | Closer | * | Closer | | Item | * ____________ | Item |
-     * |_________| * | focused | |_________| ____________ * | Item | | focused | * |___________| |
-     * Item | * | |___________| * _________ Direction _________ * | Next | of Search | Next | * |
-     * Item | | | Item | * |________| | |________| * V ---- Direction of Search ---> *
-     * *
-     * *
+     *      _________                                     *   _________
+     *     |  Next  |                                     *  |  Next  |     ^
+     *     |  Item  |                                     *  |  Item  |     |
+     *     |________|                                     *  |________|  Direction
+     *                          ____________              *             of Search
+     *                         |  focused  |              *                 |
+     *                         |    Item   |              *                 |
+     *                         |___________|              *          ____________
+     *                                 __________         *         |  focused  |
+     *                                |  Closer |         *         |    Item   |      __________
+     *                                |   Item  |         *         |___________|     |  Closer |
+     *                                |_________|         *                           |   Item  |
+     *            <---- Direction of Search ---           *                           |_________|
+     *                                                    *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     __________                                     *                            __________
+     *    |  Closer |                                     *                           |  Closer |
+     *    |   Item  |                                     *           ____________    |   Item  |
+     *    |_________|                                     *          |  focused  |    |_________|
+     *            ____________                            *          |    Item   |
+     *           |  focused  |                            *          |___________|
+     *           |    Item   |                            *                 |
+     *           |___________|                            *   _________  Direction
+     *                                   _________        *  |  Next  |  of Search
+     *                                  |  Next  |        *  |  Item  |     |
+     *                                  |  Item  |        *  |________|     |
+     *                                  |________|        *                 V
+     *            ---- Direction of Search --->           *
      */
     @LargeTest
     @Test
@@ -246,13 +280,22 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *     |________|                                   *  |   Item  |
      *          <---- Direction of Search ---           *  |_________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _________ * __________ | Next | * | Closer | | Item | * | Item | ____________ |________| *
-     * |_________| | focused | ____________ * | Item | | focused | * |___________| | Item | * |
-     * |___________| * Direction _________ __________ * of Search | Next | | Closer | * | | Item | |
-     * Item | * | |________| |_________| * V ---- Direction of Search ---> *
-     * *
-     * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                _________         *    __________
+     *                               |  Next  |         *   |  Closer |
+     *                               |  Item  |         *   |   Item  |   ____________
+     *                               |________|         *   |_________|  |  focused  |
+     *           ____________                           *                |    Item   |
+     *          |  focused  |                           *                |___________|
+     *          |    Item   |                           *                      |
+     *          |___________|                           *                  Direction    _________
+     *   __________                                     *                  of Search   |  Next  |
+     *  |  Closer |                                     *                      |       |  Item  |
+     *  |   Item  |                                     *                      |       |________|
+     *  |_________|                                     *                      V
+     *          ---- Direction of Search --->           *
+     *                                                  *
+     *                                                  *
      */
     @LargeTest
     @Test
@@ -309,14 +352,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |___________| | Closer | ____________ __________ * | Item | | focused | | Item
-     * | * |_________| | Item | | in beam | * |___________| |_________| * ____________
-     * * | Item | | ---- Direction of Search ---> * | in beam | Direction
-     * * |___________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |       __________
+     *                |_________|                       *        |___________|      |  Closer |
+     *         ____________         __________          *                           |   Item  |
+     *        |  focused  |        |  Item   |          *                           |_________|
+     *        |    Item   |        | in beam |          *
+     *        |___________|        |_________|          *         ____________
+     *                                                  *        |    Item   |          |
+     *          ---- Direction of Search --->           *        |  in beam  |      Direction
+     *                                                  *        |___________|      of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @MediumTest
     @Test
@@ -373,14 +422,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |    Item   |       |_________|
      *          <---- Direction of Search ---           *       |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |___________| | Closer | _______________ * | Item | ____________ | Item in Beam
-     * | * |_________| | focused | |______________| * | Item | * _________ |___________| * | Item |
-     * |
-     * * | in beam| Direction ---- Direction of Search ---> * |________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *        ____________
+     *                |  Closer |                       *       |  focused  |
+     *                |   Item  |                       *       |    Item   |        __________
+     *                |_________|                       *       |___________|       |  Closer |
+     *                              _______________     *                           |   Item  |
+     *         ____________        | Item in Beam |     *                           |_________|
+     *        |  focused  |        |______________|     *
+     *        |    Item   |                             *              _________
+     *        |___________|                             *             |  Item  |        |
+     *                                                  *             | in beam|    Direction
+     *          ---- Direction of Search --->           *             |________|    of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -437,14 +492,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |___________| | Closer | ____________ _______________ * | Item | | focused | |
-     * Item in Beam | * |_________| | Item | |______________| * |___________| * _________
-     * * | Item | | ---- Direction of Search ---> * | in beam| Direction
-     * * |________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |       __________
+     *                |_________|                       *        |___________|      |  Closer |
+     *         ____________          _______________    *                           |   Item  |
+     *        |  focused  |         | Item in Beam |    *                           |_________|
+     *        |    Item   |         |______________|    *
+     *        |___________|                             *            _________
+     *                                                  *           |  Item  |          |
+     *          ---- Direction of Search --->           *           | in beam|      Direction
+     *                                                  *           |________|      of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -501,14 +562,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |___________| | Closer | ____________ * | Item | | | _______________ *
-     * |_________| | focused | | Item in Beam | * | Item | |______________| * _______
-     * |___________| * | Item | |
-     * * | in | Direction
-     * * | Beam | of Search ---- Direction of Search ---> * |______| |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |       __________
+     *                |_________|                       *        |___________|      |  Closer |
+     *         ____________                             *                           |   Item  |
+     *        |           |           _______________   *                           |_________|
+     *        |  focused  |          | Item in Beam |   *
+     *        |    Item   |          |______________|   *            _______
+     *        |___________|                             *           | Item |            |
+     *                                                  *           |  in  |        Direction
+     *                                                  *           | Beam |        of Search
+     *         ---- Direction of Search --->            *           |______|            |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -565,14 +632,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item     |    |_________|
      *          <---- Direction of Search ---           *        |_____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * _____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |____________| | Closer | ____________ * | Item | | focused | _______________ *
-     * |_________| | Item | | Item in Beam | * |___________| |______________| * _________
-     * * | | | ---- Direction of Search ---> * | Item | Direction
-     * * | in beam| of Search
-     * * | | |
-     * * |________| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         _____________
+     *                |  Closer |                       *        |   focused  |
+     *                |   Item  |                       *        |    Item    |       __________
+     *                |_________|                       *        |____________|      |  Closer |
+     *         ____________                             *                            |   Item  |
+     *        |  focused  |         _______________     *                            |_________|
+     *        |    Item   |        | Item in Beam |     *
+     *        |___________|        |______________|     *         _________
+     *                                                  *        |        |             |
+     *          ---- Direction of Search --->           *        |  Item  |         Direction
+     *                                                  *        | in beam|         of Search
+     *                                                  *        |        |             |
+     *                                                  *        |________|             V
      */
     @LargeTest
     @Test
@@ -629,13 +702,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *   |______________|                               *         |  focused  |    |_________|
      *                                                  *         |    Item   |
      *          <---- Direction of Search ---           *         |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * |___________| | Closer | ____________ * | Item | | focused | * |_________| |
-     * Item | _______________ * |___________| | | * _________ | Item in Beam | * | Item | |
-     * |______________| * | in beam | Direction
-     * * |________ | of Search ---- Direction of Search ---> * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *          ____________
+     *                |  Closer |                       *         |  focused  |
+     *                |   Item  |                       *         |    Item   |      __________
+     *                |_________|                       *         |___________|     |  Closer |
+     *         ____________                             *                           |   Item  |
+     *        |  focused  |                             *                           |_________|
+     *        |    Item   |         _______________     *
+     *        |___________|        |              |     *      _________
+     *                             | Item in Beam |     *     |  Item   |                |
+     *                             |______________|     *     | in beam |            Direction
+     *                                                  *     |________ |            of Search
+     *         ---- Direction of Search --->            *                                |
+     *                                                  *                                V
      */
     @LargeTest
     @Test
@@ -691,15 +771,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item |__________
-     * _______|_________| __________ * |___________| Closer | | focused | | Item | * | Item | | Item
-     * | | in beam | * |_________| |___________| |_________| *
-     * * ____________ ---- Direction of Search ---> * | Item | |
-     * * | in beam | Direction
-     * * |___________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |__________
+     *         _______|_________|   __________          *        |___________|  Closer |
+     *        |  focused  |        |  Item   |          *                    |   Item  |
+     *        |    Item   |        | in beam |          *                    |_________|
+     *        |___________|        |_________|          *
+     *                                                  *         ____________
+     *          ---- Direction of Search --->           *        |    Item   |          |
+     *                                                  *        |  in beam  |      Direction
+     *                                                  *        |___________|      of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -756,15 +841,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |    Item   |_________|
      *          <---- Direction of Search ---           *       |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | _______________ * | Item
-     * |__________ _______|_________| | Item in Beam | * |___________| Closer | | focused |
-     * |______________| * | Item | | Item | * |_________| |___________| *
-     * * _________
-     * * | Item | | ---- Direction of Search ---> * | in beam| Direction
-     * * |________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *            __________                            *        ____________
+     *           |  Closer |                            *       |  focused  |
+     *           |   Item  |        _______________     *       |    Item   |__________
+     *    _______|_________|       | Item in Beam |     *       |___________|  Closer |
+     *   |  focused  |             |______________|     *                   |   Item  |
+     *   |    Item   |                                  *                   |_________|
+     *   |___________|                                  *
+     *                                                  *              _________
+     *                                                  *             |  Item  |        |
+     *          ---- Direction of Search --->           *             | in beam|    Direction
+     *                                                  *             |________|    of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -821,15 +911,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *        |    Item   |_________|
      *                                                  *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item |__________
-     * _______|_________| _______________ * |___________| Closer | | focused | | Item in Beam | * |
-     * Item | | Item | |______________| * |_________| |___________| *
-     * * _________
-     * * | | | ---- Direction of Search ---> * | Item | Direction
-     * * | in beam| of Search
-     * * |________| |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |__________
+     *         _______|_________|    _______________    *        |___________|  Closer |
+     *        |  focused  |         | Item in Beam |    *                    |   Item  |
+     *        |    Item   |         |______________|    *                    |_________|
+     *        |___________|                             *
+     *                                                  *            _________
+     *                                                  *           |        |          |
+     *          ---- Direction of Search --->           *           |  Item  |      Direction
+     *                                                  *           | in beam|      of Search
+     *                                                  *           |________|          |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -886,14 +981,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *       |    Item    |_________|
      *                                                  *       |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * _____________ | Closer | * | focused | | Item | * | Item |__________
-     * _______|_________| * |____________| Closer | | | _______________ * | Item | | focused | |
-     * Item in Beam | * |_________| | Item | |______________| * |___________| * _______
-     * * | Item | |
-     * * | in | Direction ---- Direction of Search ---> * | Beam | of Search
-     * * |______| |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *        _____________
+     *                |  Closer |                       *       |   focused  |
+     *                |   Item  |                       *       |     Item   |__________
+     *         _______|_________|                       *       |____________|  Closer |
+     *        |           |           _______________   *                    |   Item  |
+     *        |  focused  |          | Item in Beam |   *                    |_________|
+     *        |    Item   |          |______________|   *
+     *        |___________|                             *           _______
+     *                                                  *          | Item |            |
+     *                                                  *          |  in  |        Direction
+     *         ---- Direction of Search --->            *          | Beam |        of Search
+     *                                                  *          |______|            |
+     *                                                  *                              V
      */
     @LargeTest
     @Test
@@ -950,14 +1051,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item    |_________|
      *          <---- Direction of Search ---           *        |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * _____________ __________ * | focused | | Closer | * | Item |__________ | Item | *
-     *       |____________| Closer | _______|_________| * | Item | | focused | _______________ *
-     *       |_________| | Item | | Item in Beam | * |___________| |______________| * _________
-     *     * | | | ---- Direction of Search ---> * | Item | Direction
-     *     * | in beam| of Search
-     *     * |________| |
-     *     * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *         _____________
+     *                 __________                       *        |   focused  |
+     *                |  Closer |                       *        |    Item    |__________
+     *                |   Item  |                       *        |____________|  Closer |
+     *         _______|_________|                       *                     |   Item  |
+     *        |  focused  |         _______________     *                     |_________|
+     *        |    Item   |        | Item in Beam |     *
+     *        |___________|        |______________|     *         _________
+     *                                                  *        |        |             |
+     *          ---- Direction of Search --->           *        |  Item  |         Direction
+     *                                                  *        | in beam|         of Search
+     *                                                  *        |________|             |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -1013,14 +1120,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |  focused  |  Item   |
      *          <---- Direction of Search ---           *        |    Item   |_________|
      *                                                  *        |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item |__________
-     * _______|_________| * |___________| Closer | | focused | * | Item | | Item | _______________ *
-     * |_________| |___________| | Item in Beam | * |______________| * _________
-     * * | Item | | ---- Direction of Search ---> * | in beam| Direction
-     * * |________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *            __________                            *         ____________
+     *           |  Closer |                            *        |  focused  |
+     *           |   Item  |                            *        |    Item   |__________
+     *    _______|_________|                            *        |___________|  Closer |
+     *   |  focused  |                                  *                    |   Item  |
+     *   |    Item   |              _______________     *                    |_________|
+     *   |___________|             | Item in Beam |     *
+     *                             |______________|     *    _________
+     *                                                  *   |  Item  |                  |
+     *         ---- Direction of Search --->            *   | in beam|              Direction
+     *                                                  *   |________|              of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -1077,14 +1190,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    |    Item   |
      *          <---- Direction of Search ---           *                     |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ____________ __________ * | focused | | focused | | Item | * __________ |
-     *       Item | | Item | | in beam | * | Closer | |___________| |___________| |_________| * |
-     *       Item | __________ * |_________| | Closer | * | Item | * ____________ |_________| * | |
-     *       Item |
-     *     * Direction | in beam | ---- Direction of Search ---> * of Search |___________|
-     *     * |
-     *     * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *                      ____________
+     *         ____________            __________       *                     |  focused  |
+     *        |  focused  |           |  Item   |       *       __________    |    Item   |
+     *        |    Item   |           | in beam |       *      |  Closer |    |___________|
+     *        |___________|           |_________|       *      |   Item  |
+     *                 __________                       *      |_________|
+     *                |  Closer |                       *
+     *                |   Item  |                       *                      ____________
+     *                |_________|                       *          |          |    Item   |
+     *                                                  *      Direction      |  in beam  |
+     *        ---- Direction of Search --->             *      of Search      |___________|
+     *                                                  *          |
+     *                                                  *          V
      */
     @LargeTest
     @Test
@@ -1129,18 +1248,31 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * _______________ * ^ _________ | Item in Beam | ____________ * | | Item | |______________| |
-     * focused | * Direction | in beam| | Item | * of Search |________| |___________| * |
-     * ___________ * | | Closer | * __________ | Item | * | Closer | ____________ |__________| * |
-     * Item | | focused |
-     * * |_________| | Item | <---- Direction of Search --- * |___________| *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * ____________ ____________ | Item in Beam | * | focused | | focused |
-     * |______________| * __________ | Item | | Item | * | Closer | |___________| |___________| * |
-     * Item | __________ * |_________| | Closer | * | Item | * _________ |_________| * | | Item |
-     * * Direction | in beam| ---- Direction of Search ---> * of Search |________|
-     * * |
-     * * V
+     *     _______________                                *         ^                 _________
+     *    | Item in Beam |          ____________          *         |                |  Item  |
+     *    |______________|         |  focused  |          *      Direction           | in beam|
+     *                             |    Item   |          *      of Search           |________|
+     *                             |___________|          *         |
+     *                       ___________                  *         |
+     *                      |  Closer  |                  *      __________
+     *                      |   Item   |                  *     |  Closer |     ____________
+     *                      |__________|                  *     |  Item   |    |  focused  |
+     *                                                    *     |_________|    |    Item   |
+     *            <---- Direction of Search ---           *                    |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                _______________   *                     ____________
+     *         ____________          | Item in Beam |   *                    |  focused  |
+     *        |  focused  |          |______________|   *     __________     |    Item   |
+     *        |    Item   |                             *    |  Closer |     |___________|
+     *        |___________|                             *    |   Item  |
+     *                  __________                      *    |_________|
+     *                 |  Closer |                      *
+     *                 |   Item  |                      *                           _________
+     *                 |_________|                      *        |                 |  Item  |
+     *                                                  *    Direction             | in beam|
+     *         ---- Direction of Search --->            *    of Search             |________|
+     *                                                  *        |
+     *                                                  *        V
      */
     @LargeTest
     @Test
@@ -1197,14 +1329,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *    |_________|    |    Item   |
      *          <---- Direction of Search ---           *                   |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ____________ _______________ * | focused | | focused | | Item in Beam | *
-     *       __________ | Item | | Item | |______________| * | Closer | |___________|
-     *       |___________| * | Item | __________ * |_________| | Closer | * | Item | * _________
-     *       |_________| * | | Item |
-     *     * Direction | in beam| ---- Direction of Search ---> * of Search |________|
-     *     * |
-     *     * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *                    ____________
+     *     ____________             _______________     *                   |  focused  |
+     *    |  focused  |            | Item in Beam |     *     __________    |    Item   |
+     *    |    Item   |            |______________|     *    |  Closer |    |___________|
+     *    |___________|                                 *    |   Item  |
+     *             __________                           *    |_________|
+     *            |  Closer |                           *
+     *            |   Item  |                           *                       _________
+     *            |_________|                           *         |            |  Item  |
+     *                                                  *     Direction        | in beam|
+     *         ---- Direction of Search --->            *     of Search        |________|
+     *                                                  *         |
+     *                                                  *         V
      */
     @LargeTest
     @Test
@@ -1261,13 +1399,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|      |    Item   |
      *          <---- Direction of Search ---           *                    |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ____________ | | _______________ * | focused | | focused | | Item in Beam | *
-     * __________ | Item | | Item | |______________| * | Closer | |___________| |___________| * |
-     * Item | __________ * |_________| | Closer | * | Item | * _______ |_________| * | | Item |
-     * * Direction | in | ---- Direction of Search ---> * of Search | Beam |
-     * * | |______|
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *      ____________                                *                    ____________
+     *     |           |              _______________   *                   |  focused  |
+     *     |  focused  |             | Item in Beam |   *     __________    |    Item   |
+     *     |    Item   |             |______________|   *    |  Closer |    |___________|
+     *     |___________|                                *    |   Item  |
+     *              __________                          *    |_________|
+     *             |  Closer |                          *
+     *             |   Item  |                          *                       _______
+     *             |_________|                          *        |             | Item |
+     *                                                  *    Direction         |  in  |
+     *           ---- Direction of Search --->          *    of Search         | Beam |
+     *                                                  *        |             |______|
+     *                                                  *        V
      */
     @LargeTest
     @Test
@@ -1324,14 +1469,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |_________|      |    Item    |
      *          <---- Direction of Search ---           *                        |____________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * _____________ | focused | _______________ * | focused | | Item | | Item in
-     * Beam | * __________ | Item | |___________| |______________| * | Closer | |____________|
-     * __________ * | Item | | Closer | * |_________| | Item | * |_________| * _________
-     * * | | Item | ---- Direction of Search ---> * Direction | in beam|
-     * * of Search |________|
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *       ____________                               *                          _____________
+     *      |  focused  |           _______________     *                         |  focused   |
+     *      |    Item   |          | Item in Beam |     *        __________       |    Item    |
+     *      |___________|          |______________|     *       |  Closer |       |____________|
+     *             __________                           *       |   Item  |
+     *            |  Closer |                           *       |_________|
+     *            |   Item  |                           *
+     *            |_________|                           *                          _________
+     *                                                  *           |             |  Item  |
+     *        ---- Direction of Search --->             *       Direction         | in beam|
+     *                                                  *       of Search         |________|
+     *                                                  *           |
+     *                                                  *           V
      */
     @LargeTest
     @Test
@@ -1388,14 +1539,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                      |_________|                 *      |_________|         |    Item   |
      *          <---- Direction of Search ---           *                          |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ____________ | focused | * | focused | | Item | _______________ * __________ |
-     * Item | |___________| | | * | Closer | |___________| | Item in Beam | * | Item |
-     * |______________| * |_________|
-     * *
-     * __________ * | __________ | Closer | * Direction | Item | | Item | * of Search | in beam |
-     * |_________| * | |_________|
-     * * V ---- Direction of Search ---> * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *        ____________                              *                           ____________
+     *       |  focused  |                              *                          |  focused  |
+     *       |    Item   |         _______________      *       __________         |    Item   |
+     *       |___________|        |              |      *      |  Closer |         |___________|
+     *                            | Item in Beam |      *      |   Item  |
+     *                            |______________|      *      |_________|
+     *                                                  *
+     *              __________                          *           |          __________
+     *             |  Closer |                          *       Direction     |  Item   |
+     *             |   Item  |                          *       of Search     | in beam |
+     *             |_________|                          *           |         |_________|
+     *                                                  *           V
+     *        ---- Direction of Search --->             *
+     *                                                  *
      */
     @LargeTest
     @Test
@@ -1451,14 +1609,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |  focused  |_________|
      *          <---- Direction of Search ---           *        |    Item   |
      *                                                  *        |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________
-     *     * | focused |
-     *     * ________| Item | ____________ __________ * | Closer |___________| | focused | | Item
-     *       | * | Item | | Item | | in beam | * |________| |___________|______ |_________| *
-     *       ____________ | Closer | * | | Item | | Item | * Direction | in beam | |_________| * of
-     *       Search |___________|
-     *     * | ---- Direction of Search ---> * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *                   ____________
+     *                                                  *                  |  focused  |
+     *                                                  *          ________|    Item   |
+     *         ____________            __________       *         | Closer |___________|
+     *        |  focused  |           |  Item   |       *         |  Item  |
+     *        |    Item   |           | in beam |       *         |________|
+     *        |___________|______     |_________|       *                   ____________
+     *                |  Closer |                       *           |      |    Item   |
+     *                |   Item  |                       *       Direction  |  in beam  |
+     *                |_________|                       *       of Search  |___________|
+     *                                                  *           |
+     *         ---- Direction of Search --->            *           V
      */
     @LargeTest
     @Test
@@ -1515,13 +1678,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|    Item  |
      *          <---- Direction of Search ---           *             |__________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * ____________ ____________ | Item in Beam | * | focused | | focused |
-     * |______________| * _________| Item | | Item | * | Closer |___________| |___________|______ *
-     * | Item | | Closer | * |_________| | Item | * |_________| * | _________
-     * * Direction | Item | ---- Direction of Search ---> * of Search | in beam|
-     * * | |________|
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                              _______________     *               ____________
+     *   ____________              | Item in Beam |     *              |  focused  |
+     *  |  focused  |              |______________|     *     _________|   Item    |
+     *  |    Item   |                                   *    |  Closer |___________|
+     *  |___________|______                             *    |   Item  |
+     *          |  Closer |                             *    |_________|
+     *          |   Item  |                             *
+     *          |_________|                             *         |            _________
+     *                                                  *     Direction       |  Item  |
+     *            ---- Direction of Search --->         *     of Search       | in beam|
+     *                                                  *         |           |________|
+     *                                                  *         V
      */
     @LargeTest
     @Test
@@ -1577,15 +1746,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    focused   |
      *          <---- Direction of Search ---           *                |      Item    |
      *                                                  *                |______________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * _______________
-     *     * | focused |
-     *     * _________| Item | ____________ _______________ * | Closer |______________| | focused |
-     *       | Item in Beam | * | Item | | Item | |______________| * |_________|
-     *       |___________|______ * | Closer | * | _________ | Item | * Direction | Item |
-     *       |_________| * of Search | in beam|
-     *     * | |________|
-     *     * V ---- Direction of Search ---> *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *                 _______________
+     *                                                  *                |   focused    |
+     *                                                  *       _________|     Item     |
+     *    ____________            _______________       *      |  Closer |______________|
+     *   |  focused  |           | Item in Beam |       *      |   Item  |
+     *   |    Item   |           |______________|       *      |_________|
+     *   |___________|______                            *
+     *           |  Closer |                            *         |             _________
+     *           |   Item  |                            *     Direction        |  Item  |
+     *           |_________|                            *     of Search        | in beam|
+     *                                                  *         |            |________|
+     *                                                  *         V
+     *          ---- Direction of Search --->           *
      */
     @LargeTest
     @Test
@@ -1642,13 +1816,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *    |_________|   focused   |
      *                                                  *              |     Item    |
      *                                                  *              |_____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ______________ | | _______________ * | focused | | focused | | Item in Beam
-     * | * _________| Item | | Item | |______________| * | Closer |_____________|
-     * |___________|______ * | Item | | Closer | * |_________| | Item | * |_________| * _______ |
-     * * | Item | Direction ---- Direction of Search ---> * | in | of Search
-     * * | Beam | |
-     * * |______| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *      ____________                                *               ______________
+     *     |           |              _______________   *              |   focused   |
+     *     |  focused  |             | Item in Beam |   *     _________|     Item    |
+     *     |    Item   |             |______________|   *    |  Closer |_____________|
+     *     |___________|______                          *    |   Item  |
+     *             |  Closer |                          *    |_________|
+     *             |   Item  |                          *
+     *             |_________|                          *                   _______         |
+     *                                                  *                  | Item |     Direction
+     *         ---- Direction of Search --->            *                  |  in  |     of Search
+     *                                                  *                  | Beam |         |
+     *                                                  *                  |______|         V
      */
     @LargeTest
     @Test
@@ -1698,19 +1878,24 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *    _______________       |  focused  |           *             | in beam|        Direction
      *   | Item in Beam |       |    Item   |           *             |________|        of Search
      *   |______________|    ___|___________|           *                                  |
-     *                      |  Closer |                 *    __________                               |
+     *                      |  Closer |                 *    __________                    |
      *                      |   Item  |                 *   |  Closer |
      *                      |_________|                 *   |  Item   |____________
      *                                                  *   |_________|  focused  |
      *                                                  *             |    Item   |
      *          <---- Direction of Search ---           *             |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ____________ | focused | _______________ * | focused | | Item | | Item in Beam
-     * | * _________| Item | |___________|______ |______________| * | Closer |___________| | Closer
-     * | * | Item | | | Item | * |_________| Direction |_________| * _________ of Search
-     * * | Item | |
-     * * | in beam| V ---- Direction of Search ---> * |________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         ____________                             *              ____________
+     *        |  focused  |           _______________   *             |  focused  |
+     *        |    Item   |          | Item in Beam |   *    _________|    Item   |
+     *        |___________|______    |______________|   *   |  Closer |___________|
+     *                |  Closer |                       *   |   Item  |                     |
+     *                |   Item  |                       *   |_________|                 Direction
+     *                |_________|                       *              _________       of Search
+     *                                                  *             |  Item  |           |
+     *                                                  *             | in beam|           V
+     *       ---- Direction of Search --->              *             |________|
      */
     @LargeTest
     @Test
@@ -1766,13 +1951,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |  Item   |  focused  |
      *          <---- Direction of Search ---           *   |_________|    Item   |
      *                                                  *             |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ____________ | focused | * | focused | | Item | _______________ * _________|
-     * Item | |___________|______ | Item in Beam | * | Closer |___________| | Closer |
-     * |______________| * | Item | | Item | * |_________| |_________| * |
-     * * _________ Direction ---- Direction of Search ---> * | Item | of Search
-     * * | in beam| |
-     * * |________| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     ____________                                 *              ____________
+     *    |  focused  |                                 *             |  focused  |
+     *    |    Item   |            _______________      *    _________|    Item   |
+     *    |___________|______     | Item in Beam |      *   |  Closer |___________|
+     *            |  Closer |     |______________|      *   |   Item  |
+     *            |   Item  |                           *   |_________|
+     *            |_________|                           *                               |
+     *                                                  *          _________        Direction
+     *         ---- Direction of Search --->            *         |  Item  |        of Search
+     *                                                  *         | in beam|            |
+     *                                                  *         |________|            V
      */
     @LargeTest
     @Test
@@ -1829,14 +2019,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      |_________|
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * | Closer | * ____________ | Item | * | focused | __________ |_________| * | Item
-     * | | Closer | ______________________________ * |___________| | Item | | focused | | Item | * |
-     * | |_________| | Item | | in beam | * |___________| |___________|____|____________| * | Item |
-     * |
-     * * | in beam | Direction ---- Direction of Search ---> * |___________| of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *              __________                          *
+     *             |  Closer |                          *         ____________
+     *             |   Item  |                          *        |  focused  |       __________
+     *             |_________|                          *        |    Item   |      |  Closer |
+     *         ______________________________           *        |___________|      |   Item  |
+     *        |  focused  |    |    Item    |           *        |           |      |_________|
+     *        |    Item   |    |   in beam  |           *        |___________|
+     *        |___________|____|____________|           *        |    Item   |          |
+     *                                                  *        |  in beam  |      Direction
+     *          ---- Direction of Search --->           *        |___________|      of Search
+     *                                                  *                               |
+     *                                                  *                               V
      */
     @MediumTest
     @Test
@@ -1895,13 +2090,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * | ________| | Closer | ______________________________ * |__|________| | Item |
-     * | focused | | Item in Beam | * | Item | |_________| | Item |__|______________| * | in beam| |
-     * |______________| * |________| Direction
-     * * of Search ---- Direction of Search ---> * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused  |
+     *                |   Item  |                       *        |    Item   |       __________
+     *                |_________|                       *        |   ________|      |  Closer |
+     *         ______________________________           *        |__|________|      |   Item  |
+     *        |  focused  |  | Item in Beam |           *           |  Item  |      |_________|
+     *        |    Item   |__|______________|           *           | in beam|          |
+     *        |______________|                          *           |________|      Direction
+     *                                                  *                           of Search
+     *          ---- Direction of Search --->           *                               |
+     *                                                  *                               V
      */
     @LargeTest
     @Test
@@ -1959,14 +2159,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |  focused  |   |_________|
      *          <---- Direction of Search ---           *       |    Item   |
      *                                                  *       |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * | Closer | * ____________ | Item | * | focused | |_________| * | Item |
-     * __________ _______________ * |_________ | | Closer | | focused __|_______________ *
-     * |________|__| | Item | | Item | | Item in Beam | * | Item | |_________|
-     * |___________|__|______________| * | in beam| |
-     * * |________| Direction ---- Direction of Search ---> * of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *
+     *                |  Closer |                       *        ____________
+     *                |   Item  |                       *       |  focused  |
+     *                |_________|                       *       |    Item   |       __________
+     *         _______________                          *       |_________  |      |  Closer |
+     *        |  focused   __|_______________           *       |________|__|      |   Item  |
+     *        |    Item   |  | Item in Beam |           *       |  Item  |         |_________|
+     *        |___________|__|______________|           *       | in beam|             |
+     *                                                  *       |________|         Direction
+     *          ---- Direction of Search --->           *                          of Search
+     *                                                  *                              |
+     *                                                  *                              V
      */
     @LargeTest
     @Test
@@ -2023,13 +2228,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |   focused  |      |_________|
      *          <---- Direction of Search ---           *        |    Item    |
      *                                                  *        |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | __________
-     * |_________| * | _________ | | Closer | _______________ * |_|________|_| | Item | |
-     * __|________________ * | Item | |_________| | focused | | Item in Beam | * | in beam| | | Item
-     * |__|_______________| * |________| Direction |______________| * of Search
-     * * |
-     * * V ---- Direction of Search ---> *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         ____________
+     *                |  Closer |                       *        |  focused   |
+     *                |   Item  |                       *        |    Item    |       __________
+     *                |_________|                       *        |  _________ |      |  Closer |
+     *         _______________                          *        |_|________|_|      |   Item  |
+     *        |            __|________________          *          |  Item  |        |_________|
+     *        |  focused  |  | Item in Beam  |          *          | in beam|            |
+     *        |    Item   |__|_______________|          *          |________|        Direction
+     *        |______________|                          *                            of Search
+     *                                                  *                                |
+     *                                                  *                                V
+     *         ---- Direction of Search --->            *
      */
     @LargeTest
     @Test
@@ -2085,12 +2296,16 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |    Item   |_________|
      *          <---- Direction of Search ---           *   |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused |__________ | Item | * | Item | Closer |
-     * ____|_________|______________ * |___________| Item | | | focused | | Item | * | |_________|
-     * Direction | Item | | in beam | * |___________| of Search |___________|___|____________| * |
-     * Item | |
-     * * | in beam | V ---- Direction of Search ---> * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *              __________                          *    ____________
+     *             |  Closer |                          *   |  focused  |__________
+     *             |   Item  |                          *   |    Item   |  Closer |
+     *         ____|_________|______________            *   |___________|   Item  |       |
+     *        |  focused  |   |    Item    |            *   |           |_________|   Direction
+     *        |    Item   |   |   in beam  |            *   |___________|             of Search
+     *        |___________|___|____________|            *   |    Item   |                 |
+     *                                                  *   |  in beam  |                 V
+     *          ---- Direction of Search --->           *   |___________|
      */
     @LargeTest
     @Test
@@ -2147,12 +2362,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |
      *          <---- Direction of Search ---           *        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ __________ * | focused | | Closer | * | Item |__________ | Item | * |
-     *       ________| | _______|_________|____________ * |__|________| Closer | | | focused | |
-     *       Item in Beam | * | Item | Item | Direction | Item |__|______________| * | in
-     *       beam|_________| of Search |______________| * |________| |
-     *     * V ---- Direction of Search ---> * *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                  *         ____________
+     *                 __________                       *        |  focused  |
+     *                |  Closer |                       *        |    Item   |__________
+     *                |   Item  |                       *        |   ________|         |
+     *         _______|_________|____________           *        |__|________|  Closer |    |
+     *        |  focused  |  | Item in Beam |           *           |  Item  |   Item  | Direction
+     *        |    Item   |__|______________|           *           | in beam|_________| of Search
+     *        |______________|                          *           |________|              |
+     *                                                  *                                   V
+     *          ---- Direction of Search --->           *
+     *                                                  *
      */
     @LargeTest
     @Test
@@ -2208,12 +2429,16 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |  focused  |_________|
      *          <---- Direction of Search ---           *       |    Item   |
      *                                                  *       |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * ____________ | Closer | * | focused | | Item | * | Item | _______|_________| * |
-     * |__________ | focused __|_______________ * |_________ | Closer | | | Item | | Item in Beam
-     * | * |________|__| Item | Direction |___________|__|______________| * | Item | |_________| of
-     * Search
-     * * | in beam| | ---- Direction of Search ---> * |________| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *        ____________
+     *                |  Closer |                       *       |  focused  |
+     *                |   Item  |                       *       |    Item   |
+     *         _______|_________|                       *       |           |__________
+     *        |  focused   __|_______________           *       |_________  |  Closer |      |
+     *        |    Item   |  | Item in Beam |           *       |________|__|   Item  |  Direction
+     *        |___________|__|______________|           *       |  Item  |  |_________|  of Search
+     *                                                  *       | in beam|                   |
+     *          ---- Direction of Search --->           *       |________|                   V
      */
     @LargeTest
     @Test
@@ -2269,13 +2494,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |   focused  |_________|
      *          <---- Direction of Search ---           *        |    Item    |
      *                                                  *        |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * _____________ | Closer | * | focused | | Item | * | Item |__________
-     * _______|_________| * | _________ | Closer | | __|________________ * |_|________|_| Item | |
-     * focused | | Item in Beam | * | Item | |_________| | | Item |__|_______________| * | in beam|
-     * Direction |______________| * |________| of Search
-     * * |
-     * * V ---- Direction of Search ---> *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                 __________                       *         _____________
+     *                |  Closer |                       *        |  focused   |
+     *                |   Item  |                       *        |    Item    |__________
+     *         _______|_________|                       *        |  _________ |  Closer |
+     *        |            __|________________          *        |_|________|_|   Item  |
+     *        |  focused  |  | Item in Beam  |          *          |  Item  | |_________|    |
+     *        |    Item   |__|_______________|          *          | in beam|            Direction
+     *        |______________|                          *          |________|            of Search
+     *                                                  *                                    |
+     *                                                  *                                    V
+     *         ---- Direction of Search --->            *
      */
     @LargeTest
     @Test
@@ -2332,14 +2562,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *       |_________|      |    Item   |
      *          <---- Direction of Search ---           *                        |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _____________________________ * | focused | | Item | * ____________ | Item | | in beam | *
-     * __________ | focused | |___________|___|____________| * | Closer | | Item | __________ * |
-     * Item | |___________| | Closer | * |_________| | | | Item | * |___________| |_________| * | |
-     * Item |
-     * * Direction | in beam | ---- Direction of Search ---> * of Search |___________|
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _____________________________            *
+     *        |  focused  |   |    Item    |            *                         ____________
+     *        |    Item   |   |   in beam  |            *        __________      |  focused  |
+     *        |___________|___|____________|            *       |  Closer |      |    Item   |
+     *             __________                           *       |   Item  |      |___________|
+     *            |  Closer |                           *       |_________|      |           |
+     *            |   Item  |                           *                        |___________|
+     *            |_________|                           *           |            |    Item   |
+     *                                                  *       Direction        |  in beam  |
+     *            ---- Direction of Search --->         *       of Search        |___________|
+     *                                                  *           |
+     *                                                  *           V
      */
     @LargeTest
     @Test
@@ -2398,13 +2633,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *                    |    Item   |
      *          <---- Direction of Search ---           *                    |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ______________________________ * ____________ | focused | | Item in Beam | * __________ |
-     * focused | | Item |__|______________| * | Closer | | Item | |______________| * | Item | |
-     * ________| __________ * | | |__|________| | Closer | * |_________| | Item | | Item | * | | in
-     * beam| |_________| * Direction |________|
-     * * of Search ---- Direction of Search ---> * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         ______________________________           *                     ____________
+     *        |  focused  |  | Item in Beam |           *     __________     |  focused  |
+     *        |    Item   |__|______________|           *    |  Closer |     |    Item   |
+     *        |______________|                          *    |   Item  |     |   ________|
+     *                 __________                       *    |         |     |__|________|
+     *                |  Closer |                       *    |_________|        |  Item  |
+     *                |   Item  |                       *        |              | in beam|
+     *                |_________|                       *    Direction          |________|
+     *                                                  *    of Search
+     *          ---- Direction of Search --->           *        |
+     *                                                  *        V
      */
     @LargeTest
     @Test
@@ -2462,14 +2702,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *   |_________|     |  focused  |
      *          <---- Direction of Search ---           *                   |    Item   |
      *                                                  *                   |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * | focused __|_______________ * ____________ | Item | | Item in Beam | * |
-     * focused | |___________|__|______________| * __________ | Item | __________ * | Closer |
-     * |_________ | | Closer | * | Item | |________|__| | Item | * |_________| | Item |
-     * |_________| * | | in beam|
-     * * Direction |________| ---- Direction of Search ---> * of Search
-     * * |
-     * * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _______________                          *
+     *        |  focused   __|_______________           *                    ____________
+     *        |    Item   |  | Item in Beam |           *                   |  focused  |
+     *        |___________|__|______________|           *    __________     |    Item   |
+     *                 __________                       *   |  Closer |     |_________  |
+     *                |  Closer |                       *   |   Item  |     |________|__|
+     *                |   Item  |                       *   |_________|     |  Item  |
+     *                |_________|                       *       |           | in beam|
+     *                                                  *   Direction       |________|
+     *           ---- Direction of Search --->          *   of Search
+     *                                                  *       |
+     *                                                  *       V
      */
     @LargeTest
     @Test
@@ -2526,12 +2771,18 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    |   focused  |
      *          <---- Direction of Search ---           *                     |    Item    |
      *                                                  *                     |____________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * ____________ | __|________________ * | focused | | focused | | Item in Beam
-     * | * __________ | Item | | Item |__|_______________| * | Closer | | _________ |
-     * |______________| * | Item | |_|________|_| __________ * |_________| | Item | | Closer | * | |
-     * in beam| | Item | * Direction |________| |_________| * of Search
-     * * | ---- Direction of Search ---> * V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _______________                          *                      ____________
+     *        |            __|________________          *                     |  focused   |
+     *        |  focused  |  | Item in Beam  |          *       __________    |    Item    |
+     *        |    Item   |__|_______________|          *      |  Closer |    |  _________ |
+     *        |______________|                          *      |   Item  |    |_|________|_|
+     *                 __________                       *      |_________|      |  Item  |
+     *                |  Closer |                       *          |            | in beam|
+     *                |   Item  |                       *      Direction        |________|
+     *                |_________|                       *      of Search
+     *                                                  *          |
+     *         ---- Direction of Search --->            *          V
      */
     @LargeTest
     @Test
@@ -2586,12 +2837,16 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *      |_________|    Item   |
      *          <---- Direction of Search ---           *                |___________|
      *                                                  *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _____________________________ * ____________ | focused | | Item | * _________| focused | |
-     * Item | | in beam | * | Closer | Item | |___________|___|____________| * | Item |___________|
-     * | Closer | * |_________| | | | Item | * |___________| Direction |_________| * | Item | of
-     * Search
-     * * | in beam | | ---- Direction of Search ---> * |___________| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _____________________________            *                 ____________
+     *        |  focused  |   |    Item    |            *       _________|  focused  |
+     *        |    Item   |   |   in beam  |            *      |  Closer |    Item   |
+     *        |___________|___|____________|            *      |   Item  |___________|
+     *            |  Closer |                           *      |_________|           |       |
+     *            |   Item  |                           *                |___________|   Direction
+     *            |_________|                           *                |    Item   |   of Search
+     *                                                  *                |  in beam  |       |
+     *          ---- Direction of Search --->           *                |___________|       V
      */
     @LargeTest
     @Test
@@ -2645,12 +2900,16 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *  |_________|  focused  |       |
      *                                                  *            |    Item   |
      *          <---- Direction of Search ---           *            |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ______________________________ * ____________ | focused | | Item in Beam | * __________|
-     * focused | | Item |__|______________| * | Closer | | |______________|___ * | Item | ________|
-     * | | Closer | * | |__|________| Direction | Item | * |_________| | | of Search |_________| * |
-     * Item | |
-     * * | in beam| V ---- Direction of Search ---> * |________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         ______________________________           *             ____________
+     *        |  focused  |  | Item in Beam |           *  __________|  focused  |
+     *        |    Item   |__|______________|           *  |  Closer |           |
+     *        |______________|___                       *  |   Item  |   ________|        |
+     *                |  Closer |                       *  |         |__|________|    Direction
+     *                |   Item  |                       *  |_________|  |        |    of Search
+     *                |_________|                       *               |  Item  |        |
+     *                                                  *               | in beam|        V
+     *           ---- Direction of Search --->          *               |________|
      */
     @LargeTest
     @Test
@@ -2704,12 +2963,16 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *   |_________|  focused  |
      *                                                  *             |    Item   |
      *          <---- Direction of Search ---           *             |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * ____________ | focused __|_______________ * _________| focused | | Item | |
-     * Item in Beam | * | | Item | |___________|__|______________| * | Closer |_________ | | Closer
-     * | * | Item |________|__| | | Item | * |_________| | Direction |_________| * | Item | of
-     * Search
-     * * | in beam| | ---- Direction of Search ---> * |________| V
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _______________                          *              ____________
+     *        |  focused   __|_______________           *    _________|  focused  |
+     *        |    Item   |  | Item in Beam |           *   |         |    Item   |
+     *        |___________|__|______________|           *   |  Closer |_________  |
+     *                |  Closer |                       *   |   Item  |________|__|       |
+     *                |   Item  |                       *   |_________|        |      Direction
+     *                |_________|                       *             |  Item  |      of Search
+     *                                                  *             | in beam|          |
+     *          ---- Direction of Search --->           *             |________|          V
      */
     @LargeTest
     @Test
@@ -2764,13 +3027,17 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                 |_________|                      *            |____________|       |
      *                                                  *
      *       <---- Direction of Search ---              *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _______________ * _____________ | __|________________ * | focused | | focused | | Item in
-     * Beam | * _________| Item | | | Item |__|_______________| * | Closer | _________ | Direction
-     * |______________|___ * | Item |_|________|_| of Search | Closer | * |_________| | Item | | |
-     * Item | * | in beam| V |_________| * |________|
-     * *
-     * ---- Direction of Search ---> *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         _______________                          *             _____________
+     *        |            __|________________          *            |  focused   |
+     *        |  focused  |  | Item in Beam  |          *   _________|    Item    |       |
+     *        |    Item   |__|_______________|          *  |  Closer |  _________ |   Direction
+     *        |______________|___                       *  |   Item  |_|________|_|   of Search
+     *                |  Closer |                       *  |_________| |  Item  |         |
+     *                |   Item  |                       *              | in beam|         V
+     *                |_________|                       *              |________|
+     *                                                  *
+     *         ---- Direction of Search --->            *
      */
     @LargeTest
     @Test
@@ -2827,13 +3094,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * | Closer | * | Item | * ____________ | |_________| * | focused | Direction
-     * ____________ __________ * | Item | of Search | focused | | Item | * |___________| | | Item |
-     * | in beam | * V |___________| |_________| *
-     * * ____________ __________ ---- Direction of Search ---> * | Item | | Closer |
-     * * | in beam | | Item |
-     * * |___________| |_________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                             __________           *
+     *                            |  Closer |           *
+     *                            |   Item  |           *         ____________          |
+     *                            |_________|           *        |  focused  |      Direction
+     *         ____________        __________           *        |    Item   |      of Search
+     *        |  focused  |       |  Item   |           *        |___________|          |
+     *        |    Item   |       | in beam |           *                               V
+     *        |___________|       |_________|           *
+     *                                                  *         ____________       __________
+     *          ---- Direction of Search --->           *        |    Item   |      |  Closer |
+     *                                                  *        |  in beam  |      |   Item  |
+     *                                                  *        |___________|      |_________|
      */
     @MediumTest
     @Test
@@ -2890,11 +3163,17 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *     of Search        |    Item   |
      *          <---- Direction of Search ---           *         |            |___________|
      *                                                  *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | ____________ | focused | | Item | * Direction | focused | | Item
-     * | | in beam | * of Search | Item | |___________| |_________| * | |___________| __________ * V
-     * | Closer | * | Item | * __________ ____________ |_________| * | Closer | | Item |
-     * * | Item | | in beam | ---- Direction of Search ---> * |_________| |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     ____________        __________               *          |            ____________
+     *    |  focused  |       |  Item   |               *      Direction       |  focused  |
+     *    |    Item   |       | in beam |               *      of Search       |    Item   |
+     *    |___________|       |_________|               *          |           |___________|
+     *                         __________               *          V
+     *                        |  Closer |               *
+     *                        |   Item  |               *       __________      ____________
+     *                        |_________|               *      |  Closer |     |    Item   |
+     *                                                  *      |   Item  |     |  in beam  |
+     *          ---- Direction of Search --->           *      |_________|     |___________|
      */
     @LargeTest
     @Test
@@ -2951,13 +3230,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * _____________ * | Closer | * | Item | * ____________ | |____________| * | focused | Direction
-     * ____________ __________ * | Item | of Search | focused | | Item | * |___________| | | Item |
-     * | in beam | * V |___________| |_________| * __________
-     * * ____________ | | ---- Direction of Search ---> * | Item | | Closer |
-     * * | in beam | | Item |
-     * * |___________| |_________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                          _____________           *
+     *                         |   Closer   |           *
+     *                         |    Item    |           *         ____________          |
+     *                         |____________|           *        |  focused  |      Direction
+     *         ____________        __________           *        |    Item   |      of Search
+     *        |  focused  |       |  Item   |           *        |___________|          |
+     *        |    Item   |       | in beam |           *                               V
+     *        |___________|       |_________|           *                            __________
+     *                                                  *         ____________      |         |
+     *          ---- Direction of Search --->           *        |    Item   |      |  Closer |
+     *                                                  *        |  in beam  |      |   Item  |
+     *                                                  *        |___________|      |_________|
      */
     @MediumTest
     @Test
@@ -3014,12 +3299,17 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *     of Search        |    Item   |
      *         <---- Direction of Search ---            *         |            |___________|
      *                                                  *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | ____________ | focused | | Item | * Direction | focused | | Item
-     * | | in beam | * of Search | Item | |___________| |_________| * | |___________|
-     * _____________ * V | Closer | * __________ | Item | * | | ____________ |____________| * |
-     * Closer | | Item |
-     * * | Item | | in beam | ---- Direction of Search ---> * |_________| |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *         ____________        __________           *          |            ____________
+     *        |  focused  |       |  Item   |           *      Direction       |  focused  |
+     *        |    Item   |       | in beam |           *      of Search       |    Item   |
+     *        |___________|       |_________|           *          |           |___________|
+     *                          _____________           *          V
+     *                         |   Closer   |           *       __________
+     *                         |    Item    |           *      |         |      ____________
+     *                         |____________|           *      |  Closer |     |    Item   |
+     *                                                  *      |   Item  |     |  in beam  |
+     *        ---- Direction of Search --->             *      |_________|     |___________|
      */
     @LargeTest
     @Test
@@ -3076,13 +3366,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                  *        |    Item   |      of Search
      *          <---- Direction of Search ---           *        |___________|          |
      *                                                  *                               |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ___________ * | Closer | * | Item | * ____________ | |__________| * | focused | Direction
-     * ____________ __________ * | Item | of Search | focused | | Item | * |___________| | | Item |
-     * | in beam | * V |___________| |_________| * __________
-     * * ____________ | Closer | ---- Direction of Search ---> * | Item | | Item |
-     * * | in beam | |_________|
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                         ___________              *
+     *                        |  Closer  |              *
+     *                        |   Item   |              *         ____________          |
+     *                        |__________|              *        |  focused  |      Direction
+     *         ____________        __________           *        |    Item   |      of Search
+     *        |  focused  |       |  Item   |           *        |___________|          |
+     *        |    Item   |       | in beam |           *                               V
+     *        |___________|       |_________|           *                            __________
+     *                                                  *         ____________      |  Closer |
+     *          ---- Direction of Search --->           *        |    Item   |      |   Item  |
+     *                                                  *        |  in beam  |      |_________|
+     *                                                  *        |___________|
      */
     @MediumTest
     @Test
@@ -3139,11 +3435,17 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---           *      of Search        |    Item   |
      *                                                  *          |            |___________|
      *                                                  *          |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | ____________ | focused | | Item | * Direction | focused | | Item
-     * | | in beam | * of Search | Item | |___________| |_________| * | |___________| ___________ *
-     * V | Closer | * __________ | Item | * | Closer | ____________ |__________| * | Item | | Item |
-     * * |_________| | in beam | ---- Direction of Search ---> * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *       ____________        __________             *          |             ____________
+     *      |  focused  |       |  Item   |             *      Direction        |  focused  |
+     *      |    Item   |       | in beam |             *      of Search        |    Item   |
+     *      |___________|       |_________|             *          |            |___________|
+     *                       ___________                *          V
+     *                      |  Closer  |                *       __________
+     *                      |   Item   |                *      |  Closer |       ____________
+     *                      |__________|                *      |   Item  |      |    Item   |
+     *                                                  *      |_________|      |  in beam  |
+     *            ---- Direction of Search --->         *                       |___________|
      */
     @LargeTest
     @Test
@@ -3201,13 +3503,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---          *        |    Item   |       of Search
      *                                                 *        |___________|           |
      *                                                 *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ___________ * ____________ | | Closer | * | focused | Direction | Item | * | Item | of Search
-     * |__________| * |___________| | ____________ __________ * V | focused | | Item | * _________ |
-     * Item | | in beam | * | Closer | |___________| |_________| * | Item |
-     * * ____________ |________| ---- Direction of Search ---> * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                   ___________                   *         ____________           |
+     *                  |  Closer  |                   *        |  focused  |       Direction
+     *                  |   Item   |                   *        |    Item   |       of Search
+     *                  |__________|                   *        |___________|           |
+     *    ____________              __________         *                                V
+     *   |  focused  |             |  Item   |         *                             _________
+     *   |    Item   |             | in beam |         *                            | Closer |
+     *   |___________|             |_________|         *                            |  Item  |
+     *                                                 *         ____________       |________|
+     *          ---- Direction of Search --->          *        |    Item   |
+     *                                                 *        |  in beam  |
+     *                                                 *        |___________|
      */
     @MediumTest
     @Test
@@ -3275,13 +3583,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---          *        Direction     |  focused  |
      *                                                 *        of Search     |    Item   |
      *                                                 *            |         |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | ____________ | focused | | Item | * Direction | focused | | Item
-     * | | in beam | * of Search | Item | |___________| |_________| * | |___________| ___________ *
-     * V | Closer | * _________ | Item | * | Closer | |__________| * | Item |
-     * * |________| ____________ ---- Direction of Search ---> * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    ____________              __________         *            |          ____________
+     *   |  focused  |             |  Item   |         *        Direction     |  focused  |
+     *   |    Item   |             | in beam |         *        of Search     |    Item   |
+     *   |___________|             |_________|         *            |         |___________|
+     *                   ___________                   *            V
+     *                  |  Closer  |                   *         _________
+     *                  |   Item   |                   *        | Closer |
+     *                  |__________|                   *        |  Item  |
+     *                                                 *        |________|     ____________
+     *          ---- Direction of Search --->          *                      |    Item   |
+     *                                                 *                      |  in beam  |
+     *                                                 *                      |___________|
      */
     @LargeTest
     @Test
@@ -3350,13 +3664,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *                             of Search
      *                                                *                                 |
      *                                                *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ___________ * | | Closer | * Direction | Item | * ____________ of Search |__________| * |
-     * focused | | ____________ __________ * | Item | V | focused | | Item | * |___________|
-     * _________ | Item | | in beam | * | Closer | |___________| |_________| * | Item |
-     * * ____________ |________| ---- Direction of Search ---> * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                ___________                     *                                 |
+     *               |  Closer  |                     *                             Direction
+     *               |   Item   |                     *         ____________        of Search
+     *               |__________|                     *        |  focused  |            |
+     *    ____________           __________           *        |    Item   |            V
+     *   |  focused  |          |  Item   |           *        |___________|         _________
+     *   |    Item   |          | in beam |           *                             | Closer |
+     *   |___________|          |_________|           *                             |  Item  |
+     *                                                *         ____________        |________|
+     *          ---- Direction of Search --->         *        |    Item   |
+     *                                                *        |  in beam  |
+     *                                                *        |___________|
      */
     @MediumTest
     @Test
@@ -3425,15 +3745,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *        |    Item   |        Direction
      *                                                *        |___________|        of Search
      *                                                *                                 |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * | Closer | * | | Item | * ____________ Direction |_________| * | focused | of
-     * Search ____________ __________ * | Item | | | focused | | Item | * |___________| V | Item | |
-     * in beam | * _________ |___________| |_________| * | Closer |
-     * * | Item | ---- Direction of Search ---> * |________|
-     * * ____________
-     * * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                   __________                   *
+     *                  | Closer  |                   *                                 |
+     *                  |  Item   |                   *         ____________        Direction
+     *                  |_________|                   *        |  focused  |        of Search
+     *    ____________               __________       *        |    Item   |            |
+     *   |  focused  |              |  Item   |       *        |___________|            V
+     *   |    Item   |              | in beam |       *                              _________
+     *   |___________|              |_________|       *                             | Closer |
+     *                                                *                             |  Item  |
+     *          ---- Direction of Search --->         *                             |________|
+     *                                                *         ____________
+     *                                                *        |    Item   |
+     *                                                *        |  in beam  |
+     *                                                *        |___________|
      */
     @LargeTest
     @Test
@@ -3502,14 +3828,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *        |___________|        Direction
      *                                                *                             of Search
      *                                                *                                 |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * __________ * | | Closer | * Direction | Item | * ____________ of Search |_________| * |
-     * focused | | ____________ __________ * | Item | V | focused | | Item | * |___________|
-     * _________ | Item | | in beam | * | Closer | |___________| |_________| * | Item |
-     * * |________| ---- Direction of Search ---> * ____________
-     * * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                __________                      *                                 |
+     *               | Closer  |                      *                             Direction
+     *               |  Item   |                      *         ____________        of Search
+     *               |_________|                      *        |  focused  |            |
+     *    ____________             __________         *        |    Item   |            V
+     *   |  focused  |            |  Item   |         *        |___________|         _________
+     *   |    Item   |            | in beam |         *                             | Closer |
+     *   |___________|            |_________|         *                             |  Item  |
+     *                                                *                             |________|
+     *          ---- Direction of Search --->         *         ____________
+     *                                                *        |    Item   |
+     *                                                *        |  in beam  |
+     *                                                *        |___________|
      */
     @LargeTest
     @Test
@@ -3577,13 +3909,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *          <---- Direction of Search ---         *    Direction      |___________|
      *                                                *    of Search
      *                                                *        |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | | focused | | Item | * Direction | Item | | in beam | * of Search
-     * ____________ |___________| |_________| * | | focused | ___________ * V | Item | | Closer | *
-     * _________ |___________| | Item | * | Closer | |__________| * | Item |
-     * * |________| ____________ ---- Direction of Search ---> * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    ____________           __________           *        |
+     *   |  focused  |          |  Item   |           *    Direction
+     *   |    Item   |          | in beam |           *    of Search       ____________
+     *   |___________|          |_________|           *        |          |  focused  |
+     *                ___________                     *        V          |    Item   |
+     *               |  Closer  |                     *     _________     |___________|
+     *               |   Item   |                     *    | Closer |
+     *               |__________|                     *    |  Item  |
+     *                                                *    |________|      ____________
+     *        ---- Direction of Search --->           *                   |    Item   |
+     *                                                *                   |  in beam  |
+     *                                                *                   |___________|
      */
     @LargeTest
     @Test
@@ -3652,15 +3990,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     Direction       |    Item   |
      *                                                *     of Search       |___________|
      *                                                *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | focused | | Item | * | | Item | | in beam | * Direction
-     * ____________ |___________| |_________| * of Search | focused | __________ * | | Item | |
-     * Closer | * V |___________| | Item | * _________ |_________| * | Closer |
-     * * | Item | ---- Direction of Search ---> * |________|
-     * * ____________
-     * * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    ____________               __________       *
+     *   |  focused  |              |  Item   |       *         |
+     *   |    Item   |              | in beam |       *     Direction        ____________
+     *   |___________|              |_________|       *     of Search       |  focused  |
+     *                   __________                   *         |           |    Item   |
+     *                  | Closer  |                   *         V           |___________|
+     *                  |  Item   |                   *      _________
+     *                  |_________|                   *     | Closer |
+     *                                                *     |  Item  |
+     *          ---- Direction of Search --->         *     |________|
+     *                                                *                      ____________
+     *                                                *                     |    Item   |
+     *                                                *                     |  in beam  |
+     *                                                *                     |___________|
      */
     @LargeTest
     @Test
@@ -3729,14 +4073,20 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     Direction       |___________|
      *                                                *     of Search
      *                                                *         |
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ __________ * | | focused | | Item | * Direction | Item | | in beam | * of Search
-     * ____________ |___________| |_________| * | | focused | __________ * V | Item | | Closer | *
-     * _________ |___________| | Item | * | Closer | |_________| * | Item |
-     * * |________|
-     * * ____________ ---- Direction of Search ---> * | Item |
-     * * | in beam |
-     * * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    ____________             __________         *         |
+     *   |  focused  |            |  Item   |         *     Direction
+     *   |    Item   |            | in beam |         *     of Search        ____________
+     *   |___________|            |_________|         *         |           |  focused  |
+     *                __________                      *         V           |    Item   |
+     *               | Closer  |                      *      _________      |___________|
+     *               |  Item   |                      *     | Closer |
+     *               |_________|                      *     |  Item  |
+     *                                                *     |________|
+     *                                                *                      ____________
+     *       ---- Direction of Search --->            *                     |    Item   |
+     *                                                *                     |  in beam  |
+     *                                                *                     |___________|
      */
     @LargeTest
     @Test
@@ -3792,27 +4142,31 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * ____________ ____________ ____________ * ____________ | In Beam | | In Beam | | focused | * |
-     * In Beam | | Farther | | Closer | | Item | * | Farther | |___________| |___________|
-     * |___________| * |___________| ^
-     * * ____________ | <---- Direction of Search --- * | In Beam | Direction
-     * * | Closer | of Search
-     * * |___________| |
-     * * ____________ |
-     * * | focused |
-     * * | Item |
-     * * |___________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ ____________ ____________ * ____________ | focused | | In Beam | | In Beam | * |
-     * focused | | Item | | Closer | | Farther | * | Item | |___________| |___________|
-     * |___________| * |___________| |
-     * * ____________ | ---- Direction of Search ---> * | In Beam | Direction
-     * * | Closer | of Search
-     * * |___________| |
-     * * ____________ v
-     * * | In Beam |
-     * * | Farther |
-     * * |___________|
+     *     ____________   ____________   ____________  *    ____________
+     *    |  In Beam  |  |  In Beam  |  |  focused  |  *   |  In Beam  |
+     *    |  Farther  |  |   Closer  |  |    Item   |  *   |  Farther  |
+     *    |___________|  |___________|  |___________|  *   |___________|        ^
+     *                                                 *    ____________        |
+     *          <---- Direction of Search ---          *   |  In Beam  |    Direction
+     *                                                 *   |   Closer  |    of Search
+     *                                                 *   |___________|        |
+     *                                                 *    ____________        |
+     *                                                 *   |  focused  |
+     *                                                 *   |    Item   |
+     *                                                 *   |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *     ____________   ____________   ____________  *    ____________
+     *    |  focused  |  |  In Beam  |  |  In Beam  |  *   |  focused  |
+     *    |    Item   |  |   Closer  |  |  Farther  |  *   |    Item   |
+     *    |___________|  |___________|  |___________|  *   |___________|        |
+     *                                                 *    ____________        |
+     *         ---- Direction of Search --->           *   |  In Beam  |    Direction
+     *                                                 *   |   Closer  |    of Search
+     *                                                 *   |___________|        |
+     *                                                 *    ____________        v
+     *                                                 *   |  In Beam  |
+     *                                                 *   |  Farther  |
+     *                                                 *   |___________|
      */
     @MediumTest
     @Test
@@ -3871,13 +4225,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *  |     focused     |
      *                                                *  |      Item       |
      *                                                *  |_________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * __________________ | | * | focused | | | ____________ * | Item | | focused | |
-     * In Beam | * |_________________| | | Item | ____________ | Farther | * _____________ | | | | |
-     * |___________| * | In Beam | Direction | | | In Beam | * | Closer | of Search |___________| |
-     * Closer | * |____________| | |___________| * ___________ v
-     * * | In Beam | ---- Direction of Search ---> * | Farther |
-     * * |__________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *    ____________                                *   __________________
+     *   |           |                                *  |     focused     |
+     *   |           |                  ____________  *  |      Item       |
+     *   |  focused  |                 |  In Beam  |  *  |_________________|            |
+     *   |    Item   |   ____________  |  Farther  |  *            _____________        |
+     *   |           |  |           |  |___________|  *           |   In Beam  |    Direction
+     *   |           |  |  In Beam  |                 *           |    Closer  |    of Search
+     *   |___________|  |   Closer  |                 *           |____________|        |
+     *                  |___________|                 *       ___________               v
+     *                                                *      |  In Beam |
+     *        ---- Direction of Search --->           *      |  Farther |
+     *                                                *      |__________|
      */
     @LargeTest
     @Test
@@ -3934,15 +4294,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *   |      focused     |
      *                                                *   |        Item      |
      *                                                *   |__________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ___________________ ____________ * | focused | | | ____________ * | Item | | focused |
-     *       ____________ | In Beam | * |__________________| | | Item | | In Beam | | Farther | *
-     *       _____________ | | | | Closer | |___________| * | In Beam | Direction |___________|
-     *       |___________| * | Closer | of Search
-     *     * |____________| | ---- Direction of Search ---> * ___________ v
-     *     * | In Beam |
-     *     * | Farther |
-     *     * |__________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                *    ___________________
+     *    ____________                                *   |      focused     |
+     *   |           |                  ____________  *   |        Item      |
+     *   |  focused  |   ____________  |  In Beam  |  *   |__________________|       |
+     *   |    Item   |  |  In Beam  |  |  Farther  |  *          _____________       |
+     *   |           |  |   Closer  |  |___________|  *         |  In Beam   |   Direction
+     *   |___________|  |___________|                 *         |   Closer   |   of Search
+     *                                                *         |____________|       |
+     *        ---- Direction of Search --->           *        ___________           v
+     *                                                *       |  In Beam |
+     *                                                *       |  Farther |
+     *                                                *       |__________|
      */
     @LargeTest
     @Test
@@ -3999,15 +4363,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *    |    focused    |
      *                                                *    |      Item     |
      *                                                *    |_______________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ________________ ____________ * | focused | | | ____________ ____________ * | Item | |
-     *       focused | | In Beam | | In Beam | * |_______________| | | Item | | Closer | | Farther
-     *       | * ____________ | | | |___________| |___________| * | In Beam | Direction
-     *       |___________| * | Closer | of Search
-     *     * |___________| | ---- Direction of Search ---> * ____________ v
-     *     * | In Beam |
-     *     * | Farther |
-     *     * |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                *     ________________
+     *    ____________                                *    |    focused    |
+     *   |           |   ____________   ____________  *    |      Item     |
+     *   |  focused  |  |  In Beam  |  |  In Beam  |  *    |_______________|      |
+     *   |    Item   |  |   Closer  |  |  Farther  |  *       ____________        |
+     *   |           |  |___________|  |___________|  *      |  In Beam  |    Direction
+     *   |___________|                                *      |   Closer  |    of Search
+     *                                                *      |___________|        |
+     *        ---- Direction of Search --->           *       ____________        v
+     *                                                *      |  In Beam  |
+     *                                                *      |  Farther  |
+     *                                                *      |___________|
      */
     @LargeTest
     @Test
@@ -4065,14 +4433,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     |      focused      |
      *                                                *     |        Item       |
      *                                                *     |___________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________________ ____________ ____________ * | focused | | | | In Beam |
-     *       ____________ * | Item | | focused | | Closer | | In Beam | * |___________________| | |
-     *       Item | |___________| | Farther | * ____________ | | | |___________| * | In Beam |
-     *       Direction | | * | Closer | of Search |___________| * |___________| |
-     *     * ___________ v ---- Direction of Search ---> * | In Beam |
-     *     * | Farther |
-     *     * |__________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                *      ____________________
+     *    ____________   ____________                 *     |      focused      |
+     *   |           |  |  In Beam  |   ____________  *     |        Item       |
+     *   |  focused  |  |   Closer  |  |  In Beam  |  *     |___________________|      |
+     *   |    Item   |  |___________|  |  Farther  |  *      ____________              |
+     *   |           |                 |___________|  *     |  In Beam  |          Direction
+     *   |           |                                *     |   Closer  |          of Search
+     *   |___________|                                *     |___________|              |
+     *                                                *           ___________          v
+     *          ---- Direction of Search --->         *          |  In Beam |
+     *                                                *          |  Farther |
+     *                                                *          |__________|
      */
     @LargeTest
     @Test
@@ -4130,14 +4503,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                                *     |     focused      |
      *         <---- Direction of Search ---          *     |       Item       |
      *                                                *     |__________________|
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * ____________ * ___________________ ____________ | | * | focused | | | | In Beam |
-     * ____________ * | Item | | focused | | Closer | | In Beam | * |__________________| | | Item |
-     * |___________| | Farther | * ____________ | | | |___________| * | In Beam | Direction | | * |
-     * Closer | of Search |___________| * |___________| |
-     * * ___________ v
-     * * | In Beam | ---- Direction of Search ---> * | Farther |
-     * * |__________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                   ____________                 *      ___________________
+     *    ____________  |           |                 *     |     focused      |
+     *   |           |  |  In Beam  |   ____________  *     |       Item       |
+     *   |  focused  |  |   Closer  |  |  In Beam  |  *     |__________________|       |
+     *   |    Item   |  |___________|  |  Farther  |  *   ____________                 |
+     *   |           |                 |___________|  *  |  In Beam  |             Direction
+     *   |           |                                *  |   Closer  |             of Search
+     *   |___________|                                *  |___________|                 |
+     *                                                *          ___________           v
+     *                                                *         |  In Beam |
+     *        ---- Direction of Search --->           *         |  Farther |
+     *                                                *         |__________|
      */
     @LargeTest
     @Test
@@ -4195,12 +4573,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | |
-     *       focused | * |___________| | Item | * ____________ |___________| * | | ____________ * |
-     *       | Closer | | | * | |___________| ____________ | Farther | * Direction ____________ | |
-     *       |___________| * of Search | | | Closer | * | | Farther | |___________| * v
-     *       |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                               *   ____________
+     *        ---- Direction of Search --->          *  |  focused  |
+     *   ____________                                *  |    Item   |
+     *  |  focused  |                                *  |___________|
+     *  |    Item   |                                *                          ____________
+     *  |___________|                                *                         |           |
+     *                                 ____________  *      |                  |   Closer  |
+     *                                |           |  *      |                  |___________|
+     *                  ____________  |  Farther  |  *   Direction        ____________
+     *                 |           |  |___________|  *   of Search       |           |
+     *                 |   Closer  |                 *      |            |  Farther  |
+     *                 |___________|                 *      v            |___________|
      */
     @MediumTest
     @Test
@@ -4257,13 +4642,19 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | |
-     *       focused | * |___________| | Item | * ____________ |___________| * | | ____________
-     *       ____________ * | | Closer | | | | | * | |___________| | Closer | | Farther | *
-     *       Direction ____________ |___________| |___________| * of Search | |
-     *     * | | Farther |
-     *     * v |___________|
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                               *   ____________
+     *        ---- Direction of Search --->          *  |  focused  |
+     *   ____________                                *  |    Item   |
+     *  |  focused  |                                *  |___________|
+     *  |    Item   |                                *                    ____________
+     *  |___________|                                *                   |           |
+     *                  ____________   ____________  *      |            |   Closer  |
+     *                 |           |  |           |  *      |            |___________|
+     *                 |   Closer  |  |  Farther  |  *   Direction        ____________
+     *                 |___________|  |___________|  *   of Search       |           |
+     *                                               *      |            |  Farther  |
+     *                                               *      v            |___________|
      */
     @LargeTest
     @Test
@@ -4307,16 +4698,32 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * ____________ * ____________ ^ | | * | | | | Farther | ____________ * | Farther | Direction
-     * |___________| | | * |___________| of Search | Closer | * ____________ | |___________| * | | |
-     * ____________ * | Closer | | focused | * |___________| | Item | * ____________ |___________| *
-     * | focused |
-     * * | Item | <---- Direction of Search --- * |___________| *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     * * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | | focused
-     *   | * |___________| | Item | * ____________ |___________| * | | ____________ * | | Closer | |
-     *   | * | |___________| | Closer | ____________ * Direction ____________ |___________| | | * of
-     *   Search | | | Farther | * | | Farther | |___________| * v |___________|
+     *     ____________                                *        ____________                  ^
+     *    |           |                                *       |           |                  |
+     *    |  Farther  |   ____________                 *       |  Farther  |              Direction
+     *    |___________|  |           |                 *       |___________|              of Search
+     *                   |   Closer  |                 *               ____________           |
+     *                   |___________|                 *              |           |           |
+     *                                   ____________  *              |   Closer  |
+     *                                  |  focused  |  *              |___________|
+     *                                  |    Item   |  *                                 ____________
+     *                                  |___________|  *                                |  focused  |
+     *                                                 *                                |    Item   |
+     *          <---- Direction of Search ---          *                                |___________|
+     *                                                 *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                                 *   ____________
+     *          ---- Direction of Search --->          *  |  focused  |
+     *     ____________                                *  |    Item   |
+     *    |  focused  |                                *  |___________|
+     *    |    Item   |                                *                  ____________
+     *    |___________|                                *                 |           |
+     *                    ____________                 *      |          |   Closer  |
+     *                   |           |                 *      |          |___________|
+     *                   |   Closer  |   ____________  *   Direction             ____________
+     *                   |___________|  |           |  *   of Search            |           |
+     *                                  |  Farther  |  *      |                 |  Farther  |
+     *                                  |___________|  *      v                 |___________|
      */
     @LargeTest
     @Test
@@ -4360,25 +4767,33 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
     }
 
     /**
-     * ____________ | | | Farther | ^ |___________| | ____________ Direction | | of Search | Closer
-     * | | |___________| | ____________ | focused | | Item | |___________|
-     *
-     *        <---- Direction of Search ---
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *
-     *        ---- Direction of Search --->
-     *   ____________
-     *  |  focused  |
-     *  |    Item   |
-     *  |___________|
-     *                  ____________                      |
-     *                 |           |                      |
-     *                 |   Closer  |                   Direction
-     *                 |___________|                   of Search
-     *                                 ____________       |
-     *                                |           |       v
-     *                                |  Farther  |
-     *                                |___________|
+     *     ____________
+     *    |           |
+     *    |  Farther  |                                     ^
+     *    |___________|                                     |
+     *                    ____________                  Direction
+     *                   |           |                  of Search
+     *                   |   Closer  |                      |
+     *                   |___________|                      |
+     *                                   ____________
+     *                                  |  focused  |
+     *                                  |    Item   |
+     *                                  |___________|
+     *          <---- Direction of Search ---
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *          ---- Direction of Search --->
+     *     ____________
+     *    |  focused  |
+     *    |    Item   |
+     *    |___________|
+     *                    ____________                      |
+     *                   |           |                      |
+     *                   |   Closer  |                   Direction
+     *                   |___________|                   of Search
+     *                                   ____________       |
+     *                                  |           |       v
+     *                                  |  Farther  |
+     *                                  |___________|
      */
     @LargeTest
     @Test
@@ -4429,12 +4844,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | |
-     *       focused | * |___________| | Item | * ____________ |___________| * | | ____________ * |
-     *       | Closer | ____________ | | * | |___________| | | | Closer | * Direction | Farther |
-     *       |___________| * of Search |___________| ____________ * | | | * v | Farther | *
-     *       |___________| *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                               *   ____________
+     *        ---- Direction of Search --->          *  |  focused  |
+     *   ____________                                *  |    Item   |
+     *  |  focused  |                                *  |___________|
+     *  |    Item   |                                *                  ____________
+     *  |___________|                                *                 |           |
+     *                   ____________                *      |          |   Closer  |    ____________
+     *                  |           |                *      |          |___________|   |           |
+     *                  |   Closer  |                *   Direction                     |  Farther  |
+     *                  |___________|                *   of Search                     |___________|
+     *                           ____________        *      |
+     *                          |           |        *      v
+     *                          |  Farther  |        *
+     *                          |___________|        *
      */
     @LargeTest
     @Test
@@ -4493,12 +4917,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | |
-     *       focused | * |___________| | Item | * ____________ ____________ |___________| * | | | |
-     *       ____________ * | | Closer | | Farther | | | * | |___________| |___________| | Closer
-     *       | * Direction |___________| * of Search ____________ * | | | * v | Farther | *
-     *       |___________| *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                               *   ____________
+     *        ---- Direction of Search --->          *  |  focused  |
+     *   ____________                                *  |    Item   |
+     *  |  focused  |                                *  |___________|
+     *  |    Item   |                                *                  ____________    ____________
+     *  |___________|                                *                 |           |   |           |
+     *                   ____________                *      |          |   Closer  |   |  Farther  |
+     *                  |           |                *      |          |___________|   |___________|
+     *                  |   Closer  |                *   Direction
+     *                  |___________|                *   of Search
+     *                   ____________                *      |
+     *                  |           |                *      v
+     *                  |  Farther  |                *
+     *                  |___________|                *
      */
     @LargeTest
     @Test
@@ -4557,12 +4990,21 @@ class TwoDimensionalFocusTraversalThreeItemsTest(param: Param) {
      *                                               *                                |    Item   |
      *        <---- Direction of Search ---          *                                |___________|
      *                                               *
-     * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-     *     * ____________ ---- Direction of Search ---> * | focused | ____________ * | Item | |
-     *       focused | * |___________| | Item | * ____________ |___________| * | | ____________ * |
-     *       ____________ | Farther | | | * | | | |___________| | Closer | * Direction | Closer |
-     *       |___________| * of Search |___________| ____________ * | | | * v | Farther | *
-     *       |___________| *
+     *    * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *                                               *  ____________
+     *        ---- Direction of Search --->          * |  focused  |
+     *   ____________                                * |    Item   |
+     *  |  focused  |                                * |___________|
+     *  |    Item   |                                *                                  ____________
+     *  |___________|                                *                                 |           |
+     *                            ____________       *      |           ____________   |  Farther  |
+     *                           |           |       *      |          |           |   |___________|
+     *                           |   Closer  |       *   Direction     |   Closer  |
+     *                           |___________|       *   of Search     |___________|
+     *                      ____________             *      |
+     *                     |           |             *      v
+     *                     |  Farther  |             *
+     *                     |___________|             *
      */
     @MediumTest
     @Test

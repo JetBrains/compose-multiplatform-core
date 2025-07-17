@@ -45,7 +45,7 @@ abstract class BaseFtsEntityParserTest {
         baseClass: String = "",
         sources: List<Source> = emptyList(),
         classpath: List<File> = emptyList(),
-        handler: (FtsEntity, XTestInvocation) -> Unit
+        handler: (FtsEntity, XTestInvocation) -> Unit,
     ) {
         val ftsVersion = getFtsVersion().toString()
         val entityAttributesReplacement =
@@ -73,8 +73,8 @@ abstract class BaseFtsEntityParserTest {
                     entityAttributesReplacement,
                     ftsVersion,
                     ftsAttributesReplacement,
-                    baseClassReplacement
-                ) + input + ENTITY_SUFFIX
+                    baseClassReplacement,
+                ) + input + ENTITY_SUFFIX,
             )
         runProcessorTest(sources = sources + entitySource, classpath = classpath) { invocation ->
             val entity = invocation.processingEnv.requireTypeElement("foo.bar.MyEntity")

@@ -25,10 +25,10 @@ import android.view.View;
 import android.view.ViewPropertyAnimator;
 import android.view.animation.Interpolator;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -48,8 +48,7 @@ public final class ViewPropertyAnimatorCompat {
      * cannot be negative.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat setDuration(long value) {
+    public @NonNull ViewPropertyAnimatorCompat setDuration(long value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().setDuration(value);
@@ -64,8 +63,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat alpha(float value) {
+    public @NonNull ViewPropertyAnimatorCompat alpha(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().alpha(value);
@@ -80,8 +78,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat alphaBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat alphaBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().alphaBy(value);
@@ -96,8 +93,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationX(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationX(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().translationX(value);
@@ -112,8 +108,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationY(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationY(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().translationY(value);
@@ -146,8 +141,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param runnable The action to run when the next animation ends.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat withEndAction(@NonNull Runnable runnable) {
+    public @NonNull ViewPropertyAnimatorCompat withEndAction(@NonNull Runnable runnable) {
         View view;
         if ((view = mView.get()) != null) {
             ViewPropertyAnimator animator = view.animate();
@@ -181,8 +175,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The TimeInterpolator to be used for ensuing property animations.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat setInterpolator(@Nullable Interpolator value) {
+    public @NonNull ViewPropertyAnimatorCompat setInterpolator(@Nullable Interpolator value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().setInterpolator(value);
@@ -195,8 +188,7 @@ public final class ViewPropertyAnimatorCompat {
      *
      * @return The timing interpolator for this animation.
      */
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         View view;
         if ((view = mView.get()) != null) {
             ViewPropertyAnimator animator = view.animate();
@@ -214,8 +206,7 @@ public final class ViewPropertyAnimatorCompat {
      * cannot be negative.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat setStartDelay(long value) {
+    public @NonNull ViewPropertyAnimatorCompat setStartDelay(long value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().setStartDelay(value);
@@ -247,8 +238,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotation(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotation(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotation(value);
@@ -263,8 +253,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotationBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotationBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotationBy(value);
@@ -279,8 +268,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotationX(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotationX(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotationX(value);
@@ -295,8 +283,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotationXBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotationXBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotationXBy(value);
@@ -311,8 +298,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotationY(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotationY(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotationY(value);
@@ -327,8 +313,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat rotationYBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat rotationYBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().rotationYBy(value);
@@ -343,8 +328,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat scaleX(float value) {
+    public @NonNull ViewPropertyAnimatorCompat scaleX(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().scaleX(value);
@@ -359,8 +343,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat scaleXBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat scaleXBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().scaleXBy(value);
@@ -375,8 +358,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat scaleY(float value) {
+    public @NonNull ViewPropertyAnimatorCompat scaleY(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().scaleY(value);
@@ -391,8 +373,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat scaleYBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat scaleYBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().scaleYBy(value);
@@ -417,8 +398,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat x(float value) {
+    public @NonNull ViewPropertyAnimatorCompat x(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().x(value);
@@ -433,8 +413,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat xBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat xBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().xBy(value);
@@ -449,8 +428,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The value to be animated to.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat y(float value) {
+    public @NonNull ViewPropertyAnimatorCompat y(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().y(value);
@@ -465,8 +443,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat yBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat yBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().yBy(value);
@@ -481,8 +458,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationXBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationXBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().translationXBy(value);
@@ -497,8 +473,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationYBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationYBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             view.animate().translationYBy(value);
@@ -515,8 +490,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationZBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationZBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             if (Build.VERSION.SDK_INT >= 21) {
@@ -536,8 +510,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat translationZ(float value) {
+    public @NonNull ViewPropertyAnimatorCompat translationZ(float value) {
         View view;
         if ((view = mView.get()) != null) {
             if (Build.VERSION.SDK_INT >= 21) {
@@ -557,8 +530,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat z(float value) {
+    public @NonNull ViewPropertyAnimatorCompat z(float value) {
         View view;
         if ((view = mView.get()) != null) {
             if (Build.VERSION.SDK_INT >= 21) {
@@ -578,8 +550,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param value The amount to be animated by, as an offset from the current value.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat zBy(float value) {
+    public @NonNull ViewPropertyAnimatorCompat zBy(float value) {
         View view;
         if ((view = mView.get()) != null) {
             if (Build.VERSION.SDK_INT >= 21) {
@@ -626,9 +597,8 @@ public final class ViewPropertyAnimatorCompat {
      * @see View#setLayerType(int, Paint)
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
     @SuppressLint("WrongConstant")
-    public ViewPropertyAnimatorCompat withLayer() {
+    public @NonNull ViewPropertyAnimatorCompat withLayer() {
         View view;
         if ((view = mView.get()) != null) {
             ViewPropertyAnimator animator = view.animate();
@@ -648,8 +618,7 @@ public final class ViewPropertyAnimatorCompat {
      * @param runnable The action to run when the next animation starts.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat withStartAction(@NonNull Runnable runnable) {
+    public @NonNull ViewPropertyAnimatorCompat withStartAction(@NonNull Runnable runnable) {
         View view;
         if ((view = mView.get()) != null) {
             ViewPropertyAnimator animator = view.animate();
@@ -666,8 +635,7 @@ public final class ViewPropertyAnimatorCompat {
      * <code>null</code> removes any existing listener.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat setListener(
+    public @NonNull ViewPropertyAnimatorCompat setListener(
             final @Nullable ViewPropertyAnimatorListener listener) {
         final View view;
         if ((view = mView.get()) != null) {
@@ -707,8 +675,7 @@ public final class ViewPropertyAnimatorCompat {
      * <code>null</code> removes any existing listener.
      * @return This object, allowing calls to methods in this class to be chained.
      */
-    @NonNull
-    public ViewPropertyAnimatorCompat setUpdateListener(
+    public @NonNull ViewPropertyAnimatorCompat setUpdateListener(
             final @Nullable ViewPropertyAnimatorUpdateListener listener) {
         final View view;
         if ((view = mView.get()) != null) {
@@ -728,24 +695,20 @@ public final class ViewPropertyAnimatorCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ViewPropertyAnimator translationZBy(ViewPropertyAnimator viewPropertyAnimator,
                 float value) {
             return viewPropertyAnimator.translationZBy(value);
         }
 
-        @DoNotInline
         static ViewPropertyAnimator translationZ(ViewPropertyAnimator viewPropertyAnimator,
                 float value) {
             return viewPropertyAnimator.translationZ(value);
         }
 
-        @DoNotInline
         static ViewPropertyAnimator z(ViewPropertyAnimator viewPropertyAnimator, float value) {
             return viewPropertyAnimator.z(value);
         }
 
-        @DoNotInline
         static ViewPropertyAnimator zBy(ViewPropertyAnimator viewPropertyAnimator, float value) {
             return viewPropertyAnimator.zBy(value);
         }

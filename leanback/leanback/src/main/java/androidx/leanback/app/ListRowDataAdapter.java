@@ -1,8 +1,9 @@
 package androidx.leanback.app;
 
-import androidx.annotation.Nullable;
 import androidx.leanback.widget.ObjectAdapter;
 import androidx.leanback.widget.Row;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Wrapper class for {@link ObjectAdapter} used by {@link BrowseFragment} to initialize

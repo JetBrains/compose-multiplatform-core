@@ -28,6 +28,7 @@ import androidx.compose.ui.text.ParagraphIntrinsics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.createFontFamilyResolver
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.sp
@@ -46,7 +47,7 @@ import org.junit.runners.Parameterized
 class ParagraphBenchmark(
     private val textLength: Int,
     private val textType: TextType,
-    alphabet: Alphabet
+    alphabet: Alphabet,
 ) {
     companion object {
         @JvmStatic
@@ -55,7 +56,7 @@ class ParagraphBenchmark(
             cartesian(
                 arrayOf(512),
                 arrayOf(TextType.PlainText),
-                arrayOf(Alphabet.Latin, Alphabet.Cjk)
+                arrayOf(Alphabet.Latin, Alphabet.Cjk),
             )
     }
 
@@ -75,7 +76,7 @@ class ParagraphBenchmark(
             TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 textBenchmarkRule.widthDp,
-                instrumentationContext.resources.displayMetrics
+                instrumentationContext.resources.displayMetrics,
             )
     }
 
@@ -93,11 +94,12 @@ class ParagraphBenchmark(
     private fun paragraph(
         text: String,
         spanStyles: List<AnnotatedString.Range<SpanStyle>>,
-        width: Float
+        width: Float,
     ): Paragraph {
         return Paragraph(
             paragraphIntrinsics = paragraphIntrinsics(text, spanStyles),
-            constraints = Constraints(maxWidth = ceil(width).toInt())
+            constraints = Constraints(maxWidth = ceil(width).toInt()),
+            overflow = TextOverflow.Clip,
         )
     }
 
@@ -105,20 +107,21 @@ class ParagraphBenchmark(
         val annotatedString = text(textGenerator)
         return paragraphIntrinsics(
             text = annotatedString.text,
-            spanStyles = annotatedString.spanStyles
+            spanStyles = annotatedString.spanStyles,
         )
     }
 
     private fun paragraphIntrinsics(
         text: String,
-        spanStyles: List<AnnotatedString.Range<SpanStyle>>
+        spanStyles: List<AnnotatedString.Range<SpanStyle>>,
     ): ParagraphIntrinsics {
         return ParagraphIntrinsics(
             text = text,
-            density = Density(density = instrumentationContext.resources.displayMetrics.density),
             style = TextStyle(fontSize = fontSize),
+            annotations = spanStyles,
+            density = Density(density = instrumentationContext.resources.displayMetrics.density),
             fontFamilyResolver = createFontFamilyResolver(instrumentationContext),
-            spanStyles = spanStyles
+            placeholders = listOf(),
         )
     }
 
@@ -126,7 +129,7 @@ class ParagraphBenchmark(
     fun minIntrinsicWidth() {
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
-                val intrinsics = runWithTimingDisabled { paragraphIntrinsics(textGenerator) }
+                val intrinsics = runWithMeasurementDisabled { paragraphIntrinsics(textGenerator) }
 
                 intrinsics.minIntrinsicWidth
             }
@@ -137,7 +140,7 @@ class ParagraphBenchmark(
     fun maxIntrinsicWidth() {
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
-                val intrinsics = runWithTimingDisabled { paragraphIntrinsics(textGenerator) }
+                val intrinsics = runWithMeasurementDisabled { paragraphIntrinsics(textGenerator) }
 
                 intrinsics.maxIntrinsicWidth
             }
@@ -148,7 +151,7 @@ class ParagraphBenchmark(
     fun construct() {
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
-                val annotatedString = runWithTimingDisabled {
+                val annotatedString = runWithMeasurementDisabled {
                     // create a new paragraph and use a smaller width to get
                     // some line breaking in the result
                     text(textGenerator)
@@ -157,7 +160,7 @@ class ParagraphBenchmark(
                 paragraph(
                     text = annotatedString.text,
                     spanStyles = annotatedString.spanStyles,
-                    width = width
+                    width = width,
                 )
             }
         }
@@ -169,7 +172,7 @@ class ParagraphBenchmark(
         textBenchmarkRule.generator { textGenerator ->
             benchmarkRule.measureRepeated {
                 val (paragraph, canvas) =
-                    runWithTimingDisabled {
+                    runWithMeasurementDisabled {
                         val annotatedString = text(textGenerator)
                         val paragraph =
                             paragraph(annotatedString.text, annotatedString.spanStyles, width)
@@ -177,7 +180,7 @@ class ParagraphBenchmark(
                             Canvas(
                                 ImageBitmap(
                                     paragraph.width.roundToInt(),
-                                    paragraph.height.roundToInt()
+                                    paragraph.height.roundToInt(),
                                 )
                             )
                         Pair(paragraph, canvas)

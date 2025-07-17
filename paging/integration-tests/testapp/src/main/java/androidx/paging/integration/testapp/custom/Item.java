@@ -16,8 +16,9 @@
 
 package androidx.paging.integration.testapp.custom;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Sample item.

@@ -18,8 +18,6 @@ package androidx.pdf.viewer;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.find.MatchCount;
 import androidx.pdf.models.MatchRects;
@@ -30,6 +28,9 @@ import androidx.pdf.util.Observables;
 import androidx.pdf.util.Observables.ExposedValue;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.viewer.loader.PdfLoader;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -113,20 +114,17 @@ public class SearchModel {
     }
 
     /** Return the current search query. */
-    @NonNull
-    public ObservableValue<String> query() {
+    public @NonNull ObservableValue<String> query() {
         return mQuery;
     }
 
     /** Return the currently selected match. */
-    @NonNull
-    public ObservableValue<SelectedMatch> selectedMatch() {
+    public @NonNull ObservableValue<SelectedMatch> selectedMatch() {
         return mSelectedMatch;
     }
 
     /** Return index of the current match out of the total matches found. */
-    @NonNull
-    public ObservableValue<MatchCount> matchCount() {
+    public @NonNull ObservableValue<MatchCount> matchCount() {
         return mMatchCount;
     }
 
@@ -292,8 +290,7 @@ public class SearchModel {
     }
 
     /** Return the page overlay for the selection. */
-    @Nullable
-    public PdfHighlightOverlay getOverlay(@NonNull String matchesQuery, int page,
+    public @Nullable PdfHighlightOverlay getOverlay(@NonNull String matchesQuery, int page,
             @NonNull MatchRects matches) {
         if (page == getSelectedPage()) {
             return mSelectedMatch.get().getOverlay();
@@ -311,7 +308,7 @@ public class SearchModel {
      * @return true if such a page is found and a search task is started.
      */
     private boolean searchNextPageThat(Condition condition,
-            @Nullable CycleRange.Iterator iterator) {
+            CycleRange.@Nullable Iterator iterator) {
         if (iterator == null) {
             return false;
         }
@@ -348,8 +345,12 @@ public class SearchModel {
      * match
      * newlines, which don't have a highlightable area.
      */
-    @Nullable
-    public static String whiteSpaceToNull(@NonNull String query) {
+    public static @Nullable String whiteSpaceToNull(@NonNull String query) {
         return (query != null && TextUtils.isGraphic(query)) ? query : null;
+    }
+
+    /** Update the current selected match */
+    public void setSelectedMatch(@NonNull SelectedMatch selectedMatch) {
+        mSelectedMatch.set(selectedMatch);
     }
 }

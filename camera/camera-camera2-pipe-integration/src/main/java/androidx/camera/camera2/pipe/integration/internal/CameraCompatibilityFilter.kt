@@ -25,18 +25,25 @@ import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.InitializationException
 
 /**
- * The [CameraCompatibilityFilter] is responsible for filtering out Cameras that doesn't contains
+ * The [CameraCompatibilityFilter] is responsible for filtering out Cameras that don't contain
  * REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE capability.
  */
-object CameraCompatibilityFilter {
+public object CameraCompatibilityFilter {
 
     @JvmStatic
-    fun getBackwardCompatibleCameraIds(
+    public fun getBackwardCompatibleCameraIds(
         cameraDevices: CameraDevices,
-        availableCameraIds: List<String>
+        availableCameraIds: List<String>,
     ): List<String> {
         val backwardCompatibleCameraIds = mutableListOf<String>()
         for (cameraId in availableCameraIds) {
+            // Heuristic: Always include camera IDs "0" and "1" to align with camera-camera2
+            // behavior, assuming they are the default back and front cameras.
+            if (cameraId == "0" || cameraId == "1") {
+                backwardCompatibleCameraIds.add(cameraId)
+                continue
+            }
+
             if (isBackwardCompatible(cameraId, cameraDevices)) {
                 backwardCompatibleCameraIds.add(cameraId)
             } else {
@@ -50,7 +57,7 @@ object CameraCompatibilityFilter {
     }
 
     @JvmStatic
-    fun isBackwardCompatible(cameraId: String, cameraDevices: CameraDevices): Boolean {
+    public fun isBackwardCompatible(cameraId: String, cameraDevices: CameraDevices): Boolean {
         // Always returns true to not break robolectric tests because the cameras setup in
         // robolectric don't have REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE capability
         // by default.

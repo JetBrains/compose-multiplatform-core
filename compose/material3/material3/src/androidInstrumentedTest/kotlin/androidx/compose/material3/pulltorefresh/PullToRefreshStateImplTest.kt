@@ -17,7 +17,6 @@
 package androidx.compose.material3.pulltorefresh
 
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +40,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class PullToRefreshStateImplTest {
     @get:Rule val rule = createComposeRule()
 
@@ -64,7 +62,7 @@ class PullToRefreshStateImplTest {
                     isRefreshing = true
                     refreshCount++
                     isRefreshing = false
-                }
+                },
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -104,6 +102,9 @@ class PullToRefreshStateImplTest {
                 override val distanceFraction: Float
                     get() = distanceFractionState
 
+                override val isAnimating: Boolean
+                    get() = false
+
                 override suspend fun animateToThreshold() {}
 
                 override suspend fun animateToHidden() {}
@@ -121,7 +122,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -148,6 +149,9 @@ class PullToRefreshStateImplTest {
                 override val distanceFraction: Float
                     get() = distanceFractionState
 
+                override val isAnimating: Boolean
+                    get() = false
+
                 override suspend fun animateToThreshold() {}
 
                 override suspend fun animateToHidden() {}
@@ -165,7 +169,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }
@@ -199,6 +203,9 @@ class PullToRefreshStateImplTest {
                 override val distanceFraction: Float
                     get() = distanceFractionState
 
+                override val isAnimating: Boolean
+                    get() = false
+
                 override suspend fun animateToThreshold() {}
 
                 override suspend fun animateToHidden() {}
@@ -216,7 +223,7 @@ class PullToRefreshStateImplTest {
                 modifier = Modifier.testTag(PullRefreshTag),
                 isRefreshing = false,
                 onRefresh = { refreshCount++ },
-                state = state
+                state = state,
             ) {
                 LazyColumn { items(100) { Text("item $it") } }
             }

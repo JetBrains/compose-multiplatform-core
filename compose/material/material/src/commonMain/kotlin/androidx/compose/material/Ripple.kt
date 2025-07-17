@@ -23,12 +23,10 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.material.ripple.RippleAlpha
 import androidx.compose.material.ripple.createRippleModifierNode
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorProducer
 import androidx.compose.ui.graphics.isSpecified
@@ -76,7 +74,7 @@ import androidx.compose.ui.unit.Dp
 fun ripple(
     bounded: Boolean = true,
     radius: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified
+    color: Color = Color.Unspecified,
 ): IndicationNodeFactory {
     return if (radius == Dp.Unspecified && color == Color.Unspecified) {
         if (bounded) return DefaultBoundedRipple else DefaultUnboundedRipple
@@ -122,7 +120,7 @@ fun ripple(
 fun ripple(
     color: ColorProducer,
     bounded: Boolean = true,
-    radius: Dp = Dp.Unspecified
+    radius: Dp = Dp.Unspecified,
 ): IndicationNodeFactory {
     return RippleNodeFactory(bounded, radius, color)
 }
@@ -174,25 +172,6 @@ object RippleDefaults {
 }
 
 /**
- * Temporary CompositionLocal to allow configuring whether the old ripple implementation that uses
- * the deprecated [androidx.compose.material.ripple.RippleTheme] API should be used in Material
- * components and LocalIndication, instead of the new [ripple] API. This flag defaults to false, and
- * will be removed after one stable release: it should only be used to temporarily unblock
- * upgrading.
- *
- * Provide this CompositionLocal before you provide [MaterialTheme] to make sure it is correctly
- * provided through LocalIndication.
- */
-// TODO: b/304985887 - remove after one stable release
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
-@ExperimentalMaterialApi
-val LocalUseFallbackRippleImplementation: ProvidableCompositionLocal<Boolean> =
-    staticCompositionLocalOf {
-        false
-    }
-
-/**
  * CompositionLocal used for providing [RippleConfiguration] down the tree. This acts as a
  * tree-local 'override' for ripples used inside components that you cannot directly control, such
  * as to change the color of a specific component's ripple, or disable it entirely by providing
@@ -204,9 +183,6 @@ val LocalUseFallbackRippleImplementation: ProvidableCompositionLocal<Boolean> =
  *   own custom ripple that queries your design system theme values directly using
  *   [createRippleModifierNode].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterialApi
-@ExperimentalMaterialApi
 val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
     compositionLocalOf {
         RippleConfiguration()
@@ -225,10 +201,9 @@ val LocalRippleConfiguration: ProvidableCompositionLocal<RippleConfiguration?> =
  *   will be used instead.
  */
 @Immutable
-@ExperimentalMaterialApi
 class RippleConfiguration(
     val color: Color = Color.Unspecified,
-    val rippleAlpha: RippleAlpha? = null
+    val rippleAlpha: RippleAlpha? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -251,56 +226,18 @@ class RippleConfiguration(
     }
 }
 
-// TODO: b/304985887 - remove after one stable release
-@Suppress("DEPRECATION_ERROR")
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-internal fun rippleOrFallbackImplementation(
-    bounded: Boolean = true,
-    radius: Dp = Dp.Unspecified,
-    color: Color = Color.Unspecified
-): Indication {
-    return if (LocalUseFallbackRippleImplementation.current) {
-        androidx.compose.material.ripple.rememberRipple(bounded, radius, color)
-    } else {
-        ripple(bounded, radius, color)
-    }
-}
-
-// TODO: b/304985887 - remove after one stable release
-@Suppress("DEPRECATION_ERROR")
-@Immutable
-internal object CompatRippleTheme : androidx.compose.material.ripple.RippleTheme {
-
-    @Deprecated("Super method is deprecated")
-    @Composable
-    override fun defaultColor() =
-        RippleDefaults.rippleColor(
-            contentColor = LocalContentColor.current,
-            lightTheme = MaterialTheme.colors.isLight
-        )
-
-    @Deprecated("Super method is deprecated")
-    @Composable
-    override fun rippleAlpha() =
-        RippleDefaults.rippleAlpha(
-            contentColor = LocalContentColor.current,
-            lightTheme = MaterialTheme.colors.isLight
-        )
-}
-
 @Stable
 private class RippleNodeFactory
 private constructor(
     private val bounded: Boolean,
     private val radius: Dp,
     private val colorProducer: ColorProducer?,
-    private val color: Color
+    private val color: Color,
 ) : IndicationNodeFactory {
     constructor(
         bounded: Boolean,
         radius: Dp,
-        colorProducer: ColorProducer
+        colorProducer: ColorProducer,
     ) : this(bounded, radius, colorProducer, Color.Unspecified)
 
     constructor(bounded: Boolean, radius: Dp, color: Color) : this(bounded, radius, null, color)
@@ -329,7 +266,6 @@ private constructor(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 private class DelegatingThemeAwareRippleNode(
     private val interactionSource: InteractionSource,
     private val bounded: Boolean,
@@ -376,7 +312,7 @@ private class DelegatingThemeAwareRippleNode(
                 } else {
                     RippleDefaults.rippleColor(
                         contentColor = currentValueOf(LocalContentColor),
-                        lightTheme = currentValueOf(LocalColors).isLight
+                        lightTheme = currentValueOf(LocalColors).isLight,
                     )
                 }
             }
@@ -388,7 +324,7 @@ private class DelegatingThemeAwareRippleNode(
             rippleConfiguration?.rippleAlpha
                 ?: RippleDefaults.rippleAlpha(
                     contentColor = currentValueOf(LocalContentColor),
-                    lightTheme = currentValueOf(LocalColors).isLight
+                    lightTheme = currentValueOf(LocalColors).isLight,
                 )
         }
 
@@ -399,13 +335,14 @@ private class DelegatingThemeAwareRippleNode(
                     bounded,
                     radius,
                     calculateColor,
-                    calculateRippleAlpha
+                    calculateRippleAlpha,
                 )
             )
     }
 
     private fun removeRipple() {
         rippleNode?.let { undelegate(it) }
+        rippleNode = null
     }
 }
 
@@ -429,7 +366,7 @@ private val LightThemeHighContrastRippleAlpha =
         pressedAlpha = 0.24f,
         focusedAlpha = 0.24f,
         draggedAlpha = 0.16f,
-        hoveredAlpha = 0.08f
+        hoveredAlpha = 0.08f,
     )
 
 /**
@@ -446,7 +383,7 @@ private val LightThemeLowContrastRippleAlpha =
         pressedAlpha = 0.12f,
         focusedAlpha = 0.12f,
         draggedAlpha = 0.08f,
-        hoveredAlpha = 0.04f
+        hoveredAlpha = 0.04f,
     )
 
 /** Alpha levels for all content in a dark theme. */
@@ -455,5 +392,5 @@ private val DarkThemeRippleAlpha =
         pressedAlpha = 0.10f,
         focusedAlpha = 0.12f,
         draggedAlpha = 0.08f,
-        hoveredAlpha = 0.04f
+        hoveredAlpha = 0.04f,
     )

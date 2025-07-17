@@ -20,7 +20,6 @@ import static androidx.appsearch.app.AppSearchResult.RESULT_NOT_FOUND;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.util.LogUtil;
@@ -29,6 +28,8 @@ import androidx.core.util.Function;
 
 import com.google.android.gms.tasks.Task;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -48,8 +49,7 @@ public class AppSearchTaskFutures {
      * @param valueMapper The transformation function to apply to the task's result.
      * @param executor The {@link Executor} to execute task's onCompleteListener logic.
      */
-    @NonNull
-    public static <GmsType, JetpackType> ListenableFuture<JetpackType> toListenableFuture(
+    public static <GmsType, JetpackType> @NonNull ListenableFuture<JetpackType> toListenableFuture(
             @NonNull Task<GmsType> task,
             @NonNull Function<GmsType, JetpackType> valueMapper,
             @NonNull Executor executor) {
@@ -74,8 +74,7 @@ public class AppSearchTaskFutures {
      * Converts the given Exception to AppSearchException if from PlayServicesAppSearch otherwise
      * just returns it.
      */
-    @NonNull
-    private static Exception toJetpackException(@NonNull Exception exception) {
+    private static @NonNull Exception toJetpackException(@NonNull Exception exception) {
         if (exception instanceof com.google.android.gms.appsearch.exceptions.AppSearchException) {
             com.google.android.gms.appsearch.exceptions.AppSearchException
                     gmsException =

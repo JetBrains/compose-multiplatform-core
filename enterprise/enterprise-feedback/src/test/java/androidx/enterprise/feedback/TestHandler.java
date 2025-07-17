@@ -19,8 +19,7 @@ package androidx.enterprise.feedback;
 import android.os.Handler;
 import android.os.Message;
 
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.Nullable;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 /** Handler which stores the most recently handled message in a public field. */
@@ -28,8 +27,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 @SuppressWarnings("deprecation")
 class TestHandler extends Handler {
 
-    @Nullable
-    private Message mLatestMessage;
+    private @Nullable Message mLatestMessage;
     private int mMessageCount = 0;
 
     @Override
@@ -40,8 +38,7 @@ class TestHandler extends Handler {
         mMessageCount += 1;
     }
 
-    @Nullable
-    public Message latestMessage() {
+    public @Nullable Message latestMessage() {
         return mLatestMessage;
     }
 

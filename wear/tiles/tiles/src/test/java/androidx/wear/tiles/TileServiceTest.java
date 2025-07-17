@@ -39,8 +39,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ResourceBuilders.Resources;
@@ -51,6 +49,7 @@ import androidx.wear.protolayout.proto.ResourceProto;
 import androidx.wear.protolayout.protobuf.ExtensionRegistryLite;
 import androidx.wear.tiles.EventBuilders.TileAddEvent;
 import androidx.wear.tiles.EventBuilders.TileEnterEvent;
+import androidx.wear.tiles.EventBuilders.TileInteractionEvent;
 import androidx.wear.tiles.EventBuilders.TileLeaveEvent;
 import androidx.wear.tiles.EventBuilders.TileRemoveEvent;
 import androidx.wear.tiles.RequestBuilders.ResourcesRequest;
@@ -65,6 +64,9 @@ import com.google.common.truth.Expect;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -80,6 +82,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadows.ShadowSystemClock;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -157,7 +160,11 @@ public class TileServiceTest {
                 mTestContext.getSharedPreferences(SHARED_PREF_NAME, Context.MODE_PRIVATE);
         assertThat(mSharedPreferences.getAll()).isEmpty();
         sFakeTimeSourceClock.setCurrentTimestampMs(TIMESTAMP_MS);
-        TileService.setUseWearSdkImpl(false);
+    }
+
+    @After
+    public void tearDown() {
+        TileService.setUseWearSdkImpl(null); // Reset WearSdk detection
     }
 
     @Test
@@ -498,9 +505,7 @@ public class TileServiceTest {
     }
 
     @Test
-    public void getActiveTilesAsync_useWearSdkImplTrue_doNotAddTileToSharedPref()
-            throws Exception {
-        setUseWearSdkImpl(true);
+    public void getActiveTilesAsync_useWearSdkImplTrue_doNotAddTileToSharedPref() throws Exception {
         assertTrue(mSharedPreferences.getAll().isEmpty());
 
         mTileProviderServiceStub.onTileRemoveEvent(
@@ -516,9 +521,9 @@ public class TileServiceTest {
     }
 
     @Test
-    public void getActiveTilesAsync_useWearSdkImplTrue_doNotChangeSharedPref()
-            throws Exception {
+    public void getActiveTilesAsync_useWearSdkImplTrue_doNotChangeSharedPref() throws Exception {
         setUseWearSdkImpl(true);
+
         mSharedPreferences.edit().putLong(FAKE_TILE_IDENTIFIER_1, TIMESTAMP_MS).commit();
         assertTrue(mSharedPreferences.contains(FAKE_TILE_IDENTIFIER_1));
 
@@ -552,6 +557,142 @@ public class TileServiceTest {
                         tileCaptor.getValue().getContents(),
                         ExtensionRegistryLite.getEmptyRegistry());
         expect.that(tile).isEqualTo(DUMMY_TILE_PROTOBUF);
+    }
+
+    @Test
+    public void tileService_ifNotResourcesWithTileEnabled_sendsTileDataV1() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(524)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        expect.that(tileCaptor.getValue().getVersion()).isEqualTo(TileData.VERSION_PROTOBUF_1);
+    }
+
+    @Test
+    public void tileService_ifResourcesWithTileEnabled_sendsTileDataV2() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        expect.that(tileCaptor.getValue().getVersion()).isEqualTo(TileData.VERSION_PROTOBUF_2);
+    }
+
+    @Test
+    public void tileService_ifResourcesIsEmpty_fetchesResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isTrue();
+        expect.that(tile.getResources().getVersion()).isEqualTo("5");
+    }
+
+    @Test
+    public void tileService_ifResourcesVersionsAreDiff_fetchesResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .setLastResourcesVersion("4")
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isTrue();
+        expect.that(tile.getResources().getVersion()).isEqualTo("5");
+    }
+
+    @Test
+    public void tileService_ifSameResourcesVersions_doesNotFetchResources() throws Exception {
+        ArgumentCaptor<TileData> tileCaptor = ArgumentCaptor.forClass(TileData.class);
+        RequestProto.TileRequest tileRequest =
+                RequestProto.TileRequest.newBuilder()
+                        .setDeviceConfiguration(
+                                DeviceParameters.newBuilder()
+                                        .setRendererSchemaVersion(
+                                                VersionInfo.newBuilder()
+                                                        .setMajor(1)
+                                                        .setMinor(525)
+                                                        .build())
+                                        .build())
+                        .setLastResourcesVersion("5")
+                        .build();
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(tileRequest.toByteArray(), TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        verify(mMockTileCallback).updateTileData(tileCaptor.capture());
+        Tile tile =
+                Tile.parseFrom(
+                        tileCaptor.getValue().getContents(),
+                        ExtensionRegistryLite.getEmptyRegistry());
+        expect.that(tile.hasResources()).isFalse();
     }
 
     @Test
@@ -650,6 +791,24 @@ public class TileServiceTest {
     }
 
     @Test
+    public void tileService_onTileEnter_callsOnRecentInteractionEvents() throws Exception {
+        EventProto.TileEnterEvent enterRequest =
+                EventProto.TileEnterEvent.newBuilder().setTileId(TILE_ID).build();
+
+        mTileProviderServiceStub.onTileEnterEvent(
+                new TileEnterEventData(
+                        enterRequest.toByteArray(), TileEnterEventData.VERSION_PROTOBUF));
+        shadowOf(Looper.getMainLooper()).idle();
+
+        expect.that(mFakeTileServiceController.get().mLastEventBatch).isNotEmpty();
+        TileInteractionEvent interactionEvent =
+                mFakeTileServiceController.get().mLastEventBatch.get(0);
+
+        expect.that(interactionEvent.getTileId()).isEqualTo(TILE_ID);
+        expect.that(interactionEvent.getEventType()).isEqualTo(TileInteractionEvent.ENTER);
+    }
+
+    @Test
     public void tileService_onTileLeave() throws Exception {
         EventProto.TileLeaveEvent leaveRequest =
                 EventProto.TileLeaveEvent.newBuilder().setTileId(TILE_ID).build();
@@ -661,6 +820,69 @@ public class TileServiceTest {
 
         expect.that(mFakeTileServiceController.get().mOnTileLeaveCalled).isTrue();
         expect.that(mFakeTileServiceController.get().mTileId).isEqualTo(TILE_ID);
+    }
+
+    @Test
+    public void tileService_onTileLeave_callsOnRecentInteractionEvents() throws Exception {
+        EventProto.TileLeaveEvent leaveRequest =
+                EventProto.TileLeaveEvent.newBuilder().setTileId(TILE_ID).build();
+
+        mTileProviderServiceStub.onTileLeaveEvent(
+                new TileLeaveEventData(
+                        leaveRequest.toByteArray(), TileLeaveEventData.VERSION_PROTOBUF));
+        shadowOf(Looper.getMainLooper()).idle();
+
+        expect.that(mFakeTileServiceController.get().mLastEventBatch).isNotEmpty();
+        TileInteractionEvent interactionEvent =
+                mFakeTileServiceController.get().mLastEventBatch.get(0);
+
+        expect.that(interactionEvent.getTileId()).isEqualTo(TILE_ID);
+        expect.that(interactionEvent.getEventType()).isEqualTo(TileInteractionEvent.LEAVE);
+    }
+
+    @Test
+    public void tileService_onRecentInteractionEventsAsync() throws Exception {
+        long fakeTimestamp = 112233L;
+        ImmutableList<EventProto.TileInteractionEvent> eventProtos =
+                ImmutableList.of(
+                        EventProto.TileInteractionEvent.newBuilder()
+                                .setTileId(TILE_ID)
+                                .setTimestampEpochMillis(fakeTimestamp)
+                                .setEnter(EventProto.TileEnter.getDefaultInstance())
+                                .build(),
+                        EventProto.TileInteractionEvent.newBuilder()
+                                .setTileId(TILE_ID)
+                                .setTimestampEpochMillis(fakeTimestamp)
+                                .setLeave(EventProto.TileLeave.getDefaultInstance())
+                                .build());
+        InteractionEventsCallback callback = mock(InteractionEventsCallback.class);
+
+        mTileProviderServiceStub.onRecentInteractionEvents(
+                eventProtos.stream()
+                        .map(
+                                e ->
+                                        new TileInteractionEventData(
+                                                e.toByteArray(),
+                                                TileInteractionEventData.VERSION_PROTOBUF))
+                        .collect(toImmutableList()),
+                callback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        List<TileInteractionEvent> receivedEvents =
+                mFakeTileServiceController.get().mLastEventBatch;
+        expect.that(receivedEvents).hasSize(2);
+
+        expect.that(receivedEvents.get(0).getTileId()).isEqualTo(TILE_ID);
+        expect.that(receivedEvents.get(0).getTimestamp())
+                .isEqualTo(Instant.ofEpochMilli(fakeTimestamp));
+        expect.that(receivedEvents.get(0).getEventType()).isEqualTo(TileInteractionEvent.ENTER);
+
+        expect.that(receivedEvents.get(1).getTileId()).isEqualTo(TILE_ID);
+        expect.that(receivedEvents.get(1).getTimestamp())
+                .isEqualTo(Instant.ofEpochMilli(fakeTimestamp));
+        expect.that(receivedEvents.get(1).getEventType()).isEqualTo(TileInteractionEvent.LEAVE);
+
+        verify(callback).finish();
     }
 
     @Test
@@ -879,6 +1101,7 @@ public class TileServiceTest {
         @Nullable ResourcesRequest mResourcesRequestParams = null;
         @Nullable RuntimeException mRequestFailure = null;
         int mTileId = -1;
+        List<TileInteractionEvent> mLastEventBatch;
 
         @Override
         TimeSourceClock getTimeSourceClock() {
@@ -898,20 +1121,28 @@ public class TileServiceTest {
         }
 
         @Override
+        @SuppressWarnings("deprecation") // Testing backward compatibility
         protected void onTileEnterEvent(@NonNull TileEnterEvent requestParams) {
             mOnTileEnterCalled = true;
             mTileId = requestParams.getTileId();
         }
 
         @Override
+        @SuppressWarnings("deprecation") // Testing backward compatibility
         protected void onTileLeaveEvent(@NonNull TileLeaveEvent requestParams) {
             mOnTileLeaveCalled = true;
             mTileId = requestParams.getTileId();
         }
 
         @Override
-        @NonNull
-        protected ListenableFuture<TileBuilders.Tile> onTileRequest(
+        protected @NonNull ListenableFuture<Void> onRecentInteractionEventsAsync(
+                @NonNull List<TileInteractionEvent> events) {
+            mLastEventBatch = events;
+            return Futures.immediateVoidFuture();
+        }
+
+        @Override
+        protected @NonNull ListenableFuture<TileBuilders.Tile> onTileRequest(
                 @NonNull TileRequest requestParams) {
             mTileRequestParams = requestParams;
             mTileId = requestParams.getTileId();
@@ -922,8 +1153,7 @@ public class TileServiceTest {
         }
 
         @Override
-        @NonNull
-        protected ListenableFuture<Resources> onTileResourcesRequest(
+        protected @NonNull ListenableFuture<Resources> onTileResourcesRequest(
                 @NonNull ResourcesRequest requestParams) {
             mResourcesRequestParams = requestParams;
             mTileId = requestParams.getTileId();
@@ -953,22 +1183,22 @@ public class TileServiceTest {
         protected void onTileRemoveEvent(@NonNull TileRemoveEvent requestParams) {}
 
         @Override
+        @SuppressWarnings("deprecation") // Testing backward compatibility
         protected void onTileEnterEvent(@NonNull TileEnterEvent requestParams) {}
 
         @Override
+        @SuppressWarnings("deprecation") // Testing backward compatibility
         protected void onTileLeaveEvent(@NonNull TileLeaveEvent requestParams) {}
 
         @Override
-        @NonNull
-        protected ListenableFuture<TileBuilders.Tile> onTileRequest(
+        protected @NonNull ListenableFuture<TileBuilders.Tile> onTileRequest(
                 @NonNull TileRequest requestParams) {
             return Futures.immediateFuture(DUMMY_TILE_TO_RETURN);
         }
 
         @Override
-        @NonNull
         @SuppressWarnings("deprecation") // for backward compatibility
-        protected ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources>
+        protected @NonNull ListenableFuture<androidx.wear.tiles.ResourceBuilders.Resources>
                 onResourcesRequest(@NonNull ResourcesRequest requestParams) {
             androidx.wear.tiles.ResourceBuilders.Resources resources =
                     new androidx.wear.tiles.ResourceBuilders.Resources.Builder()

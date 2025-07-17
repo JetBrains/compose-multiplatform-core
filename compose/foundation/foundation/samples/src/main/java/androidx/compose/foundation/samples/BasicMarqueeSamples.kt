@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalTextApi::class)
+@file:OptIn(ExperimentalTextApi::class)
 
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.basicMarquee
@@ -69,7 +68,7 @@ fun BasicFocusableMarqueeSample() {
             Modifier.clickable { focusRequester.requestFocus() }
                 .basicMarquee(animationMode = MarqueeAnimationMode.WhileFocused)
                 .focusRequester(focusRequester)
-                .focusable()
+                .focusable(),
         )
     }
 }
@@ -88,9 +87,9 @@ fun BasicMarqueeWithFadedEdgesSample() {
                 Brush.horizontalGradient(
                     colors = listOf(Color.Transparent, Color.Black),
                     startX = if (leftEdge) 0f else size.width,
-                    endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx
+                    endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx,
                 ),
-            blendMode = BlendMode.DstIn
+            blendMode = BlendMode.DstIn,
         )
     }
 
@@ -109,8 +108,8 @@ fun BasicMarqueeWithFadedEdgesSample() {
             .basicMarquee(
                 // Animate forever.
                 iterations = Int.MAX_VALUE,
-                spacing = MarqueeSpacing(0.dp)
+                spacing = MarqueeSpacing(0.dp),
             )
-            .padding(start = edgeWidth)
+            .padding(start = edgeWidth),
     )
 }

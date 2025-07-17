@@ -24,9 +24,10 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,9 +78,8 @@ class CameraBurstCaptureCallback extends CameraCaptureSession.CaptureCallback {
 
     @Override
     public void onCaptureProgressed(
-            @NonNull  CameraCaptureSession session,
-            @NonNull CaptureRequest request, @NonNull
-            CaptureResult partialResult) {
+             @NonNull CameraCaptureSession session,
+            @NonNull CaptureRequest request,             @NonNull CaptureResult partialResult) {
         for (CameraCaptureSession.CaptureCallback callback : getCallbacks(request)) {
             callback.onCaptureProgressed(session, request, partialResult);
         }

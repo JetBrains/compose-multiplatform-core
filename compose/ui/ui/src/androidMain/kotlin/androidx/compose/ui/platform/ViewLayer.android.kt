@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.CanvasHolder
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Fields
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.RenderEffect
@@ -43,11 +44,12 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 /** View implementation of OwnedLayer. */
+@SuppressLint("ViewConstructor")
 internal class ViewLayer(
     val ownerView: AndroidComposeView,
     val container: DrawChildContainer,
     drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-    invalidateParentLayer: () -> Unit
+    invalidateParentLayer: () -> Unit,
 ) : View(ownerView.context), OwnedLayer, GraphicLayerInfo {
     private var drawBlock: ((canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit)? = drawBlock
     private var invalidateParentLayer: (() -> Unit)? = invalidateParentLayer
@@ -72,10 +74,19 @@ internal class ViewLayer(
             }
         }
 
+    private var layerPaint: Paint? = null
+
     private var drawnWithZ = false
     private val canvasHolder = CanvasHolder()
 
     private val matrixCache = LayerMatrixCache(getMatrix)
+
+    override val underlyingMatrix: Matrix
+        get() = matrixCache.calculateMatrix(this)
+
+    override var frameRate: Float = 0f
+
+    override var isFrameRateFromParent = false
 
     /**
      * Local copy of the transform origin as GraphicsLayerModifier can be implemented as a model
@@ -103,9 +114,7 @@ internal class ViewLayer(
 
     @RequiresApi(29)
     private object UniqueDrawingIdApi29 {
-        @JvmStatic
-        @androidx.annotation.DoNotInline
-        fun getUniqueDrawingId(view: View) = view.uniqueDrawingId
+        @JvmStatic fun getUniqueDrawingId(view: View) = view.uniqueDrawingId
     }
 
     /**
@@ -176,7 +185,7 @@ internal class ViewLayer(
                 scope.alpha,
                 clipToOutline,
                 scope.shadowElevation,
-                scope.size
+                scope.size,
             )
         if (outlineResolver.cacheIsDirty) {
             updateOutlineResolver()
@@ -195,13 +204,13 @@ internal class ViewLayer(
             if (maybeChangedFields and Fields.AmbientShadowColor != 0) {
                 ViewLayerVerificationHelper28.setOutlineAmbientShadowColor(
                     this,
-                    scope.ambientShadowColor.toArgb()
+                    scope.ambientShadowColor.toArgb(),
                 )
             }
             if (maybeChangedFields and Fields.SpotShadowColor != 0) {
                 ViewLayerVerificationHelper28.setOutlineSpotShadowColor(
                     this,
-                    scope.spotShadowColor.toArgb()
+                    scope.spotShadowColor.toArgb(),
                 )
             }
         }
@@ -211,11 +220,33 @@ internal class ViewLayer(
             }
         }
 
-        if (maybeChangedFields and Fields.CompositingStrategy != 0) {
+        val requireLayer =
+            maybeChangedFields and Fields.ColorFilter != 0 ||
+                maybeChangedFields and Fields.BlendMode != 0
+
+        if (maybeChangedFields and Fields.CompositingStrategy != 0 || requireLayer) {
+            val strategy =
+                if (requireLayer) {
+                    CompositingStrategy.Offscreen
+                } else {
+                    scope.compositingStrategy
+                }
+
             mHasOverlappingRendering =
-                when (scope.compositingStrategy) {
+                when (strategy) {
                     CompositingStrategy.Offscreen -> {
-                        setLayerType(LAYER_TYPE_HARDWARE, null)
+                        val paint =
+                            if (requireLayer) {
+                                obtainLayerPaint()
+                                    .apply {
+                                        colorFilter = scope.colorFilter
+                                        blendMode = scope.blendMode
+                                    }
+                                    .asFrameworkPaint()
+                            } else {
+                                null
+                            }
+                        setLayerType(LAYER_TYPE_HARDWARE, paint)
                         true
                     }
                     CompositingStrategy.ModulateAlpha -> {
@@ -228,8 +259,11 @@ internal class ViewLayer(
                     }
                 }
         }
+
         mutatedFields = scope.mutatedFields
     }
+
+    private fun obtainLayerPaint(): Paint = layerPaint ?: Paint().also { layerPaint = it }
 
     override fun hasOverlappingRendering(): Boolean {
         return mHasOverlappingRendering
@@ -366,39 +400,36 @@ internal class ViewLayer(
 
     override fun mapOffset(point: Offset, inverse: Boolean): Offset {
         return if (inverse) {
-            matrixCache.calculateInverseMatrix(this)?.map(point) ?: Offset.Infinite
+            matrixCache.mapInverse(this, point)
         } else {
-            matrixCache.calculateMatrix(this).map(point)
+            matrixCache.map(this, point)
         }
     }
 
     override fun mapBounds(rect: MutableRect, inverse: Boolean) {
         if (inverse) {
-            val matrix = matrixCache.calculateInverseMatrix(this)
-            if (matrix != null) {
-                matrix.map(rect)
-            } else {
-                rect.set(0f, 0f, 0f, 0f)
-            }
+            matrixCache.mapInverse(this, rect)
         } else {
-            matrixCache.calculateMatrix(this).map(rect)
+            matrixCache.map(this, rect)
         }
     }
 
     override fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M || shouldUseDispatchDraw) {
             container.addView(this)
         } else {
             visibility = VISIBLE
         }
+        matrixCache.reset()
         clipToBounds = false
         drawnWithZ = false
         mTransformOrigin = TransformOrigin.Center
         this.drawBlock = drawBlock
         this.invalidateParentLayer = invalidateParentLayer
+        isInvalidated = false
     }
 
     override fun transform(matrix: Matrix) {
@@ -450,13 +481,13 @@ internal class ViewLayer(
                                 .getDeclaredMethod(
                                     "getDeclaredMethod",
                                     String::class.java,
-                                    arrayOf<Class<*>>()::class.java
+                                    arrayOf<Class<*>>()::class.java,
                                 )
                         updateDisplayListIfDirtyMethod =
                             getDeclaredMethod.invoke(
                                 View::class.java,
                                 "updateDisplayListIfDirty",
-                                emptyArray<Class<*>>()
+                                emptyArray<Class<*>>(),
                             ) as Method?
                         val getDeclaredField =
                             Class::class
@@ -481,7 +512,6 @@ internal class ViewLayer(
 @RequiresApi(Build.VERSION_CODES.S)
 private object ViewLayerVerificationHelper31 {
 
-    @androidx.annotation.DoNotInline
     fun setRenderEffect(view: View, target: RenderEffect?) {
         view.setRenderEffect(target?.asAndroidRenderEffect())
     }
@@ -490,12 +520,10 @@ private object ViewLayerVerificationHelper31 {
 @RequiresApi(Build.VERSION_CODES.P)
 private object ViewLayerVerificationHelper28 {
 
-    @androidx.annotation.DoNotInline
     fun setOutlineAmbientShadowColor(view: View, target: Int) {
         view.outlineAmbientShadowColor = target
     }
 
-    @androidx.annotation.DoNotInline
     fun setOutlineSpotShadowColor(view: View, target: Int) {
         view.outlineSpotShadowColor = target
     }

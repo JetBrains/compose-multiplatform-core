@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.text
 
+import android.os.Build
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -73,7 +75,7 @@ class TextMeasurerTest {
                 textLayoutInput(
                     text = longText,
                     softWrap = true,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -88,7 +90,39 @@ class TextMeasurerTest {
                     text = longText,
                     softWrap = false,
                     overflow = TextOverflow.Ellipsis,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.width).isEqualTo(200)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // b/364169257 for details
+    fun width_shouldMatter_ifSoftwrapIsDisabled_butOverflowIsStartEllipsis() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = longText,
+                    softWrap = false,
+                    overflow = TextOverflow.StartEllipsis,
+                    constraints = Constraints(maxWidth = 200),
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.width).isEqualTo(200)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // b/364169257 for details
+    fun width_shouldMatter_ifSoftwrapIsDisabled_butOverflowIsMiddleEllipsis() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = longText,
+                    softWrap = false,
+                    overflow = TextOverflow.MiddleEllipsis,
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -103,7 +137,7 @@ class TextMeasurerTest {
                     text = longText,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -120,7 +154,7 @@ class TextMeasurerTest {
                     text = longText,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -136,7 +170,7 @@ class TextMeasurerTest {
                 textLayoutInput(
                     text = multiLineText,
                     softWrap = false,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             )
 
@@ -144,13 +178,69 @@ class TextMeasurerTest {
     }
 
     @Test
-    fun dontOverwriteMaxLines_ifSoftwrapIsEnabled() {
+    fun overwriteMaxLines_ifSoftwrapIsDisabled_andTextOverflowIsStartEllipsis() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = multiLineText,
+                    softWrap = false,
+                    overflow = TextOverflow.StartEllipsis,
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.lineCount).isEqualTo(1)
+    }
+
+    @Test
+    fun overwriteMaxLines_ifSoftwrapIsDisabled_andTextOverflowIsMiddleEllipsis() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = multiLineText,
+                    softWrap = false,
+                    overflow = TextOverflow.MiddleEllipsis,
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.lineCount).isEqualTo(1)
+    }
+
+    @Test
+    fun dontOverwriteMaxLines_endEllipsis_ifSoftwrapIsEnabled() {
         val textLayoutResult =
             layoutText(
                 textLayoutInput(
                     text = multiLineText,
                     softWrap = true,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.lineCount).isEqualTo(5)
+    }
+
+    @Test
+    fun dontOverwriteMaxLines_middleEllipsis_ifSoftwrapIsEnabled() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = multiLineText,
+                    softWrap = true,
+                    overflow = TextOverflow.MiddleEllipsis,
+                )
+            )
+
+        assertThat(textLayoutResult.multiParagraph.lineCount).isEqualTo(5)
+    }
+
+    @Test
+    fun dontOverwriteMaxLines_startEllipsis_ifSoftwrapIsEnabled() {
+        val textLayoutResult =
+            layoutText(
+                textLayoutInput(
+                    text = multiLineText,
+                    softWrap = true,
+                    overflow = TextOverflow.StartEllipsis,
                 )
             )
 
@@ -165,7 +255,7 @@ class TextMeasurerTest {
                     text = longText,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -181,7 +271,7 @@ class TextMeasurerTest {
                     text = longText,
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxWidth = 200)
+                    constraints = Constraints(maxWidth = 200),
                 )
             )
 
@@ -197,7 +287,7 @@ class TextMeasurerTest {
                     text = AnnotatedString("A"),
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints.fixedWidth(400)
+                    constraints = Constraints.fixedWidth(400),
                 )
             )
 
@@ -214,7 +304,7 @@ class TextMeasurerTest {
                     style = TextStyle(fontSize = fontSize.sp),
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxWidth = 400)
+                    constraints = Constraints(maxWidth = 400),
                 )
             )
 
@@ -229,7 +319,7 @@ class TextMeasurerTest {
                     text = AnnotatedString("A"),
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints.fixedHeight(400)
+                    constraints = Constraints.fixedHeight(400),
                 )
             )
 
@@ -246,7 +336,7 @@ class TextMeasurerTest {
                     style = TextStyle(fontSize = fontSize),
                     softWrap = false,
                     overflow = TextOverflow.Clip,
-                    constraints = Constraints(maxHeight = 400)
+                    constraints = Constraints(maxHeight = 400),
                 )
             )
 
@@ -262,7 +352,7 @@ class TextMeasurerTest {
             layoutText(
                 textLayoutInput(
                     text = multiLineText,
-                    style = TextStyle(textDirection = TextDirection.Rtl)
+                    style = TextStyle(textDirection = TextDirection.Rtl),
                 )
             )
 
@@ -276,13 +366,13 @@ class TextMeasurerTest {
         val firstTextLayout =
             layoutText(
                 textLayoutInput(text = longText, style = TextStyle(color = Color.Red)),
-                textMeasurer
+                textMeasurer,
             )
 
         val secondTextLayout =
             layoutText(
                 textLayoutInput(text = longText, style = TextStyle(color = Color.Blue)),
-                textMeasurer
+                textMeasurer,
             )
 
         assertThat(firstTextLayout.multiParagraph).isSameInstanceAs(secondTextLayout.multiParagraph)
@@ -297,9 +387,9 @@ class TextMeasurerTest {
             layoutText(
                 textLayoutInput(
                     text = longText,
-                    style = TextStyle(brush = Brush.linearGradient(listOf(Color.Red, Color.Blue)))
+                    style = TextStyle(brush = Brush.linearGradient(listOf(Color.Red, Color.Blue))),
                 ),
-                textMeasurer
+                textMeasurer,
             )
 
         val secondTextLayout =
@@ -307,9 +397,9 @@ class TextMeasurerTest {
                 textLayoutInput(
                     text = longText,
                     style =
-                        TextStyle(brush = Brush.linearGradient(listOf(Color.Green, Color.Yellow)))
+                        TextStyle(brush = Brush.linearGradient(listOf(Color.Green, Color.Yellow))),
                 ),
-                textMeasurer
+                textMeasurer,
             )
 
         assertThat(firstTextLayout.multiParagraph).isSameInstanceAs(secondTextLayout.multiParagraph)
@@ -325,13 +415,13 @@ class TextMeasurerTest {
         val firstTextLayout =
             layoutText(
                 textLayoutInput(text = longText, style = TextStyle(shadow = Shadow(Color.Red))),
-                textMeasurer
+                textMeasurer,
             )
 
         val secondTextLayout =
             layoutText(
                 textLayoutInput(text = longText, style = TextStyle(shadow = Shadow(Color.Blue))),
-                textMeasurer
+                textMeasurer,
             )
 
         assertThat(firstTextLayout.multiParagraph).isSameInstanceAs(secondTextLayout.multiParagraph)
@@ -346,18 +436,18 @@ class TextMeasurerTest {
             layoutText(
                 textLayoutInput(
                     text = longText,
-                    style = TextStyle(textDecoration = TextDecoration.Underline)
+                    style = TextStyle(textDecoration = TextDecoration.Underline),
                 ),
-                textMeasurer
+                textMeasurer,
             )
 
         val secondTextLayout =
             layoutText(
                 textLayoutInput(
                     text = longText,
-                    style = TextStyle(textDecoration = TextDecoration.LineThrough)
+                    style = TextStyle(textDecoration = TextDecoration.LineThrough),
                 ),
-                textMeasurer
+                textMeasurer,
             )
 
         assertThat(firstTextLayout.multiParagraph).isSameInstanceAs(secondTextLayout.multiParagraph)
@@ -365,6 +455,37 @@ class TextMeasurerTest {
             .isEqualTo(TextDecoration.Underline)
         assertThat(secondTextLayout.layoutInput.style.textDecoration)
             .isEqualTo(TextDecoration.LineThrough)
+    }
+
+    @Test
+    fun decreasingMinWidth_decreasesTheCalculatedWidth() {
+        val textMeasurer = textMeasurer(cacheSize = 8)
+        val firstTextLayout =
+            layoutText(
+                textLayoutInput(
+                    constraints = Constraints(minWidth = 1000, maxWidth = Int.MAX_VALUE)
+                ),
+                textMeasurer,
+            )
+
+        val secondTextLayout =
+            layoutText(
+                textLayoutInput(
+                    constraints = Constraints(minWidth = 500, maxWidth = Int.MAX_VALUE)
+                ),
+                textMeasurer,
+            )
+
+        assertThat(firstTextLayout.multiParagraph)
+            .isNotSameInstanceAs(secondTextLayout.multiParagraph)
+        assertThat(firstTextLayout.size.width).isEqualTo(1000)
+        assertThat(secondTextLayout.size.width).isEqualTo(500)
+    }
+
+    @Test
+    fun emptyConstraints_hugeString_dontCrash() {
+        val subject = textMeasurer()
+        subject.measure("A".repeat(100_000), TextStyle.Default)
     }
 
     private fun textLayoutInput(
@@ -377,7 +498,7 @@ class TextMeasurerTest {
         density: Density = this.defaultDensity,
         layoutDirection: LayoutDirection = this.layoutDirection,
         fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver,
-        constraints: Constraints = Constraints()
+        constraints: Constraints = Constraints(),
     ): TextLayoutInput {
         return TextLayoutInput(
             text = text,
@@ -389,7 +510,7 @@ class TextMeasurerTest {
             density = density,
             layoutDirection = layoutDirection,
             fontFamilyResolver = fontFamilyResolver,
-            constraints = constraints
+            constraints = constraints,
         )
     }
 
@@ -399,18 +520,18 @@ class TextMeasurerTest {
         placeholders: List<AnnotatedString.Range<Placeholder>> = emptyList(),
         density: Density = this.defaultDensity,
         layoutDirection: LayoutDirection = this.layoutDirection,
-        fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver
+        fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver,
     ): MultiParagraphIntrinsics {
         return MultiParagraphIntrinsics(
             annotatedString = text,
             style =
                 resolveDefaults(
                     style.merge(TextStyle(fontFamily = fontFamilyMeasureFont)),
-                    layoutDirection
+                    layoutDirection,
                 ),
             placeholders = placeholders,
             density = density,
-            fontFamilyResolver = fontFamilyResolver
+            fontFamilyResolver = fontFamilyResolver,
         )
     }
 
@@ -418,13 +539,13 @@ class TextMeasurerTest {
         fontFamilyResolver: FontFamily.Resolver = this.fontFamilyResolver,
         density: Density = this.defaultDensity,
         layoutDirection: LayoutDirection = this.layoutDirection,
-        cacheSize: Int = 0
+        cacheSize: Int = 0,
     ): TextMeasurer = TextMeasurer(fontFamilyResolver, density, layoutDirection, cacheSize)
 
     private fun layoutText(
         textLayoutInput: TextLayoutInput,
         textMeasurer: TextMeasurer? = null,
-        skipCache: Boolean = false
+        skipCache: Boolean = false,
     ) =
         with(textLayoutInput) {
             (textMeasurer ?: textMeasurer()).measure(
@@ -438,7 +559,7 @@ class TextMeasurerTest {
                 layoutDirection = layoutDirection,
                 density = density,
                 fontFamilyResolver = fontFamilyResolver,
-                skipCache = skipCache
+                skipCache = skipCache,
             )
         }
 }

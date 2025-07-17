@@ -18,9 +18,14 @@ package androidx.room.gradle.integration
 
 import androidx.room.gradle.RoomArgumentProvider
 import androidx.room.gradle.RoomExtension
-import androidx.room.gradle.RoomGradlePlugin.Companion.check
-import androidx.room.gradle.RoomGradlePlugin.Companion.findPair
+import androidx.room.gradle.RoomExtension.SchemaConfiguration
+import androidx.room.gradle.toOptions
+import androidx.room.gradle.util.check
+import androidx.room.gradle.util.kspOneTaskClass
+import androidx.room.gradle.util.kspTwoTaskClass
+import com.google.devtools.ksp.gradle.KspAATask
 import com.google.devtools.ksp.gradle.KspTask
+import kotlin.reflect.KClass
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -36,8 +41,11 @@ internal class KotlinMultiplatformPluginIntegration(private val common: CommonIn
         listOf(
             "org.jetbrains.kotlin.jvm",
             "org.jetbrains.kotlin.android",
-            "org.jetbrains.kotlin.multiplatform"
+            "org.jetbrains.kotlin.multiplatform",
         )
+
+    // Map of variant name to schema configuration
+    private val configuredTargets = mutableMapOf<String, SchemaConfiguration>()
 
     fun withKotlin(project: Project, roomExtension: RoomExtension) {
         kgpPluginIds.forEach { kgpPluginId ->
@@ -58,52 +66,104 @@ internal class KotlinMultiplatformPluginIntegration(private val common: CommonIn
     private fun configureRoomForKotlin(
         project: Project,
         roomExtension: RoomExtension,
-        target: KotlinTarget
+        target: KotlinTarget,
     ) {
         // Android KSP tasks are configured through the Android Gradle Plugin variant APIs.
         if (target.platformType == KotlinPlatformType.androidJvm) return
 
-        val configureTask: (Task) -> RoomArgumentProvider = { task ->
-            val schemaDirectories = roomExtension.schemaDirectories
-            val matchedPair =
-                schemaDirectories.findPair(target.targetName)
-                    ?: schemaDirectories.findPair(RoomExtension.ALL_MATCH.actual)
-            project.check(matchedPair != null, isFatal = true) {
-                "No matching Room schema directory for the KSP target '${target.targetName}'."
+        // Android KSP tasks can also be applied via the Android KMP Plugin
+        if (target.platformType == KotlinPlatformType.jvm && target.name == "android") return
+
+        forSchemaConfiguration(roomExtension, target) { newConfig ->
+            val oldConfig = configuredTargets.put(target.name, newConfig)
+            target.compilations.configureEach { kotlinCompilation ->
+                val kotlinCompilationTaskNames = KotlinCompilationTaskNames(kotlinCompilation)
+                common.configureSchemaCopyTask(
+                    kotlinCompilationTaskNames.taskNames,
+                    oldConfig,
+                    newConfig,
+                )
             }
-            val (matchedName, schemaDirectoryProvider) = matchedPair
-            val schemaDirectory = schemaDirectoryProvider.get()
-            project.check(schemaDirectory.isNotEmpty()) {
-                "The Room schema directory path for the KSP target '${target.targetName}' must " +
-                    "not be empty."
-            }
-            common.configureTaskWithSchema(
-                project,
-                roomExtension,
-                matchedName,
-                schemaDirectoryProvider.get(),
-                task
-            )
         }
+
         target.compilations.configureEach { kotlinCompilation ->
-            configureKspTasks(project, kotlinCompilation, configureTask)
+            val kotlinCompilationTaskNames = KotlinCompilationTaskNames(kotlinCompilation)
+            val argProviderFactory: (Task) -> RoomArgumentProvider = { apTask ->
+                val config = configuredTargets[target.name]
+                project.check(config != null, isFatal = true) {
+                    "No matching Room schema directory for the KSP target '${target.targetName}'."
+                }
+
+                apTask.finalizedBy(config.copyTask)
+                common.createArgumentProvider(
+                    schemaConfiguration = config,
+                    roomOptions = roomExtension.toOptions(),
+                    task = apTask,
+                )
+            }
+            configureKspTasks(project, kotlinCompilationTaskNames, argProviderFactory)
+        }
+    }
+
+    /**
+     * Call [block] when schema config for target matches, with the following priority:
+     * * Target name specified, e.g. `schemaLocation("linuxX64", "...")`
+     * * All targets location, e.g. `schemaLocation("...")`
+     */
+    private fun forSchemaConfiguration(
+        roomExtension: RoomExtension,
+        target: KotlinTarget,
+        block: (SchemaConfiguration) -> Unit,
+    ) {
+        var currentPriority = Int.MAX_VALUE
+        roomExtension.schemaConfigurations.configureEach { config ->
+            val newPriority =
+                when {
+                    config.matches(target.targetName) -> 0
+                    config.matches(RoomExtension.ALL_MATCH) -> 1
+                    else -> return@configureEach
+                }
+            if (currentPriority < newPriority) {
+                return@configureEach
+            }
+            currentPriority = newPriority
+
+            block.invoke(config)
         }
     }
 
     private fun configureKspTasks(
         project: Project,
-        kotlinCompilation: KotlinCompilation<*>,
-        configureBlock: (Task) -> RoomArgumentProvider
+        kotlinCompilationTaskNames: KotlinCompilationTaskNames,
+        argumentProviderFactory: (Task) -> RoomArgumentProvider,
     ) =
         project.plugins.withId("com.google.devtools.ksp") {
-            project.tasks.withType(KspTask::class.java) { task ->
-                // Same naming strategy as KSP, based off Kotlin compile task.
-                // https://github.com/google/ksp/blob/main/gradle-plugin/src/main/kotlin/com/google/devtools/ksp/gradle/KspAATask.kt#L151
-                val kspTaskName = kotlinCompilation.compileKotlinTaskName.replace("compile", "ksp")
-                if (task.name == kspTaskName) {
-                    val argProvider = configureBlock.invoke(task)
-                    task.commandLineArgumentProviders.add(argProvider)
+            fun <T : Task> configureEach(
+                kclass: KClass<T>,
+                block: T.(RoomArgumentProvider) -> Unit,
+            ) {
+                project.tasks.withType(kclass.java).configureEach { task ->
+                    if (kotlinCompilationTaskNames.isKspTask(task.name)) {
+                        val argProvider = argumentProviderFactory.invoke(task)
+                        task.block(argProvider)
+                    }
                 }
             }
+            if (kspOneTaskClass != null) {
+                configureEach(KspTask::class) { commandLineArgumentProviders.add(it) }
+            }
+            if (kspTwoTaskClass != null) {
+                configureEach(KspAATask::class) { commandLineArgumentProviders.add(it) }
+            }
         }
+
+    private class KotlinCompilationTaskNames(kotlinCompilation: KotlinCompilation<*>) {
+        // Using same naming strategy as KSP, based off Kotlin compile task.
+        // TODO(https://github.com/google/ksp/issues/2083): Use proper API when available.
+        private val kspTaskName = kotlinCompilation.compileKotlinTaskName.replace("compile", "ksp")
+
+        val taskNames = setOf(kspTaskName)
+
+        fun isKspTask(taskName: String) = taskName == kspTaskName
+    }
 }

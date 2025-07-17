@@ -19,7 +19,6 @@ package androidx.glance.appwidget
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.CorruptionException
@@ -30,6 +29,7 @@ import androidx.glance.Emittable
 import androidx.glance.EmittableButton
 import androidx.glance.EmittableImage
 import androidx.glance.EmittableWithChildren
+import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.ActionModifier
 import androidx.glance.appwidget.lazy.EmittableLazyColumn
@@ -85,6 +85,7 @@ private constructor(
     /** Set of all layout ids in [layoutConfig]. None of them can be re-used. */
     private val existingLayoutIds: MutableSet<Int> = mutableSetOf(),
 ) {
+
     internal companion object {
 
         /** Creates a [LayoutConfiguration] retrieving known layouts from file, if they exist. */
@@ -94,20 +95,20 @@ private constructor(
                     GlanceState.getValue(
                         context,
                         LayoutStateDefinition,
-                        layoutDatastoreKey(appWidgetId)
+                        layoutDatastoreKey(appWidgetId),
                     )
                 } catch (ex: CorruptionException) {
                     Log.e(
                         GlanceAppWidgetTag,
                         "Set of layout structures for App Widget id $appWidgetId is corrupted",
-                        ex
+                        ex,
                     )
                     LayoutProto.LayoutConfig.getDefaultInstance()
                 } catch (ex: IOException) {
                     Log.e(
                         GlanceAppWidgetTag,
                         "I/O error reading set of layout structures for App Widget id $appWidgetId",
-                        ex
+                        ex,
                     )
                     LayoutProto.LayoutConfig.getDefaultInstance()
                 }
@@ -117,12 +118,12 @@ private constructor(
                 layouts,
                 nextIndex = config.nextIndex,
                 appWidgetId = appWidgetId,
-                existingLayoutIds = layouts.values.toMutableSet()
+                existingLayoutIds = layouts.values.toMutableSet(),
             )
         }
 
         /** Create a new, empty, [LayoutConfiguration]. */
-        internal fun create(context: Context, appWidgetId: Int) =
+        internal fun create(context: Context, appWidgetId: Int): LayoutConfiguration =
             LayoutConfiguration(
                 context,
                 layoutConfig = mutableMapOf(),
@@ -136,8 +137,8 @@ private constructor(
             context: Context,
             appWidgetId: Int,
             nextIndex: Int,
-            existingLayoutIds: Collection<Int> = emptyList()
-        ) =
+            existingLayoutIds: Collection<Int> = emptyList(),
+        ): LayoutConfiguration =
             LayoutConfiguration(
                 context,
                 appWidgetId = appWidgetId,
@@ -145,6 +146,29 @@ private constructor(
                 nextIndex = nextIndex,
                 existingLayoutIds = existingLayoutIds.toMutableSet(),
             )
+
+        /** @return the file after delete() has been called on it. This is for testing. */
+        fun delete(context: Context, id: GlanceId): Boolean {
+
+            if (id is AppWidgetId && id.isRealId) {
+                val key = layoutDatastoreKey(id.appWidgetId)
+                val file = context.dataStoreFile(key)
+                try {
+                    return file.delete()
+                } catch (e: Exception) {
+                    // This is a minor error, File.delete() shouldn't throw an exception and these
+                    // files
+                    // are <1kb.
+                    Log.d(
+                        GlanceAppWidgetTag,
+                        "Could not delete LayoutConfiguration dataStoreFile when cleaning up" +
+                            "old appwidget id $id",
+                        e,
+                    )
+                }
+            }
+            return false
+        }
     }
 
     /**
@@ -248,6 +272,7 @@ private fun LayoutNode.Builder.setImageNode(element: EmittableImage) {
         }
     hasImageDescription = !element.isDecorative()
     hasImageColorFilter = element.colorFilterParams != null
+    hasImageAlpha = element.alpha != null
 }
 
 private fun LayoutNode.Builder.setColumnNode(element: EmittableColumn) {
@@ -273,7 +298,8 @@ private val GlanceModifier.widthModifier: Dimension
 private val GlanceModifier.heightModifier: Dimension
     get() = findModifier<HeightModifier>()?.height ?: Dimension.Wrap
 
-private fun layoutDatastoreKey(appWidgetId: Int) = "appWidgetLayout-$appWidgetId"
+@VisibleForTesting
+internal fun layoutDatastoreKey(appWidgetId: Int): String = "appWidgetLayout-$appWidgetId"
 
 private object LayoutStateDefinition : GlanceStateDefinition<LayoutProto.LayoutConfig> {
     override fun getLocation(context: Context, fileKey: String): File =
@@ -357,7 +383,6 @@ private fun Dimension.toProto(context: Context): LayoutProto.DimensionType {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object WidgetLayoutImpl31 {
-    @DoNotInline
     fun toProto(dimension: Dimension) =
         if (dimension is Dimension.Expand) {
             LayoutProto.DimensionType.EXPAND

@@ -29,8 +29,6 @@ import static androidx.wear.protolayout.materialcore.Helper.staticString;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
@@ -42,6 +40,9 @@ import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.ProtoLayoutExperimental;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ProtoLayout component {@link CompactChip} that represents clickable object with the text.
@@ -74,7 +75,7 @@ import androidx.wear.protolayout.proto.LayoutElementProto;
  * }</pre>
  */
 public class CompactChip implements LayoutElement {
-    @NonNull private final Chip mElement;
+    private final @NonNull Chip mElement;
 
     CompactChip(@NonNull Chip element) {
         this.mElement = element;
@@ -82,13 +83,13 @@ public class CompactChip implements LayoutElement {
 
     /** Builder class for {@link CompactChip}. */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private final Context mContext;
-        @Nullable private String mText;
-        @NonNull private final Clickable mClickable;
-        @NonNull private final DeviceParameters mDeviceParameters;
-        @NonNull private ChipColors mChipColors = COMPACT_PRIMARY_COLORS;
-        @Nullable private String mIconResourceId = null;
-        @Nullable private StringProp mContentDescription = null;
+        private final @NonNull Context mContext;
+        private @Nullable String mText;
+        private final @NonNull Clickable mClickable;
+        private final @NonNull DeviceParameters mDeviceParameters;
+        private @NonNull ChipColors mChipColors = COMPACT_PRIMARY_COLORS;
+        private @Nullable String mIconResourceId = null;
+        private @Nullable StringProp mContentDescription = null;
 
         /**
          * Creates a builder for the {@link CompactChip} with associated action and the given text.
@@ -130,8 +131,7 @@ public class CompactChip implements LayoutElement {
 
         /** Sets the text for the {@link CompactChip}. */
         @SuppressWarnings("MissingGetterMatchingBuilder") // Exists as getText
-        @NonNull
-        public Builder setTextContent(@NonNull String text) {
+        public @NonNull Builder setTextContent(@NonNull String text) {
             this.mText = text;
             return this;
         }
@@ -142,8 +142,7 @@ public class CompactChip implements LayoutElement {
          * ChipColors#getContentColor()} for the text. If not set, {@link
          * ChipDefaults#COMPACT_PRIMARY_COLORS} will be used.
          */
-        @NonNull
-        public Builder setChipColors(@NonNull ChipColors chipColors) {
+        public @NonNull Builder setChipColors(@NonNull ChipColors chipColors) {
             mChipColors = chipColors;
             return this;
         }
@@ -153,8 +152,7 @@ public class CompactChip implements LayoutElement {
          * content color from {@link ChipColors}. This icon should be image with chosen alpha
          * channel that can be tinted.
          */
-        @NonNull
-        public Builder setIconContent(@NonNull String imageResourceId) {
+        public @NonNull Builder setIconContent(@NonNull String imageResourceId) {
             this.mIconResourceId = imageResourceId;
             return this;
         }
@@ -163,8 +161,7 @@ public class CompactChip implements LayoutElement {
          * Sets the static content description for the {@link CompactChip}. It is highly recommended
          * to provide this for chip containing an icon.
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull CharSequence contentDescription) {
             return setContentDescription(staticString(contentDescription.toString()));
         }
 
@@ -175,18 +172,16 @@ public class CompactChip implements LayoutElement {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull StringProp contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull StringProp contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
 
 
         /** Constructs and returns {@link CompactChip} with the provided content and look. */
-        @NonNull
         @Override
         @OptIn(markerClass = ProtoLayoutExperimental.class)
-        public CompactChip build() {
+        public @NonNull CompactChip build() {
             if (mText == null && mIconResourceId == null) {
                 throw new IllegalArgumentException("At least one of text or icon must be set.");
             }
@@ -212,11 +207,7 @@ public class CompactChip implements LayoutElement {
             }
 
             if (mIconResourceId != null) {
-                if (mText != null) {
-                    chipBuilder.setIconContent(mIconResourceId);
-                } else {
-                    chipBuilder.setIconOnlyContent(mIconResourceId);
-                }
+                chipBuilder.setIconContent(mIconResourceId);
                 chipBuilder.setIconSize(COMPACT_ICON_SIZE);
             }
 
@@ -239,37 +230,38 @@ public class CompactChip implements LayoutElement {
     }
 
     /** Returns click event action associated with this Chip. */
-    @NonNull
-    public Clickable getClickable() {
+    public @NonNull Clickable getClickable() {
         return mElement.getClickable();
     }
 
     /** Returns chip color of this Chip. */
-    @NonNull
-    public ChipColors getChipColors() {
+    public @NonNull ChipColors getChipColors() {
         return mElement.getChipColors();
     }
 
     /**
      * Returns text content of this Chip if it was set. If the text content wasn't set (either with
-     * {@link Builder#setTextContent} or constructor, this method will throw.
-     *
-     * @throws NullPointerException when no text content was set to the chip.
+     * {@link Builder#setTextContent} or constructor, this method will return an empty String.
+     * Whether text content exists on this Chip, that can be checked with {@link #hasText()}.
      */
-    @NonNull
-    public String getText() {
-        return checkNotNull(mElement.getPrimaryLabelContent());
+    public @NonNull String getText() {
+        return hasText() ? checkNotNull(mElement.getPrimaryLabelContent()) : "";
+    }
+
+    /**
+     * Returns whether the text content of this Chip was set.
+     */
+    public boolean hasText() {
+        return mElement.getPrimaryLabelContent() != null;
     }
 
     /** Returns icon id from this CompactChip if it has been added. Otherwise, it returns null. */
-    @Nullable
-    public String getIconContent() {
+    public @Nullable String getIconContent() {
         return mElement.getIconContent();
     }
 
     /** Returns metadata tag set to this CompactChip. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return mElement.getMetadataTag();
     }
 
@@ -278,8 +270,7 @@ public class CompactChip implements LayoutElement {
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to CompactChip. Otherwise, it will return null.
      */
-    @Nullable
-    public static CompactChip fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable CompactChip fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof CompactChip) {
             return (CompactChip) element;
         }
@@ -289,22 +280,19 @@ public class CompactChip implements LayoutElement {
     }
 
     /** Returns content description of this CompactChip. */
-    @Nullable
-    public StringProp getContentDescription() {
+    public @Nullable StringProp getContentDescription() {
         return mElement.getContentDescription();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

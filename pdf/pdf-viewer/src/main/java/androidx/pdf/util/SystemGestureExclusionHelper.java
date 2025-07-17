@@ -19,8 +19,9 @@ package androidx.pdf.util;
 import android.graphics.Rect;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +51,7 @@ public class SystemGestureExclusionHelper {
      *
      * <p>{@code rect} is in unscaled screen coordinates.
      */
-    @NonNull
-    public static List<Rect> createExclusionRectsForCorners(
+    public static @NonNull List<Rect> createExclusionRectsForCorners(
             @NonNull Rect rect, int systemGestureInsetsWidthPx, int bufferDistancePx,
             int screenWidthPx) {
         List<Rect> exclusionRects = new ArrayList<>();
@@ -85,8 +85,7 @@ public class SystemGestureExclusionHelper {
      *
      * @throws IllegalArgumentException if {@code reservedDistancePx} <= 0.
      */
-    @NonNull
-    public static Rect createLeftSideExclusionRect(
+    public static @NonNull Rect createLeftSideExclusionRect(
             int yCoordinatePx, int systemGestureInsetsWidthPx, int reservedDistancePx) {
         Preconditions.checkArgument(
                 reservedDistancePx > 0,
@@ -106,8 +105,7 @@ public class SystemGestureExclusionHelper {
      *
      * @throws IllegalArgumentException if {@code reservedDistancePx} <= 0.
      */
-    @NonNull
-    public static Rect createRightSideExclusionRect(
+    public static @NonNull Rect createRightSideExclusionRect(
             int yCoordinatePx,
             int systemGestureInsetsWidthPx,
             int reservedDistancePx,

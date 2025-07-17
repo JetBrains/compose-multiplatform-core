@@ -16,93 +16,132 @@
 
 package androidx.compose.material3.adaptive.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold as BaseListDetailPaneScaffold
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold as BaseSupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.PaneExpansionState
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * A version of [androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold] that supports
- * navigation and back handling out of the box, controlled by [ThreePaneScaffoldNavigator].
+ * A version of [ListDetailPaneScaffold] that supports navigation and predictive back handling out
+ * of the box, controlled by [ThreePaneScaffoldNavigator].
  *
+ * Example usage, including integration with the Compose Navigation library:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.NavigableListDetailPaneScaffoldSample
  * @param navigator The navigator instance to navigate through the scaffold.
  * @param listPane the list pane of the scaffold, which is supposed to hold a list of item summaries
  *   that can be selected from, for example, the inbox mail list of a mail app. See
- *   [ListDetailPaneScaffoldRole.List].
+ *   [ListDetailPaneScaffoldRole.List]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param detailPane the detail pane of the scaffold, which is supposed to hold the detailed info of
  *   a selected item, for example, the mail content currently being viewed. See
- *   [ListDetailPaneScaffoldRole.Detail].
+ *   [ListDetailPaneScaffoldRole.Detail]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param modifier [Modifier] of the scaffold layout.
  * @param extraPane the extra pane of the scaffold, which is supposed to hold any supplementary info
  *   besides the list and the detail panes, for example, a task list or a mini-calendar view of a
- *   mail app. See [ListDetailPaneScaffoldRole.Extra].
+ *   mail app. See [ListDetailPaneScaffoldRole.Extra]. Note that we suggest you to use
+ *   [AnimatedPane] as the root layout of panes, which supports default pane behaviors like
+ *   enter/exit transitions.
  * @param defaultBackBehavior the default back navigation behavior when the system back event
  *   happens. See [BackNavigationBehavior] for the use cases of each behavior.
+ * @param paneExpansionDragHandle the pane expansion drag handle to allow users to drag to change
+ *   pane expansion state, `null` by default.
+ * @param paneExpansionState the state object of pane expansion; when no value is provided but
+ *   [paneExpansionDragHandle] is not `null`, a default implementation will be created for the drag
+ *   handle to use.
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun NavigableListDetailPaneScaffold(
-    navigator: ThreePaneScaffoldNavigator<Any>,
-    listPane: @Composable ThreePaneScaffoldScope.() -> Unit,
-    detailPane: @Composable ThreePaneScaffoldScope.() -> Unit,
+fun <T> NavigableListDetailPaneScaffold(
+    navigator: ThreePaneScaffoldNavigator<T>,
+    listPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    detailPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     modifier: Modifier = Modifier,
-    extraPane: (@Composable ThreePaneScaffoldScope.() -> Unit)? = null,
-    defaultBackBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilContentChange
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    defaultBackBehavior: BackNavigationBehavior =
+        BackNavigationBehavior.PopUntilScaffoldValueChange,
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState? = null,
 ) {
-    // TODO(b/330584029): support predictive back
-    BackHandler(enabled = navigator.canNavigateBack(defaultBackBehavior)) {
-        navigator.navigateBack(defaultBackBehavior)
-    }
-    BaseListDetailPaneScaffold(
+    ThreePaneScaffoldPredictiveBackHandler(
+        navigator = navigator,
+        backBehavior = defaultBackBehavior,
+    )
+
+    ListDetailPaneScaffold(
         modifier = modifier,
         directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
+        scaffoldState = navigator.scaffoldState,
         detailPane = detailPane,
         listPane = listPane,
-        extraPane = extraPane
+        extraPane = extraPane,
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = paneExpansionState,
     )
 }
 
 /**
- * A version of [androidx.compose.material3.adaptive.layout.SupportingPaneScaffold] that supports
- * navigation and back handling out of the box, controlled by [ThreePaneScaffoldNavigator].
+ * A version of [SupportingPaneScaffold] that supports navigation and predictive back handling out
+ * of the box, controlled by [ThreePaneScaffoldNavigator].
  *
  * @param navigator The navigator instance to navigate through the scaffold.
  * @param mainPane the main pane of the scaffold, which is supposed to hold the major content of an
- *   app, for example, the editing screen of a doc app. See [SupportingPaneScaffoldRole.Main].
+ *   app, for example, the editing screen of a doc app. See [SupportingPaneScaffoldRole.Main]. Note
+ *   that we suggest you to use [AnimatedPane] as the root layout of panes, which supports default
+ *   pane behaviors like enter/exit transitions.
  * @param supportingPane the supporting pane of the scaffold, which is supposed to hold the support
  *   content of an app, for example, the comment list of a doc app. See
- *   [SupportingPaneScaffoldRole.Supporting].
+ *   [SupportingPaneScaffoldRole.Supporting]. Note that we suggest you to use [AnimatedPane] as the
+ *   root layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param modifier [Modifier] of the scaffold layout.
  * @param extraPane the extra pane of the scaffold, which is supposed to hold any additional content
  *   besides the main and the supporting panes, for example, a styling panel in a doc app. See
- *   [SupportingPaneScaffoldRole.Extra].
+ *   [SupportingPaneScaffoldRole.Extra]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param defaultBackBehavior the default back navigation behavior when the system back event
  *   happens. See [BackNavigationBehavior] for the use cases of each behavior.
+ * @param paneExpansionDragHandle the pane expansion drag handle to allow users to drag to change
+ *   pane expansion state, `null` by default.
+ * @param paneExpansionState the state object of pane expansion; when no value is provided but
+ *   [paneExpansionDragHandle] is not `null`, a default implementation will be created for the drag
+ *   handle to use.
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun NavigableSupportingPaneScaffold(
-    navigator: ThreePaneScaffoldNavigator<Any>,
-    mainPane: @Composable ThreePaneScaffoldScope.() -> Unit,
-    supportingPane: @Composable ThreePaneScaffoldScope.() -> Unit,
+fun <T> NavigableSupportingPaneScaffold(
+    navigator: ThreePaneScaffoldNavigator<T>,
+    mainPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    supportingPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     modifier: Modifier = Modifier,
-    extraPane: (@Composable ThreePaneScaffoldScope.() -> Unit)? = null,
-    defaultBackBehavior: BackNavigationBehavior = BackNavigationBehavior.PopUntilContentChange
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    defaultBackBehavior: BackNavigationBehavior =
+        BackNavigationBehavior.PopUntilScaffoldValueChange,
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState? = null,
 ) {
-    // TODO(b/330584029): support predictive back
-    BackHandler(enabled = navigator.canNavigateBack(defaultBackBehavior)) {
-        navigator.navigateBack(defaultBackBehavior)
-    }
-    BaseSupportingPaneScaffold(
+    ThreePaneScaffoldPredictiveBackHandler(
+        navigator = navigator,
+        backBehavior = defaultBackBehavior,
+    )
+
+    SupportingPaneScaffold(
         modifier = modifier,
         directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
+        scaffoldState = navigator.scaffoldState,
         mainPane = mainPane,
         supportingPane = supportingPane,
-        extraPane = extraPane
+        extraPane = extraPane,
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = paneExpansionState,
     )
 }

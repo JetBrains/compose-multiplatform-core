@@ -20,8 +20,6 @@ import static java.lang.Math.abs;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32;
 import androidx.wear.protolayout.expression.DynamicDataKey;
@@ -39,6 +37,9 @@ import androidx.wear.protolayout.expression.proto.DynamicProto.PlatformInt32Sour
 import androidx.wear.protolayout.expression.proto.DynamicProto.StateInt32Source;
 import androidx.wear.protolayout.expression.proto.DynamicProto.ZonedDateTimePartType;
 import androidx.wear.protolayout.expression.proto.FixedProto.FixedInt32;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -96,8 +97,7 @@ class Int32Nodes {
                     downstream);
         }
 
-        @NonNull
-        private static DynamicDataKey<?> getDataKey(PlatformInt32SourceType type) {
+        private static @NonNull DynamicDataKey<?> getDataKey(PlatformInt32SourceType type) {
             if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE) {
                 return PlatformHealthSources.Keys.HEART_RATE_BPM;
             }
@@ -110,8 +110,7 @@ class Int32Nodes {
                     "Unknown DynamicInt32 platform source type: " + type);
         }
 
-        @NonNull
-        private static Function<DynamicDataValue, Integer> getStateExtractor(
+        private static @NonNull Function<DynamicDataValue, Integer> getStateExtractor(
                 PlatformInt32SourceType type) {
             if (type == PlatformInt32SourceType.PLATFORM_INT32_SOURCE_TYPE_CURRENT_HEART_RATE) {
                 return se -> (int) se.getFloatVal().getValue();
@@ -258,7 +257,7 @@ class Int32Nodes {
                 AnimatableFixedInt32 protoNode,
                 DynamicTypeValueReceiverWithPreUpdate<Integer> downstream,
                 QuotaManager quotaManager) {
-            super(quotaManager, protoNode.getAnimationSpec());
+            super(quotaManager, protoNode.getAnimationSpec(), AnimatableNode.INT_EVALUATOR);
             this.mProtoNode = protoNode;
             this.mDownstream = downstream;
             mQuotaAwareAnimator.addUpdateCallback(
@@ -318,7 +317,7 @@ class Int32Nodes {
                 DynamicTypeValueReceiverWithPreUpdate<Integer> downstream,
                 @NonNull AnimationSpec spec,
                 QuotaManager quotaManager) {
-            super(quotaManager, spec);
+            super(quotaManager, spec, AnimatableNode.INT_EVALUATOR);
             this.mDownstream = downstream;
             mQuotaAwareAnimator.addUpdateCallback(
                     animatedValue -> {

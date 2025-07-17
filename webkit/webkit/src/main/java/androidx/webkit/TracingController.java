@@ -19,11 +19,12 @@ package androidx.webkit;
 import android.content.Context;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 import androidx.webkit.internal.TracingControllerImpl;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.OutputStream;
 import java.util.concurrent.Executor;
@@ -64,10 +65,9 @@ public abstract class TracingController {
      * returns {@code true} for {@link WebViewFeature#TRACING_CONTROLLER_BASIC_USAGE}.
      *
      */
-    @NonNull
     @RequiresFeature(name = WebViewFeature.TRACING_CONTROLLER_BASIC_USAGE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static TracingController getInstance() {
+    public static @NonNull TracingController getInstance() {
         return LAZY_HOLDER.INSTANCE;
     }
 

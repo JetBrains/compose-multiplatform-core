@@ -58,7 +58,9 @@ object ListItemDefaults {
     /** The default content padding [PaddingValues] used by [DenseListItem] */
     internal val ContentPaddingDense = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
 
-    internal const val LeadingContentOpacity = 0.8f
+    internal val LeadingContentColor
+        @ReadOnlyComposable @Composable get() = LocalContentColor.current.copy(alpha = 0.8f)
+
     internal const val OverlineContentOpacity = 0.6f
     internal const val SupportingContentOpacity = 0.8f
 
@@ -97,7 +99,7 @@ object ListItemDefaults {
         disabledShape: Shape = shape,
         focusedSelectedShape: Shape = shape,
         focusedDisabledShape: Shape = disabledShape,
-        pressedSelectedShape: Shape = shape
+        pressedSelectedShape: Shape = shape,
     ) =
         ListItemShape(
             shape = shape,
@@ -107,7 +109,7 @@ object ListItemDefaults {
             disabledShape = disabledShape,
             focusedSelectedShape = focusedSelectedShape,
             focusedDisabledShape = focusedDisabledShape,
-            pressedSelectedShape = pressedSelectedShape
+            pressedSelectedShape = pressedSelectedShape,
         )
 
     /**
@@ -155,7 +157,7 @@ object ListItemDefaults {
         focusedSelectedContainerColor: Color = focusedContainerColor,
         focusedSelectedContentColor: Color = focusedContentColor,
         pressedSelectedContainerColor: Color = pressedContainerColor,
-        pressedSelectedContentColor: Color = pressedContentColor
+        pressedSelectedContentColor: Color = pressedContentColor,
     ) =
         ListItemColors(
             containerColor = containerColor,
@@ -171,7 +173,7 @@ object ListItemDefaults {
             focusedSelectedContainerColor = focusedSelectedContainerColor,
             focusedSelectedContentColor = focusedSelectedContentColor,
             pressedSelectedContainerColor = pressedSelectedContainerColor,
-            pressedSelectedContentColor = pressedSelectedContentColor
+            pressedSelectedContentColor = pressedSelectedContentColor,
         )
 
     /**
@@ -199,7 +201,7 @@ object ListItemDefaults {
         @FloatRange(from = 0.0) disabledScale: Float = scale,
         @FloatRange(from = 0.0) focusedSelectedScale: Float = focusedScale,
         @FloatRange(from = 0.0) focusedDisabledScale: Float = disabledScale,
-        @FloatRange(from = 0.0) pressedSelectedScale: Float = scale
+        @FloatRange(from = 0.0) pressedSelectedScale: Float = scale,
     ) =
         ListItemScale(
             scale = scale,
@@ -209,7 +211,7 @@ object ListItemDefaults {
             disabledScale = disabledScale,
             focusedSelectedScale = focusedSelectedScale,
             focusedDisabledScale = focusedDisabledScale,
-            pressedSelectedScale = pressedSelectedScale
+            pressedSelectedScale = pressedSelectedScale,
         )
 
     /**
@@ -237,7 +239,7 @@ object ListItemDefaults {
         disabledBorder: Border = border,
         focusedSelectedBorder: Border = focusedBorder,
         focusedDisabledBorder: Border = FocusedDisabledBorder,
-        pressedSelectedBorder: Border = border
+        pressedSelectedBorder: Border = border,
     ) =
         ListItemBorder(
             border = border,
@@ -247,7 +249,7 @@ object ListItemDefaults {
             disabledBorder = disabledBorder,
             focusedSelectedBorder = focusedSelectedBorder,
             focusedDisabledBorder = focusedDisabledBorder,
-            pressedSelectedBorder = pressedSelectedBorder
+            pressedSelectedBorder = pressedSelectedBorder,
         )
 
     /**
@@ -268,7 +270,7 @@ object ListItemDefaults {
         pressedGlow: Glow = glow,
         selectedGlow: Glow = glow,
         focusedSelectedGlow: Glow = focusedGlow,
-        pressedSelectedGlow: Glow = glow
+        pressedSelectedGlow: Glow = glow,
     ) =
         ListItemGlow(
             glow = glow,
@@ -276,6 +278,6 @@ object ListItemDefaults {
             pressedGlow = pressedGlow,
             selectedGlow = selectedGlow,
             focusedSelectedGlow = focusedSelectedGlow,
-            pressedSelectedGlow = pressedSelectedGlow
+            pressedSelectedGlow = pressedSelectedGlow,
         )
 }

@@ -20,6 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Density
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestResult
 
 /**
  * Sets up the test environment, runs the given [test][block] and then tears down the test
@@ -37,15 +42,25 @@ import kotlin.coroutines.EmptyCoroutineContext
  *
  * Keeping a reference to the [ComposeUiTest] outside of this function is an error.
  *
+ * @sample androidx.compose.ui.test.samples.RunComposeUiTestSample
  * @param effectContext The [CoroutineContext] used to run the composition. The context for
- *   `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context.
+ *   `LaunchedEffect`s and `rememberCoroutineScope` will be derived from this context. If this
+ *   context contains a [TestDispatcher] or [TestCoroutineScheduler] (in that order), it will be
+ *   used for composition and the [MainTestClock].
+ * @param runTestContext The [CoroutineContext] used to create the context to run the test [block].
+ *   By default [block] will run using [kotlinx.coroutines.test.StandardTestDispatcher].
+ *   [runTestContext] and [effectContext] must not share [TestCoroutineScheduler].
+ * @param testTimeout The [Duration] within which the test is expected to complete, otherwise a
+ *   platform specific timeout exception will be thrown.
  * @param block The test function.
  */
 @ExperimentalTestApi
 expect fun runComposeUiTest(
     effectContext: CoroutineContext = EmptyCoroutineContext,
-    block: ComposeUiTest.() -> Unit
-)
+    runTestContext: CoroutineContext = EmptyCoroutineContext,
+    testTimeout: Duration = 60.seconds,
+    block: suspend ComposeUiTest.() -> Unit,
+): TestResult
 
 /**
  * A test environment that allows you to test and control composables, either in isolation or in
@@ -64,8 +79,8 @@ expect fun runComposeUiTest(
  * time necessary to position the button in the middle of the screen.
  *
  * To test a composable in isolation, use [setContent] to set the composable in a host. On Android,
- * a host will mostly be an Activity. When using [runComposeUiTest] or any of its platform specific
- * friends, the host will be started for you automatically, unless otherwise specified. To test an
+ * the host is an Activity. When using [runComposeUiTest] or any of its platform specific variants,
+ * the host will be started for you automatically, unless otherwise specified. To test an
  * application, use the platform specific variant of [runComposeUiTest] that launches the app.
  *
  * An instance of [ComposeUiTest] can be obtained through [runComposeUiTest] or any of its platform
@@ -106,30 +121,34 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     fun <T> runOnIdle(action: () -> T): T
 
     /**
-     * Waits for compose to be idle. If [auto advancement][MainTestClock.autoAdvance] is enabled on
-     * the [mainClock], this method will actively advance the clock to process any pending
-     * composition, invalidation and animation. If auto advancement is not enabled, the clock will
-     * not be advanced actively which usually means that the Compose UI appears to be frozen. This
-     * is ideal for testing animations in a deterministic way. In either case, this method will wait
-     * for all [IdlingResource]s to become idle.
+     * Waits for the UI to become idle. Quiescence is reached when there are no more pending changes
+     * (e.g. pending recompositions or a pending draw call) and all [IdlingResource]s are idle.
+     *
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will advance the clock to process any pending composition, invalidation and animation. If
+     * auto advancement is not enabled, the clock will not be advanced which means that the Compose
+     * UI appears to be frozen. This is ideal for testing animations in a deterministic way. This
+     * method will always wait for all [IdlingResource]s to become idle.
      *
      * Note that some processes are driven by the host operating system and will therefore still
-     * execute when auto advancement is disabled. For example, on Android measure, layout and draw
-     * can still happen if the host view is invalidated by other parts of the View hierarchy.
+     * execute when auto advancement is disabled. For example, Android's measure, layout and draw
+     * passes can still happen if required by the View system.
      */
     fun waitForIdle()
 
     /**
-     * Suspends until compose is idle. If [auto advancement][MainTestClock.autoAdvance] is enabled
-     * on the [mainClock], this method will actively advance the clock to process any pending
-     * composition, invalidation and animation. If auto advancement is not enabled, the clock will
-     * not be advanced actively which usually means that the Compose UI appears to be frozen. This
-     * is ideal for testing animations in a deterministic way. In either case, this method will wait
-     * for all [IdlingResource]s to become idle.
+     * Suspends until the UI is idle. Quiescence is reached when there are no more pending changes
+     * (e.g. pending recompositions or a pending draw call) and all [IdlingResource]s are idle.
+     *
+     * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
+     * will advance the clock to process any pending composition, invalidation and animation. If
+     * auto advancement is not enabled, the clock will not be advanced which means that the Compose
+     * UI appears to be frozen. This is ideal for testing animations in a deterministic way. This
+     * method will always wait for all [IdlingResource]s to become idle.
      *
      * Note that some processes are driven by the host operating system and will therefore still
-     * execute when auto advancement is disabled. For example, on Android measure, layout and draw
-     * can still happen if the host view is invalidated by other parts of the View hierarchy.
+     * execute when auto advancement is disabled. For example, Android's measure, layout and draw
+     * passes can still happen if required by the View system.
      */
     suspend fun awaitIdle()
 
@@ -139,24 +158,19 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
      * If [auto advancement][MainTestClock.autoAdvance] is enabled on the [mainClock], this method
      * will actively advance the clock to process any pending composition, invalidation and
      * animation. If auto advancement is not enabled, the clock will not be advanced actively which
-     * usually means that the Compose UI appears to be frozen. This is ideal for testing animations
-     * in a deterministic way. In either case, this method will wait for all [IdlingResource]s to
-     * become idle.
-     *
-     * Note that some processes are driven by the host operating system and will therefore still
-     * execute when auto advancement is disabled. For example, on Android measure, layout and draw
-     * can still happen if the host view is invalidated by other parts of the View hierarchy.
+     * means that the Compose UI appears to be frozen. It is still valid to use this method in this
+     * way, if the condition will be satisfied by something not driven by our clock.
      *
      * Compared to [MainTestClock.advanceTimeUntil], [waitUntil] sleeps after every iteration to
-     * give the host operating system the opportunity to do measure/layout/draw passes. This gives
-     * [waitUntil] a better integration with the host, but it is less preferred from a performance
-     * viewpoint. Therefore, we recommend that you try using [MainTestClock.advanceTimeUntil] before
-     * resorting to [waitUntil].
+     * yield to other processes. This gives [waitUntil] a better integration with the host, but it
+     * is less preferred from a performance viewpoint. Therefore, we recommend that you try using
+     * [MainTestClock.advanceTimeUntil] before resorting to [waitUntil].
      *
-     * @param timeoutMillis The time after which this method throws an exception if the given
-     *   condition is not satisfied. This observes wall clock time, not [frame time][mainClock].
      * @param conditionDescription An optional human-readable description of [condition] that will
      *   be included in the timeout exception if thrown.
+     * @param timeoutMillis The time after which this method throws an exception if the given
+     *   condition is not satisfied. This observes wall clock time, not
+     *   [test clock time][mainClock].
      * @param condition Condition that must be satisfied in order for this method to successfully
      *   finish.
      * @throws androidx.compose.ui.test.ComposeTimeoutException If the condition is not satisfied
@@ -165,14 +179,8 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     fun waitUntil(
         conditionDescription: String? = null,
         timeoutMillis: Long = 1_000,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     )
-
-    /** Registers an [IdlingResource] in this test. */
-    fun registerIdlingResource(idlingResource: IdlingResource)
-
-    /** Unregisters an [IdlingResource] from this test. */
-    fun unregisterIdlingResource(idlingResource: IdlingResource)
 
     /**
      * Sets the given [composable] as the content to be tested. This should be called exactly once
@@ -199,10 +207,12 @@ expect sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
 fun ComposeUiTest.waitUntilNodeCount(
     matcher: SemanticsMatcher,
     count: Int,
-    timeoutMillis: Long = 1_000L
+    timeoutMillis: Long = 1_000L,
 ) {
     waitUntil("exactly $count nodes match (${matcher.description})", timeoutMillis) {
-        onAllNodes(matcher).fetchSemanticsNodes().size == count
+        // Never require the existence of compose roots. Either the current UI or the anticipated UI
+        // might not have any compose at all (i.e. View only).
+        onAllNodes(matcher).fetchSemanticsNodes(atLeastOneRootRequired = false).size == count
     }
 }
 
@@ -219,7 +229,7 @@ fun ComposeUiTest.waitUntilNodeCount(
 @ExperimentalTestApi
 fun ComposeUiTest.waitUntilAtLeastOneExists(
     matcher: SemanticsMatcher,
-    timeoutMillis: Long = 1_000L
+    timeoutMillis: Long = 1_000L,
 ) {
     waitUntil("at least one node matches (${matcher.description})", timeoutMillis) {
         onAllNodes(matcher).fetchSemanticsNodes().isNotEmpty()
@@ -239,7 +249,7 @@ fun ComposeUiTest.waitUntilAtLeastOneExists(
 @ExperimentalTestApi
 fun ComposeUiTest.waitUntilExactlyOneExists(
     matcher: SemanticsMatcher,
-    timeoutMillis: Long = 1_000L
+    timeoutMillis: Long = 1_000L,
 ) = waitUntilNodeCount(matcher, 1, timeoutMillis)
 
 /**
@@ -260,7 +270,7 @@ internal const val NanoSecondsPerMilliSecond = 1_000_000L
 
 internal fun buildWaitUntilTimeoutMessage(
     timeoutMillis: Long,
-    conditionDescription: String?
+    conditionDescription: String?,
 ): String = buildString {
     append("Condition ")
     if (conditionDescription != null) {

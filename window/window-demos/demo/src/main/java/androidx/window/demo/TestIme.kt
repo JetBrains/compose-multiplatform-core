@@ -17,13 +17,10 @@
 package androidx.window.demo
 
 import android.inputmethodservice.InputMethodService
-import android.os.Build
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
-import androidx.core.view.WindowInsetsCompat.Type
 import androidx.recyclerview.widget.RecyclerView
-import androidx.window.core.ExperimentalWindowApi
 import androidx.window.demo.common.infolog.InfoLogAdapter
 import androidx.window.layout.WindowMetrics
 import androidx.window.layout.WindowMetricsCalculator
@@ -67,7 +64,6 @@ internal class TestIme : InputMethodService() {
         displayWindowMetrics("MaximumWindowMetrics update", windowMetrics)
     }
 
-    @OptIn(ExperimentalWindowApi::class)
     private fun displayWindowMetrics(title: String, windowMetrics: WindowMetrics) {
 
         val width = windowMetrics.bounds.width()
@@ -78,15 +74,10 @@ internal class TestIme : InputMethodService() {
                 .append(
                     "Width: $width, Height: $height\n" +
                         "Top: ${windowMetrics.bounds.top}, Bottom: ${windowMetrics.bounds.bottom}, " +
-                        "Left: ${windowMetrics.bounds.left}, Right: ${windowMetrics.bounds.right}"
+                        "Left: ${windowMetrics.bounds.left}, Right: ${windowMetrics.bounds.right}\n" +
+                        "Density: ${windowMetrics.density}"
                 )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val windowInsets = windowMetrics.getWindowInsets()
-            logBuilder.append("\nimeInset: ${windowInsets.getInsets(Type.ime())}")
-            logBuilder.append("\nnavInset: ${windowInsets.getInsets(Type.navigationBars())}")
-            logBuilder.append("\nstatusBarInset: ${windowInsets.getInsets(Type.statusBars())}")
-        }
         adapter.append(title, logBuilder.toString())
         adapter.notifyDataSetChanged()
     }

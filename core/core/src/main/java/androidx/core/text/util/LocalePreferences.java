@@ -24,11 +24,11 @@ import android.icu.util.MeasureUnit;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -81,9 +81,8 @@ public final class LocalePreferences {
      * bases on the {@code Locale#getDefault(Locale.Category)}. It is one of the strings defined in
      * {@see HourCycle}, e.g. {@code HourCycle#H11}.
      */
-    @NonNull
     @HourCycle.HourCycleTypes
-    public static String getHourCycle() {
+    public static @NonNull String getHourCycle() {
         return getHourCycle(true);
     }
 
@@ -92,9 +91,8 @@ public final class LocalePreferences {
      * and based on the input {@code Locale}. It is one of the strings defined in
      * {@see HourCycle}, e.g. {@code HourCycle#H11}.
      */
-    @NonNull
     @HourCycle.HourCycleTypes
-    public static String getHourCycle(@NonNull Locale locale) {
+    public static @NonNull String getHourCycle(@NonNull Locale locale) {
         return getHourCycle(locale, true);
     }
 
@@ -114,9 +112,8 @@ public final class LocalePreferences {
      * in the hour cycle subtag, e.g. en-US-u-hc-h32, this function returns empty string, i.e.
      * {@code HourCycle#DEFAULT}.
      */
-    @NonNull
     @HourCycle.HourCycleTypes
-    public static String getHourCycle(
+    public static @NonNull String getHourCycle(
             boolean resolved) {
         Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)
                 ? Api24Impl.getDefaultLocale()
@@ -138,9 +135,8 @@ public final class LocalePreferences {
      * in the hour cycle subtag, e.g. en-US-u-hc-h32, this function returns empty string, i.e.
      * {@code HourCycle#DEFAULT}.
      */
-    @NonNull
     @HourCycle.HourCycleTypes
-    public static String getHourCycle(@NonNull Locale locale, boolean resolved) {
+    public static @NonNull String getHourCycle(@NonNull Locale locale, boolean resolved) {
         String result = getUnicodeLocaleType(HourCycle.U_EXTENSION_TAG,
                 HourCycle.DEFAULT, locale, resolved);
         if (result != null) {
@@ -210,9 +206,8 @@ public final class LocalePreferences {
      * the {@code Locale#getDefault(Locale.Category)} settings. It is one of the strings defined in
      * {@see CalendarType}, e.g. {@code CalendarType#CHINESE}.
      */
-    @NonNull
     @CalendarType.CalendarTypes
-    public static String getCalendarType() {
+    public static @NonNull String getCalendarType() {
         return getCalendarType(true);
     }
 
@@ -221,9 +216,8 @@ public final class LocalePreferences {
      * based on the input {@link Locale} settings. It is one of the strings defined in
      * {@see CalendarType}, e.g. {@code CalendarType#CHINESE}.
      */
-    @NonNull
     @CalendarType.CalendarTypes
-    public static String getCalendarType(@NonNull Locale locale) {
+    public static @NonNull String getCalendarType(@NonNull Locale locale) {
         return getCalendarType(locale, true);
     }
 
@@ -244,9 +238,8 @@ public final class LocalePreferences {
      * specified in the calendar type subtag, e.g. en-US-u-ca-calendar, this function returns
      * empty string, i.e. {@code CalendarType#DEFAULT}.
      */
-    @NonNull
     @CalendarType.CalendarTypes
-    public static String getCalendarType(boolean resolved) {
+    public static @NonNull String getCalendarType(boolean resolved) {
         Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)
                 ? Api24Impl.getDefaultLocale()
                 : getDefaultLocale();
@@ -267,9 +260,8 @@ public final class LocalePreferences {
      * specified in the calendar type subtag, e.g. en-US-u-ca-calendar, this function returns
      * empty string, i.e. {@code CalendarType#DEFAULT}.
      */
-    @NonNull
     @CalendarType.CalendarTypes
-    public static String getCalendarType(@NonNull Locale locale, boolean resolved) {
+    public static @NonNull String getCalendarType(@NonNull Locale locale, boolean resolved) {
         String result = getUnicodeLocaleType(CalendarType.U_EXTENSION_TAG,
                 CalendarType.DEFAULT, locale, resolved);
         if (result != null) {
@@ -315,9 +307,8 @@ public final class LocalePreferences {
      * {@code Locale#getDefault(Locale.Category)} settings. It is one of the strings defined in
      * {@see TemperatureUnit}, e.g. {@code TemperatureUnit#FAHRENHEIT}.
      */
-    @NonNull
     @TemperatureUnit.TemperatureUnits
-    public static String getTemperatureUnit() {
+    public static @NonNull String getTemperatureUnit() {
         return getTemperatureUnit(true);
     }
 
@@ -325,9 +316,8 @@ public final class LocalePreferences {
      * Return the temperature unit of the inputted {@link Locale}. It is one of the strings
      * defined in {@see TemperatureUnit}, e.g. {@code TemperatureUnit#FAHRENHEIT}.
      */
-    @NonNull
     @TemperatureUnit.TemperatureUnits
-    public static String getTemperatureUnit(
+    public static @NonNull String getTemperatureUnit(
             @NonNull Locale locale) {
         return getTemperatureUnit(locale, true);
     }
@@ -349,9 +339,8 @@ public final class LocalePreferences {
      * specified in the temperature unit subtag, e.g. en-US-u-mu-temperature, this function returns
      * empty string, i.e. {@code TemperatureUnit#DEFAULT}.
      */
-    @NonNull
     @TemperatureUnit.TemperatureUnits
-    public static String getTemperatureUnit(boolean resolved) {
+    public static @NonNull String getTemperatureUnit(boolean resolved) {
         Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)
                 ? Api24Impl.getDefaultLocale()
                 : getDefaultLocale();
@@ -373,9 +362,8 @@ public final class LocalePreferences {
      * specified in the temperature unit subtag, e.g. en-US-u-mu-temperature, this function returns
      * empty string, i.e. {@code TemperatureUnit#DEFAULT}.
      */
-    @NonNull
     @TemperatureUnit.TemperatureUnits
-    public static String getTemperatureUnit(@NonNull Locale locale, boolean resolved) {
+    public static @NonNull String getTemperatureUnit(@NonNull Locale locale, boolean resolved) {
         String result = getUnicodeLocaleType(TemperatureUnit.U_EXTENSION_TAG,
                 TemperatureUnit.DEFAULT, locale, resolved);
         if (result != null) {
@@ -433,9 +421,8 @@ public final class LocalePreferences {
      * {@code Locale#getDefault(Locale.Category)} settings. It is one of the strings defined in
      * {@see FirstDayOfWeek}, e.g. {@code FirstDayOfWeek#SUNDAY}.
      */
-    @NonNull
     @FirstDayOfWeek.Days
-    public static String getFirstDayOfWeek() {
+    public static @NonNull String getFirstDayOfWeek() {
         return getFirstDayOfWeek(true);
     }
 
@@ -444,9 +431,8 @@ public final class LocalePreferences {
      * and based on the input {@code Locale} settings. It is one of the strings defined in
      * {@see FirstDayOfWeek}, e.g. {@code FirstDayOfWeek#SUNDAY}.
      */
-    @NonNull
     @FirstDayOfWeek.Days
-    public static String getFirstDayOfWeek(@NonNull Locale locale) {
+    public static @NonNull String getFirstDayOfWeek(@NonNull Locale locale) {
         return getFirstDayOfWeek(locale, true);
     }
 
@@ -467,9 +453,8 @@ public final class LocalePreferences {
      * in the first day of week subtag, e.g. en-US-u-fw-days, this function returns empty string,
      * i.e. {@code FirstDayOfWeek#DEFAULT}.
      */
-    @NonNull
     @FirstDayOfWeek.Days
-    public static String getFirstDayOfWeek(boolean resolved) {
+    public static @NonNull String getFirstDayOfWeek(boolean resolved) {
         Locale defaultLocale = (Build.VERSION.SDK_INT >= VERSION_CODES.N)
                 ? Api24Impl.getDefaultLocale()
                 : getDefaultLocale();
@@ -492,9 +477,8 @@ public final class LocalePreferences {
      * specified in the first day of week subtag, e.g. en-US-u-fw-days, this function returns
      * empty string, i.e. {@code FirstDayOfWeek#DEFAULT}.
      */
-    @NonNull
     @FirstDayOfWeek.Days
-    public static String getFirstDayOfWeek(
+    public static @NonNull String getFirstDayOfWeek(
             @NonNull Locale locale, boolean resolved) {
         String result = getUnicodeLocaleType(FirstDayOfWeek.U_EXTENSION_TAG,
                 FirstDayOfWeek.DEFAULT, locale, resolved);
@@ -562,13 +546,11 @@ public final class LocalePreferences {
 
     @RequiresApi(VERSION_CODES.N)
     private static class Api24Impl {
-        @DoNotInline
         @CalendarType.CalendarTypes
         static String getCalendarType(@NonNull Locale locale) {
             return android.icu.util.Calendar.getInstance(locale).getType();
         }
 
-        @DoNotInline
         static Locale getDefaultLocale() {
             return Locale.getDefault(Category.FORMAT);
         }
@@ -579,7 +561,6 @@ public final class LocalePreferences {
 
     @RequiresApi(VERSION_CODES.TIRAMISU)
     private static class Api33Impl {
-        @DoNotInline
         @TemperatureUnit.TemperatureUnits
         static String getResolvedTemperatureUnit(@NonNull Locale locale) {
             LocalizedNumberFormatter nf = NumberFormatter.with()
@@ -593,7 +574,6 @@ public final class LocalePreferences {
             return unit;
         }
 
-        @DoNotInline
         @HourCycle.HourCycleTypes
         static String getHourCycle(@NonNull Locale locale) {
             return getHourCycleType(

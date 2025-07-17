@@ -22,15 +22,11 @@ import static androidx.wear.protolayout.materialcore.Chip.METADATA_TAG_TEXT;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.content.Context;
 import android.graphics.Color;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.ActionBuilders.LaunchAction;
@@ -42,6 +38,8 @@ import androidx.wear.protolayout.ModifiersBuilders.Clickable;
 import androidx.wear.protolayout.ModifiersBuilders.ElementMetadata;
 import androidx.wear.protolayout.ModifiersBuilders.Modifiers;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -97,6 +95,7 @@ public class CompactChipTest {
 
         assertChip(compactChip, COLORS, /* iconId= */ iconId, description);
         assertThat(compactChip.getText()).isEqualTo(MAIN_TEXT);
+        assertThat(compactChip.hasText()).isTrue();
     }
 
     @Test
@@ -120,7 +119,8 @@ public class CompactChipTest {
                         defaultColor),
                 iconId,
                 description);
-        assertThrows(NullPointerException.class, compactChip::getText);
+        assertThat(compactChip.getText()).isEmpty();
+        assertThat(compactChip.hasText()).isFalse();
     }
 
     @Test

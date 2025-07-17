@@ -20,7 +20,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 class RequestUpdateProcessorImpls {
     private static final RequestUpdateProcessorImpl sNoUpdateProcessor =

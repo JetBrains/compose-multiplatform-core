@@ -22,10 +22,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.Camera2CameraControlImpl;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,8 +57,7 @@ public class TorchFlashRequiredFor3aUpdateQuirk implements Quirk {
             "PIXEL 8 PRO"
     );
 
-    @NonNull
-    private final CameraCharacteristicsCompat mCameraCharacteristics;
+    private final @NonNull CameraCharacteristicsCompat mCameraCharacteristics;
 
     public TorchFlashRequiredFor3aUpdateQuirk(
             @NonNull CameraCharacteristicsCompat cameraCharacteristics) {

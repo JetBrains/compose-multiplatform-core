@@ -23,7 +23,8 @@ import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
-import androidx.room.compiler.codegen.XTypeSpec.Builder.Companion.apply
+import androidx.room.compiler.codegen.compat.XConverters.applyToJavaPoet
+import androidx.room.compiler.codegen.compat.XConverters.applyToKotlinPoet
 import androidx.room.compiler.processing.XProcessingEnv
 import androidx.room.compiler.processing.writeTo
 import androidx.room.processor.Context
@@ -40,10 +41,8 @@ abstract class TypeWriter(val context: WriterContext) {
     private val sharedMethodSpecs = mutableMapOf<String, XFunSpec>()
     private val sharedFieldNames = mutableSetOf<String>()
     private val sharedMethodNames = mutableSetOf<String>()
-
     private val metadata = mutableMapOf<KClass<*>, Any>()
-
-    val codeLanguage: CodeLanguage = context.codeLanguage
+    abstract val packageName: String
 
     abstract fun createTypeSpecBuilder(): XTypeSpec.Builder
 
@@ -53,7 +52,8 @@ abstract class TypeWriter(val context: WriterContext) {
      * @see set for more details.
      */
     operator fun <T> get(key: KClass<*>): T? {
-        @Suppress("UNCHECKED_CAST") return metadata[key] as? T
+        @Suppress("UNCHECKED_CAST")
+        return metadata[key] as? T
     }
 
     /**
@@ -73,63 +73,67 @@ abstract class TypeWriter(val context: WriterContext) {
         sharedMethodSpecs.values.forEach { builder.addFunction(it) }
         addGeneratedAnnotationIfAvailable(builder, processingEnv)
         addSuppressWarnings(builder)
-        builder.build().writeTo(processingEnv.filer)
+        builder
+            .build()
+            .writeTo(
+                language = context.codeLanguage,
+                packageName = packageName,
+                generator = processingEnv.filer,
+            )
     }
 
     private fun addSuppressWarnings(builder: XTypeSpec.Builder) {
-        builder.apply(
-            javaTypeBuilder = {
+        builder
+            .applyToJavaPoet {
                 addAnnotation(
-                    com.squareup.javapoet.AnnotationSpec.builder(SuppressWarnings::class.java)
+                    JAnnotationSpec.builder(SuppressWarnings::class.java)
                         .addMember(
                             "value",
                             "{\$S, \$S, \$S}",
                             "unchecked",
                             "deprecation",
-                            "removal"
+                            "removal",
                         )
                         .build()
                 )
-            },
-            kotlinTypeBuilder = {
+            }
+            .applyToKotlinPoet {
                 addAnnotation(
-                    com.squareup.kotlinpoet.AnnotationSpec.builder(Suppress::class)
+                    KAnnotationSpec.builder(Suppress::class)
                         .addMember(
                             "names = [%S, %S, %S, %S]",
                             "UNCHECKED_CAST",
                             "DEPRECATION",
                             "REDUNDANT_PROJECTION",
-                            "REMOVAL"
+                            "REMOVAL",
                         )
                         .build()
                 )
             }
-        )
     }
 
     private fun addGeneratedAnnotationIfAvailable(
         adapterTypeSpecBuilder: XTypeSpec.Builder,
-        processingEnv: XProcessingEnv
+        processingEnv: XProcessingEnv,
     ) {
         processingEnv.findGeneratedAnnotation()?.let {
             val annotationName = it.asClassName().canonicalName
             val memberValue = RoomProcessor::class.java.canonicalName
-            adapterTypeSpecBuilder.apply(
-                javaTypeBuilder = {
+            adapterTypeSpecBuilder
+                .applyToJavaPoet {
                     addAnnotation(
                         JAnnotationSpec.builder(JClassName.bestGuess(annotationName))
                             .addMember("value", "\$S", memberValue)
                             .build()
                     )
-                },
-                kotlinTypeBuilder = {
+                }
+                .applyToKotlinPoet {
                     addAnnotation(
                         KAnnotationSpec.builder(KClassName.bestGuess(annotationName))
                             .addMember("value = [%S]", memberValue)
                             .build()
                     )
                 }
-            )
         }
     }
 
@@ -172,11 +176,10 @@ abstract class TypeWriter(val context: WriterContext) {
         fun build(classWriter: TypeWriter, name: String): XPropertySpec {
             val builder =
                 XPropertySpec.builder(
-                    language = classWriter.codeLanguage,
                     name = name,
                     typeName = type,
                     visibility = VisibilityModifier.PRIVATE,
-                    isMutable = isMutable
+                    isMutable = isMutable,
                 )
             prepare(classWriter, builder)
             return builder.build()
@@ -187,10 +190,10 @@ abstract class TypeWriter(val context: WriterContext) {
 
         abstract fun getUniqueKey(): String
 
-        abstract fun prepare(methodName: String, writer: TypeWriter, builder: XFunSpec.Builder)
+        abstract fun prepare(functionName: String, writer: TypeWriter, builder: XFunSpec.Builder)
 
         fun build(writer: TypeWriter, name: String): XFunSpec {
-            val builder = XFunSpec.builder(writer.codeLanguage, name, VisibilityModifier.PRIVATE)
+            val builder = XFunSpec.builder(name, VisibilityModifier.PRIVATE)
             prepare(name, writer, builder)
             return builder.build()
         }
@@ -199,14 +202,14 @@ abstract class TypeWriter(val context: WriterContext) {
     class WriterContext(
         val codeLanguage: CodeLanguage,
         val targetPlatforms: Set<XProcessingEnv.Platform>,
-        val javaLambdaSyntaxAvailable: Boolean
+        val javaLambdaSyntaxAvailable: Boolean,
     ) {
         companion object {
             fun fromProcessingContext(context: Context) =
                 WriterContext(
                     codeLanguage = context.codeLanguage,
                     targetPlatforms = context.processingEnv.targetPlatforms,
-                    javaLambdaSyntaxAvailable = context.javaLambdaSyntaxAvailable
+                    javaLambdaSyntaxAvailable = context.javaLambdaSyntaxAvailable,
                 )
         }
     }

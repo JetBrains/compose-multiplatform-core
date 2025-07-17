@@ -27,10 +27,10 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Method;
 
@@ -295,12 +295,10 @@ public final class ViewConfigurationCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static float getScaledHorizontalScrollFactor(ViewConfiguration viewConfiguration) {
             return viewConfiguration.getScaledHorizontalScrollFactor();
         }
 
-        @DoNotInline
         static float getScaledVerticalScrollFactor(ViewConfiguration viewConfiguration) {
             return viewConfiguration.getScaledVerticalScrollFactor();
         }
@@ -312,12 +310,10 @@ public final class ViewConfigurationCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getScaledHoverSlop(ViewConfiguration viewConfiguration) {
             return viewConfiguration.getScaledHoverSlop();
         }
 
-        @DoNotInline
         static boolean shouldShowMenuShortcutsWhenKeyboardPresent(
                 ViewConfiguration viewConfiguration) {
             return viewConfiguration.shouldShowMenuShortcutsWhenKeyboardPresent();
@@ -330,7 +326,6 @@ public final class ViewConfigurationCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getScaledMaximumFlingVelocity(
                 @NonNull ViewConfiguration viewConfiguration,
                 int inputDeviceId,
@@ -339,7 +334,6 @@ public final class ViewConfigurationCompat {
             return viewConfiguration.getScaledMaximumFlingVelocity(inputDeviceId, axis, source);
         }
 
-        @DoNotInline
         static int getScaledMinimumFlingVelocity(
                 @NonNull ViewConfiguration viewConfiguration,
                 int inputDeviceId,

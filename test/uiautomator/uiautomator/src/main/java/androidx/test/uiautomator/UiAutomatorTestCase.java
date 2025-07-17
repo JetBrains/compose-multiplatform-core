@@ -21,7 +21,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.test.InstrumentationTestCase;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * UI Automator test case that is executed on the device.

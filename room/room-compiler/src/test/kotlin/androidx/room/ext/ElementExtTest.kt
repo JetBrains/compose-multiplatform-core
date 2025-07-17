@@ -49,7 +49,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                 public static void parentStaticPublic() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val childCode =
             Source.java(
@@ -66,7 +66,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                 public static void childStaticPublic() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runTest(sources = listOf(parentCode, childCode)) {
@@ -79,7 +79,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                     "parentPublic",
                     "parentStaticPrivate",
                     "parentStaticPublic",
-                    "overridden"
+                    "overridden",
                 )
             val childMethods =
                 listOf(
@@ -87,7 +87,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                     "childPublic",
                     "childStaticPrivate",
                     "childStaticPublic",
-                    "overridden"
+                    "overridden",
                 )
             assertThat(parent.getDeclaredMethods().names()).containsExactlyElementsIn(parentMethods)
             assertThat(parent.getAllMethods().names())
@@ -115,7 +115,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                             "childPrivate",
                             "childStaticPrivate",
                             "childStaticPublic",
-                            "overridden"
+                            "overridden",
                         ) + "overridden" // add 1 overridden back
                 )
 
@@ -139,7 +139,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                 public static void parentStaticPublic() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val childCode =
             Source.java(
@@ -154,7 +154,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                 public static void childStaticPublic() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runTest(sources = listOf(parentCode, childCode)) {
@@ -204,7 +204,7 @@ class ElementExtTest(private val preCompile: Boolean) {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runTest(sources = listOf(testCode)) {
@@ -225,25 +225,42 @@ class ElementExtTest(private val preCompile: Boolean) {
                 """
             package foo
             class Subject {
-              fun makeULong(): ULong {
-                TODO()
-              }
+              fun uLongFunction(): ULong = TODO()
+              fun durationFunction(): kotlin.time.Duration = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
             config =
-                XProcessingEnvConfig.DEFAULT.copy(excludeMethodsWithInvalidJvmSourceNames = false)
+                XProcessingEnvConfig.DEFAULT.copy(excludeMethodsWithInvalidJvmSourceNames = false),
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("foo.Subject")
-            val returnType =
-                subject.getDeclaredMethods().single { it.name == "makeULong" }.returnType
-            val prop = checkNotNull(returnType.typeElement).getValueClassUnderlyingElement()
-            assertThat(prop.name).isEqualTo("data")
-            assertThat(prop.type)
-                .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
+            subject
+                .getDeclaredMethods()
+                .first { it.name == "uLongFunction" }
+                .let { uLongFunction ->
+                    val returnType = uLongFunction.returnType
+                    val info = checkNotNull(returnType.typeElement).getValueClassUnderlyingInfo()
+                    assertThat(info.parameter.name).isEqualTo("data")
+                    assertThat(info.getter!!.propertyName).isEqualTo("data")
+                    assertThat(info.parameter.type)
+                        .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
+                    assertThat(info.getter!!.returnType)
+                        .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
+                }
+            subject
+                .getDeclaredMethods()
+                .first { it.name == "durationFunction" }
+                .let { durationFunction ->
+                    val returnType = durationFunction.returnType
+                    val info = checkNotNull(returnType.typeElement).getValueClassUnderlyingInfo()
+                    assertThat(info.parameter.name).isEqualTo("rawValue")
+                    assertThat(info.getter).isNull()
+                    assertThat(info.parameter.type)
+                        .isEqualTo(invocation.processingEnv.requireType(XTypeName.PRIMITIVE_LONG))
+                }
         }
     }
 

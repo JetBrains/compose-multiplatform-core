@@ -47,8 +47,9 @@ class ActivityDemo<T : ComponentActivity>(title: String, val activityClass: KCla
     Demo(title)
 
 /** A category of [Demo]s, that will display a list of [demos] when selected. */
-class DemoCategory(title: String, val demos: List<Demo>) : Demo(title) {
+open class DemoCategory(title: String, val demos: List<Demo>) : Demo(title) {
     private var scrollState: ScalingLazyListState? = null
+    open val materialVersion = 2
 
     @Composable
     fun getScrollStateOrInit(
@@ -58,10 +59,14 @@ class DemoCategory(title: String, val demos: List<Demo>) : Demo(title) {
     }
 }
 
+class Material3DemoCategory(title: String, demos: List<Demo>) : DemoCategory(title, demos) {
+    override val materialVersion = 3
+}
+
 /** Parameters which are used by [Demo] screens. */
 class DemoParameters(
     val navigateBack: () -> Unit,
-    val swipeToDismissBoxState: SwipeToDismissBoxState
+    val swipeToDismissBoxState: SwipeToDismissBoxState,
 )
 
 /**
@@ -80,6 +85,6 @@ fun Centralize(modifier: Modifier = Modifier, content: @Composable ColumnScope.(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
-        content = content
+        content = content,
     )
 }

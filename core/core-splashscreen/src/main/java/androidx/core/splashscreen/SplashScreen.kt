@@ -35,6 +35,7 @@ import android.widget.ImageView
 import android.window.SplashScreenView
 import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.splashscreen.SplashScreen.KeepOnScreenCondition
 
@@ -114,7 +115,7 @@ import androidx.core.splashscreen.SplashScreen.KeepOnScreenCondition
  * with a diameter of 200dp. Everything outside the circle will be invisible (masked).
  */
 @SuppressLint("CustomSplashScreen")
-class SplashScreen private constructor(activity: Activity) {
+public class SplashScreen private constructor(activity: Activity) {
 
     private val impl =
         when {
@@ -250,10 +251,10 @@ class SplashScreen private constructor(activity: Activity) {
                 currentTheme.resolveAttribute(
                     R.attr.windowSplashScreenAnimatedIcon,
                     typedValue,
-                    true
+                    true,
                 )
             ) {
-                icon = currentTheme.getDrawable(typedValue.resourceId)
+                icon = AppCompatResources.getDrawable(activity, typedValue.resourceId)
             }
 
             if (currentTheme.resolveAttribute(R.attr.splashScreenIconSize, typedValue, true)) {
@@ -265,7 +266,7 @@ class SplashScreen private constructor(activity: Activity) {
 
         protected fun setPostSplashScreenTheme(
             currentTheme: Resources.Theme,
-            typedValue: TypedValue
+            typedValue: TypedValue,
         ) {
             if (currentTheme.resolveAttribute(R.attr.postSplashScreenTheme, typedValue, true)) {
                 finalThemeId = typedValue.resourceId
@@ -275,7 +276,7 @@ class SplashScreen private constructor(activity: Activity) {
             }
         }
 
-        open fun setKeepOnScreenCondition(keepOnScreenCondition: KeepOnScreenCondition) {
+        public open fun setKeepOnScreenCondition(keepOnScreenCondition: KeepOnScreenCondition) {
             splashScreenWaitPredicate = keepOnScreenCondition
             val contentView = activity.findViewById<View>(android.R.id.content)
             val observer = contentView.viewTreeObserver
@@ -293,7 +294,7 @@ class SplashScreen private constructor(activity: Activity) {
             )
         }
 
-        open fun setOnExitAnimationListener(exitAnimationListener: OnExitAnimationListener) {
+        public open fun setOnExitAnimationListener(exitAnimationListener: OnExitAnimationListener) {
             animationListener = exitAnimationListener
 
             val splashScreenViewProvider = SplashScreenViewProvider(activity)
@@ -322,7 +323,7 @@ class SplashScreen private constructor(activity: Activity) {
                         oldLeft: Int,
                         oldTop: Int,
                         oldRight: Int,
-                        oldBottom: Int
+                        oldBottom: Int,
                     ) {
                         if (!view.isAttachedToWindow) {
                             return
@@ -346,7 +347,8 @@ class SplashScreen private constructor(activity: Activity) {
                 if (hasBackground) {
                     // If the splash screen has an icon background we need to mask both the
                     // background and foreground.
-                    val iconBackgroundDrawable = context.getDrawable(R.drawable.icon_background)
+                    val iconBackgroundDrawable =
+                        AppCompatResources.getDrawable(context, R.drawable.icon_background)
 
                     val iconSize =
                         resources.getDimension(R.dimen.splashscreen_icon_size_with_background)
@@ -364,7 +366,7 @@ class SplashScreen private constructor(activity: Activity) {
             }
         }
 
-        fun dispatchOnExitAnimation(splashScreenViewProvider: SplashScreenViewProvider) {
+        public fun dispatchOnExitAnimation(splashScreenViewProvider: SplashScreenViewProvider) {
             val finalListener = animationListener ?: return
             animationListener = null
             splashScreenViewProvider.view.postOnAnimation {
@@ -466,6 +468,7 @@ class SplashScreen private constructor(activity: Activity) {
          *
          * To fix this, we apply these attributes as soon as the [SplashScreenView] is visible.
          */
+        @Suppress("DEPRECATION")
         private fun applyAppSystemUiTheme() {
             val tv = TypedValue()
             val theme = activity.theme

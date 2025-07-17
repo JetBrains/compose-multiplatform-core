@@ -29,6 +29,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.InternalTestConvenience.useInCameraTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onIdle
@@ -79,14 +80,12 @@ class ToggleButtonUITest(private val implName: String, private val cameraConfig:
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     private val launchIntent =
         Intent(ApplicationProvider.getApplicationContext(), CameraXActivity::class.java).apply {
@@ -126,7 +125,7 @@ class ToggleButtonUITest(private val implName: String, private val cameraConfig:
 
     @Test
     fun testFlashToggleButton() {
-        ActivityScenario.launch<CameraXActivity>(launchIntent).use { scenario ->
+        ActivityScenario.launch<CameraXActivity>(launchIntent).useInCameraTest { scenario ->
             // Arrange.
             WaitForViewToShow(R.id.constraintLayout).wait()
             assumeTrue(isButtonEnabled(R.id.flash_toggle))
@@ -151,7 +150,7 @@ class ToggleButtonUITest(private val implName: String, private val cameraConfig:
 
     @Test
     fun testTorchToggleButton() {
-        ActivityScenario.launch<CameraXActivity>(launchIntent).use { scenario ->
+        ActivityScenario.launch<CameraXActivity>(launchIntent).useInCameraTest { scenario ->
             WaitForViewToShow(R.id.constraintLayout).wait()
             assumeTrue(isButtonEnabled(R.id.torch_toggle))
             val cameraInfo = scenario.withActivity { cameraInfo!! }
@@ -169,9 +168,9 @@ class ToggleButtonUITest(private val implName: String, private val cameraConfig:
     fun testSwitchCameraToggleButton() {
         assumeTrue(
             "Ignore the camera switch test since there's no front camera.",
-            CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT)
+            CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_FRONT),
         )
-        ActivityScenario.launch<CameraXActivity>(launchIntent).use { scenario ->
+        ActivityScenario.launch<CameraXActivity>(launchIntent).useInCameraTest { scenario ->
             WaitForViewToShow(R.id.direction_toggle).wait()
             assertThat(scenario.withActivity { preview }).isNotNull()
             for (i in 0..4) {
@@ -213,12 +212,12 @@ class ToggleButtonUITest(private val implName: String, private val cameraConfig:
             listOf(
                 arrayOf(
                     Camera2Config::class.simpleName,
-                    CameraXViewModel.CAMERA2_IMPLEMENTATION_OPTION
+                    CameraXViewModel.CAMERA2_IMPLEMENTATION_OPTION,
                 ),
                 arrayOf(
                     CameraPipeConfig::class.simpleName,
-                    CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION
-                )
+                    CameraXViewModel.CAMERA_PIPE_IMPLEMENTATION_OPTION,
+                ),
             )
     }
 }

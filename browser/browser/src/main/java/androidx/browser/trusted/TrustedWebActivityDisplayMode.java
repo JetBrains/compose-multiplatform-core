@@ -18,7 +18,7 @@ package androidx.browser.trusted;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents display mode of a Trusted Web Activity.
@@ -29,11 +29,14 @@ public interface TrustedWebActivityDisplayMode {
     String KEY_ID = "androidx.browser.trusted.displaymode.KEY_ID";
 
     /** Unpacks the object from a {@link Bundle}. */
-    @NonNull
-    static TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
+    static @NonNull TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
         switch (bundle.getInt(KEY_ID)) {
             case ImmersiveMode.ID:
                 return ImmersiveMode.fromBundle(bundle);
+            case BrowserMode.ID:
+                return new BrowserMode();
+            case MinimalUiMode.ID:
+                return new MinimalUiMode();
             case DefaultMode.ID: // fallthrough
             default:
                 return new DefaultMode();
@@ -41,8 +44,7 @@ public interface TrustedWebActivityDisplayMode {
     }
 
     /** Packs the object into a {@link Bundle}. */
-    @NonNull
-    Bundle toBundle();
+    @NonNull Bundle toBundle();
 
     /**
      * Default mode: the system UI (status bar, navigation bar) is shown, and the browser
@@ -51,9 +53,8 @@ public interface TrustedWebActivityDisplayMode {
     class DefaultMode implements TrustedWebActivityDisplayMode {
         private static final int ID = 0;
 
-        @NonNull
         @Override
-        public Bundle toBundle() {
+        public @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putInt(KEY_ID, ID);
             return bundle;
@@ -100,15 +101,13 @@ public interface TrustedWebActivityDisplayMode {
         }
 
         @SuppressWarnings("WeakerAccess") /* synthetic access */
-        @NonNull
-        static TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
+        static @NonNull TrustedWebActivityDisplayMode fromBundle(@NonNull Bundle bundle) {
             return new ImmersiveMode(bundle.getBoolean(KEY_STICKY),
                     bundle.getInt(KEY_CUTOUT_MODE));
         }
 
-        @NonNull
         @Override
-        public Bundle toBundle() {
+        public @NonNull Bundle toBundle() {
             Bundle bundle = new Bundle();
             bundle.putInt(KEY_ID, ID);
             bundle.putBoolean(KEY_STICKY, mIsSticky);
@@ -124,6 +123,43 @@ public interface TrustedWebActivityDisplayMode {
         /** Returns the cutout mode. */
         public int layoutInDisplayCutoutMode() {
             return mLayoutInDisplayCutoutMode;
+        }
+    }
+
+
+    /**
+     * Browser Mode: Lets the browser determine the display mode - this may be a Trusted Web
+     * Activity or a browser tab.
+     *
+     * {@see https://www.w3.org/TR/appmanifest/#dfn-browser}
+     */
+    class BrowserMode implements TrustedWebActivityDisplayMode {
+
+        private static final int ID = 2;
+
+        @Override
+        public @NonNull Bundle toBundle() {
+            Bundle bundle = new Bundle();
+            bundle.putInt(KEY_ID, ID);
+            return bundle;
+        }
+    }
+
+    /**
+     * Minimal UI Mode: Hides away most controls that aren't essential for navigation like Back
+     * or Reload, and hides the toolbar if possible.
+     *
+     * {@see https://www.w3.org/TR/appmanifest/#dfn-minimal-ui}
+     */
+    class MinimalUiMode implements TrustedWebActivityDisplayMode {
+
+        private static final int ID = 3;
+
+        @Override
+        public @NonNull Bundle toBundle() {
+            Bundle bundle = new Bundle();
+            bundle.putInt(KEY_ID, ID);
+            return bundle;
         }
     }
 }

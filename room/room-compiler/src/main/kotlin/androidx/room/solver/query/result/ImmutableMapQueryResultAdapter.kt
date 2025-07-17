@@ -28,25 +28,24 @@ class ImmutableMapQueryResultAdapter(
     parsedQuery: ParsedQuery,
     private val keyTypeArg: XType,
     private val valueTypeArg: XType,
-    private val resultAdapter: QueryResultAdapter
+    private val resultAdapter: QueryResultAdapter,
 ) : MultimapQueryResultAdapter(context, parsedQuery, resultAdapter.rowAdapters) {
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
             val mapVarName = scope.getTmpVar("_mapResult")
-            resultAdapter.convert(mapVarName, cursorVarName, scope)
+            resultAdapter.convert(mapVarName, stmtVarName, scope)
             addLocalVariable(
                 name = outVarName,
                 typeName =
                     GuavaTypeNames.IMMUTABLE_MAP.parametrizedBy(
                         keyTypeArg.asTypeName(),
-                        valueTypeArg.asTypeName()
+                        valueTypeArg.asTypeName(),
                     ),
                 assignExpr =
                     XCodeBlock.of(
-                        language = language,
                         format = "%T.copyOf(%L)",
                         GuavaTypeNames.IMMUTABLE_MAP,
-                        mapVarName
+                        mapVarName,
                     ),
             )
         }

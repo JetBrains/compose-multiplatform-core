@@ -15,16 +15,17 @@
  */
 
 // Impl classes from kotlin.library.abi.impl are necessary to instantiate parsed declarations
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
 @file:OptIn(ExperimentalLibraryAbiReader::class)
 
 package androidx.binarycompatibilityvalidator
 
+import kotlin.text.dropLast
 import org.jetbrains.kotlin.library.abi.AbiClassKind
 import org.jetbrains.kotlin.library.abi.AbiCompoundName
 import org.jetbrains.kotlin.library.abi.AbiModality
 import org.jetbrains.kotlin.library.abi.AbiPropertyKind
 import org.jetbrains.kotlin.library.abi.AbiQualifiedName
+import org.jetbrains.kotlin.library.abi.AbiSignatureVersion
 import org.jetbrains.kotlin.library.abi.AbiType
 import org.jetbrains.kotlin.library.abi.AbiTypeArgument
 import org.jetbrains.kotlin.library.abi.AbiTypeNullability
@@ -99,17 +100,21 @@ internal fun Cursor.hasGetterOrSetter() = hasGetter() || hasSetter()
 
 internal fun Cursor.parseGetterName(peek: Boolean = false): String? {
     val cursor = subCursor(peek)
-    cursor.parseSymbol("^<get\\-") ?: return null
+    cursor.parseContextParams()
+    cursor.parseFunctionReceiver()
+    cursor.parseSymbol(getterNameRegex) ?: return null
     val name = cursor.parseValidIdentifier() ?: return null
-    cursor.parseSymbol("^>") ?: return null
+    cursor.parseSymbol(closeAngleBracketRegex) ?: return null
     return "<get-$name>"
 }
 
 internal fun Cursor.parseSetterName(peek: Boolean = false): String? {
     val cursor = subCursor(peek)
-    cursor.parseSymbol("^<set\\-") ?: return null
+    cursor.parseContextParams()
+    cursor.parseFunctionReceiver()
+    cursor.parseSymbol(setterNameRegex) ?: return null
     val name = cursor.parseValidIdentifier() ?: return null
-    cursor.parseSymbol("^>") ?: return null
+    cursor.parseSymbol(closeAngleBracketRegex) ?: return null
     return "<set-$name>"
 }
 
@@ -117,7 +122,7 @@ internal fun Cursor.parseGetterOrSetterName(peek: Boolean = false) =
     parseGetterName(peek) ?: parseSetterName(peek)
 
 internal fun Cursor.parseClassModifier(peek: Boolean = false): String? =
-    parseSymbol("^(inner|value|fun|open)", peek)
+    parseSymbol(classModifierRegex, peek)
 
 internal fun Cursor.parseClassModifiers(): Set<String> {
     val modifiers = mutableSetOf<String>()
@@ -127,11 +132,10 @@ internal fun Cursor.parseClassModifiers(): Set<String> {
     return modifiers
 }
 
-internal fun Cursor.parseFunctionKind(peek: Boolean = false) =
-    parseSymbol("^(constructor|fun)", peek)
+internal fun Cursor.parseFunctionKind(peek: Boolean = false) = parseSymbol(functionKindRegex, peek)
 
 internal fun Cursor.parseFunctionModifier(peek: Boolean = false): String? =
-    parseSymbol("^(inline|suspend)", peek)
+    parseSymbol(functionModifierRegex, peek)
 
 internal fun Cursor.parseFunctionModifiers(): Set<String> {
     val modifiers = mutableSetOf<String>()
@@ -141,12 +145,44 @@ internal fun Cursor.parseFunctionModifiers(): Set<String> {
     return modifiers
 }
 
+internal fun Cursor.parseConstructorName() = parseSymbol(constructorNameRegex)
+
+// Valid identifiers can appear in a lot of places, some of them are followed by spaces,
+// for example at the end of a class name ('class libname.Foo {'). But not at the end of a function
+// name ('libname.foo()'). So we trim the whitespace only when we know it was inserted by the dump
+// format and is not part of the identifier itself.
+internal fun Cursor.parseValidIdentifierAndMaybeTrim(peek: Boolean = false) =
+    parseValidIdentifier(peek)?.let {
+        if (parseSymbol(symbolsFollowingIdentifiersWithSpaces, peek = true) != null) {
+            it.dropLast(1)
+        } else {
+            it
+        }
+    }
+
 internal fun Cursor.parseAbiQualifiedName(peek: Boolean = false): AbiQualifiedName? {
-    val symbol =
-        parseSymbol("^[a-zA-Z0-9\\.]+\\/[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)?", peek) ?: return null
-    val (packageName, relativeName) = symbol.split("/")
+    val cursor = subCursor(peek)
+    val packageName = cursor.parsePackageName() ?: return null
+    cursor.parseSymbol(slashRegex) ?: return null
+    val relativeNameBuilder = StringBuilder()
+    while (cursor.hasNextValidIdentifierPiece()) {
+        cursor.parseSymbol(dotRegex)?.let { relativeNameBuilder.append(it) }
+        relativeNameBuilder.append(cursor.parseValidIdentifierAndMaybeTrim())
+    }
+    val relativeName =
+        relativeNameBuilder.toString().ifEmpty {
+            return null
+        }
     return AbiQualifiedName(AbiCompoundName(packageName), AbiCompoundName(relativeName))
 }
+
+private fun Cursor.hasNextValidIdentifierPiece(): Boolean {
+    val cursor = subCursor(peek = true)
+    cursor.parseSymbol(dotRegex)
+    return cursor.parseValidIdentifier(peek = true) != null
+}
+
+internal fun Cursor.parsePackageName() = parseSymbol(packageNameRegex)
 
 internal fun Cursor.parseAbiType(peek: Boolean = false): AbiType? {
     val cursor = subCursor(peek)
@@ -158,18 +194,18 @@ internal fun Cursor.parseAbiType(peek: Boolean = false): AbiType? {
     return SimpleTypeImpl(
         ClassReferenceImpl(abiQualifiedName),
         arguments = typeArgs,
-        nullability = nullability
+        nullability = nullability,
     )
 }
 
 internal fun Cursor.parseTypeArgs(): List<AbiTypeArgument>? {
     val typeArgsString = parseTypeParamsString() ?: return null
     val subCursor = Cursor(typeArgsString)
-    subCursor.parseSymbol("<") ?: return null
+    subCursor.parseSymbol(openAngleBracketRegex) ?: return null
     val typeArgs = mutableListOf<AbiTypeArgument>()
     while (subCursor.parseTypeArg(peek = true) != null) {
         typeArgs.add(subCursor.parseTypeArg()!!)
-        subCursor.parseSymbol(",")
+        subCursor.parseSymbol(commaRegex)
     }
     return typeArgs
 }
@@ -177,7 +213,7 @@ internal fun Cursor.parseTypeArgs(): List<AbiTypeArgument>? {
 internal fun Cursor.parseTypeArg(peek: Boolean = false): AbiTypeArgument? {
     val cursor = subCursor(peek)
     val variance = cursor.parseAbiVariance()
-    cursor.parseSymbol("\\*")?.let {
+    cursor.parseSymbol(starProjectionRegex)?.let {
         return StarProjectionImpl
     }
     val type = cursor.parseAbiType(peek) ?: return null
@@ -185,7 +221,7 @@ internal fun Cursor.parseTypeArg(peek: Boolean = false): AbiTypeArgument? {
 }
 
 internal fun Cursor.parseAbiVariance(): AbiVariance {
-    val variance = parseSymbol("^(out|in)") ?: return AbiVariance.INVARIANT
+    val variance = parseSymbol(abiVarianceRegex) ?: return AbiVariance.INVARIANT
     return AbiVariance.valueOf(variance.uppercase())
 }
 
@@ -196,15 +232,15 @@ internal fun Cursor.parseTypeReference(): AbiType? {
     return SimpleTypeImpl(
         TypeParameterReferenceImpl(typeParamReference),
         arguments = typeArgs,
-        nullability = nullability
+        nullability = nullability,
     )
 }
 
-internal fun Cursor.parseTag() = parseSymbol("^#[a-zA-Z0-9]+")?.removePrefix("#")
+internal fun Cursor.parseTag() = parseSymbol(tagRegex)?.removePrefix("#")
 
 internal fun Cursor.parseNullability(assumeNotNull: Boolean = false): AbiTypeNullability {
-    val nullable = parseSymbol("^\\?") != null
-    val definitelyNotNull = parseSymbol("^\\!\\!") != null
+    val nullable = parseSymbol(nullableSymbolRegex) != null
+    val definitelyNotNull = parseSymbol(notNullSymbolRegex) != null
     return when {
         nullable -> AbiTypeNullability.MARKED_NULLABLE
         definitelyNotNull -> AbiTypeNullability.DEFINITELY_NOT_NULL
@@ -218,11 +254,11 @@ internal fun Cursor.parseNullability(assumeNotNull: Boolean = false): AbiTypeNul
 }
 
 internal fun Cursor.parseSuperTypes(): MutableSet<AbiType> {
-    parseSymbol(":")
+    parseSymbol(colonRegex)
     val superTypes = mutableSetOf<AbiType>()
     while (parseAbiQualifiedName(peek = true) != null) {
         superTypes.add(parseAbiType()!!)
-        parseSymbol(",")
+        parseSymbol(commaRegex)
     }
     return superTypes
 }
@@ -230,11 +266,11 @@ internal fun Cursor.parseSuperTypes(): MutableSet<AbiType> {
 fun Cursor.parseTypeParams(peek: Boolean = false): List<AbiTypeParameter>? {
     val typeParamsString = parseTypeParamsString(peek) ?: return null
     val subCursor = Cursor(typeParamsString)
-    subCursor.parseSymbol("^<")
+    subCursor.parseSymbol(openAngleBracketRegex)
     val typeParams = mutableListOf<AbiTypeParameter>()
     while (subCursor.parseTypeParam(peek = true) != null) {
         typeParams.add(subCursor.parseTypeParam()!!)
-        subCursor.parseSymbol("^,")
+        subCursor.parseSymbol(commaRegex)
     }
     return typeParams
 }
@@ -242,31 +278,31 @@ fun Cursor.parseTypeParams(peek: Boolean = false): List<AbiTypeParameter>? {
 internal fun Cursor.parseTypeParam(peek: Boolean = false): AbiTypeParameter? {
     val cursor = subCursor(peek)
     val tag = cursor.parseTag() ?: return null
-    cursor.parseSymbol("^:")
+    cursor.parseSymbol(colonRegex)
     val variance = cursor.parseAbiVariance()
-    val isReified = cursor.parseSymbol("reified") != null
+    val isReified = cursor.parseSymbol(reifiedRegex) != null
     val upperBounds = mutableListOf<AbiType>()
-    if (null != cursor.parseAbiType(peek = true)) {
+    while (null != cursor.parseAbiType(peek = true)) {
         upperBounds.add(cursor.parseAbiType()!!)
+        cursor.parseSymbol(ampersandRegex)
     }
 
     return AbiTypeParameterImpl(
         tag = tag,
         variance = variance,
         isReified = isReified,
-        upperBounds = upperBounds
+        upperBounds = upperBounds,
     )
 }
 
 internal fun Cursor.parseValueParameters(): List<AbiValueParameter>? {
-    val valueParamString = parseValueParametersString() ?: return null
-    val subCursor = Cursor(valueParamString)
     val valueParams = mutableListOf<AbiValueParameter>()
-    subCursor.parseSymbol("\\(")
-    while (null != subCursor.parseValueParameter(peek = true)) {
-        valueParams.add(subCursor.parseValueParameter()!!)
-        subCursor.parseSymbol("^,")
+    parseSymbol(openParenRegex)
+    while (null != parseValueParameter(peek = true)) {
+        valueParams.add(parseValueParameter()!!)
+        parseSymbol(commaRegex)
     }
+    parseSymbol(closeParenRegex)
     return valueParams
 }
 
@@ -283,7 +319,7 @@ internal fun Cursor.parseValueParameter(peek: Boolean = false): AbiValueParamete
         isVararg = isVararg,
         hasDefaultArg = hasDefaultArg,
         isNoinline = isNoInline,
-        isCrossinline = isCrossinline
+        isCrossinline = isCrossinline,
     )
 }
 
@@ -296,39 +332,74 @@ internal fun Cursor.parseValueParameterModifiers(): Set<String> {
 }
 
 internal fun Cursor.parseValueParameterModifier(peek: Boolean = false): String? =
-    parseSymbol("^(crossinline|noinline)", peek)
+    parseSymbol(valueParameterModifierRegex, peek)
 
-internal fun Cursor.parseVarargSymbol() = parseSymbol("^\\.\\.\\.")
+internal fun Cursor.parseVarargSymbol() = parseSymbol(varargSymbolRegex)
 
-internal fun Cursor.parseDefaultArg() = parseSymbol("^=\\.\\.\\.")
+internal fun Cursor.parseDefaultArg() = parseSymbol(defaultArgSymbolRegex)
 
 internal fun Cursor.parseFunctionReceiver(): AbiType? {
-    val string = parseFunctionReceiverString() ?: return null
-    val subCursor = Cursor(string)
-    subCursor.parseSymbol("\\(")
-    return subCursor.parseAbiType()
+    parseSymbol(openParenRegex) ?: return null
+    val type = parseAbiType()
+    parseSymbol(closeParenRegex)
+    parseSymbol(dotRegex)
+    return type
+}
+
+internal fun Cursor.parseContextParams(): List<AbiValueParameter>? {
+    parseSymbol(contextRegex) ?: return null
+    return parseValueParameters()
 }
 
 internal fun Cursor.parseReturnType(): AbiType? {
-    parseSymbol("^:\\s")
+    parseSymbol(colonRegex)
     return parseAbiType()
 }
 
+internal fun Cursor.hasTargets(): Boolean = parseSymbol(targetsRegex, peek = true) != null
+
 internal fun Cursor.parseTargets(): List<String> {
-    parseSymbol("^Targets:")
-    parseSymbol("^\\[")
+    parseSymbol(targetsRegex)
+    parseSymbol(openSquareBracketRegex)
     val targets = mutableListOf<String>()
     while (parseValidIdentifier(peek = true) != null) {
         targets.add(parseValidIdentifier()!!)
-        parseSymbol("^,")
+        parseSymbol(commaRegex)
     }
-    parseSymbol("^\\]")
+    parseSymbol(closeSquareBracketRegex)
     return targets
 }
 
-internal fun Cursor.parseEnumEntryKind(peek: Boolean = false) = parseSymbol("enum\\sentry", peek)
+internal fun Cursor.hasUniqueName(): Boolean =
+    parseSymbol(uniqueNameMarkerRegex, peek = true) != null
 
-internal fun Cursor.parseEnumName() = parseSymbol("^[A-Z_]+")
+internal fun Cursor.parseUniqueName(): String? {
+    parseSymbol(uniqueNameMarkerRegex)
+    parseSymbol(openAngleBracketRegex)
+    return parseSymbol(uniqueNameRegex)
+}
+
+internal fun Cursor.hasSignatureVersion(): Boolean =
+    parseSymbol(signatureMarkerRegex, peek = true) != null
+
+internal fun Cursor.parseSignatureVersion(): AbiSignatureVersion? {
+    parseSymbol(signatureMarkerRegex)
+    val versionString = parseSymbol(digitRegex) ?: return null
+    val versionNumber = versionString.toInt()
+    return AbiSignatureVersion.resolveByVersionNumber(versionNumber)
+}
+
+internal fun Cursor.parseEnumEntryKind(peek: Boolean = false) =
+    parseSymbol(enumEntryKindRegex, peek)
+
+internal fun Cursor.parseEnumName() = parseSymbol(enumNameRegex)
+
+internal fun Cursor.parseCommentMarker() = parseSymbol(commentMarkerRegex)
+
+internal fun Cursor.parseOpenClassBody() = parseSymbol(openCurlyBraceRegex)
+
+internal fun Cursor.parseCloseClassBody(peek: Boolean = false) =
+    parseSymbol(closeCurlyBraceRegex, peek)
 
 /**
  * Used to check if declarations after a property are getter / setter methods which should be
@@ -343,6 +414,7 @@ private fun Cursor.hasPropertyAccessor(type: GetterOrSetter): Boolean {
     if (mightHaveTypeParams) {
         subCursor.parseTypeParams()
     }
+    subCursor.parseContextParams()
     subCursor.parseFunctionReceiver()
     return when (type) {
         GetterOrSetter.GETTER -> subCursor.parseGetterName() != null
@@ -358,16 +430,18 @@ private fun Cursor.subCursor(peek: Boolean) =
     }
 
 private fun Cursor.parseTypeParamsString(peek: Boolean = false): String? {
-    if (parseSymbol("^<(get|set)\\-", peek = true) != null) {
+    if (parseSymbol(getterOrSetterSignalRegex, peek = true) != null) {
         return null
     }
     val cursor = subCursor(peek)
     val result = StringBuilder()
-    cursor.parseSymbol("^<")?.let { result.append(it) } ?: return null
+    cursor.parseSymbol(openAngleBracketRegex)?.let { result.append(it) } ?: return null
     var openBracketCount = 1
     while (openBracketCount > 0) {
         val nextSymbol =
-            cursor.parseSymbol(".", skipInlineWhitespace = false).also { result.append(it) }
+            cursor.parseSymbol(anyCharRegex, skipInlineWhitespace = false).also {
+                result.append(it)
+            }
         when (nextSymbol) {
             "<" -> openBracketCount++
             ">" -> openBracketCount--
@@ -377,24 +451,61 @@ private fun Cursor.parseTypeParamsString(peek: Boolean = false): String? {
     return result.toString()
 }
 
-private fun Cursor.parseFunctionReceiverString() =
-    parseSymbol("^\\([a-zA-Z0-9,\\/<>,#\\.\\s]+?\\)\\.")
-
-private fun Cursor.parseValueParametersString() =
-    parseSymbol("^\\(([a-zA-Z0-9,\\/<>,#\\.\\s\\?=]+)?\\)")
-
 private fun Cursor.parseAbiModalityString(peek: Boolean = false) =
-    parseSymbol("^(final|open|abstract|sealed)", peek)?.uppercase()
+    parseSymbol(abiModalityRegex, peek)?.uppercase()
 
 private fun Cursor.parsePropertyKindString(peek: Boolean = false) =
-    parseSymbol("^(const\\sval|val|var)", peek)?.uppercase()?.replace(" ", "_")
+    parseSymbol(propertyKindRegex, peek)?.uppercase()?.replace(" ", "_")
 
 private fun Cursor.parseClassKindString(peek: Boolean = false) =
-    parseSymbol("^(class|interface|object|enum\\sclass|annotation\\sclass)", peek)
-        ?.uppercase()
-        ?.replace(" ", "_")
+    parseSymbol(classKindRegex, peek)?.uppercase()?.replace(" ", "_")
 
 private enum class GetterOrSetter() {
     GETTER,
-    SETTER
+    SETTER,
 }
+
+private val constructorNameRegex = Regex("^constructor\\s<init>")
+private val closeCurlyBraceRegex = Regex("^}")
+private val uniqueNameMarkerRegex = Regex("^Library unique name: ")
+private val uniqueNameRegex = Regex("[a-zA-Z\\-\\.:]+")
+private val commentMarkerRegex = Regex("^\\/\\/")
+private val anyCharRegex = Regex(".")
+private val closeSquareBracketRegex = Regex("^\\]")
+private val openSquareBracketRegex = Regex("^\\[")
+private val targetsRegex = Regex("^Targets:")
+private val defaultArgSymbolRegex = Regex("^=(\\s)?\\.\\.\\.")
+private val varargSymbolRegex = Regex("^\\.\\.\\.")
+private val openParenRegex = Regex("^\\(")
+private val closeParenRegex = Regex("^\\)")
+private val reifiedRegex = Regex("reified")
+private val contextRegex = Regex("^context")
+private val colonRegex = Regex("^:")
+private val commaRegex = Regex("^,")
+private val notNullSymbolRegex = Regex("^\\!\\!")
+private val nullableSymbolRegex = Regex("^\\?")
+private val tagRegex = Regex("^#[a-zA-Z0-9]+")
+private val getterNameRegex = Regex("^<get\\-")
+private val setterNameRegex = Regex("^<set\\-")
+private val classModifierRegex = Regex("^(inner|value|fun|open)")
+private val functionKindRegex = Regex("^(constructor|fun)")
+private val functionModifierRegex = Regex("^(inline|suspend)")
+private val packageNameRegex = Regex("^[a-zA-Z0-9.]+")
+private val openAngleBracketRegex = Regex("^<")
+private val closeAngleBracketRegex = Regex("^>")
+private val openCurlyBraceRegex = Regex("^\\{")
+private val starProjectionRegex = Regex("^\\*")
+private val abiVarianceRegex = Regex("^(out|in)")
+private val valueParameterModifierRegex = Regex("^(crossinline|noinline)")
+private val abiModalityRegex = Regex("^(final|open|abstract|sealed)")
+private val classKindRegex = Regex("^(class|interface|object|enum\\sclass|annotation\\sclass)")
+private val propertyKindRegex = Regex("^(const\\sval|val|var)")
+private val getterOrSetterSignalRegex = Regex("^<(get|set)\\-")
+private val enumNameRegex = Regex("^[A-Z_]+")
+private val enumEntryKindRegex = Regex("^enum\\sentry")
+private val signatureMarkerRegex = Regex("-\\sSignature\\sversion:")
+private val digitRegex = Regex("^\\d+")
+private val dotRegex = Regex("^\\.")
+private val slashRegex = Regex("^/")
+private val symbolsFollowingIdentifiersWithSpaces = Regex("^[:|/={&]")
+private val ampersandRegex = Regex("^&")

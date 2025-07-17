@@ -21,22 +21,26 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
 }
 
 androidXMultiplatform {
-    enableBinaryCompatibilityValidator = true
-
-    jvm() {
-        withJava()
-    }
+    js()
+    jvm()
     mac()
     linux()
     ios()
+    wasmJs()
+    tvos()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -44,15 +48,15 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.8.0")
-
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
 
         commonTest {
             dependencies {
                 implementation(project(":kruth:kruth"))
-                implementation(libs.kotlinTest)
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinTestForWasmTests)
             }
         }
 
@@ -67,13 +71,39 @@ androidXMultiplatform {
                 implementation(libs.kotlinTestJunit)
             }
         }
+
+        nativeMain {
+            dependsOn(commonMain)
+        }
+
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinStdlibWasm)
+            }
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
+            }
+        }
     }
 }
 
 androidx {
     name = "Room-Common"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
-    legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

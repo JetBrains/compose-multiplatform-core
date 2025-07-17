@@ -19,12 +19,9 @@ package androidx.pdf.viewer.loader;
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
-import android.print.PrintManager;
 import android.text.TextUtils;
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.DisplayData;
 import androidx.pdf.data.Opener;
@@ -32,11 +29,13 @@ import androidx.pdf.data.PdfStatus;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.PdfDocumentRemote;
 import androidx.pdf.models.SelectionBoundary;
-import androidx.pdf.pdflib.PdfDocumentRemoteProto;
+import androidx.pdf.service.PdfDocumentRemoteProto;
 import androidx.pdf.util.BitmapRecycler;
 import androidx.pdf.util.TileBoard.TileInfo;
 
-import java.io.FileOutputStream;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 
 /**
@@ -63,14 +62,14 @@ public class PdfLoader {
     private final DisplayData mData;
     private final boolean mHideTextAnnotations;
 
-    private final WeakPdfLoaderCallbacks mCallbacks;
+    private WeakPdfLoaderCallbacks mCallbacks;
 
     private final SparseArray<PdfPageLoader> mPageLoaders;
     private String mLoadedPassword;
+    private int mNumPages;
 
     /** Creates a new {@link PdfLoader} and loads the document from the given data. */
-    @NonNull
-    public static PdfLoader create(@NonNull Context context, @NonNull DisplayData data,
+    public static @NonNull PdfLoader create(@NonNull Context context, @NonNull DisplayData data,
             @NonNull BitmapRecycler bitmaps,
             @NonNull PdfLoaderCallbacks callbacks) {
         return create(context, data, bitmaps, callbacks, false /* hideTextAnnotations */);
@@ -82,8 +81,7 @@ public class PdfLoader {
      * @param hideTextAnnotations whether to skip rendering text and highlight annotations in the
      *                            PDF
      */
-    @NonNull
-    public static PdfLoader create(
+    public static @NonNull PdfLoader create(
             @NonNull Context context,
             @NonNull DisplayData data,
             @NonNull BitmapRecycler bitmaps,
@@ -126,9 +124,40 @@ public class PdfLoader {
         this.mPageLoaders = new SparseArray<>();
     }
 
+    public int getNumPages() {
+        return mNumPages;
+    }
+
+    public void setNumPages(int numPages) {
+        mNumPages = numPages;
+    }
+
+    public void setCallbacks(@NonNull WeakPdfLoaderCallbacks callbacks) {
+        mCallbacks = callbacks;
+    }
+
     /** Schedule task to load a PdfDocument. */
     public void reloadDocument() {
-        mExecutor.schedule(new LoadDocumentTask(mLoadedPassword));
+        if (isConnected()) {
+            mExecutor.schedule(new LoadDocumentTask(mLoadedPassword));
+        } else {
+            /*
+            *  For password protected files we kill the service if the app goes into
+            *  background before the document is loaded hence here we just register a
+            *  task which will be executed once the service is reconnected onStart
+            */
+            mConnection.setOnConnectInitializer(
+                    () -> mExecutor.schedule(new LoadDocumentTask(mLoadedPassword)));
+            mConnection.setConnectionFailureHandler(
+                    () -> mCallbacks.documentNotLoaded(PdfStatus.NONE));
+        }
+    }
+
+    /**
+     * Check if PdfLoader is connected to PdfDocumentService
+     */
+    public boolean isConnected() {
+        return mConnection.isConnected();
     }
 
     /**
@@ -149,70 +178,6 @@ public class PdfLoader {
         mExecutor.schedule(new LoadDocumentTask(password));
     }
 
-    /**
-     * Creates a copy of the current document without security, if it is password protected. This
-     * maybe necessary for the {@link PrintManager} which can't handle password protected files.
-     *
-     * @param fileOutputStream points to where pdfClient should make a copy of the pdf without
-     *                         security.
-     */
-    public void cloneWithoutSecurity(@NonNull FileOutputStream fileOutputStream) {
-        mExecutor.schedule(new CloneDocumentWithoutSecurityTask(fileOutputStream));
-    }
-
-    class CloneDocumentWithoutSecurityTask extends AbstractWriteTask {
-        CloneDocumentWithoutSecurityTask(FileOutputStream fileOutputStream) {
-            super(PdfLoader.this, fileOutputStream, Priority.CLONE_PDF);
-        }
-
-        @Override
-        protected String getLogTag() {
-            return "CloneDocNoSecurityTask";
-        }
-
-        @Override
-        boolean execute(PdfDocumentRemoteProto pdfDocument, ParcelFileDescriptor pfd)
-                throws RemoteException {
-            return pdfDocument.getPdfDocumentRemote().cloneWithoutSecurity(pfd);
-        }
-
-        @Override
-        protected void doCallback(PdfLoaderCallbacks callbacks, Boolean result) {
-            callbacks.documentCloned(result.booleanValue());
-        }
-    }
-
-    /**
-     * Saves the current document to the given {@link FileOutputStream}.
-     *
-     * @param fileOutputStream where the currently open PDF should be written.
-     */
-    public void saveAs(@NonNull FileOutputStream fileOutputStream) {
-        mExecutor.schedule(new SaveAsTask(fileOutputStream));
-    }
-
-    class SaveAsTask extends AbstractWriteTask {
-        SaveAsTask(FileOutputStream fileOutputStream) {
-            super(PdfLoader.this, fileOutputStream, Priority.CLONE_PDF);
-        }
-
-        @Override
-        protected String getLogTag() {
-            return "SaveAsTask";
-        }
-
-        @Override
-        boolean execute(PdfDocumentRemoteProto pdfDocument, ParcelFileDescriptor pfd)
-                throws RemoteException {
-            return pdfDocument.getPdfDocumentRemote().saveAs(pfd);
-        }
-
-        @Override
-        protected void doCallback(PdfLoaderCallbacks callbacks, Boolean result) {
-            callbacks.documentSavedAs(result.booleanValue());
-        }
-    }
-
     /** Cancels all requests related to one page (bitmaps, texts,...). */
     public void cancel(int pageNum) {
         getPageLoader(pageNum).cancel();
@@ -221,6 +186,11 @@ public class PdfLoader {
     /** Cancel all tasks except search and form-filling. */
     public void cancelExceptSearchAndFormFilling(int pageNum) {
         getPageLoader(pageNum).cancelExceptSearchAndFormFilling();
+    }
+
+    /** Releases object in memory related to a page when that page is no longer visible. */
+    public void releasePage(int pageNum) {
+        getPageLoader(pageNum).releasePage();
     }
 
     /**
@@ -241,7 +211,7 @@ public class PdfLoader {
 
     /**
      * Renders bitmaps for the given tiles - once it is ready, will call the
-     * {@link PdfLoaderCallbacks#setPageBitmap} callback.
+     * {@link PdfLoaderCallbacks#setTileBitmap} callback.
      */
     public void loadTileBitmaps(int pageNum, @NonNull Dimensions pageSize,
             @NonNull Iterable<TileInfo> tiles) {
@@ -309,8 +279,7 @@ public class PdfLoader {
     /**
      * Returns a {@link PdfDocumentRemote} which maybe ready or not (i.e. still initializing).
      */
-    @NonNull
-    protected PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
+    protected @NonNull PdfDocumentRemote getPdfDocument(@NonNull String forTask) {
         return mConnection.getPdfDocument(forTask);
     }
 
@@ -322,16 +291,14 @@ public class PdfLoader {
      * Returns a valid {@link PdfDocumentRemote} or null if there isn't one (i.e. the service is not
      * currently bound, or it is but still initializing).
      */
-    @Nullable
-    protected PdfDocumentRemote getLoadedPdfDocument(@NonNull String forTask) {
+    protected @Nullable PdfDocumentRemote getLoadedPdfDocument(@NonNull String forTask) {
         return mConnection.isLoaded() ? mConnection.getPdfDocument(forTask) : null;
     }
 
     // Always returns a non-null callbacks - however the callbacks hold only a weak reference to the
     // PdfViewer, so it can be garbage collected if no longer in use, in which case the callbacks
     // all become no-ops.
-    @NonNull
-    protected WeakPdfLoaderCallbacks getCallbacks() {
+    public @NonNull WeakPdfLoaderCallbacks getCallbacks() {
         return mCallbacks;
     }
 
@@ -347,7 +314,6 @@ public class PdfLoader {
     /** AsyncTask for loading a PdfDocument. */
     class LoadDocumentTask extends AbstractPdfTask<PdfStatus> {
         private final String mPassword;
-        private int mNumPages;
 //        private boolean mIsLinearized;
 
         LoadDocumentTask() {
@@ -373,20 +339,26 @@ public class PdfLoader {
         @Override
         protected PdfStatus doInBackground(PdfDocumentRemoteProto pdfDocument)
                 throws RemoteException {
-            if (mData == null) {
-                return PdfStatus.FILE_ERROR;
-            }
+            PdfStatus result;
+            if (mConnection.isLoaded()) {
+                // Already loaded, skip the loading process (e.g., during screen rotation).
+                result = PdfStatus.LOADED;
+            } else {
+                if (mData == null) {
+                    return PdfStatus.FILE_ERROR;
+                }
 
-            // NOTE: This filedescriptor is not closed since it continues to be used by Pdfium.
-            // TODO: StrictMode- Look into filedescriptors more and document
-            // exactly when they should be opened and closed, making sure they are not leaked.
-            ParcelFileDescriptor fd = mData.openFd(mOpener);
+                // NOTE: This filedescriptor is not closed since it continues to be used by Pdfium.
+                // TODO: StrictMode- Look into filedescriptors more and document
+                // exactly when they should be opened and closed, making sure they are not leaked.
+                ParcelFileDescriptor fd = mData.openFd(mOpener);
 
-            if (fd == null || fd.getFd() == -1) {
-                return PdfStatus.FILE_ERROR;
+                if (fd == null || fd.getFd() == -1) {
+                    return PdfStatus.FILE_ERROR;
+                }
+                int statusIndex = pdfDocument.getPdfDocumentRemote().create(fd, mPassword);
+                result = PdfStatus.values()[statusIndex];
             }
-            int statusIndex = pdfDocument.getPdfDocumentRemote().create(fd, mPassword);
-            PdfStatus result = PdfStatus.values()[statusIndex];
 
             if (result == PdfStatus.LOADED) {
                 mNumPages = pdfDocument.getPdfDocumentRemote().numPages();
@@ -403,7 +375,7 @@ public class PdfLoader {
                     mLoadedPassword = mPassword;
                     mConnection.setDocumentLoaded();
                     // TODO: Track loaded PDF info.
-                    callbacks.documentLoaded(mNumPages);
+                    callbacks.documentLoaded(mNumPages, mData);
                     break;
                 case REQUIRES_PASSWORD:
                     // TODO: Reflect this in the state of the FileInfo object.
@@ -423,9 +395,8 @@ public class PdfLoader {
         @Override
         protected void cleanup() { /* nothing to do. */ }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return "LoadDocumentTask(" + mData + ")";
         }
     }

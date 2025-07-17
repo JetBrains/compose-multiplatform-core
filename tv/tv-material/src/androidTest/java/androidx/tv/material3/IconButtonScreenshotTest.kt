@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -31,7 +30,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -51,8 +49,8 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+@OptIn(ExperimentalTvMaterial3Api::class)
 class IconButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -203,7 +201,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester),
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -226,7 +224,7 @@ class IconButtonScreenshotTest {
                 Box(Modifier.size(50.dp).testTag(wrapperTestTag)) {
                     IconButton(
                         onClick = { /* doSomething() */ },
-                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester)
+                        modifier = Modifier.align(Alignment.Center).focusRequester(focusRequester),
                     ) {
                         Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
                     }
@@ -262,7 +260,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -279,7 +277,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -296,7 +294,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }, enabled = false) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }
@@ -313,7 +311,7 @@ class IconButtonScreenshotTest {
                     OutlinedIconButton(onClick = { /* doSomething() */ }, enabled = false) {
                         Icon(
                             Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 }

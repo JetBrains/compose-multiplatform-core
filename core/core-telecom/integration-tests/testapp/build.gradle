@@ -17,41 +17,37 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace 'androidx.core.telecom.test'
+    namespace = "androidx.core.telecom.test"
 
     defaultConfig {
-        applicationId "androidx.core.telecom.test"
-        minSdk 21
+        applicationId = "androidx.core.telecom.test"
+        minSdk = 26
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
 }
 
 dependencies {
     implementation(libs.constraintLayout)
-    implementation("androidx.annotation:annotation:1.4.0")
+    implementation("androidx.annotation:annotation:1.9.0")
     implementation("androidx.core:core:1.9.0")
     implementation(project(":core:core-telecom"))
-    implementation('androidx.appcompat:appcompat:1.6.1')
-    implementation('androidx.navigation:navigation-fragment-ktx:2.5.3')
-    implementation('androidx.navigation:navigation-ui-ktx:2.5.3')
-    implementation('androidx.recyclerview:recyclerview:1.2.1')
-
-    // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
-    androidTestImplementation("androidx.annotation:annotation-experimental:1.4.0")
-
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.5.3")
+    implementation("androidx.navigation:navigation-ui-ktx:2.5.3")
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
 }

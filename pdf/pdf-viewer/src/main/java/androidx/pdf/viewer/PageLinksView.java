@@ -25,8 +25,6 @@ import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
@@ -37,6 +35,9 @@ import androidx.pdf.models.LinkRects;
 import androidx.pdf.util.ExternalLinks;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -53,8 +54,7 @@ public class PageLinksView extends LinearLayout {
 
     private static final Rect DUMMY_RECT = new Rect(0, 0, 1, 1);
 
-    @Nullable
-    private LinkRects mUrlLinks;
+    private @Nullable LinkRects mUrlLinks;
     private List<GotoLink> mGotoLinks;
     private final ObservableValue<ZoomView.ZoomScroll> mZoomScroll;
     private ExploreByTouchHelper mTouchHelper;

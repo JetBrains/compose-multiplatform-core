@@ -18,11 +18,12 @@ package androidx.camera.core.internal.compat.workaround;
 
 import static androidx.camera.core.internal.utils.ImageUtil.isJpegFormats;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.core.internal.compat.quirk.ImageCaptureRotationOptionQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Workaround to check whether the exif rotation value embedded in the capture JPEG image is

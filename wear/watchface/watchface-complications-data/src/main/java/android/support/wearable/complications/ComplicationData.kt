@@ -25,6 +25,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.os.PersistableBundle
 import android.util.Log
 import androidx.annotation.ColorInt
 import androidx.annotation.IntDef
@@ -42,15 +43,15 @@ import java.io.InvalidObjectException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
-import java.util.Arrays
 import java.util.Objects
 
 /**
  * Container for complication data of all types.
  *
- * A [androidx.wear.watchface.complications.ComplicationProviderService] should create instances of
- * this class using [ComplicationData.Builder] and send them to the complication system in response
- * to [androidx.wear.watchface.complications.ComplicationProviderService.onComplicationRequest].
+ * A [androidx.wear.watchface.complications.datasource.ComplicationDataSourceService] should create
+ * instances of this class using [ComplicationData.Builder] and send them to the complication system
+ * in response to
+ * [androidx.wear.watchface.complications.datasource.ComplicationDataSourceService.onComplicationRequest].
  * Depending on the type of complication data, some fields will be required and some will be
  * optional - see the documentation for each type, and for the builder's set methods, for details.
  *
@@ -62,7 +63,37 @@ import java.util.Objects
  */
 @SuppressLint("BanParcelableUsage")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-class ComplicationData : Parcelable, Serializable {
+class ComplicationData
+private constructor(
+    @ComplicationType val type: Int,
+    private val fields: MutableMap<String, Any>,
+    // This should only be set at the constructor for a fully-owned Bundle, as this Bundle can be
+    // mutated by methods of this class.
+    private var _bundle: Bundle? = null,
+) : Parcelable, Serializable {
+
+    // This constructor does not set the cached _bundle, which will only be generated when needed
+    // (by the bundle property).
+    internal constructor(builder: Builder) : this(builder.type, builder.fields.toMutableMap())
+
+    internal constructor(
+        input: Parcel
+    ) : this(
+        input.readInt(),
+        input.readBundle(ComplicationData::class.java.classLoader)
+            ?: Bundle().also { Log.w(TAG, "ComplicationData parcel input has null bundle.") },
+    )
+
+    // This constructor should only be used with a fully-owned Bundle, as this Bundle can be mutated
+    // by methods of this class.
+    private constructor(
+        @ComplicationType type: Int,
+        bundle: Bundle,
+    ) : this(type, toFields(bundle, type), bundle)
+
+    private val bundle: Bundle
+        get() = _bundle ?: toBundle(fields).also { _bundle = it }
+
     @IntDef(
         TYPE_EMPTY,
         TYPE_NOT_CONFIGURED,
@@ -77,7 +108,7 @@ class ComplicationData : Parcelable, Serializable {
         TYPE_GOAL_PROGRESS,
         TYPE_WEIGHTED_ELEMENTS,
         EXP_TYPE_PROTO_LAYOUT,
-        EXP_TYPE_LIST
+        EXP_TYPE_LIST,
     )
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
@@ -87,32 +118,6 @@ class ComplicationData : Parcelable, Serializable {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
     annotation class ImageStyle
-
-    /** Returns the type of this complication data. */
-    @ComplicationType val type: Int
-
-    private val fields: Bundle
-
-    internal constructor(builder: Builder) {
-        type = builder.type
-        fields = builder.fields
-    }
-
-    internal constructor(type: Int, fields: Bundle) {
-        this.type = type
-        this.fields = fields
-        this.fields.classLoader = javaClass.classLoader
-    }
-
-    internal constructor(input: Parcel) {
-        type = input.readInt()
-        fields =
-            input.readBundle(javaClass.classLoader)
-                ?: run {
-                    Log.w(TAG, "ComplicationData parcel input has null bundle.")
-                    Bundle()
-                }
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.P)
     private class SerializedForm
@@ -128,6 +133,11 @@ class ComplicationData : Parcelable, Serializable {
             oos.writeInt(type)
             oos.writeInt(complicationData.persistencePolicy)
             oos.writeInt(complicationData.displayPolicy)
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                if (Build.VERSION.SDK_INT > 30) {
+                    complicationData.extras.writeToStream(oos)
+                }
+            }
             if (isFieldValidForType(FIELD_LONG_TEXT, type)) {
                 oos.writeObject(complicationData.longText)
             }
@@ -206,7 +216,7 @@ class ComplicationData : Parcelable, Serializable {
             if (isFieldValidForType(FIELD_END_TIME, type)) {
                 oos.writeLong(complicationData.endDateTimeMillis)
             }
-            oos.writeInt(complicationData.fields.getInt(EXP_FIELD_LIST_ENTRY_TYPE))
+            oos.writeInt(complicationData.type) // EXP_FIELD_LIST_ENTRY_TYPE
             if (isFieldValidForType(EXP_FIELD_LIST_STYLE_HINT, type)) {
                 oos.writeInt(complicationData.listStyleHint)
             }
@@ -232,11 +242,11 @@ class ComplicationData : Parcelable, Serializable {
             oos.writeBoolean(
                 complicationData.hasTapAction() || complicationData.tapActionLostDueToSerialization
             )
-            val start = complicationData.fields.getLong(FIELD_TIMELINE_START_TIME, -1)
+            val start = complicationData.timelineStartEpochSecond ?: -1
             oos.writeLong(start)
-            val end = complicationData.fields.getLong(FIELD_TIMELINE_END_TIME, -1)
+            val end = complicationData.timelineEndEpochSecond ?: -1
             oos.writeLong(end)
-            oos.writeInt(complicationData.fields.getInt(FIELD_TIMELINE_ENTRY_TYPE))
+            oos.writeInt(complicationData.type) // FIELD_TIMELINE_ENTRY_TYPE
             oos.writeList(complicationData.listEntries ?: listOf()) {
                 SerializedForm(it).writeObject(oos)
             }
@@ -265,9 +275,14 @@ class ComplicationData : Parcelable, Serializable {
                 throw IOException("Unsupported serialization version number $versionNumber")
             }
             val type = ois.readInt()
-            val fields = Bundle()
-            fields.putInt(FIELD_PERSISTENCE_POLICY, ois.readInt())
-            fields.putInt(FIELD_DISPLAY_POLICY, ois.readInt())
+            val fields = mutableMapOf<String, Any>()
+            fields[FIELD_PERSISTENCE_POLICY] = ois.readInt()
+            fields[FIELD_DISPLAY_POLICY] = ois.readInt()
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                if (Build.VERSION.SDK_INT > 30) {
+                    fields[FIELD_EXTRAS] = PersistableBundle.readFromStream(ois)
+                }
+            }
             if (isFieldValidForType(FIELD_LONG_TEXT, type)) {
                 putIfNotNull(fields, FIELD_LONG_TEXT, ois.readObject() as ComplicationText?)
             }
@@ -284,7 +299,7 @@ class ComplicationData : Parcelable, Serializable {
                 putIfNotNull(
                     fields,
                     FIELD_CONTENT_DESCRIPTION,
-                    ois.readObject() as ComplicationText?
+                    ois.readObject() as ComplicationText?,
                 )
             }
             if (isFieldValidForType(FIELD_ICON, type)) {
@@ -294,7 +309,7 @@ class ComplicationData : Parcelable, Serializable {
                 putIfNotNull(
                     fields,
                     FIELD_ICON_BURN_IN_PROTECTION,
-                    IconSerializableHelper.read(ois)
+                    IconSerializableHelper.read(ois),
                 )
             }
             if (isFieldValidForType(FIELD_SMALL_IMAGE, type)) {
@@ -304,72 +319,70 @@ class ComplicationData : Parcelable, Serializable {
                 putIfNotNull(
                     fields,
                     FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                    IconSerializableHelper.read(ois)
+                    IconSerializableHelper.read(ois),
                 )
             }
             if (isFieldValidForType(FIELD_IMAGE_STYLE, type)) {
-                fields.putInt(FIELD_IMAGE_STYLE, ois.readInt())
+                fields[FIELD_IMAGE_STYLE] = ois.readInt()
             }
             if (isFieldValidForType(FIELD_LARGE_IMAGE, type)) {
-                fields.putParcelable(FIELD_LARGE_IMAGE, IconSerializableHelper.read(ois))
+                IconSerializableHelper.read(ois)?.let { fields[FIELD_LARGE_IMAGE] = it }
             }
             if (isFieldValidForType(FIELD_VALUE, type)) {
-                fields.putFloat(FIELD_VALUE, ois.readFloat())
+                fields[FIELD_VALUE] = ois.readFloat()
             }
             if (isFieldValidForType(FIELD_DYNAMIC_VALUE, type)) {
                 ois.readNullable { ois.readByteArray() }
-                    ?.let { fields.putByteArray(FIELD_DYNAMIC_VALUE, it) }
+                    ?.let { fields[FIELD_DYNAMIC_VALUE] = DynamicFloat.fromByteArray(it) }
             }
             if (isFieldValidForType(FIELD_VALUE_TYPE, type)) {
-                fields.putInt(FIELD_VALUE_TYPE, ois.readInt())
+                fields[FIELD_VALUE_TYPE] = ois.readInt()
             }
             if (isFieldValidForType(FIELD_MIN_VALUE, type)) {
-                fields.putFloat(FIELD_MIN_VALUE, ois.readFloat())
+                fields[FIELD_MIN_VALUE] = ois.readFloat()
             }
             if (isFieldValidForType(FIELD_MAX_VALUE, type)) {
-                fields.putFloat(FIELD_MAX_VALUE, ois.readFloat())
+                fields[FIELD_MAX_VALUE] = ois.readFloat()
             }
             if (isFieldValidForType(FIELD_TARGET_VALUE, type)) {
-                fields.putFloat(FIELD_TARGET_VALUE, ois.readFloat())
+                fields[FIELD_TARGET_VALUE] = ois.readFloat()
             }
             if (isFieldValidForType(FIELD_COLOR_RAMP, type)) {
-                ois.readNullable { ois.readIntArray() }
-                    ?.let { fields.putIntArray(FIELD_COLOR_RAMP, it) }
+                ois.readNullable { ois.readIntArray() }?.let { fields[FIELD_COLOR_RAMP] = it }
             }
             if (isFieldValidForType(FIELD_COLOR_RAMP_INTERPOLATED, type)) {
                 ois.readNullable { ois.readBoolean() }
-                    ?.let { fields.putBoolean(FIELD_COLOR_RAMP_INTERPOLATED, it) }
+                    ?.let { fields[FIELD_COLOR_RAMP_INTERPOLATED] = it }
             }
             if (isFieldValidForType(FIELD_ELEMENT_WEIGHTS, type)) {
                 ois.readNullable { ois.readFloatArray() }
-                    ?.let { fields.putFloatArray(FIELD_ELEMENT_WEIGHTS, it) }
+                    ?.let { fields[FIELD_ELEMENT_WEIGHTS] = it }
             }
             if (isFieldValidForType(FIELD_ELEMENT_COLORS, type)) {
-                ois.readNullable { ois.readIntArray() }
-                    ?.let { fields.putIntArray(FIELD_ELEMENT_COLORS, it) }
+                ois.readNullable { ois.readIntArray() }?.let { fields[FIELD_ELEMENT_COLORS] = it }
             }
             if (isFieldValidForType(FIELD_ELEMENT_BACKGROUND_COLOR, type)) {
-                fields.putInt(FIELD_ELEMENT_BACKGROUND_COLOR, ois.readInt())
+                fields[FIELD_ELEMENT_BACKGROUND_COLOR] = ois.readInt()
             }
             if (isFieldValidForType(FIELD_START_TIME, type)) {
-                fields.putLong(FIELD_START_TIME, ois.readLong())
+                fields[FIELD_START_TIME] = ois.readLong()
             }
             if (isFieldValidForType(FIELD_END_TIME, type)) {
-                fields.putLong(FIELD_END_TIME, ois.readLong())
+                fields[FIELD_END_TIME] = ois.readLong()
             }
             val listEntryType = ois.readInt()
             if (listEntryType != 0) {
-                fields.putInt(EXP_FIELD_LIST_ENTRY_TYPE, listEntryType)
+                fields[EXP_FIELD_LIST_ENTRY_TYPE] = listEntryType
             }
             if (isFieldValidForType(EXP_FIELD_LIST_STYLE_HINT, type)) {
-                fields.putInt(EXP_FIELD_LIST_STYLE_HINT, ois.readInt())
+                fields[EXP_FIELD_LIST_STYLE_HINT] = ois.readInt()
             }
             if (isFieldValidForType(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, type)) {
                 val length = ois.readInt()
                 if (length > 0) {
                     val protoLayout = ByteArray(length)
                     ois.readFully(protoLayout)
-                    fields.putByteArray(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, protoLayout)
+                    fields[EXP_FIELD_PROTO_LAYOUT_INTERACTIVE] = protoLayout
                 }
             }
             if (isFieldValidForType(EXP_FIELD_PROTO_LAYOUT_AMBIENT, type)) {
@@ -377,7 +390,7 @@ class ComplicationData : Parcelable, Serializable {
                 if (length > 0) {
                     val ambientProtoLayout = ByteArray(length)
                     ois.readFully(ambientProtoLayout)
-                    fields.putByteArray(EXP_FIELD_PROTO_LAYOUT_AMBIENT, ambientProtoLayout)
+                    fields[EXP_FIELD_PROTO_LAYOUT_AMBIENT] = ambientProtoLayout
                 }
             }
             if (isFieldValidForType(EXP_FIELD_PROTO_LAYOUT_RESOURCES, type)) {
@@ -385,7 +398,7 @@ class ComplicationData : Parcelable, Serializable {
                 if (length > 0) {
                     val protoLayoutResources = ByteArray(length)
                     ois.readFully(protoLayoutResources)
-                    fields.putByteArray(EXP_FIELD_PROTO_LAYOUT_RESOURCES, protoLayoutResources)
+                    fields[EXP_FIELD_PROTO_LAYOUT_RESOURCES] = protoLayoutResources
                 }
             }
             if (isFieldValidForType(FIELD_DATA_SOURCE, type)) {
@@ -393,60 +406,63 @@ class ComplicationData : Parcelable, Serializable {
                 if (componentName.isEmpty()) {
                     fields.remove(FIELD_DATA_SOURCE)
                 } else {
-                    fields.putParcelable(
-                        FIELD_DATA_SOURCE,
-                        ComponentName.unflattenFromString(componentName)
-                    )
+                    ComponentName.unflattenFromString(componentName)?.let {
+                        fields[FIELD_DATA_SOURCE] = it
+                    }
                 }
             }
             if (ois.readBoolean()) {
-                fields.putBoolean(FIELD_TAP_ACTION_LOST, true)
+                fields[FIELD_TAP_ACTION_LOST] = true
             }
             val start = ois.readLong()
             if (start != -1L) {
-                fields.putLong(FIELD_TIMELINE_START_TIME, start)
+                fields[FIELD_TIMELINE_START_TIME] = start
             }
             val end = ois.readLong()
             if (end != -1L) {
-                fields.putLong(FIELD_TIMELINE_END_TIME, end)
+                fields[FIELD_TIMELINE_END_TIME] = end
             }
             val timelineEntryType = ois.readInt()
             if (timelineEntryType != 0) {
-                fields.putInt(FIELD_TIMELINE_ENTRY_TYPE, timelineEntryType)
+                fields[FIELD_TIMELINE_ENTRY_TYPE] = timelineEntryType
             }
             ois.readList { SerializedForm().apply { readObject(ois) } }
-                .map { it.complicationData!!.fields }
+                .map { it.complicationData!! }
                 .takeIf { it.isNotEmpty() }
-                ?.let { fields.putParcelableArray(EXP_FIELD_LIST_ENTRIES, it.toTypedArray()) }
+                ?.let { fields[EXP_FIELD_LIST_ENTRIES] = it }
             if (isFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type)) {
                 ois.readNullable { SerializedForm().apply { readObject(ois) } }
                     ?.let {
-                        fields.putInt(FIELD_PLACEHOLDER_TYPE, it.complicationData!!.type)
-                        fields.putBundle(FIELD_PLACEHOLDER_FIELDS, it.complicationData!!.fields)
+                        fields[FIELD_PLACEHOLDER_TYPE] = it.complicationData!!.type
+                        fields[FIELD_PLACEHOLDER_FIELDS] = it.complicationData!!
                     }
             }
             if (isFieldValidForType(FIELD_ORIGINAL_FIELDS, type)) {
                 ois.readNullable { SerializedForm().apply { readObject(ois) } }
                     ?.let {
-                        fields.putInt(FIELD_ORIGINAL_TYPE, it.complicationData!!.type)
-                        fields.putBundle(FIELD_ORIGINAL_FIELDS, it.complicationData!!.fields)
+                        fields[FIELD_ORIGINAL_TYPE] = it.complicationData!!.type
+                        fields[FIELD_ORIGINAL_FIELDS] = it.complicationData!!
                     }
             }
             ois.readList { SerializedForm().apply { readObject(ois) } }
-                .map { it.complicationData!!.fields }
+                .map { it.complicationData!! }
                 .takeIf { it.isNotEmpty() }
-                ?.let { fields.putParcelableArray(FIELD_TIMELINE_ENTRIES, it.toTypedArray()) }
+                ?.let { fields[FIELD_TIMELINE_ENTRIES] = it }
             complicationData = ComplicationData(type, fields)
         }
 
         fun readResolve(): Any = complicationData!!
 
         companion object {
-            private const val VERSION_NUMBER = 20
+            private const val VERSION_NUMBER = 21
 
-            internal fun putIfNotNull(fields: Bundle, field: String, value: Parcelable?) {
+            internal fun putIfNotNull(
+                fields: MutableMap<String, Any>,
+                field: String,
+                value: Parcelable?,
+            ) {
                 if (value != null) {
-                    fields.putParcelable(field, value)
+                    fields[field] = value
                 }
             }
         }
@@ -463,7 +479,7 @@ class ComplicationData : Parcelable, Serializable {
 
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeInt(type)
-        dest.writeBundle(fields)
+        dest.writeBundle(bundle)
     }
 
     /**
@@ -472,9 +488,23 @@ class ComplicationData : Parcelable, Serializable {
      *
      * This must be checked for any time for which the complication will be displayed.
      */
-    fun isActiveAt(dateTimeMillis: Long) =
-        (dateTimeMillis >= fields.getLong(FIELD_START_TIME, 0) &&
-            dateTimeMillis <= fields.getLong(FIELD_END_TIME, Long.MAX_VALUE))
+    fun isActiveAt(dateTimeMillis: Long) = dateTimeMillis in startDateTimeMillis..endDateTimeMillis
+
+    /**
+     * Removes any extras from this complication data, including from placeholders and timelines.
+     */
+    fun stripExtras() {
+        fields.remove(FIELD_EXTRAS)
+
+        (fields[FIELD_PLACEHOLDER_FIELDS] as ComplicationData?)?.stripExtras()
+        (fields[FIELD_ORIGINAL_FIELDS] as ComplicationData?)?.stripExtras()
+
+        timelineEntries?.let {
+            for (complicationEntry in it) {
+                complicationEntry.stripExtras()
+            }
+        }
+    }
 
     /**
      * TapAction unfortunately can't be serialized. Returns true if tapAction has been lost due to
@@ -482,26 +512,34 @@ class ComplicationData : Parcelable, Serializable {
      * from the system would replace this with one with a tapAction.
      */
     val tapActionLostDueToSerialization: Boolean
-        get() = fields.getBoolean(FIELD_TAP_ACTION_LOST)
+        get() = fields[FIELD_TAP_ACTION_LOST] as Boolean? ?: false
+
+    /** Expansion point for OEM watch faces and complications. */
+    var extras: PersistableBundle
+        get() = (fields[FIELD_EXTRAS] as PersistableBundle?) ?: PersistableBundle.EMPTY
+        set(extraBundle) {
+            if (extraBundle.isEmpty) {
+                fields.remove(FIELD_EXTRAS)
+                _bundle?.remove(FIELD_EXTRAS)
+            } else {
+                fields[FIELD_EXTRAS] = extraBundle
+                _bundle?.putParcelable(FIELD_EXTRAS, extraBundle)
+            }
+        }
 
     /**
      * For timeline entries. The epoch second at which this timeline entry becomes * valid or `null`
      * if it's not set.
      */
     var timelineStartEpochSecond: Long?
-        get() {
-            val expiresAt = fields.getLong(FIELD_TIMELINE_START_TIME, -1)
-            return if (expiresAt == -1L) {
-                null
-            } else {
-                expiresAt
-            }
-        }
+        get() = fields[FIELD_TIMELINE_START_TIME] as Long?
         set(epochSecond) {
             if (epochSecond == null) {
                 fields.remove(FIELD_TIMELINE_START_TIME)
+                _bundle?.remove(FIELD_TIMELINE_START_TIME)
             } else {
-                fields.putLong(FIELD_TIMELINE_START_TIME, epochSecond)
+                fields[FIELD_TIMELINE_START_TIME] = epochSecond
+                _bundle?.putLong(FIELD_TIMELINE_START_TIME, epochSecond)
             }
         }
 
@@ -510,72 +548,61 @@ class ComplicationData : Parcelable, Serializable {
      * if it's not set.
      */
     var timelineEndEpochSecond: Long?
-        get() {
-            val expiresAt = fields.getLong(FIELD_TIMELINE_END_TIME, -1)
-            return if (expiresAt == -1L) {
-                null
-            } else {
-                expiresAt
-            }
-        }
+        get() = fields[FIELD_TIMELINE_END_TIME] as Long?
         set(epochSecond) {
             if (epochSecond == null) {
                 fields.remove(FIELD_TIMELINE_END_TIME)
+                _bundle?.remove(FIELD_TIMELINE_END_TIME)
             } else {
-                fields.putLong(FIELD_TIMELINE_END_TIME, epochSecond)
+                fields[FIELD_TIMELINE_END_TIME] = epochSecond
+                _bundle?.putLong(FIELD_TIMELINE_END_TIME, epochSecond)
             }
         }
 
     /** The list of [ComplicationData] timeline entries. */
     val timelineEntries: List<ComplicationData>?
-        @Suppress("DEPRECATION")
-        get() =
-            fields.getParcelableArray(FIELD_TIMELINE_ENTRIES)?.map { parcelable ->
-                val bundle = parcelable as Bundle
-                bundle.classLoader = javaClass.classLoader
-                // Use the serialized FIELD_TIMELINE_ENTRY_TYPE or the outer type if it's not there.
-                // Usually the timeline entry type will be the same as the outer type, unless an
-                // entry contains NoDataComplicationData.
-                val type = bundle.getInt(FIELD_TIMELINE_ENTRY_TYPE, type)
-                ComplicationData(type, parcelable)
-            }
+        @Suppress("UNCHECKED_CAST")
+        get() = fields[FIELD_TIMELINE_ENTRIES] as List<ComplicationData>?
 
     /** Sets the list of [ComplicationData] timeline entries. */
     fun setTimelineEntryCollection(timelineEntries: Collection<ComplicationData>?) {
         if (timelineEntries == null) {
             fields.remove(FIELD_TIMELINE_ENTRIES)
+            _bundle?.remove(FIELD_TIMELINE_ENTRIES)
         } else {
-            fields.putParcelableArray(
+            fields[FIELD_TIMELINE_ENTRIES] = timelineEntries
+            _bundle?.putParcelableArray(
                 FIELD_TIMELINE_ENTRIES,
                 timelineEntries
                     .map {
                         // This supports timeline entry of NoDataComplicationData.
-                        it.fields.putInt(FIELD_TIMELINE_ENTRY_TYPE, it.type)
-                        it.fields
+                        it.bundle.putInt(FIELD_TIMELINE_ENTRY_TYPE, it.type)
+                        it.bundle
                     }
-                    .toTypedArray()
+                    .toTypedArray(),
             )
         }
     }
 
     /** The list of [ComplicationData] entries for a ListComplicationData. */
     val listEntries: List<ComplicationData>?
-        @Suppress("deprecation")
-        get() =
-            fields.getParcelableArray(EXP_FIELD_LIST_ENTRIES)?.map { parcelable ->
-                val bundle = parcelable as Bundle
-                bundle.classLoader = javaClass.classLoader
-                ComplicationData(bundle.getInt(EXP_FIELD_LIST_ENTRY_TYPE), bundle)
-            }
+        @Suppress("UNCHECKED_CAST")
+        get() = fields[EXP_FIELD_LIST_ENTRIES] as List<ComplicationData>?
 
     /**
      * The [ComponentName] of the ComplicationDataSourceService that provided this ComplicationData.
      */
     var dataSource: ComponentName?
         // The safer alternative is not available on Wear OS yet.
-        get() = getParcelableField(FIELD_DATA_SOURCE)
+        get() = fields[FIELD_DATA_SOURCE] as ComponentName?
         set(provider) {
-            fields.putParcelable(FIELD_DATA_SOURCE, provider)
+            if (provider == null) {
+                fields.remove(FIELD_DATA_SOURCE)
+                _bundle?.remove(FIELD_DATA_SOURCE)
+            } else {
+                fields[FIELD_DATA_SOURCE] = provider
+                _bundle?.putParcelable(FIELD_DATA_SOURCE, provider)
+            }
         }
 
     /**
@@ -593,7 +620,7 @@ class ComplicationData : Parcelable, Serializable {
     val rangedValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_VALUE, type)
-            return fields.getFloat(FIELD_VALUE)
+            return fields[FIELD_VALUE] as Float? ?: 0f
         }
 
     /**
@@ -612,7 +639,7 @@ class ComplicationData : Parcelable, Serializable {
     val rangedDynamicValue: DynamicFloat?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_DYNAMIC_VALUE, type)
-            return fields.getByteArray(FIELD_DYNAMIC_VALUE)?.let { DynamicFloat.fromByteArray(it) }
+            return fields[FIELD_DYNAMIC_VALUE] as DynamicFloat?
         }
 
     /**
@@ -630,7 +657,7 @@ class ComplicationData : Parcelable, Serializable {
     val rangedValueType: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_VALUE_TYPE, type)
-            return fields.getInt(FIELD_VALUE_TYPE)
+            return fields[FIELD_VALUE_TYPE] as Int? ?: 0
         }
 
     /**
@@ -648,7 +675,7 @@ class ComplicationData : Parcelable, Serializable {
     val rangedMinValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_MIN_VALUE, type)
-            return fields.getFloat(FIELD_MIN_VALUE)
+            return fields[FIELD_MIN_VALUE] as Float? ?: 0f
         }
 
     /**
@@ -666,7 +693,7 @@ class ComplicationData : Parcelable, Serializable {
     val rangedMaxValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_MAX_VALUE, type)
-            return fields.getFloat(FIELD_MAX_VALUE)
+            return fields[FIELD_MAX_VALUE] as Float? ?: 0f
         }
 
     /**
@@ -684,7 +711,7 @@ class ComplicationData : Parcelable, Serializable {
     val targetValue: Float
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_TARGET_VALUE, type)
-            return fields.getFloat(FIELD_TARGET_VALUE)
+            return fields[FIELD_TARGET_VALUE] as Float? ?: 0f
         }
 
     /**
@@ -697,11 +724,7 @@ class ComplicationData : Parcelable, Serializable {
     val colorRamp: IntArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_COLOR_RAMP, type)
-            return if (fields.containsKey(FIELD_COLOR_RAMP)) {
-                fields.getIntArray(FIELD_COLOR_RAMP)
-            } else {
-                null
-            }
+            return fields[FIELD_COLOR_RAMP] as IntArray?
         }
 
     /**
@@ -716,11 +739,7 @@ class ComplicationData : Parcelable, Serializable {
     val isColorRampInterpolated: Boolean?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_COLOR_RAMP_INTERPOLATED, type)
-            return if (fields.containsKey(FIELD_COLOR_RAMP_INTERPOLATED)) {
-                fields.getBoolean(FIELD_COLOR_RAMP_INTERPOLATED)
-            } else {
-                null
-            }
+            return fields[FIELD_COLOR_RAMP_INTERPOLATED] as Boolean?
         }
 
     /**
@@ -728,7 +747,7 @@ class ComplicationData : Parcelable, Serializable {
      * succeed.
      */
     fun hasShortTitle(): Boolean =
-        isFieldValidForType(FIELD_SHORT_TITLE, type) && hasParcelableField(FIELD_SHORT_TITLE)
+        isFieldValidForType(FIELD_SHORT_TITLE, type) && fields.containsKey(FIELD_SHORT_TITLE)
 
     /**
      * Returns the *short title* field for this complication, or `null` if no value was provided for
@@ -749,14 +768,14 @@ class ComplicationData : Parcelable, Serializable {
     val shortTitle: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SHORT_TITLE, type)
-            return getParcelableFieldOrWarn<ComplicationText>(FIELD_SHORT_TITLE)
+            return fields[FIELD_SHORT_TITLE] as ComplicationText?
         }
 
     /**
      * Returns true if the ComplicationData contains short text. I.e. if [shortText] can succeed.
      */
     fun hasShortText(): Boolean =
-        isFieldValidForType(FIELD_SHORT_TEXT, type) && hasParcelableField(FIELD_SHORT_TEXT)
+        isFieldValidForType(FIELD_SHORT_TEXT, type) && fields.containsKey(FIELD_SHORT_TEXT)
 
     /**
      * Returns the *short text* field for this complication, or `null` if no value was provided for
@@ -777,14 +796,14 @@ class ComplicationData : Parcelable, Serializable {
     val shortText: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SHORT_TEXT, type)
-            return getParcelableFieldOrWarn<ComplicationText>(FIELD_SHORT_TEXT)
+            return fields[FIELD_SHORT_TEXT] as ComplicationText?
         }
 
     /**
      * Returns true if the ComplicationData contains a long title. I.e. if [longTitle] can succeed.
      */
     fun hasLongTitle(): Boolean =
-        isFieldValidForType(FIELD_LONG_TITLE, type) && hasParcelableField(FIELD_LONG_TITLE)
+        isFieldValidForType(FIELD_LONG_TITLE, type) && fields.containsKey(FIELD_LONG_TITLE)
 
     /**
      * Returns the *long title* field for this complication, or `null` if no value was provided for
@@ -798,12 +817,12 @@ class ComplicationData : Parcelable, Serializable {
     val longTitle: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LONG_TITLE, type)
-            return getParcelableFieldOrWarn<ComplicationText>(FIELD_LONG_TITLE)
+            return fields[FIELD_LONG_TITLE] as ComplicationText?
         }
 
     /** Returns true if the ComplicationData contains long text. I.e. if [longText] can succeed. */
     fun hasLongText(): Boolean =
-        isFieldValidForType(FIELD_LONG_TEXT, type) && hasParcelableField(FIELD_LONG_TEXT)
+        isFieldValidForType(FIELD_LONG_TEXT, type) && fields.containsKey(FIELD_LONG_TEXT)
 
     /**
      * Returns the *long text* field for this complication.
@@ -816,11 +835,11 @@ class ComplicationData : Parcelable, Serializable {
     val longText: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LONG_TEXT, type)
-            return getParcelableFieldOrWarn<ComplicationText>(FIELD_LONG_TEXT)
+            return fields[FIELD_LONG_TEXT] as ComplicationText?
         }
 
     /** Returns true if the ComplicationData contains an Icon. I.e. if [icon] can succeed. */
-    fun hasIcon(): Boolean = isFieldValidForType(FIELD_ICON, type) && hasParcelableField(FIELD_ICON)
+    fun hasIcon(): Boolean = isFieldValidForType(FIELD_ICON, type) && fields.containsKey(FIELD_ICON)
 
     /**
      * Returns the *icon* field for this complication, or `null` if no value was provided for the
@@ -837,7 +856,7 @@ class ComplicationData : Parcelable, Serializable {
     val icon: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ICON, type)
-            return getParcelableFieldOrWarn<Icon>(FIELD_ICON)
+            return fields[FIELD_ICON] as Icon?
         }
 
     /**
@@ -846,7 +865,7 @@ class ComplicationData : Parcelable, Serializable {
      */
     fun hasBurnInProtectionIcon(): Boolean =
         isFieldValidForType(FIELD_ICON_BURN_IN_PROTECTION, type) &&
-            hasParcelableField(FIELD_ICON_BURN_IN_PROTECTION)
+            fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION)
 
     /**
      * Returns the burn-in protection version of the *icon* field for this complication, or `null`
@@ -865,7 +884,7 @@ class ComplicationData : Parcelable, Serializable {
     val burnInProtectionIcon: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ICON_BURN_IN_PROTECTION, type)
-            return getParcelableFieldOrWarn<Icon>(FIELD_ICON_BURN_IN_PROTECTION)
+            return fields[FIELD_ICON_BURN_IN_PROTECTION] as Icon?
         }
 
     /**
@@ -873,7 +892,7 @@ class ComplicationData : Parcelable, Serializable {
      * succeed.
      */
     fun hasSmallImage(): Boolean =
-        isFieldValidForType(FIELD_SMALL_IMAGE, type) && hasParcelableField(FIELD_SMALL_IMAGE)
+        isFieldValidForType(FIELD_SMALL_IMAGE, type) && fields.containsKey(FIELD_SMALL_IMAGE)
 
     /**
      * Returns the *small image* field for this complication, or `null` if no value was provided for
@@ -892,7 +911,7 @@ class ComplicationData : Parcelable, Serializable {
     val smallImage: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_SMALL_IMAGE, type)
-            return getParcelableFieldOrWarn<Icon>(FIELD_SMALL_IMAGE)
+            return fields[FIELD_SMALL_IMAGE] as Icon?
         }
 
     /**
@@ -903,7 +922,7 @@ class ComplicationData : Parcelable, Serializable {
      */
     fun hasBurnInProtectionSmallImage(): Boolean =
         isFieldValidForType(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION, type) &&
-            hasParcelableField(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION)
+            fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION)
 
     /**
      * Returns the burn-in protection version of the *small image* field for this complication, or
@@ -923,9 +942,9 @@ class ComplicationData : Parcelable, Serializable {
         get() {
             checkFieldValidForTypeWithoutThrowingException(
                 FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                type
+                type,
             )
-            return getParcelableFieldOrWarn<Icon>(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION)
+            return fields[FIELD_SMALL_IMAGE_BURN_IN_PROTECTION] as Icon?
         }
 
     /**
@@ -944,7 +963,7 @@ class ComplicationData : Parcelable, Serializable {
     val smallImageStyle: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_IMAGE_STYLE, type)
-            return fields.getInt(FIELD_IMAGE_STYLE)
+            return fields[FIELD_IMAGE_STYLE] as Int? ?: 0
         }
 
     /**
@@ -952,7 +971,7 @@ class ComplicationData : Parcelable, Serializable {
      * succeed.
      */
     fun hasLargeImage(): Boolean =
-        isFieldValidForType(FIELD_LARGE_IMAGE, type) && hasParcelableField(FIELD_LARGE_IMAGE)
+        isFieldValidForType(FIELD_LARGE_IMAGE, type) && fields.containsKey(FIELD_LARGE_IMAGE)
 
     /**
      * Returns the *large image* field for this complication. This image is expected to be of a
@@ -968,14 +987,14 @@ class ComplicationData : Parcelable, Serializable {
     val largeImage: Icon?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_LARGE_IMAGE, type)
-            return getParcelableFieldOrWarn<Icon>(FIELD_LARGE_IMAGE)
+            return fields[FIELD_LARGE_IMAGE] as Icon?
         }
 
     /**
      * Returns true if the ComplicationData contains a tap action. I.e. if [tapAction] can succeed.
      */
     fun hasTapAction(): Boolean =
-        isFieldValidForType(FIELD_TAP_ACTION, type) && hasParcelableField(FIELD_TAP_ACTION)
+        isFieldValidForType(FIELD_TAP_ACTION, type) && fields.containsKey(FIELD_TAP_ACTION)
 
     /**
      * Returns the *tap action* field for this complication. The result is a [PendingIntent] that
@@ -987,7 +1006,7 @@ class ComplicationData : Parcelable, Serializable {
     val tapAction: PendingIntent?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_TAP_ACTION, type)
-            return getParcelableFieldOrWarn<PendingIntent>(FIELD_TAP_ACTION)
+            return fields[FIELD_TAP_ACTION] as PendingIntent?
         }
 
     /**
@@ -996,7 +1015,7 @@ class ComplicationData : Parcelable, Serializable {
      */
     fun hasContentDescription(): Boolean =
         isFieldValidForType(FIELD_CONTENT_DESCRIPTION, type) &&
-            hasParcelableField(FIELD_CONTENT_DESCRIPTION)
+            fields.containsKey(FIELD_CONTENT_DESCRIPTION)
 
     /**
      * Returns the *content description * field for this complication, for screen readers. This
@@ -1007,7 +1026,7 @@ class ComplicationData : Parcelable, Serializable {
     val contentDescription: ComplicationText?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_CONTENT_DESCRIPTION, type)
-            return getParcelableFieldOrWarn<ComplicationText>(FIELD_CONTENT_DESCRIPTION)
+            return fields[FIELD_CONTENT_DESCRIPTION] as ComplicationText?
         }
 
     /**
@@ -1019,7 +1038,7 @@ class ComplicationData : Parcelable, Serializable {
     val elementWeights: FloatArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_WEIGHTS, type)
-            return fields.getFloatArray(FIELD_ELEMENT_WEIGHTS)
+            return fields[FIELD_ELEMENT_WEIGHTS] as FloatArray?
         }
 
     /**
@@ -1031,7 +1050,7 @@ class ComplicationData : Parcelable, Serializable {
     val elementColors: IntArray?
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_COLORS, type)
-            return fields.getIntArray(FIELD_ELEMENT_COLORS)
+            return fields[FIELD_ELEMENT_COLORS] as IntArray?
         }
 
     /**
@@ -1044,7 +1063,7 @@ class ComplicationData : Parcelable, Serializable {
     val elementBackgroundColor: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_ELEMENT_BACKGROUND_COLOR, type)
-            return fields.getInt(FIELD_ELEMENT_BACKGROUND_COLOR)
+            return fields[FIELD_ELEMENT_BACKGROUND_COLOR] as Int? ?: 0
         }
 
     /**
@@ -1054,7 +1073,7 @@ class ComplicationData : Parcelable, Serializable {
     fun hasPlaceholder(): Boolean =
         isFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type) &&
             isFieldValidForType(FIELD_PLACEHOLDER_TYPE, type) &&
-            hasParcelableField(FIELD_PLACEHOLDER_FIELDS) &&
+            fields.containsKey(FIELD_PLACEHOLDER_FIELDS) &&
             fields.containsKey(FIELD_PLACEHOLDER_TYPE)
 
     /** Returns the placeholder ComplicationData if there is one or `null`. */
@@ -1062,17 +1081,7 @@ class ComplicationData : Parcelable, Serializable {
         get() {
             checkFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type)
             checkFieldValidForType(FIELD_PLACEHOLDER_TYPE, type)
-            return if (
-                !fields.containsKey(FIELD_PLACEHOLDER_FIELDS) ||
-                    !fields.containsKey(FIELD_PLACEHOLDER_TYPE)
-            ) {
-                null
-            } else {
-                ComplicationData(
-                    fields.getInt(FIELD_PLACEHOLDER_TYPE),
-                    fields.getBundle(FIELD_PLACEHOLDER_FIELDS)!!
-                )
-            }
+            return fields[FIELD_PLACEHOLDER_FIELDS] as ComplicationData?
         }
 
     /**
@@ -1082,7 +1091,7 @@ class ComplicationData : Parcelable, Serializable {
     fun hasInvalidatedData(): Boolean =
         isFieldValidForType(FIELD_ORIGINAL_FIELDS, type) &&
             isFieldValidForType(FIELD_ORIGINAL_TYPE, type) &&
-            hasParcelableField(FIELD_ORIGINAL_FIELDS)
+            fields.containsKey(FIELD_ORIGINAL_FIELDS)
 
     /**
      * Returns the invalidated [ComplicationData] used in [TYPE_NO_DATA] when generated by dynamic
@@ -1092,22 +1101,12 @@ class ComplicationData : Parcelable, Serializable {
         get() {
             checkFieldValidForType(FIELD_ORIGINAL_FIELDS, type)
             checkFieldValidForType(FIELD_ORIGINAL_TYPE, type)
-            return if (
-                !fields.containsKey(FIELD_ORIGINAL_FIELDS) ||
-                    !fields.containsKey(FIELD_ORIGINAL_TYPE)
-            ) {
-                null
-            } else {
-                ComplicationData(
-                    fields.getInt(FIELD_ORIGINAL_TYPE),
-                    fields.getBundle(FIELD_ORIGINAL_FIELDS)!!
-                )
-            }
+            return fields[FIELD_ORIGINAL_FIELDS] as ComplicationData?
         }
 
     /** Returns the bytes of the proto layout. */
     val interactiveLayout: ByteArray?
-        get() = fields.getByteArray(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE)
+        get() = fields[EXP_FIELD_PROTO_LAYOUT_INTERACTIVE] as ByteArray?
 
     /**
      * Returns the list style hint.
@@ -1117,26 +1116,24 @@ class ComplicationData : Parcelable, Serializable {
     val listStyleHint: Int
         get() {
             checkFieldValidForType(EXP_FIELD_LIST_STYLE_HINT, type)
-            return fields.getInt(EXP_FIELD_LIST_STYLE_HINT)
+            return fields[EXP_FIELD_LIST_STYLE_HINT] as Int? ?: 0
         }
 
     /** Returns the bytes of the ambient proto layout. */
     val ambientLayout: ByteArray?
-        get() = fields.getByteArray(EXP_FIELD_PROTO_LAYOUT_AMBIENT)
+        get() = fields[EXP_FIELD_PROTO_LAYOUT_AMBIENT] as ByteArray?
 
     /** Returns the bytes of the proto layout resources. */
     val layoutResources: ByteArray?
-        get() = fields.getByteArray(EXP_FIELD_PROTO_LAYOUT_RESOURCES)
+        get() = fields[EXP_FIELD_PROTO_LAYOUT_RESOURCES] as ByteArray?
 
     /** Return's the complication's [ComplicationPersistencePolicies]. */
     @ComplicationPersistencePolicy
     val persistencePolicy: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_PERSISTENCE_POLICY, type)
-            return fields.getInt(
-                FIELD_PERSISTENCE_POLICY,
-                ComplicationPersistencePolicies.CACHING_ALLOWED
-            )
+            return fields[FIELD_PERSISTENCE_POLICY] as Int?
+                ?: ComplicationPersistencePolicies.CACHING_ALLOWED
         }
 
     /** Return's the complication's [ComplicationDisplayPolicy]. */
@@ -1144,7 +1141,8 @@ class ComplicationData : Parcelable, Serializable {
     val displayPolicy: Int
         get() {
             checkFieldValidForTypeWithoutThrowingException(FIELD_DISPLAY_POLICY, type)
-            return fields.getInt(FIELD_DISPLAY_POLICY, ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+            return fields[FIELD_DISPLAY_POLICY] as Int?
+                ?: ComplicationDisplayPolicies.ALWAYS_DISPLAY
         }
 
     /**
@@ -1152,14 +1150,14 @@ class ComplicationData : Parcelable, Serializable {
      * considered active and displayed), this may be 0. See also [isActiveAt].
      */
     val startDateTimeMillis: Long
-        get() = fields.getLong(FIELD_START_TIME, 0)
+        get() = fields[FIELD_START_TIME] as Long? ?: 0L
 
     /**
      * Returns the end time for this complication data (i.e. the last time at which it should be
      * considered active and displayed), this may be [Long.MAX_VALUE]. See also [isActiveAt].
      */
     val endDateTimeMillis: Long
-        get() = fields.getLong(FIELD_END_TIME, Long.MAX_VALUE)
+        get() = fields[FIELD_END_TIME] as Long? ?: Long.MAX_VALUE
 
     /** Returns `true` if the complication contains a dynamic value that needs to be evaluated. */
     fun hasDynamicValues(): Boolean =
@@ -1186,31 +1184,9 @@ class ComplicationData : Parcelable, Serializable {
                 isTimeDependentField(FIELD_LONG_TITLE)
 
     private fun isTimeDependentField(field: String): Boolean {
-        val text = getParcelableFieldOrWarn<ComplicationText>(field)
+        val text = fields[field] as ComplicationText?
         return text != null && text.isTimeDependent
     }
-
-    private fun <T : Parcelable?> getParcelableField(field: String): T? =
-        try {
-            @Suppress("deprecation") fields.getParcelable<T>(field)
-        } catch (e: BadParcelableException) {
-            null
-        }
-
-    private fun hasParcelableField(field: String) = getParcelableField<Parcelable>(field) != null
-
-    private fun <T : Parcelable?> getParcelableFieldOrWarn(field: String): T? =
-        try {
-            @Suppress("deprecation") fields.getParcelable<T>(field)
-        } catch (e: BadParcelableException) {
-            Log.w(
-                TAG,
-                "Could not unparcel ComplicationData. Provider apps must exclude wearable " +
-                    "support complication classes from proguard.",
-                e
-            )
-            null
-        }
 
     override fun toString() =
         if (shouldRedact()) {
@@ -1350,7 +1326,9 @@ class ComplicationData : Parcelable, Serializable {
                 (!isFieldValidForType(FIELD_START_TIME, type) ||
                     startDateTimeMillis == other.startDateTimeMillis) &&
                 (!isFieldValidForType(FIELD_END_TIME, type) ||
-                    endDateTimeMillis == other.endDateTimeMillis))
+                    endDateTimeMillis == other.endDateTimeMillis) &&
+                (!isFieldValidForType(FIELD_EXTRAS, type) ||
+                    PersistableBundleHelper.equals(extras, other.extras)))
 
     override fun hashCode(): Int =
         Objects.hash(
@@ -1372,7 +1350,7 @@ class ComplicationData : Parcelable, Serializable {
             if (isFieldValidForType(FIELD_DATA_SOURCE, type)) dataSource else null,
             if (isFieldValidForType(FIELD_VALUE, type)) rangedValue else null,
             if (isFieldValidForType(FIELD_DYNAMIC_VALUE, type)) {
-                Arrays.hashCode(rangedDynamicValue?.toDynamicFloatByteArray())
+                rangedDynamicValue?.toDynamicFloatByteArray().contentHashCode()
             } else {
                 null
             },
@@ -1443,36 +1421,45 @@ class ComplicationData : Parcelable, Serializable {
             if (isFieldValidForType(FIELD_DISPLAY_POLICY, type)) displayPolicy else null,
             if (isFieldValidForType(FIELD_START_TIME, type)) startDateTimeMillis else null,
             if (isFieldValidForType(FIELD_END_TIME, type)) endDateTimeMillis else null,
+            if (isFieldValidForType(FIELD_EXTRAS, type)) {
+                // PersistableBundle does not implement hashCode
+                PersistableBundleHelper.hashCode(extras)
+            } else {
+                null
+            },
         )
 
     /** Builder class for [ComplicationData]. */
-    class Builder {
-        @ComplicationType internal val type: Int
-
-        internal val fields: Bundle
-
+    class Builder(
+        @ComplicationType internal val type: Int,
+        internal val fields: MutableMap<String, Any>,
+    ) {
         /** Creates a builder from given [ComplicationData], copying its type and data. */
-        constructor(data: ComplicationData) {
-            type = data.type
-            fields = data.fields.clone() as Bundle
-        }
+        constructor(data: ComplicationData) : this(data.type, data.fields.toMutableMap())
 
-        constructor(@ComplicationType type: Int) {
-            this.type = type
-            fields = Bundle()
+        constructor(@ComplicationType type: Int) : this(type, mutableMapOf()) {
             if (type == TYPE_SMALL_IMAGE || type == TYPE_LONG_TEXT) {
                 setSmallImageStyle(IMAGE_STYLE_PHOTO)
             }
         }
 
+        /** Sets any extras. */
+        fun setExtras(extras: PersistableBundle) = apply {
+            if (extras.isEmpty) {
+                fields.remove(FIELD_EXTRAS)
+            } else {
+                fields[FIELD_EXTRAS] = extras
+            }
+        }
+
         /** Sets the complication's [ComplicationPersistencePolicy]. */
         fun setPersistencePolicy(@ComplicationPersistencePolicy cachePolicy: Int) = apply {
-            fields.putInt(FIELD_PERSISTENCE_POLICY, cachePolicy)
+            fields[FIELD_PERSISTENCE_POLICY] = cachePolicy
         }
 
         /** Sets the complication's [ComplicationDisplayPolicy]. */
         fun setDisplayPolicy(@ComplicationDisplayPolicy displayPolicy: Int) = apply {
-            fields.putInt(FIELD_DISPLAY_POLICY, displayPolicy)
+            fields[FIELD_DISPLAY_POLICY] = displayPolicy
         }
 
         /**
@@ -1485,7 +1472,7 @@ class ComplicationData : Parcelable, Serializable {
          * Returns this Builder to allow chaining.
          */
         fun setStartDateTimeMillis(startDateTimeMillis: Long) = apply {
-            fields.putLong(FIELD_START_TIME, startDateTimeMillis)
+            fields[FIELD_START_TIME] = startDateTimeMillis
         }
 
         /**
@@ -1506,7 +1493,7 @@ class ComplicationData : Parcelable, Serializable {
          * Returns this Builder to allow chaining.
          */
         fun setEndDateTimeMillis(endDateTimeMillis: Long) = apply {
-            fields.putLong(FIELD_END_TIME, endDateTimeMillis)
+            fields[FIELD_END_TIME] = endDateTimeMillis
         }
 
         /**
@@ -1541,14 +1528,14 @@ class ComplicationData : Parcelable, Serializable {
          * @throws IllegalStateException if this field is not valid for the complication type
          */
         fun setRangedDynamicValue(value: DynamicFloat?) = apply {
-            putOrRemoveField(FIELD_DYNAMIC_VALUE, value?.toDynamicFloatByteArray())
+            putOrRemoveField(FIELD_DYNAMIC_VALUE, value)
         }
 
         /**
          * Sets the *value type* field which provides meta data about the value. This is optional
          * for the [TYPE_RANGED_VALUE] type.
          */
-        fun setRangedValueType(valueType: Int) = apply { putIntField(FIELD_VALUE_TYPE, valueType) }
+        fun setRangedValueType(valueType: Int) = apply { putField(FIELD_VALUE_TYPE, valueType) }
 
         /**
          * Sets the *min value* field. This is required for the [TYPE_RANGED_VALUE] type, and is not
@@ -1560,7 +1547,7 @@ class ComplicationData : Parcelable, Serializable {
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedMinValue(minValue: Float) = apply { putFloatField(FIELD_MIN_VALUE, minValue) }
+        fun setRangedMinValue(minValue: Float) = apply { putField(FIELD_MIN_VALUE, minValue) }
 
         /**
          * Sets the *max value* field. This is required for the [TYPE_RANGED_VALUE] type, and is not
@@ -1572,7 +1559,7 @@ class ComplicationData : Parcelable, Serializable {
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setRangedMaxValue(maxValue: Float) = apply { putFloatField(FIELD_MAX_VALUE, maxValue) }
+        fun setRangedMaxValue(maxValue: Float) = apply { putField(FIELD_MAX_VALUE, maxValue) }
 
         /**
          * Sets the *targetValue* field. This is required for the [TYPE_GOAL_PROGRESS] type, and is
@@ -1584,9 +1571,7 @@ class ComplicationData : Parcelable, Serializable {
          *
          * @throws IllegalStateException if this field is not valid for the complication type
          */
-        fun setTargetValue(targetValue: Float) = apply {
-            putFloatField(FIELD_TARGET_VALUE, targetValue)
-        }
+        fun setTargetValue(targetValue: Float) = apply { putField(FIELD_TARGET_VALUE, targetValue) }
 
         /**
          * Sets the *long title* field. This is optional for the [TYPE_LONG_TEXT] type, and is not
@@ -1737,7 +1722,7 @@ class ComplicationData : Parcelable, Serializable {
          * @see .IMAGE_STYLE_ICON which can be recolored but not cropped.
          */
         fun setSmallImageStyle(@ImageStyle imageStyle: Int) = apply {
-            putIntField(FIELD_IMAGE_STYLE, imageStyle)
+            putField(FIELD_IMAGE_STYLE, imageStyle)
         }
 
         /**
@@ -1761,7 +1746,7 @@ class ComplicationData : Parcelable, Serializable {
          * zero.
          */
         fun setListStyleHint(listStyleHint: Int) = apply {
-            putIntField(EXP_FIELD_LIST_STYLE_HINT, listStyleHint)
+            putField(EXP_FIELD_LIST_STYLE_HINT, listStyleHint)
         }
 
         /**
@@ -1802,7 +1787,9 @@ class ComplicationData : Parcelable, Serializable {
          */
         fun setTapActionLostDueToSerialization(tapActionLostDueToSerialization: Boolean) = apply {
             if (tapActionLostDueToSerialization) {
-                fields.putBoolean(FIELD_TAP_ACTION_LOST, tapActionLostDueToSerialization)
+                fields[FIELD_TAP_ACTION_LOST] = true
+            } else {
+                fields.remove(FIELD_TAP_ACTION_LOST)
             }
         }
 
@@ -1816,9 +1803,8 @@ class ComplicationData : Parcelable, Serializable {
                 fields.remove(FIELD_PLACEHOLDER_FIELDS)
                 fields.remove(FIELD_PLACEHOLDER_TYPE)
             } else {
-                checkFieldValidForType(FIELD_PLACEHOLDER_FIELDS, type)
-                fields.putBundle(FIELD_PLACEHOLDER_FIELDS, placeholder.fields)
-                putIntField(FIELD_PLACEHOLDER_TYPE, placeholder.type)
+                putField(FIELD_PLACEHOLDER_FIELDS, placeholder)
+                putField(FIELD_PLACEHOLDER_TYPE, placeholder.type)
             }
         }
 
@@ -1833,9 +1819,8 @@ class ComplicationData : Parcelable, Serializable {
                 fields.remove(FIELD_ORIGINAL_FIELDS)
                 fields.remove(FIELD_ORIGINAL_TYPE)
             } else {
-                checkFieldValidForType(FIELD_ORIGINAL_FIELDS, type)
-                fields.putBundle(FIELD_ORIGINAL_FIELDS, invalidatedData.fields)
-                putIntField(FIELD_ORIGINAL_TYPE, invalidatedData.type)
+                putField(FIELD_ORIGINAL_FIELDS, invalidatedData)
+                putField(FIELD_ORIGINAL_TYPE, invalidatedData.type)
             }
         }
 
@@ -1856,7 +1841,7 @@ class ComplicationData : Parcelable, Serializable {
          * Returns this Builder to allow chaining.
          */
         fun setAmbientLayout(ambientProtoLayout: ByteArray) = apply {
-            putByteArrayField(EXP_FIELD_PROTO_LAYOUT_AMBIENT, ambientProtoLayout)
+            putField(EXP_FIELD_PROTO_LAYOUT_AMBIENT, ambientProtoLayout)
         }
 
         /**
@@ -1865,7 +1850,7 @@ class ComplicationData : Parcelable, Serializable {
          * Returns this Builder to allow chaining.
          */
         fun setInteractiveLayout(protoLayout: ByteArray) = apply {
-            putByteArrayField(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, protoLayout)
+            putField(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, protoLayout)
         }
 
         /**
@@ -1874,7 +1859,7 @@ class ComplicationData : Parcelable, Serializable {
          * Returns this Builder to allow chaining.
          */
         fun setLayoutResources(resources: ByteArray) = apply {
-            putByteArrayField(EXP_FIELD_PROTO_LAYOUT_RESOURCES, resources)
+            putField(EXP_FIELD_PROTO_LAYOUT_RESOURCES, resources)
         }
 
         /**
@@ -1892,8 +1877,8 @@ class ComplicationData : Parcelable, Serializable {
          *
          * Returns this Builder to allow chaining.
          */
-        fun setColorRampIsSmoothShaded(isSmoothShaded: Boolean?) = apply {
-            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isSmoothShaded)
+        fun setColorRampInterpolated(isColorRampInterpolated: Boolean?) = apply {
+            putOrRemoveField(FIELD_COLOR_RAMP_INTERPOLATED, isColorRampInterpolated)
         }
 
         /**
@@ -1905,15 +1890,7 @@ class ComplicationData : Parcelable, Serializable {
             if (listEntries == null) {
                 fields.remove(EXP_FIELD_LIST_ENTRIES)
             } else {
-                fields.putParcelableArray(
-                    EXP_FIELD_LIST_ENTRIES,
-                    listEntries
-                        .map { data ->
-                            data.fields.putInt(EXP_FIELD_LIST_ENTRY_TYPE, data.type)
-                            data.fields
-                        }
-                        .toTypedArray()
-                )
+                fields[EXP_FIELD_LIST_ENTRIES] = listEntries.toList()
             }
         }
 
@@ -1978,38 +1955,18 @@ class ComplicationData : Parcelable, Serializable {
             return ComplicationData(this)
         }
 
-        private fun putIntField(field: String, value: Int) {
+        private fun putField(field: String, value: Any) {
             checkFieldValidForType(field, type)
-            fields.putInt(field, value)
+            fields[field] = value
         }
 
-        private fun putFloatField(field: String, value: Float) {
+        /** Sets the field to value or removes it if null. */
+        private fun putOrRemoveField(field: String, value: Any?) {
             checkFieldValidForType(field, type)
-            fields.putFloat(field, value)
-        }
-
-        private fun putByteArrayField(field: String, value: ByteArray) {
-            checkFieldValidForType(field, type)
-            fields.putByteArray(field, value)
-        }
-
-        /** Sets the field with obj or removes it if null. */
-        private fun putOrRemoveField(field: String, obj: Any?) {
-            checkFieldValidForType(field, type)
-            if (obj == null) {
+            if (value == null) {
                 fields.remove(field)
-                return
-            }
-            when (obj) {
-                is Boolean -> fields.putBoolean(field, obj)
-                is Int -> fields.putInt(field, obj)
-                is Float -> fields.putFloat(field, obj)
-                is String -> fields.putString(field, obj)
-                is Parcelable -> fields.putParcelable(field, obj)
-                is ByteArray -> fields.putByteArray(field, obj)
-                is IntArray -> fields.putIntArray(field, obj)
-                is FloatArray -> fields.putFloatArray(field, obj)
-                else -> throw IllegalArgumentException("Unexpected object type: " + obj.javaClass)
+            } else {
+                fields[field] = value
             }
         }
     }
@@ -2203,6 +2160,7 @@ class ComplicationData : Parcelable, Serializable {
         private const val FIELD_ELEMENT_COLORS = "ELEMENT_COLORS"
         private const val FIELD_ELEMENT_WEIGHTS = "ELEMENT_WEIGHTS"
         private const val FIELD_END_TIME = "END_TIME"
+        private const val FIELD_EXTRAS = "EXTRAS"
         private const val FIELD_ICON = "ICON"
         private const val FIELD_ICON_BURN_IN_PROTECTION = "ICON_BURN_IN_PROTECTION"
         private const val FIELD_IMAGE_STYLE = "IMAGE_STYLE"
@@ -2325,6 +2283,7 @@ class ComplicationData : Parcelable, Serializable {
                 FIELD_TIMELINE_END_TIME,
                 FIELD_START_TIME,
                 FIELD_END_TIME,
+                FIELD_EXTRAS,
                 FIELD_TIMELINE_ENTRIES,
                 FIELD_TIMELINE_ENTRY_TYPE,
                 // Placeholder or fallback.
@@ -2372,20 +2331,10 @@ class ComplicationData : Parcelable, Serializable {
                         FIELD_COLOR_RAMP_INTERPOLATED,
                         FIELD_VALUE_TYPE,
                     ),
-                TYPE_ICON to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        FIELD_ICON_BURN_IN_PROTECTION,
-                    ),
+                TYPE_ICON to setOf(*COMMON_OPTIONAL_FIELDS, FIELD_ICON_BURN_IN_PROTECTION),
                 TYPE_SMALL_IMAGE to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        FIELD_SMALL_IMAGE_BURN_IN_PROTECTION,
-                    ),
-                TYPE_LARGE_IMAGE to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                    ),
+                    setOf(*COMMON_OPTIONAL_FIELDS, FIELD_SMALL_IMAGE_BURN_IN_PROTECTION),
+                TYPE_LARGE_IMAGE to setOf(*COMMON_OPTIONAL_FIELDS),
                 TYPE_NO_PERMISSION to
                     setOf(
                         *COMMON_OPTIONAL_FIELDS,
@@ -2431,15 +2380,8 @@ class ComplicationData : Parcelable, Serializable {
                         EXP_FIELD_PROTO_LAYOUT_INTERACTIVE,
                         EXP_FIELD_PROTO_LAYOUT_RESOURCES,
                     ),
-                EXP_TYPE_PROTO_LAYOUT to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                    ),
-                EXP_TYPE_LIST to
-                    setOf(
-                        *COMMON_OPTIONAL_FIELDS,
-                        EXP_FIELD_LIST_STYLE_HINT,
-                    ),
+                EXP_TYPE_PROTO_LAYOUT to setOf(*COMMON_OPTIONAL_FIELDS),
+                EXP_TYPE_LIST to setOf(*COMMON_OPTIONAL_FIELDS, EXP_FIELD_LIST_STYLE_HINT),
                 TYPE_GOAL_PROGRESS to
                     setOf(
                         *COMMON_OPTIONAL_FIELDS,
@@ -2472,6 +2414,213 @@ class ComplicationData : Parcelable, Serializable {
                 override fun createFromParcel(source: Parcel) = ComplicationData(source)
 
                 override fun newArray(size: Int): Array<ComplicationData?> = Array(size) { null }
+            }
+
+        private fun toFields(bundle: Bundle, @ComplicationType type: Int): MutableMap<String, Any> {
+            bundle.classLoader = ComplicationData::class.java.classLoader
+            val fields = mutableMapOf<String, Any>()
+            // Helper methods to avoid key repetition.
+            fun putFromBundle(key: String, getter: (String) -> Any?) {
+                if (bundle.containsKey(key)) getter(key)?.let { fields.put(key, it) }
+            }
+            fun putComplicationDataFromBundle(typeKey: String, fieldsKey: String) {
+                if (bundle.containsKey(typeKey) && bundle.getBundle(fieldsKey) != null) {
+                    fields[typeKey] = bundle.getInt(typeKey) // Safety, generally unnecessary.
+                    fields[fieldsKey] =
+                        ComplicationData(bundle.getInt(typeKey), bundle.getBundle(fieldsKey)!!)
+                }
+            }
+            fun putComplicationDataArrayFromBundle(arrayKey: String, entryTypeKey: String) {
+                putFromBundle(arrayKey) { key ->
+                    @Suppress("DEPRECATION")
+                    bundle.getParcelableArray(key)?.map {
+                        it as Bundle
+                        it.classLoader = ComplicationData::class.java.classLoader
+                        ComplicationData(it.getInt(entryTypeKey, type), it)
+                    }
+                }
+            }
+
+            // Builder fields.
+            putFromBundle(FIELD_PERSISTENCE_POLICY) {
+                bundle.getInt(it, ComplicationPersistencePolicies.CACHING_ALLOWED)
+            }
+            putFromBundle(FIELD_DISPLAY_POLICY) {
+                bundle.getInt(it, ComplicationDisplayPolicies.ALWAYS_DISPLAY)
+            }
+            putFromBundle(FIELD_START_TIME) { bundle.getLong(it, 0) }
+            putFromBundle(FIELD_END_TIME) { bundle.getLong(it, Long.MAX_VALUE) }
+            putFromBundle(FIELD_EXTRAS) { GetParcelableHelper.getPersistableBundle(bundle, it) }
+            putFromBundle(FIELD_VALUE, bundle::getFloat)
+            putFromBundle(FIELD_DYNAMIC_VALUE) { key ->
+                bundle.getByteArray(key)?.let { DynamicFloat.fromByteArray(it) }
+            }
+            putFromBundle(FIELD_VALUE_TYPE, bundle::getInt)
+            putFromBundle(FIELD_MIN_VALUE, bundle::getFloat)
+            putFromBundle(FIELD_MAX_VALUE, bundle::getFloat)
+            putFromBundle(FIELD_TARGET_VALUE, bundle::getFloat)
+            putFromBundle(FIELD_LONG_TITLE) {
+                bundle.getParcelableFieldOrWarn<ComplicationText>(it)
+            }
+            putFromBundle(FIELD_LONG_TEXT) { bundle.getParcelableFieldOrWarn<ComplicationText>(it) }
+            putFromBundle(FIELD_SHORT_TITLE) {
+                bundle.getParcelableFieldOrWarn<ComplicationText>(it)
+            }
+            putFromBundle(FIELD_SHORT_TEXT) {
+                bundle.getParcelableFieldOrWarn<ComplicationText>(it)
+            }
+            putFromBundle(FIELD_ICON) { bundle.getParcelableFieldOrWarn<Icon>(it) }
+            putFromBundle(FIELD_ICON_BURN_IN_PROTECTION) {
+                bundle.getParcelableFieldOrWarn<Icon>(it)
+            }
+            putFromBundle(FIELD_SMALL_IMAGE) { bundle.getParcelableFieldOrWarn<Icon>(it) }
+            putFromBundle(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION) {
+                bundle.getParcelableFieldOrWarn<Icon>(it)
+            }
+            putFromBundle(FIELD_IMAGE_STYLE, bundle::getInt)
+            putFromBundle(FIELD_LARGE_IMAGE) { bundle.getParcelableFieldOrWarn<Icon>(it) }
+            putFromBundle(EXP_FIELD_LIST_STYLE_HINT, bundle::getInt)
+            putFromBundle(FIELD_TAP_ACTION) { bundle.getParcelableFieldOrWarn<PendingIntent>(it) }
+            putFromBundle(FIELD_CONTENT_DESCRIPTION) {
+                bundle.getParcelableFieldOrWarn<ComplicationText>(it)
+            }
+            putFromBundle(FIELD_TAP_ACTION_LOST, bundle::getBoolean)
+            putComplicationDataFromBundle(
+                typeKey = FIELD_PLACEHOLDER_TYPE,
+                fieldsKey = FIELD_PLACEHOLDER_FIELDS,
+            )
+            putComplicationDataFromBundle(
+                typeKey = FIELD_ORIGINAL_TYPE,
+                fieldsKey = FIELD_ORIGINAL_FIELDS,
+            )
+            putFromBundle(FIELD_DATA_SOURCE) { bundle.getParcelableFieldOrWarn<ComponentName>(it) }
+            putFromBundle(EXP_FIELD_PROTO_LAYOUT_AMBIENT, bundle::getByteArray)
+            putFromBundle(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, bundle::getByteArray)
+            putFromBundle(EXP_FIELD_PROTO_LAYOUT_RESOURCES, bundle::getByteArray)
+            putFromBundle(FIELD_COLOR_RAMP, bundle::getIntArray)
+            putFromBundle(FIELD_COLOR_RAMP_INTERPOLATED, bundle::getBoolean)
+            putComplicationDataArrayFromBundle(
+                arrayKey = EXP_FIELD_LIST_ENTRIES,
+                entryTypeKey = EXP_FIELD_LIST_ENTRY_TYPE,
+            )
+            putFromBundle(FIELD_ELEMENT_WEIGHTS, bundle::getFloatArray)
+            putFromBundle(FIELD_ELEMENT_COLORS, bundle::getIntArray)
+            putFromBundle(FIELD_ELEMENT_BACKGROUND_COLOR, bundle::getInt)
+
+            // Non-builder fields.
+            putFromBundle(FIELD_TIMELINE_START_TIME) { key ->
+                bundle.getLong(key, -1L).takeIf { it != -1L }
+            }
+            putFromBundle(FIELD_TIMELINE_END_TIME) { key ->
+                bundle.getLong(key, -1L).takeIf { it != -1L }
+            }
+            putComplicationDataArrayFromBundle(
+                arrayKey = FIELD_TIMELINE_ENTRIES,
+                entryTypeKey = FIELD_TIMELINE_ENTRY_TYPE,
+            )
+            return fields
+        }
+
+        private fun toBundle(fields: Map<String, Any>): Bundle {
+            val bundle = Bundle()
+            // Helper methods to avoid key repetition.
+            fun <T> putFromFields(key: String, setter: (String, T) -> Unit) {
+                @Suppress("UNCHECKED_CAST") if (key in fields) setter(key, fields[key] as T)
+            }
+            fun putComplicationDataFromFields(typeKey: String, fieldsKey: String) {
+                if (typeKey in fields && fieldsKey in fields) {
+                    bundle.putInt(typeKey, fields[typeKey] as Int)
+                    bundle.putBundle(fieldsKey, (fields[fieldsKey] as ComplicationData).bundle)
+                }
+            }
+            fun putComplicationDataArrayFromFields(arrayKey: String, entryTypeKey: String) {
+                if (arrayKey in fields) {
+                    @Suppress("UNCHECKED_CAST")
+                    bundle.putParcelableArray(
+                        arrayKey,
+                        (fields[arrayKey] as List<ComplicationData>)
+                            .map {
+                                it.bundle.putInt(entryTypeKey, it.type)
+                                it.bundle
+                            }
+                            .toTypedArray(),
+                    )
+                }
+            }
+
+            // Builder fields.
+            putFromFields(FIELD_PERSISTENCE_POLICY, bundle::putInt)
+            putFromFields(FIELD_DISPLAY_POLICY, bundle::putInt)
+            putFromFields(FIELD_START_TIME, bundle::putLong)
+            putFromFields(FIELD_END_TIME, bundle::putLong)
+            putFromFields<PersistableBundle>(FIELD_EXTRAS) { key, value ->
+                bundle.putParcelable(key, value)
+            }
+            putFromFields(FIELD_VALUE, bundle::putFloat)
+            putFromFields<DynamicFloat>(FIELD_DYNAMIC_VALUE) { key, value ->
+                bundle.putByteArray(key, value.toDynamicFloatByteArray())
+            }
+            putFromFields(FIELD_VALUE_TYPE, bundle::putInt)
+            putFromFields(FIELD_MIN_VALUE, bundle::putFloat)
+            putFromFields(FIELD_MAX_VALUE, bundle::putFloat)
+            putFromFields(FIELD_TARGET_VALUE, bundle::putFloat)
+            putFromFields<ComplicationText>(FIELD_LONG_TITLE, bundle::putParcelable)
+            putFromFields<ComplicationText>(FIELD_LONG_TEXT, bundle::putParcelable)
+            putFromFields<ComplicationText>(FIELD_SHORT_TITLE, bundle::putParcelable)
+            putFromFields<ComplicationText>(FIELD_SHORT_TEXT, bundle::putParcelable)
+            putFromFields<Icon>(FIELD_ICON, bundle::putParcelable)
+            putFromFields<Icon>(FIELD_ICON_BURN_IN_PROTECTION, bundle::putParcelable)
+            putFromFields<Icon>(FIELD_SMALL_IMAGE, bundle::putParcelable)
+            putFromFields<Icon>(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION, bundle::putParcelable)
+            putFromFields(FIELD_IMAGE_STYLE, bundle::putInt)
+            putFromFields<Icon>(FIELD_LARGE_IMAGE, bundle::putParcelable)
+            putFromFields(EXP_FIELD_LIST_STYLE_HINT, bundle::putInt)
+            putFromFields<PendingIntent>(FIELD_TAP_ACTION, bundle::putParcelable)
+            putFromFields<ComplicationText>(FIELD_CONTENT_DESCRIPTION, bundle::putParcelable)
+            putFromFields(FIELD_TAP_ACTION_LOST, bundle::putBoolean)
+            putComplicationDataFromFields(
+                typeKey = FIELD_PLACEHOLDER_TYPE,
+                fieldsKey = FIELD_PLACEHOLDER_FIELDS,
+            )
+            putComplicationDataFromFields(
+                typeKey = FIELD_ORIGINAL_TYPE,
+                fieldsKey = FIELD_ORIGINAL_FIELDS,
+            )
+            putFromFields<ComponentName>(FIELD_DATA_SOURCE, bundle::putParcelable)
+            putFromFields<ByteArray>(EXP_FIELD_PROTO_LAYOUT_AMBIENT, bundle::putByteArray)
+            putFromFields<ByteArray>(EXP_FIELD_PROTO_LAYOUT_INTERACTIVE, bundle::putByteArray)
+            putFromFields<ByteArray>(EXP_FIELD_PROTO_LAYOUT_RESOURCES, bundle::putByteArray)
+            putFromFields<IntArray>(FIELD_COLOR_RAMP, bundle::putIntArray)
+            putFromFields(FIELD_COLOR_RAMP_INTERPOLATED, bundle::putBoolean)
+            putComplicationDataArrayFromFields(
+                arrayKey = EXP_FIELD_LIST_ENTRIES,
+                entryTypeKey = EXP_FIELD_LIST_ENTRY_TYPE,
+            )
+            putFromFields<FloatArray>(FIELD_ELEMENT_WEIGHTS, bundle::putFloatArray)
+            putFromFields<IntArray>(FIELD_ELEMENT_COLORS, bundle::putIntArray)
+            putFromFields(FIELD_ELEMENT_BACKGROUND_COLOR, bundle::putInt)
+
+            // Non-builder fields.
+            putFromFields(FIELD_TIMELINE_START_TIME, bundle::putLong)
+            putFromFields(FIELD_TIMELINE_END_TIME, bundle::putLong)
+            putComplicationDataArrayFromFields(
+                arrayKey = FIELD_TIMELINE_ENTRIES,
+                entryTypeKey = FIELD_TIMELINE_ENTRY_TYPE,
+            )
+            return bundle
+        }
+
+        private fun <T : Parcelable?> Bundle.getParcelableFieldOrWarn(key: String): T? =
+            try {
+                @Suppress("deprecation") getParcelable<T>(key)
+            } catch (e: BadParcelableException) {
+                Log.w(
+                    TAG,
+                    "Could not unparcel ComplicationData. Provider apps must exclude wearable " +
+                        "support complication classes from proguard.",
+                    e,
+                )
+                null
             }
 
         fun isFieldValidForType(field: String, @ComplicationType type: Int): Boolean {
@@ -2507,7 +2656,8 @@ class ComplicationData : Parcelable, Serializable {
         }
 
         /** Returns whether or not we should redact complication data in toString(). */
-        @JvmStatic fun shouldRedact() = !Log.isLoggable(TAG, Log.DEBUG)
+        @JvmStatic
+        fun shouldRedact() = !Log.isLoggable(TAG, Log.DEBUG) && !Build.TYPE.equals("userdebug")
 
         @JvmStatic
         fun maybeRedact(unredacted: CharSequence?): String =
@@ -2516,6 +2666,70 @@ class ComplicationData : Parcelable, Serializable {
         @JvmSynthetic
         private fun maybeRedact(unredacted: String): String =
             if (!shouldRedact() || unredacted == PLACEHOLDER_STRING) unredacted else "REDACTED"
+    }
+}
+
+internal object GetParcelableHelperApi33 {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun getPersistableBundle(bundle: Bundle, key: String) =
+        bundle.getParcelable(key, PersistableBundle::class.java)
+}
+
+internal object GetParcelableHelper {
+    @Suppress("deprecation")
+    fun getPersistableBundle(bundle: Bundle, key: String): PersistableBundle? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return GetParcelableHelperApi33.getPersistableBundle(bundle, key)
+        } else {
+            return bundle.getParcelable(key) as PersistableBundle?
+        }
+    }
+}
+
+/** [PersistableBundle] doesn't implement equals or hashCode, but we need them. */
+internal object PersistableBundleHelper {
+    @Suppress("deprecation")
+    fun equals(a: PersistableBundle?, b: PersistableBundle?): Boolean {
+        if (a === b) {
+            return true
+        }
+        if (a == null || b == null) {
+            return false
+        }
+        if (a.size() != b.size()) {
+            return false
+        }
+        for (key in a.keySet()) {
+            val aVal = a.get(key)!!
+            val bVal = b.get(key) ?: return false
+            if (aVal is PersistableBundle && bVal is PersistableBundle) {
+                if (!equals(aVal, bVal)) {
+                    return false
+                }
+            } else {
+                if (aVal != bVal) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    @Suppress("deprecation")
+    fun hashCode(bundle: PersistableBundle?): Int {
+        if (bundle == null) {
+            return -1
+        }
+        var hash = 0
+        for (key in bundle.keySet()) {
+            val v = bundle.get(key)!!
+            if (v is PersistableBundle) {
+                hash = hash * 33 + hashCode(v)
+            } else {
+                hash = hash * 33 + v.hashCode()
+            }
+        }
+        return hash
     }
 }
 

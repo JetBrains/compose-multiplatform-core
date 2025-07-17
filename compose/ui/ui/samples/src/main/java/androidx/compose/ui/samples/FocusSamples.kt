@@ -36,12 +36,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusRequester.Companion.Cancel
-import androidx.compose.ui.focus.FocusRequester.Companion.Default
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
@@ -97,22 +95,18 @@ fun CaptureFocusSample() {
         modifier =
             Modifier.border(2.dp, borderColor).focusRequester(focusRequester).onFocusChanged {
                 borderColor = if (it.isCaptured) Red else Transparent
-            }
+            },
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun RestoreFocusSample() {
     val focusRequester = remember { FocusRequester() }
     LazyRow(
         Modifier.focusRequester(focusRequester).focusProperties {
-            exit = {
-                focusRequester.saveFocusedChild()
-                Default
-            }
-            enter = { if (focusRequester.restoreFocusedChild()) Cancel else Default }
+            onExit = { focusRequester.saveFocusedChild() }
+            onEnter = { if (focusRequester.restoreFocusedChild()) cancelFocusChange() }
         }
     ) {
         item { Button(onClick = {}) { Text("1") } }
@@ -122,7 +116,6 @@ fun RestoreFocusSample() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun FocusRestorerSample() {
@@ -134,14 +127,13 @@ fun FocusRestorerSample() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun FocusRestorerCustomFallbackSample() {
     val focusRequester = remember { FocusRequester() }
     LazyRow(
         // If restoration fails, focus would fallback to the item associated with focusRequester.
-        Modifier.focusRestorer { focusRequester }
+        Modifier.focusRestorer(focusRequester)
     ) {
         item {
             Button(modifier = Modifier.focusRequester(focusRequester), onClick = {}) { Text("1") }
@@ -275,7 +267,6 @@ fun FocusPropertiesSample() {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun CancelFocusMoveSample() {
@@ -291,20 +282,18 @@ fun CancelFocusMoveSample() {
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun CustomFocusEnterSample() {
     // If the row is focused, performing a moveFocus(Enter) will move focus to item2.
     val item2 = remember { FocusRequester() }
-    Row(Modifier.focusProperties { enter = { item2 } }.focusable()) {
+    Row(Modifier.focusProperties { onEnter = { item2.requestFocus() } }.focusable()) {
         Box(Modifier.focusable())
         Box(Modifier.focusRequester(item2).focusable())
         Box(Modifier.focusable())
     }
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun CustomFocusExitSample() {
@@ -312,7 +301,7 @@ fun CustomFocusExitSample() {
     // will move focus to the specified next item instead of moving focus to row1.
     val nextItem = remember { FocusRequester() }
     Column {
-        Row(Modifier.focusProperties { exit = { nextItem } }.focusable()) {
+        Row(Modifier.focusProperties { onExit = { nextItem.requestFocus() } }.focusable()) {
             Box(Modifier.focusable())
             Box(Modifier.focusable())
             Box(Modifier.focusable())

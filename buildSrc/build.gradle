@@ -4,7 +4,7 @@ buildscript {
     repos.addMavenRepositories(repositories)
 
     dependencies {
-        classpath(libs.kotlinGradlePluginz)
+        classpath(libs.kotlinGradlePlugin)
     }
 
     configurations.classpath.resolutionStrategy {
@@ -21,6 +21,11 @@ apply from: "repos.gradle"
 apply plugin: "kotlin"
 
 repos.addMavenRepositories(repositories)
+
+project.tasks.withType(Jar).configureEach { task ->
+    task.reproducibleFileOrder = true
+    task.preserveFileTimestamps = false
+}
 
 dependencies {
     api(project("plugins"))

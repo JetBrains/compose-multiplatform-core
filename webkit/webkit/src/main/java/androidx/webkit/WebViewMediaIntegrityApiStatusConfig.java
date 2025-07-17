@@ -19,11 +19,11 @@ package androidx.webkit;
 import android.webkit.WebView;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RestrictTo;
 
 import org.chromium.support_lib_boundary.WebSettingsBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -123,8 +123,7 @@ public class WebViewMediaIntegrityApiStatusConfig {
          * will be chosen.
          */
 
-        @NonNull
-        public Builder addOverrideRule(@NonNull String originPattern,
+        public @NonNull Builder addOverrideRule(@NonNull String originPattern,
                 @WebViewMediaIntegrityApiStatus int permission) {
             mOverrideRules.put(originPattern, permission);
             return this;
@@ -140,8 +139,7 @@ public class WebViewMediaIntegrityApiStatusConfig {
          * This is only meant for internal use within the library.
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @NonNull
-        public Builder setOverrideRules(@NonNull Map<String,
+        public @NonNull Builder setOverrideRules(@NonNull Map<String,
                 @WebViewMediaIntegrityApiStatus Integer> overrideRules) {
             mOverrideRules = overrideRules;
             return this;
@@ -150,8 +148,7 @@ public class WebViewMediaIntegrityApiStatusConfig {
         /**
          * Build the config.
          */
-        @NonNull
-        public WebViewMediaIntegrityApiStatusConfig build() {
+        public @NonNull WebViewMediaIntegrityApiStatusConfig build() {
             return new WebViewMediaIntegrityApiStatusConfig(this);
         }
     }
@@ -168,8 +165,7 @@ public class WebViewMediaIntegrityApiStatusConfig {
      * <p> This is a map from origin patterns to their desired WebView Media Integrity API statuses.
      *
      */
-    @NonNull
-    public Map<String, @WebViewMediaIntegrityApiStatus Integer> getOverrideRules() {
+    public @NonNull Map<String, @WebViewMediaIntegrityApiStatus Integer> getOverrideRules() {
         return mOverrideRules;
     }
 }

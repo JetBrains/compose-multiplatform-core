@@ -23,13 +23,14 @@
     <string name="fingerprint_error_no_fingerprints" msgid="7520712796891883488">"اثر انگشتی ثبت نشده است."</string>
     <string name="fingerprint_error_hw_not_present" msgid="6306988885793029438">"این دستگاه حسگر اثر انگشت ندارد"</string>
     <string name="fingerprint_error_user_canceled" msgid="7627716295344353987">"کاربر عملیات اثر انگشت را لغو کرد"</string>
-    <string name="fingerprint_error_lockout" msgid="7291787166416782245">"تعداد تلاش‌ها بیش از حد مجاز است. لطفاً بعداً دوباره امتحان کنید."</string>
+    <string name="fingerprint_error_lockout" msgid="7291787166416782245">"تلاش‌های بسیار زیاد ناموفق. لطفاً بعداً دوباره امتحان کنید."</string>
     <string name="default_error_msg" msgid="4776854077120974966">"خطای ناشناس"</string>
     <string name="generic_error_user_canceled" msgid="7309881387583143581">"کاربر اصالت‌سنجی را لغو کرد."</string>
     <string name="confirm_device_credential_password" msgid="5912733858573823945">"استفاده از گذرواژه"</string>
     <string name="generic_error_no_device_credential" msgid="3791785319221634505">"پین، الگو، یا گذرواژه‌ای تنظیم نشده است."</string>
     <string name="generic_error_no_keyguard" msgid="1807436368654974044">"این دستگاه از پین، الگو، یا گذرواژه پشتیبانی نمی‌کند."</string>
     <string name="fingerprint_dialog_icon_description" msgid="5462024216548165325">"نماد اثر انگشت"</string>
+    <string name="content_view_more_options_button_clicked" msgid="5031325658202184259">"روی دکمه گزینه‌های بیشتر در نمای محتوا کلیک شده است."</string>
     <string name="use_fingerprint_label" msgid="6961788485681412417">"استفاده از اثر انگشت"</string>
     <string name="use_face_label" msgid="6533512708069459542">"استفاده از چهره"</string>
     <string name="use_biometric_label" msgid="6524145989441579428">"استفاده از داده‌های زیست‌سنجشی"</string>

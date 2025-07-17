@@ -41,6 +41,8 @@
     <string name="mixed_volume_route_group_name">Mixed Volume Route Group</string>
     <string name="sample_route_description">Sample route from AndroidXDemos</string>
 
+    <string name="wrapper_media_route_provider_service">Media Route Provider Service provides wrapper routes</string>
+
     <string name="sample_dynamic_group_mrp_service">Media Route Provider Service Support Library Sample (supporting dynamic group)</string>
     <string name="dg_tv_route_name1">Dynamic Route 1 - TV</string>
     <string name="dg_tv_route_name2">Dynamic Route 2 - TV</string>

@@ -16,8 +16,9 @@
 
 package androidx.pdf.util;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for a subject that wants to expose changes to its state with notifications. Clients of
@@ -48,8 +49,7 @@ public interface Observable<T> {
      * @return An object that uniquely identifies this observer, for use in {@link #removeObserver}.
      * Unless explicitly documented otherwise, the key will be the passed observer instance.
      */
-    @NonNull
-    Object addObserver(T observer);
+    @NonNull Object addObserver(T observer);
 
     /**
      * Removes an observer previously set with {@link #addObserver}. This is not idempotent and some

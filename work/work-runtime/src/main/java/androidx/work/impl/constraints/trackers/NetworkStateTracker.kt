@@ -22,6 +22,10 @@ import android.net.ConnectivityManager
 import android.net.ConnectivityManager.NetworkCallback
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+import android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED
+import android.net.NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING
+import android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -48,9 +52,9 @@ import androidx.work.impl.utils.unregisterNetworkCallbackCompat
  * https://android.googlesource.com/platform/frameworks/base/+/oreo-release/services/core/java/com/android/server/job/controllers/ConnectivityController.java}
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-fun NetworkStateTracker(
+public fun NetworkStateTracker(
     context: Context,
-    taskExecutor: TaskExecutor
+    taskExecutor: TaskExecutor,
 ): ConstraintTracker<NetworkState> {
     // Based on requiring ConnectivityManager#registerDefaultNetworkCallback - added in API 24.
     return if (Build.VERSION.SDK_INT >= 24) {
@@ -81,14 +85,36 @@ internal val ConnectivityManager.isActiveNetworkValidated: Boolean
 @Suppress("DEPRECATION")
 internal val ConnectivityManager.activeNetworkState: NetworkState
     get() {
-        // Use getActiveNetworkInfo() instead of getNetworkInfo(network) because it can detect VPNs.
-        val info = activeNetworkInfo
-        val isConnected = info != null && info.isConnected
-        val isValidated = isActiveNetworkValidated
-        val isMetered = ConnectivityManagerCompat.isActiveNetworkMetered(this)
-        val isNotRoaming = info != null && !info.isRoaming
+        try {
+            // Use getActiveNetworkInfo() instead of getNetworkInfo(network) because it can detect
+            // VPNs.
+            val info = activeNetworkInfo
+            val isConnected = info != null && info.isConnected
+            val isValidated = isActiveNetworkValidated
+            val isMetered = ConnectivityManagerCompat.isActiveNetworkMetered(this)
+            val isNotRoaming = info != null && !info.isRoaming
+            return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
+        } catch (exception: SecurityException) {
+            // b/406629536 and b/163342798
+            Logger.get().error(TAG, "Unable to get active network state", exception)
+            return NetworkState(
+                isConnected = false,
+                isValidated = false,
+                isMetered = false,
+                isNotRoaming = true,
+            )
+        }
+    }
+
+@get:RequiresApi(28)
+internal val NetworkCapabilities.activeNetworkState: NetworkState
+    get() {
+        val isConnected = hasCapability(NET_CAPABILITY_INTERNET)
+        val isValidated = hasCapability(NET_CAPABILITY_VALIDATED)
+        val isMetered = !hasCapability(NET_CAPABILITY_NOT_METERED) // API 28 only
+        val isNotRoaming = hasCapability(NET_CAPABILITY_NOT_ROAMING) // API 28 only
         return NetworkState(isConnected, isValidated, isMetered, isNotRoaming)
-    } // b/163342798
+    }
 
 internal class NetworkStateTrackerPre24(context: Context, taskExecutor: TaskExecutor) :
     BroadcastReceiverConstraintTracker<NetworkState>(context, taskExecutor) {
@@ -124,12 +150,19 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
         object : NetworkCallback() {
             override fun onCapabilitiesChanged(
                 network: Network,
-                capabilities: NetworkCapabilities
+                capabilities: NetworkCapabilities,
             ) {
                 // The Network parameter is unreliable when a VPN app is running - use active
                 // network.
                 Logger.get().debug(TAG, "Network capabilities changed: $capabilities")
-                state = connectivityManager.activeNetworkState
+                state =
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        // Get the active network state from the capabilities itself.
+                        // b/323479909
+                        capabilities.activeNetworkState
+                    } else {
+                        connectivityManager.activeNetworkState
+                    }
             }
 
             override fun onLost(network: Network) {

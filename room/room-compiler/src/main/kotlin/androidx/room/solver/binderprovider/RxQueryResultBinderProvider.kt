@@ -25,6 +25,7 @@ import androidx.room.solver.query.result.QueryResultAdapter
 import androidx.room.solver.query.result.QueryResultBinder
 import androidx.room.solver.query.result.RxQueryResultBinder
 
+/** Generic result binder for Rx classes that are reactive. */
 class RxQueryResultBinderProvider
 private constructor(context: Context, private val rxType: RxType) :
     ObservableQueryResultBinderProvider(context) {
@@ -32,18 +33,19 @@ private constructor(context: Context, private val rxType: RxType) :
         context.processingEnv.findType(rxType.className.canonicalName)?.rawType
     }
 
-    override fun extractTypeArg(declared: XType): XType = declared.typeArguments.first()
+    override fun extractTypeArg(declared: XType): XType =
+        declared.typeArguments.first().makeNullable()
 
     override fun create(
         typeArg: XType,
         resultAdapter: QueryResultAdapter?,
-        tableNames: Set<String>
+        tableNames: Set<String>,
     ): QueryResultBinder {
         return RxQueryResultBinder(
             rxType = rxType,
             typeArg = typeArg,
             queryTableNames = tableNames,
-            adapter = resultAdapter
+            adapter = resultAdapter,
         )
     }
 
@@ -63,14 +65,14 @@ private constructor(context: Context, private val rxType: RxType) :
                     RxType.RX2_FLOWABLE,
                     RxType.RX2_OBSERVABLE,
                     RxType.RX3_FLOWABLE,
-                    RxType.RX3_OBSERVABLE
+                    RxType.RX3_OBSERVABLE,
                 )
                 .map {
                     RxQueryResultBinderProvider(context, it)
                         .requireArtifact(
                             context = context,
-                            requiredType = it.version.rxRoomClassName,
-                            missingArtifactErrorMsg = it.version.missingArtifactMessage
+                            requiredType = it.version.rxMarkerClassName,
+                            missingArtifactErrorMsg = it.version.missingArtifactMessage,
                         )
                 }
     }

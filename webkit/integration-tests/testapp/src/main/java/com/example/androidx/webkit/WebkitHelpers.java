@@ -20,9 +20,10 @@ import android.app.Activity;
 import android.content.pm.PackageInfo;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.webkit.WebViewCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Static utility methods for the Webkit demo app.
@@ -55,8 +56,7 @@ public final class WebkitHelpers {
      * @param messageResourceId the resource ID of the message to show.
      * @return the {@link TextView} holding the error message.
      */
-    @NonNull
-    public static TextView showMessageInActivity(@NonNull Activity activity,
+    public static @NonNull TextView showMessageInActivity(@NonNull Activity activity,
             @StringRes int messageResourceId) {
         TextView errorMessage = new TextView(activity);
         errorMessage.setText(messageResourceId);

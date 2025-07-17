@@ -21,8 +21,9 @@ import android.os.Bundle;
 import android.text.style.ClickableSpan;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link ClickableSpan} cannot be parceled, but accessibility services need to be able to cause

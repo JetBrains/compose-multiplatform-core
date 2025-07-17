@@ -49,9 +49,7 @@ import org.junit.runners.model.Statement
  *
  * @property active true to activate this rule.
  */
-class CameraPipeConfigTestRule(
-    val active: Boolean,
-) : TestRule {
+public class CameraPipeConfigTestRule(public val active: Boolean) : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
@@ -59,24 +57,10 @@ class CameraPipeConfigTestRule(
 
             override fun evaluate() {
                 if (active) {
-                    if (!Log.isLoggable(CAMERA_PIPE_MH_FLAG, Log.DEBUG)) {
-                        throw AssumptionViolatedException(
-                            "Ignore Camera-pipe tests since there's no debug flag"
-                        )
-                    }
-                    try {
-                        log("started: ${description.displayName}")
-                        logUncaughtExceptions()
-                        base.evaluate()
-                    } catch (e: AssumptionViolatedException) {
-                        log("AssumptionViolatedException: ${description.displayName}", e)
-                        handleException(e)
-                    } catch (e: Throwable) {
-                        log("failed: ${description.displayName}", e)
-                        handleException(e)
-                    } finally {
-                        restoreUncaughtExceptionHandler()
-                        log("finished: ${description.displayName}")
+                    if (Log.isLoggable(CAMERA_PIPE_MH_FLAG, Log.DEBUG)) {
+                        testInPipeLab()
+                    } else {
+                        testNotInPipeLab()
                     }
                 } else {
                     if (Log.isLoggable(CAMERA2_TEST_DISABLE, Log.DEBUG)) {
@@ -87,6 +71,37 @@ class CameraPipeConfigTestRule(
                     base.evaluate()
                 }
             }
+
+            private fun testInPipeLab() {
+                try {
+                    log("started: ${description.displayName}")
+                    logUncaughtExceptions()
+                    base.evaluate()
+                } catch (e: AssumptionViolatedException) {
+                    log("AssumptionViolatedException: ${description.displayName}", e)
+                    handleException(e)
+                } catch (e: Throwable) {
+                    log("failed: ${description.displayName}", e)
+                    handleException(e)
+                } finally {
+                    restoreUncaughtExceptionHandler()
+                    log("finished: ${description.displayName}")
+                }
+            }
+
+            private fun testNotInPipeLab() {
+                if (testInAllowList() && !Log.isLoggable(CAMERA_MH_FLAG, Log.DEBUG)) {
+                    // Run the test when (1) In the allow list && (2) It is not MH daily test.
+                    base.evaluate()
+                } else {
+                    throw AssumptionViolatedException(
+                        "Ignore Camera-pipe tests since there's no debug flag"
+                    )
+                }
+            }
+
+            private fun testInAllowList() =
+                allowPresubmitTests.any { description.displayName.contains(it, ignoreCase = true) }
 
             private fun handleException(e: Throwable) {
                 if (Log.isLoggable(CAMERA_PIPE_TEST_FLAG, Log.DEBUG)) {
@@ -109,11 +124,26 @@ class CameraPipeConfigTestRule(
             }
         }
 
-    companion object {
+    private companion object {
         private const val CAMERA2_TEST_DISABLE = "CAMERA2_TEST_DISABLE"
         private const val CAMERA_PIPE_TEST_FLAG = "CAMERA_PIPE_TESTING"
         private const val CAMERA_PIPE_MH_FLAG = "CameraPipeMH"
+        private const val CAMERA_MH_FLAG = "MH"
         private const val LOG_TAG = "CameraPipeTest"
+
+        private val allowPresubmitTests =
+            listOf(
+                // Camera-View
+                "androidx.camera.view.",
+                // Camera-Video
+                "androidx.camera.video.",
+                // Benchmark
+                "androidx.camera.integration.benchmark.",
+                // CoreTestApps
+                "androidx.camera.integration.core.",
+                // UIWidgets
+                "androidx.camera.integration.uiwidgets.",
+            )
 
         fun log(message: String, throwable: Throwable? = null) {
             if (throwable != null) {

@@ -61,7 +61,7 @@ import kotlin.random.Random
  *
  * Where the MotionScene is defined using the DSL.
  */
-@Preview(group = "scroll", device = "spec:shape=Normal,width=480,height=800,unit=dp,dpi=440")
+@Preview(group = "scroll", device = "spec:width=480dp,height=800dp,dpi=440")
 @Composable
 fun MotionInLazyColumnDslDemo() {
     val scene = MotionScene {
@@ -117,19 +117,19 @@ fun MotionInLazyColumnDslDemo() {
                 val progress by
                     animateFloatAsState(
                         targetValue = if (animateToEnd) 1f else 0f,
-                        animationSpec = tween(700)
+                        animationSpec = tween(700),
                     )
 
                 MotionLayout(
                     modifier = Modifier.background(Color(0xFF331B1B)).fillMaxWidth().padding(1.dp),
                     motionScene = scene,
-                    progress = progress
+                    progress = progress,
                 ) {
                     Image(
                         modifier = Modifier.layoutId("image"),
                         imageVector = Icons.Default.Face,
                         contentDescription = null,
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
                     )
                     Image(
                         modifier =
@@ -139,13 +139,13 @@ fun MotionInLazyColumnDslDemo() {
                             },
                         imageVector = Icons.Default.Menu,
                         contentDescription = null,
-                        colorFilter = ColorFilter.tint(Color.White)
+                        colorFilter = ColorFilter.tint(Color.White),
                     )
                     Text(
                         modifier = Modifier.layoutId("title"),
                         text = "San Francisco $it",
                         fontSize = 30.sp,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             }
@@ -160,7 +160,7 @@ fun MotionInLazyColumnDslDemo() {
  * Demonstrates how to dynamically create constraints based on input. See [DynamicGraph]. Where
  * constraints are created to lay out the given values into a single graph layout.
  */
-@Preview(group = "scroll", device = "spec:shape=Normal,width=480,height=800,unit=dp,dpi=440")
+@Preview(group = "scroll", device = "spec:width=480dp,height=800dp,dpi=440")
 @Composable
 fun AnimateGraphsOnRevealDemo() {
     val graphs = mutableListOf<List<Float>>()
@@ -175,11 +175,11 @@ fun AnimateGraphsOnRevealDemo() {
     }
 }
 
-@Preview(group = "scroll", device = "spec:shape=Normal,width=480,height=800,unit=dp,dpi=440")
+@Preview(group = "scroll", device = "spec:width=480dp,height=800dp,dpi=440")
 @Composable
 private fun DynamicGraph(
     values: List<Float> = listOf<Float>(12f, 32f, 21f, 32f, 2f),
-    max: Int = 100
+    max: Int = 100,
 ) {
     val scale = values.map { (it * 0.8f) / max }
     val count = values.size
@@ -229,7 +229,7 @@ private fun DynamicGraph(
                 .clickable { animateToEnd = !animateToEnd }
                 .padding(1.dp),
         motionScene = scene,
-        progress = progress.value
+        progress = progress.value,
     ) {
         for (i in 0..count) {
             Box(

@@ -20,8 +20,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.test.R;
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;
 import androidx.leanback.widget.Action;
@@ -36,6 +34,9 @@ import androidx.leanback.widget.ListRowPresenter;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.SparseArrayObjectAdapter;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 /**
  * Base class provides overview row and some related rows.
  */
@@ -44,9 +45,8 @@ public class DetailsTestSupportFragment extends androidx.leanback.app.DetailsSup
     private ArrayObjectAdapter mRowsAdapter;
     private PhotoItem mPhotoItem;
     private final Presenter mCardPresenter = new Presenter() {
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
+        public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent) {
             ImageCardView cardView = new ImageCardView(getActivity());
             cardView.setFocusable(true);
             cardView.setFocusableInTouchMode(true);
@@ -91,7 +91,7 @@ public class DetailsTestSupportFragment extends androidx.leanback.app.DetailsSup
                 new FullWidthDetailsOverviewRowPresenter(new AbstractDetailsDescriptionPresenter() {
                     @Override
                     protected void onBindDescription(
-                            @NonNull AbstractDetailsDescriptionPresenter.ViewHolder vh,
+                            AbstractDetailsDescriptionPresenter.@NonNull ViewHolder vh,
                             @Nullable Object item
                     ) {
                         vh.getTitle().setText("Funny Movie");

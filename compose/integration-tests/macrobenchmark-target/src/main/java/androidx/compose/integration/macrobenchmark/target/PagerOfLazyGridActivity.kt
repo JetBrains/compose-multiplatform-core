@@ -19,7 +19,6 @@ package androidx.compose.integration.macrobenchmark.target
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,7 +56,6 @@ class PagerOfLazyGridActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
     val pagerState: PagerState = rememberPagerState(initialPage = 1) { pages }
@@ -74,7 +72,7 @@ private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.semantics { contentDescription = "Pager" }
+            modifier = Modifier.semantics { contentDescription = "Pager" },
         ) { page: Int ->
             Grid(gridItems, page)
         }
@@ -84,10 +82,7 @@ private fun HorizontalPagerOfLazyGrid(pages: Int = 100, gridItems: Int = 100) {
 @Composable
 private fun Grid(itemCount: Int, pageNum: Int) {
     val text = remember(pageNum) { "Hello + $pageNum" }
-    LazyVerticalGrid(
-        modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Fixed(3),
-    ) {
+    LazyVerticalGrid(modifier = Modifier.fillMaxSize(), columns = GridCells.Fixed(3)) {
         items(itemCount, contentType = { "cell" }) { _ ->
             Button(onClick = {}) { Text(text = text) }
         }

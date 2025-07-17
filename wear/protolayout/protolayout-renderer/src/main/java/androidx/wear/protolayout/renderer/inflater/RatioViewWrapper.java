@@ -22,9 +22,10 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.AttrRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A wrapper for a view, which enforces that its dimensions adhere to a set ratio if possible. Note

@@ -57,7 +57,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.concurrent.TimeUnit;
 
-
 @RunWith(AndroidJUnit4.class)
 public class GreedySchedulerTest extends WorkManagerTest {
     private final Context mContext = ApplicationProvider.getApplicationContext();

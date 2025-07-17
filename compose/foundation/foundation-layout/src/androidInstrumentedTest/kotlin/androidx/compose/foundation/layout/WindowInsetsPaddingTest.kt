@@ -30,38 +30,41 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.LayoutDirection
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.Insets as AndroidXInsets
 import androidx.core.view.DisplayCutoutCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.forEach
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import org.junit.After
 import org.junit.Before
@@ -76,29 +79,23 @@ class WindowInsetsPaddingTest {
 
     private lateinit var insetsView: InsetsView
 
-    private lateinit var finishLatch: CountDownLatch
-    private val finishLatchGetter
-        get() = finishLatch
-
-    private val observer =
-        object : DefaultLifecycleObserver {
-            override fun onDestroy(owner: LifecycleOwner) {
-                finishLatchGetter.countDown()
-            }
-        }
-
     @Before
     fun setup() {
         WindowInsetsHolder.setUseTestInsets(true)
-        finishLatch = CountDownLatch(1)
-        rule.runOnUiThread { rule.activity.lifecycle.addObserver(observer) }
     }
 
     @After
     fun teardown() {
         WindowInsetsHolder.setUseTestInsets(false)
-        rule.runOnUiThread { rule.activity.finish() }
-        assertThat(finishLatch.await(1, TimeUnit.SECONDS)).isTrue()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = rule.activity
+        while (!activity.isDestroyed) {
+            instrumentation.runOnMainSync {
+                if (!activity.isDestroyed) {
+                    activity.finish()
+                }
+            }
+        }
     }
 
     @Test
@@ -122,6 +119,158 @@ class WindowInsetsPaddingTest {
         }
     }
 
+    @Test
+    fun recalculateWindowInsets() {
+        var coordinates: LayoutCoordinates? = null
+
+        var padding by mutableIntStateOf(10)
+
+        setContent {
+            val paddingDp = with(LocalDensity.current) { padding.toDp() }
+            Box(Modifier.padding(paddingDp)) {
+                Box(Modifier.fillMaxSize().recalculateWindowInsets().safeDrawingPadding()) {
+                    Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates = it })
+                }
+            }
+        }
+
+        rule.waitUntil { coordinates != null }
+        val coords = coordinates!!
+
+        sendInsets(WindowInsetsCompat.Type.systemBars(), AndroidXInsets.of(11, 17, 23, 29))
+
+        rule.waitUntil { // older devices animate the insets
+            rule.runOnUiThread { coords.boundsInRoot().top > 16.99f }
+        }
+
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            val rootSize = coords.findRootCoordinates().size
+            assertThat(bounds.left).isWithin(0.1f).of(11f)
+            assertThat(bounds.top).isWithin(0.1f).of(17f)
+            assertThat(bounds.right).isWithin(0.1f).of(rootSize.width - 23f)
+            assertThat(bounds.bottom).isWithin(0.1f).of(rootSize.height - 29f)
+
+            padding = 5
+        }
+
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            val rootSize = coords.findRootCoordinates().size
+            assertThat(bounds.left).isWithin(0.1f).of(11f)
+            assertThat(bounds.top).isWithin(0.1f).of(17f)
+            assertThat(bounds.right).isWithin(0.1f).of(rootSize.width - 23f)
+            assertThat(bounds.bottom).isWithin(0.1f).of(rootSize.height - 29f)
+
+            padding = 20
+        }
+
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            val rootSize = coords.findRootCoordinates().size
+            assertThat(bounds.left).isWithin(0.1f).of(20f)
+            assertThat(bounds.top).isWithin(0.1f).of(20f)
+            assertThat(bounds.right).isWithin(0.1f).of(rootSize.width - 23f)
+            assertThat(bounds.bottom).isWithin(0.1f).of(rootSize.height - 29f)
+        }
+    }
+
+    @Test
+    fun recalculateWindowInsetsWithMovement() {
+        var coordinates: LayoutCoordinates? = null
+
+        var alignment by mutableStateOf(AbsoluteAlignment.TopLeft)
+        setContent {
+            Box(Modifier.background(Color.Blue)) {
+                val sizeDp = with(LocalDensity.current) { 100.toDp() }
+                Box(
+                    Modifier.size(sizeDp)
+                        .recalculateWindowInsets()
+                        .safeDrawingPadding()
+                        .align(alignment)
+                        .background(Color.Yellow)
+                        .onPlaced { coordinates = it }
+                )
+            }
+        }
+
+        rule.waitUntil { coordinates != null }
+        val coords = coordinates!!
+
+        sendInsets(WindowInsetsCompat.Type.statusBars(), AndroidXInsets.of(11, 17, 23, 29))
+        rule.waitUntil { // older devices animate the insets
+            rule.runOnUiThread { coords.boundsInRoot().top > 16.9f }
+        }
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            assertThat(bounds.left).isWithin(0.1f).of(11f)
+            assertThat(bounds.top).isWithin(0.1f).of(17f)
+            assertThat(bounds.right).isWithin(0.1f).of(100f)
+            assertThat(bounds.bottom).isWithin(0.1f).of(100f)
+
+            alignment = AbsoluteAlignment.BottomRight
+        }
+
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            val rootSize = coords.findRootCoordinates().size
+            assertThat(bounds.left).isWithin(0.1f).of(rootSize.width - 100f)
+            assertThat(bounds.top).isWithin(0.1f).of(rootSize.height - 100f)
+            assertThat(bounds.right).isWithin(0.1f).of(rootSize.width - 23f)
+            assertThat(bounds.bottom).isWithin(0.1f).of(rootSize.height - 29f)
+        }
+    }
+
+    @Test
+    fun recalculateWindowInsetsWithNestedMovement() {
+        val coordinates = mutableStateOf<LayoutCoordinates?>(null)
+
+        var alignment by mutableStateOf(AbsoluteAlignment.TopLeft)
+        var size = 0f
+        setContent {
+            size = with(LocalDensity.current) { 100.dp.toPx() }
+            Box(Modifier.background(Color.Blue)) {
+                Box(Modifier.size(100.dp).align(alignment)) {
+                    Box(Modifier.requiredSize(100.dp)) {
+                        Box(
+                            Modifier.size(100.dp)
+                                .recalculateWindowInsets()
+                                .safeDrawingPadding()
+                                .background(Color.Yellow)
+                                .onPlaced { coordinates.value = it }
+                        )
+                    }
+                }
+            }
+        }
+
+        rule.waitUntil { coordinates.value != null }
+        val coords = coordinates.value!!
+
+        sendInsets(WindowInsetsCompat.Type.statusBars(), AndroidXInsets.of(11, 17, 23, 29))
+        rule.waitUntil { // older devices animate the insets
+            rule.runOnUiThread { coords.boundsInRoot().top > 16.9f }
+        }
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            assertThat(bounds.left).isWithin(1f).of(11f)
+            assertThat(bounds.top).isWithin(1f).of(17f)
+            assertThat(bounds.right).isWithin(1f).of(size)
+            assertThat(bounds.bottom).isWithin(1f).of(size)
+
+            alignment = AbsoluteAlignment.BottomRight
+        }
+
+        rule.runOnIdle {
+            val bounds = coords.boundsInRoot()
+            val rootSize = coords.findRootCoordinates().size
+            assertThat(bounds.left).isWithin(1f).of(rootSize.width - size)
+            assertThat(bounds.top).isWithin(1f).of(rootSize.height - size)
+            assertThat(bounds.right).isWithin(1f).of(rootSize.width - 23f)
+            assertThat(bounds.bottom).isWithin(1f).of(rootSize.height - 29f)
+        }
+    }
+
     private fun sendDisplayCutoutInsets(width: Int, height: Int): WindowInsetsCompat {
         val centerWidth = width / 2
         val centerHeight = height / 2
@@ -142,7 +291,7 @@ class WindowInsetsPaddingTest {
                         top,
                         right,
                         bottom,
-                        AndroidXInsets.of(1, 2, 3, 4)
+                        AndroidXInsets.of(1, 2, 3, 4),
                     )
                 )
                 .build()
@@ -176,7 +325,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(10, 0, 0, 0)
+            sentInsets = AndroidXInsets.of(10, 0, 0, 0),
         )
     }
 
@@ -185,7 +334,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(0, 0, 12, 0)
+            sentInsets = AndroidXInsets.of(0, 0, 12, 0),
         )
     }
 
@@ -194,7 +343,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             Modifier.navigationBarsPadding(),
-            sentInsets = AndroidXInsets.of(0, 0, 0, 13)
+            sentInsets = AndroidXInsets.of(0, 0, 0, 13),
         )
     }
 
@@ -203,7 +352,7 @@ class WindowInsetsPaddingTest {
     fun navigationBarsPaddingApi30() {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
-            Modifier.navigationBarsPadding()
+            Modifier.navigationBarsPadding(),
         )
     }
 
@@ -226,7 +375,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.statusBars(),
             sentInsets = AndroidXInsets.of(0, 10, 0, 0),
-            expected = { w, h -> Rect(0f, 10f, w.toFloat(), h.toFloat()) }
+            expected = { w, h -> Rect(0f, 10f, w.toFloat(), h.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.statusBars)
         }
@@ -270,7 +419,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(10, 0, 0, 0),
-            expected = { width, height -> Rect(10f, 0f, width.toFloat(), height.toFloat()) }
+            expected = { width, height -> Rect(10f, 0f, width.toFloat(), height.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -280,7 +429,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(0, 0, 10, 0),
-            expected = { width, height -> Rect(0f, 0f, width - 10f, height.toFloat()) }
+            expected = { width, height -> Rect(0f, 0f, width - 10f, height.toFloat()) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -290,7 +439,7 @@ class WindowInsetsPaddingTest {
         testInsetsPadding(
             WindowInsetsCompat.Type.navigationBars(),
             sentInsets = AndroidXInsets.of(0, 0, 0, 10),
-            expected = { width, height -> Rect(0f, 0f, width.toFloat(), height - 10f) }
+            expected = { width, height -> Rect(0f, 0f, width.toFloat(), height - 10f) },
         ) {
             Modifier.windowInsetsPadding(WindowInsets.navigationBars)
         }
@@ -472,9 +621,9 @@ class WindowInsetsPaddingTest {
                 sentInsets.left.toFloat(),
                 sentInsets.top.toFloat(),
                 width - sentInsets.right.toFloat(),
-                height - sentInsets.bottom.toFloat()
+                height - sentInsets.bottom.toFloat(),
             )
-        }
+        },
     ) {
         testInsetsPadding(type, sentInsets, expected) { modifier }
     }
@@ -543,7 +692,7 @@ class WindowInsetsPaddingTest {
                 sendImeStart(
                     view,
                     AndroidXInsets.of(10, 11, 12, 13),
-                    WindowInsetsCompat.Type.systemBars()
+                    WindowInsetsCompat.Type.systemBars(),
                 )
 
             val width = view.width
@@ -810,6 +959,8 @@ class WindowInsetsPaddingTest {
             bottomInset = insets.getBottom(LocalDensity.current)
         }
 
+        val insets = WindowInsetsCompat.Builder().build()
+        dispatchApplyWindowInsets(insets)
         rule.waitForIdle()
         assertThat(leftInset).isEqualTo(0)
         assertThat(topInset).isEqualTo(0)
@@ -840,7 +991,7 @@ class WindowInsetsPaddingTest {
 
     private fun sendInsets(
         type: Int,
-        sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13)
+        sentInsets: AndroidXInsets = AndroidXInsets.of(10, 11, 12, 13),
     ): WindowInsetsCompat {
         val insets = WindowInsetsCompat.Builder().setInsets(type, sentInsets).build()
         return dispatchApplyWindowInsets(insets)
@@ -860,6 +1011,7 @@ class WindowInsetsPaddingTest {
         lateinit var coordinates: LayoutCoordinates
 
         setContent {
+            (LocalView.current.parent as ComposeView).consumeWindowInsets = true
             Box(Modifier.fillMaxSize().background(Color.Blue).then(insetsModifier())) {
                 Box(Modifier.fillMaxSize().onGloballyPositioned { coordinates = it })
             }
@@ -877,17 +1029,18 @@ class WindowInsetsPaddingTest {
                     val view = InsetsView(context)
                     insetsView = view
                     val composeView = ComposeView(rule.activity)
+                    composeView.consumeWindowInsets = true
                     view.addView(
                         composeView,
                         ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        ),
                     )
                     composeView.setContent(content)
                     view
                 },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

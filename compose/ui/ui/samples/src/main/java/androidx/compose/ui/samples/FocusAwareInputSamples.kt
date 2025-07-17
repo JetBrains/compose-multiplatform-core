@@ -40,7 +40,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.CenterVertically
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -97,7 +96,6 @@ fun KeyEventTypeSample() {
     )
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun KeyEventIsAltPressedSample() {
@@ -114,7 +112,6 @@ fun KeyEventIsAltPressedSample() {
     )
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun KeyEventIsCtrlPressedSample() {
@@ -131,7 +128,6 @@ fun KeyEventIsCtrlPressedSample() {
     )
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun KeyEventIsMetaPressedSample() {
@@ -148,7 +144,6 @@ fun KeyEventIsMetaPressedSample() {
     )
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun KeyEventIsShiftPressedSample() {
@@ -165,7 +160,6 @@ fun KeyEventIsShiftPressedSample() {
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun RotaryEventSample() {
@@ -185,21 +179,16 @@ fun RotaryEventSample() {
                     true
                 }
                 .focusRequester(focusRequester)
-                .focusable(),
+                .focusable()
     ) {
         repeat(100) {
-            Text(
-                text = "item $it",
-                modifier = Modifier.align(CenterHorizontally),
-                color = White,
-            )
+            Text(text = "item $it", modifier = Modifier.align(CenterHorizontally), color = White)
         }
     }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Sampled
 @Composable
 fun PreRotaryEventSample() {
@@ -229,17 +218,14 @@ fun PreRotaryEventSample() {
         ) {
             Row(
                 modifier = Modifier.align(CenterHorizontally),
-                verticalAlignment = CenterVertically
+                verticalAlignment = CenterVertically,
             ) {
                 Text(
                     modifier = Modifier.width(70.dp),
                     text = if (interceptScroll) "Row" else "Column",
-                    style = TextStyle(color = White)
+                    style = TextStyle(color = White),
                 )
-                Switch(
-                    checked = interceptScroll,
-                    onCheckedChange = { interceptScroll = it },
-                )
+                Switch(checked = interceptScroll, onCheckedChange = { interceptScroll = it })
             }
             Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rowScrollState)) {
                 repeat(100) {
@@ -261,7 +247,7 @@ fun PreRotaryEventSample() {
                             true
                         }
                         .focusRequester(focusRequester)
-                        .focusable(),
+                        .focusable()
             ) {
                 repeat(100) {
                     Text(

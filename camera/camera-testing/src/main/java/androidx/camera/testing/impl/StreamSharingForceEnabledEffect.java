@@ -16,7 +16,6 @@
 
 package androidx.camera.testing.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.CameraEffect;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.SurfaceOutput;
@@ -24,6 +23,8 @@ import androidx.camera.core.SurfaceProcessor;
 import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.UseCaseGroup;
 import androidx.lifecycle.LifecycleOwner;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * An effect that is used to simulate the stream sharing is enabled automatically.
@@ -38,7 +39,11 @@ import androidx.lifecycle.LifecycleOwner;
 public class StreamSharingForceEnabledEffect extends CameraEffect {
 
     public StreamSharingForceEnabledEffect() {
-        super(PREVIEW | VIDEO_CAPTURE, TRANSFORMATION_PASSTHROUGH, command -> {
+        this(0);
+    }
+
+    public StreamSharingForceEnabledEffect(@Targets int extraTargets) {
+        super(PREVIEW | VIDEO_CAPTURE | extraTargets, TRANSFORMATION_PASSTHROUGH, command -> {
         }, new SurfaceProcessor() {
             @Override
             public void onInputSurface(@NonNull SurfaceRequest request) {

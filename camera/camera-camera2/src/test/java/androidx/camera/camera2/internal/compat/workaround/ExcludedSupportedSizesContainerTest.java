@@ -26,9 +26,8 @@ import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -227,10 +226,9 @@ public class ExcludedSupportedSizesContainerTest {
         return data;
     }
 
-    @NonNull
-    private final Config mConfig;
+    private final @NonNull Config mConfig;
 
-    public ExcludedSupportedSizesContainerTest(@NonNull final Config config) {
+    public ExcludedSupportedSizesContainerTest(final @NonNull Config config) {
         mConfig = config;
     }
 
@@ -262,23 +260,17 @@ public class ExcludedSupportedSizesContainerTest {
     }
 
     static class Config {
-        @Nullable
-        final String mBrand;
-        @Nullable
-        final String mDevice;
-        @NonNull
-        final String mCameraId;
+        final @Nullable String mBrand;
+        final @Nullable String mDevice;
+        final @NonNull String mCameraId;
         final int mImageFormat;
-        @Nullable
-        final Class<?> mClass;
-        @Nullable
-        final ApiLevelChecker mApiLevelChecker;
-        @NonNull
-        final Size[] mExcludedSizes;
+        final @Nullable Class<?> mClass;
+        final @Nullable ApiLevelChecker mApiLevelChecker;
+        final Size @NonNull [] mExcludedSizes;
 
         Config(@Nullable String brand, @Nullable String device, @NonNull String cameraId,
                 int imageFormat, @Nullable Class<?> klass,
-                @Nullable ApiLevelChecker apiLevelChecker, @NonNull Size... excludedSizes) {
+                @Nullable ApiLevelChecker apiLevelChecker, Size @NonNull ... excludedSizes) {
             mBrand = brand;
             mDevice = device;
             mCameraId = cameraId;

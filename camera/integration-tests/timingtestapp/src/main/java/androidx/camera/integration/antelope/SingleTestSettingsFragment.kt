@@ -24,7 +24,7 @@ import androidx.preference.PreferenceFragmentCompat
 /** Fragment that shows the settings for the "Single test" option */
 class SingleTestSettingsFragment(
     internal val cameraNames: Array<String>,
-    internal val cameraIds: Array<String>
+    internal val cameraIds: Array<String>,
 ) : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -54,12 +54,12 @@ class SingleTestSettingsFragment(
 
     override fun onResume() {
         super.onResume()
-        preferenceManager.sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+        preferenceManager.sharedPreferences?.registerOnSharedPreferenceChangeListener(this)
     }
 
     override fun onPause() {
         super.onPause()
-        preferenceManager.sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
+        preferenceManager.sharedPreferences?.unregisterOnSharedPreferenceChangeListener(this)
     }
 
     /**

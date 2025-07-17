@@ -16,6 +16,8 @@
 
 package androidx.compose.foundation.lazy.staggeredgrid
 
+import androidx.compose.foundation.internal.requirePrecondition
+
 /**
  * Utility class to remember grid lane assignments in a sliding window relative to requested item
  * position (usually reflected by scroll position). Remembers the maximum range of remembered items
@@ -31,7 +33,7 @@ internal class LazyStaggeredGridLaneInfo {
 
     /** Sets given lane for given item index. */
     fun setLane(itemIndex: Int, lane: Int) {
-        require(itemIndex >= 0) { "Negative lanes are not supported" }
+        requirePrecondition(itemIndex >= 0) { "Negative lanes are not supported" }
         ensureValidIndex(itemIndex)
         lanes[itemIndex - anchor] = lane + 1
     }
@@ -39,11 +41,11 @@ internal class LazyStaggeredGridLaneInfo {
     /**
      * Get lane for given item index.
      *
-     * @return lane previously recorded for given item or [Unset] if it doesn't exist.
+     * @return lane previously recorded for given item or [LaneUnset] if it doesn't exist.
      */
     fun getLane(itemIndex: Int): Int {
         if (itemIndex < lowerBound() || itemIndex >= upperBound()) {
-            return Unset
+            return LaneUnset
         }
         return lanes[itemIndex - anchor] - 1
     }
@@ -56,7 +58,7 @@ internal class LazyStaggeredGridLaneInfo {
      */
     fun assignedToLane(itemIndex: Int, targetLane: Int): Boolean {
         val lane = getLane(itemIndex)
-        return lane == targetLane || lane == Unset || lane == FullSpan
+        return lane == targetLane || lane == LaneUnset || lane == LaneFullSpan
     }
 
     /** @return upper bound of currently valid item range */
@@ -121,7 +123,7 @@ internal class LazyStaggeredGridLaneInfo {
                         lanes,
                         destinationOffset = 0,
                         startIndex = delta,
-                        endIndex = lanes.size
+                        endIndex = lanes.size,
                     )
                 }
                 // fill the rest of the spans with default values
@@ -139,7 +141,7 @@ internal class LazyStaggeredGridLaneInfo {
                             lanes,
                             destinationOffset = delta,
                             startIndex = 0,
-                            endIndex = lanes.size - delta
+                            endIndex = lanes.size - delta,
                         )
                     }
                     // fill the rest of the spans with default values
@@ -185,7 +187,7 @@ internal class LazyStaggeredGridLaneInfo {
     }
 
     private fun ensureCapacity(capacity: Int, newOffset: Int = 0) {
-        require(capacity <= MaxCapacity) {
+        requirePrecondition(capacity <= MaxCapacity) {
             "Requested item capacity $capacity is larger than max supported: $MaxCapacity!"
         }
         if (lanes.size < capacity) {
@@ -197,7 +199,7 @@ internal class LazyStaggeredGridLaneInfo {
 
     companion object {
         private const val MaxCapacity = 131_072 // Closest to 100_000, 2 ^ 17
-        internal const val Unset = -1
-        internal const val FullSpan = -2
+        internal const val LaneUnset = -1
+        internal const val LaneFullSpan = -2
     }
 }

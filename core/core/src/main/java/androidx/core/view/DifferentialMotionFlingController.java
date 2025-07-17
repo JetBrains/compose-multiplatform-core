@@ -21,9 +21,10 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Controller differential motion flings.
@@ -49,7 +50,7 @@ public class DifferentialMotionFlingController {
     private final FlingVelocityThresholdCalculator mVelocityThresholdCalculator;
     private final DifferentialVelocityProvider mVelocityProvider;
 
-    @Nullable private VelocityTracker mVelocityTracker;
+    private @Nullable VelocityTracker mVelocityTracker;
 
     private float mLastFlingVelocity;
 

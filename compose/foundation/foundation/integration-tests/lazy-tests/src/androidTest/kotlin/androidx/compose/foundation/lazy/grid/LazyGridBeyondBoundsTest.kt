@@ -27,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.ParameterizedComposeTestRule
 import androidx.compose.testutils.createParameterizedComposeTestRule
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.BeyondBoundsLayout
@@ -50,7 +49,6 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 class LazyGridBeyondBoundsTest {
 
@@ -499,7 +497,7 @@ class LazyGridBeyondBoundsTest {
         size: Dp,
         firstVisibleItem: Int,
         cells: Int = 1,
-        content: LazyGridScope.() -> Unit
+        content: LazyGridScope.() -> Unit,
     ) {
         setContent {
             key(it) {
@@ -515,7 +513,7 @@ class LazyGridBeyondBoundsTest {
                                 modifier = Modifier.size(size),
                                 state = lazyGridState,
                                 reverseLayout = it.reverseLayout,
-                                content = content
+                                content = content,
                             )
                         Above,
                         Below ->
@@ -524,7 +522,7 @@ class LazyGridBeyondBoundsTest {
                                 modifier = Modifier.size(size),
                                 state = lazyGridState,
                                 reverseLayout = it.reverseLayout,
-                                content = content
+                                content = content,
                             )
                         else -> unsupportedDirection()
                     }
@@ -536,7 +534,7 @@ class LazyGridBeyondBoundsTest {
     private fun ParameterizedComposeTestRule<Param>.setLazyContentInPerpendicularDirection(
         size: Dp,
         firstVisibleItem: Int,
-        content: LazyGridScope.() -> Unit
+        content: LazyGridScope.() -> Unit,
     ) {
         setContent {
             key(it) {
@@ -552,7 +550,7 @@ class LazyGridBeyondBoundsTest {
                                 modifier = Modifier.size(size),
                                 state = lazyGridState,
                                 reverseLayout = it.reverseLayout,
-                                content = content
+                                content = content,
                             )
                         Above,
                         Below ->
@@ -561,7 +559,7 @@ class LazyGridBeyondBoundsTest {
                                 modifier = Modifier.size(size),
                                 state = lazyGridState,
                                 reverseLayout = it.reverseLayout,
-                                content = content
+                                content = content,
                             )
                         else -> unsupportedDirection()
                     }

@@ -21,6 +21,7 @@ import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XClassName
 import androidx.room.compiler.codegen.XCodeBlock
 import androidx.room.compiler.codegen.asClassName
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.CollectionTypeNames
 import androidx.room.ext.CommonTypeNames
@@ -28,10 +29,10 @@ import androidx.room.ext.implementsEqualsAndHashcode
 import androidx.room.parser.ParsedQuery
 import androidx.room.processor.Context
 import androidx.room.processor.ProcessorErrors
+import androidx.room.processor.ProcessorErrors.AmbiguousColumnLocation.DATA_CLASS
 import androidx.room.processor.ProcessorErrors.AmbiguousColumnLocation.ENTITY
 import androidx.room.processor.ProcessorErrors.AmbiguousColumnLocation.MAP_INFO
-import androidx.room.processor.ProcessorErrors.AmbiguousColumnLocation.POJO
-import androidx.room.solver.types.CursorValueReader
+import androidx.room.solver.types.StatementValueReader
 import androidx.room.verifier.ColumnInfo
 import androidx.room.vo.ColumnIndexVar
 import androidx.room.vo.Warning
@@ -85,7 +86,8 @@ abstract class MultimapQueryResultAdapter(
                         when (it) {
                             is SingleNamedColumnRowAdapter.SingleNamedColumnRowMapping ->
                                 MAP_INFO to null
-                            is PojoRowAdapter.PojoMapping -> POJO to it.pojo.typeName
+                            is DataClassRowAdapter.DataClassMapping ->
+                                DATA_CLASS to it.dataClass.typeName
                             is EntityRowAdapter.EntityMapping -> ENTITY to it.entity.typeName
                             else -> error("Unknown mapping type: $it")
                         }
@@ -94,8 +96,8 @@ abstract class MultimapQueryResultAdapter(
                         ProcessorErrors.ambiguousColumn(
                             columnName = ambiguousColumnName,
                             location = location,
-                            typeName = objectTypeName?.toString(context.codeLanguage)
-                        )
+                            typeName = objectTypeName?.toString(context.codeLanguage),
+                        ),
                     )
                 }
         }
@@ -114,7 +116,7 @@ abstract class MultimapQueryResultAdapter(
 
     enum class CollectionValueType(val className: XClassName) {
         LIST(CommonTypeNames.MUTABLE_LIST),
-        SET(CommonTypeNames.MUTABLE_SET)
+        SET(CommonTypeNames.MUTABLE_SET),
     }
 
     companion object {
@@ -126,7 +128,7 @@ abstract class MultimapQueryResultAdapter(
         fun validateMapKeyTypeArg(
             context: Context,
             keyTypeArg: XType,
-            keyReader: CursorValueReader?,
+            keyReader: StatementValueReader?,
             keyColumnName: String?,
         ) {
             if (!keyTypeArg.implementsEqualsAndHashcode()) {
@@ -134,7 +136,7 @@ abstract class MultimapQueryResultAdapter(
                     Warning.DOES_NOT_IMPLEMENT_EQUALS_HASHCODE,
                     ProcessorErrors.classMustImplementEqualsAndHashCode(
                         keyTypeArg.asTypeName().toString(context.codeLanguage)
-                    )
+                    ),
                 )
             }
 
@@ -155,7 +157,7 @@ abstract class MultimapQueryResultAdapter(
         fun validateMapValueTypeArg(
             context: Context,
             valueTypeArg: XType,
-            valueReader: CursorValueReader?,
+            valueReader: StatementValueReader?,
             valueColumnName: String?,
         ) {
             val hasValueColumnName = valueColumnName?.isNotEmpty() ?: false
@@ -175,9 +177,7 @@ abstract class MultimapQueryResultAdapter(
             val annotation = type.getAnnotation(MapColumn::class.asClassName()) ?: return null
 
             val mapColumnName = annotation.getAsString("columnName")
-            // TODO: Temporary workaround below due to XAnnotation bug
-            val mapColumnTableName =
-                (annotation.getAnnotationValue("tableName").value ?: "") as String
+            val mapColumnTableName = (annotation["tableName"]?.value ?: "") as String
 
             fun List<ColumnInfo>.contains(columnName: String, tableName: String?) =
                 any { resultColumn ->
@@ -202,7 +202,7 @@ abstract class MultimapQueryResultAdapter(
                         ProcessorErrors.cannotMapSpecifiedColumn(
                             errorColumn,
                             resultColumns.map { it.name },
-                            MapColumn::class.java.simpleName
+                            MapColumn::class.java.simpleName,
                         )
                     )
                 }
@@ -211,25 +211,17 @@ abstract class MultimapQueryResultAdapter(
         }
     }
 
-    /** Generates a code expression that verifies if all matched fields are null. */
-    fun getColumnNullCheckCode(
-        language: CodeLanguage,
-        cursorVarName: String,
-        indexVars: List<ColumnIndexVar>
-    ) =
-        XCodeBlock.builder(language)
-            .apply {
-                val space =
-                    when (language) {
-                        CodeLanguage.JAVA -> "%W"
-                        CodeLanguage.KOTLIN -> " "
-                    }
-                val conditions =
-                    indexVars.map {
-                        XCodeBlock.of(language, "%L.isNull(%L)", cursorVarName, it.indexVar)
-                    }
-                val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
-                add(placeholders, *conditions.toTypedArray())
-            }
-            .build()
+    /** Generates a code expression that verifies if all matched properties are null. */
+    fun getColumnNullCheckCode(stmtVarName: String, indexVars: List<ColumnIndexVar>) =
+        buildCodeBlock { language ->
+            val space =
+                when (language) {
+                    CodeLanguage.JAVA -> "%W"
+                    CodeLanguage.KOTLIN -> " "
+                }
+            val conditions =
+                indexVars.map { XCodeBlock.of("%L.isNull(%L)", stmtVarName, it.indexVar) }
+            val placeholders = conditions.joinToString(separator = "$space&&$space") { "%L" }
+            add(placeholders, *conditions.toTypedArray())
+        }
 }

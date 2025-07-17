@@ -18,8 +18,9 @@ package androidx.pdf.util;
 
 import android.util.SparseArray;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -35,12 +36,10 @@ public class CollectUtils {
      * non-null values would be returned, although it's always possible to associate a null value
      * to a key in SparseArray, in which case the null value would be returned.
      */
-    @NonNull
-    public static <T> Iterable<T> asIterable(final @NonNull SparseArray<T> array) {
+    public static <T> @NonNull Iterable<T> asIterable(final @NonNull SparseArray<T> array) {
         return new Iterable<T>() {
-            @NonNull
             @Override
-            public Iterator<T> iterator() {
+            public @NonNull Iterator<T> iterator() {
                 return makeIterator(array);
             }
         };
@@ -49,8 +48,7 @@ public class CollectUtils {
     /**
      *
      */
-    @NonNull
-    public static <T> Iterator<T> makeIterator(final @NonNull SparseArray<T> array) {
+    public static <T> @NonNull Iterator<T> makeIterator(final @NonNull SparseArray<T> array) {
         return new Iterator<T>() {
 
             private int mIndex = 0;
@@ -77,8 +75,7 @@ public class CollectUtils {
     }
 
     /** Creates an {@link Iterable} over the keys mapped in a {@link SparseArray}. */
-    @NonNull
-    public static Iterable<Integer> iterableKeys(final @NonNull SparseArray<?> array) {
+    public static @NonNull Iterable<Integer> iterableKeys(final @NonNull SparseArray<?> array) {
         return new Iterable<Integer>() {
             @Override
             public Iterator<Integer> iterator() {
@@ -90,8 +87,7 @@ public class CollectUtils {
     /**
      *
      */
-    @NonNull
-    public static Iterator<Integer> makeKeyIterator(final @NonNull SparseArray<?> array) {
+    public static @NonNull Iterator<Integer> makeKeyIterator(final @NonNull SparseArray<?> array) {
         return new Iterator<Integer>() {
 
             private int mIndex = 0;

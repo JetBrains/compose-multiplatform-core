@@ -16,14 +16,18 @@
 
 package androidx.pdf.widget;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.inputmethod.InputMethodManager;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.widget.AppCompatEditText;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * EditText for search queries which shows/hides the keyboard on focus change.
@@ -39,12 +43,8 @@ public class SearchEditText extends AppCompatEditText {
      */
     private final Runnable mShowImeRunnable =
             () -> {
-                InputMethodManager imm =
-                        (InputMethodManager) getContext().getSystemService(
-                                Context.INPUT_METHOD_SERVICE);
-                if (imm != null) {
-                    imm.showSoftInput(SearchEditText.this, 0);
-                }
+                WindowCompat.getInsetsController(((Activity) getContext()).getWindow(), this)
+                        .show(WindowInsetsCompat.Type.ime());
             };
 
     public SearchEditText(@NonNull Context context) {

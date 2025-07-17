@@ -23,7 +23,6 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.window.WindowSdkExtensions
 import androidx.window.area.WindowAreaInfo.Type.Companion.TYPE_REAR_FACING
-import androidx.window.area.utils.DeviceUtils
 import androidx.window.core.BuildConfig
 import androidx.window.core.ExperimentalWindowApi
 import androidx.window.core.ExtensionsUtil
@@ -36,7 +35,9 @@ import kotlinx.coroutines.flow.Flow
  * display areas on a device.
  */
 @ExperimentalWindowApi
-interface WindowAreaController {
+public abstract class WindowAreaController
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor() {
 
     /**
      * [Flow] of the list of current [WindowAreaInfo]s that are currently available to be interacted
@@ -45,7 +46,7 @@ interface WindowAreaController {
      * If [WindowSdkExtensions.extensionVersion] is less than 2, the flow will return empty
      * [WindowAreaInfo] list flow.
      */
-    val windowAreaInfos: Flow<List<WindowAreaInfo>>
+    public abstract val windowAreaInfos: Flow<List<WindowAreaInfo>>
 
     /**
      * Starts a transfer session where the calling [Activity] is moved to the window area identified
@@ -83,12 +84,12 @@ interface WindowAreaController {
      *   ended.
      * @see windowAreaInfos
      */
-    fun transferActivityToWindowArea(
+    public abstract fun transferActivityToWindowArea(
         token: Binder,
         activity: Activity,
         executor: Executor,
         // TODO(272064992) investigate how to make this safer from leaks
-        windowAreaSessionCallback: WindowAreaSessionCallback
+        windowAreaSessionCallback: WindowAreaSessionCallback,
     )
 
     /**
@@ -119,11 +120,11 @@ interface WindowAreaController {
      *   the currently enabled rear display presentation.
      * @see windowAreaInfos
      */
-    fun presentContentOnWindowArea(
+    public abstract fun presentContentOnWindowArea(
         token: Binder,
         activity: Activity,
         executor: Executor,
-        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback
+        windowAreaPresentationSessionCallback: WindowAreaPresentationSessionCallback,
     )
 
     public companion object {
@@ -131,11 +132,7 @@ interface WindowAreaController {
         private val TAG = WindowAreaController::class.simpleName
 
         private var decorator: WindowAreaControllerDecorator = EmptyDecorator
-
-        /** Provides an instance of [WindowAreaController]. */
-        @JvmName("getOrCreate")
-        @JvmStatic
-        fun getOrCreate(): WindowAreaController {
+        private val windowAreaController: WindowAreaController by lazy {
             val windowAreaComponentExtensions =
                 try {
                     this::class.java.classLoader?.let {
@@ -147,33 +144,35 @@ interface WindowAreaController {
                     }
                     null
                 }
+
             val deviceSupported =
                 Build.VERSION.SDK_INT > Build.VERSION_CODES.Q &&
                     windowAreaComponentExtensions != null &&
-                    (ExtensionsUtil.safeVendorApiLevel >= 3 ||
-                        DeviceUtils.hasDeviceMetrics(Build.MANUFACTURER, Build.MODEL))
+                    ExtensionsUtil.safeVendorApiLevel >= 3
 
-            val controller =
-                if (deviceSupported) {
-                    WindowAreaControllerImpl(
-                        windowAreaComponentExtensions!!,
-                        ExtensionsUtil.safeVendorApiLevel
-                    )
-                } else {
-                    EmptyWindowAreaControllerImpl()
-                }
-            return decorator.decorate(controller)
+            if (deviceSupported) {
+                WindowAreaControllerImpl(windowAreaComponent = windowAreaComponentExtensions!!)
+            } else {
+                EmptyWindowAreaControllerImpl()
+            }
+        }
+
+        /** Provides an instance of [WindowAreaController]. */
+        @JvmName("getOrCreate")
+        @JvmStatic
+        public fun getOrCreate(): WindowAreaController {
+            return decorator.decorate(windowAreaController)
         }
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun overrideDecorator(overridingDecorator: WindowAreaControllerDecorator) {
+        public fun overrideDecorator(overridingDecorator: WindowAreaControllerDecorator) {
             decorator = overridingDecorator
         }
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        fun reset() {
+        public fun reset() {
             decorator = EmptyDecorator
         }
     }
@@ -182,7 +181,7 @@ interface WindowAreaController {
 /** Decorator that allows us to provide different functionality in our window-testing artifact. */
 @ExperimentalWindowApi
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface WindowAreaControllerDecorator {
+public interface WindowAreaControllerDecorator {
     /** Returns an instance of [WindowAreaController] associated to the [Activity] */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun decorate(controller: WindowAreaController): WindowAreaController

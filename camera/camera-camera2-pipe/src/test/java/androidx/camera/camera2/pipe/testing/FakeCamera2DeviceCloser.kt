@@ -26,10 +26,12 @@ internal class FakeCamera2DeviceCloser : Camera2DeviceCloser {
     override fun closeCamera(
         cameraDeviceWrapper: CameraDeviceWrapper?,
         cameraDevice: CameraDevice?,
-        closeUnderError: Boolean,
         androidCameraState: AndroidCameraState,
-        audioRestrictionController: AudioRestrictionController
+        audioRestrictionController: AudioRestrictionController,
+        shouldReopenCamera: Boolean,
+        shouldCreateEmptyCaptureSession: Boolean,
     ) {
+        cameraDeviceWrapper?.onDeviceClosing()
         cameraDeviceWrapper?.onDeviceClosed()
     }
 }

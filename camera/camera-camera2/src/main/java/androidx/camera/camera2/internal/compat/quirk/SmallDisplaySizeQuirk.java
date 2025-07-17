@@ -19,8 +19,9 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -74,8 +75,7 @@ public class SmallDisplaySizeQuirk implements Quirk {
         return MODEL_TO_DISPLAY_SIZE_MAP.containsKey(Build.MODEL.toUpperCase(Locale.US));
     }
 
-    @NonNull
-    public Size getDisplaySize() {
+    public @NonNull Size getDisplaySize() {
         return MODEL_TO_DISPLAY_SIZE_MAP.get(Build.MODEL.toUpperCase(Locale.US));
     }
 }

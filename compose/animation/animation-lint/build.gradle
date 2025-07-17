@@ -22,7 +22,7 @@
  * modifying its settings.
  */
 import androidx.build.BundleInsideHelper
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,7 +32,7 @@ plugins {
 BundleInsideHelper.forInsideLintJar(project)
 
 dependencies {
-    compileOnly libs.androidLintMinComposeApi
+    compileOnly libs.androidLintMinApi
     compileOnly libs.kotlinStdlib
     bundleInside(project(":compose:lint:common"))
 
@@ -46,7 +46,7 @@ dependencies {
 
 androidx {
     name = "Compose Animation Lint Checks"
-    type = LibraryType.LINT
+    type = SoftwareType.STANDALONE_PUBLISHED_LINT
     inceptionYear = "2021"
     description = "Compose Animation Lint Checks"
 }

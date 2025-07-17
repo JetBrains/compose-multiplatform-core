@@ -23,11 +23,12 @@ import static androidx.enterprise.feedback.KeyedAppStatesReporter.APP_STATE_SEVE
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.enterprise.feedback.KeyedAppState.Severity;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A keyed app state received from an app. This contains all of the information added by the app to
@@ -41,8 +42,7 @@ public abstract class ReceivedKeyedAppState {
     ReceivedKeyedAppState() {}
 
     /** Create a {@link ReceivedKeyedAppStateBuilder}. */
-    @NonNull
-    public static ReceivedKeyedAppStateBuilder builder() {
+    public static @NonNull ReceivedKeyedAppStateBuilder builder() {
         return new AutoValue_ReceivedKeyedAppState.Builder();
     }
 
@@ -68,8 +68,7 @@ public abstract class ReceivedKeyedAppState {
      * <p>This is automatically set to the correct value by the receiver; it is NOT self-reported by
      * the app sending the feedback.
      */
-    @NonNull
-    public abstract String getPackageName();
+    public abstract @NonNull String getPackageName();
 
     /**
      * The unix timestamp, in milliseconds, when the states were received.
@@ -80,19 +79,16 @@ public abstract class ReceivedKeyedAppState {
     public abstract long getTimestamp();
 
     /** See {@link KeyedAppState#getKey()} */
-    @NonNull
-    public abstract String getKey();
+    public abstract @NonNull String getKey();
 
     /** See {@link KeyedAppState#getSeverity()} */
     public abstract int getSeverity();
 
     /** See {@link KeyedAppState#getMessage()} */
-    @Nullable
-    public abstract String getMessage();
+    public abstract @Nullable String getMessage();
 
     /** See {@link KeyedAppState#getData()} */
-    @Nullable
-    public abstract String getData();
+    public abstract @Nullable String getData();
 
     /** The builder for {@link ReceivedKeyedAppState}. */
     @AutoValue.Builder
@@ -102,35 +98,29 @@ public abstract class ReceivedKeyedAppState {
         ReceivedKeyedAppStateBuilder() {}
 
         /** Set {@link ReceivedKeyedAppState#getPackageName()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setPackageName(@NonNull String packageName);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setPackageName(
+                @NonNull String packageName);
 
         /** Set {@link ReceivedKeyedAppState#getTimestamp()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setTimestamp(long timestamp);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setTimestamp(long timestamp);
 
         /** Set {@link ReceivedKeyedAppState#getKey()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setKey(@NonNull String key);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setKey(@NonNull String key);
 
         /** Set {@link ReceivedKeyedAppState#getSeverity()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setSeverity(@Severity int severity);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setSeverity(@Severity int severity);
 
         /** Set {@link ReceivedKeyedAppState#getMessage()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setMessage(@Nullable String message);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setMessage(@Nullable String message);
 
         /** Set {@link ReceivedKeyedAppState#getData()}. */
-        @NonNull
-        public abstract ReceivedKeyedAppStateBuilder setData(@Nullable String data);
+        public abstract @NonNull ReceivedKeyedAppStateBuilder setData(@Nullable String data);
 
         /**
          * Instantiate the {@link ReceivedKeyedAppState}.
          *
          * <p>Assumes the key and severity are set.
          */
-        @NonNull
-        public abstract ReceivedKeyedAppState build();
+        public abstract @NonNull ReceivedKeyedAppState build();
     }
 }

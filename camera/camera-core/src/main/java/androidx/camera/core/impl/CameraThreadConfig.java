@@ -18,9 +18,9 @@ package androidx.camera.core.impl;
 
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -40,8 +40,7 @@ public abstract class CameraThreadConfig {
      *                          this handler.
      * @return the camera thread configuration.
      */
-    @NonNull
-    public static CameraThreadConfig create(@NonNull Executor cameraExecutor,
+    public static @NonNull CameraThreadConfig create(@NonNull Executor cameraExecutor,
             @NonNull Handler schedulerHandler) {
         return new AutoValue_CameraThreadConfig(cameraExecutor, schedulerHandler);
     }
@@ -49,8 +48,7 @@ public abstract class CameraThreadConfig {
     /**
      * Returns the executor used to run all camera-related tasks.
      */
-    @NonNull
-    public abstract Executor getCameraExecutor();
+    public abstract @NonNull Executor getCameraExecutor();
 
     /**
      * Returns the handler used for scheduling future tasks (such as with a delay).
@@ -59,6 +57,5 @@ public abstract class CameraThreadConfig {
      * that are scheduled with this handler should always be executed by cameraExecutor. No
      * business logic should be executed directly by this handler.
      */
-    @NonNull
-    public abstract Handler getSchedulerHandler();
+    public abstract @NonNull Handler getSchedulerHandler();
 }

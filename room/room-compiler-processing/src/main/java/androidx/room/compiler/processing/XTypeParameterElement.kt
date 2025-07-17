@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing
 
+import androidx.room.compiler.codegen.XTypeName
 import com.squareup.javapoet.TypeVariableName
 
 interface XTypeParameterElement : XElement {
@@ -32,7 +33,17 @@ interface XTypeParameterElement : XElement {
      */
     val bounds: List<XType>
 
-    // TODO(b/259091615): Migrate to XTypeName
     /** Returns the [TypeVariableName] for this type parameter) */
+    // TODO(b/247248619): Deprecate when more progress is made, otherwise -werror fails the build.
+    // @Deprecated(
+    //     message = "Use asTypeVariableName().toJavaPoet() to be clear the name is for JavaPoet.",
+    //     replaceWith = ReplaceWith(
+    //         expression = "asTypeVariableName().toJavaPoet()",
+    //         imports = ["androidx.room.compiler.codegen.toJavaPoet"]
+    //     )
+    // )
     val typeVariableName: TypeVariableName
+
+    /** Returns the type variable name for this type parameter as [XTypeName]. */
+    fun asTypeVariableName(): XTypeName
 }

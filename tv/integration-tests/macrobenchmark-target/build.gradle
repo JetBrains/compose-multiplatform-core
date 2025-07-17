@@ -22,16 +22,18 @@ plugins {
 }
 
 android {
-    namespace "androidx.tv.integration.macrobenchmark.target"
+    compileSdk = 35
+
+    namespace = "androidx.tv.integration.macrobenchmark.target"
 
     defaultConfig {
-        minSdkVersion 28
+        minSdk = 28
     }
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
         }
@@ -41,11 +43,7 @@ android {
 dependencies {
     implementation(libs.kotlinStdlib)
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation("androidx.compose.runtime:runtime:1.6.7")
-    implementation("androidx.compose.runtime:runtime-tracing:1.0.0-beta01")
-    implementation("androidx.compose.ui:ui:1.6.7")
-    implementation("androidx.compose.ui:ui-tooling:1.6.7")
-    implementation("androidx.profileinstaller:profileinstaller:1.3.1")
+    implementation("androidx.compose.runtime:runtime-tracing:1.7.3")
 
     implementation(project(":tv:tv-foundation"))
     implementation(project(":tv:tv-material"))

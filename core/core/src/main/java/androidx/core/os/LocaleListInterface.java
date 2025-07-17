@@ -17,8 +17,9 @@
 package androidx.core.os;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -37,6 +38,5 @@ interface LocaleListInterface {
 
     String toLanguageTags();
 
-    @Nullable
-    Locale getFirstMatch(@NonNull String[] supportedLocales);
+    @Nullable Locale getFirstMatch(String @NonNull [] supportedLocales);
 }

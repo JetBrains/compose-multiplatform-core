@@ -76,7 +76,6 @@ import kotlin.math.roundToInt
  * visually represented.
  *
  * @sample androidx.wear.compose.material.samples.HorizontalPageIndicatorSample
- *
  * @param pageIndicatorState The state object of a [HorizontalPageIndicator] to be used to observe
  *   the Pager's state.
  * @param modifier Modifier to be applied to the [HorizontalPageIndicator]
@@ -98,7 +97,7 @@ public fun HorizontalPageIndicator(
     unselectedColor: Color = selectedColor.copy(alpha = 0.3f),
     indicatorSize: Dp = 6.dp,
     spacing: Dp = 4.dp,
-    indicatorShape: Shape = CircleShape
+    indicatorShape: Shape = CircleShape,
 ) {
     // We want to bring offset to 0..1 range.
     // However, it can come in any range. It might be for example selectedPage = 1, with offset 2.5
@@ -138,7 +137,7 @@ public fun HorizontalPageIndicator(
                             lerp(
                                 unselectedColor,
                                 selectedColor,
-                                pagesState.calculateSelectedRatio(page, normalizedOffset)
+                                pagesState.calculateSelectedRatio(page, normalizedOffset),
                             )
                         )
             )
@@ -167,7 +166,7 @@ public fun HorizontalPageIndicator(
                 pagesOnScreen = pagesOnScreen,
                 indicatorFactory = indicatorFactory,
                 spacerLeft = spacerLeft,
-                spacerRight = spacerRight
+                spacerRight = spacerRight,
             )
         }
         PageIndicatorStyle.Curved -> {
@@ -177,7 +176,7 @@ public fun HorizontalPageIndicator(
                 val size =
                     IntSize(
                         width = ((indicatorSize + spacing).toPx() * pagesOnScreen).roundToInt(),
-                        height = (indicatorSize * 2).toPx().roundToInt().coerceAtLeast(0)
+                        height = (indicatorSize * 2).toPx().roundToInt().coerceAtLeast(0),
                     )
                 size
             }
@@ -197,13 +196,13 @@ public fun HorizontalPageIndicator(
                 offset = boundsOffset,
                 size = boundsSize,
                 modifier = modifier,
-                onSizeChanged = { containerSize = it }
+                onSizeChanged = { containerSize = it },
             ) {
                 CurvedPageIndicator(
                     pagesOnScreen = pagesOnScreen,
                     indicatorFactory = indicatorFactory,
                     spacerLeft = spacerLeft,
-                    spacerRight = spacerRight
+                    spacerRight = spacerRight,
                 )
             }
         }
@@ -213,12 +212,12 @@ public fun HorizontalPageIndicator(
 /** The style of [HorizontalPageIndicator]. May be Curved or Linear */
 @kotlin.jvm.JvmInline
 public value class PageIndicatorStyle internal constructor(internal val value: Int) {
-    companion object {
+    public companion object {
         /** Curved style of [HorizontalPageIndicator] */
-        public val Curved = PageIndicatorStyle(0)
+        public val Curved: PageIndicatorStyle = PageIndicatorStyle(0)
 
         /** Linear style of [HorizontalPageIndicator] */
-        public val Linear = PageIndicatorStyle(1)
+        public val Linear: PageIndicatorStyle = PageIndicatorStyle(1)
     }
 }
 
@@ -258,13 +257,13 @@ private fun LinearPageIndicator(
     pagesOnScreen: Int,
     indicatorFactory: @Composable (Int) -> Unit,
     spacerLeft: @Composable () -> Unit,
-    spacerRight: @Composable () -> Unit
+    spacerRight: @Composable () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = modifier.align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.Bottom
+            verticalAlignment = Alignment.Bottom,
         ) {
             // drawing 1 extra spacer for transition
             spacerLeft()
@@ -281,13 +280,13 @@ private fun CurvedPageIndicator(
     pagesOnScreen: Int,
     indicatorFactory: @Composable (Int) -> Unit,
     spacerLeft: @Composable () -> Unit,
-    spacerRight: @Composable () -> Unit
+    spacerRight: @Composable () -> Unit,
 ) {
     CurvedLayout(
         modifier = Modifier,
         // 90 degrees equals to 6 o'clock position, at the bottom of the screen
         anchor = 90f,
-        angularDirection = CurvedDirection.Angular.Reversed
+        angularDirection = CurvedDirection.Angular.Reversed,
     ) {
         // drawing 1 extra spacer for transition
         curvedComposable { spacerLeft() }

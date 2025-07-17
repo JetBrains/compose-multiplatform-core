@@ -30,7 +30,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.LayoutRes;
-import androidx.annotation.Nullable;
 import androidx.collection.SparseArrayCompat;
 import androidx.core.util.Pair;
 import androidx.core.view.ViewCompat;
@@ -38,14 +37,16 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-
+@SdkSuppress(minSdkVersion = 22) // The Instrumentation doesn't actually wait on Idle on API 21
 @MediumTest
 @RunWith(Parameterized.class)
 public class FragmentTransitionSupportTest extends BaseTest {
@@ -189,9 +190,8 @@ public class FragmentTransitionSupportTest extends BaseTest {
             setSharedElementReturnTransition(createTransition(TRANSITION_SHARED_RETURN));
         }
 
-        @Nullable
         @Override
-        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+        public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
                 @Nullable Bundle savedInstanceState) {
             return inflater.inflate(getArguments().getInt(ARG_LAYOUT_ID), container, false);
         }

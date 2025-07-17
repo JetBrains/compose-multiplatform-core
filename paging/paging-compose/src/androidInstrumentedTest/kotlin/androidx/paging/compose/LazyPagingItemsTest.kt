@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
@@ -38,7 +39,9 @@ import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import androidx.paging.CombinedLoadStates
 import androidx.paging.LoadState
 import androidx.paging.LoadState.Loading
@@ -87,7 +90,7 @@ class LazyPagingItemsTest {
         loadDelay: Long = 0,
         pagingSourceFactory: () -> PagingSource<Int, Int> = {
             TestPagingSource(items = items, loadDelay = loadDelay)
-        }
+        },
     ): Pager<Int, Int> {
         return Pager(config = config, pagingSourceFactory = pagingSourceFactory)
     }
@@ -104,7 +107,7 @@ class LazyPagingItemsTest {
     ) =
         Pager(
             config = config,
-            pagingSourceFactory = { TestPagingSource(items = items, loadDelay = 0) }
+            pagingSourceFactory = { TestPagingSource(items = items, loadDelay = 0) },
         )
 
     @Test
@@ -127,9 +130,9 @@ class LazyPagingItemsTest {
                     LoadStates(
                         LoadState.Loading,
                         LoadState.NotLoading(false),
-                        LoadState.NotLoading(false)
+                        LoadState.NotLoading(false),
                     ),
-                mediator = null
+                mediator = null,
             )
         assertThat(loadStates).isNotEmpty()
         assertThat(loadStates.first()).isEqualTo(expected)
@@ -175,9 +178,9 @@ class LazyPagingItemsTest {
                     LoadStates(
                         LoadState.Loading,
                         LoadState.NotLoading(false),
-                        LoadState.NotLoading(false)
+                        LoadState.NotLoading(false),
                     ),
-                mediator = null
+                mediator = null,
             )
         assertThat(loadStates.first()).isEqualTo(expected)
     }
@@ -252,7 +255,7 @@ class LazyPagingItemsTest {
                     contentType =
                         lazyPagingItems.itemContentType(
                             contentType = { if (it == 8) "reuse" else "not-to-reuse-$it" }
-                        )
+                        ),
                 ) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
@@ -260,6 +263,8 @@ class LazyPagingItemsTest {
             }
         }
 
+        val idMinus1 = rule.onNodeWithTag("-1").fetchSemanticsNode().id
+        val id0 = rule.onNodeWithTag("0").fetchSemanticsNode().id
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(2)
@@ -267,8 +272,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
-        rule.onNodeWithTag("0").assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -277,7 +282,9 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+
         // node reused
         rule.onNodeWithTag("0").assertDoesNotExist()
         rule.onNodeWithTag("7").assertIsDisplayed()
@@ -310,7 +317,7 @@ class LazyPagingItemsTest {
                     count = lazyPagingItems.itemCount,
                     // item 7 would be null, which should default to PagingPlaceholderContentType
                     contentType =
-                        lazyPagingItems.itemContentType(contentType = { "not-to-reuse-$it" })
+                        lazyPagingItems.itemContentType(contentType = { "not-to-reuse-$it" }),
                 ) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
@@ -320,6 +327,9 @@ class LazyPagingItemsTest {
 
         rule.waitUntil { loadedItem6 }
 
+        val idMinus1 = rule.onNodeWithTag("-1").fetchSemanticsNode().id
+        val id0 = rule.onNodeWithTag("0").fetchSemanticsNode().id
+
         rule.runOnIdle {
             runBlocking {
                 state.scrollToItem(2)
@@ -327,8 +337,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
-        rule.onNodeWithTag("0").assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -337,7 +347,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
         // node reused
         rule.onNodeWithTag("0").assertDoesNotExist()
     }
@@ -362,13 +373,16 @@ class LazyPagingItemsTest {
                 items(
                     count = lazyPagingItems.itemCount,
                     // should default to null
-                    contentType = lazyPagingItems.itemContentType(null)
+                    contentType = lazyPagingItems.itemContentType(null),
                 ) { index ->
                     val item = lazyPagingItems[index]
                     Content("$item")
                 }
             }
         }
+
+        val idMinus1 = rule.onNodeWithTag("-1").fetchSemanticsNode().id
+        val id0 = rule.onNodeWithTag("0").fetchSemanticsNode().id
 
         rule.runOnIdle {
             runBlocking {
@@ -377,8 +391,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
-        rule.onNodeWithTag("0").assertIsDeactivated()
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(id0)
 
         rule.runOnIdle {
             runBlocking {
@@ -387,7 +401,8 @@ class LazyPagingItemsTest {
             }
         }
 
-        rule.onNodeWithTag("-1").assertIsDeactivated()
+        // Assert -1 is deactivated still
+        rule.onRoot().fetchSemanticsNode().assertLayoutDeactivatedById(idMinus1)
         // node reused
         rule.onNodeWithTag("0").assertDoesNotExist()
         rule.onNodeWithTag("4").assertExists().assertIsDisplayed()
@@ -692,10 +707,8 @@ class LazyPagingItemsTest {
         rule.setContent {
             lazyPagingItems = pager.flow.collectAsLazyPagingItems()
             LazyColumn {
-                items(
-                    count = lazyPagingItems.itemCount,
-                    key = lazyPagingItems.itemKey { it },
-                ) { index ->
+                items(count = lazyPagingItems.itemCount, key = lazyPagingItems.itemKey { it }) {
+                    index ->
                     val item = lazyPagingItems[index]
                     BasicText("Item=$item. counter=${remember { counter++ }}")
                 }
@@ -849,10 +862,7 @@ class LazyPagingItemsTest {
     fun cachedPagingDataFromWithLoadStates() {
         val flow =
             MutableStateFlow(
-                PagingData.from(
-                    data = items,
-                    sourceLoadStates = loadStates(refresh = Loading),
-                )
+                PagingData.from(data = items, sourceLoadStates = loadStates(refresh = Loading))
             )
         lateinit var lazyPagingItems: LazyPagingItems<Int>
         val dispatcher = StandardTestDispatcher()
@@ -894,7 +904,7 @@ class LazyPagingItemsTest {
                 PagingData.from(
                     emptyList<Int>(),
                     sourceLoadStates =
-                        loadStates(prepend = NotLoading(true), append = NotLoading(true))
+                        loadStates(prepend = NotLoading(true), append = NotLoading(true)),
                 )
             )
         lateinit var lazyPagingItems: LazyPagingItems<Int>
@@ -1040,7 +1050,7 @@ class LazyPagingItemsTest {
             .isEqualTo(
                 localLoadStatesOf(
                     refreshLocal = LoadState.NotLoading(false),
-                    prependLocal = LoadState.NotLoading(true)
+                    prependLocal = LoadState.NotLoading(true),
                 )
             )
 
@@ -1053,7 +1063,7 @@ class LazyPagingItemsTest {
                 .isEqualTo(
                     localLoadStatesOf(
                         refreshLocal = LoadState.NotLoading(false),
-                        prependLocal = LoadState.NotLoading(true)
+                        prependLocal = LoadState.NotLoading(true),
                     )
                 )
         }
@@ -1106,5 +1116,13 @@ class LazyPagingItemsTest {
     @Composable
     private fun Content(tag: String) {
         Spacer(Modifier.height(itemsSizeDp).width(10.dp).testTag(tag))
+    }
+
+    private fun SemanticsNode.assertLayoutDeactivatedById(id: Int) {
+        children.fastForEach {
+            if (it.id == id) {
+                assert(it.layoutInfo.isDeactivated)
+            }
+        }
     }
 }

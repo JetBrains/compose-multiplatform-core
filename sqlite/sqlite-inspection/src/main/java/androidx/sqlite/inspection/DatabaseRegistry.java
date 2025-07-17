@@ -23,8 +23,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.ArraySet;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -250,8 +251,7 @@ class DatabaseRegistry {
      * Consumer of this method must release the reference when done using it.
      * Thread-safe
      */
-    @Nullable
-    SQLiteDatabase getConnection(int databaseId) {
+    @Nullable SQLiteDatabase getConnection(int databaseId) {
         synchronized (mLock) {
             return getConnectionImpl(databaseId);
         }

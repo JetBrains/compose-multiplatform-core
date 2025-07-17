@@ -26,7 +26,7 @@ class TransformedText(
     val text: AnnotatedString,
 
     /** The map used for bidirectional offset mapping from original to transformed text. */
-    val offsetMapping: OffsetMapping
+    val offsetMapping: OffsetMapping,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -72,7 +72,6 @@ fun interface VisualTransformation {
      * 1234567890123456 transformed text: 1234-5678-9012-3456
      *
      * @sample androidx.compose.ui.text.samples.creditCardFilter
-     *
      * @param text The original text
      * @return the pair of filtered text and offset translator.
      */
@@ -98,7 +97,7 @@ class PasswordVisualTransformation(val mask: Char = '\u2022') : VisualTransforma
     override fun filter(text: AnnotatedString): TransformedText {
         return TransformedText(
             AnnotatedString(mask.toString().repeat(text.text.length)),
-            OffsetMapping.Identity
+            OffsetMapping.Identity,
         )
     }
 

@@ -16,11 +16,12 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.SearchResult;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,7 @@ public class SearchResultToGmsConverter {
     }
 
     /** Translates from Gms to Jetpack versions of list of {@link SearchResult}. */
-    @NonNull
-    public static List<SearchResult> toJetpackSearchResultList(
+    public static @NonNull List<SearchResult> toJetpackSearchResultList(
             @NonNull List<com.google.android.gms.appsearch.SearchResult> gmsResultList) {
         Preconditions.checkNotNull(gmsResultList);
         List<androidx.appsearch.app.SearchResult> jetpackResults =
@@ -49,9 +49,8 @@ public class SearchResultToGmsConverter {
     }
 
     /** Translates from Gms to Jetpack versions of {@link SearchResult}. */
-    @NonNull
-    public static SearchResult toJetpackSearchResult(
-            @NonNull com.google.android.gms.appsearch.SearchResult gmsResult) {
+    public static @NonNull SearchResult toJetpackSearchResult(
+            com.google.android.gms.appsearch.@NonNull SearchResult gmsResult) {
         Preconditions.checkNotNull(gmsResult);
         GenericDocument document =
                 GenericDocumentToGmsConverter.toJetpackGenericDocument(
@@ -68,13 +67,18 @@ public class SearchResultToGmsConverter {
                     gmsMatches.get(i));
             builder.addMatchInfo(jetpackMatchInfo);
         }
+        for (com.google.android.gms.appsearch.SearchResult joinedResult :
+                gmsResult.getJoinedResults()) {
+            builder.addJoinedResult(toJetpackSearchResult(joinedResult));
+        }
         return builder.build();
     }
 
-    @NonNull
-    private static SearchResult.MatchInfo toJetpackMatchInfo(
-            @NonNull com.google.android.gms.appsearch.SearchResult.MatchInfo
+    private static SearchResult.@NonNull MatchInfo toJetpackMatchInfo(
+            com.google.android.gms.appsearch.SearchResult.@NonNull MatchInfo
                     gmsMatchInfo) {
+        // TODO(b/395128139): Use the new version of MatchInfo with EmbeddingMatchInfo once it's
+        //  available in GmsAppSearch.
         Preconditions.checkNotNull(gmsMatchInfo);
         SearchResult.MatchInfo.Builder builder = new SearchResult.MatchInfo.Builder(
                 gmsMatchInfo.getPropertyPath())

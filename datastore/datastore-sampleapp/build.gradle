@@ -38,7 +38,6 @@ dependencies {
     // For DataStore with protos
     implementation(project(":datastore:datastore"))
 
-
     implementation(libs.protobufLite)
     implementation(libs.kotlinStdlib)
     implementation("androidx.appcompat:appcompat:1.2.0")
@@ -54,25 +53,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 }
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-    generateProtoTasks {
-        all().each { task ->
-            task.builtins {
-                java {
-                    option "lite"
-                }
-            }
-        }
-    }
-}
-
 android {
-    namespace "com.example.datastoresampleapp"
-    defaultConfig {
-        multiDexEnabled true
+    namespace = "com.example.datastoresampleapp"
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
     }
 }
 

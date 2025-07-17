@@ -21,11 +21,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.focusRequester as modifierNodeFocusRequester
@@ -44,6 +44,19 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
     @get:Rule val rule = createComposeRule()
+
+    @Test
+    fun focusRequesterModifierNotUsed() {
+        // Arrange.
+        val focusRequester = FocusRequester()
+        rule.setFocusableContent { Box {} }
+
+        // Act.
+        val result = rule.runOnIdle { focusRequester.requestFocus() }
+
+        // Assert.
+        assertThat(result).isFalse()
+    }
 
     @Test
     fun requestFocus_noFocusTargetInLayoutNode() {
@@ -351,10 +364,7 @@ class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
                     Modifier.focusRequester(focusRequester)
                         .focusProperties {
                             canFocus = false
-                            @OptIn(ExperimentalComposeUiApi::class)
-                            enter = {
-                                FocusRequester.Cancel
-                            }
+                            onEnter = { cancelFocusChange() }
                         }
                         .focusTarget()
             ) {
@@ -396,10 +406,7 @@ class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
                         Modifier.size(10.dp)
                             .focusProperties {
                                 canFocus = false
-                                @OptIn(ExperimentalComposeUiApi::class)
-                                enter = {
-                                    FocusRequester.Cancel
-                                }
+                                onEnter = { FocusRequester.Cancel }
                             }
                             .focusTarget()
                 ) {
@@ -489,7 +496,6 @@ class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun requestFocus_onDeactivatedNode_performsFocusEnter() {
         // Arrange.
@@ -501,7 +507,7 @@ class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
             Column(
                 modifier =
                     Modifier.focusRequester(focusRequester)
-                        .focusProperties { enter = { child2 } }
+                        .focusProperties { onEnter = { child2.requestFocus() } }
                         .focusProperties { canFocus = false }
                         .focusTarget()
             ) {
@@ -556,6 +562,60 @@ class FocusRequesterTest(private val modifierNodeVersion: Boolean) {
             // Assert.
             assertThat(focusState1.isFocused).isTrue()
             assertThat(focusState2.isFocused).isFalse()
+        }
+    }
+
+    @Test
+    fun requestFocus_onRemovedChild_skipsRemovedNode() {
+        // Arrange.
+        lateinit var focusState1: FocusState
+        lateinit var focusState2: FocusState
+        val focusRequester = FocusRequester()
+        var showBox1 by mutableStateOf(true)
+        rule.setFocusableContent {
+            Column(modifier = Modifier.focusRequester(focusRequester)) {
+                if (showBox1) {
+                    Box(modifier = Modifier.onFocusChanged { focusState1 = it }.focusTarget())
+                }
+                Box(modifier = Modifier.onFocusChanged { focusState2 = it }.focusTarget())
+            }
+        }
+        rule.runOnIdle { showBox1 = false }
+
+        rule.runOnIdle {
+            // Act.
+            focusRequester.requestFocus()
+
+            // Assert.
+            assertThat(focusState1.isFocused).isFalse()
+            assertThat(focusState2.isFocused).isTrue()
+        }
+    }
+
+    @Test
+    fun requestFocus_inOnDisposeOnRemovedChild_skipsRemovedNode() {
+        // Arrange.
+        lateinit var focusState1: FocusState
+        lateinit var focusState2: FocusState
+        val focusRequester = FocusRequester()
+        var showBox1 by mutableStateOf(true)
+        rule.setFocusableContent {
+            Column(modifier = Modifier.focusRequester(focusRequester)) {
+                if (showBox1) {
+                    Box(modifier = Modifier.onFocusChanged { focusState1 = it }.focusTarget())
+                    DisposableEffect(Unit) { onDispose { focusRequester.requestFocus() } }
+                }
+                Box(modifier = Modifier.onFocusChanged { focusState2 = it }.focusTarget())
+            }
+        }
+
+        // Act.
+        rule.runOnIdle { showBox1 = false }
+
+        rule.runOnIdle {
+            // Assert.
+            assertThat(focusState1.isFocused).isFalse()
+            assertThat(focusState2.isFocused).isTrue()
         }
     }
 

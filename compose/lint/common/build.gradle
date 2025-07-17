@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,7 +29,7 @@ plugins {
 }
 
 dependencies {
-    compileOnly(libs.androidLintMinComposeApi)
+    compileOnly(libs.androidLintMinApi)
     compileOnly(libs.kotlinStdlib)
 
     api(libs.kotlinMetadataJvm) { exclude group: "org.jetbrains.kotlin" }
@@ -43,7 +43,7 @@ dependencies {
 
 androidx {
     name = "Compose Lint Utils"
-    type = LibraryType.LINT
+    type = SoftwareType.LINT
     inceptionYear = "2021"
     description = "Lint utils used for writing Compose related lint checks"
 }

@@ -28,14 +28,19 @@ import androidx.compose.ui.util.lerp
  * 32bit represents the metadata of this value and lower 32bit represents the bit representation of
  * the float value. Currently lower 8bits in the metadata bits are used for unit information.
  *
- * Bits |-------|-------|-------|-------|-------|-------|-------|-------|
- * FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF: Float Value UUUUUUUU : Unit Information
- * XXXXXXXXXXXXXXXXXXXXXXXX : Unused bits
+ * Bits
+ *
+ * ```
+ * |-------|-------|-------|-------|-------|-------|-------|-------|
+ *                                  FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF: Float Value
+ *                          UUUUUUUU                                : Unit Information
+ *  XXXXXXXXXXXXXXXXXXXXXXXX                                        : Unused bits
+ * ```
  */
 private const val UNIT_MASK = 0xFFL shl 32 // 0xFF_0000_0000
 private const val UNIT_TYPE_UNSPECIFIED = 0x00L shl 32 // 0x00_0000_0000
 private const val UNIT_TYPE_SP = 0x01L shl 32 // 0x01_0000_0000
-private const val UNIT_TYPE_EM = 0x02L shl 32 // 0x2_0000_0000
+private const val UNIT_TYPE_EM = 0x02L shl 32 // 0x02_0000_0000
 
 /** An enum class defining for type of [TextUnit]. */
 @kotlin.jvm.JvmInline
@@ -243,8 +248,8 @@ inline val TextUnit.isSpecified: Boolean
 
 /** `true` when this is [TextUnit.Unspecified]. */
 @Stable
-val TextUnit.isUnspecified: Boolean
-    get() = rawType == UNIT_TYPE_UNSPECIFIED
+inline val TextUnit.isUnspecified: Boolean
+    get() = rawType == 0x0L // UNIT_TYPE_UNSPECIFIED
 
 /**
  * If this [TextUnit] [isSpecified] then this is returned, otherwise [block] is executed and its
@@ -320,27 +325,27 @@ inline operator fun Int.times(other: TextUnit): TextUnit {
 
 @PublishedApi
 internal fun pack(unitType: Long, v: Float): TextUnit =
-    TextUnit(unitType or (v.toBits().toLong() and 0xFFFF_FFFFL))
+    TextUnit(unitType or (v.toRawBits().toLong() and 0xFFFF_FFFFL))
 
 @PublishedApi
 internal fun checkArithmetic(a: TextUnit) {
-    require(!a.isUnspecified) { "Cannot perform operation for Unspecified type." }
+    requirePrecondition(!a.isUnspecified) { "Cannot perform operation for Unspecified type." }
 }
 
 @PublishedApi
 internal fun checkArithmetic(a: TextUnit, b: TextUnit) {
-    require(!a.isUnspecified && !b.isUnspecified) {
+    requirePrecondition(!a.isUnspecified && !b.isUnspecified) {
         "Cannot perform operation for Unspecified type."
     }
-    require(a.type == b.type) { "Cannot perform operation for ${a.type} and ${b.type}" }
+    requirePrecondition(a.type == b.type) { "Cannot perform operation for ${a.type} and ${b.type}" }
 }
 
 @PublishedApi
 internal fun checkArithmetic(a: TextUnit, b: TextUnit, c: TextUnit) {
-    require(!a.isUnspecified && !b.isUnspecified && !c.isUnspecified) {
+    requirePrecondition(!a.isUnspecified && !b.isUnspecified && !c.isUnspecified) {
         "Cannot perform operation for Unspecified type."
     }
-    require(a.type == b.type && b.type == c.type) {
+    requirePrecondition(a.type == b.type && b.type == c.type) {
         "Cannot perform operation for ${a.type} and ${b.type}"
     }
 }

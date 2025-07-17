@@ -20,8 +20,9 @@ import static kotlin.jvm.internal.Intrinsics.checkNotNull;
 
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link Consumer} that can be listened to by another {@link Consumer}.

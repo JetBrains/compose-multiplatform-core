@@ -22,21 +22,78 @@
  * modifying its settings.
  */
 
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
+import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("kotlin")
 }
 
-dependencies {
-    api(project(":compose:ui:ui-graphics"))
-    testImplementation(libs.kotlinTest)
+androidXMultiplatform {
+  jvm()
+  androidLibrary {
+    namespace = "androidx.ink.brush"
+    androidResources.enable = true
+  }
+
+  defaultPlatform(PlatformIdentifier.JVM)
+
+  sourceSets {
+    commonMain {}
+
+    commonTest {}
+
+    jvmAndroidMain {
+      dependsOn(commonMain)
+      dependencies {
+        api(libs.androidx.annotation)
+        implementation(libs.kotlinStdlib)
+        implementation("androidx.collection:collection:1.4.3")
+        implementation(project(":ink:ink-geometry"))
+        implementation(project(":ink:ink-nativeloader"))
+      }
+    }
+
+    jvmAndroidTest {
+      dependsOn(commonTest)
+      dependencies {
+        implementation(libs.junit)
+        implementation(libs.kotlinTest)
+        implementation(libs.truth)
+      }
+    }
+
+    androidMain {
+      dependsOn(jvmAndroidMain)
+    }
+
+    androidInstrumentedTest {
+      dependsOn(jvmAndroidTest)
+      dependencies {
+        implementation(libs.testExtJunit)
+        implementation(libs.testRules)
+        implementation(libs.testRunner)
+        implementation(libs.espressoCore)
+        implementation(libs.junit)
+        implementation(libs.truth)
+      }
+    }
+
+    jvmMain {
+      dependsOn(jvmAndroidMain)
+    }
+
+    jvmTest {
+      // TODO: b/362697089 - add `dependsOn(jvmAndroidTest)` to run the tests
+      //   in a JVM environment in addition to on Android emulators, once the
+      //   mysterious SIGSEGV is resolved.
+    }
+  }
 }
 
 androidx {
     name = "Ink Brush"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2024"
     description = "Define brushes for freehand input."
 }

@@ -24,8 +24,9 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,7 +34,12 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * An instance of a callback to a specific class/method with a specific set
  * of arguments. Can only be obtained from a {@link CallbackReceiver}.
+ *
+ * @deprecated Slice framework has been deprecated, it will not receive any updates moving
+ * forward. If you are looking for a framework that handles communication across apps,
+ * consider using {@link android.app.appsearch.AppSearchManager}.
  */
+@Deprecated
 public class RemoteCallback {
 
     /**
@@ -91,8 +97,7 @@ public class RemoteCallback {
     /**
      * Gets the class the callback will be called on.
      */
-    @NonNull
-    public String getReceiverClass() {
+    public @NonNull String getReceiverClass() {
         return mReceiverClass;
     }
 
@@ -162,9 +167,8 @@ public class RemoteCallback {
             throw new UnsupportedOperationException("RemoteCallback.LOCAL cannot be used");
         }
 
-        @NonNull
         @Override
-        public String getReceiverClass() {
+        public @NonNull String getReceiverClass() {
             throw new UnsupportedOperationException("RemoteCallback.LOCAL cannot be used");
         }
 

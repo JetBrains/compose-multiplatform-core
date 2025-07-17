@@ -21,20 +21,25 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":car:app:app"))
+
     implementation "androidx.lifecycle:lifecycle-runtime:2.2.0"
     implementation "androidx.lifecycle:lifecycle-common-java8:2.2.0"
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation("androidx.annotation:annotation:1.1.0")
     implementation(libs.robolectric)
-    implementation("androidx.annotation:annotation-experimental:1.4.0")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    api(libs.kotlinStdlib)
+    implementation(libs.kotlinStdlibCommon)
 
     testImplementation(project(":car:app:app-projected"))
     testImplementation(libs.junit)
@@ -42,27 +47,19 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 
     annotationProcessor(libs.nullaway)
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 21
-        multiDexEnabled = true
-    }
-    lintOptions {
-        disable("InvalidPackage")
-    }
-    namespace "androidx.car.app.testing"
+    namespace = "androidx.car.app.testing"
 }
 
 androidx {
     name = "androidx.car.app:app-testing"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2021"
     description = "androidx.car.app:app-testing"
-    metalavaK2UastEnabled = true
+    enableRobolectric()
 }

@@ -1,6 +1,5 @@
 package com.example.appsearch;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchDocumentClassMap;
 import com.google.auto.service.AutoService;
 import java.lang.Override;
@@ -10,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.processing.Generated;
+import org.jspecify.annotations.NonNull;
 
 @AutoService(AppSearchDocumentClassMap.class)
 @Generated("androidx.appsearch.compiler.AppSearchCompiler")

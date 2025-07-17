@@ -33,8 +33,6 @@ import android.os.UserHandle;
 import android.text.TextUtils;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -44,6 +42,9 @@ import androidx.core.content.LocusIdCompat;
 import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.net.UriCompat;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -93,8 +94,7 @@ public class ShortcutInfoCompat {
     Person[] mPersons;
     Set<String> mCategories;
 
-    @Nullable
-    LocusIdCompat mLocusId;
+    @Nullable LocusIdCompat mLocusId;
     // TODO: Support |auto| when the value of mIsLongLived is not set
     boolean mIsLongLived;
 
@@ -221,16 +221,14 @@ public class ShortcutInfoCompat {
      * devices so that shortcuts will still be valid when restored on a different device.
      * See {@link android.content.pm.ShortcutManager} for details.
      */
-    @NonNull
-    public String getId() {
+    public @NonNull String getId() {
         return mId;
     }
 
     /**
      * Return the package name of the publisher app.
      */
-    @NonNull
-    public String getPackage() {
+    public @NonNull String getPackage() {
         return mPackageName;
     }
 
@@ -243,8 +241,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setActivity(ComponentName)
      */
-    @Nullable
-    public ComponentName getActivity() {
+    public @Nullable ComponentName getActivity() {
         return mActivity;
     }
 
@@ -253,8 +250,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setShortLabel(CharSequence)
      */
-    @NonNull
-    public CharSequence getShortLabel() {
+    public @NonNull CharSequence getShortLabel() {
         return mLabel;
     }
 
@@ -263,8 +259,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setLongLabel(CharSequence)
      */
-    @Nullable
-    public CharSequence getLongLabel() {
+    public @Nullable CharSequence getLongLabel() {
         return mLongLabel;
     }
 
@@ -274,8 +269,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setDisabledMessage(CharSequence)
      */
-    @Nullable
-    public CharSequence getDisabledMessage() {
+    public @Nullable CharSequence getDisabledMessage() {
         return mDisabledMessage;
     }
 
@@ -292,8 +286,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setIntent(Intent)
      */
-    @NonNull
-    public Intent getIntent() {
+    public @NonNull Intent getIntent() {
         return mIntents[mIntents.length - 1];
     }
 
@@ -302,8 +295,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setIntents(Intent[])
      */
-    @NonNull
-    public Intent[] getIntents() {
+    public Intent @NonNull [] getIntents() {
         return Arrays.copyOf(mIntents, mIntents.length);
     }
 
@@ -312,8 +304,7 @@ public class ShortcutInfoCompat {
      *
      * @see Builder#setCategories(Set)
      */
-    @Nullable
-    public Set<String> getCategories() {
+    public @Nullable Set<String> getCategories() {
         return mCategories;
     }
 
@@ -324,8 +315,7 @@ public class ShortcutInfoCompat {
      * {@link androidx.core.app.NotificationCompat} and
      * {@link android.view.contentcapture.ContentCaptureContext}) that are correlated.
      */
-    @Nullable
-    public LocusIdCompat getLocusId() {
+    public @Nullable LocusIdCompat getLocusId() {
         return mLocusId;
     }
 
@@ -350,8 +340,7 @@ public class ShortcutInfoCompat {
     @RequiresApi(25)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @VisibleForTesting
-    @Nullable
-    static Person[] getPersonsFromExtra(@NonNull PersistableBundle bundle) {
+    static Person @Nullable [] getPersonsFromExtra(@NonNull PersistableBundle bundle) {
         if (bundle == null || !bundle.containsKey(EXTRA_PERSON_COUNT)) {
             return null;
         }
@@ -381,8 +370,8 @@ public class ShortcutInfoCompat {
      */
     @RequiresApi(25)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    static List<ShortcutInfoCompat> fromShortcuts(@NonNull final Context context,
-            @NonNull final List<ShortcutInfo> shortcuts) {
+    static List<ShortcutInfoCompat> fromShortcuts(final @NonNull Context context,
+            final @NonNull List<ShortcutInfo> shortcuts) {
         final List<ShortcutInfoCompat> results = new ArrayList<>(shortcuts.size());
         for (ShortcutInfo s : shortcuts) {
             results.add(new ShortcutInfoCompat.Builder(context, s).build());
@@ -390,8 +379,7 @@ public class ShortcutInfoCompat {
         return results;
     }
 
-    @Nullable
-    public PersistableBundle getExtras() {
+    public @Nullable PersistableBundle getExtras() {
         return mExtras;
     }
 
@@ -400,16 +388,14 @@ public class ShortcutInfoCompat {
      * shortcut is published.
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public Bundle getTransientExtras() {
+    public @Nullable Bundle getTransientExtras() {
         return mTransientExtras;
     }
 
     /**
      * {@link UserHandle} on which the publisher created this shortcut.
      */
-    @Nullable
-    public UserHandle getUserHandle() {
+    public @Nullable UserHandle getUserHandle() {
         return mUser;
     }
 
@@ -494,8 +480,7 @@ public class ShortcutInfoCompat {
     }
 
     @RequiresApi(25)
-    @Nullable
-    static LocusIdCompat getLocusId(@NonNull final ShortcutInfo shortcutInfo) {
+    static @Nullable LocusIdCompat getLocusId(final @NonNull ShortcutInfo shortcutInfo) {
         if (Build.VERSION.SDK_INT >= 29) {
             if (shortcutInfo.getLocusId() == null) return null;
             return LocusIdCompat.toLocusIdCompat(shortcutInfo.getLocusId());
@@ -525,8 +510,7 @@ public class ShortcutInfoCompat {
      */
     @RequiresApi(25)
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    private static LocusIdCompat getLocusIdFromExtra(@Nullable PersistableBundle bundle) {
+    private static @Nullable LocusIdCompat getLocusIdFromExtra(@Nullable PersistableBundle bundle) {
         if (bundle == null) return null;
         final String locusId = bundle.getString(EXTRA_LOCUS_ID);
         return locusId == null ? null : new LocusIdCompat(locusId);
@@ -638,8 +622,7 @@ public class ShortcutInfoCompat {
          *
          * <p>The recommended maximum length is 10 characters.
          */
-        @NonNull
-        public Builder setShortLabel(@NonNull CharSequence shortLabel) {
+        public @NonNull Builder setShortLabel(@NonNull CharSequence shortLabel) {
             mInfo.mLabel = shortLabel;
             return this;
         }
@@ -652,8 +635,7 @@ public class ShortcutInfoCompat {
          *
          * <p>The recommend maximum length is 25 characters.
          */
-        @NonNull
-        public Builder setLongLabel(@NonNull CharSequence longLabel) {
+        public @NonNull Builder setLongLabel(@NonNull CharSequence longLabel) {
             mInfo.mLongLabel = longLabel;
             return this;
         }
@@ -664,8 +646,7 @@ public class ShortcutInfoCompat {
          *
          * @see ShortcutInfo#getDisabledMessage()
          */
-        @NonNull
-        public Builder setDisabledMessage(@NonNull CharSequence disabledMessage) {
+        public @NonNull Builder setDisabledMessage(@NonNull CharSequence disabledMessage) {
             mInfo.mDisabledMessage = disabledMessage;
             return this;
         }
@@ -679,8 +660,7 @@ public class ShortcutInfoCompat {
          * <p>The given {@code intent} can contain extras, but these extras must contain values
          * of primitive types in order for the system to persist these values.
          */
-        @NonNull
-        public Builder setIntent(@NonNull Intent intent) {
+        public @NonNull Builder setIntent(@NonNull Intent intent) {
             return setIntents(new Intent[]{intent});
         }
 
@@ -690,8 +670,7 @@ public class ShortcutInfoCompat {
          * intents. The last element in the list represents the only intent that doesn't place
          * an activity on the back stack.
          */
-        @NonNull
-        public Builder setIntents(@NonNull Intent[] intents) {
+        public @NonNull Builder setIntents(Intent @NonNull [] intents) {
             mInfo.mIntents = intents;
             return this;
         }
@@ -699,8 +678,7 @@ public class ShortcutInfoCompat {
         /**
          * Sets an icon of a shortcut.
          */
-        @NonNull
-        public Builder setIcon(IconCompat icon) {
+        public @NonNull Builder setIcon(IconCompat icon) {
             mInfo.mIcon = icon;
             return this;
         }
@@ -713,8 +691,7 @@ public class ShortcutInfoCompat {
          * {@link android.view.contentcapture.ContentCaptureContext}) so the device's intelligence
          * services can correlate them.
          */
-        @NonNull
-        public Builder setLocusId(@Nullable final LocusIdCompat locusId) {
+        public @NonNull Builder setLocusId(final @Nullable LocusIdCompat locusId) {
             mInfo.mLocusId = locusId;
             return this;
         }
@@ -729,8 +706,7 @@ public class ShortcutInfoCompat {
          * Additionally, the shortcut will be long-lived.
          * @see #setLongLived(boolean)
          */
-        @NonNull
-        public Builder setIsConversation() {
+        public @NonNull Builder setIsConversation() {
             mIsConversation = true;
             return this;
         }
@@ -742,8 +718,7 @@ public class ShortcutInfoCompat {
          * @see ShortcutInfo#getActivity()
          * @see ShortcutInfo.Builder#setActivity(ComponentName)
          */
-        @NonNull
-        public Builder setActivity(@NonNull ComponentName activity) {
+        public @NonNull Builder setActivity(@NonNull ComponentName activity) {
             mInfo.mActivity = activity;
             return this;
         }
@@ -760,8 +735,7 @@ public class ShortcutInfoCompat {
          *
          * @see #setActivity(ComponentName)
          */
-        @NonNull
-        public Builder setAlwaysBadged() {
+        public @NonNull Builder setAlwaysBadged() {
             mInfo.mIsAlwaysBadged = true;
             return this;
         }
@@ -774,16 +748,14 @@ public class ShortcutInfoCompat {
          *
          * @see Person
          */
-        @NonNull
-        public Builder setPerson(@NonNull Person person) {
+        public @NonNull Builder setPerson(@NonNull Person person) {
             return setPersons(new Person[]{person});
         }
 
         /**
          * Sets multiple persons instead of a single person.
          */
-        @NonNull
-        public Builder setPersons(@NonNull Person[] persons) {
+        public @NonNull Builder setPersons(Person @NonNull [] persons) {
             mInfo.mPersons = persons;
             return this;
         }
@@ -799,8 +771,7 @@ public class ShortcutInfoCompat {
          *
          * @see ShortcutInfo#getCategories()
          */
-        @NonNull
-        public Builder setCategories(@NonNull Set<String> categories) {
+        public @NonNull Builder setCategories(@NonNull Set<String> categories) {
             ArraySet<String> set = new ArraySet<>();
             set.addAll(categories);
             mInfo.mCategories = set;
@@ -811,8 +782,7 @@ public class ShortcutInfoCompat {
          * @deprecated Use {@ink #setLongLived(boolean)) instead.
          */
         @Deprecated
-        @NonNull
-        public Builder setLongLived() {
+        public @NonNull Builder setLongLived() {
             mInfo.mIsLongLived = true;
             return this;
         }
@@ -822,8 +792,7 @@ public class ShortcutInfoCompat {
          * (as a dynamic or pinned shortcut). If it is long lived, it can be cached by various
          * system services even after it has been unpublished as a dynamic shortcut.
          */
-        @NonNull
-        public Builder setLongLived(boolean longLived) {
+        public @NonNull Builder setLongLived(boolean longLived) {
             mInfo.mIsLongLived = longLived;
             return this;
         }
@@ -842,8 +811,7 @@ public class ShortcutInfoCompat {
          * actually sent to {@link ShortcutManager}. These shortcuts might still be made
          * available to other surfaces via alternative means.
          */
-        @NonNull
-        public Builder setExcludedFromSurfaces(final int surfaces) {
+        public @NonNull Builder setExcludedFromSurfaces(final int surfaces) {
             mInfo.mExcludedSurfaces = surfaces;
             return this;
         }
@@ -854,8 +822,7 @@ public class ShortcutInfoCompat {
          *
          * @see ShortcutInfo#getRank() for details.
          */
-        @NonNull
-        public Builder setRank(int rank) {
+        public @NonNull Builder setRank(int rank) {
             mInfo.mRank = rank;
             return this;
         }
@@ -868,8 +835,7 @@ public class ShortcutInfoCompat {
          *
          * @see ShortcutInfo#getExtras
          */
-        @NonNull
-        public Builder setExtras(@NonNull PersistableBundle extras) {
+        public @NonNull Builder setExtras(@NonNull PersistableBundle extras) {
             mInfo.mExtras = extras;
             return this;
         }
@@ -877,8 +843,7 @@ public class ShortcutInfoCompat {
         /**
          */
         @RestrictTo(LIBRARY_GROUP_PREFIX)
-        @NonNull
-        public Builder setTransientExtras(@NonNull final Bundle transientExtras) {
+        public @NonNull Builder setTransientExtras(final @NonNull Bundle transientExtras) {
             mInfo.mTransientExtras = Preconditions.checkNotNull(transientExtras);
             return this;
         }
@@ -894,8 +859,7 @@ public class ShortcutInfoCompat {
          *                   .START_EXERCISE.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder addCapabilityBinding(@NonNull String capability) {
+        public @NonNull Builder addCapabilityBinding(@NonNull String capability) {
             if (mCapabilityBindings == null) {
                 mCapabilityBindings = new HashSet<>();
             }
@@ -919,8 +883,7 @@ public class ShortcutInfoCompat {
          *                        the shortcut.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder addCapabilityBinding(@NonNull String capability,
+        public @NonNull Builder addCapabilityBinding(@NonNull String capability,
                 @NonNull String parameter, @NonNull List<String> parameterValues) {
             addCapabilityBinding(capability);
 
@@ -942,8 +905,7 @@ public class ShortcutInfoCompat {
          * slice, instead of an intent.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull
-        public Builder setSliceUri(@NonNull Uri sliceUri) {
+        public @NonNull Builder setSliceUri(@NonNull Uri sliceUri) {
             mSliceUri = sliceUri;
             return this;
         }
@@ -951,8 +913,7 @@ public class ShortcutInfoCompat {
         /**
          * Creates a {@link ShortcutInfoCompat} instance.
          */
-        @NonNull
-        public ShortcutInfoCompat build() {
+        public @NonNull ShortcutInfoCompat build() {
             // Verify the arguments
             if (TextUtils.isEmpty(mInfo.mLabel)) {
                 throw new IllegalArgumentException("Shortcut must have a non-empty label");
@@ -1007,7 +968,7 @@ public class ShortcutInfoCompat {
 
     @RequiresApi(33)
     private static class Api33Impl {
-        static void setExcludedFromSurfaces(@NonNull final ShortcutInfo.Builder builder,
+        static void setExcludedFromSurfaces(final ShortcutInfo.@NonNull Builder builder,
                 final int surfaces) {
             builder.setExcludedFromSurfaces(surfaces);
         }

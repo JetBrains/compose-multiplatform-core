@@ -21,9 +21,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.debugview.DebugAppSearchManager;
 import androidx.appsearch.debugview.R;
 import androidx.appsearch.exceptions.AppSearchException;
@@ -34,9 +33,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.concurrent.Executors;
 
 /**
  * Debug Activity for AppSearch.
@@ -105,7 +106,8 @@ public class AppSearchDebugActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_appsearchdebug);
 
-        mBackgroundExecutor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+        mBackgroundExecutor = MoreExecutors.listeningDecorator(AppSearchEnvironmentFactory
+                .getEnvironmentInstance().createCachedThreadPoolExecutor());
         mDbName = getIntent().getExtras().getString(DB_INTENT_KEY);
         String targetPackageName =
                 getIntent().getExtras().getString(TARGET_PACKAGE_NAME_INTENT_KEY);
@@ -144,16 +146,14 @@ public class AppSearchDebugActivity extends FragmentActivity {
     /**
      * Gets the {@link DebugAppSearchManager} instance created by the activity.
      */
-    @NonNull
-    public ListenableFuture<DebugAppSearchManager> getDebugAppSearchManager() {
+    public @NonNull ListenableFuture<DebugAppSearchManager> getDebugAppSearchManager() {
         return mDebugAppSearchManager;
     }
 
     /**
      * Gets the {@link ListeningExecutorService} instance created by the activity.
      */
-    @NonNull
-    public ListeningExecutorService getBackgroundExecutor() {
+    public @NonNull ListeningExecutorService getBackgroundExecutor() {
         return mBackgroundExecutor;
     }
 }

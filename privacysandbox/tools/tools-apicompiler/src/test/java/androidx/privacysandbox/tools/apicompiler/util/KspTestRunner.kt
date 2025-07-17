@@ -20,6 +20,7 @@ import androidx.privacysandbox.tools.apicompiler.parser.ApiParser
 import androidx.privacysandbox.tools.core.model.ParsedApi
 import androidx.privacysandbox.tools.testing.CompilationResultSubject
 import androidx.privacysandbox.tools.testing.CompilationTestHelper.assertThat
+import androidx.room.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.TestCompilationArguments
 import androidx.room.compiler.processing.util.compiler.compile
@@ -40,10 +41,11 @@ fun parseSources(vararg sources: Source): ParsedApi {
                 TestCompilationArguments(
                     sources = sources.toList(),
                     symbolProcessorProviders = listOf(provider),
-                )
+                    kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
+                ),
             )
         )
-        .succeeds()
+        .succeedsExcludingOptInWarnings()
     assert(provider.processor.capture != null) { "KSP run didn't produce any output." }
     return provider.processor.capture!!
 }
@@ -55,8 +57,9 @@ fun checkSourceFails(vararg sources: Source): CompilationResultSubject {
             Files.createTempDirectory("test").toFile(),
             TestCompilationArguments(
                 sources = sources.asList(),
-                symbolProcessorProviders = listOf(provider)
-            )
+                symbolProcessorProviders = listOf(provider),
+                kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
+            ),
         )
     return assertThat(result).also { it.fails() }
 }

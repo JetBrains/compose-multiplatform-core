@@ -24,8 +24,6 @@ import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.widget.Action;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.ControlButtonPresenterSelector;
@@ -34,6 +32,9 @@ import androidx.leanback.widget.PlaybackControlsRow;
 import androidx.leanback.widget.PlaybackRowPresenter;
 import androidx.leanback.widget.PlaybackTransportRowPresenter;
 import androidx.leanback.widget.Presenter;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -293,8 +294,7 @@ public abstract class PlaybackBaseControlGlue<T extends PlayerAdapter> extends P
         }
     }
 
-    @NonNull
-    protected abstract PlaybackRowPresenter onCreateRowPresenter();
+    protected abstract @NonNull PlaybackRowPresenter onCreateRowPresenter();
 
     /**
      * Sets the controls to auto hide after a timeout when media is playing.
@@ -358,16 +358,14 @@ public abstract class PlaybackBaseControlGlue<T extends PlayerAdapter> extends P
     /**
      * Returns the playback controls row managed by the glue layer.
      */
-    @Nullable
-    public PlaybackControlsRow getControlsRow() {
+    public @Nullable PlaybackControlsRow getControlsRow() {
         return mControlsRow;
     }
 
     /**
      * Returns the playback controls row Presenter managed by the glue layer.
      */
-    @Nullable
-    public PlaybackRowPresenter getPlaybackRowPresenter() {
+    public @Nullable PlaybackRowPresenter getPlaybackRowPresenter() {
         return mControlsRowPresenter;
     }
 
@@ -523,8 +521,7 @@ public abstract class PlaybackBaseControlGlue<T extends PlayerAdapter> extends P
     /**
      * @return The drawable representing cover image.
      */
-    @Nullable
-    public Drawable getArt() {
+    public @Nullable Drawable getArt() {
         return mCover;
     }
 
@@ -546,8 +543,7 @@ public abstract class PlaybackBaseControlGlue<T extends PlayerAdapter> extends P
     /**
      * Return The media subtitle.
      */
-    @Nullable
-    public CharSequence getSubtitle() {
+    public @Nullable CharSequence getSubtitle() {
         return mSubtitle;
     }
 
@@ -568,8 +564,7 @@ public abstract class PlaybackBaseControlGlue<T extends PlayerAdapter> extends P
     /**
      * Returns the title of the media item.
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         return mTitle;
     }
 

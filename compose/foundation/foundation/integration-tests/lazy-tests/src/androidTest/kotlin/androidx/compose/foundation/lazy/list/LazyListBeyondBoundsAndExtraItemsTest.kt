@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.BeyondBoundsLayout
@@ -55,7 +54,6 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
     private val placementComparator =
         PlacementComparator(beyondBoundsLayoutDirection, layoutDirection, reverseLayout)
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun verifyItemsArePlacedBeforeBeyondBoundsItems_oneBeyondBoundItem() {
         // Arrange
@@ -69,7 +67,7 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
                     modifier = Modifier.size(30.dp),
                     state = lazyListState,
                     beyondBoundsItemCount = 1,
-                    reverseLayout = reverseLayout
+                    reverseLayout = reverseLayout,
                 ) {
                     items(5) { index -> Box(Modifier.size(10.dp).trackPlaced(index)) }
                     item {
@@ -108,7 +106,6 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun verifyItemsArePlacedBeforeBeyondBoundsItems_twoBeyondBoundItem() {
         // Arrange
@@ -123,7 +120,7 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
                     modifier = Modifier.size(30.dp),
                     state = lazyListState,
                     beyondBoundsItemCount = 1,
-                    reverseLayout = reverseLayout
+                    reverseLayout = reverseLayout,
                 ) {
                     items(5) { index -> Box(Modifier.size(10.dp).trackPlaced(index)) }
                     item {
@@ -181,7 +178,7 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
                                     orientation,
                                     beyondBoundsLayoutDirection,
                                     reverseLayout,
-                                    layoutDirection
+                                    layoutDirection,
                                 )
                             )
                         }
@@ -194,7 +191,7 @@ class LazyListBeyondBoundsAndExtraItemsTest(val config: Config) :
             val orientation: Orientation,
             val beyondBoundsLayoutDirection: BeyondBoundsLayout.LayoutDirection,
             val reverseLayout: Boolean,
-            val layoutDirection: LayoutDirection
+            val layoutDirection: LayoutDirection,
         ) {
             override fun toString(): String {
                 return "orientation=$orientation " +

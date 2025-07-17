@@ -23,8 +23,9 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewParent;
 
-import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat.ScrollAxis;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * This interface should be implemented by {@link android.view.View View} subclasses that wish
@@ -153,7 +154,7 @@ public interface NestedScrollingChild {
      * @see #dispatchNestedPreScroll(int, int, int[], int[])
      */
     boolean dispatchNestedScroll(int dxConsumed, int dyConsumed,
-            int dxUnconsumed, int dyUnconsumed, @Nullable int[] offsetInWindow);
+            int dxUnconsumed, int dyUnconsumed, int @Nullable [] offsetInWindow);
 
     /**
      * Dispatch one step of a nested scroll in progress before this view consumes any portion of it.
@@ -174,8 +175,8 @@ public interface NestedScrollingChild {
      * @return true if the parent consumed some or all of the scroll delta
      * @see #dispatchNestedScroll(int, int, int, int, int[])
      */
-    boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
-            @Nullable int[] offsetInWindow);
+    boolean dispatchNestedPreScroll(int dx, int dy, int @Nullable [] consumed,
+            int @Nullable [] offsetInWindow);
 
     /**
      * Dispatch a fling to a nested scrolling parent.

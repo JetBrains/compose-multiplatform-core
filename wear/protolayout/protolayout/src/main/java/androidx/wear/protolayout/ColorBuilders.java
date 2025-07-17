@@ -21,17 +21,19 @@ import static androidx.wear.protolayout.expression.Preconditions.checkNotNull;
 import android.graphics.Color;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders.DegreesProp;
+import androidx.wear.protolayout.DimensionBuilders.OffsetDimension;
 import androidx.wear.protolayout.TypeBuilders.FloatProp;
 import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
 import androidx.wear.protolayout.proto.ColorProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,8 +45,7 @@ public final class ColorBuilders {
 
     /** Shortcut for building a {@link ColorProp} using an ARGB value. */
     @RequiresSchemaVersion(major = 1, minor = 0)
-    @NonNull
-    public static ColorProp argb(@ColorInt int colorArgb) {
+    public static @NonNull ColorProp argb(@ColorInt int colorArgb) {
         return new ColorProp.Builder(colorArgb).build();
     }
 
@@ -52,7 +53,7 @@ public final class ColorBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class ColorProp {
         private final ColorProto.ColorProp mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ColorProp(ColorProto.ColorProp impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -75,8 +76,7 @@ public final class ColorBuilders {
          * required to be set to support older renderers that only read the static value. If {@code
          * dynamicValue} has an invalid result, the provided static value will be used instead.
          */
-        @Nullable
-        public DynamicColor getDynamicValue() {
+        public @Nullable DynamicColor getDynamicValue() {
             if (mImpl.hasDynamicValue()) {
                 return DynamicBuilders.dynamicColorFromProto(mImpl.getDynamicValue());
             } else {
@@ -86,34 +86,29 @@ public final class ColorBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ColorProp fromProto(
-                @NonNull ColorProto.ColorProp proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull ColorProp fromProto(
+                ColorProto.@NonNull ColorProp proto, @Nullable Fingerprint fingerprint) {
             return new ColorProp(proto, fingerprint);
         }
 
-        @NonNull
-        static ColorProp fromProto(@NonNull ColorProto.ColorProp proto) {
+        static @NonNull ColorProp fromProto(ColorProto.@NonNull ColorProp proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ColorProto.ColorProp toProto() {
+        public ColorProto.@NonNull ColorProp toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ColorProp{" + "argb=" + getArgb() + ", dynamicValue=" + getDynamicValue() + "}";
         }
 
@@ -145,8 +140,7 @@ public final class ColorBuilders {
              * Color#TRANSPARENT}) will be used instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
-            @NonNull
-            public Builder setArgb(@ColorInt int argb) {
+            public @NonNull Builder setArgb(@ColorInt int argb) {
                 mImpl.setArgb(argb);
                 mFingerprint.recordPropertyUpdate(1, argb);
                 return this;
@@ -159,8 +153,7 @@ public final class ColorBuilders {
              * instead.
              */
             @RequiresSchemaVersion(major = 1, minor = 200)
-            @NonNull
-            public Builder setDynamicValue(@NonNull DynamicColor dynamicValue) {
+            public @NonNull Builder setDynamicValue(@NonNull DynamicColor dynamicValue) {
                 mImpl.setDynamicValue(dynamicValue.toDynamicColorProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(dynamicValue.getFingerprint()).aggregateValueAsInt());
@@ -174,8 +167,7 @@ public final class ColorBuilders {
              *     #setDynamicValue(DynamicColor)} but neither {@link #Builder(int)} nor {@link
              *     #setArgb(int)} is used to provide a static value.
              */
-            @NonNull
-            public ColorProp build() {
+            public @NonNull ColorProp build() {
                 if (mImpl.hasDynamicValue() && !mImpl.hasArgb()) {
                     throw new IllegalStateException("Static value is missing.");
                 }
@@ -188,7 +180,7 @@ public final class ColorBuilders {
     @RequiresSchemaVersion(major = 1, minor = 300)
     public static final class ColorStop {
         private final ColorProto.ColorStop mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         ColorStop(ColorProto.ColorStop impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -199,8 +191,7 @@ public final class ColorBuilders {
          * Gets the color for this stop. Only opaque colors are supported. Any transparent colors
          * will have their alpha component set to 0xFF (opaque).
          */
-        @NonNull
-        public ColorProp getColor() {
+        public @NonNull ColorProp getColor() {
             return ColorProp.fromProto(mImpl.getColor());
         }
 
@@ -208,8 +199,7 @@ public final class ColorBuilders {
          * Gets the relative offset for this color, between 0 and 1. This determines where the color
          * is positioned relative to a gradient space.
          */
-        @Nullable
-        public FloatProp getOffset() {
+        public @Nullable FloatProp getOffset() {
             if (mImpl.hasOffset()) {
                 return FloatProp.fromProto(mImpl.getOffset());
             } else {
@@ -219,34 +209,29 @@ public final class ColorBuilders {
 
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static ColorStop fromProto(
-                @NonNull ColorProto.ColorStop proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull ColorStop fromProto(
+                ColorProto.@NonNull ColorStop proto, @Nullable Fingerprint fingerprint) {
             return new ColorStop(proto, fingerprint);
         }
 
-        @NonNull
-        static ColorStop fromProto(@NonNull ColorProto.ColorStop proto) {
+        static @NonNull ColorStop fromProto(ColorProto.@NonNull ColorStop proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ColorProto.ColorStop toProto() {
+        public ColorProto.@NonNull ColorStop toProto() {
             return mImpl;
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "ColorStop{" + "color=" + getColor() + ", offset=" + getOffset() + "}";
         }
 
@@ -256,18 +241,28 @@ public final class ColorBuilders {
             private final Fingerprint mFingerprint = new Fingerprint(-468737254);
 
             /**
-             * Sets the color for this stop. Only opaque colors are supported. Any transparent
-             * colors will have their alpha component set to 0xFF (opaque).
+             * Creates an instance of {@link Builder}.
              *
-             * <p>Note that this field only supports static values.
+             * @param color the color for this stop. Only opaque colors are supported. Any
+             *     transparent colors will have their alpha component set to 0xFF (opaque).
+             * @param offset the relative offset for this color, between 0 and 1. This determines
+             *     where the color is positioned relative to a gradient space.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            Builder setColor(@NonNull ColorProp color) {
-                if (color.getDynamicValue() != null) {
-                    throw new IllegalArgumentException(
-                            "ColorStop.Builder.setColor doesn't support dynamic values.");
-                }
+            public Builder(@NonNull ColorProp color, @NonNull FloatProp offset) {
+                setColor(color);
+                setOffset(offset);
+            }
+
+            @RequiresSchemaVersion(major = 1, minor = 300)
+            Builder() {}
+
+            /**
+             * Sets the color for this stop. Only opaque colors are supported. Any transparent
+             * colors will have their alpha component set to 0xFF (opaque).
+             */
+            @RequiresSchemaVersion(major = 1, minor = 300)
+            @NonNull Builder setColor(@NonNull ColorProp color) {
                 mImpl.setColor(color.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(color.getFingerprint()).aggregateValueAsInt());
@@ -283,12 +278,7 @@ public final class ColorBuilders {
              * @throws IllegalArgumentException if the offset value is outside of range [0,1].
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            Builder setOffset(@NonNull FloatProp offset) {
-                if (offset.getDynamicValue() != null) {
-                    throw new IllegalArgumentException(
-                            "ColorStop.Builder.setOffset doesn't support dynamic values.");
-                }
+            @NonNull Builder setOffset(@NonNull FloatProp offset) {
                 float value = offset.getValue();
                 if (value < 0f || value > 1f) {
                     throw new IllegalArgumentException(
@@ -300,28 +290,8 @@ public final class ColorBuilders {
                 return this;
             }
 
-            /**
-             * Creates an instance of {@link Builder}.
-             *
-             * @param color the color for this stop. Only opaque colors are supported. Any
-             *     transparent colors will have their alpha component set to 0xFF (opaque). Note
-             *     that this parameter only supports static values.
-             * @param offset the relative offset for this color, between 0 and 1. This determines
-             *     where the color is positioned relative to a gradient space. Note that this
-             *     parameter only supports static values.
-             */
-            @RequiresSchemaVersion(major = 1, minor = 300)
-            public Builder(@NonNull ColorProp color, @NonNull FloatProp offset) {
-                this.setColor(color);
-                this.setOffset(offset);
-            }
-
-            /** Creates an instance of {@link Builder}. */
-            Builder() {}
-
             /** Builds an instance from accumulated values. */
-            @NonNull
-            public ColorStop build() {
+            public @NonNull ColorStop build() {
                 return new ColorStop(mImpl.build(), mFingerprint);
             }
         }
@@ -337,7 +307,7 @@ public final class ColorBuilders {
     @RequiresSchemaVersion(major = 1, minor = 300)
     public static final class SweepGradient implements Brush {
         private final ColorProto.SweepGradient mImpl;
-        @Nullable private final Fingerprint mFingerprint;
+        private final @Nullable Fingerprint mFingerprint;
 
         SweepGradient(ColorProto.SweepGradient impl, @Nullable Fingerprint fingerprint) {
             this.mImpl = impl;
@@ -357,8 +327,7 @@ public final class ColorBuilders {
          *
          * <p>If offset values are not set, the colors are evenly distributed in the gradient.
          */
-        @NonNull
-        public List<ColorStop> getColorStops() {
+        public @NonNull List<ColorStop> getColorStops() {
             List<ColorStop> list = new ArrayList<>();
             for (ColorProto.ColorStop item : mImpl.getColorStopsList()) {
                 list.add(ColorStop.fromProto(item));
@@ -375,8 +344,7 @@ public final class ColorBuilders {
          * length span. Values greater than 360 degrees correspond to upper layers of the arc line
          * as it wraps over itself.
          */
-        @NonNull
-        public DegreesProp getStartAngle() {
+        public @NonNull DegreesProp getStartAngle() {
             if (mImpl.hasStartAngle()) {
                 return DegreesProp.fromProto(mImpl.getStartAngle());
             } else {
@@ -393,8 +361,7 @@ public final class ColorBuilders {
          * length span. Values greater than 360 degrees correspond to upper layers of the arc line
          * as it wraps over itself.
          */
-        @NonNull
-        public DegreesProp getEndAngle() {
+        public @NonNull DegreesProp getEndAngle() {
             if (mImpl.hasEndAngle()) {
                 return DegreesProp.fromProto(mImpl.getEndAngle());
             } else {
@@ -404,40 +371,34 @@ public final class ColorBuilders {
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        public Fingerprint getFingerprint() {
+        public @Nullable Fingerprint getFingerprint() {
             return mFingerprint;
         }
 
         /** Creates a new wrapper instance from the proto. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public static SweepGradient fromProto(
-                @NonNull ColorProto.SweepGradient proto, @Nullable Fingerprint fingerprint) {
+        public static @NonNull SweepGradient fromProto(
+                ColorProto.@NonNull SweepGradient proto, @Nullable Fingerprint fingerprint) {
             return new SweepGradient(proto, fingerprint);
         }
 
-        @NonNull
-        static SweepGradient fromProto(@NonNull ColorProto.SweepGradient proto) {
+        static @NonNull SweepGradient fromProto(ColorProto.@NonNull SweepGradient proto) {
             return fromProto(proto, null);
         }
 
         /** Returns the internal proto instance. */
-        @NonNull
-        ColorProto.SweepGradient toProto() {
+        ColorProto.@NonNull SweepGradient toProto() {
             return mImpl;
         }
 
         @Override
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        public ColorProto.Brush toBrushProto() {
+        public ColorProto.@NonNull Brush toBrushProto() {
             return ColorProto.Brush.newBuilder().setSweepGradient(mImpl).build();
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return "SweepGradient{"
                     + "colorStops="
                     + getColorStops()
@@ -469,8 +430,7 @@ public final class ColorBuilders {
              * <p>If offset values are not set, the colors are evenly distributed in the gradient.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            private Builder addColorStop(@NonNull ColorStop colorStop) {
+            private @NonNull Builder addColorStop(@NonNull ColorStop colorStop) {
                 mImpl.addColorStops(colorStop.toProto());
                 mFingerprint.recordPropertyUpdate(
                         1, checkNotNull(colorStop.getFingerprint()).aggregateValueAsInt());
@@ -485,16 +445,9 @@ public final class ColorBuilders {
              * angle is the angle where the line starts. The value represents a relative position in
              * the line's length span. Values greater than 360 degrees correspond to upper layers of
              * the arc line as it wraps over itself.
-             *
-             * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setStartAngle(@NonNull DegreesProp startAngle) {
-                if (startAngle.getDynamicValue() != null) {
-                    throw new IllegalArgumentException(
-                            "SweepGradient.Builder.setStartAngle doesn't support dynamic values.");
-                }
+            public @NonNull Builder setStartAngle(@NonNull DegreesProp startAngle) {
                 mImpl.setStartAngle(startAngle.toProto());
                 mFingerprint.recordPropertyUpdate(
                         2, checkNotNull(startAngle.getFingerprint()).aggregateValueAsInt());
@@ -509,16 +462,9 @@ public final class ColorBuilders {
              * angle is the angle where the line starts. The value represents a relative position in
              * the line's length span. Values greater than 360 degrees correspond to upper layers of
              * the arc line as it wraps over itself.
-             *
-             * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
-            @NonNull
-            public Builder setEndAngle(@NonNull DegreesProp endAngle) {
-                if (endAngle.getDynamicValue() != null) {
-                    throw new IllegalArgumentException(
-                            "SweepGradient.Builder.setEndAngle doesn't support dynamic values.");
-                }
+            public @NonNull Builder setEndAngle(@NonNull DegreesProp endAngle) {
                 mImpl.setEndAngle(endAngle.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(endAngle.getFingerprint()).aggregateValueAsInt());
@@ -538,7 +484,7 @@ public final class ColorBuilders {
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
             @SafeVarargs
-            public Builder(@NonNull ColorStop... colorStops) {
+            public Builder(ColorStop @NonNull ... colorStops) {
                 if (colorStops.length < 2 || colorStops.length > 10) {
                     throw new IllegalArgumentException(
                             "Size of colorStops must not be less than 2 or greater than 10. Got "
@@ -556,13 +502,12 @@ public final class ColorBuilders {
              *
              * @param colors The color sequence to be distributed around the gradient center. The
              *     color sequence is distributed between the gradient's start and end angles.
-             *
              * @throws IllegalArgumentException if the number of colors is less than 2 or larger
              *     than 10.
              */
             @RequiresSchemaVersion(major = 1, minor = 300)
             @SafeVarargs
-            public Builder(@NonNull ColorProp... colors) {
+            public Builder(ColorProp @NonNull ... colors) {
                 if (colors.length < 2 || colors.length > 10) {
                     throw new IllegalArgumentException(
                             "Size of colors must not be less than 2 or greater than 10. Got "
@@ -581,14 +526,281 @@ public final class ColorBuilders {
              *     10.
              */
             @Override
-            @NonNull
-            public SweepGradient build() {
+            public @NonNull SweepGradient build() {
                 int colorStopsCount = mImpl.getColorStopsCount();
                 if (colorStopsCount < 2 || colorStopsCount > 10) {
                     throw new IllegalStateException(
                             "Size of colorStops must not be less than 2 or greater than 10");
                 }
                 return new SweepGradient(mImpl.build(), mFingerprint);
+            }
+        }
+    }
+
+    /**
+     * A linear gradient with the provided colors based on defined start and end coordinates.
+     *
+     * <p>The colors are dispersed at the offsets defined in each color stop.
+     */
+    @RequiresSchemaVersion(major = 1, minor = 500)
+    public static final class LinearGradient implements Brush {
+        private final ColorProto.LinearGradient mImpl;
+        private final @Nullable Fingerprint mFingerprint;
+
+        LinearGradient(ColorProto.LinearGradient impl, @Nullable Fingerprint fingerprint) {
+            this.mImpl = impl;
+            this.mFingerprint = fingerprint;
+        }
+
+        /**
+         * Gets the color stops defining how the colors are distributed from the start to the end
+         * coordinates.
+         *
+         * <p>A color stop is a pair of a color and its offset in the gradient. The offset is the
+         * relative position of the color, beginning with 0 at the start coordinate and ending with
+         * 1.0 at the end coordinate.
+         *
+         * <p>There must be at least 2 colors and at most 10 colors.
+         *
+         * <p>If offset values are not set, the colors are evenly distributed in the gradient.
+         */
+        public @NonNull List<ColorStop> getColorStops() {
+            List<ColorStop> list = new ArrayList<>();
+            for (ColorProto.ColorStop item : mImpl.getColorStopsList()) {
+                list.add(ColorStop.fromProto(item));
+            }
+            return Collections.unmodifiableList(list);
+        }
+
+        /**
+         * Gets the starting x position of the linear gradient. Defaults to the left side of the
+         * element.
+         */
+        public @Nullable OffsetDimension getStartX() {
+            if (mImpl.hasStartX()) {
+                return DimensionBuilders.offsetDimensionFromProto(mImpl.getStartX());
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Gets the starting y position of the linear gradient. Defaults to the top side of the
+         * element.
+         */
+        public @Nullable OffsetDimension getStartY() {
+            if (mImpl.hasStartY()) {
+                return DimensionBuilders.offsetDimensionFromProto(mImpl.getStartY());
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Gets the ending y position of the linear gradient. Defaults to the right side of the
+         * element.
+         */
+        public @Nullable OffsetDimension getEndX() {
+            if (mImpl.hasEndX()) {
+                return DimensionBuilders.offsetDimensionFromProto(mImpl.getEndX());
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * Gets the ending y position of the linear gradient. Defaults to the top side of the
+         * element.
+         */
+        public @Nullable OffsetDimension getEndY() {
+            if (mImpl.hasEndY()) {
+                return DimensionBuilders.offsetDimensionFromProto(mImpl.getEndY());
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public @Nullable Fingerprint getFingerprint() {
+            return mFingerprint;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull LinearGradient fromProto(
+                ColorProto.@NonNull LinearGradient proto, @Nullable Fingerprint fingerprint) {
+            return new LinearGradient(proto, fingerprint);
+        }
+
+        static @NonNull LinearGradient fromProto(ColorProto.@NonNull LinearGradient proto) {
+            return fromProto(proto, null);
+        }
+
+        /** Returns the internal proto instance. */
+        ColorProto.@NonNull LinearGradient toProto() {
+            return mImpl;
+        }
+
+        @Override
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public ColorProto.@NonNull Brush toBrushProto() {
+            return ColorProto.Brush.newBuilder().setLinearGradient(mImpl).build();
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "LinearGradient{"
+                    + "colorStops="
+                    + getColorStops()
+                    + ", startX="
+                    + getStartX()
+                    + ", startY="
+                    + getStartY()
+                    + ", endX="
+                    + getEndX()
+                    + ", endY="
+                    + getEndY()
+                    + "}";
+        }
+
+        /** Builder for {@link LinearGradient}. */
+        @SuppressWarnings("HiddenSuperclass")
+        public static final class Builder implements Brush.Builder {
+            private final ColorProto.LinearGradient.Builder mImpl =
+                    ColorProto.LinearGradient.newBuilder();
+            private final Fingerprint mFingerprint = new Fingerprint(-1075994710);
+
+            /**
+             * Adds one item to the color stops defining how the colors are distributed from the
+             * start to the end coordinates.
+             *
+             * <p>A color stop is a pair of a color and its offset in the gradient. The offset is
+             * the relative position of the color, beginning with 0 at the start coordinate and
+             * ending with 1.0 at the end coordinate.
+             *
+             * <p>There must be at least 2 colors and at most 10 colors.
+             *
+             * <p>If offset values are not set, the colors are evenly distributed in the gradient.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            private @NonNull Builder addColorStop(@NonNull ColorStop colorStop) {
+                mImpl.addColorStops(colorStop.toProto());
+                mFingerprint.recordPropertyUpdate(
+                        1, checkNotNull(colorStop.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the starting x position of the linear gradient. Defaults to the left side of the
+             * element.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            public @NonNull Builder setStartX(@NonNull OffsetDimension startX) {
+                mImpl.setStartX(startX.toOffsetDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        2, checkNotNull(startX.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the starting y position of the linear gradient. Defaults to the top side of the
+             * element.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            public @NonNull Builder setStartY(@NonNull OffsetDimension startY) {
+                mImpl.setStartY(startY.toOffsetDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        3, checkNotNull(startY.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the ending y position of the linear gradient. Defaults to the right side of the
+             * element.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            public @NonNull Builder setEndX(@NonNull OffsetDimension endX) {
+                mImpl.setEndX(endX.toOffsetDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        4, checkNotNull(endX.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Sets the ending y position of the linear gradient. Defaults to the top side of the
+             * element.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            public @NonNull Builder setEndY(@NonNull OffsetDimension endY) {
+                mImpl.setEndY(endY.toOffsetDimensionProto());
+                mFingerprint.recordPropertyUpdate(
+                        5, checkNotNull(endY.getFingerprint()).aggregateValueAsInt());
+                return this;
+            }
+
+            /**
+             * Creates an instance of {@link Builder}.
+             *
+             * @param colorStops The color stops defining how the colors are distributed from the
+             *     start to the end coordinates.
+             *     <p>A color stop is a pair of a color and its offset in the gradient. The offset
+             *     is the relative position of the color, beginning with 0 from the start coordinate
+             *     and ending with 1.0 at the end coordinate.
+             * @throws IllegalArgumentException if the number of colors is less than 2 or larger
+             *     than 10.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            @SafeVarargs
+            public Builder(ColorStop @NonNull ... colorStops) {
+                if (colorStops.length < 2 || colorStops.length > 10) {
+                    throw new IllegalArgumentException(
+                            "Size of colorStops must not be less than 2 or greater than 10. Got "
+                                    + colorStops.length);
+                }
+                for (ColorStop colorStop : colorStops) {
+                    addColorStop(colorStop);
+                }
+            }
+
+            /**
+             * Creates an instance of {@link Builder}.
+             *
+             * <p>The colors are evenly distributed in the gradient.
+             *
+             * @param colors The color sequence to be distributed between the gradient's start and
+             *     end coordinates.
+             * @throws IllegalArgumentException if the number of colors is less than 2 or larger
+             *     than 10.
+             */
+            @RequiresSchemaVersion(major = 1, minor = 500)
+            @SafeVarargs
+            public Builder(ColorProp @NonNull ... colors) {
+                if (colors.length < 2 || colors.length > 10) {
+                    throw new IllegalArgumentException(
+                            "Size of colors must not be less than 2 or greater than 10. Got "
+                                    + colors.length);
+                }
+                for (ColorProp colorProp : colors) {
+                    ColorStop stop = new ColorStop.Builder().setColor(colorProp).build();
+                    addColorStop(stop);
+                }
+            }
+
+            /**
+             * Builds an instance from accumulated values.
+             *
+             * @throws IllegalStateException if size of colorStops is less than 2 or greater than
+             *     10.
+             */
+            @Override
+            public @NonNull LinearGradient build() {
+                int colorStopsCount = mImpl.getColorStopsCount();
+                if (colorStopsCount < 2 || colorStopsCount > 10) {
+                    throw new IllegalStateException(
+                            "Size of colorStops must not be less than 2 or greater than 10");
+                }
+                return new LinearGradient(mImpl.build(), mFingerprint);
             }
         }
     }
@@ -601,37 +813,35 @@ public final class ColorBuilders {
     public interface Brush {
         /** Get the protocol buffer representation of this object. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @NonNull
-        ColorProto.Brush toBrushProto();
+        ColorProto.@NonNull Brush toBrushProto();
 
         /** Get the fingerprint for this object or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
-        @Nullable
-        Fingerprint getFingerprint();
+        @Nullable Fingerprint getFingerprint();
 
         /** Builder to create {@link Brush} objects. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         interface Builder {
 
             /** Builds an instance with values accumulated in this Builder. */
-            @NonNull
-            Brush build();
+            @NonNull Brush build();
         }
     }
 
     /** Creates a new wrapper instance from the proto. */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
-    public static Brush brushFromProto(
-            @NonNull ColorProto.Brush proto, @Nullable Fingerprint fingerprint) {
+    public static @NonNull Brush brushFromProto(
+            ColorProto.@NonNull Brush proto, @Nullable Fingerprint fingerprint) {
         if (proto.hasSweepGradient()) {
             return SweepGradient.fromProto(proto.getSweepGradient(), fingerprint);
+        }
+        if (proto.hasLinearGradient()) {
+            return LinearGradient.fromProto(proto.getLinearGradient(), fingerprint);
         }
         throw new IllegalStateException("Proto was not a recognised instance of Brush");
     }
 
-    @NonNull
-    static Brush brushFromProto(@NonNull ColorProto.Brush proto) {
+    static @NonNull Brush brushFromProto(ColorProto.@NonNull Brush proto) {
         return brushFromProto(proto, null);
     }
 }

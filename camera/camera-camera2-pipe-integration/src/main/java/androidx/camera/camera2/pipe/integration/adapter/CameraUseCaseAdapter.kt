@@ -22,6 +22,8 @@ import android.hardware.camera2.CameraDevice
 import android.util.Size
 import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.core.Log.info
+import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.pipe.integration.compat.quirk.PreviewUnderExposureQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.setupHDRnet
 import androidx.camera.camera2.pipe.integration.compat.workaround.toggleHDRPlus
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
@@ -51,7 +53,7 @@ import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
  * and aspect ratios for the display.
  */
 @Suppress("DEPRECATION")
-class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
+public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
     private val displayInfoManager by lazy { DisplayInfoManager(context) }
 
     init {
@@ -79,20 +81,20 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
         when (captureType) {
             CaptureType.IMAGE_CAPTURE,
             CaptureType.PREVIEW,
-            // Uses TEMPLATE_PREVIEW instead of TEMPLATE_RECORD for StreamSharing. Since there
-            // is a issue that captured results being stretched when requested for recording on
-            // some models, it would be safer to request for preview, which is also better
-            // tested. More detail please see b/297167569.
             CaptureType.STREAM_SHARING,
             CaptureType.METERING_REPEATING,
             CaptureType.IMAGE_ANALYSIS ->
                 sessionBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
             CaptureType.VIDEO_CAPTURE ->
-                sessionBuilder.setTemplateType(CameraDevice.TEMPLATE_RECORD)
+                sessionBuilder.setTemplateType(
+                    if (DeviceQuirks[PreviewUnderExposureQuirk::class.java] != null)
+                        CameraDevice.TEMPLATE_PREVIEW
+                    else CameraDevice.TEMPLATE_RECORD
+                )
         }
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_DEFAULT_SESSION_CONFIG,
-            sessionBuilder.build()
+            sessionBuilder.build(),
         )
         val captureBuilder = CaptureConfig.Builder()
         when (captureType) {
@@ -103,16 +105,18 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
                     else CameraDevice.TEMPLATE_STILL_CAPTURE
             CaptureType.PREVIEW,
             CaptureType.IMAGE_ANALYSIS,
-            // Uses TEMPLATE_PREVIEW instead of TEMPLATE_RECORD for StreamSharing to align with
-            // SessionConfig's setup. More detail please see b/297167569.
             CaptureType.STREAM_SHARING,
             CaptureType.METERING_REPEATING ->
                 captureBuilder.templateType = CameraDevice.TEMPLATE_PREVIEW
-            CaptureType.VIDEO_CAPTURE -> captureBuilder.templateType = CameraDevice.TEMPLATE_RECORD
+            CaptureType.VIDEO_CAPTURE ->
+                captureBuilder.templateType =
+                    if (DeviceQuirks[PreviewUnderExposureQuirk::class.java] != null)
+                        CameraDevice.TEMPLATE_PREVIEW
+                    else CameraDevice.TEMPLATE_RECORD
         }
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_DEFAULT_CAPTURE_CONFIG,
-            captureBuilder.build()
+            captureBuilder.build(),
         )
 
         // Only CAPTURE_TYPE_IMAGE_CAPTURE has its own ImageCaptureOptionUnpacker. Other
@@ -123,11 +127,11 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
                 ImageCaptureOptionUnpacker.INSTANCE
             } else {
                 DefaultCaptureOptionsUnpacker.INSTANCE
-            }
+            },
         )
         mutableConfig.insertOption(
             UseCaseConfig.OPTION_SESSION_CONFIG_UNPACKER,
-            DefaultSessionOptionsUnpacker
+            DefaultSessionOptionsUnpacker,
         )
 
         if (captureType == CaptureType.PREVIEW) {
@@ -137,12 +141,12 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
 
         mutableConfig.insertOption(
             ImageOutputConfig.OPTION_TARGET_ROTATION,
-            displayInfoManager.defaultDisplay.rotation
+            displayInfoManager.getMaxSizeDisplay().rotation,
         )
         return OptionsBundle.from(mutableConfig)
     }
 
-    open class DefaultCaptureOptionsUnpacker : CaptureConfig.OptionUnpacker {
+    public open class DefaultCaptureOptionsUnpacker : CaptureConfig.OptionUnpacker {
         @OptIn(ExperimentalCamera2Interop::class)
         override fun unpack(config: UseCaseConfig<*>, builder: CaptureConfig.Builder) {
             val defaultCaptureConfig = config.getDefaultCaptureConfig(null)
@@ -180,12 +184,12 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             builder.addImplementationOptions(camera2Config.captureRequestOptions)
         }
 
-        companion object {
-            val INSTANCE = DefaultCaptureOptionsUnpacker()
+        public companion object {
+            public val INSTANCE: DefaultCaptureOptionsUnpacker = DefaultCaptureOptionsUnpacker()
         }
     }
 
-    class ImageCaptureOptionUnpacker : DefaultCaptureOptionsUnpacker() {
+    public class ImageCaptureOptionUnpacker : DefaultCaptureOptionsUnpacker() {
 
         override fun unpack(config: UseCaseConfig<*>, builder: CaptureConfig.Builder) {
             super.unpack(config, builder)
@@ -195,17 +199,17 @@ class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
             )
         }
 
-        companion object {
-            val INSTANCE = ImageCaptureOptionUnpacker()
+        public companion object {
+            public val INSTANCE: ImageCaptureOptionUnpacker = ImageCaptureOptionUnpacker()
         }
     }
 
-    object DefaultSessionOptionsUnpacker : SessionConfig.OptionUnpacker {
+    public object DefaultSessionOptionsUnpacker : SessionConfig.OptionUnpacker {
         @OptIn(ExperimentalCamera2Interop::class)
         override fun unpack(
             resolution: Size,
             config: UseCaseConfig<*>,
-            builder: SessionConfig.Builder
+            builder: SessionConfig.Builder,
         ) {
             val defaultSessionConfig = config.getDefaultSessionConfig(/* valueIfMissing= */ null)
 

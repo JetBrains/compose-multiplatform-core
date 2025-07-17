@@ -21,19 +21,21 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
+    api(libs.jspecify)
     api(project(":work:work-runtime"))
 
     implementation("androidx.lifecycle:lifecycle-livedata-core:2.6.2")
-    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
@@ -41,31 +43,27 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.multidex)
 
     testImplementation(libs.truth)
     testImplementation(libs.testCore)
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinCoroutinesAndroid)
 }
 
 androidx {
     name = "WorkManager Testing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager testing library"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }
 
 android {
-    namespace "androidx.work.testing"
-    defaultConfig {
-        multiDexEnabled = true
-    }
+    compileSdk = 35
+    namespace = "androidx.work.testing"
 }

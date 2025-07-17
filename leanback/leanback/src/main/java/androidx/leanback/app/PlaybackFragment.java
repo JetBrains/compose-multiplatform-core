@@ -21,6 +21,7 @@ import android.animation.AnimatorInflater;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
+import android.app.Fragment;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -37,10 +38,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import android.app.Fragment;
 import androidx.leanback.R;
 import androidx.leanback.animation.LogAccelerateInterpolator;
 import androidx.leanback.animation.LogDecelerateInterpolator;
@@ -62,6 +60,9 @@ import androidx.leanback.widget.RowPresenter;
 import androidx.leanback.widget.SparseArrayObjectAdapter;
 import androidx.leanback.widget.VerticalGridView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fragment for displaying playback controls and related content.
@@ -915,8 +916,8 @@ public class PlaybackFragment extends Fragment {
             };
 
     @Override
-    @Nullable
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+            Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.lb_playback_fragment, container, false);
         mBackgroundView = mRootView.findViewById(R.id.playback_fragment_background);
         mRowsFragment = (RowsFragment) getChildFragmentManager().findFragmentById(

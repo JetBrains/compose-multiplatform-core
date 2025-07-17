@@ -16,9 +16,10 @@
 
 package androidx.camera.core.processing;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A provider that supplies OpenGL shader code.
@@ -51,15 +52,9 @@ public interface ShaderProvider {
      * @param fragCoordsVarName the variable name of the fragment coordinates.
      * @return the shader code. Return null to use the default shader.
      */
-    @Nullable
-    default String createFragmentShader(
+    default @Nullable String createFragmentShader(
             @NonNull String samplerVarName,
             @NonNull String fragCoordsVarName) {
         return null;
     }
-
-    /** A default provider that will use the default shader code without any post-processing. */
-    ShaderProvider DEFAULT = new ShaderProvider() {
-        // Use default implementation.
-    };
 }

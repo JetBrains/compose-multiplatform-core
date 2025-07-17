@@ -23,9 +23,10 @@ import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,16 +44,15 @@ class IconSerializableHelper implements Serializable {
 
     private static final String TAG = "IconSerializableHelper";
 
-    @Nullable
-    static IconSerializableHelper create(@Nullable Icon icon) {
+    static @Nullable IconSerializableHelper create(@Nullable Icon icon) {
         if (icon == null) {
             return null;
         }
         return new IconSerializableHelper(icon);
     }
 
-    @Nullable
-    static Icon read(@NonNull ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    static @Nullable Icon read(@NonNull ObjectInputStream ois)
+            throws IOException, ClassNotFoundException {
         IconSerializableHelper helper = (IconSerializableHelper) ois.readObject();
         if (helper == null) {
             return null;
@@ -93,8 +93,7 @@ class IconSerializableHelper implements Serializable {
         }
     }
 
-    @Nullable
-    Icon toIcon() {
+    @Nullable Icon toIcon() {
         switch (mType) {
             case Icon.TYPE_RESOURCE:
                 return Icon.createWithResource(mResourcePackage, mResourceId);

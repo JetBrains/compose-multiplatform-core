@@ -24,12 +24,12 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-
 import com.example.androidx.mediarouting.R;
 import com.example.androidx.mediarouting.activities.MainActivity;
 import com.example.androidx.mediarouting.data.PlaylistItem;
 import com.example.androidx.mediarouting.session.SessionManager;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link ListView} {@link Adapter} for showing items in the playlist listview.

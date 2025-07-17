@@ -37,7 +37,7 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.Bullet
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.android.InternalPlatformTextApi
@@ -51,7 +51,6 @@ import androidx.compose.ui.text.android.style.ShadowSpan
 import androidx.compose.ui.text.android.style.SkewXSpan
 import androidx.compose.ui.text.android.style.TextDecorationSpan
 import androidx.compose.ui.text.android.style.TypefaceSpan
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
@@ -59,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intersect
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.platform.style.CustomBulletSpan
 import androidx.compose.ui.text.platform.style.DrawStyleSpan
 import androidx.compose.ui.text.platform.style.ShaderBrushSpan
 import androidx.compose.ui.text.style.BaselineShift
@@ -71,7 +71,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.util.fastFilter
+import androidx.compose.ui.util.fastFilteredMap
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.ceil
@@ -85,7 +85,7 @@ internal fun Spannable.setSpan(span: Any, start: Int, end: Int) {
 internal fun Spannable.setTextIndent(
     textIndent: TextIndent?,
     contextFontSize: Float,
-    density: Density
+    density: Density,
 ) {
     textIndent?.let { indent ->
         if (indent.firstLine == 0.sp && indent.restLine == 0.sp) return@let
@@ -106,18 +106,87 @@ internal fun Spannable.setTextIndent(
             setSpan(
                 LeadingMarginSpan.Standard(ceil(firstLine).toInt(), ceil(restLine).toInt()),
                 0,
-                length
+                length,
             )
         }
     }
 }
 
-@OptIn(InternalPlatformTextApi::class, ExperimentalTextApi::class)
+/**
+ * This implementation of the bullet span only draws the bullet. The actual indentation is added
+ * already inside the [setTextIndent] call since each bullet is a paragraph. The only exception is
+ * when there isn't enough space to put the bullet with its padding, in that case a minimum required
+ * space will be added.
+ *
+ * @param contextFontSize the font size that all text in this paragraph is drawn with
+ */
+internal fun Spannable.setBulletSpans(
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    contextFontSize: Float,
+    density: Density,
+    textIndent: TextIndent?,
+) {
+    val textIndentPx =
+        textIndent?.let {
+            with(density) {
+                when (textIndent.firstLine.type) {
+                    TextUnitType.Sp -> textIndent.firstLine.toPx()
+                    TextUnitType.Em -> textIndent.firstLine.value * contextFontSize
+                    else -> 0f
+                }
+            }
+        } ?: 0f
+    annotations.fastForEach {
+        (it.item as? Bullet)?.let { bullet ->
+            val bulletWidthPx = resolveBulletTextUnitToPx(bullet.width, contextFontSize, density)
+            val bulletHeightPx = resolveBulletTextUnitToPx(bullet.height, contextFontSize, density)
+            val gapWidthPx = resolveBulletTextUnitToPx(bullet.padding, contextFontSize, density)
+            if (!bulletWidthPx.isNaN() && !bulletHeightPx.isNaN() && !gapWidthPx.isNaN()) {
+                setSpan(
+                    CustomBulletSpan(
+                        shape = bullet.shape,
+                        bulletWidthPx = bulletWidthPx,
+                        bulletHeightPx = bulletHeightPx,
+                        gapWidthPx = gapWidthPx,
+                        density = density,
+                        brush = bullet.brush,
+                        alpha = bullet.alpha,
+                        drawStyle = bullet.drawStyle,
+                        textIndentPx = textIndentPx,
+                    ),
+                    it.start,
+                    it.end,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Resolves bullet's size or gap size [size] to pixels. If unknown [TextUnitType] is used, returns
+ * [Float.NaN] that needs to be handled on caller site.
+ */
+private fun resolveBulletTextUnitToPx(
+    size: TextUnit,
+    contextFontSize: Float,
+    density: Density,
+): Float {
+    if (size == TextUnit.Unspecified) return contextFontSize
+    return when (size.type) {
+        TextUnitType.Sp -> {
+            // if non-linear font scaling is enabled, this is handled by toPx() conversion already
+            with(density) { size.toPx() }
+        }
+        TextUnitType.Em -> size.value * contextFontSize
+        else -> Float.NaN
+    }
+}
+
 internal fun Spannable.setLineHeight(
     lineHeight: TextUnit,
     contextFontSize: Float,
     density: Density,
-    lineHeightStyle: LineHeightStyle
+    lineHeightStyle: LineHeightStyle,
 ) {
     val resolvedLineHeight = resolveLineHeightInPx(lineHeight, contextFontSize, density)
     if (!resolvedLineHeight.isNaN()) {
@@ -132,10 +201,11 @@ internal fun Spannable.setLineHeight(
                     endIndex = endIndex,
                     trimFirstLineTop = lineHeightStyle.trim.isTrimFirstLineTop(),
                     trimLastLineBottom = lineHeightStyle.trim.isTrimLastLineBottom(),
-                    topRatio = lineHeightStyle.alignment.topRatio
+                    topRatio = lineHeightStyle.alignment.topRatio,
+                    mode = lineHeightStyle.mode,
                 ),
             start = 0,
-            end = length
+            end = length,
         )
     }
 }
@@ -144,7 +214,7 @@ internal fun Spannable.setLineHeight(
 internal fun Spannable.setLineHeight(
     lineHeight: TextUnit,
     contextFontSize: Float,
-    density: Density
+    density: Density,
 ) {
     val resolvedLineHeight = resolveLineHeightInPx(lineHeight, contextFontSize, density)
     if (!resolvedLineHeight.isNaN()) {
@@ -155,7 +225,7 @@ internal fun Spannable.setLineHeight(
 private fun resolveLineHeightInPx(
     lineHeight: TextUnit,
     contextFontSize: Float,
-    density: Density
+    density: Density,
 ): Float {
     return when (lineHeight.type) {
         TextUnitType.Sp -> {
@@ -181,23 +251,24 @@ private fun isNonLinearFontScalingActive(density: Density) = density.fontScale >
 
 internal fun Spannable.setSpanStyles(
     contextTextStyle: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     density: Density,
     resolveTypeface: (FontFamily?, FontWeight, FontStyle, FontSynthesis) -> Typeface,
 ) {
 
-    setFontAttributes(contextTextStyle, spanStyles, resolveTypeface)
+    setFontAttributes(contextTextStyle, annotations, resolveTypeface)
     var hasLetterSpacing = false
-    for (i in spanStyles.indices) {
-        val spanStyleRange = spanStyles[i]
-        val start = spanStyleRange.start
-        val end = spanStyleRange.end
+    for (i in annotations.indices) {
+        val annotationRange = annotations[i]
+        if (annotationRange.item !is SpanStyle) continue
+        val start = annotationRange.start
+        val end = annotationRange.end
 
         if (start < 0 || start >= length || end <= start || end > length) continue
 
-        setSpanStyle(spanStyleRange, density)
+        setSpanStyle(annotationRange.item, start, end, density)
 
-        if (spanStyleRange.item.needsLetterSpacingSpan) {
+        if (annotationRange.item.needsLetterSpacingSpan) {
             hasLetterSpacing = true
         }
     }
@@ -208,12 +279,12 @@ internal fun Spannable.setSpanStyles(
         // letterSpacing relies on the fontSize on [Paint] to compute Px/Sp from Em. So it must be
         // applied after all spans that changes the fontSize.
 
-        for (i in spanStyles.indices) {
-            val spanStyleRange = spanStyles[i]
+        for (i in annotations.indices) {
+            val spanStyleRange = annotations[i]
+            val style = spanStyleRange.item
+            if (style !is SpanStyle) continue
             val start = spanStyleRange.start
             val end = spanStyleRange.end
-            val style = spanStyleRange.item
-
             if (start < 0 || start >= length || end <= start || end > length) continue
 
             createLetterSpacingSpan(style.letterSpacing, density)?.let { setSpan(it, start, end) }
@@ -221,14 +292,7 @@ internal fun Spannable.setSpanStyles(
     }
 }
 
-private fun Spannable.setSpanStyle(
-    spanStyleRange: AnnotatedString.Range<SpanStyle>,
-    density: Density
-) {
-    val start = spanStyleRange.start
-    val end = spanStyleRange.end
-    val style = spanStyleRange.item
-
+private fun Spannable.setSpanStyle(style: SpanStyle, start: Int, end: Int, density: Density) {
     // Be aware that SuperscriptSpan needs to be applied before all other spans which
     // affect FontMetrics
     setBaselineShift(style.baselineShift, start, end)
@@ -268,19 +332,23 @@ private fun Spannable.setSpanStyle(
  * [0, 8). The resolved TypefaceSpan should be TypefaceSpan("Sans-serif", "bold") in range [0, 8). As demonstrated above, the fontFamily information is from [contextTextStyle].
  *
  * @param contextTextStyle the global [TextStyle] for the entire string.
- * @param spanStyles the [spanStyles] to be applied, this function will first filter out the font
+ * @param annotations the [annotations] to be applied, this function will first filter out the font
  *   related [SpanStyle]s and then apply them to this [Spannable].
- * @param fontFamilyResolver the [Font.ResourceLoader] used to resolve font.
+ * @param resolveTypeface the lambda used to resolve font.
  * @see flattenFontStylesAndApply
  */
-@OptIn(InternalPlatformTextApi::class)
 private fun Spannable.setFontAttributes(
     contextTextStyle: TextStyle,
-    spanStyles: List<AnnotatedString.Range<SpanStyle>>,
+    annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     resolveTypeface: (FontFamily?, FontWeight, FontStyle, FontSynthesis) -> Typeface,
 ) {
+    @Suppress("UNCHECKED_CAST")
     val fontRelatedSpanStyles =
-        spanStyles.fastFilter { it.item.hasFontAttributes() || it.item.fontSynthesis != null }
+        annotations.fastFilteredMap({
+            it.item is SpanStyle && (it.item.hasFontAttributes() || it.item.fontSynthesis != null)
+        }) {
+            it as AnnotatedString.Range<SpanStyle>
+        }
 
     // Create a SpanStyle if contextTextStyle has font related attributes, otherwise use
     // null to avoid unnecessary object creation.
@@ -290,7 +358,7 @@ private fun Spannable.setFontAttributes(
                 fontFamily = contextTextStyle.fontFamily,
                 fontWeight = contextTextStyle.fontWeight,
                 fontStyle = contextTextStyle.fontStyle,
-                fontSynthesis = contextTextStyle.fontSynthesis
+                fontSynthesis = contextTextStyle.fontSynthesis,
             )
         } else {
             null
@@ -304,12 +372,12 @@ private fun Spannable.setFontAttributes(
                     spanStyle.fontFamily,
                     spanStyle.fontWeight ?: FontWeight.Normal,
                     spanStyle.fontStyle ?: FontStyle.Normal,
-                    spanStyle.fontSynthesis ?: FontSynthesis.All
+                    spanStyle.fontSynthesis ?: FontSynthesis.All,
                 )
             ),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
         )
     }
 }
@@ -327,7 +395,7 @@ private fun Spannable.setFontAttributes(
 internal fun flattenFontStylesAndApply(
     contextFontSpanStyle: SpanStyle?,
     spanStyles: List<AnnotatedString.Range<SpanStyle>>,
-    block: (SpanStyle, Int, Int) -> Unit
+    block: (SpanStyle, Int, Int) -> Unit,
 ) {
     // quick way out for single SpanStyle or empty list.
     if (spanStyles.size <= 1) {
@@ -335,7 +403,7 @@ internal fun flattenFontStylesAndApply(
             block(
                 contextFontSpanStyle.merge(spanStyles[0].item),
                 spanStyles[0].start,
-                spanStyles[0].end
+                spanStyles[0].end,
             )
         }
         return
@@ -344,7 +412,7 @@ internal fun flattenFontStylesAndApply(
     // Sort all span start and end points.
     // S1--S2--E1--S3--E3--E2
     val spanCount = spanStyles.size
-    val transitionOffsets = Array(spanCount * 2) { 0 }
+    val transitionOffsets = IntArray(spanCount * 2)
     spanStyles.fastForEachIndexed { idx, spanStyle ->
         transitionOffsets[idx] = spanStyle.start
         transitionOffsets[idx + spanCount] = spanStyle.end
@@ -373,7 +441,7 @@ internal fun flattenFontStylesAndApply(
                         lastTransitionOffsets,
                         transitionOffset,
                         spanStyle.start,
-                        spanStyle.end
+                        spanStyle.end,
                     )
             ) {
                 mergedSpanStyle = mergedSpanStyle.merge(spanStyle.item)
@@ -390,7 +458,7 @@ internal fun flattenFontStylesAndApply(
 @Suppress("DEPRECATION")
 private fun createLetterSpacingSpan(
     letterSpacing: TextUnit,
-    density: Density
+    density: Density,
 ): MetricAffectingSpan? {
     return when (letterSpacing.type) {
         TextUnitType.Sp -> with(density) { LetterSpacingSpanPx(letterSpacing.toPx()) }
@@ -414,10 +482,10 @@ private fun Spannable.setShadow(shadow: Shadow?, start: Int, end: Int) {
                 it.color.toArgb(),
                 it.offset.x,
                 it.offset.y,
-                correctBlurRadius(it.blurRadius)
+                correctBlurRadius(it.blurRadius),
             ),
             start,
-            end
+            end,
         )
     }
 }
@@ -443,7 +511,7 @@ internal fun Spannable.setLocaleList(localeList: LocaleList?, start: Int, end: I
                 LocaleSpan(locale.platformLocale)
             },
             start,
-            end
+            end,
         )
     }
 }
@@ -452,7 +520,7 @@ internal fun Spannable.setLocaleList(localeList: LocaleList?, start: Int, end: I
 private fun Spannable.setGeometricTransform(
     textGeometricTransform: TextGeometricTransform?,
     start: Int,
-    end: Int
+    end: Int,
 ) {
     textGeometricTransform?.let {
         setSpan(ScaleXSpan(it.scaleX), start, end)
@@ -473,7 +541,7 @@ internal fun Spannable.setFontSize(fontSize: TextUnit, density: Density, start: 
                 setSpan(
                     AbsoluteSizeSpan(/* size */ fontSize.toPx().roundToInt(), /* dip */ false),
                     start,
-                    end
+                    end,
                 )
             }
         TextUnitType.Em -> {
@@ -489,7 +557,7 @@ internal fun Spannable.setTextDecoration(textDecoration: TextDecoration?, start:
         val textDecorationSpan =
             TextDecorationSpan(
                 isUnderlineText = TextDecoration.Underline in it,
-                isStrikethroughText = TextDecoration.LineThrough in it
+                isStrikethroughText = TextDecoration.LineThrough in it,
             )
         setSpan(textDecorationSpan, start, end)
     }

@@ -24,9 +24,10 @@ import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.content.res.TypedArrayUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link DialogPreference} that shows a {@link EditText} in the dialog.
@@ -36,8 +37,7 @@ import androidx.core.content.res.TypedArrayUtils;
 public class EditTextPreference extends DialogPreference {
     private String mText;
 
-    @Nullable
-    private OnBindEditTextListener mOnBindEditTextListener;
+    private @Nullable OnBindEditTextListener mOnBindEditTextListener;
 
     public EditTextPreference(@NonNull Context context, @Nullable AttributeSet attrs,
             int defStyleAttr, int defStyleRes) {
@@ -93,8 +93,7 @@ public class EditTextPreference extends DialogPreference {
      *
      * @return The current preference value
      */
-    @Nullable
-    public String getText() {
+    public @Nullable String getText() {
         return mText;
     }
 
@@ -113,9 +112,8 @@ public class EditTextPreference extends DialogPreference {
         return TextUtils.isEmpty(mText) || super.shouldDisableDependents();
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         if (isPersistent()) {
             // No need to save instance state since it's persistent
@@ -230,17 +228,15 @@ public class EditTextPreference extends DialogPreference {
          * @return a singleton instance of this simple
          * {@link androidx.preference.Preference.SummaryProvider} implementation
          */
-        @NonNull
-        public static SimpleSummaryProvider getInstance() {
+        public static @NonNull SimpleSummaryProvider getInstance() {
             if (sSimpleSummaryProvider == null) {
                 sSimpleSummaryProvider = new SimpleSummaryProvider();
             }
             return sSimpleSummaryProvider;
         }
 
-        @Nullable
         @Override
-        public CharSequence provideSummary(@NonNull EditTextPreference preference) {
+        public @Nullable CharSequence provideSummary(@NonNull EditTextPreference preference) {
             if (TextUtils.isEmpty(preference.getText())) {
                 return preference.getContext().getString(R.string.not_set);
             } else {

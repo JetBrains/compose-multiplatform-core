@@ -41,8 +41,6 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
@@ -59,6 +57,9 @@ import androidx.camera.view.transform.ImageProxyTransformFactory;
 import androidx.camera.view.transform.OutputTransform;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.Fragment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -94,13 +95,11 @@ public final class TransformFragment extends Fragment {
 
     // The following two variables should only be accessed from mExecutorService.
     // Synthetic access
-    @Nullable
     @SuppressWarnings("WeakerAccess")
-    OutputTransform mImageProxyTransform;
+    @Nullable OutputTransform mImageProxyTransform;
     // Synthetic access
-    @Nullable
     @SuppressWarnings("WeakerAccess")
-    RectF mBrightestTile;
+    @Nullable RectF mBrightestTile;
 
     private FileTransformFactory mFileTransformFactoryWithoutExif;
     private FileTransformFactory mFileTransformFactoryWithExif;
@@ -146,8 +145,7 @@ public final class TransformFragment extends Fragment {
      * <p> A forked version of {@code TransformUtil#getExifTransform} to make the test app
      * self-contained.
      */
-    @NonNull
-    public static Matrix getExifTransform(int exifOrientation, int width, int height) {
+    public static @NonNull Matrix getExifTransform(int exifOrientation, int width, int height) {
         Matrix matrix = new Matrix();
 
         // Map the bitmap to a normalized space (-1, -1) - (1, 1) and perform transform in the
@@ -259,10 +257,9 @@ public final class TransformFragment extends Fragment {
                 (brightestTileY + 1) * tileHeight + cropRect.top);
     }
 
-    @NonNull
     @Override
     @OptIn(markerClass = TransformExperimental.class)
-    public View onCreateView(
+    public @NonNull View onCreateView(
             @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
@@ -337,7 +334,7 @@ public final class TransformFragment extends Fragment {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(
-                            @NonNull ImageCapture.OutputFileResults outputFileResults) {
+                            ImageCapture.@NonNull OutputFileResults outputFileResults) {
                         if (mImageProxyTransform == null || mBrightestTile == null) {
                             Logger.d(TAG, "ImageAnalysis result not ready.");
                             return;
@@ -373,8 +370,7 @@ public final class TransformFragment extends Fragment {
      */
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
-    @NonNull
-    Bitmap loadBitmapWithExifApplied(Uri uri) throws IOException {
+    @NonNull Bitmap loadBitmapWithExifApplied(Uri uri) throws IOException {
         // Loads bitmap.
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inMutable = true;
@@ -440,7 +436,7 @@ public final class TransformFragment extends Fragment {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(
-                            @NonNull ImageCapture.OutputFileResults outputFileResults) {
+                            ImageCapture.@NonNull OutputFileResults outputFileResults) {
                         if (mImageProxyTransform == null || mBrightestTile == null) {
                             Logger.d(TAG, "ImageAnalysis result not ready.");
                             return;
@@ -542,8 +538,7 @@ public final class TransformFragment extends Fragment {
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
     @OptIn(markerClass = TransformExperimental.class)
-    @NonNull
-    RectF getBrightestTileInFileWithoutExif(@NonNull File file,
+    @NonNull RectF getBrightestTileInFileWithoutExif(@NonNull File file,
             @NonNull OutputTransform imageProxyTransform,
             @NonNull RectF imageProxyTile) throws IOException {
         return getBrightestTile(
@@ -555,8 +550,7 @@ public final class TransformFragment extends Fragment {
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
     @OptIn(markerClass = TransformExperimental.class)
-    @NonNull
-    RectF getBrightestTileInUriWithExif(@NonNull Uri uri,
+    @NonNull RectF getBrightestTileInUriWithExif(@NonNull Uri uri,
             @NonNull OutputTransform imageProxyTransform,
             @NonNull RectF imageProxyTile) throws IOException {
         OutputTransform uriTransform = mFileTransformFactoryWithExif.getOutputTransform(
@@ -568,8 +562,7 @@ public final class TransformFragment extends Fragment {
     @SuppressWarnings("WeakerAccess")
     @OptIn(markerClass = TransformExperimental.class)
     @MainThread
-    @Nullable
-    RectF getBrightestTileInPreviewView(@NonNull OutputTransform imageProxyTransform,
+    @Nullable RectF getBrightestTileInPreviewView(@NonNull OutputTransform imageProxyTransform,
             @NonNull RectF imageProxyTile) {
         OutputTransform previewViewTransform = mPreviewView.getOutputTransform();
         if (previewViewTransform == null) {
@@ -580,8 +573,7 @@ public final class TransformFragment extends Fragment {
     }
 
     @OptIn(markerClass = TransformExperimental.class)
-    @NonNull
-    private RectF getBrightestTile(@NonNull OutputTransform source,
+    private @NonNull RectF getBrightestTile(@NonNull OutputTransform source,
             @NonNull OutputTransform target,
             @NonNull RectF imageProxyTile) {
         CoordinateTransform transform = new CoordinateTransform(source, target);

@@ -33,7 +33,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import junit.framework.Assert.assertNotNull
 import junit.framework.Assert.assertNotSame
 import org.junit.After
@@ -142,7 +142,7 @@ class LocalesStackedHandlingTestCase {
                 assertConfigurationLocalesEquals(
                     "Activity ${activity.title}'s effective configuration has locales set",
                     expectedLocales,
-                    activityC.effectiveConfiguration!!
+                    activityC.effectiveConfiguration!!,
                 )
             }
         }
@@ -251,7 +251,7 @@ class LocalesStackedHandlingTestCase {
                 assertConfigurationLocalesEquals(
                     "Activity ${activity.title}'s effective configuration has locales set",
                     expectedLocales,
-                    activity.effectiveConfiguration!!
+                    activity.effectiveConfiguration!!,
                 )
             }
         }
@@ -317,7 +317,7 @@ class LocalesStackedHandlingTestCase {
                 assertConfigurationLocalesEquals(
                     "Activity ${activity.title}'s effective configuration has locales set",
                     systemLocales,
-                    activity.effectiveConfiguration!!
+                    activity.effectiveConfiguration!!,
                 )
             }
         }

@@ -16,35 +16,39 @@
 
 package androidx.camera.camera2.pipe.testing
 
+import android.os.Build
+import android.util.Size
 import androidx.camera.camera2.pipe.CameraBackend
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraContext
 import androidx.camera.camera2.pipe.CameraController
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraGraphId
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.CameraStatusMonitor
+import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.StreamGraph
+import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.graph.GraphListener
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /** The FakeCameraBackend implements [CameraBackend] and creates [CameraControllerSimulator]s. */
-class FakeCameraBackend(private val fakeCameras: Map<CameraId, CameraMetadata>) : CameraBackend {
+public class FakeCameraBackend(private val fakeCameras: Map<CameraId, CameraMetadata>) :
+    CameraBackend {
     private val lock = Any()
     private val fakeCameraIds = fakeCameras.keys.toList()
 
     private val _cameraControllers = mutableListOf<CameraControllerSimulator>()
-    val cameraControllers: List<CameraControllerSimulator>
+    public val cameraControllers: List<CameraControllerSimulator>
         get() = synchronized(lock) { _cameraControllers.toList() }
 
     override val id: CameraBackendId
         get() = FAKE_CAMERA_BACKEND_ID
 
-    override val cameraStatus: Flow<CameraStatusMonitor.CameraStatus>
-        get() = MutableSharedFlow()
+    override val cameraIds: Flow<List<CameraId>> = MutableStateFlow(fakeCameraIds)
 
     override fun awaitCameraIds(): List<CameraId> = fakeCameraIds
 
@@ -64,12 +68,15 @@ class FakeCameraBackend(private val fakeCameras: Map<CameraId, CameraMetadata>) 
 
     override fun createCameraController(
         cameraContext: CameraContext,
+        graphId: CameraGraphId,
         graphConfig: CameraGraph.Config,
         graphListener: GraphListener,
-        streamGraph: StreamGraph
+        streamGraph: StreamGraph,
+        surfaceTracker: SurfaceTracker,
     ): CameraController {
         val cameraController =
-            CameraControllerSimulator(cameraContext, graphConfig, graphListener, streamGraph)
+            CameraControllerSimulator(cameraContext, graphId, graphConfig, graphListener)
+        cameraController.streamGraph = streamGraph
         synchronized(lock) { _cameraControllers.add(cameraController) }
         return cameraController
     }
@@ -91,8 +98,23 @@ class FakeCameraBackend(private val fakeCameras: Map<CameraId, CameraMetadata>) 
         _cameraControllers.forEach { it.simulateCameraStopped() }
     }
 
-    companion object {
-        val FAKE_CAMERA_BACKEND_ID =
+    override fun prewarmIsConfigSupported(cameraId: CameraId) {}
+
+    override suspend fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM)
+            return ConfigQueryResult.UNKNOWN
+        val size = graphConfig.streams.first().outputs.first().size
+        return if (
+            size.width <= MAX_VIDEO_RESOLUTION.width && size.height <= MAX_VIDEO_RESOLUTION.height
+        )
+            ConfigQueryResult.SUPPORTED
+        else ConfigQueryResult.UNSUPPORTED
+    }
+
+    public companion object {
+        public val FAKE_CAMERA_BACKEND_ID: CameraBackendId =
             CameraBackendId("androidx.camera.camera2.pipe.testing.FakeCameraBackend")
+
+        public val MAX_VIDEO_RESOLUTION: Size = Size(1280, 720)
     }
 }

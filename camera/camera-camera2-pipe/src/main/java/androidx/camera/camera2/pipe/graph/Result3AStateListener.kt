@@ -38,24 +38,22 @@ import kotlinx.coroutines.Deferred
  * This update method can be called multiple times as we get newer [CaptureResult]s from the camera
  * device. This class also exposes a [Deferred] to query the status of desired state.
  */
-internal interface Result3AStateListener {
+internal interface Result3AStateListener : GraphLoop.Listener {
     fun onRequestSequenceCreated(requestNumber: RequestNumber)
 
     fun update(requestNumber: RequestNumber, frameMetadata: FrameMetadata): Boolean
-
-    fun onRequestSequenceStopped()
 }
 
 internal class Result3AStateListenerImpl(
     private val exitCondition: (FrameMetadata) -> Boolean,
     private val frameLimit: Int? = null,
-    private val timeLimitNs: Long? = null
+    private val timeLimitNs: Long? = null,
 ) : Result3AStateListener {
 
     internal constructor(
         exitConditionForKeys: Map<CaptureResult.Key<*>, List<Any>>,
         frameLimit: Int? = null,
-        timeLimitNs: Long? = null
+        timeLimitNs: Long? = null,
     ) : this(
         exitCondition = exitConditionForKeys.toConditionChecker(),
         frameLimit = frameLimit,
@@ -133,12 +131,16 @@ internal class Result3AStateListenerImpl(
         return true
     }
 
-    override fun onRequestSequenceStopped() {
+    override fun onStopRepeating() {
         _result.complete(Result3A(Result3A.Status.SUBMIT_CANCELLED))
     }
 
-    fun getDeferredResult(): Deferred<Result3A> {
-        return _result
+    override fun onGraphStopped() {
+        _result.complete(Result3A(Result3A.Status.SUBMIT_CANCELLED))
+    }
+
+    override fun onGraphShutdown() {
+        _result.complete(Result3A(Result3A.Status.SUBMIT_CANCELLED))
     }
 }
 

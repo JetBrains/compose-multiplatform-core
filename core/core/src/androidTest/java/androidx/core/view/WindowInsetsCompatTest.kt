@@ -15,6 +15,7 @@
  */
 package androidx.core.view
 
+import android.graphics.Rect
 import androidx.core.graphics.Insets
 import androidx.core.view.WindowInsetsCompat.Type
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -106,6 +107,79 @@ class WindowInsetsCompatTest {
         assertEquals(11, insets.top)
         assertEquals(12, insets.right)
         assertEquals(13, insets.bottom)
+    }
+
+    /** On API 34+ we can test more types such as SYSTEM_OVERLAYS. */
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    public fun builder_min34_types() {
+        val statusBars = Insets.of(0, 50, 0, 0)
+        val navigationBars = Insets.of(0, 0, 0, 100)
+        val tappableElement = Insets.of(0, 10, 0, 10)
+        val mandatorySystemGestures = Insets.of(0, 20, 0, 20)
+        val systemGestures = Insets.of(0, 30, 0, 30)
+        val displayCutout = Insets.of(0, 5, 0, 0)
+        val captionBar = Insets.of(0, 50, 0, 0)
+        val ime = Insets.of(0, 0, 0, 300)
+        val systemOverlays = Insets.of(10, 0, 0, 10)
+
+        val result =
+            WindowInsetsCompat.Builder()
+                .setInsets(Type.statusBars(), statusBars)
+                .setInsets(Type.navigationBars(), navigationBars)
+                .setInsets(Type.tappableElement(), tappableElement)
+                .setInsets(Type.mandatorySystemGestures(), mandatorySystemGestures)
+                .setInsets(Type.systemGestures(), systemGestures)
+                .setInsets(Type.displayCutout(), displayCutout)
+                .setInsets(Type.captionBar(), captionBar)
+                .setInsets(Type.ime(), ime)
+                .setInsets(Type.systemOverlays(), systemOverlays)
+                .build()
+
+        assertEquals(statusBars, result.getInsets(Type.statusBars()))
+        assertEquals(navigationBars, result.getInsets(Type.navigationBars()))
+        assertEquals(tappableElement, result.getInsets(Type.tappableElement()))
+        assertEquals(mandatorySystemGestures, result.getInsets(Type.mandatorySystemGestures()))
+        assertEquals(systemGestures, result.getInsets(Type.systemGestures()))
+        assertEquals(displayCutout, result.getInsets(Type.displayCutout()))
+        assertEquals(captionBar, result.getInsets(Type.captionBar()))
+        assertEquals(ime, result.getInsets(Type.ime()))
+        assertEquals(systemOverlays, result.getInsets(Type.systemOverlays()))
+        assertEquals(Insets.of(10, 50, 0, 100), result.getInsets(Type.systemBars()))
+        assertEquals(Insets.of(10, 50, 0, 100), result.systemWindowInsets)
+    }
+
+    /** On API 31+ we can test the rounded corner. */
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    public fun builder_min31_roundedCorner() {
+        val position = RoundedCornerCompat.POSITION_BOTTOM_RIGHT
+        val roundedCorner =
+            RoundedCornerCompat(position, 1 /* radius */, 2 /* centerX */, 3 /* centerY */)
+
+        val result = WindowInsetsCompat.Builder().setRoundedCorner(position, roundedCorner).build()
+
+        assertEquals(roundedCorner, result.getRoundedCorner(position))
+    }
+
+    /** On API 31+ we can test the privacy indicator bounds. */
+    @Test
+    @SdkSuppress(minSdkVersion = 31)
+    public fun builder_min31_privacyIndicatorBounds() {
+        val bounds = Rect(1, 2, 3, 4)
+        val boundsInput = Rect(bounds)
+        val result = WindowInsetsCompat.Builder().setPrivacyIndicatorBounds(boundsInput).build()
+        val boundsOutput = result.privacyIndicatorBounds
+
+        assertEquals(bounds, boundsOutput)
+
+        // Changing the output here must not affect result.privacyIndicatorBounds
+        boundsOutput?.set(5, 6, 7, 8)
+        assertEquals(bounds, result.privacyIndicatorBounds)
+
+        // Changing the input here must not affect result.privacyIndicatorBounds
+        boundsInput.set(9, 10, 11, 12)
+        assertEquals(bounds, result.privacyIndicatorBounds)
     }
 
     /** On API 29+ we can test more types. */

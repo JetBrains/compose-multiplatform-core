@@ -30,14 +30,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
-import androidx.activity.ViewTreeOnBackPressedDispatcherOwner;
 import androidx.activity.contextaware.OnContextAvailableListener;
 import androidx.annotation.CallSuper;
 import androidx.annotation.ContentView;
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
 import androidx.appcompat.app.AppCompatDelegate.NightMode;
 import androidx.appcompat.view.ActionMode;
@@ -48,10 +45,10 @@ import androidx.core.app.NavUtils;
 import androidx.core.app.TaskStackBuilder;
 import androidx.core.os.LocaleListCompat;
 import androidx.fragment.app.FragmentActivity;
-import androidx.lifecycle.ViewTreeLifecycleOwner;
-import androidx.lifecycle.ViewTreeViewModelStoreOwner;
 import androidx.savedstate.SavedStateRegistry;
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for activities that wish to use some of the newer platform features on older
@@ -117,9 +114,8 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
         // TODO: Directly connect AppCompatDelegate to SavedStateRegistry
         getSavedStateRegistry().registerSavedStateProvider(DELEGATE_TAG,
                 new SavedStateRegistry.SavedStateProvider() {
-                    @NonNull
                     @Override
-                    public Bundle saveState() {
+                    public @NonNull Bundle saveState() {
                         Bundle outState = new Bundle();
                         getDelegate().onSaveInstanceState(outState);
                         return outState;
@@ -160,8 +156,7 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
      *
      * @return The Activity's ActionBar, or null if it does not have one.
      */
-    @Nullable
-    public ActionBar getSupportActionBar() {
+    public @Nullable ActionBar getSupportActionBar() {
         return getDelegate().getSupportActionBar();
     }
 
@@ -185,43 +180,33 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
         getDelegate().setSupportActionBar(toolbar);
     }
 
-    @NonNull
     @Override
-    public MenuInflater getMenuInflater() {
+    public @NonNull MenuInflater getMenuInflater() {
         return getDelegate().getMenuInflater();
     }
 
     @Override
     public void setContentView(@LayoutRes int layoutResID) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(layoutResID);
     }
 
     @Override
     public void setContentView(View view) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(view);
     }
 
     @Override
     public void setContentView(View view, ViewGroup.LayoutParams params) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(view, params);
     }
 
     @Override
     public void addContentView(View view, ViewGroup.LayoutParams params) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().addContentView(view, params);
-    }
-
-    private void initViewTreeOwners() {
-        // Set the view tree owners before setting the content view so that the inflation process
-        // and attach listeners will see them already present
-        ViewTreeLifecycleOwner.set(getWindow().getDecorView(), this);
-        ViewTreeViewModelStoreOwner.set(getWindow().getDecorView(), this);
-        ViewTreeSavedStateRegistryOwner.set(getWindow().getDecorView(), this);
-        ViewTreeOnBackPressedDispatcherOwner.set(getWindow().getDecorView(), this);
     }
 
     @Override
@@ -265,7 +250,7 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
     }
 
     @Override
-    public final boolean onMenuItemSelected(int featureId, @NonNull android.view.MenuItem item) {
+    public final boolean onMenuItemSelected(int featureId, android.view.@NonNull MenuItem item) {
         if (super.onMenuItemSelected(featureId, item)) {
             return true;
         }
@@ -350,9 +335,9 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
      * @param callback Callback to control the lifecycle of this action mode
      * @return The ActionMode that was started, or null if the system should present it
      */
-    @Nullable
     @Override
-    public ActionMode onWindowStartingSupportActionMode(@NonNull ActionMode.Callback callback) {
+    public @Nullable ActionMode onWindowStartingSupportActionMode(
+            ActionMode.@NonNull Callback callback) {
         return null;
     }
 
@@ -362,8 +347,7 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
      * @param callback Callback that will manage lifecycle events for this context mode
      * @return The ContextMode that was started, or null if it was canceled
      */
-    @Nullable
-    public ActionMode startSupportActionMode(@NonNull ActionMode.Callback callback) {
+    public @Nullable ActionMode startSupportActionMode(ActionMode.@NonNull Callback callback) {
         return getDelegate().startSupportActionMode(callback);
     }
 
@@ -499,9 +483,8 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
      *
      * @return a new Intent targeting the defined parent activity of sourceActivity
      */
-    @Nullable
     @Override
-    public Intent getSupportParentActivityIntent() {
+    public @Nullable Intent getSupportParentActivityIntent() {
         return NavUtils.getParentActivityIntent(this);
     }
 
@@ -552,9 +535,8 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
     public void onSupportContentChanged() {
     }
 
-    @Nullable
     @Override
-    public ActionBarDrawerToggle.Delegate getDrawerToggleDelegate() {
+    public ActionBarDrawerToggle.@Nullable Delegate getDrawerToggleDelegate() {
         return getDelegate().getDrawerToggleDelegate();
     }
 
@@ -583,8 +565,7 @@ public class AppCompatActivity extends FragmentActivity implements AppCompatCall
     /**
      * @return The {@link AppCompatDelegate} being used by this Activity.
      */
-    @NonNull
-    public AppCompatDelegate getDelegate() {
+    public @NonNull AppCompatDelegate getDelegate() {
         if (mDelegate == null) {
             mDelegate = AppCompatDelegate.create(this, this);
         }

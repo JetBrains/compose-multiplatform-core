@@ -19,12 +19,12 @@ package androidx.webkit.internal;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.ServiceWorkerClientCompat;
 
 import org.chromium.support_lib_boundary.ServiceWorkerClientBoundaryInterface;
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Adapter between {@link ServiceWorkerClientCompat} and
@@ -39,14 +39,13 @@ public class ServiceWorkerClientAdapter implements ServiceWorkerClientBoundaryIn
     }
 
     @Override
-    @Nullable
-    public WebResourceResponse shouldInterceptRequest(@NonNull WebResourceRequest request) {
+    public @Nullable WebResourceResponse shouldInterceptRequest(
+            @NonNull WebResourceRequest request) {
         return mClient.shouldInterceptRequest(request);
     }
 
     @Override
-    @NonNull
-    public String[] getSupportedFeatures() {
+    public String @NonNull [] getSupportedFeatures() {
         return new String[] { Features.SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST };
     }
 }

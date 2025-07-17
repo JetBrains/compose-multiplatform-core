@@ -18,27 +18,24 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
-import androidx.room.compiler.codegen.XPropertySpec
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.compiler.processing.XNullability
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.SQLiteDriverTypeNames
-import androidx.room.ext.SupportDbTypeNames
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.FieldWithIndex
-import androidx.room.vo.Pojo
+import androidx.room.vo.DataClass
+import androidx.room.vo.PropertyWithIndex
 import androidx.room.vo.ShortcutEntity
 import androidx.room.vo.columnNames
 
 class EntityInsertAdapterWriter
 private constructor(
     val tableName: String,
-    val pojo: Pojo,
+    val dataClass: DataClass,
     val primitiveAutoGenerateColumn: String?,
-    val onConflict: String
+    val onConflict: String,
 ) {
     companion object {
         fun create(entity: ShortcutEntity, onConflict: String): EntityInsertAdapterWriter {
@@ -46,7 +43,7 @@ private constructor(
             // not set. For such fields, we must generate a slightly different insertion SQL.
             val primitiveAutoGenerateField =
                 if (entity.primaryKey.autoGenerateId) {
-                    entity.primaryKey.fields.firstOrNull()?.let { field ->
+                    entity.primaryKey.properties.firstOrNull()?.let { field ->
                         field.statementBinder?.typeMirror()?.let { binderType ->
                             if (binderType.nullability == XNullability.NONNULL) {
                                 field
@@ -60,38 +57,22 @@ private constructor(
                 }
             return EntityInsertAdapterWriter(
                 tableName = entity.tableName,
-                pojo = entity.pojo,
+                dataClass = entity.dataClass,
                 primitiveAutoGenerateColumn = primitiveAutoGenerateField?.columnName,
-                onConflict = onConflict
+                onConflict = onConflict,
             )
         }
     }
 
-    fun createAnonymous(
-        typeWriter: TypeWriter,
-        dbProperty: XPropertySpec,
-        useDriverApi: Boolean
-    ): XTypeSpec {
-        return if (useDriverApi) {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage)
-            } else {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage, "%N", dbProperty)
-            }
+    fun createAnonymous(typeWriter: TypeWriter): XTypeSpec {
+        return XTypeSpec.anonymousClassBuilder()
             .apply {
-                superclass(
-                    if (useDriverApi) {
-                            RoomTypeNames.INSERT_ADAPTER
-                        } else {
-                            RoomTypeNames.INSERT_ADAPTER_COMPAT
-                        }
-                        .parametrizedBy(pojo.typeName)
-                )
+                superclass(RoomTypeNames.INSERT_ADAPTER.parametrizedBy(dataClass.typeName))
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(CommonTypeNames.STRING)
@@ -101,10 +82,10 @@ private constructor(
                                 } else {
                                     append("INSERT INTO `$tableName`")
                                 }
-                                append(" (${pojo.columnNames.joinToString(",") { "`$it`" }})")
+                                append(" (${dataClass.columnNames.joinToString(",") { "`$it`" }})")
                                 append(" VALUES (")
                                 append(
-                                    pojo.fields.joinToString(",") {
+                                    dataClass.properties.joinToString(",") {
                                         if (it.columnName == primitiveAutoGenerateColumn) {
                                             "nullif(?, 0)"
                                         } else {
@@ -120,32 +101,23 @@ private constructor(
                 )
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(XTypeName.UNIT_VOID)
                             val stmtParam = "statement"
-                            addParameter(
-                                if (useDriverApi) {
-                                    SQLiteDriverTypeNames.STATEMENT
-                                } else {
-                                    SupportDbTypeNames.SQLITE_STMT
-                                },
-                                stmtParam
-                            )
+                            addParameter(stmtParam, SQLiteDriverTypeNames.STATEMENT)
                             val entityParam = "entity"
-                            addParameter(pojo.typeName, entityParam)
-                            val mapped = FieldWithIndex.byOrder(pojo.fields)
-                            val bindScope =
-                                CodeGenScope(writer = typeWriter, useDriverApi = useDriverApi)
-                            FieldReadWriteWriter.bindToStatement(
+                            addParameter(entityParam, dataClass.typeName)
+                            val mapped = PropertyWithIndex.byOrder(dataClass.properties)
+                            val bindScope = CodeGenScope(writer = typeWriter)
+                            PropertyReadWriteWriter.bindToStatement(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
-                                fieldsWithIndices = mapped,
-                                scope = bindScope
+                                propertiesWithIndices = mapped,
+                                scope = bindScope,
                             )
                             addCode(bindScope.generate())
                         }

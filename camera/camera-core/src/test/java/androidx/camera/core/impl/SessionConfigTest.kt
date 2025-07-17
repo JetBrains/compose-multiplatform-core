@@ -195,14 +195,14 @@ class SessionConfigTest {
     fun builderDefaultSessionTypeIsRegular() {
         val builder = SessionConfig.Builder()
         val sessionConfig = builder.build()
-        assertThat(sessionConfig.sessionType == SessionConfiguration.SESSION_REGULAR)
+        assertThat(sessionConfig.sessionType).isEqualTo(SessionConfiguration.SESSION_REGULAR)
     }
 
     @Test
     fun builderSetSessionType() {
         val builder = SessionConfig.Builder().setSessionType(2)
         val sessionConfig = builder.build()
-        assertThat(sessionConfig.sessionType == 2)
+        assertThat(sessionConfig.sessionType).isEqualTo(2)
     }
 
     @Test
@@ -374,18 +374,20 @@ class SessionConfigTest {
     fun addImplementationOptionForStreamUseCase() {
         val validatingBuilder = ValidatingBuilder()
         assertThat(
-            !validatingBuilder
-                .build()
-                .implementationOptions
-                .containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
-        )
+                !validatingBuilder
+                    .build()
+                    .implementationOptions
+                    .containsOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
+            )
+            .isTrue()
         validatingBuilder.addImplementationOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION, 1L)
         assertThat(
-            validatingBuilder
-                .build()
-                .implementationOptions
-                .retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION) == 1L
-        )
+                validatingBuilder
+                    .build()
+                    .implementationOptions
+                    .retrieveOption(Camera2ImplConfig.STREAM_USE_CASE_OPTION)
+            )
+            .isEqualTo(1L)
     }
 
     @Test
@@ -881,11 +883,11 @@ class SessionConfigTest {
         val builder = SessionConfig.Builder()
         val callback = mock(SessionConfig.ErrorListener::class.java)
 
-        builder.addErrorListener(callback)
+        builder.setErrorListener(callback)
 
         val config = builder.build()
 
-        assertThat(config.errorListeners).contains(callback)
+        assertThat(config.errorListener).isSameInstanceAs(callback)
     }
 
     @Test
@@ -895,24 +897,26 @@ class SessionConfigTest {
         val deviceCallback0 = mock(CameraDevice.StateCallback::class.java)
         val repeatingCallback0 = mock(CameraCaptureCallback::class.java)
         val cameraCallback0 = mock(CameraCaptureCallback::class.java)
-        val errorListener0 = mock(SessionConfig.ErrorListener::class.java)
+        var errorCallbackInvoked0 = false
+        val errorListener0 = SessionConfig.ErrorListener { _, _ -> errorCallbackInvoked0 = true }
         builder0.addSessionStateCallback(sessionCallback0)
         builder0.addDeviceStateCallback(deviceCallback0)
         builder0.addRepeatingCameraCaptureCallback(repeatingCallback0)
         builder0.addCameraCaptureCallback(cameraCallback0)
-        builder0.addErrorListener(errorListener0)
+        builder0.setErrorListener(errorListener0)
 
         val builder1 = SessionConfig.Builder()
         val sessionCallback1 = mock(CameraCaptureSession.StateCallback::class.java)
         val deviceCallback1 = mock(CameraDevice.StateCallback::class.java)
         val repeatingCallback1 = mock(CameraCaptureCallback::class.java)
         val cameraCallback1 = mock(CameraCaptureCallback::class.java)
-        val errorListener1 = mock(SessionConfig.ErrorListener::class.java)
+        var errorCallbackInvoked1 = false
+        val errorListener1 = SessionConfig.ErrorListener { _, _ -> errorCallbackInvoked1 = true }
         builder1.addSessionStateCallback(sessionCallback1)
         builder1.addDeviceStateCallback(deviceCallback1)
         builder1.addRepeatingCameraCaptureCallback(repeatingCallback1)
         builder1.addCameraCaptureCallback(cameraCallback1)
-        builder1.addErrorListener(errorListener1)
+        builder1.setErrorListener(errorListener1)
 
         val validatingBuilder = ValidatingBuilder()
         validatingBuilder.add(builder0.build())
@@ -929,11 +933,16 @@ class SessionConfigTest {
                 repeatingCallback0,
                 cameraCallback0,
                 repeatingCallback1,
-                cameraCallback1
+                cameraCallback1,
             )
         assertThat(sessionConfig.singleCameraCaptureCallbacks)
             .containsExactly(cameraCallback0, cameraCallback1)
-        assertThat(sessionConfig.errorListeners).containsExactly(errorListener0, errorListener1)
+        sessionConfig.errorListener!!.onError(
+            sessionConfig,
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
+        )
+        assertThat(errorCallbackInvoked0).isTrue()
+        assertThat(errorCallbackInvoked1).isTrue()
     }
 
     @Test
@@ -986,7 +995,7 @@ class SessionConfigTest {
         builder.addSessionStateCallback(sessionCallback1)
         builder.setTemplateType(template1)
         builder.addImplementationOptions(optionsBundle1)
-        builder.addErrorListener(errorListener1)
+        builder.setErrorListener(errorListener1)
         val sessionConfig = builder.build()
 
         // 2. Act
@@ -999,7 +1008,7 @@ class SessionConfigTest {
         builder.addSessionStateCallback(sessionCallback2)
         builder.setTemplateType(template2)
         builder.addImplementationOptions(optionsBundle2)
-        builder.addErrorListener(errorListener2)
+        builder.setErrorListener(errorListener2)
 
         // 3. Verify
         assertThat(sessionConfig.surfaces).containsExactly(deferrableSurface1)
@@ -1011,7 +1020,7 @@ class SessionConfigTest {
         assertThat(sessionConfig.sessionStateCallbacks).containsExactly(sessionCallback1)
         assertThat(sessionConfig.templateType).isEqualTo(template1)
         assertThat(sessionConfig.implementationOptions.retrieveOption(OPTION)).isEqualTo(1)
-        assertThat(sessionConfig.errorListeners).containsExactly(errorListener1)
+        assertThat(sessionConfig.errorListener).isEqualTo(errorListener1)
     }
 
     @Test
@@ -1025,7 +1034,8 @@ class SessionConfigTest {
         val deviceStateCallback2 = mock(CameraDevice.StateCallback::class.java)
         val sessionCallback1 = mock(CameraCaptureSession.StateCallback::class.java)
         val sessionCallback2 = mock(CameraCaptureSession.StateCallback::class.java)
-        val errorListener1 = mock(SessionConfig.ErrorListener::class.java)
+        var errorCallbackInvoked1 = false
+        val errorListener1 = SessionConfig.ErrorListener { _, _ -> errorCallbackInvoked1 = true }
         val errorListener2 = mock(SessionConfig.ErrorListener::class.java)
         val fpsRange1 = Range(30, 30)
         val fpsRange2 = Range(15, 30)
@@ -1045,7 +1055,7 @@ class SessionConfigTest {
         builder.addSessionStateCallback(sessionCallback1)
         builder.setTemplateType(template1)
         builder.addImplementationOptions(optionsBundle1)
-        builder.addErrorListener(errorListener1)
+        builder.setErrorListener(errorListener1)
 
         val validatingBuilder = ValidatingBuilder()
         validatingBuilder.add(builder.build())
@@ -1063,7 +1073,7 @@ class SessionConfigTest {
         builder2.addSessionStateCallback(sessionCallback2)
         builder2.setTemplateType(template2)
         builder2.addImplementationOptions(optionsBundle2)
-        builder2.addErrorListener(errorListener2)
+        builder2.setErrorListener(errorListener2)
         validatingBuilder.add(builder2.build())
 
         // 3. Verify
@@ -1076,7 +1086,13 @@ class SessionConfigTest {
         assertThat(sessionConfig.sessionStateCallbacks).containsExactly(sessionCallback1)
         assertThat(sessionConfig.templateType).isEqualTo(template1)
         assertThat(sessionConfig.implementationOptions.retrieveOption(OPTION)).isEqualTo(1)
-        assertThat(sessionConfig.errorListeners).containsExactly(errorListener1)
+        // The preview error callback can still be invoked after the builder aggregates the error
+        // listeners
+        sessionConfig.errorListener!!.onError(
+            sessionConfig,
+            SessionConfig.SessionError.SESSION_ERROR_SURFACE_NEEDS_RESET,
+        )
+        assertThat(errorCallbackInvoked1).isTrue()
     }
 
     private fun createSessionConfigWithTag(key: String, tagValue: Any): SessionConfig {

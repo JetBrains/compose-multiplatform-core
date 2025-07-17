@@ -24,13 +24,11 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Intent;
 
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.internal.DoNotInstrument;
-
 
 /**
  * Tests for color scheme parameters api.

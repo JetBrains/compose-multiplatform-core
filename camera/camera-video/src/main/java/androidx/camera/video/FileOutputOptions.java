@@ -16,11 +16,12 @@
 
 package androidx.camera.video;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.util.Preconditions;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 
@@ -42,14 +43,12 @@ public final class FileOutputOptions extends OutputOptions {
     }
 
     /** Gets the File instance */
-    @NonNull
-    public File getFile() {
+    public @NonNull File getFile() {
         return mFileOutputOptionsInternal.getFile();
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         // Don't use Class.getSimpleName(), class name will be changed by proguard obfuscation.
         return mFileOutputOptionsInternal.toString().replaceFirst("FileOutputOptionsInternal",
                 "FileOutputOptions");
@@ -96,25 +95,21 @@ public final class FileOutputOptions extends OutputOptions {
 
         /** Builds the {@link FileOutputOptions} instance. */
         @Override
-        @NonNull
-        public FileOutputOptions build() {
+        public @NonNull FileOutputOptions build() {
             return new FileOutputOptions(mInternalBuilder.build());
         }
     }
 
     @AutoValue
     abstract static class FileOutputOptionsInternal extends OutputOptions.OutputOptionsInternal {
-        @NonNull
-        abstract File getFile();
+        abstract @NonNull File getFile();
 
         @SuppressWarnings("NullableProblems") // Nullable problem in AutoValue generated class
         @AutoValue.Builder
         abstract static class Builder extends OutputOptions.OutputOptionsInternal.Builder<Builder> {
-            @NonNull
-            abstract Builder setFile(@NonNull File file);
+            abstract @NonNull Builder setFile(@NonNull File file);
             @Override
-            @NonNull
-            abstract FileOutputOptionsInternal build();
+            abstract @NonNull FileOutputOptionsInternal build();
         }
     }
 }

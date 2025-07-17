@@ -83,14 +83,14 @@ internal class FontMatcher {
                             fontWeight,
                             preferBelow = false,
                             minSearchRange = null,
-                            maxSearchRange = FontWeight.W500
+                            maxSearchRange = FontWeight.W500,
                         )
                         .ifEmpty {
                             fontsToSearch.filterByClosestWeight(
                                 fontWeight,
                                 preferBelow = false,
                                 minSearchRange = FontWeight.W500,
-                                maxSearchRange = null
+                                maxSearchRange = null,
                             )
                         }
                 }
@@ -99,7 +99,7 @@ internal class FontMatcher {
         return result
     }
 
-    @Suppress("NOTHING_TO_INLINE")
+    @Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
     // @VisibleForTesting
     internal inline fun List<Font>.filterByClosestWeight(
         fontWeight: FontWeight,
@@ -146,7 +146,7 @@ internal class FontMatcher {
     fun matchFont(
         fontFamily: FontFamily,
         fontWeight: FontWeight,
-        fontStyle: FontStyle
+        fontStyle: FontStyle,
     ): List<Font> {
         if (fontFamily !is FontListFontFamily)
             throw IllegalArgumentException(
@@ -164,7 +164,7 @@ internal class FontMatcher {
     fun matchFont(
         fontFamily: FontListFontFamily,
         fontWeight: FontWeight,
-        fontStyle: FontStyle
+        fontStyle: FontStyle,
     ): List<Font> {
         return matchFont(fontFamily.fonts, fontWeight, fontStyle)
     }

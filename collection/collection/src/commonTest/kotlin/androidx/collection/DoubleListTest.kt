@@ -96,15 +96,15 @@ class DoubleListTest {
     fun joinToString() {
         assertEquals("${1.0}, ${2.0}, ${3.0}, ${4.0}, ${5.0}", list.joinToString())
         assertEquals(
-            "x${1.0}, ${2.0}, ${3.0}...",
-            list.joinToString(prefix = "x", postfix = "y", limit = 3)
+            "x${1.0}, ${2.0}, ${3.0}, ...y",
+            list.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${1.0}-${2.0}-${3.0}-${4.0}-${5.0}<",
-            list.joinToString(separator = "-", prefix = ">", postfix = "<")
+            list.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it.toInt()) {
                     1 -> "one"
@@ -112,7 +112,7 @@ class DoubleListTest {
                     3 -> "three"
                     else -> "whoops"
                 }
-            }
+            },
         )
     }
 
@@ -163,21 +163,21 @@ class DoubleListTest {
             list.elementAtOrElse(0) {
                 assertEquals(0, it)
                 0.0
-            }
+            },
         )
         assertEquals(
             0.0,
             list.elementAtOrElse(-1) {
                 assertEquals(-1, it)
                 0.0
-            }
+            },
         )
         assertEquals(
             0.0,
             list.elementAtOrElse(5) {
                 assertEquals(5, it)
                 0.0
-            }
+            },
         )
     }
 
@@ -366,7 +366,7 @@ class DoubleListTest {
     fun foldIndexed() {
         assertEquals(
             "01-12-23-34-45-",
-            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" }
+            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -379,7 +379,7 @@ class DoubleListTest {
     fun foldRightIndexed() {
         assertEquals(
             "45-34-23-12-01-",
-            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" }
+            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -623,6 +623,14 @@ class DoubleListTest {
     }
 
     @Test
+    fun sortEmpty() {
+        val l = MutableDoubleList(0)
+        l.sort()
+        l.sortDescending()
+        assertEquals(MutableDoubleList(0), l)
+    }
+
+    @Test
     fun testEmptyDoubleList() {
         val l = emptyDoubleList()
         assertEquals(0, l.size)
@@ -704,5 +712,47 @@ class DoubleListTest {
         assertEquals(10.0, l[1])
         assertEquals(-1.0, l[2])
         assertEquals(10.0, l[3])
+    }
+
+    @Test
+    fun buildDoubleListFunction() {
+        val contract: Boolean
+        val l = buildDoubleList {
+            contract = true
+            add(2.0)
+            add(10.0)
+        }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertEquals(2.0, l[0])
+        assertEquals(10.0, l[1])
+    }
+
+    @Test
+    fun buildDoubleListWithCapacityFunction() {
+        val contract: Boolean
+        val l =
+            buildDoubleList(20) {
+                contract = true
+                add(2.0)
+                add(10.0)
+            }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertTrue(l.content.size >= 20)
+        assertEquals(2.0, l[0])
+        assertEquals(10.0, l[1])
+    }
+
+    @Test
+    fun binarySearchDoubleList() {
+        val l = mutableDoubleListOf(-2.0, -1.0, 2.0, 10.0, 10.0)
+        assertEquals(0, l.binarySearch(-2))
+        assertEquals(2, l.binarySearch(2))
+        assertEquals(3, l.binarySearch(10))
+
+        assertEquals(-1, l.binarySearch(-20))
+        assertEquals(-4, l.binarySearch(3))
+        assertEquals(-6, l.binarySearch(20))
     }
 }

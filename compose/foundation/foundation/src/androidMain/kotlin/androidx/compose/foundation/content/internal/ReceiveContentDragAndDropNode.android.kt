@@ -19,8 +19,8 @@ package androidx.compose.foundation.content.internal
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.content.TransferableContent
 import androidx.compose.ui.draganddrop.DragAndDropEvent
-import androidx.compose.ui.draganddrop.DragAndDropModifierNode
 import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTargetModifierNode
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.platform.toClipMetadata
@@ -28,9 +28,9 @@ import androidx.compose.ui.platform.toClipMetadata
 @OptIn(ExperimentalFoundationApi::class)
 internal actual fun ReceiveContentDragAndDropNode(
     receiveContentConfiguration: ReceiveContentConfiguration,
-    dragAndDropRequestPermission: (DragAndDropEvent) -> Unit
-): DragAndDropModifierNode {
-    return DragAndDropModifierNode(
+    dragAndDropRequestPermission: (DragAndDropEvent) -> Unit,
+): DragAndDropTargetModifierNode {
+    return DragAndDropTargetModifierNode(
         shouldStartDragAndDrop = {
             // accept any dragging item. The actual decider will be the onReceive callback.
             true
@@ -61,7 +61,7 @@ internal actual fun ReceiveContentDragAndDropNode(
                         receiveContentConfiguration.receiveContentListener.onReceive(original)
                     return original != remaining
                 }
-            }
+            },
     )
 }
 
@@ -71,7 +71,7 @@ internal fun DragAndDropEvent.toTransferableContent(): TransferableContent {
         TransferableContent(
             clipEntry = clipData.toClipEntry(),
             clipMetadata = clipDescription.toClipMetadata(),
-            source = TransferableContent.Source.DragAndDrop
+            source = TransferableContent.Source.DragAndDrop,
         )
     }
 }

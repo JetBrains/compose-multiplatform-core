@@ -23,6 +23,7 @@ import androidx.annotation.UiContext
 import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
 import androidx.window.core.Version
+import androidx.window.layout.SupportedPosture
 import androidx.window.layout.WindowLayoutInfo
 import androidx.window.layout.adapter.WindowBackend
 import androidx.window.layout.adapter.sidecar.ExtensionInterfaceCompat.ExtensionCallbackInterface
@@ -58,7 +59,7 @@ constructor(
     override fun registerLayoutChangeCallback(
         @UiContext context: Context,
         executor: Executor,
-        callback: Consumer<WindowLayoutInfo>
+        callback: Consumer<WindowLayoutInfo>,
     ) {
         val activity = context as? Activity
         activity?.let {
@@ -127,6 +128,12 @@ constructor(
         }
     }
 
+    override val supportedPostures: List<SupportedPosture>
+        get() = throw UnsupportedOperationException("Must be called from extensions.")
+
+    override fun getCurrentWindowLayoutInfo(context: Context): WindowLayoutInfo =
+        throw UnsupportedOperationException("Must be called from extensions.")
+
     /**
      * Checks if there are no more registered callbacks left for the activity and inform extension
      * if needed.
@@ -161,7 +168,7 @@ constructor(
     internal class WindowLayoutChangeCallbackWrapper(
         val activity: Activity,
         private val executor: Executor,
-        val callback: Consumer<WindowLayoutInfo>
+        val callback: Consumer<WindowLayoutInfo>,
     ) {
         var lastInfo: WindowLayoutInfo? = null
 

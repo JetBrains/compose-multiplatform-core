@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+@file:Suppress(
+    "INVISIBLE_MEMBER",
+    "INVISIBLE_REFERENCE",
+    "DEPRECATION",
+) // b/407927787 // b/420551535
 
 package androidx.compose.foundation.lazy.grid
 
@@ -46,6 +50,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class LazyGridPrefetcherTest(orientation: Orientation) :
@@ -54,11 +59,7 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> =
-            arrayOf(
-                Orientation.Vertical,
-                Orientation.Horizontal,
-            )
+        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
     }
 
     val itemsSizePx = 30
@@ -77,7 +78,7 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
     @Composable
     fun rememberState(
         initialFirstVisibleItemIndex: Int = 0,
-        initialFirstVisibleItemScrollOffset: Int = 0
+        initialFirstVisibleItemScrollOffset: Int = 0,
     ): LazyGridState = remember {
         LazyGridState(initialFirstVisibleItemIndex, initialFirstVisibleItemScrollOffset, strategy)
     }
@@ -103,7 +104,6 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
         rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
 
         waitForPrefetch()
-        waitForPrefetch()
 
         rule.onNodeWithTag("4").assertExists()
         rule.onNodeWithTag("5").assertExists()
@@ -116,7 +116,6 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
 
         rule.runOnIdle { runBlocking { state.scrollBy(-5f) } }
 
-        waitForPrefetch()
         waitForPrefetch()
 
         rule.onNodeWithTag("2").assertExists()
@@ -131,7 +130,6 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
         rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
 
         waitForPrefetch()
-        waitForPrefetch()
 
         rule.onNodeWithTag("6").assertExists()
         rule.onNodeWithTag("7").assertExists()
@@ -144,7 +142,6 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
             }
         }
 
-        waitForPrefetch()
         waitForPrefetch()
 
         rule.onNodeWithTag("0").assertExists()
@@ -231,7 +228,7 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
         composeGrid(
             firstItem = 4,
             itemOffset = 5,
-            contentPadding = PaddingValues(mainAxis = halfItemSize)
+            contentPadding = PaddingValues(mainAxis = halfItemSize),
         )
 
         rule.onNodeWithTag("2").assertIsDisplayed()
@@ -271,11 +268,7 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
                     if (emit) {
                         subcompose(Unit) {
                                 state = rememberState()
-                                LazyGrid(
-                                    2,
-                                    Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                                    state,
-                                ) {
+                                LazyGrid(2, Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                                     items(1000) { Spacer(Modifier.mainAxisSize(itemsSizeDp)) }
                                 }
                             }
@@ -304,11 +297,7 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
         val composedItems = mutableListOf<Int>()
         rule.setContent {
             state = rememberState()
-            LazyGrid(
-                1,
-                Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                state,
-            ) {
+            LazyGrid(1, Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                 items(1000) {
                     composedItems.add(it)
                     Spacer(Modifier.mainAxisSize(itemsSizeDp))
@@ -378,20 +367,20 @@ class LazyGridPrefetcherTest(orientation: Orientation) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
-        contentPadding: PaddingValues = PaddingValues(0.dp)
+        contentPadding: PaddingValues = PaddingValues(0.dp),
     ) {
         rule.setContent {
             state =
                 rememberState(
                     initialFirstVisibleItemIndex = firstItem,
-                    initialFirstVisibleItemScrollOffset = itemOffset
+                    initialFirstVisibleItemScrollOffset = itemOffset,
                 )
             LazyGrid(
                 2,
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f),
                 state,
                 reverseLayout = reverseLayout,
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
             ) {
                 items(100) {
                     DisposableEffect(it) {

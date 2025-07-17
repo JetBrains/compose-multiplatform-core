@@ -19,12 +19,12 @@ package androidx.loader.content;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -118,9 +118,8 @@ public class AsyncTaskLoaderTest {
             return null;
         }
 
-        @NonNull
         @Override
-        protected Executor getExecutor() {
+        protected @NonNull Executor getExecutor() {
             mGetExecutorCallCount += 1;
             if (mExecutor != null) {
                 return mExecutor;

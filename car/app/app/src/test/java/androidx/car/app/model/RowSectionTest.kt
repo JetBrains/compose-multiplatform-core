@@ -29,7 +29,7 @@ class RowSectionTest {
     private val testItemList =
         listOf(
             Row.Builder().setTitle("Test title").build(),
-            Row.Builder().setTitle("Test another title").build()
+            Row.Builder().setTitle("Test another title").build(),
         )
 
     @Test
@@ -102,25 +102,6 @@ class RowSectionTest {
     }
 
     @Test
-    fun builderFromObject() {
-        val section =
-            RowSection.Builder()
-                .setItems(testItemList)
-                .setAsSelectionGroup(1)
-                .setTitle(testHeader)
-                .setNoItemsMessage(testNoItemsMessage)
-                .build()
-
-        val result = RowSection.Builder(section).build()
-
-        assertThat(result.items).containsExactlyElementsIn(testItemList)
-        assertThat(result.isSelectionGroup).isTrue()
-        assertThat(result.initialSelectedIndex).isEqualTo(1)
-        assertThat(result.title).isEqualTo(testHeader)
-        assertThat(result.noItemsMessage).isEqualTo(testNoItemsMessage)
-    }
-
-    @Test
     fun equals_returnsFalse_whenPassedNull() {
         val section = RowSection.Builder().build()
 
@@ -169,7 +150,7 @@ class RowSectionTest {
                 RowSection.Builder().setItems(testItemList).build(),
                 RowSection.Builder().setItems(testItemList).setAsSelectionGroup(1).build(),
                 RowSection.Builder().setTitle(testHeader).build(),
-                RowSection.Builder().setNoItemsMessage(testNoItemsMessage)
+                RowSection.Builder().setNoItemsMessage(testNoItemsMessage),
             )
 
         // Test all different sections against each other

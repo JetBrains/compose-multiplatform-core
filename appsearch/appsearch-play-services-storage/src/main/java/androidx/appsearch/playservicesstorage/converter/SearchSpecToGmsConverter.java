@@ -16,18 +16,20 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.SearchSpec;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * Translates between Gms and Jetpack versions of {@link SearchSpec}.
-
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class SearchSpecToGmsConverter {
@@ -35,18 +37,15 @@ public final class SearchSpecToGmsConverter {
     }
 
     /** Translates from Jetpack to Gms version of {@link SearchSpec}. */
-    @NonNull
-    public static com.google.android.gms.appsearch.SearchSpec toGmsSearchSpec(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static com.google.android.gms.appsearch.@NonNull SearchSpec toGmsSearchSpec(
             @NonNull SearchSpec jetpackSearchSpec) {
         Preconditions.checkNotNull(jetpackSearchSpec);
         com.google.android.gms.appsearch.SearchSpec.Builder gmsBuilder =
                 new com.google.android.gms.appsearch.SearchSpec.Builder();
 
         if (!jetpackSearchSpec.getAdvancedRankingExpression().isEmpty()) {
-            //TODO(b/274986359) Add GMSCore feature check for Advanced Ranking once available.
-            throw new UnsupportedOperationException(
-                    Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION
-                            + " is not available on this AppSearch implementation.");
+            gmsBuilder.setRankingStrategy(jetpackSearchSpec.getAdvancedRankingExpression());
         } else {
             gmsBuilder.setRankingStrategy(jetpackSearchSpec.getRankingStrategy());
         }
@@ -57,7 +56,6 @@ public final class SearchSpecToGmsConverter {
                 .addFilterNamespaces(jetpackSearchSpec.getFilterNamespaces())
                 .addFilterPackageNames(jetpackSearchSpec.getFilterPackageNames())
                 .setResultCountPerPage(jetpackSearchSpec.getResultCountPerPage())
-                .setRankingStrategy(jetpackSearchSpec.getRankingStrategy())
                 .setOrder(jetpackSearchSpec.getOrder())
                 .setSnippetCount(jetpackSearchSpec.getSnippetCount())
                 .setSnippetCountPerProperty(jetpackSearchSpec.getSnippetCountPerProperty())
@@ -72,36 +70,79 @@ public final class SearchSpecToGmsConverter {
             gmsBuilder.addProjection(projection.getKey(), projection.getValue());
         }
 
-        if (!jetpackSearchSpec.getEnabledFeatures().isEmpty()) {
-            if (jetpackSearchSpec.isNumericSearchEnabled()
-                    || jetpackSearchSpec.isVerbatimSearchEnabled()
-                    || jetpackSearchSpec.isListFilterQueryLanguageEnabled()) {
-                //TODO(b/274986359) Add GMSCore feature check for NUMERIC_SEARCH,
-                // VERBATIM_SEARCH and LIST_FILTER_QUERY_LANGUAGE once available.
-                throw new UnsupportedOperationException(
-                        "Advanced query features (NUMERIC_SEARCH, VERBATIM_SEARCH and "
-                                + "LIST_FILTER_QUERY_LANGUAGE) are not supported with this "
-                                + "backend/Android API level combination.");
+        if (!jetpackSearchSpec.getPropertyWeights().isEmpty()) {
+            for (Map.Entry<String, Map<String, Double>> entry :
+                    jetpackSearchSpec.getPropertyWeights().entrySet()) {
+                gmsBuilder.setPropertyWeights(entry.getKey(), entry.getValue());
             }
         }
 
-        if (!jetpackSearchSpec.getPropertyWeights().isEmpty()) {
-            //TODO(b/274986359) Add GMSCore feature check for Property Weights once available.
-            throw new UnsupportedOperationException(
-                    "Property weights are not supported with this backend/Android API level "
-                            + "combination.");
+        if (!jetpackSearchSpec.getEnabledFeatures().isEmpty()) {
+            if (jetpackSearchSpec.isNumericSearchEnabled()) {
+                gmsBuilder.setNumericSearchEnabled(true);
+            }
+            if (jetpackSearchSpec.isVerbatimSearchEnabled()) {
+                gmsBuilder.setVerbatimSearchEnabled(true);
+            }
+            if (jetpackSearchSpec.isListFilterQueryLanguageEnabled()) {
+                gmsBuilder.setListFilterQueryLanguageEnabled(true);
+            }
+            if (jetpackSearchSpec.isListFilterHasPropertyFunctionEnabled()) {
+                gmsBuilder.setListFilterHasPropertyFunctionEnabled(true);
+            }
+            if (jetpackSearchSpec.isListFilterMatchScoreExpressionFunctionEnabled()) {
+                // TODO(b/377215223): Remove this once matchScoreExpression is supported.
+                throw new UnsupportedOperationException(
+                        Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION
+                                + " is not available on this AppSearch implementation.");
+            }
+        }
+        if (!jetpackSearchSpec.getEmbeddingParameters().isEmpty()) {
+            // TODO(b/326656531): Remove this once embedding search APIs are available.
+            throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
+                    + " is not available on this AppSearch implementation.");
+        }
+        if (!jetpackSearchSpec.getSearchStringParameters().isEmpty()) {
+            // TODO(b/332620561): Remove this once search parameter strings are supported.
+            throw new UnsupportedOperationException(Features.SEARCH_SPEC_SEARCH_STRING_PARAMETERS
+                    + " is not available on this AppSearch implementation.");
         }
 
         if (jetpackSearchSpec.getJoinSpec() != null) {
-            //TODO(b/274986359) Add GMSCore feature check for Joins once available.
-            throw new UnsupportedOperationException("JoinSpec is not available on this "
-                    + "AppSearch implementation.");
+            gmsBuilder.setJoinSpec(JoinSpecToGmsConverter.toGmsJoinSpec(
+                    jetpackSearchSpec.getJoinSpec()));
         }
 
         if (!jetpackSearchSpec.getFilterProperties().isEmpty()) {
-            // TODO(b/296088047): Remove this once property filters become available.
-            throw new UnsupportedOperationException(Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES
-                    + " is not available on this AppSearch implementation.");
+            for (Map.Entry<String, List<String>> entry :
+                    jetpackSearchSpec.getFilterProperties().entrySet()) {
+                gmsBuilder.addFilterProperties(entry.getKey(), entry.getValue());
+            }
+        }
+
+        if (jetpackSearchSpec.getSearchSourceLogTag() != null) {
+            gmsBuilder.setSearchSourceLogTag(jetpackSearchSpec.getSearchSourceLogTag());
+        }
+
+        if (!jetpackSearchSpec.getInformationalRankingExpressions().isEmpty()) {
+            // TODO(b/332642571): Remove this once informational ranking expressions are available.
+            throw new UnsupportedOperationException(
+                    Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS
+                            + " are not available on this AppSearch implementation.");
+        }
+
+        if (!jetpackSearchSpec.getFilterDocumentIds().isEmpty()) {
+            // TODO(b/367464836): Remove this once document id filters are available.
+            throw new UnsupportedOperationException(
+                    Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS
+                            + " is not available on this AppSearch implementation.");
+        }
+
+        if (jetpackSearchSpec.isScorablePropertyRankingEnabled()) {
+            // TODO(b/379743983): Remove once this feature is available.
+            throw new UnsupportedOperationException(
+                    Features.SCHEMA_SCORABLE_PROPERTY_CONFIG
+                            + " is not available on this AppSearch implementation.");
         }
 
         return gmsBuilder.build();

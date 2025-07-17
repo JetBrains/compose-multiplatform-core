@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+AddedAbstractMethod: androidx.graphics.shapes.PointTransformer#transform-XgqJiTY(float, float):
+    Binary breaking change: Added method androidx.graphics.shapes.PointTransformer.transform-XgqJiTY(float,float)

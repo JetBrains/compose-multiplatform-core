@@ -18,11 +18,9 @@ package androidx.compose.foundation.benchmark
 
 import android.view.MotionEvent
 import android.view.View
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.benchmark.lazy.MotionEventHelper
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Box
@@ -31,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -111,7 +110,6 @@ class OverscrollBenchmark {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private class OverscrollTestCase : LayeredComposeTestCase(), ToggleableTestCase {
 
     private lateinit var view: View
@@ -134,13 +132,13 @@ private class OverscrollTestCase : LayeredComposeTestCase(), ToggleableTestCase 
                         get() = true
                 }
             }
-        val overscrollEffect = ScrollableDefaults.overscrollEffect()
+        val overscrollEffect = rememberOverscrollEffect()
         Box(
             Modifier.scrollable(
                     wrappedScrollState,
                     orientation = Orientation.Vertical,
                     reverseDirection = true,
-                    overscrollEffect = overscrollEffect
+                    overscrollEffect = overscrollEffect,
                 )
                 .overscroll(overscrollEffect)
                 .fillMaxSize()

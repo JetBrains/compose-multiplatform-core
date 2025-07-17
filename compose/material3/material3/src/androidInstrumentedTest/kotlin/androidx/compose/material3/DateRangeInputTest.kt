@@ -16,15 +16,22 @@
 
 package androidx.compose.material3
 
+import android.os.Build
 import androidx.compose.material3.internal.Strings
 import androidx.compose.material3.internal.formatWithSkeleton
 import androidx.compose.material3.internal.getString
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher.Companion.expectValue
 import androidx.compose.ui.test.SemanticsMatcher.Companion.keyIsDefined
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -33,17 +40,18 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.delay
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3Api::class)
 class DateRangeInputTest {
 
     @get:Rule val rule = createComposeRule()
@@ -60,7 +68,7 @@ class DateRangeInputTest {
             state =
                 rememberDateRangePickerState(
                     initialDisplayedMonthMillis = monthInUtcMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -103,7 +111,7 @@ class DateRangeInputTest {
                 rememberDateRangePickerState(
                     initialSelectedStartDateMillis = initialStartDateMillis,
                     initialSelectedEndDateMillis = initialEndDateMillis,
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -112,6 +120,95 @@ class DateRangeInputTest {
         rule.onNodeWithText("10/20/2020").assertExists()
         rule.onNodeWithText("May 11, 2010", useUnmergedTree = true).assertExists()
         rule.onNodeWithText("Oct 20, 2020", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun dateRangeInput_initialFocusOnInputField() {
+        var delayCompleted by mutableStateOf(false)
+        rule.setMaterialContent(lightColorScheme()) {
+            val initialStartDateMillis =
+                dayInUtcMilliseconds(year = 2010, month = 5, dayOfMonth = 11)
+            val initialEndDateMillis =
+                dayInUtcMilliseconds(year = 2020, month = 10, dayOfMonth = 20)
+            DateRangePicker(
+                state =
+                    rememberDateRangePickerState(
+                        initialSelectedStartDateMillis = initialStartDateMillis,
+                        initialSelectedEndDateMillis = initialEndDateMillis,
+                        initialDisplayMode = DisplayMode.Input,
+                    )
+            )
+            // Update the delayCompleted till after the focus is acquired. Note that we request the
+            // focus about 400ms after the picker is shown, but using a higher delay here to reduce
+            // flakiness.
+            LaunchedEffect(Unit) {
+                delay(1000)
+                delayCompleted = true
+            }
+        }
+        rule.waitUntil("Waiting for focus", 5_000L) { delayCompleted }
+        rule.onNodeWithText("05/11/2010").assertIsFocused()
+        rule.onNodeWithText("10/20/2020").assertIsNotFocused()
+    }
+
+    @Test
+    fun dateRangeInput_noInitialFocusOnInputField() {
+        var delayCompleted by mutableStateOf(false)
+        rule.setMaterialContent(lightColorScheme()) {
+            val initialStartDateMillis =
+                dayInUtcMilliseconds(year = 2010, month = 5, dayOfMonth = 11)
+            val initialEndDateMillis =
+                dayInUtcMilliseconds(year = 2020, month = 10, dayOfMonth = 20)
+            DateRangePicker(
+                state =
+                    rememberDateRangePickerState(
+                        initialSelectedStartDateMillis = initialStartDateMillis,
+                        initialSelectedEndDateMillis = initialEndDateMillis,
+                        initialDisplayMode = DisplayMode.Input,
+                    ),
+                // Prevent the focus from being requested.
+                focusRequester = null,
+            )
+            // Although a focus request is not made, apply a delay to ensure that the test checks
+            // for focus after that delay.
+            LaunchedEffect(Unit) {
+                delay(1000)
+                delayCompleted = true
+            }
+        }
+        rule.waitUntil("Waiting for delay completion", 5_000L) { delayCompleted }
+        rule.onNodeWithText("05/11/2010").assertIsNotFocused()
+        rule.onNodeWithText("10/20/2020").assertIsNotFocused()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun dateRangeInputWithInitialDate_alternateLocale() {
+        lateinit var state: DateRangePickerState
+        rule.setMaterialContent(lightColorScheme()) {
+            val initialStartDateMillis =
+                dayInUtcMilliseconds(year = 2010, month = 5, dayOfMonth = 11)
+            val initialEndDateMillis = dayInUtcMilliseconds(year = 2020, month = 5, dayOfMonth = 20)
+            state =
+                DateRangePickerState(
+                    locale = Locale.forLanguageTag("HE"),
+                    initialSelectedStartDateMillis = initialStartDateMillis,
+                    initialSelectedEndDateMillis = initialEndDateMillis,
+                    initialDisplayMode = DisplayMode.Input,
+                )
+            DateRangePicker(state = state)
+        }
+
+        // For Hebrew Locale, the month precedes the date.
+        rule.onNodeWithText("11.05.2010").assertExists()
+        rule.onNodeWithText("20.05.2020").assertExists()
+        // Setting the Locale at the state would not affect the displayed dates at the headline, and
+        // it will still be displayed as "May 11, 2010" with the default locale. To ensure that the
+        // entire date picker UI is localized, there is a need to wrap the picker's code in a
+        // CompositionLocalProvider with a new Context Configuration, but this test does not cover
+        // that.
+        rule.onNodeWithText("May 11, 2010", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("May 20, 2020", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -131,7 +228,7 @@ class DateRangeInputTest {
                         object : SelectableDates {
                             // All dates are invalid for the sake of this test.
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean = false
-                        }
+                        },
                 )
             DateRangePicker(state = state)
         }
@@ -168,7 +265,7 @@ class DateRangeInputTest {
                 rememberDateRangePickerState(
                     // Limit the years selection to 2018-2023
                     yearRange = IntRange(2018, 2023),
-                    initialDisplayMode = DisplayMode.Input
+                    initialDisplayMode = DisplayMode.Input,
                 )
             DateRangePicker(state = state)
         }
@@ -230,7 +327,7 @@ class DateRangeInputTest {
                     rememberDateRangePickerState(
                         initialSelectedStartDateMillis = startDateMillis,
                         initialSelectedEndDateMillis = endDateMillis,
-                        initialDisplayMode = DisplayMode.Input
+                        initialDisplayMode = DisplayMode.Input,
                     )
             )
         }
@@ -240,14 +337,14 @@ class DateRangeInputTest {
                 startDateMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache
+                cache,
             )
         val fullEndDateDescription =
             formatWithSkeleton(
                 endDateMillis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache
+                cache,
             )
 
         val startHeadlineDescription = "$pickerStartDateHeadline: $fullStartDateDescription"

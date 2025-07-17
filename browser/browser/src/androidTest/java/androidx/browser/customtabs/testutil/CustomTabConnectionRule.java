@@ -21,11 +21,11 @@ import static org.junit.Assert.fail;
 import android.content.ComponentName;
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 

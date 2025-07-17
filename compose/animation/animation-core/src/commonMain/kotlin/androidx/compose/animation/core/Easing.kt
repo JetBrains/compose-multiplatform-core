@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.computeCubicVerticalBounds
 import androidx.compose.ui.graphics.evaluateCubic
 import androidx.compose.ui.graphics.findFirstCubicRoot
 import androidx.compose.ui.util.fastCoerceIn
+import kotlin.math.max
 
 /**
  * Easing is a way to adjust an animation’s fraction. Easing allows transitioning elements to speed
@@ -33,8 +34,8 @@ import androidx.compose.ui.util.fastCoerceIn
  * An [Easing] must map fraction=0.0 to 0.0 and fraction=1.0 to 1.0.
  */
 @Stable
-fun interface Easing {
-    fun transform(fraction: Float): Float
+public fun interface Easing {
+    public fun transform(fraction: Float): Float
 }
 
 /**
@@ -46,7 +47,7 @@ fun interface Easing {
  *
  * This is equivalent to the Android `FastOutSlowInInterpolator`
  */
-val FastOutSlowInEasing: Easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
+public val FastOutSlowInEasing: Easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
 
 /**
  * Incoming elements are animated using deceleration easing, which starts a transition at peak
@@ -54,7 +55,7 @@ val FastOutSlowInEasing: Easing = CubicBezierEasing(0.4f, 0.0f, 0.2f, 1.0f)
  *
  * This is equivalent to the Android `LinearOutSlowInInterpolator`
  */
-val LinearOutSlowInEasing: Easing = CubicBezierEasing(0.0f, 0.0f, 0.2f, 1.0f)
+public val LinearOutSlowInEasing: Easing = CubicBezierEasing(0.0f, 0.0f, 0.2f, 1.0f)
 
 /**
  * Elements exiting a screen use acceleration easing, where they start at rest and end at peak
@@ -62,13 +63,17 @@ val LinearOutSlowInEasing: Easing = CubicBezierEasing(0.0f, 0.0f, 0.2f, 1.0f)
  *
  * This is equivalent to the Android `FastOutLinearInInterpolator`
  */
-val FastOutLinearInEasing: Easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f)
+public val FastOutLinearInEasing: Easing = CubicBezierEasing(0.4f, 0.0f, 1.0f, 1.0f)
 
 /**
  * It returns fraction unmodified. This is useful as a default value for cases where a [Easing] is
  * required but no actual easing is desired.
  */
-val LinearEasing: Easing = Easing { fraction -> fraction }
+public val LinearEasing: Easing = Easing { fraction -> fraction }
+
+// This is equal to 1f.ulp or 1f.nextUp() - 1f, but neither ulp nor nextUp() are part of all KMP
+// targets, only JVM and native
+private const val OneUlpAt1 = 1.1920929e-7f
 
 /**
  * A cubic polynomial easing.
@@ -96,11 +101,11 @@ val LinearEasing: Easing = Easing { fraction -> fraction }
  * @see FastOutLinearInEasing
  */
 @Immutable
-class CubicBezierEasing(
+public class CubicBezierEasing(
     private val a: Float,
     private val b: Float,
     private val c: Float,
-    private val d: Float
+    private val d: Float,
 ) : Easing {
     private val min: Float
     private val max: Float
@@ -125,13 +130,11 @@ class CubicBezierEasing(
      */
     override fun transform(fraction: Float): Float {
         return if (fraction > 0f && fraction < 1f) {
-            val t =
-                findFirstCubicRoot(
-                    0.0f - fraction,
-                    a - fraction,
-                    c - fraction,
-                    1.0f - fraction,
-                )
+            // We translate the coordinates by the fraction when calling findFirstCubicRoot,
+            // but we need to make sure the translation can be done at 1.0f so we take at
+            // least 1 ulp at 1.0f
+            val f = max(fraction, OneUlpAt1)
+            val t = findFirstCubicRoot(0.0f - f, a - f, c - f, 1.0f - f)
 
             // No root, the cubic curve has no solution
             if (t.isNaN()) {

@@ -16,7 +16,11 @@
 package androidx.privacysandbox.sdkruntime.client.loader
 
 import android.content.Context
+import android.hardware.display.DisplayManager
 import android.os.Build
+import android.view.Display
+import android.view.LayoutInflater
+import android.view.WindowManager.LayoutParams
 import androidx.privacysandbox.sdkruntime.client.loader.impl.SandboxedSdkContextCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
@@ -35,13 +39,19 @@ import org.junit.runners.Parameterized
 internal class SandboxedSdkContextCompatTest(
     private val contextType: String,
     private val sdkContextCompat: SandboxedSdkContextCompat,
-    private val appStorageContext: Context
+    private val appStorageContext: Context,
 ) {
 
     @Test
     fun getClassloader_returnSdkClassloader() {
         val sdkClassLoader = javaClass.classLoader!!.parent!!
         assertThat(sdkContextCompat.classLoader).isEqualTo(sdkClassLoader)
+    }
+
+    @Test
+    fun layoutInflater_hasCorrectContext() {
+        val layoutInflater = LayoutInflater.from(sdkContextCompat)
+        assertThat(layoutInflater.context).isEqualTo(sdkContextCompat)
     }
 
     @Test
@@ -65,7 +75,6 @@ internal class SandboxedSdkContextCompatTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     fun getCodeCacheDir_returnSdkCodeCacheDirInAppCodeCacheDir() {
         val expectedSdksCodeCacheRoot = File(appStorageContext.codeCacheDir, SDK_ROOT_FOLDER)
         val expectedSdkCodeCache = File(expectedSdksCodeCacheRoot, SDK_PACKAGE_NAME)
@@ -76,7 +85,6 @@ internal class SandboxedSdkContextCompatTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     fun getNoBackupFilesDir_returnSdkNoBackupDirInAppNoBackupDir() {
         val expectedSdksNoBackupRoot = File(appStorageContext.noBackupFilesDir, SDK_ROOT_FOLDER)
         val expectedSdkNoBackupDir = File(expectedSdksNoBackupRoot, SDK_PACKAGE_NAME)
@@ -235,7 +243,7 @@ internal class SandboxedSdkContextCompatTest(
             sdkContextCompat.openOrCreateDatabase(
                 name = databaseName,
                 mode = Context.MODE_PRIVATE,
-                factory = null
+                factory = null,
             )
 
         database.execSQL("CREATE TABLE test (data int)")
@@ -246,7 +254,7 @@ internal class SandboxedSdkContextCompatTest(
                 name = databaseName,
                 mode = Context.MODE_PRIVATE,
                 factory = null,
-                errorHandler = null
+                errorHandler = null,
             )
 
         val result = databaseFrom4ParamMethod.rawQuery("SELECT * FROM test", null)
@@ -263,7 +271,7 @@ internal class SandboxedSdkContextCompatTest(
         sdkContextCompat.openOrCreateDatabase(
             name = databaseName,
             mode = Context.MODE_PRIVATE,
-            factory = null
+            factory = null,
         )
         assertThat(sdkContextCompat.getDatabasePath(databaseName).exists()).isTrue()
 
@@ -278,7 +286,7 @@ internal class SandboxedSdkContextCompatTest(
         sdkContextCompat.openOrCreateDatabase(
             name = databaseName,
             mode = Context.MODE_PRIVATE,
-            factory = null
+            factory = null,
         )
 
         val result = sdkContextCompat.databaseList().asList()
@@ -299,7 +307,7 @@ internal class SandboxedSdkContextCompatTest(
             SandboxedSdkContextCompat(
                 sourceAppStorageContext,
                 sdkPackageName = SDK_PACKAGE_NAME,
-                classLoader = javaClass.classLoader!!.parent!!
+                classLoader = javaClass.classLoader!!.parent!!,
             )
 
         val databaseName = "testMoveTo$contextType.db"
@@ -309,7 +317,7 @@ internal class SandboxedSdkContextCompatTest(
             sourceContext.openOrCreateDatabase(
                 name = databaseName,
                 mode = Context.MODE_PRIVATE,
-                factory = null
+                factory = null,
             )
 
         database.execSQL("CREATE TABLE test (data int)")
@@ -322,7 +330,7 @@ internal class SandboxedSdkContextCompatTest(
             sdkContextCompat.openOrCreateDatabase(
                 name = databaseName,
                 mode = Context.MODE_PRIVATE,
-                factory = null
+                factory = null,
             )
 
         val result = migratedDatabase.rawQuery("SELECT * FROM test", null)
@@ -344,7 +352,7 @@ internal class SandboxedSdkContextCompatTest(
         val appSharedPreferences =
             appStorageContext.getSharedPreferences(
                 "${SDK_SHARED_PREFERENCES_PREFIX}_${SDK_PACKAGE_NAME}_$sdkSharedPreferencesName",
-                Context.MODE_PRIVATE
+                Context.MODE_PRIVATE,
             )
         val result = appSharedPreferences.getInt("test", 0)
         assertThat(result).isEqualTo(42)
@@ -378,7 +386,7 @@ internal class SandboxedSdkContextCompatTest(
             SandboxedSdkContextCompat(
                 sourceAppStorageContext,
                 sdkPackageName = SDK_PACKAGE_NAME,
-                classLoader = javaClass.classLoader!!.parent!!
+                classLoader = javaClass.classLoader!!.parent!!,
             )
 
         val sdkSharedPreferencesName = "testMoveTo$contextType"
@@ -417,7 +425,7 @@ internal class SandboxedSdkContextCompatTest(
                 SandboxedSdkContextCompat(
                     appContext,
                     sdkPackageName = SDK_PACKAGE_NAME,
-                    classLoader = javaClass.classLoader!!.parent!!
+                    classLoader = javaClass.classLoader!!.parent!!,
                 )
             add(arrayOf("SimpleContext", sdkContext, appContext))
 
@@ -427,7 +435,40 @@ internal class SandboxedSdkContextCompatTest(
                     arrayOf(
                         "DeviceProtectedStorageContext",
                         deviceProtectedSdkContext,
-                        appContext.createDeviceProtectedStorageContext()
+                        appContext.createDeviceProtectedStorageContext(),
+                    )
+                )
+            }
+
+            val displayManager =
+                sdkContext.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+            val display = displayManager.getDisplay(Display.DEFAULT_DISPLAY)
+            val displayContext = sdkContext.createDisplayContext(display)
+            add(arrayOf("DisplayContext", displayContext, appContext))
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                add(
+                    arrayOf(
+                        "WindowContext",
+                        displayContext.createWindowContext(
+                            LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+                            /* options = */ null,
+                        ),
+                        appContext,
+                    )
+                )
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(
+                    arrayOf(
+                        "WindowContextWithDisplay",
+                        displayContext.createWindowContext(
+                            display,
+                            LayoutParams.TYPE_APPLICATION_SUB_PANEL,
+                            /* options = */ null,
+                        ),
+                        appContext,
                     )
                 )
             }

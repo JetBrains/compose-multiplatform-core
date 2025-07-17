@@ -116,7 +116,7 @@ class ProcessingCaptureSessionTest(
                 arrayOf(LENS_FACING_BACK, (PRIVATE to null), (JPEG to YUV_420_888)),
                 arrayOf(LENS_FACING_FRONT, (PRIVATE to null), (JPEG to null)),
                 arrayOf(LENS_FACING_FRONT, (YUV_420_888 to YUV_420_888), (JPEG to null)),
-                arrayOf(LENS_FACING_FRONT, (PRIVATE to null), (YUV_420_888 to YUV_420_888))
+                arrayOf(LENS_FACING_FRONT, (PRIVATE to null), (YUV_420_888 to YUV_420_888)),
             )
     }
 
@@ -148,7 +148,7 @@ class ProcessingCaptureSessionTest(
         sessionProcessor =
             FakeSessionProcessor(
                 inputFormatPreview = previewFormatConvert.second,
-                inputFormatCapture = captureFormatConvert.second
+                inputFormatCapture = captureFormatConvert.second,
             )
 
         val cameraId = CameraUtil.getCameraIdWithLensFacing(lensFacing)!!
@@ -161,7 +161,7 @@ class ProcessingCaptureSessionTest(
                 handler,
                 captureSessionRepository,
                 camera2CameraInfo.cameraQuirks,
-                DeviceQuirks.getAll()
+                DeviceQuirks.getAll(),
             )
 
         cameraDeviceHolder =
@@ -197,7 +197,8 @@ class ProcessingCaptureSessionTest(
             camera2Info,
             dynamicRangesCompat,
             executor,
-            executor as ScheduledExecutorService
+            executor as ScheduledExecutorService,
+            null,
         )
     }
 
@@ -215,7 +216,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -237,7 +238,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -249,7 +250,7 @@ class ProcessingCaptureSessionTest(
             assertThat(
                     areParametersConfigIdentical(
                         parametersConfigSet,
-                        captureSession.sessionConfig!!.implementationOptions
+                        captureSession.sessionConfig!!.implementationOptions,
                     )
                 )
                 .isTrue()
@@ -267,7 +268,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
             captureSession.sessionConfig =
@@ -281,7 +282,7 @@ class ProcessingCaptureSessionTest(
             assertThat(
                     areParametersConfigIdentical(
                         parametersConfigSet,
-                        captureSession.sessionConfig!!.implementationOptions
+                        captureSession.sessionConfig!!.implementationOptions,
                     )
                 )
                 .isTrue()
@@ -299,7 +300,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
             sessionConfigParameters.assertPreviewImageReceived()
@@ -348,7 +349,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -380,7 +381,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -404,7 +405,7 @@ class ProcessingCaptureSessionTest(
             assertThat(
                     parametersConfig.isParameterSet(
                         CaptureRequest.JPEG_ORIENTATION,
-                        JPEG_ORIENTATION_VALUE
+                        JPEG_ORIENTATION_VALUE,
                     )
                 )
                 .isTrue()
@@ -424,7 +425,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -444,7 +445,7 @@ class ProcessingCaptureSessionTest(
         runBlocking(Dispatchers.Main) {
             assertCanIssueTriggerRequest(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         }
 
@@ -453,13 +454,13 @@ class ProcessingCaptureSessionTest(
         runBlocking(Dispatchers.Main) {
             assertCanIssueTriggerRequest(
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
-                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START
+                CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_START,
             )
         }
 
     private suspend fun <T : Any> assertCanIssueTriggerRequest(
         testKey: CaptureRequest.Key<T>,
-        testValue: T
+        testValue: T,
     ) {
         // Arrange
         val cameraDevice = cameraDeviceHolder.get()!!
@@ -468,7 +469,7 @@ class ProcessingCaptureSessionTest(
             .open(
                 sessionConfigParameters.getSessionConfigForOpen(),
                 cameraDevice,
-                captureSessionOpenerBuilder.build()
+                captureSessionOpenerBuilder.build(),
             )
             .awaitWithTimeout(3000)
 
@@ -501,7 +502,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -517,14 +518,14 @@ class ProcessingCaptureSessionTest(
             assertThat(
                     parametersConfig.isParameterSet(
                         CaptureRequest.CONTROL_AF_MODE,
-                        CaptureRequest.CONTROL_AF_MODE_OFF
+                        CaptureRequest.CONTROL_AF_MODE_OFF,
                     )
                 )
                 .isTrue()
             assertThat(
                     parametersConfig.isParameterSet(
                         CaptureRequest.JPEG_ORIENTATION,
-                        JPEG_ORIENTATION_VALUE
+                        JPEG_ORIENTATION_VALUE,
                     )
                 )
                 .isTrue()
@@ -551,7 +552,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -570,7 +571,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
             val cancelCountLatch = CountDownLatch(1)
@@ -608,7 +609,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -629,7 +630,7 @@ class ProcessingCaptureSessionTest(
                             object : CameraCaptureCallback() {
                                 override fun onCaptureCompleted(
                                     captureConfigId: Int,
-                                    cameraCaptureResult: CameraCaptureResult
+                                    cameraCaptureResult: CameraCaptureResult,
                                 ) {
                                     deferredRequestCompleted.complete(Unit)
                                 }
@@ -687,7 +688,7 @@ class ProcessingCaptureSessionTest(
             captureSession.open(
                 sessionConfigParameters.getSessionConfigForOpen(),
                 cameraDevice,
-                captureSessionOpenerBuilder.build()
+                captureSessionOpenerBuilder.build(),
             )
 
         // Assert
@@ -706,7 +707,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -732,7 +733,7 @@ class ProcessingCaptureSessionTest(
                 assertThat(outputSurface.useCount).isAtLeast(1)
                 outputSurface.terminationFuture.addListener(
                     { surfaceTerminated.countDown() },
-                    CameraXExecutors.directExecutor()
+                    CameraXExecutors.directExecutor(),
                 )
             }
 
@@ -773,7 +774,7 @@ class ProcessingCaptureSessionTest(
         for (outputSurface in sessionConfigForOpen.surfaces) {
             outputSurface.terminationFuture.addListener(
                 { surfaceTerminated.countDown() },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
         assertThat(surfaceTerminated.await(3, TimeUnit.SECONDS)).isTrue()
@@ -788,7 +789,7 @@ class ProcessingCaptureSessionTest(
             captureSession.open(
                 sessionConfigParameters.getSessionConfigForOpen(),
                 cameraDevice,
-                captureSessionOpenerBuilder.build()
+                captureSessionOpenerBuilder.build(),
             )
             captureSession.close()
             captureSession.release(false)
@@ -799,7 +800,7 @@ class ProcessingCaptureSessionTest(
             captureSession2.open(
                 sessionConfigParameters2.getSessionConfigForOpen(),
                 cameraDevice,
-                captureSessionOpenerBuilder.build()
+                captureSessionOpenerBuilder.build(),
             )
 
             // Assert
@@ -819,7 +820,7 @@ class ProcessingCaptureSessionTest(
                 .open(
                     sessionConfigParameters.getSessionConfigForOpen(),
                     cameraDevice,
-                    captureSessionOpenerBuilder.build()
+                    captureSessionOpenerBuilder.build(),
                 )
                 .awaitWithTimeout(3000)
 
@@ -861,7 +862,7 @@ class ProcessingCaptureSessionTest(
             captureSession.open(
                 sessionConfigParameters.getSessionConfigForOpen(),
                 cameraDevice,
-                captureSessionOpenerBuilder.build()
+                captureSessionOpenerBuilder.build(),
             )
 
             // Act
@@ -923,7 +924,7 @@ class ProcessingCaptureSessionTest(
                 previewImageReader = ImageReader.newInstance(640, 480, previewFormat, 2)
                 previewImageReader!!.setOnImageAvailableListener(
                     { it.acquireNextImage().use { previewImageReady.complete(Unit) } },
-                    handler
+                    handler,
                 )
                 previewSurface = previewImageReader!!.surface
             }
@@ -934,7 +935,7 @@ class ProcessingCaptureSessionTest(
                     previewSurfaceTexture?.release()
                     previewImageReader?.close()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
             previewOutputDeferrableSurface.setContainerClass(Preview::class.java)
 
@@ -943,14 +944,14 @@ class ProcessingCaptureSessionTest(
             captureImageReader = ImageReader.newInstance(640, 480, captureFormat, 2)
             captureImageReader.setOnImageAvailableListener(
                 { it.acquireNextImage().use { captureImageReady.complete(Unit) } },
-                handler
+                handler,
             )
             captureOutputDeferrableSurface =
                 ImmediateSurface(captureImageReader.surface, Size(640, 480), captureFormat)
             captureOutputDeferrableSurface.setContainerClass(ImageCapture::class.java)
             captureOutputDeferrableSurface.terminationFuture.addListener(
                 { captureImageReader.close() },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         }
 
@@ -993,7 +994,7 @@ class ProcessingCaptureSessionTest(
                         CaptureRequestOptions.Builder()
                             .setCaptureRequestOption(
                                 CaptureRequest.CONTROL_AF_MODE,
-                                CaptureRequest.CONTROL_AF_MODE_OFF
+                                CaptureRequest.CONTROL_AF_MODE_OFF,
                             )
                             .build()
                     )
@@ -1003,7 +1004,7 @@ class ProcessingCaptureSessionTest(
                                 override fun onCaptureCompleted(
                                     session: CameraCaptureSession,
                                     request: CaptureRequest,
-                                    result: TotalCaptureResult
+                                    result: TotalCaptureResult,
                                 ) {
                                     if (request.tag !is TagBundle) {
                                         return
@@ -1037,11 +1038,11 @@ class ProcessingCaptureSessionTest(
                             .apply {
                                 setCaptureRequestOption(
                                     CaptureRequest.JPEG_ORIENTATION,
-                                    JPEG_ORIENTATION_VALUE
+                                    JPEG_ORIENTATION_VALUE,
                                 )
                                 setCaptureRequestOption(
                                     CaptureRequest.JPEG_QUALITY,
-                                    JPEG_QUALITY_VALUE
+                                    JPEG_QUALITY_VALUE,
                                 )
                             }
                             .build()
@@ -1053,21 +1054,21 @@ class ProcessingCaptureSessionTest(
 
                             override fun onCaptureCompleted(
                                 captureConfigId: Int,
-                                cameraCaptureResult: CameraCaptureResult
+                                cameraCaptureResult: CameraCaptureResult,
                             ) {
                                 stillCaptureCompleted.complete(captureConfigId)
                             }
 
                             override fun onCaptureFailed(
                                 captureConfigId: Int,
-                                failure: CameraCaptureFailure
+                                failure: CameraCaptureFailure,
                             ) {
                                 stillCaptureFailed.complete(captureConfigId)
                             }
 
                             override fun onCaptureProcessProgressed(
                                 captureConfigId: Int,
-                                progress: Int
+                                progress: Int,
                             ) {
                                 stillCaptureProcessProgressed.complete(captureConfigId)
                             }
@@ -1079,7 +1080,7 @@ class ProcessingCaptureSessionTest(
 
         fun <T : Any> getTriggerCaptureConfig(
             triggerKey: CaptureRequest.Key<T>,
-            triggerValue: T
+            triggerValue: T,
         ): CaptureConfig {
             return CaptureConfig.Builder()
                 .apply {
@@ -1092,7 +1093,7 @@ class ProcessingCaptureSessionTest(
                         object : CameraCaptureCallback() {
                             override fun onCaptureCompleted(
                                 captureConfigId: Int,
-                                cameraCaptureResult: CameraCaptureResult
+                                cameraCaptureResult: CameraCaptureResult,
                             ) {
                                 triggerRequestCompleted.complete(Unit)
                             }

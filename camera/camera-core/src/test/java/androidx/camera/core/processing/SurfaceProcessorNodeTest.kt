@@ -37,12 +37,11 @@ import androidx.camera.core.impl.ImmediateSurface
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.utils.TransformUtils
 import androidx.camera.core.impl.utils.TransformUtils.getRectToRect
-import androidx.camera.core.impl.utils.TransformUtils.getRotatedSize
 import androidx.camera.core.impl.utils.TransformUtils.is90or270
 import androidx.camera.core.impl.utils.TransformUtils.rectToSize
 import androidx.camera.core.impl.utils.TransformUtils.sizeToRect
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
-import androidx.camera.core.processing.SurfaceProcessorNode.OutConfig
+import androidx.camera.core.processing.util.OutConfig
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.fakes.FakeImageReaderProxy
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
@@ -131,7 +130,7 @@ class SurfaceProcessorNodeTest {
                 Rect(160, 120, 480, 360), // 320 x 240 crop rect in the center
                 0,
                 ROTATION_NOT_SPECIFIED,
-                true
+                true,
             )
         val outCropRect = Rect(80, 60, 560, 420)
         val outConfig =
@@ -142,7 +141,7 @@ class SurfaceProcessorNodeTest {
                 rectToSize(outCropRect),
                 inputEdge.rotationDegrees,
                 inputEdge.isMirroring,
-                true
+                true,
             )
         createSurfaceProcessorNode()
         // Act: transform input.
@@ -166,7 +165,7 @@ class SurfaceProcessorNodeTest {
                 Rect(160, 120, 480, 360), // 320 x 240 crop rect in the center
                 0,
                 ROTATION_NOT_SPECIFIED,
-                true
+                true,
             )
         // A crop rect that is smaller than the input's.
         val smallCropRect = Rect(170, 120, 480, 360)
@@ -178,7 +177,7 @@ class SurfaceProcessorNodeTest {
                 rectToSize(smallCropRect),
                 inputEdge.rotationDegrees,
                 inputEdge.isMirroring,
-                true
+                true,
             )
         createSurfaceProcessorNode()
         // Act: transform input which throws exception.
@@ -194,7 +193,7 @@ class SurfaceProcessorNodeTest {
             getRectToRect(
                 RectF(0F, 0F, 1400F, 1000F),
                 RectF(0F, 0F, 700F, 500F),
-                /*rotationDegrees=*/ 0
+                /*rotationDegrees=*/ 0,
             )
         val inputEdge =
             SurfaceEdge(
@@ -206,7 +205,7 @@ class SurfaceProcessorNodeTest {
                 Rect(60, 20, 700, 500), // 640 x 480 crop rect
                 180,
                 ROTATION_NOT_SPECIFIED,
-                true
+                true,
             )
         nodeInput = SurfaceProcessorNode.In.of(inputEdge, listOf(OutConfig.of(inputEdge)))
 
@@ -239,7 +238,7 @@ class SurfaceProcessorNodeTest {
                     PREVIEW_CROP_RECT,
                     0,
                     ROTATION_NOT_SPECIFIED,
-                    false
+                    false,
                 )
         )
 
@@ -270,7 +269,7 @@ class SurfaceProcessorNodeTest {
                 PREVIEW_CROP_RECT,
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         val outConfig =
             OutConfig.of(
@@ -279,7 +278,7 @@ class SurfaceProcessorNodeTest {
                 inputEdge.cropRect,
                 TransformUtils.getRotatedSize(inputEdge.cropRect, inputEdge.rotationDegrees),
                 inputEdge.rotationDegrees,
-                inputEdge.isMirroring
+                inputEdge.isMirroring,
             )
         nodeInput = SurfaceProcessorNode.In.of(inputEdge, listOf(outConfig))
         // Act.
@@ -295,13 +294,13 @@ class SurfaceProcessorNodeTest {
                 INPUT_SIZE.height,
                 ImageFormat.JPEG,
                 1,
-                0
+                0,
             )
         val outputDeferrableSurface =
             ImmediateSurface(
                 imageReader.surface!!,
                 Size(PREVIEW_CROP_RECT.width(), PREVIEW_CROP_RECT.height()),
-                ImageFormat.JPEG
+                ImageFormat.JPEG,
             )
         outEdge.setProvider(outputDeferrableSurface)
         shadowOf(getMainLooper()).idle()
@@ -325,7 +324,7 @@ class SurfaceProcessorNodeTest {
                 PREVIEW_CROP_RECT,
                 0,
                 ROTATION_NOT_SPECIFIED,
-                false
+                false,
             )
         val outConfig1 = OutConfig.of(inputEdge)
         val outConfig2 = OutConfig.of(inputEdge)
@@ -356,9 +355,7 @@ class SurfaceProcessorNodeTest {
         for (rotationDegrees in arrayOf(0, 90, 180, 270)) {
             // Arrange.
             createSurfaceProcessorNode()
-            createInputEdge(
-                inputRotationDegrees = rotationDegrees,
-            )
+            createInputEdge(inputRotationDegrees = rotationDegrees)
             // The result cropRect should have zero left and top.
             val expectedCropRect =
                 if (is90or270(rotationDegrees))
@@ -589,7 +586,7 @@ class SurfaceProcessorNodeTest {
                 VIDEO_CROP_RECT,
                 videoOutputSize,
                 VIDEO_ROTATION_DEGREES,
-                true
+                true,
             )
         previewOutConfig = OutConfig.of(inputEdge)
         nodeInput = SurfaceProcessorNode.In.of(inputEdge, listOf(previewOutConfig, videoOutConfig))

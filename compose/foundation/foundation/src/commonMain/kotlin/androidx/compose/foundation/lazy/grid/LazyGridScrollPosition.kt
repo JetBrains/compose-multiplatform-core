@@ -17,6 +17,8 @@
 package androidx.compose.foundation.lazy.grid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.checkPrecondition
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.lazy.layout.LazyLayoutNearestRangeState
 import androidx.compose.foundation.lazy.layout.findIndexByKey
 import androidx.compose.runtime.getValue
@@ -27,7 +29,6 @@ import androidx.compose.runtime.setValue
  * Contains the current scroll position represented by the first visible item index and the first
  * visible item scroll offset.
  */
-@OptIn(ExperimentalFoundationApi::class)
 internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset: Int = 0) {
     var index by mutableIntStateOf(initialIndex)
         private set
@@ -44,7 +45,7 @@ internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset
         LazyLayoutNearestRangeState(
             initialIndex,
             NearestItemsSlidingWindowSize,
-            NearestItemsExtraItemCount
+            NearestItemsExtraItemCount,
         )
 
     /** Updates the current scroll position based on the results of the last measurement. */
@@ -56,7 +57,9 @@ internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset
         if (hadFirstNotEmptyLayout || measureResult.totalItemsCount > 0) {
             hadFirstNotEmptyLayout = true
             val scrollOffset = measureResult.firstVisibleLineScrollOffset
-            check(scrollOffset >= 0f) { "scrollOffset should be non-negative ($scrollOffset)" }
+            checkPrecondition(scrollOffset >= 0f) {
+                "scrollOffset should be non-negative ($scrollOffset)"
+            }
 
             val firstIndex = measureResult.firstVisibleLine?.items?.firstOrNull()?.index ?: 0
             update(firstIndex, scrollOffset)
@@ -64,7 +67,7 @@ internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset
     }
 
     fun updateScrollOffset(scrollOffset: Int) {
-        check(scrollOffset >= 0f) { "scrollOffset should be non-negative ($scrollOffset)" }
+        checkPrecondition(scrollOffset >= 0f) { "scrollOffset should be non-negative" }
         this.scrollOffset = scrollOffset
     }
 
@@ -91,9 +94,10 @@ internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset
      * were items added or removed before our current first visible item and keep this item as the
      * first visible one even given that its index has been changed.
      */
+    @OptIn(ExperimentalFoundationApi::class)
     fun updateScrollPositionIfTheFirstItemWasMoved(
         itemProvider: LazyGridItemProvider,
-        index: Int
+        index: Int,
     ): Int {
         val newIndex = itemProvider.findIndexByKey(lastKnownFirstItemKey, index)
         if (index != newIndex) {
@@ -104,7 +108,7 @@ internal class LazyGridScrollPosition(initialIndex: Int = 0, initialScrollOffset
     }
 
     private fun update(index: Int, scrollOffset: Int) {
-        require(index >= 0f) { "Index should be non-negative ($index)" }
+        requirePrecondition(index >= 0f) { "Index should be non-negative" }
         this.index = index
         nearestRangeState.update(index)
         this.scrollOffset = scrollOffset

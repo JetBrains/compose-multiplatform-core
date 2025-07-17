@@ -16,10 +16,8 @@
 
 package androidx.compose.material3
 
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
@@ -42,6 +40,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.material3.tokens.MenuTokens
+import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -66,8 +65,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a>.
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
@@ -104,7 +102,6 @@ import kotlin.math.min
  * Example usage with a [ScrollState] to control the menu items scroll position:
  *
  * @sample androidx.compose.material3.samples.MenuWithScrollStateSample
- *
  * @param expanded whether the menu is expanded or not
  * @param onDismissRequest called when the user requests to dismiss the menu, such as by tapping
  *   outside the menu's bounds
@@ -135,12 +132,11 @@ expect fun DropdownMenu(
     tonalElevation: Dp = MenuDefaults.TonalElevation,
     shadowElevation: Dp = MenuDefaults.ShadowElevation,
     border: BorderStroke? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 )
 
 /**
- * <a href="https://m3.material.io/components/menus/overview" class="external"
- * target="_blank">Material Design dropdown menu</a> item.
+ * [Material Design dropdown menu](https://m3.material.io/components/menus/overview)
  *
  * Menus display a list of choices on a temporary surface. They appear when users interact with a
  * button, action, or other control.
@@ -151,7 +147,6 @@ expect fun DropdownMenu(
  * Example usage:
  *
  * @sample androidx.compose.material3.samples.MenuSample
- *
  * @param text text of the menu item
  * @param onClick called when this menu item is clicked
  * @param modifier the [Modifier] to be applied to this menu item
@@ -371,38 +366,20 @@ internal fun DropdownMenuContent(
     tonalElevation: Dp,
     shadowElevation: Dp,
     border: BorderStroke?,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     // Menu open/close animation.
     @Suppress("DEPRECATION") val transition = updateTransition(expandedState, "DropDownMenu")
-
+    // TODO Load the motionScheme tokens from the component tokens file
+    val scaleAnimationSpec = MotionSchemeKeyTokens.FastSpatial.value<Float>()
+    val alphaAnimationSpec = MotionSchemeKeyTokens.FastEffects.value<Float>()
     val scale by
-        transition.animateFloat(
-            transitionSpec = {
-                if (false isTransitioningTo true) {
-                    // Dismissed to expanded
-                    tween(durationMillis = InTransitionDuration, easing = LinearOutSlowInEasing)
-                } else {
-                    // Expanded to dismissed.
-                    tween(durationMillis = 1, delayMillis = OutTransitionDuration - 1)
-                }
-            }
-        ) { expanded ->
+        transition.animateFloat(transitionSpec = { scaleAnimationSpec }) { expanded ->
             if (expanded) ExpandedScaleTarget else ClosedScaleTarget
         }
 
     val alpha by
-        transition.animateFloat(
-            transitionSpec = {
-                if (false isTransitioningTo true) {
-                    // Dismissed to expanded
-                    tween(durationMillis = 30)
-                } else {
-                    // Expanded to dismissed.
-                    tween(durationMillis = OutTransitionDuration)
-                }
-            }
-        ) { expanded ->
+        transition.animateFloat(transitionSpec = { alphaAnimationSpec }) { expanded ->
             if (expanded) ExpandedAlphaTarget else ClosedAlphaTarget
         }
 
@@ -433,7 +410,7 @@ internal fun DropdownMenuContent(
                     .padding(vertical = DropdownMenuVerticalPadding)
                     .width(IntrinsicSize.Max)
                     .verticalScroll(scrollState),
-            content = content
+            content = content,
         )
     }
 }
@@ -448,7 +425,7 @@ internal fun DropdownMenuItemContent(
     enabled: Boolean,
     colors: MenuItemColors,
     contentPadding: PaddingValues,
-    interactionSource: MutableInteractionSource?
+    interactionSource: MutableInteractionSource?,
 ) {
     Row(
         modifier =
@@ -457,23 +434,23 @@ internal fun DropdownMenuItemContent(
                     enabled = enabled,
                     onClick = onClick,
                     interactionSource = interactionSource,
-                    indication = rippleOrFallbackImplementation(true)
+                    indication = ripple(true),
                 )
                 .fillMaxWidth()
                 // Preferred min and max width used during the intrinsic measurement.
                 .sizeIn(
                     minWidth = DropdownMenuItemDefaultMinWidth,
                     maxWidth = DropdownMenuItemDefaultMaxWidth,
-                    minHeight = MenuListItemContainerHeight
+                    minHeight = MenuListItemContainerHeight,
                 )
                 .padding(contentPadding),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // TODO(b/271818892): Align menu list item style with general list item style.
         ProvideTextStyle(MaterialTheme.typography.labelLarge) {
             if (leadingIcon != null) {
                 CompositionLocalProvider(
-                    LocalContentColor provides colors.leadingIconColor(enabled),
+                    LocalContentColor provides colors.leadingIconColor(enabled)
                 ) {
                     Box(Modifier.defaultMinSize(minWidth = ListTokens.ListItemLeadingIconSize)) {
                         leadingIcon()
@@ -495,7 +472,7 @@ internal fun DropdownMenuItemContent(
                                     DropdownMenuItemHorizontalPadding
                                 } else {
                                     0.dp
-                                }
+                                },
                         )
                 ) {
                     text()
@@ -551,8 +528,6 @@ private val DropdownMenuItemDefaultMinWidth = 112.dp
 private val DropdownMenuItemDefaultMaxWidth = 280.dp
 
 // Menu open/close animation.
-internal const val InTransitionDuration = 120
-internal const val OutTransitionDuration = 75
 internal const val ExpandedScaleTarget = 1f
 internal const val ClosedScaleTarget = 0.8f
 internal const val ExpandedAlphaTarget = 1f

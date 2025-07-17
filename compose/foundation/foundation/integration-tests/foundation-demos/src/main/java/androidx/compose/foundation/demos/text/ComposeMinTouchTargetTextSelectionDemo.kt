@@ -17,7 +17,7 @@
 package androidx.compose.foundation.demos.text
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.demos.collection.MutableColorList
+import androidx.compose.foundation.demos.collection.buildColorList
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,16 +61,14 @@ private val Purple = Color(0xff7B4397)
 
 // red is used for the selection container color
 private val Rainbow =
-    MutableColorList(initialCapacity = 6)
-        .apply {
-            add(Orange)
-            add(Yellow)
-            add(Green)
-            add(Blue)
-            add(Indigo)
-            add(Purple)
-        }
-        .asColorList()
+    buildColorList(initialCapacity = 6) {
+        add(Orange)
+        add(Yellow)
+        add(Green)
+        add(Blue)
+        add(Indigo)
+        add(Purple)
+    }
 
 @Composable
 fun MinTouchTargetTextSelection() {
@@ -110,13 +108,13 @@ fun MinTouchTargetTextSelection() {
                         .trimMargin()
                         .replace("\n", "")
                 )
-            },
+            }
         )
         var minTouchSideLength by remember { mutableFloatStateOf(48f) }
         Slider(
             value = minTouchSideLength,
             onValueChange = { minTouchSideLength = it },
-            valueRange = 0f..100f
+            valueRange = 0f..100f,
         )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             val length = minTouchSideLength.dp
@@ -153,7 +151,7 @@ private fun MinTouchTargetInTextSelection() {
                             .border(1.dp, color)
                             // Padding between text and border so they aren't touching
                             .padding(1.dp)
-                            .drawMinTouchTargetBorderBehind(fadedColor, minimumTouchTarget)
+                            .drawMinTouchTargetBorderBehind(fadedColor, minimumTouchTarget),
                 )
             }
         }
@@ -163,17 +161,17 @@ private fun MinTouchTargetInTextSelection() {
 /** Draw a 1 dp unfilled rect around the minimum touch target. */
 private fun Modifier.drawMinTouchTargetBorderBehind(
     color: Color,
-    minimumTouchTarget: DpSize
+    minimumTouchTarget: DpSize,
 ): Modifier = drawBehind {
     val minTouchTargetCoercedSize =
         Size(
             width = size.width.coerceAtLeast(minimumTouchTarget.width.toPx()),
-            height = size.height.coerceAtLeast(minimumTouchTarget.height.toPx())
+            height = size.height.coerceAtLeast(minimumTouchTarget.height.toPx()),
         )
     val topLeft =
         Offset(
             x = (size.width - minTouchTargetCoercedSize.width) / 2,
-            y = (size.height - minTouchTargetCoercedSize.height) / 2
+            y = (size.height - minTouchTargetCoercedSize.height) / 2,
         )
     drawRect(color, topLeft, minTouchTargetCoercedSize, style = Stroke(1.dp.toPx()))
 }

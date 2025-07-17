@@ -21,6 +21,7 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraMetadata
+import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
@@ -47,7 +48,7 @@ import androidx.camera.core.impl.Quirk
  * TODO: enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class CamcorderProfileResolutionQuirk(
+public class CamcorderProfileResolutionQuirk(
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat
 ) : Quirk {
 
@@ -63,15 +64,12 @@ class CamcorderProfileResolutionQuirk(
     }
 
     /** Returns the supported video resolutions. */
-    fun getSupportedResolutions(): List<Size> {
+    public fun getSupportedResolutions(): List<Size> {
         return supportedResolution.toList()
     }
 
-    companion object {
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
-            val level = cameraMetadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL]
-            return level != null &&
-                level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
-        }
+    public companion object {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean =
+            cameraMetadata.isHardwareLevelLegacy
     }
 }

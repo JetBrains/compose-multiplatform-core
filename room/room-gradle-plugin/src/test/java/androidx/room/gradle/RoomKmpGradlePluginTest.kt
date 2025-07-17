@@ -55,12 +55,9 @@ class RoomKmpGradlePluginTest {
             |
             |${projectSetup.androidProject}
             |
-            |// Disabled due to https://youtrack.jetbrains.com/issue/KT-65761
-            |ext["kotlin.native.disableCompilerDaemon"] = 'true'
-            |
             |kotlin {
             |  androidTarget()
-            |  linuxX64("native")
+            |  linuxX64()
             |  jvm()
             |  sourceSets {
             |    commonMain {
@@ -69,12 +66,16 @@ class RoomKmpGradlePluginTest {
             |      }
             |    }
             |  }
+            |
+            |  compilerOptions {
+            |    languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
+            |  }
             |}
             |
             |dependencies {
             |    add("kspCommonMainMetadata", "androidx.room:room-compiler:$roomVersion")
             |    add("kspAndroid", "androidx.room:room-compiler:$roomVersion")
-            |    add("kspNative", "androidx.room:room-compiler:$roomVersion")
+            |    add("kspLinuxX64", "androidx.room:room-compiler:$roomVersion")
             |    add("kspJvm", "androidx.room:room-compiler:$roomVersion")
             |}
             |
@@ -92,9 +93,13 @@ class RoomKmpGradlePluginTest {
             |room {
             |  schemaDirectory("metadata", "${'$'}projectDir/schemas/common")
             |  schemaDirectory("android", "${'$'}projectDir/schemas/android")
-            |  schemaDirectory("native", "${'$'}projectDir/schemas/native")
+            |  schemaDirectory("linuxX64", "${'$'}projectDir/schemas/native")
             |  schemaDirectory("jvm", "${'$'}projectDir/schemas/jvm")
             |  generateKotlin = $generateKotlin
+            |}
+            |
+            |ksp {
+            |  useKsp2 = true
             |}
             |
             """
@@ -111,7 +116,7 @@ class RoomKmpGradlePluginTest {
                 CLEAN_TASK,
                 ANDROID_COMPILE_TASK,
                 NATIVE_COMPILE_TASK,
-                projectDir = projectSetup.rootDir
+                projectDir = projectSetup.rootDir,
             )
             .let { result ->
                 result.assertTaskOutcome(ANDROID_COMPILE_TASK, TaskOutcome.SUCCESS)
@@ -176,7 +181,7 @@ class RoomKmpGradlePluginTest {
                 @Query("SELECT * FROM NativeEntity")
                 fun blockingQuery(): NativeEntity
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)
@@ -201,7 +206,7 @@ class RoomKmpGradlePluginTest {
                 @Insert
                 fun blockingInsert(entity: NativeEntity)
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)
@@ -226,7 +231,7 @@ class RoomKmpGradlePluginTest {
                 @Transaction
                 fun blockingTransaction() { }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
 
         runGradle(NATIVE_COMPILE_TASK, projectDir = projectSetup.rootDir, expectFailure = true)
@@ -244,11 +249,11 @@ class RoomKmpGradlePluginTest {
         private const val COMMON_KSP_TASK = ":kspCommonMainKotlinMetadata"
         private const val ANDROID_COMPILE_TASK = ":compileDebugKotlinAndroid"
         private const val ANDROID_KSP_TASK = ":kspDebugKotlinAndroid"
-        private const val NATIVE_COMPILE_TASK = ":compileKotlinNative"
-        private const val NATIVE_KSP_TASK = ":kspKotlinNative"
+        private const val NATIVE_COMPILE_TASK = ":compileKotlinLinuxX64"
+        private const val NATIVE_KSP_TASK = ":kspKotlinLinuxX64"
         private const val JVM_COMPILE_TASK = ":compileKotlinJvm"
         private const val JVM_KSP_TASK = ":kspKotlinJvm"
         private const val ANDROID_COPY_TASK = ":copyRoomSchemasAndroid"
-        private const val NATIVE_COPY_TASK = ":copyRoomSchemasNative"
+        private const val NATIVE_COPY_TASK = ":copyRoomSchemasLinuxX64"
     }
 }

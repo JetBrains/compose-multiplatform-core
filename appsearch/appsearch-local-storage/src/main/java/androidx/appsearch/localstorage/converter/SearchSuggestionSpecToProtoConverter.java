@@ -16,18 +16,22 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.FeatureConstants;
 import androidx.appsearch.app.SearchSuggestionSpec;
+import androidx.appsearch.localstorage.NamespaceCache;
+import androidx.appsearch.localstorage.SchemaCache;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.proto.NamespaceDocumentUriGroup;
-import com.google.android.icing.proto.SchemaTypeConfigProto;
 import com.google.android.icing.proto.SuggestionScoringSpecProto;
 import com.google.android.icing.proto.SuggestionSpecProto;
 import com.google.android.icing.proto.TermMatchType;
 import com.google.android.icing.proto.TypePropertyMask;
 
+import org.jspecify.annotations.NonNull;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,30 +68,28 @@ public final class SearchSuggestionSpecToProtoConverter {
      * @param suggestionQueryExpression The non-empty query expression used to be completed.
      * @param searchSuggestionSpec      The spec we need to convert from.
      * @param prefixes                  Set of database prefix which the caller want to access.
-     * @param namespaceMap              The cached Map of {@code <Prefix, Set<PrefixedNamespace>>}
-     *                                  stores all prefixed namespace filters which are stored in
-     *                                  AppSearch.
+     * @param namespaceCache            The NamespaceCache instance held in AppSearch.
      */
     public SearchSuggestionSpecToProtoConverter(
             @NonNull String suggestionQueryExpression,
             @NonNull SearchSuggestionSpec searchSuggestionSpec,
             @NonNull Set<String> prefixes,
-            @NonNull Map<String, Set<String>> namespaceMap,
-            @NonNull Map<String, Map<String, SchemaTypeConfigProto>> schemaMap) {
+            @NonNull NamespaceCache namespaceCache,
+            @NonNull SchemaCache schemaCache) {
         mSuggestionQueryExpression = Preconditions.checkNotNull(suggestionQueryExpression);
         mSearchSuggestionSpec = Preconditions.checkNotNull(searchSuggestionSpec);
         mPrefixes = Preconditions.checkNotNull(prefixes);
-        Preconditions.checkNotNull(namespaceMap);
+        Preconditions.checkNotNull(namespaceCache);
         mTargetPrefixedNamespaceFilters =
                 SearchSpecToProtoConverterUtil.generateTargetNamespaceFilters(
-                        prefixes, namespaceMap, searchSuggestionSpec.getFilterNamespaces());
+                        prefixes, namespaceCache, searchSuggestionSpec.getFilterNamespaces());
         mTargetPrefixedSchemaFilters =
                 SearchSpecToProtoConverterUtil.generateTargetSchemaFilters(
-                        prefixes, schemaMap, searchSuggestionSpec.getFilterSchemas());
+                        prefixes, schemaCache, searchSuggestionSpec.getFilterSchemas());
     }
 
     /**
-     * @return whether this search's target filters are empty. If any target filter is empty, we
+     * Returns whether this search's target filters are empty. If any target filter is empty, we
      * should skip send request to Icing.
      */
     public boolean hasNothingToSearch() {
@@ -98,8 +100,7 @@ public final class SearchSuggestionSpecToProtoConverter {
      * Extracts {@link SuggestionSpecProto} information from a {@link SearchSuggestionSpec}.
      *
      */
-    @NonNull
-    public SuggestionSpecProto toSearchSuggestionSpecProto() {
+    public @NonNull SuggestionSpecProto toSearchSuggestionSpecProto() {
         // Set query suggestion prefix to the SearchSuggestionProto and override schema and
         // namespace filter by targetPrefixedFilters which contains all existing and also
         // accessible to the caller filters.
@@ -108,6 +109,20 @@ public final class SearchSuggestionSpecToProtoConverter {
                 .addAllNamespaceFilters(mTargetPrefixedNamespaceFilters)
                 .addAllSchemaTypeFilters(mTargetPrefixedSchemaFilters)
                 .setNumToReturn(mSearchSuggestionSpec.getMaximumResultCount());
+
+        if (!mSearchSuggestionSpec.getSearchStringParameters().isEmpty()) {
+            protoBuilder.addAllQueryParameterStrings(
+                    mSearchSuggestionSpec.getSearchStringParameters());
+            // When the SearchSuggestions api first launched, it did not include the various "set
+            // feature enabled" apis that {@link SearchSpec} has.
+            //
+            // Search string parameters necessarily invokes the LIST_FILTER_QUERY_LANGUAGE feature
+            // because they are referenced in the query expression through a function call.
+            // To avoid errors about using un-enabled query features, we add it here. This is safe
+            // to do because search string parameters were added after the
+            // LIST_FILTER_QUERY_LANGUAGE.
+            protoBuilder.addEnabledFeatures(FeatureConstants.LIST_FILTER_QUERY_LANGUAGE);
+        }
 
         // Convert type property filter map into type property mask proto.
         for (Map.Entry<String, List<String>> entry :

@@ -15,13 +15,6 @@
   export let isExperimental: boolean = false;
   export let showHistogramControls: boolean = false;
 
-  $: {
-    if ($chart) {
-      $chart.data = data;
-      $chart.update();
-    }
-  }
-
   // State
   let controlsDispatcher = createEventDispatcher<ControlsEvent>();
   let element: HTMLCanvasElement;
@@ -29,18 +22,25 @@
   let chart: Writable<Chart | null> = writable(null);
   let items: Writable<LegendItem[] | null> = writable(null);
 
+  $: {
+    if ($chart) {
+      $chart.data = data;
+      $chart.update();
+    }
+  }
+
   // Effects
   onMount(() => {
-    const onUpdate = (chart: Chart) => {
-      $chart = chart;
+    const onUpdate = (updated: Chart) => {
+      $chart = updated;
       // Bad typings.
-      const legend = chart.options.plugins.legend as any;
-      $items = legend.labels.generateLabels(chart);
+      const legend = updated.options.plugins?.legend as any;
+      $items = legend.labels.generateLabels($chart);
     };
     const plugins = {
       tooltip: {
         callbacks: {
-          label: (context: TooltipItem<typeof chartType>): string | null => {
+          label: (context: TooltipItem<typeof chartType>): string | void | string[] => {
             // TODO: Configure Tooltips
             // https://www.chartjs.org/docs/latest/configuration/tooltip.html
             const label = context.dataset.label;
@@ -51,7 +51,7 @@
               return `${label}: ${fx} F(${frequency})`;
             } else {
               // Fallback to default behavior
-              return undefined;
+              return;
             }
           },
         },
@@ -103,7 +103,7 @@
       ⎘
     </button>
   </div>
-  <canvas class="chart" bind:this={element} />
+  <canvas class="chart" bind:this={element}> </canvas>
   {#if showHistogramControls}
     <div class="controls">
       <label for="buckets">
@@ -131,7 +131,7 @@
   {/if}
 </article>
 
-{#if $items}
+{#if $chart && $items}
   <Legend chart={$chart} items={$items} />
 {/if}
 

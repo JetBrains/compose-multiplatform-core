@@ -25,11 +25,11 @@ import androidx.room.compiler.processing.util.compileFiles
 import androidx.room.compiler.processing.util.runKspTest
 import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.ext.RoomTypeNames.ROOM_DB
-import androidx.room.processor.ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoMethod
-import androidx.room.processor.ProcessorErrors.nullableComponentInDaoMethodReturnType
+import androidx.room.processor.ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoFunction
+import androidx.room.processor.ProcessorErrors.nullableComponentInDaoFunctionReturnType
 import androidx.room.testing.context
 import androidx.room.vo.Dao
-import androidx.room.vo.ReadQueryMethod
+import androidx.room.vo.ReadQueryFunction
 import androidx.room.vo.Warning
 import createVerifierFromEntitiesAndViews
 import java.io.File
@@ -92,7 +92,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
         """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_METHOD)
+                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION)
             }
         }
     }
@@ -107,19 +107,19 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 public interface MissingAnnotationsBaseDao {
                     int getFoo();
                 }
-                """
+                """,
             )
         val libraryClasspath = compileFiles(listOf(librarySource))
         singleDao(
             "@Dao public interface MyDao extends test.library.MissingAnnotationsBaseDao {}",
-            classpathFiles = libraryClasspath
+            classpathFiles = libraryClasspath,
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasRawOutputContaining(
-                    ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_METHOD +
+                    ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION +
                         " - test.library.MissingAnnotationsBaseDao.getFoo()"
                 )
-                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_METHOD)
+                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION)
             }
         }
     }
@@ -136,7 +136,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
         """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_METHOD).onLine(8)
+                hasErrorContaining(ProcessorErrors.INVALID_ANNOTATION_COUNT_IN_DAO_FUNCTION)
+                    .onLine(8)
             }
         }
     }
@@ -151,8 +152,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, _ ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getIds"))
         }
     }
@@ -167,8 +168,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, _ ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getIds"))
         }
     }
@@ -185,11 +186,11 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, _ ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getIds"))
-            assertThat(dao.insertMethods.size, `is`(1))
-            val insertMethod = dao.insertMethods.first()
+            assertThat(dao.insertFunctions.size, `is`(1))
+            val insertMethod = dao.insertFunctions.first()
             assertThat(insertMethod.element.jvmName, `is`("insert"))
         }
     }
@@ -204,8 +205,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, _ ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getIds"))
         }
     }
@@ -214,7 +215,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
     fun suppressedWarnings() {
         singleDao(
             """
-            @SuppressWarnings({"ALL", RoomWarnings.CURSOR_MISMATCH})
+            @SuppressWarnings({"ALL", RoomWarnings.QUERY_MISMATCH})
             @Dao interface MyDao {
                 @Query("SELECT * from user")
                 abstract User users();
@@ -226,21 +227,21 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
 
             assertThat(
                 daoProcessor.context.logger.suppressedWarnings,
-                `is`(setOf(Warning.ALL, Warning.CURSOR_MISMATCH))
+                `is`(setOf(Warning.ALL, Warning.QUERY_MISMATCH)),
             )
 
-            dao.queryMethods.forEach {
+            dao.queryFunctions.forEach {
                 assertThat(
-                    QueryMethodProcessor(
+                    QueryFunctionProcessor(
                             baseContext = daoProcessor.context,
                             containing = dao.element.type,
                             executableElement = it.element,
-                            dbVerifier = null
+                            dbVerifier = null,
                         )
                         .context
                         .logger
                         .suppressedWarnings,
-                    `is`(setOf(Warning.ALL, Warning.CURSOR_MISMATCH))
+                    `is`(setOf(Warning.ALL, Warning.QUERY_MISMATCH)),
                 )
             }
         }
@@ -255,13 +256,13 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             package foo.bar
             import androidx.room.*
             @Dao
-            @Suppress(RoomWarnings.CURSOR_MISMATCH)
+            @Suppress(RoomWarnings.QUERY_MISMATCH)
             interface MyDao {
                 @Query("SELECT uid from user")
                 fun userId(): Int
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(daoSrc) + COMMON.USER) { invocation ->
             val dao =
@@ -274,7 +275,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             val daoProcessor = DaoProcessor(invocation.context, dao, dbType, null)
             assertThat(daoProcessor.context.logger.suppressedWarnings)
-                .containsExactly(Warning.CURSOR_MISMATCH)
+                .containsExactly(Warning.QUERY_MISMATCH)
         }
     }
 
@@ -282,7 +283,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
     fun suppressedWarningsInheritance() {
         singleDao(
             """
-            @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+            @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
             @Dao interface MyDao {
                 @SuppressWarnings("ALL")
                 @Query("SELECT * from user")
@@ -294,21 +295,21 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             val daoProcessor = DaoProcessor(invocation.context, dao.element, dbType, null)
             assertThat(
                 daoProcessor.context.logger.suppressedWarnings,
-                `is`(setOf(Warning.CURSOR_MISMATCH))
+                `is`(setOf(Warning.QUERY_MISMATCH)),
             )
 
-            dao.queryMethods.forEach {
+            dao.queryFunctions.forEach {
                 assertThat(
-                    QueryMethodProcessor(
+                    QueryFunctionProcessor(
                             baseContext = daoProcessor.context,
                             containing = dao.element.type,
                             executableElement = it.element,
-                            dbVerifier = null
+                            dbVerifier = null,
                         )
                         .context
                         .logger
                         .suppressedWarnings,
-                    `is`(setOf(Warning.ALL, Warning.CURSOR_MISMATCH))
+                    `is`(setOf(Warning.ALL, Warning.QUERY_MISMATCH)),
                 )
             }
         }
@@ -332,10 +333,10 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, invocation ->
-            assertThat(dao.queryMethods.size, `is`(1))
+            assertThat(dao.queryFunctions.size, `is`(1))
             assertThat(
-                dao.queryMethods.filterIsInstance<ReadQueryMethod>().first().inTransaction,
-                `is`(false)
+                dao.queryFunctions.filterIsInstance<ReadQueryFunction>().first().inTransaction,
+                `is`(false),
             )
             invocation.assertCompilationResult {
                 hasWarningContaining(ProcessorErrors.TRANSACTION_MISSING_ON_RELATION)
@@ -362,10 +363,10 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, invocation ->
-            assertThat(dao.queryMethods.size, `is`(1))
+            assertThat(dao.queryFunctions.size, `is`(1))
             assertThat(
-                dao.queryMethods.filterIsInstance<ReadQueryMethod>().first().inTransaction,
-                `is`(false)
+                dao.queryFunctions.filterIsInstance<ReadQueryFunction>().first().inTransaction,
+                `is`(false),
             )
             invocation.assertCompilationResult { hasNoWarnings() }
         }
@@ -391,10 +392,10 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 """
         ) { dao, invocation ->
             // test sanity
-            assertThat(dao.queryMethods.size, `is`(1))
+            assertThat(dao.queryFunctions.size, `is`(1))
             assertThat(
-                dao.queryMethods.filterIsInstance<ReadQueryMethod>().first().inTransaction,
-                `is`(true)
+                dao.queryFunctions.filterIsInstance<ReadQueryFunction>().first().inTransaction,
+                `is`(true),
             )
             invocation.assertCompilationResult { hasNoWarnings() }
         }
@@ -410,8 +411,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, _ ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("deleteAllIds"))
         }
     }
@@ -426,8 +427,8 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 }
                 """
         ) { dao, invocation ->
-            assertThat(dao.queryMethods.size, `is`(1))
-            val method = dao.queryMethods.first()
+            assertThat(dao.queryFunctions.size, `is`(1))
+            val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getAllIds"))
             invocation.assertCompilationResult {
                 hasErrorContaining(ProcessorErrors.cannotFindQueryResultAdapter("void"))
@@ -450,7 +451,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 fun method(): Int
             }
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
@@ -459,11 +460,11 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult {
-                hasWarningContaining(ProcessorErrors.JVM_NAME_ON_OVERRIDDEN_METHOD)
+                hasWarningContaining(ProcessorErrors.JVM_NAME_ON_OVERRIDDEN_FUNCTION)
             }
         }
     }
@@ -488,7 +489,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 var pk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
@@ -500,7 +501,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -526,7 +527,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 var pk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
@@ -538,7 +539,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -567,7 +568,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 var pk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
@@ -579,7 +580,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult {
@@ -639,7 +640,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 var otherPk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
@@ -651,62 +652,62 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult {
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "kotlin.collections.List<MyEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "com.google.common.collect.ImmutableList<MyEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "kotlin.Array<MyEntity>?",
-                        "Array"
+                        "Array",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "java.util.Optional<MyEntity>?",
-                        "Optional"
+                        "Optional",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "com.google.common.base.Optional<MyEntity>?",
-                        "Optional"
+                        "Optional",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "kotlin.collections.Map<MyEntity, MyOtherEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "com.google.common.collect.ImmutableMap<MyEntity, MyOtherEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "com.google.common.collect.ImmutableSetMultimap<MyEntity, MyOtherEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningContaining(
-                    nullableCollectionOrArrayReturnTypeInDaoMethod(
+                    nullableCollectionOrArrayReturnTypeInDaoFunction(
                         "com.google.common.collect.ImmutableListMultimap<MyEntity, MyOtherEntity>?",
-                        "Collection"
+                        "Collection",
                     )
                 )
                 hasWarningCount(9)
@@ -765,7 +766,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 var otherPk: Int
             )
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runKspTest(
             sources = listOf(src),
@@ -777,36 +778,36 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                     baseContext = invocation.context,
                     element = dao,
                     dbType = dbType,
-                    dbVerifier = null
+                    dbVerifier = null,
                 )
                 .process()
             invocation.assertCompilationResult {
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType("kotlin.collections.List<MyEntity?>")
+                    nullableComponentInDaoFunctionReturnType("kotlin.collections.List<MyEntity?>")
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "com.google.common.collect.ImmutableList<MyEntity?>"
                     )
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType("kotlin.Array<MyEntity?>")
+                    nullableComponentInDaoFunctionReturnType("kotlin.Array<MyEntity?>")
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType("java.util.Optional<MyEntity?>")
+                    nullableComponentInDaoFunctionReturnType("java.util.Optional<MyEntity?>")
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "com.google.common.base.Optional<MyEntity?>"
                     )
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "kotlin.collections.Map<MyEntity?, MyOtherEntity>"
                     )
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "com.google.common.collect.ImmutableMap<MyEntity?, MyOtherEntity>"
                     )
                 )
@@ -814,17 +815,17 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
                 // convert the map to a mutable one and re-run the `findQueryResultAdapter`
                 // algorithm
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "kotlin.collections.MutableMap<MyEntity?, MyOtherEntity>"
                     )
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "com.google.common.collect.ImmutableSetMultimap<MyEntity?, MyOtherEntity>"
                     )
                 )
                 hasWarningContaining(
-                    nullableComponentInDaoMethodReturnType(
+                    nullableComponentInDaoFunctionReturnType(
                         "com.google.common.collect.ImmutableListMultimap<MyEntity?, MyOtherEntity>"
                     )
                 )
@@ -836,16 +837,16 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
     private fun singleDao(
         vararg inputs: String,
         classpathFiles: List<File> = emptyList(),
-        handler: (Dao, XTestInvocation) -> Unit
+        handler: (Dao, XTestInvocation) -> Unit,
     ) {
         runProcessorTest(
             sources =
                 listOf(
                     Source.java("foo.bar.MyDao", DAO_PREFIX + inputs.joinToString("\n")),
-                    COMMON.USER
+                    COMMON.USER,
                 ),
             options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-            classpath = classpathFiles
+            classpath = classpathFiles,
         ) { invocation: XTestInvocation ->
             val dao =
                 invocation.roundEnv

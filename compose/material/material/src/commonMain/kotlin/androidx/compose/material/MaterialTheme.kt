@@ -24,8 +24,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 
 /**
- * <a href="https://material.io/design/material-theming/overview.html" class="external"
- * target="_blank">Material Theming</a>.
+ * [Material Theming](https://material.io/design/material-theming/overview.html)
  *
  * Material Theming refers to the customization of your Material Design app to better reflect your
  * product’s brand.
@@ -50,17 +49,17 @@ import androidx.compose.runtime.remember
  * overriding only the parts of the theme definition that need to change.
  *
  * @sample androidx.compose.material.samples.MaterialThemeSample
- *
  * @param colors A complete definition of the Material Color theme for this hierarchy
  * @param typography A set of text styles to be used as this hierarchy's typography system
  * @param shapes A set of shapes to be used by the components in this hierarchy
+ * @param content The content inheriting this theme
  */
 @Composable
 fun MaterialTheme(
     colors: Colors = MaterialTheme.colors,
     typography: Typography = MaterialTheme.typography,
     shapes: Shapes = MaterialTheme.shapes,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val rememberedColors =
         remember {
@@ -69,18 +68,15 @@ fun MaterialTheme(
                 colors.copy()
             }
             .apply { updateColorsFrom(colors) }
-    val rippleIndication = rippleOrFallbackImplementation()
+    val rippleIndication = ripple()
     val selectionColors = rememberTextSelectionColors(rememberedColors)
-    @Suppress("DEPRECATION_ERROR")
     CompositionLocalProvider(
         LocalColors provides rememberedColors,
         LocalContentAlpha provides ContentAlpha.high,
         LocalIndication provides rippleIndication,
-        // TODO: b/304985887 - remove after one stable release
-        androidx.compose.material.ripple.LocalRippleTheme provides CompatRippleTheme,
         LocalShapes provides shapes,
         LocalTextSelectionColors provides selectionColors,
-        LocalTypography provides typography
+        LocalTypography provides typography,
     ) {
         ProvideTextStyle(value = typography.body1) { PlatformMaterialTheme(content) }
     }

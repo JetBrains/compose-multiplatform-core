@@ -22,8 +22,9 @@ import androidx.benchmark.macro.perfetto.FrameTimingQuery.SubMetric.FrameDuratio
 import androidx.benchmark.macro.perfetto.FrameTimingQuery.SubMetric.FrameDurationUiNs
 import androidx.benchmark.macro.perfetto.FrameTimingQuery.SubMetric.FrameOverrunNs
 import androidx.benchmark.macro.perfetto.FrameTimingQuery.getFrameSubMetrics
+import androidx.benchmark.macro.runSingleSessionServer
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
-import androidx.benchmark.perfetto.PerfettoTraceProcessor
+import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertEquals
@@ -41,11 +42,11 @@ class FrameTimingQueryTest {
         val traceFile = createTempFileFromAsset("api28_scroll", ".perfetto-trace")
 
         val frameSubMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 FrameTimingQuery.getFrameData(
                         session = this,
                         captureApiLevel = 28,
-                        packageName = "androidx.benchmark.integration.macrobenchmark.target"
+                        packageName = "androidx.benchmark.integration.macrobenchmark.target",
                     )
                     .getFrameSubMetrics(captureApiLevel = 28)
             }
@@ -54,14 +55,14 @@ class FrameTimingQueryTest {
             expected =
                 mapOf(
                     FrameDurationCpuNs to listOf(9907605L, 6038595L, 4812136L, 3938490L),
-                    FrameDurationUiNs to listOf(3086979L, 2868490L, 2232709L, 1889479L)
+                    FrameDurationUiNs to listOf(3086979L, 2868490L, 2232709L, 1889479L),
                 ),
-            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) }
+            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) },
         )
         assertEquals(
             expected = List(2) { 62 },
             actual = frameSubMetrics.map { it.value.size },
-            message = "Expect same number of frames for each metric"
+            message = "Expect same number of frames for each metric",
         )
     }
 
@@ -72,11 +73,11 @@ class FrameTimingQueryTest {
         val traceFile = createTempFileFromAsset("api31_scroll", ".perfetto-trace")
 
         val frameSubMetrics =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 FrameTimingQuery.getFrameData(
                         session = this,
                         captureApiLevel = 31,
-                        packageName = "androidx.benchmark.integration.macrobenchmark.target"
+                        packageName = "androidx.benchmark.integration.macrobenchmark.target",
                     )
                     .getFrameSubMetrics(captureApiLevel = 31)
             }
@@ -89,12 +90,12 @@ class FrameTimingQueryTest {
                     FrameDurationFullNs to listOf(15292863L, 8800138L, 6474705L, 8199845L),
                     FrameOverrunNs to listOf(-5207137L, -11699862L, -14025295L, -12300155L),
                 ),
-            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) }
+            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) },
         )
         assertEquals(
             expected = List(FrameTimingQuery.SubMetric.values().size) { 96 },
             actual = frameSubMetrics.map { it.value.size },
-            message = "Expect same number of frames for each metric"
+            message = "Expect same number of frames for each metric",
         )
     }
 
@@ -109,12 +110,12 @@ class FrameTimingQueryTest {
         val traceFile = createTempFileFromAsset("api33_motionlayout_messagejson", ".perfetto-trace")
 
         val frameData =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 FrameTimingQuery.getFrameData(
                     session = this,
                     captureApiLevel = 33,
                     packageName =
-                        "androidx.constraintlayout.compose.integration.macrobenchmark.target"
+                        "androidx.constraintlayout.compose.integration.macrobenchmark.target",
                 )
             }
 
@@ -153,7 +154,7 @@ class FrameTimingQueryTest {
             actual =
                 frameData.getFrameSubMetrics(captureApiLevel = 33).mapValues {
                     it.value.subList(0, 4)
-                }
+                },
         )
     }
 
@@ -164,11 +165,11 @@ class FrameTimingQueryTest {
         val traceFile = createTempFileFromAsset("api34_invalid_expect_actual", ".perfetto-trace")
 
         val frameData =
-            PerfettoTraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
                 FrameTimingQuery.getFrameData(
                     session = this,
                     captureApiLevel = 34,
-                    packageName = "androidx.compose.integration.macrobenchmark.target"
+                    packageName = "androidx.compose.integration.macrobenchmark.target",
                 )
             }
 
@@ -178,5 +179,31 @@ class FrameTimingQueryTest {
                 it.actualSlice!!.frameId == 110752 || it.expectedSlice!!.frameId == 110752
             }
         )
+    }
+
+    @MediumTest
+    @Test
+    fun fixedTrace35_resynced() {
+        assumeTrue(isAbiSupported())
+        val traceFile = createTempFileFromAsset("api35_startup_cold_classinit", ".perfetto-trace")
+        val packageName = "com.android.systemui"
+
+        val frameData =
+            TraceProcessor.runSingleSessionServer(traceFile.absolutePath) {
+                // this trace has a 'Choreographer#doFrame - resynced to 1253256 in 32.8ms' in it
+                // which is used to regression test for b/394610806
+                assertTrue(
+                    querySlices("Choreographer#doFrame - resynced to%", packageName = packageName)
+                        .isNotEmpty()
+                )
+
+                FrameTimingQuery.getFrameData(
+                    session = this,
+                    captureApiLevel = 35,
+                    packageName = packageName,
+                )
+            }
+
+        assertEquals(22, frameData.size)
     }
 }

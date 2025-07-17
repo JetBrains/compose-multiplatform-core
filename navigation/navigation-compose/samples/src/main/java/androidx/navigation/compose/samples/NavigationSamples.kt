@@ -16,6 +16,7 @@
 
 package androidx.navigation.compose.samples
 
+import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.annotation.Sampled
@@ -60,9 +61,16 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import java.util.UUID
+import kotlin.reflect.typeOf
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 
 @Serializable
@@ -112,7 +120,7 @@ fun BasicNav() {
                 } else {
                     null
                 }
-            }
+            },
         ) {
             Dashboard(navController)
         }
@@ -132,7 +140,7 @@ fun BasicNav() {
                 } else {
                     null
                 }
-            }
+            },
         ) {
             Scrollable(navController)
         }
@@ -221,7 +229,7 @@ fun ProfileWithArgs(navController: NavController) {
             TextField(
                 value = state.value,
                 onValueChange = { state.value = it },
-                placeholder = { Text("Enter userId here") }
+                placeholder = { Text("Enter userId here") },
             )
         }
         Divider(color = Color.Black)
@@ -266,7 +274,7 @@ fun NavigateButton(text: String, listener: () -> Unit = {}) {
     Button(
         onClick = listener,
         colors = ButtonDefaults.buttonColors(backgroundColor = LightGray),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Text(text = "Navigate to $text")
     }
@@ -283,7 +291,7 @@ fun NavigateBackButton(navController: NavController) {
         Button(
             onClick = { navController.popBackStack() },
             colors = ButtonDefaults.buttonColors(backgroundColor = LightGray),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(text = "Go to Previous screen")
         }
@@ -293,9 +301,7 @@ fun NavigateBackButton(navController: NavController) {
 @Preview
 @Composable
 fun NavHostPreview() {
-    CompositionLocalProvider(
-        LocalInspectionMode provides true,
-    ) {
+    CompositionLocalProvider(LocalInspectionMode provides true) {
         Box(Modifier.fillMaxSize().background(Color.Red)) {
             NavHost(navController = rememberNavController(), startDestination = "home") {
                 composable("home") {
@@ -305,6 +311,48 @@ fun NavHostPreview() {
                 }
             }
         }
+    }
+}
+
+@Composable
+@Preview
+fun ThirdPartySerializableType() {
+    val navController = rememberNavController()
+    NavHost(navController, startDestination = User(WrappedUUID(UUID.randomUUID()))) {
+        composable<User>(typeMap = mapOf(typeOf<WrappedUUID>() to WrappedUUIDNavType)) { entry ->
+            val uuid = entry.toRoute<User>().id.uuid
+            Box(Modifier.fillMaxSize().background(Color.Blue)) {
+                Text(text = "uuid: $uuid", modifier = Modifier.testTag("text"))
+            }
+        }
+    }
+}
+
+@Serializable class User(val id: WrappedUUID)
+
+@Serializable class WrappedUUID(@Serializable(with = UUIDSerializer::class) val uuid: UUID)
+
+object WrappedUUIDNavType : NavType<WrappedUUID>(isNullableAllowed = false) {
+    override fun put(bundle: Bundle, key: String, value: WrappedUUID) {
+        bundle.putString(key, value.uuid.toString())
+    }
+
+    override fun get(bundle: Bundle, key: String): WrappedUUID? =
+        WrappedUUID(UUID.fromString(bundle.getString(key)))
+
+    override fun parseValue(value: String): WrappedUUID = WrappedUUID(UUID.fromString(value))
+
+    override fun serializeAsValue(value: WrappedUUID): String = Uri.encode(value.uuid.toString())
+}
+
+object UUIDSerializer : KSerializer<UUID> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): UUID = UUID.fromString(decoder.decodeString())
+
+    override fun serialize(encoder: Encoder, value: UUID) {
+        encoder.encodeString(value.toString())
     }
 }
 
@@ -339,7 +387,7 @@ private val phrases =
         "Fool's Gold",
         "It's Not Brain Surgery",
         "Fight Fire With Fire",
-        "Go For Broke"
+        "Go For Broke",
     )
 
 @Serializable

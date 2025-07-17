@@ -27,11 +27,14 @@ import androidx.compose.runtime.internal.IntRef
 import androidx.compose.runtime.internal.SnapshotThreadLocal
 import androidx.compose.runtime.internal.identityHashCode
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotId
+import androidx.compose.runtime.snapshots.SnapshotIdZero
 import androidx.compose.runtime.snapshots.StateFactoryMarker
 import androidx.compose.runtime.snapshots.StateObject
 import androidx.compose.runtime.snapshots.StateObjectImpl
 import androidx.compose.runtime.snapshots.StateRecord
 import androidx.compose.runtime.snapshots.current
+import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.newWritableRecord
 import androidx.compose.runtime.snapshots.sync
 import androidx.compose.runtime.snapshots.withCurrent
@@ -82,16 +85,17 @@ private inline fun <T> withCalculationNestedLevel(block: (IntRef) -> T): T {
 
 private class DerivedSnapshotState<T>(
     private val calculation: () -> T,
-    override val policy: SnapshotMutationPolicy<T>?
+    override val policy: SnapshotMutationPolicy<T>?,
 ) : StateObjectImpl(), DerivedState<T> {
-    private var first: ResultRecord<T> = ResultRecord()
+    private var first: ResultRecord<T> = ResultRecord(currentSnapshot().snapshotId)
 
-    class ResultRecord<T> : StateRecord(), DerivedState.Record<T> {
+    class ResultRecord<T>(snapshotId: SnapshotId) :
+        StateRecord(snapshotId), DerivedState.Record<T> {
         companion object {
             val Unset = Any()
         }
 
-        var validSnapshotId: Int = 0
+        var validSnapshotId: SnapshotId = SnapshotIdZero
         var validSnapshotWriteCount: Int = 0
 
         override var dependencies: ObjectIntMap<StateObject> = emptyObjectIntMap()
@@ -105,11 +109,14 @@ private class DerivedSnapshotState<T>(
             resultHash = other.resultHash
         }
 
-        override fun create(): StateRecord = ResultRecord<T>()
+        override fun create(): StateRecord = create(currentSnapshot().snapshotId)
+
+        override fun create(snapshotId: SnapshotId): StateRecord = ResultRecord<T>(snapshotId)
 
         fun isValid(derivedState: DerivedState<*>, snapshot: Snapshot): Boolean {
             val snapshotChanged = sync {
-                validSnapshotId != snapshot.id || validSnapshotWriteCount != snapshot.writeCount
+                validSnapshotId != snapshot.snapshotId ||
+                    validSnapshotWriteCount != snapshot.writeCount
             }
             val isValid =
                 result !== Unset &&
@@ -117,7 +124,7 @@ private class DerivedSnapshotState<T>(
 
             if (isValid && snapshotChanged) {
                 sync {
-                    validSnapshotId = snapshot.id
+                    validSnapshotId = snapshot.snapshotId
                     validSnapshotWriteCount = snapshot.writeCount
                 }
             }
@@ -148,7 +155,7 @@ private class DerivedSnapshotState<T>(
                             }
 
                         hash = 31 * hash + identityHashCode(record)
-                        hash = 31 * hash + record.snapshotId
+                        hash = 31 * hash + record.snapshotId.hashCode()
                     }
                 }
             }
@@ -172,7 +179,7 @@ private class DerivedSnapshotState<T>(
         readable: ResultRecord<T>,
         snapshot: Snapshot,
         forceDependencyReads: Boolean,
-        calculation: () -> T
+        calculation: () -> T,
     ): ResultRecord<T> {
         if (readable.isValid(this, snapshot)) {
             // If the dependency is not recalculated, emulate nested state reads
@@ -208,12 +215,12 @@ private class DerivedSnapshotState<T>(
                                 newDependencies[it] =
                                     min(
                                         readNestedLevel - nestedCalculationLevel,
-                                        newDependencies.getOrDefault(it, Int.MAX_VALUE)
+                                        newDependencies.getOrDefault(it, Int.MAX_VALUE),
                                     )
                             }
                         },
                         null,
-                        calculation
+                        calculation,
                     )
 
                 calculationLevelRef.element = nestedCalculationLevel
@@ -246,7 +253,7 @@ private class DerivedSnapshotState<T>(
 
             sync {
                 val currentSnapshot = Snapshot.current
-                record.validSnapshotId = currentSnapshot.id
+                record.validSnapshotId = currentSnapshot.snapshotId
                 record.validSnapshotWriteCount = currentSnapshot.writeCount
             }
         }
@@ -322,13 +329,11 @@ private class DerivedSnapshotState<T>(
  * [SnapshotMutationPolicy] through [derivedStateOf] overload.
  *
  * @sample androidx.compose.runtime.samples.DerivedStateSample
- *
  * @param calculation the calculation to create the value this state object represents.
  */
 @StateFactoryMarker
-fun <T> derivedStateOf(
-    calculation: () -> T,
-): State<T> = DerivedSnapshotState(calculation, null)
+public fun <T> derivedStateOf(calculation: () -> T): State<T> =
+    DerivedSnapshotState(calculation, null)
 
 /**
  * Creates a [State] object whose [State.value] is the result of [calculation]. The result of
@@ -339,15 +344,12 @@ fun <T> derivedStateOf(
  * observed context such as a [Composable] function.
  *
  * @sample androidx.compose.runtime.samples.DerivedStateSample
- *
  * @param policy mutation policy to control when changes to the [calculation] result trigger update.
  * @param calculation the calculation to create the value this state object represents.
  */
 @StateFactoryMarker
-fun <T> derivedStateOf(
-    policy: SnapshotMutationPolicy<T>,
-    calculation: () -> T,
-): State<T> = DerivedSnapshotState(calculation, policy)
+public fun <T> derivedStateOf(policy: SnapshotMutationPolicy<T>, calculation: () -> T): State<T> =
+    DerivedSnapshotState(calculation, policy)
 
 /** Observe the recalculations performed by derived states. */
 internal interface DerivedStateObserver {
@@ -383,7 +385,7 @@ private inline fun <R> notifyObservers(derivedState: DerivedState<*>, block: () 
  */
 internal inline fun <R> observeDerivedStateRecalculations(
     observer: DerivedStateObserver,
-    block: () -> R
+    block: () -> R,
 ) {
     val observers = derivedStateObservers()
     try {

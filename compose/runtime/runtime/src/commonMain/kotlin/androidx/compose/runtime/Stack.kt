@@ -14,12 +14,16 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.runtime
 
-// TODO(b/139762913): Consider changing to inline class of ArrayList<T> to avoid wrapper class
-internal class Stack<T> {
-    private val backing = ArrayList<T>()
+import kotlin.jvm.JvmField
+import kotlin.jvm.JvmInline
+import kotlin.math.min
 
+@JvmInline
+internal value class Stack<T>(private val backing: ArrayList<T> = ArrayList()) {
     val size: Int
         get() = backing.size
 
@@ -42,22 +46,32 @@ internal class Stack<T> {
 }
 
 internal class IntStack {
-    private var slots = IntArray(10)
-    private var tos = 0
+    @JvmField internal var slots = IntArray(10)
+    @JvmField internal var tos = 0
 
-    val size: Int
+    inline val size: Int
         get() = tos
 
+    private fun resize(): IntArray {
+        val copy = slots.copyOf(slots.size * 2)
+        slots = copy
+        return copy
+    }
+
     fun push(value: Int) {
+        var slots = slots
         if (tos >= slots.size) {
-            slots = slots.copyOf(slots.size * 2)
+            slots = resize()
         }
         slots[tos++] = value
     }
 
     fun pop(): Int = slots[--tos]
 
-    fun peekOr(default: Int): Int = if (tos > 0) peek() else default
+    fun peekOr(default: Int): Int {
+        val index = tos - 1
+        return if (index >= 0) slots[index] else default
+    }
 
     fun peek() = slots[tos - 1]
 
@@ -65,16 +79,20 @@ internal class IntStack {
 
     fun peek(index: Int) = slots[index]
 
-    fun isEmpty() = tos == 0
+    inline fun isEmpty() = tos == 0
 
-    fun isNotEmpty() = tos != 0
+    inline fun isNotEmpty() = tos != 0
 
     fun clear() {
         tos = 0
     }
 
     fun indexOf(value: Int): Int {
-        for (i in 0 until tos) if (slots[i] == value) return i
+        val slots = slots
+        val end = min(slots.size, tos)
+        for (i in 0 until end) {
+            if (slots[i] == value) return i
+        }
         return -1
     }
 }

@@ -19,7 +19,6 @@ package androidx.camera.video.internal.config;
 import android.util.Range;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SurfaceRequest;
@@ -30,7 +29,7 @@ import androidx.camera.video.internal.encoder.VideoEncoderDataSpace;
 import androidx.camera.video.internal.utils.DynamicRangeUtil;
 import androidx.core.util.Supplier;
 
-import java.util.Objects;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link VideoEncoderConfig} supplier that resolves requested encoder settings from a
@@ -45,9 +44,7 @@ public class VideoEncoderConfigDefaultResolver implements Supplier<VideoEncoderC
     private static final int VIDEO_BITRATE_BASE = 14000000;
     private static final Size VIDEO_SIZE_BASE = new Size(1280, 720);
     private static final int VIDEO_FRAME_RATE_BASE = 30;
-    static final int VIDEO_FRAME_RATE_FIXED_DEFAULT = 30;
     private static final int VIDEO_BIT_DEPTH_BASE = 8;
-    private static final Range<Integer> VALID_FRAME_RATE_RANGE = new Range<>(1, 60);
 
     private final String mMimeType;
 
@@ -88,10 +85,12 @@ public class VideoEncoderConfigDefaultResolver implements Supplier<VideoEncoderC
     }
 
     @Override
-    @NonNull
-    public VideoEncoderConfig get() {
-        int resolvedFrameRate = resolveFrameRate();
-        Logger.d(TAG, "Resolved VIDEO frame rate: " + resolvedFrameRate + "fps");
+    public @NonNull VideoEncoderConfig get() {
+        CaptureEncodeRates resolvedFrameRates = VideoConfigUtil.resolveFrameRates(mVideoSpec,
+                mExpectedFrameRateRange);
+        Logger.d(TAG, "Resolved VIDEO frame rates: "
+                + "Capture frame rate = " + resolvedFrameRates.getCaptureRate() + "fps. "
+                + "Encode frame rate = " + resolvedFrameRates.getEncodeRate() + "fps.");
 
         Range<Integer> videoSpecBitrateRange = mVideoSpec.getBitrate();
         Logger.d(TAG, "Using fallback VIDEO bitrate");
@@ -99,7 +98,7 @@ public class VideoEncoderConfigDefaultResolver implements Supplier<VideoEncoderC
         int resolvedBitrate = VideoConfigUtil.scaleAndClampBitrate(
                 VIDEO_BITRATE_BASE,
                 mDynamicRange.getBitDepth(), VIDEO_BIT_DEPTH_BASE,
-                resolvedFrameRate, VIDEO_FRAME_RATE_BASE,
+                resolvedFrameRates.getEncodeRate(), VIDEO_FRAME_RATE_BASE,
                 mSurfaceSize.getWidth(), VIDEO_SIZE_BASE.getWidth(),
                 mSurfaceSize.getHeight(), VIDEO_SIZE_BASE.getHeight(),
                 videoSpecBitrateRange);
@@ -114,30 +113,10 @@ public class VideoEncoderConfigDefaultResolver implements Supplier<VideoEncoderC
                 .setInputTimebase(mInputTimebase)
                 .setResolution(mSurfaceSize)
                 .setBitrate(resolvedBitrate)
-                .setFrameRate(resolvedFrameRate)
+                .setCaptureFrameRate(resolvedFrameRates.getCaptureRate())
+                .setEncodeFrameRate(resolvedFrameRates.getEncodeRate())
                 .setProfile(resolvedProfile)
                 .setDataSpace(dataSpace)
                 .build();
-    }
-
-    private int resolveFrameRate() {
-        // If the operating frame rate range isn't unspecified, we'll use the upper frame rate from
-        // as our default in an attempt to maximize the quality of the video. Clamp the value to
-        // ensure it's a valid frame rate.
-        int resolvedFrameRate;
-        if (!Objects.equals(mExpectedFrameRateRange, SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED)) {
-            resolvedFrameRate = VALID_FRAME_RATE_RANGE.clamp(mExpectedFrameRateRange.getUpper());
-        } else {
-            // If the frame rate range is unspecified, return a hard coded common default.
-            resolvedFrameRate = VIDEO_FRAME_RATE_FIXED_DEFAULT;
-        }
-
-        Logger.d(TAG,
-                String.format("Default resolved frame rate: %dfps. [Expected operating range: %s]",
-                        resolvedFrameRate, Objects.equals(mExpectedFrameRateRange,
-                                SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED)
-                                ? mExpectedFrameRateRange : "<UNSPECIFIED>"));
-
-        return resolvedFrameRate;
     }
 }

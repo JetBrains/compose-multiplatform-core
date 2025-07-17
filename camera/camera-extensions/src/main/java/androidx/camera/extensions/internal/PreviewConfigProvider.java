@@ -19,10 +19,11 @@ package androidx.camera.extensions.internal;
 import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.Preview;
 import androidx.camera.core.impl.ConfigProvider;
 import androidx.camera.core.impl.PreviewConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -37,9 +38,8 @@ public class PreviewConfigProvider implements ConfigProvider<PreviewConfig> {
         mVendorExtender = vendorExtender;
     }
 
-    @NonNull
     @Override
-    public PreviewConfig getConfig() {
+    public @NonNull PreviewConfig getConfig() {
         Preview.Builder builder = new Preview.Builder();
         updateBuilderConfig(builder, mVendorExtender);
         return builder.getUseCaseConfig();
@@ -48,7 +48,7 @@ public class PreviewConfigProvider implements ConfigProvider<PreviewConfig> {
     /**
      * Update extension related configs to the builder.
      */
-    void updateBuilderConfig(@NonNull Preview.Builder builder,
+    void updateBuilderConfig(Preview.@NonNull Builder builder,
             @NonNull VendorExtender vendorExtender) {
         List<Pair<Integer, Size[]>> supportedResolutions =
                 vendorExtender.getSupportedPreviewOutputResolutions();

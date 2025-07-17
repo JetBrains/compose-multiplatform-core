@@ -19,6 +19,7 @@ package androidx.wear.protolayout.expression;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
 
@@ -36,7 +37,7 @@ import java.lang.annotation.Target;
  */
 @MustBeDocumented
 @Retention(CLASS)
-@Target({TYPE, METHOD, CONSTRUCTOR, FIELD})
+@Target({TYPE, METHOD, CONSTRUCTOR, FIELD, PARAMETER})
 public @interface RequiresSchemaVersion {
     int major();
 

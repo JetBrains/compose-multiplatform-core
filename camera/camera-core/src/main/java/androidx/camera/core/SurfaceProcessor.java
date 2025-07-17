@@ -19,8 +19,9 @@ package androidx.camera.core;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface to implement a GPU-based post-processing effect.
@@ -44,9 +45,9 @@ import androidx.core.util.Consumer;
  * <pre><code>
  * class SurfaceProcessorImpl implements SurfaceProcessor {
  *
- *     Consumer<Exception> mErrorListener;
+ *     Consumer&lt;Exception&gt; mErrorListener;
  *
- *     SurfaceProcessorImpl(@NonNull Consumer<Exception> errorListener) {
+ *     SurfaceProcessorImpl(@NonNull Consumer&lt;Exception&gt; errorListener) {
  *         mErrorListener = errorListener;
  *     }
  *

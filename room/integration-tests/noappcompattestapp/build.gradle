@@ -20,9 +20,11 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.jspecify)
     implementation(project(":room:room-runtime"))
     annotationProcessor(project(":room:room-compiler"))
     androidTestAnnotationProcessor(project(":room:room-compiler"))
+    androidTestImplementation("androidx.annotation:annotation:1.8.1")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -31,7 +33,7 @@ dependencies {
 }
 
 android {
-    namespace "androidx.room.integration.noappcompat"
+    namespace = "androidx.room.integration.noappcompat"
 }
 
 // Enable parameter names to support Room incremental when its a project() dep.

@@ -35,8 +35,6 @@ import static java.lang.Math.min;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.FloatRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders.AngularLayoutConstraint;
@@ -57,6 +55,9 @@ import androidx.wear.protolayout.expression.DynamicBuilders;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ProtoLayout component {@link CircularProgressIndicator} that represents circular progress
@@ -99,9 +100,9 @@ public class CircularProgressIndicator implements LayoutElement {
      */
     static final String METADATA_TAG = "CPI";
 
-    @NonNull private final Arc mElement;
-    @NonNull private final ArcLine mProgress;
-    @NonNull private final ArcLine mBackground;
+    private final @NonNull Arc mElement;
+    private final @NonNull ArcLine mProgress;
+    private final @NonNull ArcLine mBackground;
 
     CircularProgressIndicator(@NonNull Arc element) {
         this.mElement = element;
@@ -111,12 +112,12 @@ public class CircularProgressIndicator implements LayoutElement {
 
     /** Builder class for {@link CircularProgressIndicator} */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private ProgressIndicatorColors mCircularProgressIndicatorColors = DEFAULT_COLORS;
-        @NonNull private DpProp mStrokeWidth = DEFAULT_STROKE_WIDTH;
-        @Nullable private StringProp mContentDescription;
-        @NonNull private DegreesProp mStartAngle = degrees(DEFAULT_START_ANGLE);
-        @NonNull private DegreesProp mEndAngle = degrees(DEFAULT_END_ANGLE);
-        @NonNull private FloatProp mProgress = staticFloat(0f);
+        private @NonNull ProgressIndicatorColors mCircularProgressIndicatorColors = DEFAULT_COLORS;
+        private @NonNull DpProp mStrokeWidth = DEFAULT_STROKE_WIDTH;
+        private @Nullable StringProp mContentDescription;
+        private @NonNull DegreesProp mStartAngle = degrees(DEFAULT_START_ANGLE);
+        private @NonNull DegreesProp mEndAngle = degrees(DEFAULT_END_ANGLE);
+        private @NonNull FloatProp mProgress = staticFloat(0f);
         private boolean mIsMarginApplied = true;
 
         /** Creates a builder for the {@link CircularProgressIndicator}. */
@@ -127,8 +128,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * value between 0 and 1. If not set, 0 will be used. Progress will be colored in {@link
          * ProgressIndicatorColors#getIndicatorColor()}.
          */
-        @NonNull
-        public Builder setProgress(@FloatRange(from = 0, to = 1) float progressRatio) {
+        public @NonNull Builder setProgress(@FloatRange(from = 0, to = 1) float progressRatio) {
             this.mProgress = staticFloat(progressRatio);
             return this;
         }
@@ -145,8 +145,7 @@ public class CircularProgressIndicator implements LayoutElement {
          *     value. The static value of {@code progressRatio} will be considered as 0 if it's
          *     smaller than zero and as 1 if it's larger than one.
          */
-        @NonNull
-        public Builder setProgress(@NonNull FloatProp progressRatio) {
+        public @NonNull Builder setProgress(@NonNull FloatProp progressRatio) {
             this.mProgress = progressRatio;
             return this;
         }
@@ -157,8 +156,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * start arc from the 9 o'clock. If not set 0 will be used and the indicator will have full
          * length.
          */
-        @NonNull
-        public Builder setStartAngle(float startAngle) {
+        public @NonNull Builder setStartAngle(float startAngle) {
             this.mStartAngle = degrees(startAngle);
             return this;
         }
@@ -168,8 +166,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * 0 is 12 o'clock. End angle doesn't need to be within 0-360 range, but it must be larger
          * than start angle. If not set 360 will be used and the indicator will have full length.
          */
-        @NonNull
-        public Builder setEndAngle(float endAngle) {
+        public @NonNull Builder setEndAngle(float endAngle) {
             this.mEndAngle = degrees(endAngle);
             return this;
         }
@@ -178,8 +175,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * Sets the static content description of the {@link CircularProgressIndicator} to be used
          * for accessibility support.
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull CharSequence contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull CharSequence contentDescription) {
             this.mContentDescription =
                     new StringProp.Builder(contentDescription.toString()).build();
             return this;
@@ -192,8 +188,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * <p>While this field is statically accessible from 1.0, it's only bindable since version
          * 1.2 and renderers supporting version 1.2 will use the dynamic value (if set).
          */
-        @NonNull
-        public Builder setContentDescription(@NonNull StringProp contentDescription) {
+        public @NonNull Builder setContentDescription(@NonNull StringProp contentDescription) {
             this.mContentDescription = contentDescription;
             return this;
         }
@@ -204,8 +199,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * made, while {@link ProgressIndicatorColors#getTrackColor()} will be used for a background
          * full size arc. If not set, {@link ProgressIndicatorDefaults#DEFAULT_COLORS} will be used.
          */
-        @NonNull
-        public Builder setCircularProgressIndicatorColors(
+        public @NonNull Builder setCircularProgressIndicatorColors(
                 @NonNull ProgressIndicatorColors circularProgressIndicatorColors) {
             this.mCircularProgressIndicatorColors = circularProgressIndicatorColors;
             return this;
@@ -215,8 +209,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * Sets the stroke width of the {@link CircularProgressIndicator}. Strongly recommended
          * value is {@link ProgressIndicatorDefaults#DEFAULT_STROKE_WIDTH}.
          */
-        @NonNull
-        public Builder setStrokeWidth(@NonNull DpProp strokeWidth) {
+        public @NonNull Builder setStrokeWidth(@NonNull DpProp strokeWidth) {
             this.mStrokeWidth = strokeWidth;
             return this;
         }
@@ -225,8 +218,7 @@ public class CircularProgressIndicator implements LayoutElement {
          * Sets the stroke width of the {@link CircularProgressIndicator}. Strongly recommended
          * value is {@link ProgressIndicatorDefaults#DEFAULT_STROKE_WIDTH}.
          */
-        @NonNull
-        public Builder setStrokeWidth(@Dimension(unit = DP) float strokeWidth) {
+        public @NonNull Builder setStrokeWidth(@Dimension(unit = DP) float strokeWidth) {
             this.mStrokeWidth = dp(strokeWidth);
             return this;
         }
@@ -243,8 +235,7 @@ public class CircularProgressIndicator implements LayoutElement {
          *
          * <p>If not set, defaults to true.
          */
-        @NonNull
-        public Builder setOuterMarginApplied(boolean isApplied) {
+        public @NonNull Builder setOuterMarginApplied(boolean isApplied) {
             this.mIsMarginApplied = isApplied;
             return this;
         }
@@ -253,9 +244,8 @@ public class CircularProgressIndicator implements LayoutElement {
          * Constructs and returns {@link CircularProgressIndicator} with the provided field and
          * look.
          */
-        @NonNull
         @Override
-        public CircularProgressIndicator build() {
+        public @NonNull CircularProgressIndicator build() {
             checkAngles();
 
             DegreesProp length = getLength();
@@ -341,8 +331,7 @@ public class CircularProgressIndicator implements LayoutElement {
             }
         }
 
-        @NonNull
-        private DegreesProp getLength() {
+        private @NonNull DegreesProp getLength() {
             float startAngle = mStartAngle.getValue();
             float endAngle = mEndAngle.getValue();
             if (endAngle <= startAngle) {
@@ -353,40 +342,34 @@ public class CircularProgressIndicator implements LayoutElement {
     }
 
     /** Returns angle representing progressed part of this CircularProgressIndicator. */
-    @NonNull
-    public DegreesProp getProgress() {
+    public @NonNull DegreesProp getProgress() {
         return checkNotNull(mProgress.getLength());
     }
 
     /** Returns stroke width of this CircularProgressIndicator. */
-    @NonNull
-    public DpProp getStrokeWidth() {
+    public @NonNull DpProp getStrokeWidth() {
         return checkNotNull(mProgress.getThickness());
     }
 
     /** Returns start angle of this CircularProgressIndicator. */
-    @NonNull
-    public DegreesProp getStartAngle() {
+    public @NonNull DegreesProp getStartAngle() {
         return checkNotNull(mElement.getAnchorAngle());
     }
 
     /** Returns start angle of this CircularProgressIndicator. */
-    @NonNull
-    public DegreesProp getEndAngle() {
+    public @NonNull DegreesProp getEndAngle() {
         float backArcLength = checkNotNull(mBackground.getLength()).getValue();
         return degrees(getStartAngle().getValue() + backArcLength);
     }
 
     /** Returns main arc color of this CircularProgressIndicator. */
-    @NonNull
-    public ProgressIndicatorColors getCircularProgressIndicatorColors() {
+    public @NonNull ProgressIndicatorColors getCircularProgressIndicatorColors() {
         return new ProgressIndicatorColors(
                 checkNotNull(mProgress.getColor()), checkNotNull(mBackground.getColor()));
     }
 
     /** Returns content description of this CircularProgressIndicator. */
-    @Nullable
-    public StringProp getContentDescription() {
+    public @Nullable StringProp getContentDescription() {
         Semantics semantics = checkNotNull(mElement.getModifiers()).getSemantics();
         if (semantics == null) {
             return null;
@@ -398,8 +381,7 @@ public class CircularProgressIndicator implements LayoutElement {
      * Returns metadata tag set to this CircularProgressIndicator, which should be {@link
      * #METADATA_TAG}.
      */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return getMetadataTagName(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getMetadata()));
     }
@@ -415,8 +397,8 @@ public class CircularProgressIndicator implements LayoutElement {
      * from a container's content with {@code container.getContents().get(index)}) if that element
      * can be converted to CircularProgressIndicator. Otherwise, it will return null.
      */
-    @Nullable
-    public static CircularProgressIndicator fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable CircularProgressIndicator fromLayoutElement(
+            @NonNull LayoutElement element) {
         if (element instanceof CircularProgressIndicator) {
             return (CircularProgressIndicator) element;
         }
@@ -431,17 +413,15 @@ public class CircularProgressIndicator implements LayoutElement {
         return new CircularProgressIndicator(arcElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

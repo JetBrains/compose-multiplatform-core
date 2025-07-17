@@ -18,6 +18,7 @@ package androidx.camera.core
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.ImageFormat
 import android.os.Build
 import android.os.Looper
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -27,10 +28,12 @@ import androidx.camera.testing.impl.fakes.FakeImageInfo
 import androidx.camera.testing.impl.fakes.FakeImageProxy
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
+import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
@@ -63,7 +66,7 @@ class ImageCaptureExtTest {
                     cameraProvider = ProcessCameraProvider.getInstance(context).get()
                     latch.countDown()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
 
         assertThat(latch.await(5, TimeUnit.SECONDS)).isTrue()
@@ -73,7 +76,7 @@ class ImageCaptureExtTest {
         cameraProvider.bindToLifecycle(
             FakeLifecycleOwner().apply { startAndResume() },
             CameraSelector.DEFAULT_BACK_CAMERA,
-            imageCapture
+            imageCapture,
         )
     }
 
@@ -101,12 +104,47 @@ class ImageCaptureExtTest {
     }
 
     @Test
+    fun takePicture_inMemory_imageProxyIsNotDeliveredClosed(): Unit = runTest {
+        // Arrange
+        val imageProxy = FakeImageProxy(FakeImageInfo())
+
+        // Arrange & Act.
+        val takePictureAsync = MainScope().async { imageCapture.takePicture() }
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        val imageCaptureCallback = imageCapture.getTakePictureRequest()?.inMemoryCallback
+        imageCaptureCallback?.onCaptureSuccess(imageProxy)
+
+        // Assert.
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        assertThat(takePictureAsync.await()).isEqualTo(imageProxy)
+        assertThat(imageProxy.isClosed).isFalse()
+    }
+
+    @Test
     fun takePicture_inMemory_canCancel(): Unit = runTest {
         // Arrange & Act.
         val takePictureAsync = MainScope().async { imageCapture.takePicture() }
 
         // Assert: cancel() should complete the coroutine.
         takePictureAsync.cancel()
+    }
+
+    @Test
+    fun takePicture_inMemory_cancelClosesUndeliveredImage(): Unit = runTest {
+        // Arrange
+        val imageProxy = FakeImageProxy(FakeImageInfo())
+
+        // Arrange & Act.
+        val takePictureAsync = MainScope().async { imageCapture.takePicture() }
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        val imageCaptureCallback = imageCapture.getTakePictureRequest()?.inMemoryCallback
+        takePictureAsync.cancel()
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        imageCaptureCallback?.onCaptureSuccess(imageProxy)
+
+        // Assert.
+        assertThrows<CancellationException> { takePictureAsync.await() }
+        assertThat(imageProxy.isClosed).isTrue()
     }
 
     @Test
@@ -188,7 +226,7 @@ class ImageCaptureExtTest {
     @Test
     fun takePicture_onDisk_canGetResult(): Unit = runTest {
         // Arrange
-        val outputFileResults = ImageCapture.OutputFileResults(null)
+        val outputFileResults = ImageCapture.OutputFileResults(null, ImageFormat.JPEG)
 
         // Arrange & Act.
         val takePictureAsync =
@@ -226,7 +264,7 @@ class ImageCaptureExtTest {
             MainScope().async {
                 imageCapture.takePicture(
                     outputFileOptions = fakeOutputFileOptions,
-                    onCaptureStarted = { callbackCalled = true }
+                    onCaptureStarted = { callbackCalled = true },
                 )
             }
         Shadows.shadowOf(Looper.getMainLooper()).idle()
@@ -254,7 +292,7 @@ class ImageCaptureExtTest {
                     onCaptureProcessProgressed = {
                         resultProgress = it
                         callbackCalled = true
-                    }
+                    },
                 )
             }
         Shadows.shadowOf(Looper.getMainLooper()).idle()
@@ -283,7 +321,7 @@ class ImageCaptureExtTest {
                     onPostviewBitmapAvailable = {
                         resultBitmap = it
                         callbackCalled = true
-                    }
+                    },
                 )
             }
         Shadows.shadowOf(Looper.getMainLooper()).idle()

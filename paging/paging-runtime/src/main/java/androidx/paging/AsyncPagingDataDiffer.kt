@@ -90,7 +90,7 @@ constructor(
      */
     @Deprecated(
         message = "Superseded by constructors which accept CoroutineContext",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     // Only for binary compatibility; cannot apply @JvmOverloads as the function signature would
     // conflict with the primary constructor.
@@ -105,7 +105,7 @@ constructor(
         diffCallback = diffCallback,
         updateCallback = updateCallback,
         mainDispatcher = mainDispatcher,
-        workerDispatcher = Dispatchers.Default
+        workerDispatcher = Dispatchers.Default,
     )
 
     /**
@@ -124,7 +124,7 @@ constructor(
      */
     @Deprecated(
         message = "Superseded by constructors which accept CoroutineContext",
-        level = DeprecationLevel.HIDDEN
+        level = DeprecationLevel.HIDDEN,
     )
     // Only for binary compatibility; cannot apply @JvmOverloads as the function signature would
     // conflict with the primary constructor.
@@ -141,11 +141,21 @@ constructor(
         diffCallback = diffCallback,
         updateCallback = updateCallback,
         mainDispatcher = mainDispatcher,
-        workerDispatcher = workerDispatcher
+        workerDispatcher = workerDispatcher,
     )
 
     /** True if we're currently executing [getItem] */
     internal val inGetItem = MutableStateFlow(false)
+    private var lastAccessedIndex = 0
+
+    /**
+     * When presenter presents a new Refresh load, temporarily stores the previous generation of
+     * loaded data while doing [computeDiff] to ensure that RV has access to the previous list (the
+     * list actually still presented on the UI) for diffing.
+     *
+     * This presenter should be null when not computing diff.
+     */
+    private val previousPresenter: AtomicReference<PlaceholderPaddedList<T>> = AtomicReference(null)
 
     internal val presenter =
         object : PagingDataPresenter<T>(mainDispatcher) {
@@ -167,11 +177,38 @@ constructor(
                                     }
                                 }
                                 else -> {
+                                    previousPresenter.set(previousList)
                                     val diffResult =
-                                        withContext(workerDispatcher) {
-                                            previousList.computeDiff(newList, diffCallback)
+                                        try {
+                                            withContext(workerDispatcher) {
+                                                previousList.computeDiff(newList, diffCallback)
+                                            }
+                                        } finally {
+                                            // Set null here to ensure previousPresenter is reset
+                                            // even if this refresh is interrupted.
+                                            // Also, ensure we reset presenter on main thread to
+                                            // avoid potential race with RV doing work between
+                                            // set null and dispatchDiff.
+                                            previousPresenter.set(null)
                                         }
+
                                     previousList.dispatchDiff(updateCallback, newList, diffResult)
+                                    val transformedIndex =
+                                        previousList.transformAnchorIndex(
+                                            diffResult = diffResult,
+                                            newList = newList,
+                                            oldPosition = lastAccessedIndex,
+                                        )
+                                    // Transform the last loadAround index from the old list to the
+                                    // new list by passing it through the DiffResult, and pass
+                                    // it forward as a ViewportHint within the new list to the
+                                    // next generation of Pager.
+                                    // This ensures prefetch distance for the last ViewportHint from
+                                    // the old list is respected in the new list, even if
+                                    // invalidation interrupts the prepend / append load that
+                                    // would have fulfilled it in the old list.
+                                    lastAccessedIndex = transformedIndex
+                                    get(transformedIndex)
                                 }
                             }
                         }
@@ -201,7 +238,7 @@ constructor(
                                 updateCallback.onChanged(
                                     placeholdersChangedPos,
                                     placeholdersChangedCount,
-                                    null
+                                    null,
                                 )
                             }
                             if (itemsInsertedCount > 0) {
@@ -228,7 +265,7 @@ constructor(
                                 updateCallback.onChanged(
                                     placeholdersChangedPos,
                                     placeholdersChangedCount,
-                                    null
+                                    null,
                                 )
                             }
                             if (itemsInsertedCount > 0) {
@@ -241,7 +278,7 @@ constructor(
                             if (placeholderInsertedCount > 0) {
                                 updateCallback.onInserted(
                                     newTotalSize - placeholderInsertedCount,
-                                    placeholderInsertedCount
+                                    placeholderInsertedCount,
                                 )
                             } else if (placeholderInsertedCount < 0) {
                                 updateCallback.onRemoved(newTotalSize, -placeholderInsertedCount)
@@ -304,7 +341,7 @@ constructor(
                             if (placeholdersToInsert > 0) {
                                 updateCallback.onInserted(
                                     newSize - placeholdersToInsert,
-                                    placeholdersToInsert
+                                    placeholdersToInsert,
                                 )
                             } else if (placeholdersToInsert < 0) {
                                 updateCallback.onRemoved(newSize, -placeholdersToInsert)
@@ -409,9 +446,8 @@ constructor(
      * Invalidation due repository-layer signals, such as DB-updates, should instead use
      * [PagingSource.invalidate].
      *
-     * @see PagingSource.invalidate
-     *
      * @sample androidx.paging.samples.refreshSample
+     * @see PagingSource.invalidate
      */
     fun refresh() {
         presenter.refresh()
@@ -429,7 +465,9 @@ constructor(
     fun getItem(@IntRange(from = 0) index: Int): T? {
         try {
             inGetItem.update { true }
-            return presenter[index]
+            lastAccessedIndex = index
+            val tempList = previousPresenter.get()
+            return if (tempList != null) tempList.get(index) else presenter[index]
         } finally {
             inGetItem.update { false }
         }
@@ -444,14 +482,16 @@ constructor(
      */
     @MainThread
     fun peek(@IntRange(from = 0) index: Int): T? {
-        return presenter.peek(index)
+        val tempList = previousPresenter.get()
+        return if (tempList != null) tempList.peek(index) else presenter.peek(index)
     }
 
     /**
      * Returns a new [ItemSnapshotList] representing the currently presented items, including any
      * placeholders if they are enabled.
      */
-    fun snapshot(): ItemSnapshotList<T> = presenter.snapshot()
+    fun snapshot(): ItemSnapshotList<T> =
+        previousPresenter.get()?.snapshot() ?: presenter.snapshot()
 
     /**
      * Get the number of items currently presented by this Differ. This value can be directly
@@ -460,7 +500,7 @@ constructor(
      * @return Number of items being presented, including placeholders.
      */
     val itemCount: Int
-        get() = presenter.size
+        get() = previousPresenter.get()?.size ?: presenter.size
 
     /**
      * A hot [Flow] of [CombinedLoadStates] that emits a snapshot whenever the loading state of the
@@ -554,9 +594,8 @@ constructor(
      * reflect the current [CombinedLoadStates].
      *
      * @param listener [LoadStates] listener to receive updates.
-     * @see removeLoadStateListener
-     *
      * @sample androidx.paging.samples.addLoadStateListenerSample
+     * @see removeLoadStateListener
      */
     fun addLoadStateListener(listener: (CombinedLoadStates) -> Unit) {
         if (parentLoadStateListener.get() == null) {
@@ -608,4 +647,24 @@ constructor(
                 loadState.get()?.let { state -> childLoadStateListeners.forEach { it(state) } }
             }
         }
+}
+
+private fun <T : Any> PlaceholderPaddedList<T>.get(@IntRange(from = 0) index: Int): T? {
+    if (index < 0 || index >= size) {
+        throw IndexOutOfBoundsException("Index: $index, Size: $size")
+    }
+    val localIndex = index - placeholdersBefore
+    if (localIndex < 0 || localIndex >= dataCount) return null
+    return getItem(localIndex)
+}
+
+private fun <T : Any> PlaceholderPaddedList<T>.peek(@IntRange(from = 0) index: Int): T? = get(index)
+
+private fun <T : Any> PlaceholderPaddedList<T>.snapshot(): ItemSnapshotList<T> {
+    val itemEndIndex = dataCount - 1
+    val items = mutableListOf<T>()
+    for (i in 0..itemEndIndex) {
+        items.add(getItem(i))
+    }
+    return ItemSnapshotList(placeholdersBefore, placeholdersAfter, items)
 }

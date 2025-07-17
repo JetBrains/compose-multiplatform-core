@@ -45,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference
 import org.hamcrest.Matchers.`is`
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assume.assumeFalse
@@ -209,7 +210,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
             "OnApplyWindowListener should have been called $expectedListenerPasses times but was " +
                 "called ${expectedListenerPasses - latch.count} times",
             latch.await(2, TimeUnit.SECONDS),
-            `is`(true)
+            `is`(true),
         )
 
         // Check that the IME insets is equal to 0
@@ -245,6 +246,22 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
                 // (unlike the old system window insets)
                 assertEquals(initialSystemBars, insets.getInsets(Type.systemBars()))
             }
+    }
+
+    @SdkSuppress(minSdkVersion = 20)
+    @Test
+    public fun systemBars_hidden() {
+        scenario.onActivity { activity ->
+            WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+            WindowInsetsControllerCompat(activity.window, activity.window.decorView)
+                .hide(Type.systemBars())
+        }
+        val container: View = scenario.withActivity { findViewById(R.id.container) }
+
+        // System bar insets should be empty and invisible because we just hide them
+        val insets = container.requestAndAwaitInsets()
+        assertEquals(Insets.NONE, insets.getInsets(Type.systemBars()))
+        assertFalse(insets.isVisible(Type.systemBars()))
     }
 
     @SdkSuppress(minSdkVersion = 23)
@@ -293,7 +310,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertNotEquals(
             "The root window insets for NavigationBars not be empty",
             Insets.NONE,
-            navigationBar
+            navigationBar,
         )
 
         val statusBar = ViewCompat.getRootWindowInsets(container)?.getInsets(Type.statusBars())!!
@@ -304,12 +321,12 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         assertNotEquals(
             "The dispatched insets for NavigationBars insets should not be empty",
             Insets.NONE,
-            insets.getInsets(Type.navigationBars())
+            insets.getInsets(Type.navigationBars()),
         )
         assertNotEquals(
             "The dispatched insets for StatusBar insets should not be empty",
             Insets.NONE,
-            insets.getInsets(Type.statusBars())
+            insets.getInsets(Type.statusBars()),
         )
     }
 
@@ -317,7 +334,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         // TODO: remove this if b/159103848 is resolved
         assumeFalse(
             "Unable to test: Cuttlefish devices default to the virtual keyboard being disabled.",
-            Build.MODEL.contains("Cuttlefish", ignoreCase = true)
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
         )
     }
 
@@ -357,10 +374,7 @@ public class WindowInsetsCompatActivityTest(private val softInputMode: Int) {
         @JvmStatic
         @Parameterized.Parameters
         public fun data(): List<Array<Int>> =
-            listOf(
-                arrayOf(SOFT_INPUT_ADJUST_PAN),
-                arrayOf(SOFT_INPUT_ADJUST_RESIZE),
-            )
+            listOf(arrayOf(SOFT_INPUT_ADJUST_PAN), arrayOf(SOFT_INPUT_ADJUST_RESIZE))
     }
 }
 

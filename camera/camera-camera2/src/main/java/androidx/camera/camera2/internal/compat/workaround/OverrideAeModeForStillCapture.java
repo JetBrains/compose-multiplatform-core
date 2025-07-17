@@ -16,10 +16,11 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.AutoFlashUnderExposedQuirk;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The workaround sets AE_MODE to AE_MODE_ON_ALWAYS_FLASH in still capture requests. On some

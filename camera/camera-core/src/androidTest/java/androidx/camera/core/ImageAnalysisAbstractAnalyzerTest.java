@@ -19,10 +19,13 @@ package androidx.camera.core;
 import static android.graphics.ImageFormat.YUV_420_888;
 import static android.graphics.PixelFormat.RGBA_8888;
 
+import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21;
 import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888;
 import static androidx.camera.core.ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888;
 import static androidx.camera.core.ImageAnalysisAbstractAnalyzer.getAdditionalTransformMatrixAppliedByProcessor;
+import static androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_VGA;
 import static androidx.camera.testing.impl.ImageProxyUtil.createYUV420ImagePlanes;
+import static androidx.camera.testing.impl.ImageProxyUtil.getDefaultYuvFormatPlaneDataType;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -33,8 +36,6 @@ import static org.mockito.Mockito.verify;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.ImageReaderProxy;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.testing.impl.fakes.FakeImageInfo;
@@ -45,6 +46,8 @@ import androidx.test.filters.SmallTest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,8 +67,6 @@ public class ImageAnalysisAbstractAnalyzerTest {
     private static final int WIDTH = 8;
     private static final int HEIGHT = 4;
     private static final int MAX_IMAGES = 4;
-    private static final int PIXEL_STRIDE_Y = 1;
-    private static final int PIXEL_STRIDE_UV = 1;
 
     private FakeImageAnalysisAnalyzer mImageAnalysisAbstractAnalyzer;
     private FakeImageProxy mImageProxy;
@@ -79,6 +80,8 @@ public class ImageAnalysisAbstractAnalyzerTest {
 
     @Before
     public void setup() {
+        int yuvFormatPlaneDataType = getDefaultYuvFormatPlaneDataType(RESOLUTION_VGA.getWidth(),
+                RESOLUTION_VGA.getHeight());
         mImageProxy = new FakeImageProxy(new FakeImageInfo());
         mImageProxy.setWidth(WIDTH);
         mImageProxy.setHeight(HEIGHT);
@@ -86,9 +89,7 @@ public class ImageAnalysisAbstractAnalyzerTest {
         mImageProxy.setPlanes(createYUV420ImagePlanes(
                 WIDTH,
                 HEIGHT,
-                PIXEL_STRIDE_Y,
-                PIXEL_STRIDE_UV,
-                /*flipUV=*/true,
+                yuvFormatPlaneDataType,
                 /*incrementValue=*/true));
 
         mSecondImageProxy = new FakeImageProxy(new FakeImageInfo());
@@ -98,9 +99,7 @@ public class ImageAnalysisAbstractAnalyzerTest {
         mSecondImageProxy.setPlanes(createYUV420ImagePlanes(
                 WIDTH,
                 HEIGHT,
-                PIXEL_STRIDE_Y,
-                PIXEL_STRIDE_UV,
-                /*flipUV=*/true,
+                yuvFormatPlaneDataType,
                 /*incrementValue=*/true));
 
         mYUVImageReaderProxy = new SafeCloseImageReaderProxy(
@@ -149,58 +148,36 @@ public class ImageAnalysisAbstractAnalyzerTest {
     }
 
     @Test
-    public void analysisRunWhenOutputImageYUV() throws ExecutionException, InterruptedException {
-        // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_YUV_420_888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mYUVImageReaderProxy);
-
-        // Act.
-        ListenableFuture<Void> result =
-                mImageAnalysisAbstractAnalyzer.analyzeImage(mImageProxy);
-        result.get();
-
-        // Assert.
-        ArgumentCaptor<ImageProxy> imageProxyArgumentCaptor =
-                ArgumentCaptor.forClass(ImageProxy.class);
-        verify(mAnalyzer).analyze(imageProxyArgumentCaptor.capture());
-        assertThat(imageProxyArgumentCaptor.getValue().getFormat()).isEqualTo(YUV_420_888);
-        assertThat(imageProxyArgumentCaptor.getValue().getPlanes().length).isEqualTo(3);
-        assertThat(imageProxyArgumentCaptor.getValue().getCropRect()).isEqualTo(
-                new Rect(0, 0, WIDTH, HEIGHT));
+    public void analysisRunWhenOutputImage_YUV_420_888()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenOutputImage(OUTPUT_IMAGE_FORMAT_YUV_420_888, mYUVImageReaderProxy, 3,
+                YUV_420_888);
     }
 
     @Test
-    public void analysisRunWhenOutputImageRGB() throws ExecutionException, InterruptedException {
-        // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRGBImageReaderProxy);
-
-        // Act.
-        ListenableFuture<Void> result =
-                mImageAnalysisAbstractAnalyzer.analyzeImage(mImageProxy);
-        result.get();
-
-        // Assert.
-        ArgumentCaptor<ImageProxy> imageProxyArgumentCaptor =
-                ArgumentCaptor.forClass(ImageProxy.class);
-        verify(mAnalyzer).analyze(imageProxyArgumentCaptor.capture());
-        assertThat(imageProxyArgumentCaptor.getValue().getFormat()).isEqualTo(RGBA_8888);
-        assertThat(imageProxyArgumentCaptor.getValue().getPlanes().length).isEqualTo(1);
-        assertThat(imageProxyArgumentCaptor.getValue().getCropRect()).isEqualTo(
-                new Rect(0, 0, WIDTH, HEIGHT));
+    public void analysisRunWhenOutputImage_RGBA_8888()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenOutputImage(OUTPUT_IMAGE_FORMAT_RGBA_8888, mRGBImageReaderProxy, 1,
+                RGBA_8888);
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
-    public void analysisRunWhenRotateYUVMinSdk23() throws ExecutionException, InterruptedException {
-        // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_YUV_420_888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedYUVImageReaderProxy);
-        mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(true);
-        mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
-        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/90);
+    public void analysisRunWhenOutputImage_NV21()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenOutputImage(OUTPUT_IMAGE_FORMAT_NV21, null, 3, YUV_420_888);
+    }
 
-        Matrix original = new Matrix(mSensorToBufferMatrix);
+    private void analysisRunWhenOutputImage(
+            int outputFormat,
+            @Nullable SafeCloseImageReaderProxy processedImageReaderProxy,
+            int expectedPlaneCount,
+            int expectedFormat)
+            throws ExecutionException, InterruptedException {
+        // Arrange.
+        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(outputFormat);
+        if (processedImageReaderProxy != null) {
+            mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(processedImageReaderProxy);
+        }
 
         // Act.
         ListenableFuture<Void> result =
@@ -211,17 +188,15 @@ public class ImageAnalysisAbstractAnalyzerTest {
         ArgumentCaptor<ImageProxy> imageProxyArgumentCaptor =
                 ArgumentCaptor.forClass(ImageProxy.class);
         verify(mAnalyzer).analyze(imageProxyArgumentCaptor.capture());
-
-        Matrix target = new Matrix();
-        target.setConcat(original, getAdditionalTransformMatrixAppliedByProcessor(
-                WIDTH, HEIGHT, HEIGHT, WIDTH, 90));
-        assertThat(imageProxyArgumentCaptor.getValue().getImageInfo()
-                .getSensorToBufferTransformMatrix()).isEqualTo(target);
-
-        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNotNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNotNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNotNull();
+        assertThat(imageProxyArgumentCaptor.getValue().getFormat()).isEqualTo(expectedFormat);
+        assertThat(imageProxyArgumentCaptor.getValue().getPlanes().length).isEqualTo(
+                expectedPlaneCount);
+        assertThat(imageProxyArgumentCaptor.getValue().getCropRect()).isEqualTo(
+                new Rect(0, 0, WIDTH, HEIGHT));
+        if (outputFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+            assertThat(ImageProcessingUtil.isNV21FormatImage(
+                    imageProxyArgumentCaptor.getValue())).isTrue();
+        }
     }
 
     @SdkSuppress(maxSdkVersion = 22, minSdkVersion = 21)
@@ -253,14 +228,56 @@ public class ImageAnalysisAbstractAnalyzerTest {
         assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNotNull();
         assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNotNull();
         assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNull();
+    }
+
+    @SdkSuppress(minSdkVersion = 23)
+    @Test
+    public void analysisRunWhenRotateYUVMinSdk23() throws ExecutionException, InterruptedException {
+        analysisRunWhenRotate(OUTPUT_IMAGE_FORMAT_YUV_420_888, mRotatedYUVImageReaderProxy);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNull();
     }
 
     @Test
-    public void analysisRunWhenRotateRGB() throws ExecutionException,
-            InterruptedException {
+    public void analysisRunWhenRotate_RGBA_8888() throws ExecutionException, InterruptedException {
+        analysisRunWhenRotate(OUTPUT_IMAGE_FORMAT_RGBA_8888, mRotatedRGBImageReaderProxy);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNull();
+    }
+
+    @Test
+    public void analysisRunWhenRotate_NV21() throws ExecutionException, InterruptedException {
+        analysisRunWhenRotate(OUTPUT_IMAGE_FORMAT_NV21, null);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNotNull();
+    }
+
+    private void analysisRunWhenRotate(int outputFormat,
+            @Nullable SafeCloseImageReaderProxy processedImageReaderProxy)
+            throws ExecutionException, InterruptedException {
         // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedRGBImageReaderProxy);
+        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(outputFormat);
+        if (processedImageReaderProxy != null) {
+            mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(
+                    processedImageReaderProxy);
+        }
         mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(true);
         mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
         mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/90);
@@ -284,20 +301,41 @@ public class ImageAnalysisAbstractAnalyzerTest {
                 .getSensorToBufferTransformMatrix()).isEqualTo(target);
         assertThat(imageProxyArgumentCaptor.getValue().getCropRect())
                 .isEqualTo(new Rect(0, 0, HEIGHT, WIDTH));
-
-        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNotNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
+        if (outputFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+            assertThat(ImageProcessingUtil.isNV21FormatImage(
+                    imageProxyArgumentCaptor.getValue())).isTrue();
+        }
     }
 
     @SdkSuppress(minSdkVersion = 23)
     @Test
-    public void analysisRunWhenYUVSetTargetRotationMultipleTimes() throws ExecutionException,
-            InterruptedException {
+    public void analysisRunWhenSetTargetRotationMultipleTimes_YUV_420_888()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenSetTargetRotationMultipleTimes(OUTPUT_IMAGE_FORMAT_YUV_420_888,
+                mRotatedYUVImageReaderProxy);
+    }
+
+    @Test
+    public void analysisRunWhenSetTargetRotationMultipleTimes_RGBA_8888()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenSetTargetRotationMultipleTimes(OUTPUT_IMAGE_FORMAT_RGBA_8888,
+                mRotatedRGBImageReaderProxy);
+    }
+
+    @Test
+    public void analysisRunWhenSetTargetRotationMultipleTimes_NV21()
+            throws ExecutionException, InterruptedException {
+        analysisRunWhenSetTargetRotationMultipleTimes(OUTPUT_IMAGE_FORMAT_NV21, null);
+    }
+
+    private void analysisRunWhenSetTargetRotationMultipleTimes(int outputFormat,
+            @Nullable SafeCloseImageReaderProxy processedImageReaderProxy)
+            throws ExecutionException, InterruptedException {
         // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_YUV_420_888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedYUVImageReaderProxy);
+        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(outputFormat);
+        if (processedImageReaderProxy != null) {
+            mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(processedImageReaderProxy);
+        }
         mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(true);
         mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
         mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/90);
@@ -328,86 +366,78 @@ public class ImageAnalysisAbstractAnalyzerTest {
                 WIDTH, HEIGHT, WIDTH, HEIGHT, 180));
         assertThat(imageProxyArgumentCaptor.getValue().getImageInfo()
                 .getSensorToBufferTransformMatrix()).isEqualTo(target);
+        if (outputFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+            assertThat(ImageProcessingUtil.isNV21FormatImage(
+                    imageProxyArgumentCaptor.getValue())).isTrue();
+        }
     }
 
     @Test
-    public void analysisRunWhenRGBSetTargetRotationMultipleTimes() throws ExecutionException,
+    public void analysisRunWhenNoRotate_RGBA_8888() throws ExecutionException,
             InterruptedException {
+        analysisRunWhenNoRotateYUV(OUTPUT_IMAGE_FORMAT_RGBA_8888, mRotatedRGBImageReaderProxy);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNull();
+    }
+
+    @Test
+    public void analysisRunWhenNoRotate_YUV_420_888() throws ExecutionException,
+            InterruptedException {
+        analysisRunWhenNoRotateYUV(OUTPUT_IMAGE_FORMAT_YUV_420_888, mRotatedRGBImageReaderProxy);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNull();
+    }
+
+    @Test
+    public void analysisRunWhenNoRotate_NV21() throws ExecutionException,
+            InterruptedException {
+        analysisRunWhenNoRotateYUV(OUTPUT_IMAGE_FORMAT_NV21, null);
+
+        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21YDelegatedBuffer()).isNotNull();
+        assertThat(mImageAnalysisAbstractAnalyzer.getNV21UVDelegatedBuffer()).isNotNull();
+    }
+
+    private void analysisRunWhenNoRotateYUV(int outputFormat,
+            @Nullable SafeCloseImageReaderProxy processedImageReaderProxy)
+            throws ExecutionException, InterruptedException {
         // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedRGBImageReaderProxy);
-        mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(true);
+        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(outputFormat);
+        if (processedImageReaderProxy != null) {
+            mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(
+                    mRotatedRGBImageReaderProxy);
+        }
+        mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(false);
         mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
-        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/90);
-
-        Matrix original = new Matrix(mSensorToBufferMatrix);
+        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/270);
 
         // Act.
-        ListenableFuture<Void> result1 =
+        ListenableFuture<Void> result =
                 mImageAnalysisAbstractAnalyzer.analyzeImage(mImageProxy);
-        result1.get();
-
-        reset(mAnalyzer);
-
-        // Act.
-        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/180);
-        ListenableFuture<Void> result2 =
-                mImageAnalysisAbstractAnalyzer.analyzeImage(mSecondImageProxy);
-        result2.get();
+        result.get();
 
         // Assert.
         ArgumentCaptor<ImageProxy> imageProxyArgumentCaptor =
                 ArgumentCaptor.forClass(ImageProxy.class);
         verify(mAnalyzer).analyze(imageProxyArgumentCaptor.capture());
 
-        // Verify that additional transform matrix will only be applied to original matrix once.
-        Matrix target = new Matrix();
-        target.setConcat(original, getAdditionalTransformMatrixAppliedByProcessor(
-                WIDTH, HEIGHT, WIDTH, HEIGHT, 180));
-        assertThat(imageProxyArgumentCaptor.getValue().getImageInfo()
-                .getSensorToBufferTransformMatrix()).isEqualTo(target);
-    }
-
-    @Test
-    public void analysisRunWhenNoRotateRGB() throws ExecutionException,
-            InterruptedException {
-        // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedRGBImageReaderProxy);
-        mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(false);
-        mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
-        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/270);
-
-        // Act.
-        ListenableFuture<Void> result =
-                mImageAnalysisAbstractAnalyzer.analyzeImage(mImageProxy);
-        result.get();
-
-        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
-    }
-
-    @Test
-    public void analysisRunWhenNoRotateYUV() throws ExecutionException,
-            InterruptedException {
-        // Arrange.
-        mImageAnalysisAbstractAnalyzer.setOutputImageFormat(OUTPUT_IMAGE_FORMAT_YUV_420_888);
-        mImageAnalysisAbstractAnalyzer.setProcessedImageReaderProxy(mRotatedRGBImageReaderProxy);
-        mImageAnalysisAbstractAnalyzer.setOutputImageRotationEnabled(false);
-        mImageAnalysisAbstractAnalyzer.setSensorToBufferTransformMatrix(mSensorToBufferMatrix);
-        mImageAnalysisAbstractAnalyzer.setRelativeRotation(/*rotation=*/270);
-
-        // Act.
-        ListenableFuture<Void> result =
-                mImageAnalysisAbstractAnalyzer.analyzeImage(mImageProxy);
-        result.get();
-
-        assertThat(mImageAnalysisAbstractAnalyzer.getRGBConverterBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getYRotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getURotatedBuffer()).isNull();
-        assertThat(mImageAnalysisAbstractAnalyzer.getVRotatedBuffer()).isNull();
+        if (outputFormat == OUTPUT_IMAGE_FORMAT_NV21) {
+            assertThat(ImageProcessingUtil.isNV21FormatImage(
+                    imageProxyArgumentCaptor.getValue())).isTrue();
+        }
     }
 
     @Test
@@ -481,9 +511,8 @@ public class ImageAnalysisAbstractAnalyzerTest {
             mImageAnalysisNonBlockingAnalyzer = imageAnalysisNonBlockingAnalyzer;
         }
 
-        @Nullable
         @Override
-        ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
+        @Nullable ImageProxy acquireImage(@NonNull ImageReaderProxy imageReaderProxy) {
             return mImageAnalysisNonBlockingAnalyzer.acquireImage(imageReaderProxy);
         }
 
@@ -499,7 +528,7 @@ public class ImageAnalysisAbstractAnalyzerTest {
 
         @Override
         void setAnalyzer(@Nullable Executor userExecutor,
-                @Nullable ImageAnalysis.Analyzer subscribedAnalyzer) {
+                ImageAnalysis.@Nullable Analyzer subscribedAnalyzer) {
             mImageAnalysisNonBlockingAnalyzer.setAnalyzer(userExecutor, subscribedAnalyzer);
         }
 
@@ -547,24 +576,28 @@ public class ImageAnalysisAbstractAnalyzerTest {
             mImageAnalysisNonBlockingAnalyzer.setRelativeRotation(relativeRotation);
         }
 
-        @Nullable
-        ByteBuffer getRGBConverterBuffer() {
+        @Nullable ByteBuffer getRGBConverterBuffer() {
             return mImageAnalysisNonBlockingAnalyzer.mRGBConvertedBuffer;
         }
 
-        @Nullable
-        ByteBuffer getYRotatedBuffer() {
+        @Nullable ByteBuffer getYRotatedBuffer() {
             return mImageAnalysisNonBlockingAnalyzer.mYRotatedBuffer;
         }
 
-        @Nullable
-        ByteBuffer getURotatedBuffer() {
+        @Nullable ByteBuffer getURotatedBuffer() {
             return mImageAnalysisNonBlockingAnalyzer.mURotatedBuffer;
         }
 
-        @Nullable
-        ByteBuffer getVRotatedBuffer() {
+        @Nullable ByteBuffer getVRotatedBuffer() {
             return mImageAnalysisNonBlockingAnalyzer.mVRotatedBuffer;
+        }
+
+        @Nullable ByteBuffer getNV21YDelegatedBuffer() {
+            return mImageAnalysisNonBlockingAnalyzer.mNV21YDelegatedBuffer;
+        }
+
+        @Nullable ByteBuffer getNV21UVDelegatedBuffer() {
+            return mImageAnalysisNonBlockingAnalyzer.mNV21UVDelegatedBuffer;
         }
     }
 }

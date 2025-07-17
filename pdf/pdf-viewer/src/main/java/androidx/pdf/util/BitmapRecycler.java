@@ -18,10 +18,11 @@ package androidx.pdf.util;
 
 import android.graphics.Bitmap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.Dimensions;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -46,8 +47,7 @@ public class BitmapRecycler {
      * @param dimensions The required dimensions of the bitmap (in px)
      * @return A recycled or new {@link Bitmap}, or null if there's not enough memory to create one.
      */
-    @Nullable
-    public Bitmap obtainBitmap(@NonNull Dimensions dimensions) {
+    public @Nullable Bitmap obtainBitmap(@NonNull Dimensions dimensions) {
         Bitmap bitmap;
         Iterator<WeakReference<Bitmap>> iterator = null;
         synchronized (mPool) {
@@ -80,8 +80,7 @@ public class BitmapRecycler {
 
     }
 
-    @Nullable
-    private Bitmap createBitmap(Dimensions dimensions) {
+    private @Nullable Bitmap createBitmap(Dimensions dimensions) {
         try {
             Bitmap bitmap =
                     Bitmap.createBitmap(dimensions.getWidth(), dimensions.getHeight(),

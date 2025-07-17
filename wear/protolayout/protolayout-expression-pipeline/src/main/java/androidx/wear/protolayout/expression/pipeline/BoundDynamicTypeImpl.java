@@ -22,7 +22,10 @@ import android.util.Log;
 
 import androidx.annotation.UiThread;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Dynamic type node implementation that contains a list of {@link DynamicDataNode} created during
@@ -76,6 +79,23 @@ class BoundDynamicTypeImpl implements BoundDynamicType {
                         .filter(n -> n instanceof AnimatableNode)
                         .filter(n -> ((AnimatableNode) n).hasRunningAnimation())
                         .count();
+    }
+
+    @Override
+    public @NonNull List<DynamicTypeAnimator> getAnimations() {
+        List<QuotaAwareAnimator> animators =
+                mNodes.stream()
+                        .filter(n -> n instanceof AnimatableNode)
+                        .map(n -> ((AnimatableNode) n).mQuotaAwareAnimator)
+                        .collect(Collectors.toList());
+
+        if (!animators.isEmpty()) {
+            animators.get(animators.size() - 1).setTerminal();
+        }
+
+        return animators.stream()
+                .map(animator -> (DynamicTypeAnimator) animator)
+                .collect(Collectors.toList());
     }
 
     @Override

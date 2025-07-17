@@ -24,8 +24,9 @@ import static androidx.browser.customtabs.CustomTabsIntent.EXTRA_TOOLBAR_COLOR;
 import android.os.Bundle;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Contains visual parameters of a Custom Tab that may depend on the color scheme.
@@ -36,29 +37,29 @@ public final class CustomTabColorSchemeParams {
     /**
      * Toolbar color. See {@link CustomTabsIntent.Builder#setToolbarColor(int)}.
      */
-    @Nullable @ColorInt public final Integer toolbarColor;
+    @ColorInt public final @Nullable Integer toolbarColor;
 
     /**
      * Secondary toolbar color. See {@link CustomTabsIntent.Builder#setSecondaryToolbarColor(int)}.
      */
-    @Nullable @ColorInt public final Integer secondaryToolbarColor;
+    @ColorInt public final @Nullable Integer secondaryToolbarColor;
 
     /**
      * Navigation bar color. See {@link CustomTabsIntent.Builder#setNavigationBarColor(int)}.
      */
-    @Nullable @ColorInt public final Integer navigationBarColor;
+    @ColorInt public final @Nullable Integer navigationBarColor;
 
     /**
      * Navigation bar color. See {@link CustomTabsIntent.Builder#setNavigationBarDividerColor(int)}.
      */
-    @Nullable @ColorInt public final Integer navigationBarDividerColor;
+    @ColorInt public final @Nullable Integer navigationBarDividerColor;
 
     @SuppressWarnings("WeakerAccess") /* synthetic access */
     CustomTabColorSchemeParams(
-            @Nullable @ColorInt Integer toolbarColor,
-            @Nullable @ColorInt Integer secondaryToolbarColor,
-            @Nullable @ColorInt Integer navigationBarColor,
-            @Nullable @ColorInt Integer navigationBarDividerColor) {
+            @ColorInt @Nullable Integer toolbarColor,
+            @ColorInt @Nullable Integer secondaryToolbarColor,
+            @ColorInt @Nullable Integer navigationBarColor,
+            @ColorInt @Nullable Integer navigationBarDividerColor) {
         this.toolbarColor = toolbarColor;
         this.secondaryToolbarColor = secondaryToolbarColor;
         this.navigationBarColor = navigationBarColor;
@@ -70,8 +71,7 @@ public final class CustomTabColorSchemeParams {
      * For backward compatibility and ease of use, the names of keys and the structure of the Bundle
      * are the same as that of Intent extras prior to introducing the themes.
      */
-    @NonNull
-    Bundle toBundle() {
+    @NonNull Bundle toBundle() {
         Bundle bundle = new Bundle();
         if (toolbarColor != null) {
             bundle.putInt(EXTRA_TOOLBAR_COLOR, toolbarColor);
@@ -92,9 +92,8 @@ public final class CustomTabColorSchemeParams {
      * Unpacks parameters from a {@link Bundle}. Sets all parameters to null if provided bundle is
      * null.
      */
-    @NonNull
     @SuppressWarnings("deprecation")
-    static CustomTabColorSchemeParams fromBundle(@Nullable Bundle bundle) {
+    static @NonNull CustomTabColorSchemeParams fromBundle(@Nullable Bundle bundle) {
         if (bundle == null) {
             bundle = new Bundle(0);
         }
@@ -110,8 +109,7 @@ public final class CustomTabColorSchemeParams {
     /**
      * Replaces the null fields with values from provided defaults.
      */
-    @NonNull
-    CustomTabColorSchemeParams withDefaults(@NonNull CustomTabColorSchemeParams defaults) {
+    @NonNull CustomTabColorSchemeParams withDefaults(@NonNull CustomTabColorSchemeParams defaults) {
         return new CustomTabColorSchemeParams(
                 toolbarColor == null ? defaults.toolbarColor : toolbarColor,
                 secondaryToolbarColor == null ? defaults.secondaryToolbarColor
@@ -127,16 +125,15 @@ public final class CustomTabColorSchemeParams {
      * The browser's default colors will be used for any unset value.
      */
     public static final class Builder {
-        @Nullable @ColorInt private Integer mToolbarColor;
-        @Nullable @ColorInt private Integer mSecondaryToolbarColor;
-        @Nullable @ColorInt private Integer mNavigationBarColor;
-        @Nullable @ColorInt private Integer mNavigationBarDividerColor;
+        @ColorInt private @Nullable Integer mToolbarColor;
+        @ColorInt private @Nullable Integer mSecondaryToolbarColor;
+        @ColorInt private @Nullable Integer mNavigationBarColor;
+        @ColorInt private @Nullable Integer mNavigationBarDividerColor;
 
         /**
          * @see CustomTabsIntent.Builder#setToolbarColor(int)
          */
-        @NonNull
-        public Builder setToolbarColor(@ColorInt int color) {
+        public @NonNull Builder setToolbarColor(@ColorInt int color) {
             mToolbarColor = color | 0xff000000;
             return this;
         }
@@ -144,8 +141,7 @@ public final class CustomTabColorSchemeParams {
         /**
          * @see CustomTabsIntent.Builder#setSecondaryToolbarColor(int)
          */
-        @NonNull
-        public Builder setSecondaryToolbarColor(@ColorInt int color) {
+        public @NonNull Builder setSecondaryToolbarColor(@ColorInt int color) {
             mSecondaryToolbarColor = color;
             return this;
         }
@@ -153,8 +149,7 @@ public final class CustomTabColorSchemeParams {
         /**
          * @see CustomTabsIntent.Builder#setNavigationBarColor(int)
          */
-        @NonNull
-        public Builder setNavigationBarColor(@ColorInt int color) {
+        public @NonNull Builder setNavigationBarColor(@ColorInt int color) {
             mNavigationBarColor = color | 0xff000000;
             return this;
         }
@@ -162,8 +157,7 @@ public final class CustomTabColorSchemeParams {
         /**
          * @see CustomTabsIntent.Builder#setNavigationBarDividerColor(int)
          */
-        @NonNull
-        public Builder setNavigationBarDividerColor(@ColorInt int color) {
+        public @NonNull Builder setNavigationBarDividerColor(@ColorInt int color) {
             mNavigationBarDividerColor = color;
             return this;
         }
@@ -172,8 +166,7 @@ public final class CustomTabColorSchemeParams {
          * Combines all the options that have been into a {@link CustomTabColorSchemeParams}
          * object.
          */
-        @NonNull
-        public CustomTabColorSchemeParams build() {
+        public @NonNull CustomTabColorSchemeParams build() {
             return new CustomTabColorSchemeParams(mToolbarColor, mSecondaryToolbarColor,
                     mNavigationBarColor, mNavigationBarDividerColor);
         }

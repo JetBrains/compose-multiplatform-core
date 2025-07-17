@@ -26,14 +26,12 @@ import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW;
 import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_MAX;
 import static androidx.core.app.NotificationManagerCompat.IMPORTANCE_MIN;
 
-import static org.mockito.Mockito.spy;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -63,7 +61,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest

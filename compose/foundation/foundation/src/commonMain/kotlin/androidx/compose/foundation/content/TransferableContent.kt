@@ -19,6 +19,7 @@ package androidx.compose.foundation.content
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.ClipMetadata
+import kotlin.jvm.JvmInline
 
 /**
  * Represents content that can be transferred between applications or processes.
@@ -40,7 +41,7 @@ internal constructor(
     val clipEntry: ClipEntry,
     val clipMetadata: ClipMetadata,
     val source: Source,
-    val platformTransferableContent: PlatformTransferableContent? = null
+    val platformTransferableContent: PlatformTransferableContent? = null,
 ) {
 
     /** Defines the type of operation that a [TransferableContent] originates from. */

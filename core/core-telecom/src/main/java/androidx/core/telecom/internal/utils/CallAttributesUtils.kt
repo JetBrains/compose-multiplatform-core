@@ -18,7 +18,6 @@ package androidx.core.telecom.internal.utils
 
 import android.net.Uri
 import android.telecom.PhoneAccountHandle
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallAttributesCompat
 
@@ -26,20 +25,19 @@ import androidx.core.telecom.CallAttributesCompat
 internal class CallAttributesUtils {
     internal object Api34PlusImpl {
         @JvmStatic
-        @DoNotInline
         fun toTelecomCallAttributes(
             phoneAccountHandle: PhoneAccountHandle,
             direction: Int,
             displayName: CharSequence,
             address: Uri,
             callType: Int,
-            callCapabilities: Int
+            callCapabilities: Int,
         ): android.telecom.CallAttributes {
             return android.telecom.CallAttributes.Builder(
                     phoneAccountHandle,
                     direction,
                     displayName,
-                    address
+                    address,
                 )
                 .setCallType(remapCallType(callType))
                 .setCallCapabilities(remapCapabilities(callCapabilities))

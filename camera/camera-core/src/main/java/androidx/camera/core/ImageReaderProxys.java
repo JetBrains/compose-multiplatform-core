@@ -18,9 +18,10 @@ package androidx.camera.core;
 
 import android.media.ImageReader;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.ImageReaderProxy;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Different implementations of {@link ImageReaderProxy}.
@@ -41,8 +42,7 @@ public final class ImageReaderProxys {
      * @param maxImages of the reader
      * @return new {@link ImageReaderProxy} instance
      */
-    @NonNull
-    public static ImageReaderProxy createIsolatedReader(
+    public static @NonNull ImageReaderProxy createIsolatedReader(
             int width, int height, int format, int maxImages) {
         ImageReader imageReader = ImageReader.newInstance(width, height, format, maxImages);
         return new AndroidImageReaderProxy(imageReader);

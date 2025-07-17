@@ -21,12 +21,13 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP;
 import android.os.IBinder;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.window.sidecar.SidecarDeviceState;
 import androidx.window.sidecar.SidecarInterface.SidecarCallback;
 import androidx.window.sidecar.SidecarWindowLayoutInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -80,8 +81,8 @@ public class DistinctElementSidecarCallback implements SidecarCallback {
                 return;
             }
             mLastDeviceState = newDeviceState;
-            mCallback.onDeviceStateChanged(mLastDeviceState);
         }
+        mCallback.onDeviceStateChanged(newDeviceState);
     }
 
     @Override
@@ -93,7 +94,7 @@ public class DistinctElementSidecarCallback implements SidecarCallback {
                 return;
             }
             mActivityWindowLayoutInfo.put(windowToken, newLayout);
-            mCallback.onWindowLayoutChanged(windowToken, newLayout);
         }
+        mCallback.onWindowLayoutChanged(windowToken, newLayout);
     }
 }

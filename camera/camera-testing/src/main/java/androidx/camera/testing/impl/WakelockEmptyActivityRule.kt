@@ -21,7 +21,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.view.WindowManager
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.camera.core.Logger
 import androidx.camera.testing.impl.Api27Impl.setShowWhenLocked
@@ -34,11 +33,25 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-/** A rule that opens an empty Activity and wakes the device to prevent test failures. */
-class WakelockEmptyActivityRule : TestRule {
+/**
+ * A rule that opens an empty Activity and wakes the device to prevent test failures.
+ *
+ * By default, all brands will be enabled (brandsToEnable == null). Caller can specify the brand
+ * list to enable the rule via the [brandsToEnable] parameter.
+ */
+public class WakelockEmptyActivityRule(private val brandsToEnable: List<String>? = null) :
+    TestRule {
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
             override fun evaluate() {
+                if (
+                    brandsToEnable != null &&
+                        !brandsToEnable.any { Build.BRAND.equals(it, ignoreCase = true) }
+                ) {
+                    base.evaluate()
+                    return
+                }
+
                 val instrumentation = InstrumentationRegistry.getInstrumentation()
                 clearDeviceUI(instrumentation)
                 var activityRef: EmptyActivity? = null
@@ -51,10 +64,10 @@ class WakelockEmptyActivityRule : TestRule {
                                     setClassName(
                                         ApplicationProvider.getApplicationContext<Context>()
                                             .packageName,
-                                        EmptyActivity::class.java.name
+                                        EmptyActivity::class.java.name,
                                     )
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
+                                },
                             )
                             ?.also { activity ->
                                 instrumentation.runOnMainSync {
@@ -89,14 +102,12 @@ class WakelockEmptyActivityRule : TestRule {
 }
 
 @RequiresApi(Build.VERSION_CODES.O_MR1)
-object Api27Impl {
-    @DoNotInline
-    fun Activity.setShowWhenLocked() {
+public object Api27Impl {
+    public fun Activity.setShowWhenLocked() {
         setShowWhenLocked(true)
     }
 
-    @DoNotInline
-    fun Activity.setTurnScreenOn() {
+    public fun Activity.setTurnScreenOn() {
         setTurnScreenOn(true)
     }
 }

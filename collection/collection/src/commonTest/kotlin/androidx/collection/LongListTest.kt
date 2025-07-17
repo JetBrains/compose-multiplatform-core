@@ -96,15 +96,15 @@ class LongListTest {
     fun joinToString() {
         assertEquals("${1L}, ${2L}, ${3L}, ${4L}, ${5L}", list.joinToString())
         assertEquals(
-            "x${1L}, ${2L}, ${3L}...",
-            list.joinToString(prefix = "x", postfix = "y", limit = 3)
+            "x${1L}, ${2L}, ${3L}, ...y",
+            list.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${1L}-${2L}-${3L}-${4L}-${5L}<",
-            list.joinToString(separator = "-", prefix = ">", postfix = "<")
+            list.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it.toInt()) {
                     1 -> "one"
@@ -112,7 +112,7 @@ class LongListTest {
                     3 -> "three"
                     else -> "whoops"
                 }
-            }
+            },
         )
     }
 
@@ -163,21 +163,21 @@ class LongListTest {
             list.elementAtOrElse(0) {
                 assertEquals(0, it)
                 0L
-            }
+            },
         )
         assertEquals(
             0L,
             list.elementAtOrElse(-1) {
                 assertEquals(-1, it)
                 0L
-            }
+            },
         )
         assertEquals(
             0L,
             list.elementAtOrElse(5) {
                 assertEquals(5, it)
                 0L
-            }
+            },
         )
     }
 
@@ -366,7 +366,7 @@ class LongListTest {
     fun foldIndexed() {
         assertEquals(
             "01-12-23-34-45-",
-            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" }
+            list.foldIndexed("") { index, acc, i -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -379,7 +379,7 @@ class LongListTest {
     fun foldRightIndexed() {
         assertEquals(
             "45-34-23-12-01-",
-            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" }
+            list.foldRightIndexed("") { index, i, acc -> "$acc$index${i.toInt()}-" },
         )
     }
 
@@ -623,6 +623,14 @@ class LongListTest {
     }
 
     @Test
+    fun sortEmpty() {
+        val l = MutableLongList(0)
+        l.sort()
+        l.sortDescending()
+        assertEquals(MutableLongList(0), l)
+    }
+
+    @Test
     fun testEmptyLongList() {
         val l = emptyLongList()
         assertEquals(0, l.size)
@@ -704,5 +712,47 @@ class LongListTest {
         assertEquals(10L, l[1])
         assertEquals(-1L, l[2])
         assertEquals(10L, l[3])
+    }
+
+    @Test
+    fun buildLongListFunction() {
+        val contract: Boolean
+        val l = buildLongList {
+            contract = true
+            add(2L)
+            add(10L)
+        }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertEquals(2L, l[0])
+        assertEquals(10L, l[1])
+    }
+
+    @Test
+    fun buildLongListWithCapacityFunction() {
+        val contract: Boolean
+        val l =
+            buildLongList(20) {
+                contract = true
+                add(2L)
+                add(10L)
+            }
+        assertTrue(contract)
+        assertEquals(2, l.size)
+        assertTrue(l.content.size >= 20)
+        assertEquals(2L, l[0])
+        assertEquals(10L, l[1])
+    }
+
+    @Test
+    fun binarySearchLongList() {
+        val l = mutableLongListOf(-2L, -1L, 2L, 10L, 10L)
+        assertEquals(0, l.binarySearch(-2))
+        assertEquals(2, l.binarySearch(2))
+        assertEquals(3, l.binarySearch(10))
+
+        assertEquals(-1, l.binarySearch(-20))
+        assertEquals(-4, l.binarySearch(3))
+        assertEquals(-6, l.binarySearch(20))
     }
 }

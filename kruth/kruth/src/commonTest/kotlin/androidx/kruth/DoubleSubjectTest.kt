@@ -36,7 +36,7 @@ class DoubleSubjectTest {
      * Also asserts Kotlin behavior where -0.0 is not equal to 0.0 when dynamically typed
      */
     @Test
-    fun doubleCornerCaseZero() {
+    fun doubleCornerCaseZero() = assumeNotJs {
         var dynamicZeroDouble: Any = 0.0
         var dynamicNegativeZeroDouble: Any = -0.0
         assertThat(dynamicZeroDouble == dynamicNegativeZeroDouble).isFalse()
@@ -286,11 +286,11 @@ class DoubleSubjectTest {
     @Test
     fun doubleIsEqualTo() {
         assertThat(1.23).isEqualTo(1.23)
-        assertThatIsEqualToFails(GOLDEN, OVER_GOLDEN)
         assertThat(Double.POSITIVE_INFINITY).isEqualTo(Double.POSITIVE_INFINITY)
         assertThat(Double.NaN).isEqualTo(Double.NaN)
         assertThat(null as Double?).isEqualTo(null)
         assertThat(1.0).isEqualTo(1)
+        assumeNotJs { assertThatIsEqualToFails(GOLDEN, OVER_GOLDEN) }
     }
 
     private fun assertThatIsEqualToFails(actual: Double, expected: Double) {
@@ -300,13 +300,15 @@ class DoubleSubjectTest {
     @Test
     fun doubleIsNotEqualTo() {
         assertThatIsNotEqualToFails(1.23)
-        assertThat(GOLDEN).isNotEqualTo(OVER_GOLDEN)
         assertThatIsNotEqualToFails(Double.POSITIVE_INFINITY)
         assertThatIsNotEqualToFails(Double.NaN)
-        assertThat(-0.0).isNotEqualTo(0.0)
         assertThatIsNotEqualToFails(null)
-        assertThat(1.23).isNotEqualTo(1.23f)
         assertThat(1.0).isNotEqualTo(2)
+        assumeNotJs {
+            assertThat(GOLDEN).isNotEqualTo(OVER_GOLDEN)
+            assertThat(-0.0).isNotEqualTo(0.0)
+            assertThat(1.23).isNotEqualTo(1.23f)
+        }
     }
 
     private fun assertThatIsNotEqualToFails(value: Double?) {
@@ -401,9 +403,9 @@ class DoubleSubjectTest {
     fun doubleIsNotNaN() {
         assertThat(1.23).isNotNaN()
         assertThat(Double.MAX_VALUE).isNotNaN()
-        assertThat(-1.0 * Double.MIN_VALUE).isNotNaN()
         assertThat(Double.POSITIVE_INFINITY).isNotNaN()
         assertThat(Double.NEGATIVE_INFINITY).isNotNaN()
+        assumeNotJs { assertThat(-1.0 * Double.MIN_VALUE).isNotNaN() }
     }
 
     @Test

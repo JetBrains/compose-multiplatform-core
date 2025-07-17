@@ -22,32 +22,41 @@
  * modifying its settings.
  */
 
-import androidx.build.KmpPlatformsKt
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    android()
-    desktop()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.graphics"
+        androidResources.enable = true
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
+    jvmStubs()
+    linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlibCommon)
+                implementation(libs.kotlinStdlib)
                 api(libs.androidx.annotation)
 
                 api(project(":compose:ui:ui-unit"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.4.0")
+                implementation("androidx.collection:collection:1.4.2")
             }
         }
 
@@ -57,48 +66,29 @@ androidXMultiplatform {
             }
         }
 
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                api(libs.skikoCommon)
-            }
-        }
-
-        jvmMain {
-            dependsOn(commonMain)
-            dependencies {
-            }
-        }
-
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(commonMain)
             dependencies {
                 // This has stub APIs for access to legacy Android APIs, so we don't want
                 // any dependency on this module.
                 compileOnly(project(":compose:ui:ui-android-stubs"))
                 implementation("androidx.graphics:graphics-path:1.0.1")
                 implementation libs.androidx.core
-                api("androidx.annotation:annotation-experimental:1.4.0")
+                api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
 
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(skikoMain)
-            dependencies {
-                implementation(libs.kotlinStdlib)
-                implementation(libs.kotlinStdlibJdk8)
-            }
+        commonStubsMain {
+            dependsOn(commonMain)
         }
-
-        jvmTest {
-            dependsOn(commonTest)
-            dependencies {
-            }
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
-            dependsOn(jvmTest)
             dependencies {
                 implementation(project(":compose:ui:ui-graphics:ui-graphics-samples"))
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -112,25 +102,12 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
-                implementation(libs.robolectric)
                 implementation(project(":compose:test-utils"))
-            }
-        }
-
-        desktopTest {
-            resources.srcDirs += "src/desktopTest/res"
-            dependsOn(jvmTest)
-            dependencies {
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(libs.junit)
-                implementation(libs.truth)
-                implementation(libs.skikoCurrentOs)
             }
         }
     }
@@ -142,10 +119,12 @@ dependencies {
 
 androidx {
     name = "Compose Graphics"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose graphics"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
+    enableRobolectric()
     samples(project(":compose:ui:ui-graphics:ui-graphics-samples"))
 }
 
@@ -153,14 +132,11 @@ androidxCompose {
     composeCompilerPluginEnabled = false
 }
 
-android {
-    namespace "androidx.compose.ui.graphics"
-}
-
-if (KmpPlatformsKt.enableDesktop(project)) {
-    tasks.withType(Test).configureEach {
-        if (name.equals("desktopTest")) {
-            systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/../../golden"
-        }
+// TODO(b/407640608): Task :compose:ui:ui-inspection:connectedCheck fails without this block
+tasks.withType(KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += [
+                "-Xlambdas=class"
+        ]
     }
 }

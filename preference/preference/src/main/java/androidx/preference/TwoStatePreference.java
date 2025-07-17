@@ -27,9 +27,10 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Common base class for preferences that have two selectable states, save a boolean value, and
@@ -127,8 +128,7 @@ public abstract class TwoStatePreference extends Preference {
      *
      * @return The summary
      */
-    @Nullable
-    public CharSequence getSummaryOn() {
+    public @Nullable CharSequence getSummaryOn() {
         return mSummaryOn;
     }
 
@@ -160,8 +160,7 @@ public abstract class TwoStatePreference extends Preference {
      *
      * @return The summary
      */
-    @Nullable
-    public CharSequence getSummaryOff() {
+    public @Nullable CharSequence getSummaryOff() {
         return mSummaryOff;
     }
 
@@ -251,9 +250,8 @@ public abstract class TwoStatePreference extends Preference {
         }
     }
 
-    @Nullable
     @Override
-    protected Parcelable onSaveInstanceState() {
+    protected @Nullable Parcelable onSaveInstanceState() {
         final Parcelable superState = super.onSaveInstanceState();
         if (isPersistent()) {
             // No need to save instance state since it's persistent

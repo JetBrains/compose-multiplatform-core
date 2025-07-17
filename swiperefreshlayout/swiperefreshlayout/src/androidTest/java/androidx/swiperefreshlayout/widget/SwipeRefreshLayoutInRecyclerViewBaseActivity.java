@@ -24,11 +24,12 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class SwipeRefreshLayoutInRecyclerViewBaseActivity extends FragmentActivity {
 
@@ -71,9 +72,8 @@ public abstract class SwipeRefreshLayoutInRecyclerViewBaseActivity extends Fragm
             return position == 1 ? SRL_ITEM : OTHER_ITEM;
         }
 
-        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public @NonNull ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return viewType == SRL_ITEM ? createSrlItem(parent) : createOtherItem(parent);
         }
 

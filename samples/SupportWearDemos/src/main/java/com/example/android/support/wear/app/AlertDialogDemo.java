@@ -22,10 +22,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.android.support.wear.R;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Demo for AlertDialog on Wear.

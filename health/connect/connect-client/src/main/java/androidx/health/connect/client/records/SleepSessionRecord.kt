@@ -39,12 +39,12 @@ class SleepSessionRecord(
     override val startZoneOffset: ZoneOffset?,
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** Title of the session. Optional field. */
     val title: String? = null,
     /** Additional notes for the session. Optional field. */
     val notes: String? = null,
     val stages: List<Stage> = emptyList(),
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : IntervalRecord {
 
     init {
@@ -86,6 +86,10 @@ class SleepSessionRecord(
         result = 31 * result + (endZoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "SleepSessionRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, title=$title, notes=$notes, stages=$stages, metadata=$metadata)"
     }
 
     companion object {
@@ -135,7 +139,7 @@ class SleepSessionRecord(
                 "deep" to STAGE_TYPE_DEEP,
                 "rem" to STAGE_TYPE_REM,
                 "awake_in_bed" to STAGE_TYPE_AWAKE_IN_BED,
-                "unknown" to STAGE_TYPE_UNKNOWN
+                "unknown" to STAGE_TYPE_UNKNOWN,
             )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -167,11 +171,7 @@ class SleepSessionRecord(
      *
      * @see SleepSessionRecord
      */
-    class Stage(
-        val startTime: Instant,
-        val endTime: Instant,
-        @property:StageTypes val stage: Int,
-    ) {
+    class Stage(val startTime: Instant, val endTime: Instant, @property:StageTypes val stage: Int) {
         init {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
         }
@@ -192,6 +192,10 @@ class SleepSessionRecord(
             result = 31 * result + startTime.hashCode()
             result = 31 * result + endTime.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Stage(startTime=$startTime, endTime=$endTime, stage=$stage)"
         }
     }
 }

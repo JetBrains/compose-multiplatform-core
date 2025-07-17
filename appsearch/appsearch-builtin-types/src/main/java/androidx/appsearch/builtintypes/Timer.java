@@ -20,11 +20,14 @@ import android.content.Context;
 import android.os.SystemClock;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.Document;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.utils.BootCountUtil;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -85,6 +88,7 @@ public class Timer extends Thing {
     @Document.BooleanProperty
     private final boolean mShouldVibrate;
 
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     Timer(@NonNull String namespace, @NonNull String id, int documentScore,
             long creationTimestampMillis, long documentTtlMillis, @Nullable String name,
             @Nullable List<String> alternateNames, @Nullable String description,
@@ -205,8 +209,7 @@ public class Timer extends Thing {
      * Returns the ringtone as a content URI to be played, or
      * {@link android.provider.AlarmClock#VALUE_RINGTONE_SILENT} if no ringtone will be played.
      */
-    @Nullable
-    public String getRingtone() {
+    public @Nullable String getRingtone() {
         return mRingtone;
     }
 
@@ -345,8 +348,7 @@ public class Timer extends Thing {
         /**
          * Sets the total duration in milliseconds, including additional time added by the user.
          */
-        @NonNull
-        public T setDurationMillis(long durationMillis) {
+        public @NonNull T setDurationMillis(long durationMillis) {
             mDurationMillis = durationMillis;
             return (T) this;
         }
@@ -354,8 +356,7 @@ public class Timer extends Thing {
         /**
          * Sets the original duration in milliseconds when the {@link Timer} was first created.
          */
-        @NonNull
-        public T setOriginalDurationMillis(long originalDurationMillis) {
+        public @NonNull T setOriginalDurationMillis(long originalDurationMillis) {
             mOriginalDurationMillis = originalDurationMillis;
             return (T) this;
         }
@@ -367,8 +368,7 @@ public class Timer extends Thing {
          * <p>The start time is the first time that a new Timer, or a Timer that has been reset is
          * started. Pausing and resuming should not change its start time.
          */
-        @NonNull
-        public T setStartTimeMillis(long startTimeMillis) {
+        public @NonNull T setStartTimeMillis(long startTimeMillis) {
             mStartTimeMillis = startTimeMillis;
             return (T) this;
         }
@@ -392,8 +392,7 @@ public class Timer extends Thing {
          * @param bootCount The current boot count of the device. See
          * {@link android.provider.Settings.Global#BOOT_COUNT}.
          */
-        @NonNull
-        public T setBaseTimeMillis(long baseTimeMillis,
+        public @NonNull T setBaseTimeMillis(long baseTimeMillis,
                 long baseTimeMillisInElapsedRealtime, int bootCount) {
             mBaseTimeMillis = baseTimeMillis;
             mBaseTimeMillisInElapsedRealtime = baseTimeMillisInElapsedRealtime;
@@ -416,8 +415,7 @@ public class Timer extends Thing {
          * @param baseTimeMillisInElapsedRealtime The base time in milliseconds using the
          * {@link android.os.SystemClock#elapsedRealtime()} time base.
          */
-        @NonNull
-        public T setBaseTimeMillis(@NonNull Context context, long baseTimeMillis,
+        public @NonNull T setBaseTimeMillis(@NonNull Context context, long baseTimeMillis,
                 long baseTimeMillisInElapsedRealtime) {
             int bootCount = BootCountUtil.getCurrentBootCount(context);
             return setBaseTimeMillis(baseTimeMillis, baseTimeMillisInElapsedRealtime, bootCount);
@@ -430,8 +428,7 @@ public class Timer extends Thing {
          * <p>The expire time of the Timer can be calculated using the sum of its base time and
          * remaining time.
          */
-        @NonNull
-        public T setRemainingDurationMillis(long remainingDurationMillis) {
+        public @NonNull T setRemainingDurationMillis(long remainingDurationMillis) {
             mRemainingDurationMillis = remainingDurationMillis;
             return (T) this;
         }
@@ -440,8 +437,7 @@ public class Timer extends Thing {
          * Sets the content URI for the ringtone to be played, or
          * {@link android.provider.AlarmClock#VALUE_RINGTONE_SILENT} if no ringtone will be played.
          */
-        @NonNull
-        public T setRingtone(@Nullable String ringtone) {
+        public @NonNull T setRingtone(@Nullable String ringtone) {
             mRingtone = ringtone;
             return (T) this;
         }
@@ -453,23 +449,20 @@ public class Timer extends Thing {
          * {@link #STATUS_PAUSED}, {@link #STATUS_EXPIRED}, {@link #STATUS_MISSED}, or
          * {@link #STATUS_RESET}.
          */
-        @NonNull
-        public T setStatus(@Status int status) {
+        public @NonNull T setStatus(@Status int status) {
             mStatus = status;
             return (T) this;
         }
 
         /** Sets whether or not to activate the device vibrator when the {@link Timer} expires. */
-        @NonNull
-        public T setShouldVibrate(boolean shouldVibrate) {
+        public @NonNull T setShouldVibrate(boolean shouldVibrate) {
             mShouldVibrate = shouldVibrate;
             return (T) this;
         }
 
         /** Builds the {@link Timer}. */
-        @NonNull
         @Override
-        public Timer build() {
+        public @NonNull Timer build() {
             return new Timer(mNamespace, mId, mDocumentScore, mCreationTimestampMillis,
                     mDocumentTtlMillis, mName, mAlternateNames, mDescription, mImage, mUrl,
                     mPotentialActions,

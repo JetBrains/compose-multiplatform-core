@@ -24,7 +24,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.glance.appwidget.TranslationContext
 
@@ -33,7 +32,7 @@ internal enum class ActionTrampolineType {
     BROADCAST,
     SERVICE,
     FOREGROUND_SERVICE,
-    CALLBACK
+    CALLBACK,
 }
 
 private const val ActionTrampolineScheme = "glance-action"
@@ -50,13 +49,13 @@ internal fun Intent.applyTrampolineIntent(
     type: ActionTrampolineType,
     activityOptions: Bundle? = null,
 ): Intent {
-    val target =
-        if (type == ActionTrampolineType.ACTIVITY) {
-            ActionTrampolineActivity::class.java
-        } else {
-            InvisibleActionTrampolineActivity::class.java
-        }
-    return Intent(translationContext.context, target).also { intent ->
+    return Intent().also { intent ->
+        intent.component =
+            if (type == ActionTrampolineType.ACTIVITY) {
+                translationContext.glanceComponents.actionTrampolineActivity
+            } else {
+                translationContext.glanceComponents.invisibleActionTrampolineActivity
+            }
         intent.data = createUniqueUri(translationContext, viewId, type)
         intent.putExtra(ActionTypeKey, type.name)
         intent.putExtra(ActionIntentKey, this)
@@ -81,11 +80,11 @@ internal fun createUniqueUri(
             if (translationContext.isLazyCollectionDescendant) {
                 appendQueryParameter(
                     "lazyCollection",
-                    translationContext.layoutCollectionViewId.toString()
+                    translationContext.layoutCollectionViewId.toString(),
                 )
                 appendQueryParameter(
                     "lazeViewItem",
-                    translationContext.layoutCollectionItemId.toString()
+                    translationContext.layoutCollectionItemId.toString(),
                 )
             }
         }
@@ -105,7 +104,7 @@ internal fun Activity.launchTrampolineAction(intent: Intent) {
     if (intent.hasExtra(RemoteViews.EXTRA_CHECKED)) {
         actionIntent.putExtra(
             RemoteViews.EXTRA_CHECKED,
-            intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false)
+            intent.getBooleanExtra(RemoteViews.EXTRA_CHECKED, false),
         )
     }
     val type =
@@ -123,7 +122,7 @@ internal fun Activity.launchTrampolineAction(intent: Intent) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     ListAdapterTrampolineApi26Impl.startForegroundService(
                         context = this,
-                        intent = actionIntent
+                        intent = actionIntent,
                     )
                 } else {
                     startService(actionIntent)
@@ -156,7 +155,6 @@ private const val ActivityOptionsKey = "ACTIVITY_OPTIONS"
 
 @RequiresApi(Build.VERSION_CODES.O)
 private object ListAdapterTrampolineApi26Impl {
-    @DoNotInline
     fun startForegroundService(context: Context, intent: Intent) {
         context.startForegroundService(intent)
     }
@@ -164,7 +162,6 @@ private object ListAdapterTrampolineApi26Impl {
 
 @RequiresApi(Build.VERSION_CODES.S)
 private object StrictModeVmPolicyApi31Impl {
-    @DoNotInline
     fun permitUnsafeIntentLaunch(builder: StrictMode.VmPolicy.Builder) =
         builder.permitUnsafeIntentLaunch()
 }

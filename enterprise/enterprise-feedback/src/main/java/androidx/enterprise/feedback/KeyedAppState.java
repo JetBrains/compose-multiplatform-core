@@ -25,10 +25,11 @@ import android.annotation.SuppressLint;
 import android.os.Bundle;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -86,8 +87,7 @@ public abstract class KeyedAppState {
     }
 
     /** Create a {@link KeyedAppStateBuilder}. */
-    @NonNull
-    public static KeyedAppStateBuilder builder() {
+    public static @NonNull KeyedAppStateBuilder builder() {
         return new AutoValue_KeyedAppState.Builder().setSeverity(SEVERITY_INFO);
     }
 
@@ -96,8 +96,7 @@ public abstract class KeyedAppState {
      * for. For example, when providing managed configuration feedback, this key could be the
      * managed configuration key to allow EMMs to take advantage of the connection in their UI.
      */
-    @NonNull
-    public abstract String getKey();
+    public abstract @NonNull String getKey();
 
     /**
      * The severity of the app state. This allows EMMs to choose to notify admins of errors. This
@@ -116,16 +115,14 @@ public abstract class KeyedAppState {
      * triggered by a particular value (e.g. a managed configuration value), it should be
      * included in the message.
      */
-    @Nullable
-    public abstract String getMessage();
+    public abstract @Nullable String getMessage();
 
     /**
      * Optionally, a machine-readable value to be read by the EMM. For example, setting values that
      * the admin can choose to query against in the EMM console (e.g. “notify me if the
      * battery_warning data < 10”).
      */
-    @Nullable
-    public abstract String getData();
+    public abstract @Nullable String getData();
 
     Bundle toStateBundle() {
         Bundle bundle = new Bundle();
@@ -186,20 +183,16 @@ public abstract class KeyedAppState {
         KeyedAppStateBuilder() {}
 
         /** Set {@link KeyedAppState#getKey()}. */
-        @NonNull
-        public abstract KeyedAppStateBuilder setKey(@NonNull String key);
+        public abstract @NonNull KeyedAppStateBuilder setKey(@NonNull String key);
 
         /** Set {@link KeyedAppState#getSeverity()}. */
-        @NonNull
-        public abstract KeyedAppStateBuilder setSeverity(@Severity int severity);
+        public abstract @NonNull KeyedAppStateBuilder setSeverity(@Severity int severity);
 
         /** Set {@link KeyedAppState#getMessage()}. */
-        @NonNull
-        public abstract KeyedAppStateBuilder setMessage(@Nullable String message);
+        public abstract @NonNull KeyedAppStateBuilder setMessage(@Nullable String message);
 
         /** Set {@link KeyedAppState#getData()}. */
-        @NonNull
-        public abstract KeyedAppStateBuilder setData(@Nullable String data);
+        public abstract @NonNull KeyedAppStateBuilder setData(@Nullable String data);
 
         abstract KeyedAppState autoBuild();
 
@@ -212,8 +205,7 @@ public abstract class KeyedAppState {
          * most 1000 characters, data length is at most 1000 characters, and severity is set to
          * either {@link #SEVERITY_INFO} or {@link #SEVERITY_ERROR}.
          */
-        @NonNull
-        public KeyedAppState build() {
+        public @NonNull KeyedAppState build() {
             KeyedAppState keyedAppState = autoBuild();
             if (keyedAppState.getKey().length() > MAX_KEY_LENGTH) {
                 throw new IllegalStateException(

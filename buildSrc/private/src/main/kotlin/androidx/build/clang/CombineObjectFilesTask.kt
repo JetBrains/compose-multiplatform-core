@@ -38,14 +38,25 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 /**
  * Combines all given [objectFiles] into a directory with a well defined directory structure.
  *
- * The android targets will be placed into a directory structure that matches the jniLibs structure
- * of Android Gradle Plugin.
- *
- * e.g.: <outputDir> x86/libfoo.so x86_64/libfoo.so armeabi-v7a/libfoo.so arm64-v8a/libfoo.so
+ * The Android targets will be placed into a directory structure that matches the jniLibs structure
+ * of Android Gradle Plugin, e.g.:
+ * ```
+ * <outputDir>
+ *     armeabi-v7a/libfoo.so
+ *     arm64-v8a/libfoo.so
+ *     x86/libfoo.so
+ *     x86_64/libfoo.so
+ * ```
  *
  * Desktop targets will be placed on a structure that is based on the OS and architecture. e.g.:
- * <outputDir> osx_arm64/libfoo.dylib osx_x64/libfoo.dylib windows_x64/libfoo.dll
- * linux_x64/libfoo.so linux_arm64/libfoo.so
+ * ```
+ * <outputDir>
+ *     linux_arm64/libfoo.so
+ *     linux_x64/libfoo.so
+ *     osx_arm64/libfoo.dylib
+ *     osx_x64/libfoo.dylib
+ *     windows_x64/foo.dll
+ * ```
  */
 @DisableCachingByDefault(because = "not worth caching,just copies inputs into a another directory")
 abstract class CombineObjectFilesTask : DefaultTask() {
@@ -74,24 +85,20 @@ abstract class CombineObjectFilesTask : DefaultTask() {
 
     companion object {
         private val familyDirectoryPrefixes =
-            mapOf(
-                Family.LINUX to "linux",
-                Family.MINGW to "windows",
-                Family.OSX to "osx",
-            )
+            mapOf(Family.LINUX to "linux", Family.MINGW to "windows", Family.OSX to "osx")
 
         private val architectureSuffixes =
             mapOf(
                 Architecture.ARM32 to "arm32",
                 Architecture.ARM64 to "arm64",
                 Architecture.X64 to "x64",
-                Architecture.X86 to "x86"
+                Architecture.X86 to "x86",
             )
 
         private fun targetFileFor(
             outputDir: File,
             konanTarget: KonanTarget,
-            objectFile: ObjectFile
+            objectFile: ObjectFile,
         ) = outputDir.resolve(directoryName(konanTarget)).resolve(objectFile.file.get().asFile.name)
 
         private fun directoryName(konanTarget: KonanTarget): String {
@@ -103,7 +110,6 @@ abstract class CombineObjectFilesTask : DefaultTask() {
                     Architecture.X64 -> "x86_64"
                     Architecture.ARM32 -> "armeabi-v7a"
                     Architecture.ARM64 -> "arm64-v8a"
-                    else -> error("add this architecture for android ${konanTarget.architecture}")
                 }
             }
             val familyPrefix =
@@ -125,16 +131,16 @@ abstract class CombineObjectFilesTask : DefaultTask() {
  */
 fun TaskProvider<CombineObjectFilesTask>.configureFrom(
     multiTargetNativeCompilation: MultiTargetNativeCompilation,
-    filter: (KonanTarget) -> Boolean
+    filter: (KonanTarget) -> Boolean,
 ) {
     configure { task ->
         task.objectFiles.addAll(
             multiTargetNativeCompilation.targetsProvider(filter).map { nativeTargetCompilations ->
                 nativeTargetCompilations.map { nativeTargetCompilation ->
-                    nativeTargetCompilation.sharedLibTask.map { sharedLibraryTask ->
+                    nativeTargetCompilation.linkerTask.map { linkerTask ->
                         ObjectFile(
-                            konanTarget = sharedLibraryTask.clangParameters.konanTarget,
-                            file = sharedLibraryTask.clangParameters.outputFile
+                            konanTarget = linkerTask.clangParameters.konanTarget,
+                            file = linkerTask.clangParameters.outputFile,
                         )
                     }
                 }
@@ -146,5 +152,5 @@ fun TaskProvider<CombineObjectFilesTask>.configureFrom(
 /** Represents an object file (.o, .so) associated with its [konanTarget]. */
 class ObjectFile(
     @get:Input val konanTarget: Provider<SerializableKonanTarget>,
-    @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) val file: RegularFileProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) val file: RegularFileProperty,
 )

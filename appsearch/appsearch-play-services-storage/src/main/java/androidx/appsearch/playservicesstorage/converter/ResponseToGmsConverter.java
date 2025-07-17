@@ -16,10 +16,11 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.StorageInfo;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Gms and Jetpack versions of responses.
@@ -33,9 +34,8 @@ public final class ResponseToGmsConverter {
      * Translates a Gms {@link com.google.android.gms.appsearch.StorageInfo} into
      * a jetpack {@link StorageInfo}.
      */
-    @NonNull
-    public static StorageInfo toJetpackStorageInfo(
-            @NonNull com.google.android.gms.appsearch.StorageInfo gmsStorageInfo) {
+    public static @NonNull StorageInfo toJetpackStorageInfo(
+            com.google.android.gms.appsearch.@NonNull StorageInfo gmsStorageInfo) {
         Preconditions.checkNotNull(gmsStorageInfo);
         return new StorageInfo.Builder()
                 .setAliveNamespacesCount(gmsStorageInfo.getAliveNamespacesCount())

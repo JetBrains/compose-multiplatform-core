@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.gestures.snapping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -39,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class LazyGridSnapLayoutInfoProviderTest(orientation: Orientation) :
@@ -119,7 +117,7 @@ class LazyGridSnapLayoutInfoProviderTest(orientation: Orientation) :
                 layoutInfoProvider
                     .calculateSnapOffset(2 * minVelocityThreshold.toFloat())
                     .roundToInt(),
-                expectedResult
+                expectedResult,
             )
         }
     }
@@ -158,7 +156,7 @@ class LazyGridSnapLayoutInfoProviderTest(orientation: Orientation) :
                 layoutInfoProvider
                     .calculateSnapOffset(-2 * minVelocityThreshold.toFloat())
                     .roundToInt(),
-                expectedResult
+                expectedResult,
             )
         }
     }
@@ -168,7 +166,7 @@ class LazyGridSnapLayoutInfoProviderTest(orientation: Orientation) :
         LazyGrid(
             cells = GridCells.Fixed(3),
             state = state,
-            flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
+            flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider),
         ) {
             items(200) { Box(modifier = Modifier.size(itemSizeDp)) }
         }

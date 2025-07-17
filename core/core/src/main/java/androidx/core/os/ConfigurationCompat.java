@@ -21,9 +21,9 @@ import static android.os.Build.VERSION.SDK_INT;
 import android.content.res.Configuration;
 import android.os.LocaleList;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Locale;
 
@@ -41,8 +41,7 @@ public final class ConfigurationCompat {
      * @return The locale list.
      */
     @SuppressWarnings("deprecation")
-    @NonNull
-    public static LocaleListCompat getLocales(@NonNull Configuration configuration) {
+    public static @NonNull LocaleListCompat getLocales(@NonNull Configuration configuration) {
         if (SDK_INT >= 24) {
             return LocaleListCompat.wrap(Api24Impl.getLocales(configuration));
         } else {
@@ -70,12 +69,10 @@ public final class ConfigurationCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static android.os.LocaleList getLocales(Configuration configuration) {
             return configuration.getLocales();
         }
 
-        @DoNotInline
         static void setLocales(
                 @NonNull Configuration configuration, @NonNull LocaleListCompat locales) {
             configuration.setLocales((LocaleList) locales.unwrap());

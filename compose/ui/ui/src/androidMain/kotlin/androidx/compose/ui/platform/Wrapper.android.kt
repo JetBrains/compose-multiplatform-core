@@ -17,7 +17,7 @@ package androidx.compose.ui.platform
 
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.MainThread
+import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionContext
@@ -26,7 +26,6 @@ import androidx.compose.runtime.CompositionServiceKey
 import androidx.compose.runtime.CompositionServices
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.ReusableComposition
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.tooling.CompositionData
 import androidx.compose.runtime.tooling.LocalInspectionTables
@@ -39,11 +38,8 @@ import androidx.lifecycle.LifecycleOwner
 import java.util.Collections
 import java.util.WeakHashMap
 
-@MainThread
-internal actual fun createSubcomposition(
-    container: LayoutNode,
-    parent: CompositionContext
-): ReusableComposition = ReusableComposition(UiApplier(container), parent)
+internal actual fun createApplier(container: LayoutNode): AbstractApplier<LayoutNode> =
+    UiApplier(container)
 
 /**
  * Composes the given composable into the given view.
@@ -60,7 +56,7 @@ internal actual fun createSubcomposition(
  */
 internal fun AbstractComposeView.setContent(
     parent: CompositionContext,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Composition {
     GlobalSnapshotManager.ensureStarted()
     val composeView =
@@ -79,18 +75,18 @@ internal fun AbstractComposeView.setContent(
 private fun doSetContent(
     owner: AndroidComposeView,
     parent: CompositionContext,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Composition {
     if (isDebugInspectorInfoEnabled && owner.getTag(R.id.inspection_slot_table_set) == null) {
         owner.setTag(
             R.id.inspection_slot_table_set,
-            Collections.newSetFromMap(WeakHashMap<CompositionData, Boolean>())
+            Collections.newSetFromMap(WeakHashMap<CompositionData, Boolean>()),
         )
     }
-    val original = Composition(UiApplier(owner.root), parent)
+
     val wrapped =
         owner.view.getTag(R.id.wrapped_composition_tag) as? WrappedComposition
-            ?: WrappedComposition(owner, original).also {
+            ?: WrappedComposition(owner, Composition(UiApplier(owner.root), parent)).also {
                 owner.view.setTag(R.id.wrapped_composition_tag, it)
             }
     wrapped.setContent(content)

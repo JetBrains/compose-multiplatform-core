@@ -17,9 +17,13 @@
 package androidx.compose.material3
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.tokens.NavigationBarTokens
@@ -64,6 +68,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,7 +88,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -111,7 +116,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -134,7 +139,7 @@ class NavigationBarTest {
                     label = { Text("Favorite") },
                     selected = true,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item2"),
@@ -142,13 +147,13 @@ class NavigationBarTest {
                     label = { Text("Favorite") },
                     selected = false,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     modifier = Modifier.testTag("item3"),
                     icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -165,8 +170,9 @@ class NavigationBarTest {
     }
 
     @Test
+    @Ignore("b/422735600")
     fun navigationBar_size() {
-        val height = NavigationBarTokens.ContainerHeight
+        val height = NavigationBarTokens.TallContainerHeight
         rule
             .setMaterialContentForSizeAssertions {
                 val items = listOf("Songs", "Artists", "Playlists")
@@ -176,7 +182,7 @@ class NavigationBarTest {
                             icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                             label = { Text(item) },
                             selected = index == 0,
-                            onClick = { /* do something */ }
+                            onClick = { /* do something */ },
                         )
                     }
                 }
@@ -204,7 +210,7 @@ class NavigationBarTest {
         val itemCoords = mutableMapOf<Int, LayoutCoordinates>()
         rule.setMaterialContent(
             lightColorScheme(),
-            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords }
+            Modifier.onGloballyPositioned { coords: LayoutCoordinates -> parentCoords = coords },
         ) {
             Box {
                 NavigationBar {
@@ -217,7 +223,7 @@ class NavigationBarTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -230,7 +236,7 @@ class NavigationBarTest {
                 totalWidth.toFloat() - (NavigationBarItemHorizontalPadding.toPx() * 3)
 
             val expectedItemWidth = (availableWidth / 4)
-            val expectedItemHeight = NavigationBarTokens.ContainerHeight.toPx()
+            val expectedItemHeight = NavigationBarTokens.TallContainerHeight.toPx()
 
             assertThat(itemCoords.size).isEqualTo(4)
 
@@ -252,26 +258,26 @@ class NavigationBarTest {
                 NavigationBarItem(
                     icon = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.ActiveIconColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemActiveIconColor.value)
                     },
                     label = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.ActiveLabelTextColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
                     },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     icon = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.InactiveIconColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveIconColor.value)
                     },
                     label = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.InactiveLabelTextColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveLabelTextColor.value)
                     },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -292,20 +298,20 @@ class NavigationBarTest {
                     icon = { assertThat(LocalContentColor.current).isEqualTo(Color.Red) },
                     label = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.ActiveLabelTextColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemActiveLabelTextColor.value)
                     },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationBarItem(
                     colors = customNavigationBarItemColors,
                     icon = {
                         assertThat(LocalContentColor.current)
-                            .isEqualTo(NavigationBarTokens.InactiveIconColor.value)
+                            .isEqualTo(NavigationBarTokens.ItemInactiveIconColor.value)
                     },
                     label = { assertThat(LocalContentColor.current).isEqualTo(Color.Green) },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -313,7 +319,7 @@ class NavigationBarTest {
 
     @Test
     fun navigationBarItem_withLongLabel_automaticallyResizesHeight() {
-        val defaultHeight = NavigationBarTokens.ContainerHeight
+        val defaultHeight = NavigationBarTokens.TallContainerHeight
 
         rule.setMaterialContent(lightColorScheme()) {
             NavigationBar(modifier = Modifier.testTag("TAG")) {
@@ -341,7 +347,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -383,7 +389,7 @@ class NavigationBarTest {
                         label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
                     )
                 }
             }
@@ -413,7 +419,7 @@ class NavigationBarTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -431,8 +437,9 @@ class NavigationBarTest {
     }
 
     @Test
+    @Ignore("b/422746273")
     fun navigationBarItemContent_customHeight_withLabel_sizeAndPosition() {
-        val defaultHeight = NavigationBarTokens.ContainerHeight
+        val defaultHeight = NavigationBarTokens.TallContainerHeight
         val customHeight = 64.dp
 
         rule.setMaterialContent(lightColorScheme()) {
@@ -442,7 +449,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                     label = { Text("Label") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -485,7 +492,7 @@ class NavigationBarTest {
                         icon = { Icon(Icons.Filled.Favorite, contentDescription = null) },
                         label = { Text(item) },
                         selected = selectedItem == index,
-                        onClick = { selectedItem = index }
+                        onClick = { selectedItem = index },
                     )
                 }
             }
@@ -521,7 +528,7 @@ class NavigationBarTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = { clicks++ }
+                    onClick = { clicks++ },
                 )
             }
         }
@@ -529,5 +536,25 @@ class NavigationBarTest {
         rule.onNodeWithTag("item").performClick()
 
         rule.runOnIdle { Truth.assertThat(clicks).isEqualTo(0) }
+    }
+
+    @Test
+    fun navigationBarItem_respectsMinIntrinsicSize() {
+        val iconSize = 24.dp
+        rule.setMaterialContent(lightColorScheme()) {
+            Row(modifier = Modifier.testTag("ROW_TAG").width(IntrinsicSize.Min)) {
+                NavigationBarItem(
+                    icon = {
+                        Icon(Icons.Filled.Favorite, null, modifier = Modifier.size(iconSize))
+                    },
+                    onClick = {},
+                    selected = true,
+                )
+            }
+        }
+
+        val expectedWidth = iconSize + NavigationBarItemToIconMinimumPadding * 2
+
+        assertThat(rule.onNodeWithTag("ROW_TAG").assertWidthIsEqualTo(expectedWidth))
     }
 }

@@ -15,6 +15,7 @@
  */
 package androidx.compose.ui.window
 
+import android.view.KeyEvent
 import android.view.View
 import android.view.View.MEASURED_STATE_TOO_SMALL
 import android.view.ViewGroup
@@ -63,6 +64,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
+import androidx.window.layout.WindowMetricsCalculator
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -144,7 +146,7 @@ class PopupTest {
                     Popup(
                         alignment = Alignment.TopStart,
                         offset = offset,
-                        properties = PopupProperties(focusable = focusable)
+                        properties = PopupProperties(focusable = focusable),
                     ) {
                         // This is called after the OnChildPosition method in Popup() which
                         // updates the popup to its final position
@@ -264,7 +266,7 @@ class PopupTest {
                                 focusable = true
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -282,6 +284,36 @@ class PopupTest {
     }
 
     @Test
+    fun isDismissedOnEscapePress() {
+        var showPopup by mutableStateOf(true)
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                if (showPopup) {
+                    Popup(
+                        properties =
+                            PopupProperties(
+                                // Needs to be focusable to intercept key press
+                                focusable = true
+                            ),
+                        alignment = Alignment.Center,
+                        onDismissRequest = { showPopup = false },
+                    ) {
+                        Box(Modifier.size(50.dp).testTag(testTag))
+                    }
+                }
+            }
+        }
+
+        // Popup should be visible
+        rule.onNodeWithTag(testTag).assertIsDisplayed()
+
+        UiDevice.getInstance(getInstrumentation()).pressKeyCode(KeyEvent.KEYCODE_ESCAPE)
+
+        // Popup should not exist
+        rule.onNodeWithTag(testTag).assertDoesNotExist()
+    }
+
+    @Test
     fun isNotDismissedOnTapOutside_dismissOnClickOutsideFalse() {
         var showPopup by mutableStateOf(true)
         rule.setContent {
@@ -290,7 +322,7 @@ class PopupTest {
                     Popup(
                         alignment = Alignment.Center,
                         properties = PopupProperties(dismissOnClickOutside = false),
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -325,10 +357,10 @@ class PopupTest {
                             PopupProperties(
                                 // Needs to be focusable to intercept back press
                                 focusable = true,
-                                dismissOnBackPress = false
+                                dismissOnBackPress = false,
                             ),
                         alignment = Alignment.Center,
-                        onDismissRequest = { showPopup = false }
+                        onDismissRequest = { showPopup = false },
                     ) {
                         Box(Modifier.size(50.dp).testTag(testTag))
                     }
@@ -346,6 +378,37 @@ class PopupTest {
     }
 
     @Test
+    fun isNotDismissedOnEscapePress_dismissOnBackPressFalse() {
+        var showPopup by mutableStateOf(true)
+        rule.setContent {
+            Box(Modifier.fillMaxSize()) {
+                if (showPopup) {
+                    Popup(
+                        properties =
+                            PopupProperties(
+                                // Needs to be focusable to intercept key press
+                                focusable = true,
+                                dismissOnBackPress = false,
+                            ),
+                        alignment = Alignment.Center,
+                        onDismissRequest = { showPopup = false },
+                    ) {
+                        Box(Modifier.size(50.dp).testTag(testTag))
+                    }
+                }
+            }
+        }
+
+        // Popup should be visible
+        rule.onNodeWithTag(testTag).assertIsDisplayed()
+
+        UiDevice.getInstance(getInstrumentation()).pressKeyCode(KeyEvent.KEYCODE_ESCAPE)
+
+        // Popup should still be visible
+        rule.onNodeWithTag(testTag).assertIsDisplayed()
+    }
+
+    @Test
     fun canFillScreenWidth_dependingOnProperty() {
         var box1Width = 0
         var box2Width = 0
@@ -356,11 +419,9 @@ class PopupTest {
             }
         }
         rule.runOnIdle {
-            assertThat(box1Width)
-                .isEqualTo(
-                    (rule.activity.resources.configuration.screenWidthDp * rule.density.density)
-                        .roundToInt()
-                )
+            val metrics =
+                WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(rule.activity)
+            assertThat(box1Width).isEqualTo(metrics.bounds.width())
             assertThat(box2Width).isLessThan(box1Width)
         }
     }
@@ -406,13 +467,7 @@ class PopupTest {
 
         rule.setContent {
             PopupTestTag(testTag) {
-                Popup(
-                    properties =
-                        PopupProperties(
-                            flags = flags,
-                            inheritSecurePolicy = false,
-                        )
-                ) {
+                Popup(properties = PopupProperties(flags = flags, inheritSecurePolicy = false)) {
                     Box(Modifier.size(50.dp))
                 }
             }
@@ -444,7 +499,7 @@ class PopupTest {
                     val popupLayout = item.parent as ViewGroup
                     return popupLayout.measuredState != MEASURED_STATE_TOO_SMALL
                 }
-            }
+            },
         )
     }
 

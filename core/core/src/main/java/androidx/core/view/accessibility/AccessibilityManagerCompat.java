@@ -20,9 +20,9 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.os.Build;
 import android.view.accessibility.AccessibilityManager;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -313,7 +313,6 @@ public final class AccessibilityManagerCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isRequestFromAccessibilityTool(AccessibilityManager accessibilityManager) {
             return accessibilityManager.isRequestFromAccessibilityTool();
         }

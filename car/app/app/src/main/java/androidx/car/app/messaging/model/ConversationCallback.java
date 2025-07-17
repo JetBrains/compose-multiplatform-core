@@ -16,12 +16,11 @@
 
 package androidx.car.app.messaging.model;
 
-import androidx.annotation.NonNull;
 import androidx.car.app.annotations.CarProtocol;
-import androidx.car.app.annotations.ExperimentalCarApi;
+
+import org.jspecify.annotations.NonNull;
 
 /** Host -> Client callbacks for a {@link ConversationItem} */
-@ExperimentalCarApi
 @CarProtocol
 public interface ConversationCallback {
     /**

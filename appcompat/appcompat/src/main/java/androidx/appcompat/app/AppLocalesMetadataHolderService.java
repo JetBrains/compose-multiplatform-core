@@ -25,10 +25,10 @@ import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.os.LocaleListCompat;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A placeholder service to avoid adding application-level metadata. The service
@@ -42,9 +42,9 @@ import androidx.core.os.LocaleListCompat;
 public final class AppLocalesMetadataHolderService extends Service {
     public AppLocalesMetadataHolderService() {}
 
-    @NonNull
     @Override
-    public IBinder onBind(@SuppressWarnings("InvalidNullabilityOverride") @NonNull Intent intent) {
+    public @NonNull IBinder onBind(
+            @SuppressWarnings("InvalidNullabilityOverride") @NonNull Intent intent) {
         throw new UnsupportedOperationException();
     }
 
@@ -54,9 +54,8 @@ public final class AppLocalesMetadataHolderService extends Service {
      * <p>This serviceInfo contains the attribute "autoStoreLocales", its value being a boolean
      * that informs us if the developer wants us to handle the storage of locales or not.</p>
      */
-    @NonNull
     @SuppressWarnings("deprecation") // GET_DISABLED_COMPONENTS, getServiceInfo
-    public static ServiceInfo getServiceInfo(@NonNull Context context) throws
+    public static @NonNull ServiceInfo getServiceInfo(@NonNull Context context) throws
             PackageManager.NameNotFoundException {
         int flags = PackageManager.GET_META_DATA;
         // The service is marked as disabled so we need to include the following flags.
@@ -72,7 +71,6 @@ public final class AppLocalesMetadataHolderService extends Service {
 
     @RequiresApi(24)
     private static class Api24Impl {
-        @DoNotInline
         static int getDisabledComponentFlag() {
             return PackageManager.MATCH_DISABLED_COMPONENTS;
         }

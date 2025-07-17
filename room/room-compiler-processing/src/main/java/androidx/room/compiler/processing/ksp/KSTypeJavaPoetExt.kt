@@ -21,6 +21,7 @@ import androidx.room.compiler.processing.javac.kotlin.typeNameFromJvmSignature
 import androidx.room.compiler.processing.tryBox
 import androidx.room.compiler.processing.util.ISSUE_TRACKER_LINK
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.outerType
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSName
@@ -35,6 +36,20 @@ import com.squareup.kotlinpoet.javapoet.JParameterizedTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.JTypeVariableName
 import com.squareup.kotlinpoet.javapoet.JWildcardTypeName
+
+// TODO(https://github.com/google/ksp/issues/2268): KSP outputs the error type but we currently have
+//  to capture it from a pattern due to the associated KSP bug. The pattern looks for one of the
+//  following:
+//    1: <ERROR TYPE: foo.bar.MissingType>
+//    2: <ERROR TYPE: foo.bar.MissingType?>
+//    3: (<ERROR TYPE: foo.bar.MissingType>..<ERROR TYPE: foo.bar.MissingType?>)
+//  Note that this pattern won't catch all cases, but it ensures the cases we do catch won't cause
+//  issues when creating the javapoet/kotlinpoet class names. Any error type that does not end up
+//  matching will just return "error.NonExistentClass".
+internal val PACKAGE_PATTERN = "[a-z][^.?]*\\."
+internal val CLASS_PATTERN = "[A-Z][^.?]*"
+internal val ERROR_TYPE_PATTERN =
+    Regex("<ERROR TYPE: ((?:$PACKAGE_PATTERN)*(?:$CLASS_PATTERN\\.)*(?:$CLASS_PATTERN)+)[?]?>")
 
 // Catch-all type name when we cannot resolve to anything. This is what KAPT uses as error type
 // and we use the same type in KSP for consistency.
@@ -56,7 +71,7 @@ internal fun KSTypeReference?.asJTypeName(resolver: Resolver): JTypeName =
 
 private fun KSTypeReference?.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     return if (this == null) {
         ERROR_JTYPE_NAME
@@ -72,7 +87,7 @@ internal fun KSDeclaration.asJTypeName(resolver: Resolver): JTypeName =
 @OptIn(KspExperimental::class)
 private fun KSDeclaration.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     if (this is KSTypeAlias) {
         return this.type.asJTypeName(resolver, typeResolutionContext)
@@ -80,10 +95,6 @@ private fun KSDeclaration.asJTypeName(
     if (this is KSTypeParameter) {
         return this.asJTypeName(resolver, typeResolutionContext)
     }
-    // if there is no qualified name, it is a resolution error so just return shared instance
-    // KSP may improve that later and if not, we can improve it in Room
-    // TODO: https://issuetracker.google.com/issues/168639183
-    val qualified = qualifiedName?.asString() ?: return ERROR_JTYPE_NAME
     val pkg = getNormalizedPackageName()
 
     // We want to map Kotlin types to equivalent Java types if there is one (e.g.
@@ -93,22 +104,38 @@ private fun KSDeclaration.asJTypeName(
     // type args of another type, (e.g. List<MyInlineType>).
     val isInline = isValueClass()
     val isKotlinType = pkg == "kotlin" || pkg.startsWith("kotlin.")
-    if ((isInline && isUsedDirectly(typeResolutionContext)) || (!isInline && isKotlinType)) {
+    val isKotlinUnitType = qualifiedName?.asString() == "kotlin.Unit"
+    if (
+        !isKotlinUnitType &&
+            ((isInline && isUsedDirectly(typeResolutionContext)) || (!isInline && isKotlinType))
+    ) {
         val jvmSignature = resolver.mapToJvmSignature(this)
         if (!jvmSignature.isNullOrBlank()) {
             return jvmSignature.typeNameFromJvmSignature()
         }
     }
-
-    // using qualified name and pkg, figure out the short names.
-    val shortNames =
-        if (pkg == "") {
-                qualified
-            } else {
-                qualified.substring(pkg.length + 1)
-            }
-            .split('.')
-    return JClassName.get(pkg, shortNames.first(), *(shortNames.drop(1).toTypedArray()))
+    val qualified = qualifiedName?.asString()
+    if (qualified != null) {
+        val simpleNames =
+            if (pkg.isNotEmpty()) {
+                    check(qualified.startsWith(pkg))
+                    qualified.substring(pkg.length + 1, qualified.length)
+                } else {
+                    qualified
+                }
+                .split('.')
+        return JClassName.get(pkg, simpleNames.first(), *(simpleNames.drop(1).toTypedArray()))
+    } else {
+        val errorTypeName =
+            ERROR_TYPE_PATTERN.find(simpleName.asString())?.groupValues?.get(1)
+                // If we don't match the ERROR_TYPE_PATTERN just return the default error type name.
+                ?: return ERROR_JTYPE_NAME
+        // Although we don't get an actual package for an error type, the error type found in the
+        // simple name's pattern match may contain a package if the type it references is fully
+        // qualified. Since we only get this as a string, use bestGuess to get a class name.
+        check(pkg.isEmpty())
+        return JClassName.bestGuess(errorTypeName)
+    }
 }
 
 /** Turns a KSTypeArgument into a TypeName in java's type system. */
@@ -117,7 +144,7 @@ internal fun KSTypeArgument.asJTypeName(resolver: Resolver): JTypeName =
 
 private fun KSTypeParameter.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     // see https://github.com/square/javapoet/issues/842
     typeResolutionContext.typeArgumentTypeLookup[name]?.let {
@@ -138,7 +165,7 @@ private fun KSTypeParameter.asJTypeName(
 
 private fun KSTypeArgument.asJTypeName(
     resolver: Resolver,
-    typeResolutionContext: TypeResolutionContext
+    typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
     fun resolveTypeName() = type.asJTypeName(resolver, typeResolutionContext).tryBox()
     return when (variance) {
@@ -158,28 +185,64 @@ private fun KSType.asJTypeName(
     resolver: Resolver,
     typeResolutionContext: TypeResolutionContext,
 ): JTypeName {
-    return if (declaration is KSTypeAlias) {
-        replaceTypeAliases(resolver).asJTypeName(resolver, typeResolutionContext)
-    } else if (
-        this.arguments.isNotEmpty() &&
+    if (declaration is KSTypeAlias) {
+        return replaceTypeAliases(resolver).asJTypeName(resolver, typeResolutionContext)
+    }
+    val typeName = declaration.asJTypeName(resolver, typeResolutionContext)
+    val isJavaPrimitiveOrVoid = typeName.tryBox() !== typeName
+    if (
+        !isTypeParameter() &&
             !resolver.isJavaRawType(this) &&
             // Excluding generic value classes used directly otherwise we may generate something
             // like `Object<String>`.
-            !(declaration.isValueClass() && declaration.isUsedDirectly(typeResolutionContext))
+            !(declaration.isValueClass() && declaration.isUsedDirectly(typeResolutionContext)) &&
+            !isJavaPrimitiveOrVoid
     ) {
         val args: Array<JTypeName> =
-            this.arguments
+            this.innerArguments
                 .map { typeArg -> typeArg.asJTypeName(resolver, typeResolutionContext) }
                 .map { it.tryBox() }
                 .toTypedArray()
 
-        when (val typeName = declaration.asJTypeName(resolver, typeResolutionContext).tryBox()) {
-            is JArrayTypeName -> JArrayTypeName.of(args.single())
-            is JClassName -> JParameterizedTypeName.get(typeName, *args)
+        when (typeName) {
+            is JArrayTypeName -> {
+                return if (args.isEmpty()) {
+                    // e.g. IntArray
+                    typeName
+                } else {
+                    // `T[]` in Java is seen as `Array<out T>` in KSP and if we pass
+                    // the argument (`out T` or `? extends T`) to JavaPoet's `ArrayTypeName.of()`
+                    // directly it becomes `? extends T[]` instead of `T[]`. Since the component
+                    // type of Java arrays shouldn't have variances we remove the variance here.
+                    val arg =
+                        args.single().let {
+                            if (it is JWildcardTypeName) {
+                                it.upperBounds.single()
+                            } else {
+                                it
+                            }
+                        }
+                    JArrayTypeName.of(arg)
+                }
+            }
+            is JClassName -> {
+                val outerType = this.outerType
+                if (outerType != null) {
+                    val outerTypeName = outerType.asJTypeName(resolver, typeResolutionContext)
+                    if (outerTypeName is JParameterizedTypeName) {
+                        return outerTypeName.nestedClass(typeName.simpleName(), args.toList())
+                    }
+                }
+                return if (args.isEmpty()) {
+                    typeName
+                } else {
+                    JParameterizedTypeName.get(typeName, *args)
+                }
+            }
             else -> error("Unexpected type name for KSType: $typeName")
         }
     } else {
-        this.declaration.asJTypeName(resolver, typeResolutionContext)
+        return typeName
     }
 }
 
@@ -201,7 +264,7 @@ private val typeVarNameConstructor by lazy {
             Please file a bug at $ISSUE_TRACKER_LINK.
             """
                 .trimIndent(),
-            ex
+            ex,
         )
     }
 }
@@ -212,7 +275,7 @@ private val typeVarNameConstructor by lazy {
  */
 private fun createModifiableTypeVariableName(
     name: String,
-    bounds: List<JTypeName>
+    bounds: List<JTypeName>,
 ): JTypeVariableName = typeVarNameConstructor.newInstance(name, bounds) as JTypeVariableName
 
 private fun KSDeclaration.isUsedDirectly(typeResolutionContext: TypeResolutionContext): Boolean {

@@ -63,17 +63,19 @@ class AndroidCompositionLocalTest {
         }
         rule.runOnIdle { assertThat(compositionCount).isEqualTo(1) }
         val configuration = view.context.resources.configuration
-        // Dispatch the same configuration: same instance and compares equal so we shouldn't
+        // Make a deep copy - mutating the original configuration will affect other tests
+        val configurationCopy = Configuration(configuration)
+        // Dispatch the new configuration: new instance that compares equal so we shouldn't
         // invalidate LocalConfiguration
-        view.dispatchConfigurationChanged(configuration)
+        view.dispatchConfigurationChanged(configurationCopy)
         rule.runOnIdle { assertThat(compositionCount).isEqualTo(1) }
-        configuration.densityDpi *= 2
+        configurationCopy.densityDpi *= 2
         // Same instance but different fields, so we should invalidate LocalConfiguration
-        view.dispatchConfigurationChanged(configuration)
+        view.dispatchConfigurationChanged(configurationCopy)
         rule.runOnIdle { assertThat(compositionCount).isEqualTo(2) }
-        configuration.screenHeightDp *= 2
+        configurationCopy.screenHeightDp *= 2
         // Same instance but different fields, so we should invalidate LocalConfiguration
-        view.dispatchConfigurationChanged(configuration)
+        view.dispatchConfigurationChanged(configurationCopy)
         rule.runOnIdle { assertThat(compositionCount).isEqualTo(3) }
     }
 

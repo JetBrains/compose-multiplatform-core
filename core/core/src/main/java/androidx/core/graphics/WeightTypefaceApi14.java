@@ -24,11 +24,12 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.collection.LongSparseArray;
 import androidx.core.content.res.FontResourcesParserCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Field;
 
@@ -74,8 +75,7 @@ final class WeightTypefaceApi14 {
     /**
      * @return Valid typeface, or {@code null} if private API is not available
      */
-    @Nullable
-    static Typeface createWeightStyle(@NonNull TypefaceCompatBaseImpl compat,
+    static @Nullable Typeface createWeightStyle(@NonNull TypefaceCompatBaseImpl compat,
             @NonNull Context context, @NonNull Typeface base, int weight, boolean italic) {
         if (!isPrivateApiAvailable()) {
             return null;
@@ -128,8 +128,7 @@ final class WeightTypefaceApi14 {
     /**
      * @see {@code TypefaceCompat#getBestFontFromFamily(Context, Typeface, int)}
      */
-    @Nullable
-    private static Typeface getBestFontFromFamily(@NonNull TypefaceCompatBaseImpl compat,
+    private static @Nullable Typeface getBestFontFromFamily(@NonNull TypefaceCompatBaseImpl compat,
             @NonNull Context context, @NonNull Typeface base, int weight, boolean italic) {
         final FontResourcesParserCompat.FontFamilyFilesResourceEntry family =
                 compat.getFontFamily(base);

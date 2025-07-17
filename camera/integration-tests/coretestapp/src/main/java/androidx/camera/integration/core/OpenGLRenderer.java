@@ -29,8 +29,6 @@ import android.view.Surface;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.Preview;
@@ -39,6 +37,9 @@ import androidx.core.util.Consumer;
 import androidx.core.util.Pair;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -137,8 +138,7 @@ final class OpenGLRenderer {
      */
     @MainThread
     @SuppressWarnings("ObjectToString")
-    @NonNull
-    ListenableFuture<Void> attachInputPreview(@NonNull Preview preview) {
+    @NonNull ListenableFuture<Void> attachInputPreview(@NonNull Preview preview) {
         return CallbackToFutureAdapter.getFuture(completer -> {
             preview.setSurfaceProvider(
                     mExecutor,
@@ -345,8 +345,7 @@ final class OpenGLRenderer {
     }
 
     @WorkerThread
-    @NonNull
-    private SurfaceTexture resetPreviewTexture(@NonNull Size size) {
+    private @NonNull SurfaceTexture resetPreviewTexture(@NonNull Size size) {
         if (mPreviewTexture != null) {
             mPreviewTexture.detachFromGLContext();
         }
@@ -761,9 +760,9 @@ final class OpenGLRenderer {
     private static native boolean renderTexture(
             long nativeContext,
             long timestampNs,
-            @NonNull float[] mvpTransform,
+            float @NonNull [] mvpTransform,
             boolean mvpDirty,
-            @NonNull float[] textureTransform);
+            float @NonNull [] textureTransform);
 
     @WorkerThread
     private static native void closeContext(long nativeContext);

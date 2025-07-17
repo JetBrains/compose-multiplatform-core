@@ -16,15 +16,17 @@
 
 package androidx.camera.core.impl;
 
-import android.graphics.Rect;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.IntRange;
+import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
+import androidx.camera.core.imagecapture.CameraCapturePipeline;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -43,41 +45,46 @@ public class ForwardingCameraControl implements CameraControlInternal {
         mCameraControlInternal = cameraControlInternal;
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> enableTorch(boolean torch) {
+    public @NonNull ListenableFuture<Void> enableTorch(boolean torch) {
         return mCameraControlInternal.enableTorch(torch);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<FocusMeteringResult> startFocusAndMetering(
+    public @NonNull ListenableFuture<Void> enableLowLightBoostAsync(boolean lowLightBoost) {
+        return mCameraControlInternal.enableLowLightBoostAsync(lowLightBoost);
+    }
+
+    @Override
+    public @NonNull ListenableFuture<FocusMeteringResult> startFocusAndMetering(
             @NonNull FocusMeteringAction action) {
         return mCameraControlInternal.startFocusAndMetering(action);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> cancelFocusAndMetering() {
+    public @NonNull ListenableFuture<Void> cancelFocusAndMetering() {
         return mCameraControlInternal.cancelFocusAndMetering();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setZoomRatio(float ratio) {
+    public @NonNull ListenableFuture<Void> setZoomRatio(float ratio) {
         return mCameraControlInternal.setZoomRatio(ratio);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setLinearZoom(float linearZoom) {
+    public @NonNull ListenableFuture<Void> setLinearZoom(float linearZoom) {
         return mCameraControlInternal.setLinearZoom(linearZoom);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Integer> setExposureCompensationIndex(int value) {
+    public @NonNull ListenableFuture<Integer> setExposureCompensationIndex(int value) {
         return mCameraControlInternal.setExposureCompensationIndex(value);
+    }
+
+    @Override
+    public @NonNull ListenableFuture<Void> setTorchStrengthLevel(
+            @IntRange(from = 1) int torchStrengthLevel) {
+        return mCameraControlInternal.setTorchStrengthLevel(torchStrengthLevel);
     }
 
     @Override
@@ -92,13 +99,18 @@ public class ForwardingCameraControl implements CameraControlInternal {
     }
 
     @Override
-    public void setScreenFlash(@Nullable ImageCapture.ScreenFlash screenFlash) {
+    public void setScreenFlash(ImageCapture.@Nullable ScreenFlash screenFlash) {
         mCameraControlInternal.setScreenFlash(screenFlash);
     }
 
     @Override
-    public void addZslConfig(@NonNull SessionConfig.Builder sessionConfigBuilder) {
+    public void addZslConfig(SessionConfig.@NonNull Builder sessionConfigBuilder) {
         mCameraControlInternal.addZslConfig(sessionConfigBuilder);
+    }
+
+    @Override
+    public void clearZslConfig() {
+        mCameraControlInternal.clearZslConfig();
     }
 
     @Override
@@ -111,9 +123,8 @@ public class ForwardingCameraControl implements CameraControlInternal {
         return mCameraControlInternal.isZslDisabledByByUserCaseConfig();
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<List<Void>> submitStillCaptureRequests(
+    public @NonNull ListenableFuture<List<Void>> submitStillCaptureRequests(
             @NonNull List<CaptureConfig> captureConfigs,
             @ImageCapture.CaptureMode int captureMode,
             @ImageCapture.FlashType int flashType) {
@@ -123,16 +134,15 @@ public class ForwardingCameraControl implements CameraControlInternal {
                 flashType);
     }
 
-    @NonNull
     @Override
-    public SessionConfig getSessionConfig() {
-        return mCameraControlInternal.getSessionConfig();
+    public @NonNull ListenableFuture<CameraCapturePipeline> getCameraCapturePipelineAsync(
+            @ImageCapture.CaptureMode int captureMode, @ImageCapture.FlashType int flashType) {
+        return mCameraControlInternal.getCameraCapturePipelineAsync(captureMode, flashType);
     }
 
-    @NonNull
     @Override
-    public Rect getSensorRect() {
-        return mCameraControlInternal.getSensorRect();
+    public @NonNull SessionConfig getSessionConfig() {
+        return mCameraControlInternal.getSessionConfig();
     }
 
     @Override
@@ -145,15 +155,29 @@ public class ForwardingCameraControl implements CameraControlInternal {
         mCameraControlInternal.clearInteropConfig();
     }
 
-    @NonNull
     @Override
-    public Config getInteropConfig() {
+    public @NonNull Config getInteropConfig() {
         return mCameraControlInternal.getInteropConfig();
     }
 
-    @NonNull
     @Override
-    public CameraControlInternal getImplementation() {
+    public @NonNull CameraControlInternal getImplementation() {
         return mCameraControlInternal.getImplementation();
+    }
+
+    @Override
+    public void incrementVideoUsage() {
+        mCameraControlInternal.incrementVideoUsage();
+    }
+
+    @Override
+    public void decrementVideoUsage() {
+        mCameraControlInternal.decrementVideoUsage();
+    }
+
+    @VisibleForTesting
+    @Override
+    public boolean isInVideoUsage() {
+        return mCameraControlInternal.isInVideoUsage();
     }
 }

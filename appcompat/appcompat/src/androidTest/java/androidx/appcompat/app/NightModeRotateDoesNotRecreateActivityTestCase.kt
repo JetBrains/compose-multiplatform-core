@@ -30,7 +30,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
-import androidx.testutils.LifecycleOwnerUtils
+import androidx.testutils.lifecycle.LifecycleOwnerUtils
 import org.junit.After
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
@@ -53,7 +53,7 @@ public class NightModeRotateDoesNotRecreateActivityTestCase(private val setMode:
             NightModeRotateDoesNotRecreateActivity::class.java,
             initialTouchMode = false,
             // Let the test method launch its own activity so that we can ensure it's RESUMED.
-            launchActivity = false
+            launchActivity = false,
         )
 
     @After

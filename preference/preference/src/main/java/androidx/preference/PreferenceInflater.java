@@ -23,9 +23,8 @@ import android.util.AttributeSet;
 import android.util.Xml;
 import android.view.InflateException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -43,8 +42,7 @@ class PreferenceInflater {
     private static final HashMap<String, Constructor<?>> CONSTRUCTOR_MAP = new HashMap<>();
     private static final String INTENT_TAG_NAME = "intent";
     private static final String EXTRA_TAG_NAME = "extra";
-    @NonNull
-    private final Context mContext;
+    private final @NonNull Context mContext;
     private final Object[] mConstructorArgs = new Object[2];
     private PreferenceManager mPreferenceManager;
     private String[] mDefaultPackages;
@@ -91,8 +89,7 @@ class PreferenceInflater {
     /**
      * Return the context we are running in, for access to resources, class loader, etc.
      */
-    @NonNull
-    public Context getContext() {
+    public @NonNull Context getContext() {
         return mContext;
     }
 
@@ -105,8 +102,7 @@ class PreferenceInflater {
      * @return The root of the inflated hierarchy. If root was supplied, this is the root item;
      * otherwise it is the root of the inflated XML file.
      */
-    @NonNull
-    public Preference inflate(int resource, @Nullable PreferenceGroup root) {
+    public @NonNull Preference inflate(int resource, @Nullable PreferenceGroup root) {
         XmlResourceParser parser = getContext().getResources().getXml(resource);
         try {
             return inflate(parser, root);
@@ -132,8 +128,7 @@ class PreferenceInflater {
      * @return The root of the inflated hierarchy. If root was supplied, this is root; otherwise
      * it is the root of the inflated XML file.
      */
-    @NonNull
-    public Preference inflate(XmlPullParser parser, @Nullable PreferenceGroup root) {
+    public @NonNull Preference inflate(XmlPullParser parser, @Nullable PreferenceGroup root) {
         synchronized (mConstructorArgs) {
             final AttributeSet attrs = Xml.asAttributeSet(parser);
             mConstructorArgs[0] = mContext;
@@ -203,7 +198,7 @@ class PreferenceInflater {
      * @param attrs The XML attributes supplied for this instance
      * @return The newly instantiated item, or {@code null}
      */
-    private Preference createItem(@NonNull String name, @Nullable String[] prefixes,
+    private Preference createItem(@NonNull String name, String @Nullable [] prefixes,
             AttributeSet attrs)
             throws ClassNotFoundException, InflateException {
         Constructor<?> constructor = CONSTRUCTOR_MAP.get(name);

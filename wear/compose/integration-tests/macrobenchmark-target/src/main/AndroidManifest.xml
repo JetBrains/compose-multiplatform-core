@@ -46,6 +46,28 @@
         </activity>
 
         <activity
+            android:name=".AlertDialogActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.integration.macrobenchmark.target.ALERT_DIALOG_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ConfirmationDialogActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.integration.macrobenchmark.target.CONFIRMATION_DIALOG_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".SwipeToDismissActivity"
             android:theme="@style/AppTheme"
             android:exported="true">
@@ -103,7 +125,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
     </application>
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />

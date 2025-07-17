@@ -22,9 +22,11 @@ import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.GestureTracker.Gesture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link FrameLayout} plus helper methods to reliably share gestures with its hierarchy, by:
@@ -46,22 +48,22 @@ public abstract class GestureTrackingView extends FrameLayout {
         super(context);
     }
 
-    public GestureTrackingView(@NonNull Context context, @NonNull AttributeSet attrs) {
+    public GestureTrackingView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public GestureTrackingView(@NonNull Context context, @NonNull AttributeSet attrs,
+    public GestureTrackingView(@NonNull Context context, @Nullable AttributeSet attrs,
             int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
-    public GestureTrackingView(@NonNull Context ctx, @NonNull AttributeSet attrs, int defStyleAttr,
+    public GestureTrackingView(@NonNull Context ctx, @Nullable AttributeSet attrs, int defStyleAttr,
             int defStyleRes) {
         super(ctx, attrs, defStyleAttr, defStyleRes);
     }
 
     {
-        mGestureTracker = new GestureTracker(getClass().getSimpleName(), getContext());
+        mGestureTracker = new GestureTracker(getContext());
     }
 
     @Override
@@ -129,8 +131,7 @@ public abstract class GestureTrackingView extends FrameLayout {
      */
     protected abstract boolean interceptGesture(@NonNull GestureTracker gestureTracker);
 
-    @NonNull
-    protected OnGestureListener patchGestureListener(@NonNull OnGestureListener original) {
+    protected @NonNull OnGestureListener patchGestureListener(@NonNull OnGestureListener original) {
         return new PatchedSimpleGestureHandler(original);
     }
 

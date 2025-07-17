@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.3.0-beta01" type="baseline" client="gradle" dependencies="false" name="AGP (8.3.0-beta01)" variant="all" version="8.3.0-beta01">
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
         id="RestrictedApiAndroidX"
@@ -40,8 +40,8 @@
     <issue
         id="RestrictedApiAndroidX"
         message="UseCase.getAttachedSurfaceResolution can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        val resolution = mImageCapture.attachedSurfaceResolution"
-        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            mImageCapture.attachedSurfaceResolution"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/uiwidgets/rotations/CameraActivity.kt"/>
     </issue>
@@ -49,8 +49,8 @@
     <issue
         id="RestrictedApiAndroidX"
         message="UseCase.getAttachedSurfaceResolution can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        val resolution = mImageCapture.attachedSurfaceResolution"
-        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            mImageCapture.attachedSurfaceResolution"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/uiwidgets/rotations/CameraActivity.kt"/>
     </issue>
@@ -60,15 +60,6 @@
         message="Exif.createFromFile can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
         errorLine1="        private val exif = Exif.createFromFile(file)"
         errorLine2="                                ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/camera/integration/uiwidgets/rotations/ImageCaptureResult.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Exif.createFromFile can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="        private val exif = Exif.createFromFile(file)"
-        errorLine2="                                               ~~~~">
         <location
             file="src/main/java/androidx/camera/integration/uiwidgets/rotations/ImageCaptureResult.kt"/>
     </issue>
@@ -141,15 +132,6 @@
         message="Exif.createFromInputStream can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
         errorLine1="            exif = Exif.createFromInputStream(inputStream!!)"
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/camera/integration/uiwidgets/rotations/ImageCaptureResult.kt"/>
-    </issue>
-
-    <issue
-        id="RestrictedApiAndroidX"
-        message="Exif.createFromInputStream can only be called from within the same library group (referenced groupId=`androidx.camera` from groupId=`androidx.camera.integration-tests`)"
-        errorLine1="            exif = Exif.createFromInputStream(inputStream!!)"
-        errorLine2="                                              ~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/camera/integration/uiwidgets/rotations/ImageCaptureResult.kt"/>
     </issue>
@@ -229,7 +211,7 @@
     <issue
         id="PrimitiveInCollection"
         message="field VALID_FLASH_MODES with type List&lt;Integer>: replace with IntList"
-        errorLine1="        private val VALID_FLASH_MODES = listOf("
+        errorLine1="        private val VALID_FLASH_MODES ="
         errorLine2="        ^">
         <location
             file="src/main/java/androidx/camera/integration/uiwidgets/compose/ui/screen/imagecapture/ImageCaptureScreenState.kt"/>

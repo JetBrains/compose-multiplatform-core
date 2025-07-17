@@ -16,12 +16,13 @@
 
 package androidx.appsearch.localstorage.converter;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.SetSchemaResponse;
 import androidx.core.util.Preconditions;
 
 import com.google.android.icing.proto.SetSchemaResultProto;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates a {@link SetSchemaResultProto} into {@link SetSchemaResponse}.
@@ -40,9 +41,8 @@ public class SetSchemaResponseToProtoConverter {
      * @param prefix The prefix need to removed from schemaTypes
      * @return The {@link SetSchemaResponse} object.
      */
-    @NonNull
-    public static SetSchemaResponse toSetSchemaResponse(@NonNull SetSchemaResultProto proto,
-            @NonNull String prefix) {
+    public static @NonNull SetSchemaResponse toSetSchemaResponse(
+            @NonNull SetSchemaResultProto proto, @NonNull String prefix) {
         Preconditions.checkNotNull(proto);
         Preconditions.checkNotNull(prefix);
         SetSchemaResponse.Builder builder = new SetSchemaResponse.Builder();

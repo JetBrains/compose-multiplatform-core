@@ -92,6 +92,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
         throw NotImplementedError()
     }
 
+    @Suppress("WRONG_NULLABILITY_FOR_JAVA_OVERRIDE")
     override fun orElse(p0: T): Provider<T> {
         throw NotImplementedError()
     }
@@ -119,7 +120,7 @@ class FakeGradleProperty<T>(private var value: T? = null) : Property<T> {
 
     override fun <U : Any?, R : Any?> zip(
         p0: Provider<U>,
-        p1: BiFunction<in T, in U, out R>
+        p1: BiFunction<in T, in U, out R>,
     ): Provider<R> {
         throw NotImplementedError()
     }

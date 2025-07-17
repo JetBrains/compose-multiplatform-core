@@ -27,14 +27,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsAnimation;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.PathInterpolator;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.core.R;
@@ -42,6 +41,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.WindowInsetsCompat.Type;
 import androidx.core.view.WindowInsetsCompat.Type.InsetsType;
 import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -157,8 +159,7 @@ public final class WindowInsetsAnimationCompat {
      *
      * @return The interpolator used for this animation.
      */
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         return mImpl.getInterpolator();
     }
 
@@ -225,7 +226,7 @@ public final class WindowInsetsAnimationCompat {
         }
 
         @RequiresApi(30)
-        private BoundsCompat(@NonNull WindowInsetsAnimation.Bounds bounds) {
+        private BoundsCompat(WindowInsetsAnimation.@NonNull Bounds bounds) {
             mLowerBound = Impl30.getLowerBounds(bounds);
             mUpperBound = Impl30.getHigherBounds(bounds);
         }
@@ -249,8 +250,7 @@ public final class WindowInsetsAnimationCompat {
          * @see #getUpperBound()
          * @see WindowInsetsAnimationControllerCompat#getHiddenStateInsets
          */
-        @NonNull
-        public Insets getLowerBound() {
+        public @NonNull Insets getLowerBound() {
             return mLowerBound;
         }
 
@@ -273,8 +273,7 @@ public final class WindowInsetsAnimationCompat {
          * @see #getLowerBound()
          * @see WindowInsetsAnimationControllerCompat#getShownStateInsets
          */
-        @NonNull
-        public Insets getUpperBound() {
+        public @NonNull Insets getUpperBound() {
             return mUpperBound;
         }
 
@@ -289,8 +288,7 @@ public final class WindowInsetsAnimationCompat {
          * @see WindowInsetsCompat#inset
          * @see WindowInsetsAnimationCompat.Callback#onStart
          */
-        @NonNull
-        public BoundsCompat inset(@NonNull Insets insets) {
+        public @NonNull BoundsCompat inset(@NonNull Insets insets) {
             return new BoundsCompat(
                     // TODO: refactor so that WindowInsets.insetInsets() is in a more appropriate
                     //  place eventually.
@@ -309,8 +307,7 @@ public final class WindowInsetsAnimationCompat {
          * Creates a new instance of {@link WindowInsetsAnimation.Bounds} from this compat instance.
          */
         @RequiresApi(30)
-        @NonNull
-        public WindowInsetsAnimation.Bounds toBounds() {
+        public WindowInsetsAnimation.@NonNull Bounds toBounds() {
             return Impl30.createPlatformBounds(this);
         }
 
@@ -319,8 +316,8 @@ public final class WindowInsetsAnimationCompat {
          * platform {@link android.view.WindowInsetsAnimation.Bounds}.
          */
         @RequiresApi(30)
-        @NonNull
-        public static BoundsCompat toBoundsCompat(@NonNull WindowInsetsAnimation.Bounds bounds) {
+        public static @NonNull BoundsCompat toBoundsCompat(
+                WindowInsetsAnimation.@NonNull Bounds bounds) {
             return new BoundsCompat(bounds);
         }
     }
@@ -349,7 +346,7 @@ public final class WindowInsetsAnimationCompat {
          * continue in the view hierarchy.
          */
         public static final int DISPATCH_MODE_CONTINUE_ON_SUBTREE = 1;
-        WindowInsets mDispachedInsets;
+        WindowInsetsCompat mDispachedInsets;
 
         @IntDef(value = {
                 DISPATCH_MODE_STOP,
@@ -482,8 +479,7 @@ public final class WindowInsetsAnimationCompat {
          * dispatched to
          * the subtree of the hierarchy.
          */
-        @NonNull
-        public BoundsCompat onStart(
+        public @NonNull BoundsCompat onStart(
                 @NonNull WindowInsetsAnimationCompat animation,
                 @NonNull BoundsCompat bounds) {
             return bounds;
@@ -507,8 +503,7 @@ public final class WindowInsetsAnimationCompat {
          * @param runningAnimations The currently running animations.
          * @return The insets to dispatch to the subtree of the hierarchy.
          */
-        @NonNull
-        public abstract WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets,
+        public abstract @NonNull WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets,
                 @NonNull List<WindowInsetsAnimationCompat> runningAnimations);
 
         /**
@@ -534,10 +529,9 @@ public final class WindowInsetsAnimationCompat {
         @InsetsType
         private final int mTypeMask;
         private float mFraction;
-        @Nullable
-        private final Interpolator mInterpolator;
+        private final @Nullable Interpolator mInterpolator;
         private final long mDurationMillis;
-        private float mAlpha;
+        private float mAlpha = 1f;
 
         Impl(int typeMask, @Nullable Interpolator interpolator, long durationMillis) {
             mTypeMask = typeMask;
@@ -560,8 +554,7 @@ public final class WindowInsetsAnimationCompat {
             return mFraction;
         }
 
-        @Nullable
-        public Interpolator getInterpolator() {
+        public @Nullable Interpolator getInterpolator() {
             return mInterpolator;
         }
 
@@ -603,49 +596,53 @@ public final class WindowInsetsAnimationCompat {
                 new FastOutLinearInInterpolator();
 
         /**
-         * The fallback interpolator for animating non-IME insets.
+         * A fixed interpolator to use when simulating the window insets animation for showing
+         * system bars.
+         *
+         * This interpolator and the factor was to align with the legacy animation described in
+         * dock_[side]_enter.xml before API 30.
          */
-        private static final Interpolator DEFAULT_INSET_INTERPOLATOR =
-                new DecelerateInterpolator();
+        private static final Interpolator SHOW_SYSTEM_BAR_INTERPOLATOR =
+                new DecelerateInterpolator(1.5f /* factor */);
+
+        /**
+         * A fixed interpolator to use when simulating the window insets animation for hiding
+         * system bars.
+         *
+         * This interpolator and the factor was to align with the legacy animation described in
+         * dock_[side]_exit.xml before API 30.
+         */
+        private static final Interpolator HIDE_SYSTEM_BAR_INTERPOLATOR =
+                new AccelerateInterpolator(1.5f /* factor */);
 
         Impl21(int typeMask, @Nullable Interpolator interpolator, long durationMillis) {
             super(typeMask, interpolator, durationMillis);
         }
 
-        static void setCallback(@NonNull final View view,
-                @Nullable final Callback callback) {
+        static void setCallback(final @NonNull View view,
+                final @Nullable Callback callback) {
+            final View.OnApplyWindowInsetsListener proxyListener = callback != null
+                    ? createProxyListener(view, callback)
+                    : null;
+            view.setTag(R.id.tag_window_insets_animation_callback, proxyListener);
 
-            Object userListener = view.getTag(R.id.tag_on_apply_window_listener);
-            if (callback == null) {
-                view.setTag(R.id.tag_window_insets_animation_callback, null);
-                if (userListener == null) {
-                    // If no user defined listener is set, that means our listener is the one set.
-                    // Make sure to remove it.
-                    view.setOnApplyWindowInsetsListener(null);
-                }
-            } else {
-                View.OnApplyWindowInsetsListener proxyListener =
-                        createProxyListener(view, callback);
-                view.setTag(R.id.tag_window_insets_animation_callback, proxyListener);
-
-                // We rely on OnApplyWindowInsetsListener, but one might already be set by the
-                // application, so we only register it on the view if none is set yet.
-                // If one is set using ViewCompat.setOnApplyWindowInsetsListener,
-                // this Callback will be called by the exiting listener.
-                if (userListener == null) {
-                    view.setOnApplyWindowInsetsListener(proxyListener);
-                }
+            // We rely on View.OnApplyWindowInsetsListener, but one might already be set by the
+            // library, so we only register it on the view if none is set yet.
+            // If any of them is set via ViewGroupCompat#installCompatInsetsDispatch or
+            // ViewCompat.setOnApplyWindowInsetsListener, this Callback will be called by their
+            // listener.
+            if (view.getTag(R.id.tag_compat_insets_dispatch) == null
+                    && view.getTag(R.id.tag_on_apply_window_listener) == null) {
+                view.setOnApplyWindowInsetsListener(proxyListener);
             }
         }
 
-        @NonNull
-        private static View.OnApplyWindowInsetsListener createProxyListener(
-                @NonNull View view, @NonNull final Callback callback) {
+        private static View.@NonNull OnApplyWindowInsetsListener createProxyListener(
+                @NonNull View view, final @NonNull Callback callback) {
             return new Impl21OnApplyWindowInsetsListener(view, callback);
         }
 
-        @NonNull
-        static BoundsCompat computeAnimationBounds(
+        static @NonNull BoundsCompat computeAnimationBounds(
                 @NonNull WindowInsetsCompat targetInsets,
                 @NonNull WindowInsetsCompat startingInsets, int mask) {
             Insets targetInsetsInsets = targetInsets.getInsets(mask);
@@ -666,16 +663,30 @@ public final class WindowInsetsAnimationCompat {
         }
 
         @SuppressLint("WrongConstant") // We iterate over all the constants.
-        static int buildAnimationMask(@NonNull WindowInsetsCompat targetInsets,
-                @NonNull WindowInsetsCompat currentInsets) {
-            int animatingMask = 0;
+        static void buildAnimationMask(@NonNull WindowInsetsCompat targetInsets,
+                @NonNull WindowInsetsCompat currentInsets, int[] showingTypes, int[] hidingTypes) {
             for (int i = WindowInsetsCompat.Type.FIRST; i <= WindowInsetsCompat.Type.LAST;
                     i = i << 1) {
-                if (!targetInsets.getInsets(i).equals(currentInsets.getInsets(i))) {
-                    animatingMask |= i;
+                final Insets target = targetInsets.getInsets(i);
+                final Insets current = currentInsets.getInsets(i);
+                final boolean showing = target.left > current.left
+                        || target.top > current.top
+                        || target.right > current.right
+                        || target.bottom > current.bottom;
+                final boolean hiding = target.left < current.left
+                        || target.top < current.top
+                        || target.right < current.right
+                        || target.bottom < current.bottom;
+                // If both showing and hiding are true, it can be the side change of navigation bar.
+                // Don't consider that it is playing an animation.
+                if (showing != hiding) {
+                    if (showing) {
+                        showingTypes[0] |= i;
+                    } else {
+                        hidingTypes[0] |= i;
+                    }
                 }
             }
-            return animatingMask;
         }
 
         /**
@@ -684,21 +695,17 @@ public final class WindowInsetsAnimationCompat {
          * This allows for a smoother animation especially in the common case of showing and hiding
          * the IME.
          */
-        static Interpolator createInsetInterpolator(
-                int animationMask,
-                WindowInsetsCompat targetInsets,
-                WindowInsetsCompat startingInsets) {
-            if ((animationMask & WindowInsetsCompat.Type.IME) != 0) {
-                // If the target insets are larger than the starting, we're showing the IME
-                if (targetInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                        > startingInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom) {
-                    return SHOW_IME_INTERPOLATOR;
-                } else {
-                    return HIDE_IME_INTERPOLATOR;
-                }
-            } else {
-                return DEFAULT_INSET_INTERPOLATOR;
+        static @Nullable Interpolator createInsetInterpolator(int showingTypes, int hidingTypes) {
+            if ((showingTypes & WindowInsetsCompat.Type.ime()) != 0) {
+                return SHOW_IME_INTERPOLATOR;
+            } else if ((hidingTypes & WindowInsetsCompat.Type.ime()) != 0) {
+                return HIDE_IME_INTERPOLATOR;
+            } else if ((showingTypes & WindowInsetsCompat.Type.systemBars()) != 0) {
+                return SHOW_SYSTEM_BAR_INTERPOLATOR;
+            } else if ((hidingTypes & WindowInsetsCompat.Type.systemBars()) != 0) {
+                return HIDE_SYSTEM_BAR_INTERPOLATOR;
             }
+            return null;
         }
 
         @SuppressLint("WrongConstant")
@@ -736,7 +743,8 @@ public final class WindowInsetsAnimationCompat {
         private static class Impl21OnApplyWindowInsetsListener implements
                 View.OnApplyWindowInsetsListener {
 
-            private static final int COMPAT_ANIMATION_DURATION = 160;
+            private static final int COMPAT_ANIMATION_DURATION_IME = 160;
+            private static final int COMPAT_ANIMATION_DURATION_SYSTEM_BAR = 250;
 
             final Callback mCallback;
             // We save the last insets to compute the starting insets for the animation.
@@ -753,7 +761,8 @@ public final class WindowInsetsAnimationCompat {
             }
 
             @Override
-            public WindowInsets onApplyWindowInsets(final View v, final WindowInsets insets) {
+            public @NonNull WindowInsets onApplyWindowInsets(final View v,
+                    @NonNull WindowInsets insets) {
                 // We cannot rely on the compat insets value until the view is laid out.
                 if (!v.isLaidOut()) {
                     mLastInsets = toWindowInsetsCompat(insets, v);
@@ -785,27 +794,34 @@ public final class WindowInsetsAnimationCompat {
                 // that have been dispatched first as a marker to avoid dispatching the callback
                 // in children.
                 Callback callback = getCallback(v);
-                if (callback != null && Objects.equals(callback.mDispachedInsets, insets)) {
+                if (callback != null && Objects.equals(callback.mDispachedInsets, targetInsets)) {
                     return forwardToViewIfNeeded(v, insets);
                 }
 
                 // We only run the animation when the some insets are animating
-                final int animationMask = buildAnimationMask(targetInsets, mLastInsets);
+                final int[] showingTypes = new int[1];
+                final int[] hidingTypes = new int[1];
+                buildAnimationMask(targetInsets, mLastInsets, showingTypes, hidingTypes);
+                final int animationMask = showingTypes[0] | hidingTypes[0];
+
                 if (animationMask == 0) {
                     if (DEBUG) {
-                        Log.d(TAG, "Insets applied bug no window animation to run");
+                        Log.d(TAG, "Insets applied but no window animation to run");
                     }
+                    mLastInsets = targetInsets;
                     return forwardToViewIfNeeded(v, insets);
                 }
 
                 final WindowInsetsCompat startingInsets = this.mLastInsets;
 
-                final Interpolator interpolator =
-                        createInsetInterpolator(animationMask, targetInsets, startingInsets);
+                final Interpolator interpolator = createInsetInterpolator(
+                        showingTypes[0], hidingTypes[0]);
 
                 final WindowInsetsAnimationCompat anim =
                         new WindowInsetsAnimationCompat(animationMask, interpolator,
-                                COMPAT_ANIMATION_DURATION);
+                                (animationMask & WindowInsetsCompat.Type.ime()) != 0
+                                        ? COMPAT_ANIMATION_DURATION_IME
+                                        : COMPAT_ANIMATION_DURATION_SYSTEM_BAR);
                 anim.setFraction(0);
 
                 final ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f).setDuration(
@@ -816,7 +832,7 @@ public final class WindowInsetsAnimationCompat {
                         startingInsets, animationMask
                 );
 
-                dispatchOnPrepare(v, anim, insets, false);
+                dispatchOnPrepare(v, anim, targetInsets, false);
 
                 animator.addUpdateListener(
                         new ValueAnimator.AnimatorUpdateListener() {
@@ -862,8 +878,8 @@ public final class WindowInsetsAnimationCompat {
          * Forward the call to view.onApplyWindowInsets if there is no other listener attached to
          * the view.
          */
-        @NonNull
-        static WindowInsets forwardToViewIfNeeded(@NonNull View v, @NonNull WindowInsets insets) {
+        static @NonNull WindowInsets forwardToViewIfNeeded(@NonNull View v,
+                @NonNull WindowInsets insets) {
             // If the app set an on apply window listener, it will be called after this
             // and will decide whether to call the view's onApplyWindowInsets.
             if (v.getTag(R.id.tag_on_apply_window_listener) != null) {
@@ -873,7 +889,7 @@ public final class WindowInsetsAnimationCompat {
         }
 
         static void dispatchOnPrepare(View v, WindowInsetsAnimationCompat anim,
-                WindowInsets insets, boolean stopDispatch) {
+                WindowInsetsCompat insets, boolean stopDispatch) {
             final Callback callback = getCallback(v);
             if (callback != null) {
                 callback.mDispachedInsets = insets;
@@ -951,8 +967,7 @@ public final class WindowInsetsAnimationCompat {
             }
         }
 
-        @Nullable
-        static Callback getCallback(View child) {
+        static @Nullable Callback getCallback(View child) {
             Object listener = child.getTag(
                     R.id.tag_window_insets_animation_callback);
             Callback callback = null;
@@ -966,8 +981,7 @@ public final class WindowInsetsAnimationCompat {
     @RequiresApi(30)
     private static class Impl30 extends Impl {
 
-        @NonNull
-        private final WindowInsetsAnimation mWrapped;
+        private final @NonNull WindowInsetsAnimation mWrapped;
 
         Impl30(@NonNull WindowInsetsAnimation wrapped) {
             super(0, null, 0);
@@ -984,8 +998,7 @@ public final class WindowInsetsAnimationCompat {
         }
 
         @Override
-        @Nullable
-        public Interpolator getInterpolator() {
+        public @Nullable Interpolator getInterpolator() {
             return mWrapped.getInterpolator();
         }
 
@@ -1009,12 +1022,22 @@ public final class WindowInsetsAnimationCompat {
             return mWrapped.getInterpolatedFraction();
         }
 
+        @Override
+        public float getAlpha() {
+            return mWrapped.getAlpha();
+        }
+
+        @Override
+        public void setAlpha(float alpha) {
+            mWrapped.setAlpha(alpha);
+        }
+
         @RequiresApi(30)
         private static class ProxyCallback extends WindowInsetsAnimation.Callback {
 
             private final Callback mCompat;
 
-            ProxyCallback(@NonNull final WindowInsetsAnimationCompat.Callback compat) {
+            ProxyCallback(final WindowInsetsAnimationCompat.@NonNull Callback compat) {
                 super(compat.getDispatchMode());
                 mCompat = compat;
             }
@@ -1024,8 +1047,7 @@ public final class WindowInsetsAnimationCompat {
             private final HashMap<WindowInsetsAnimation, WindowInsetsAnimationCompat>
                     mAnimations = new HashMap<>();
 
-            @NonNull
-            private WindowInsetsAnimationCompat getWindowInsetsAnimationCompat(
+            private @NonNull WindowInsetsAnimationCompat getWindowInsetsAnimationCompat(
                     @NonNull WindowInsetsAnimation animation) {
                 WindowInsetsAnimationCompat animationCompat = mAnimations.get(
                         animation);
@@ -1041,19 +1063,17 @@ public final class WindowInsetsAnimationCompat {
                 mCompat.onPrepare(getWindowInsetsAnimationCompat(animation));
             }
 
-            @NonNull
             @Override
-            public WindowInsetsAnimation.Bounds onStart(
+            public WindowInsetsAnimation.@NonNull Bounds onStart(
                     @NonNull WindowInsetsAnimation animation,
-                    @NonNull WindowInsetsAnimation.Bounds bounds) {
+                    WindowInsetsAnimation.@NonNull Bounds bounds) {
                 return mCompat.onStart(
                         getWindowInsetsAnimationCompat(animation),
                         BoundsCompat.toBoundsCompat(bounds)).toBounds();
             }
 
-            @NonNull
             @Override
-            public WindowInsets onProgress(@NonNull WindowInsets insets,
+            public @NonNull WindowInsets onProgress(@NonNull WindowInsets insets,
                     @NonNull List<WindowInsetsAnimation> runningAnimations) {
                 if (mTmpRunningAnimations == null) {
                     mTmpRunningAnimations = new ArrayList<>(runningAnimations.size());
@@ -1087,20 +1107,18 @@ public final class WindowInsetsAnimationCompat {
             view.setWindowInsetsAnimationCallback(platformCallback);
         }
 
-        @NonNull
-        public static WindowInsetsAnimation.Bounds createPlatformBounds(
+        public static WindowInsetsAnimation.@NonNull Bounds createPlatformBounds(
                 @NonNull BoundsCompat bounds) {
             return new WindowInsetsAnimation.Bounds(bounds.getLowerBound().toPlatformInsets(),
                     bounds.getUpperBound().toPlatformInsets());
         }
 
-        @NonNull
-        public static Insets getLowerBounds(@NonNull WindowInsetsAnimation.Bounds bounds) {
+        public static @NonNull Insets getLowerBounds(WindowInsetsAnimation.@NonNull Bounds bounds) {
             return Insets.toCompatInsets(bounds.getLowerBound());
         }
 
-        @NonNull
-        public static Insets getHigherBounds(@NonNull WindowInsetsAnimation.Bounds bounds) {
+        public static @NonNull Insets getHigherBounds(
+                WindowInsetsAnimation.@NonNull Bounds bounds) {
             return Insets.toCompatInsets(bounds.getUpperBound());
         }
     }

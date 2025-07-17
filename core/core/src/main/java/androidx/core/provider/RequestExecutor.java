@@ -20,9 +20,10 @@ import android.os.Handler;
 import android.os.Process;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -59,7 +60,7 @@ class RequestExecutor {
 
     static <T> T submit(
             @NonNull ExecutorService executor,
-            @NonNull final Callable<T> callable,
+            final @NonNull Callable<T> callable,
             @IntRange(from = 0) int timeoutMillis
     ) throws InterruptedException {
         Future<T> future = executor.submit(callable);

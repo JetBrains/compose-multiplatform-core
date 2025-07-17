@@ -24,9 +24,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.tracing.Trace;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,14 +57,11 @@ public final class AppInitializer {
      */
     private static final Object sLock = new Object();
 
-    @NonNull
-    final Map<Class<?>, Object> mInitialized;
+    final @NonNull Map<Class<?>, Object> mInitialized;
 
-    @NonNull
-    final Set<Class<? extends Initializer<?>>> mDiscovered;
+    final @NonNull Set<Class<? extends Initializer<?>>> mDiscovered;
 
-    @NonNull
-    final Context mContext;
+    final @NonNull Context mContext;
 
     /**
      * Creates an instance of {@link AppInitializer}
@@ -80,9 +78,8 @@ public final class AppInitializer {
      * @param context The Application {@link Context}
      * @return The instance of {@link AppInitializer} after initialization.
      */
-    @NonNull
     @SuppressWarnings("UnusedReturnValue")
-    public static AppInitializer getInstance(@NonNull Context context) {
+    public static @NonNull AppInitializer getInstance(@NonNull Context context) {
         if (sInstance == null) {
             synchronized (sLock) {
                 if (sInstance == null) {
@@ -111,9 +108,8 @@ public final class AppInitializer {
      * @param <T>       The instance type being initialized
      * @return The initialized instance
      */
-    @NonNull
     @SuppressWarnings("unused")
-    public <T> T initializeComponent(@NonNull Class<? extends Initializer<T>> component) {
+    public <T> @NonNull T initializeComponent(@NonNull Class<? extends Initializer<T>> component) {
         return doInitialize(component);
     }
 
@@ -128,9 +124,8 @@ public final class AppInitializer {
         return mDiscovered.contains(component);
     }
 
-    @NonNull
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-    <T> T doInitialize(@NonNull Class<? extends Initializer<?>> component) {
+    <T> @NonNull T doInitialize(@NonNull Class<? extends Initializer<?>> component) {
         Object result;
         synchronized (sLock) {
             result = mInitialized.get(component);
@@ -141,9 +136,8 @@ public final class AppInitializer {
         return (T) result;
     }
 
-    @NonNull
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-    private <T> T doInitialize(
+    private <T> @NonNull T doInitialize(
             @NonNull Class<? extends Initializer<?>> component,
             @NonNull Set<Class<?>> initializing) {
         boolean isTracingEnabled = Trace.isEnabled();

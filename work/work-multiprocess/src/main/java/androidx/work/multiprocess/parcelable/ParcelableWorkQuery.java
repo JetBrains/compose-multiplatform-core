@@ -23,10 +23,11 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkInfo;
 import androidx.work.WorkQuery;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,8 +79,7 @@ public class ParcelableWorkQuery implements Parcelable {
                 .build();
     }
 
-    @NonNull
-    public WorkQuery getWorkQuery() {
+    public @NonNull WorkQuery getWorkQuery() {
         return mWorkQuery;
     }
 

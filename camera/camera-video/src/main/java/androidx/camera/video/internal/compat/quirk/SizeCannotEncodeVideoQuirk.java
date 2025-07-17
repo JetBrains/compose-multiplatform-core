@@ -25,10 +25,11 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,8 +54,7 @@ public class SizeCannotEncodeVideoQuirk implements Quirk {
         return "motorola".equalsIgnoreCase(Build.BRAND) && "moto c".equalsIgnoreCase(Build.MODEL);
     }
 
-    @NonNull
-    private static Set<Size> getProblematicSizes() {
+    private static @NonNull Set<Size> getProblematicSizes() {
         if (isMotoC()) {
             return new HashSet<>(singletonList(new Size(720, 1280)));
         }
@@ -75,9 +75,9 @@ public class SizeCannotEncodeVideoQuirk implements Quirk {
      * @param videoEncoderInfo        the video encoder info.
      * @return the adjusted crop rect.
      */
-    @NonNull
-    public Rect adjustCropRectForProblematicEncodeSize(@NonNull Rect cropRectWithoutRotation,
-            int rotationDegrees, @Nullable VideoEncoderInfo videoEncoderInfo) {
+    public @NonNull Rect adjustCropRectForProblematicEncodeSize(
+            @NonNull Rect cropRectWithoutRotation, int rotationDegrees,
+            @Nullable VideoEncoderInfo videoEncoderInfo) {
         Size sizeToEncode = rotateSize(rectToSize(cropRectWithoutRotation), rotationDegrees);
         if (!isProblematicEncodeSize(sizeToEncode)) {
             return cropRectWithoutRotation;

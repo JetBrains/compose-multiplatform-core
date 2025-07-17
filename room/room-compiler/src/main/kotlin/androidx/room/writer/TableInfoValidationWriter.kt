@@ -18,7 +18,7 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.buildCodeBlock
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.KotlinCollectionMemberNames
 import androidx.room.ext.RoomMemberNames
@@ -44,48 +44,44 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
             val columnListType =
                 CommonTypeNames.MUTABLE_MAP.parametrizedBy(
                     CommonTypeNames.STRING,
-                    RoomTypeNames.TABLE_INFO_COLUMN
+                    RoomTypeNames.TABLE_INFO_COLUMN,
                 )
             addLocalVariable(
                 name = columnListVar,
                 typeName = columnListType,
                 assignExpr =
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                CommonTypeNames.HASH_MAP.parametrizedBy(
-                                    CommonTypeNames.STRING,
-                                    RoomTypeNames.TABLE_INFO_COLUMN
-                                ),
-                                "%L",
-                                entity.fields.size
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_MAP_OF
-                            )
-                    }
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add(
+                                    "new %T(%L)",
+                                    CommonTypeNames.HASH_MAP.parametrizedBy(
+                                        CommonTypeNames.STRING,
+                                        RoomTypeNames.TABLE_INFO_COLUMN,
+                                    ),
+                                    entity.properties.size,
+                                )
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
+                        }
+                    },
             )
-            entity.fields.forEach { field ->
+            entity.properties.forEach { field ->
                 addStatement(
                     "%L.put(%S, %L)",
                     columnListVar,
                     field.columnName,
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.TABLE_INFO_COLUMN,
                         "%S, %S, %L, %L, %S, %T.%L",
                         field.columnName, // name
                         field.affinity?.name ?: SQLTypeAffinity.TEXT.name, // type
                         field.nonNull, // nonNull
-                        entity.primaryKey.fields.indexOf(field) + 1, // pkeyPos
+                        entity.primaryKey.properties.indexOf(field) + 1, // pkeyPos
                         field.defaultValue, // defaultValue
                         RoomTypeNames.TABLE_INFO,
-                        CREATED_FROM_ENTITY // createdFrom
-                    )
+                        CREATED_FROM_ENTITY, // createdFrom
+                    ),
                 )
             }
 
@@ -96,38 +92,34 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
                 name = foreignKeySetVar,
                 typeName = foreignKeySetType,
                 assignExpr =
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                CommonTypeNames.HASH_SET.parametrizedBy(
-                                    RoomTypeNames.TABLE_INFO_FOREIGN_KEY
-                                ),
-                                "%L",
-                                entity.foreignKeys.size
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_SET_OF
-                            )
-                    }
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add(
+                                    "new %T(%L)",
+                                    CommonTypeNames.HASH_SET.parametrizedBy(
+                                        RoomTypeNames.TABLE_INFO_FOREIGN_KEY
+                                    ),
+                                    entity.foreignKeys.size,
+                                )
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
+                        }
+                    },
             )
             entity.foreignKeys.forEach {
                 addStatement(
                     "%L.add(%L)",
                     foreignKeySetVar,
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.TABLE_INFO_FOREIGN_KEY,
                         "%S, %S, %S, %L, %L",
                         it.parentTable, // parent table
                         it.onDelete.sqlName, // on delete
                         it.onUpdate.sqlName, // on update
-                        listOfStrings(it.childFields.map { it.columnName }), // parent names
-                        listOfStrings(it.parentColumns) // parent column names
-                    )
+                        listOfStrings(it.childProperties.map { it.columnName }), // parent names
+                        listOfStrings(it.parentColumns), // parent column names
+                    ),
                 )
             }
 
@@ -138,23 +130,20 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
                 name = indicesSetVar,
                 typeName = indicesType,
                 assignExpr =
-                    when (language) {
-                        CodeLanguage.JAVA ->
-                            XCodeBlock.ofNewInstance(
-                                language,
-                                CommonTypeNames.HASH_SET.parametrizedBy(
-                                    RoomTypeNames.TABLE_INFO_INDEX
-                                ),
-                                "%L",
-                                entity.indices.size
-                            )
-                        CodeLanguage.KOTLIN ->
-                            XCodeBlock.of(
-                                language,
-                                "%M()",
-                                KotlinCollectionMemberNames.MUTABLE_SET_OF
-                            )
-                    }
+                    buildCodeBlock { language ->
+                        when (language) {
+                            CodeLanguage.JAVA ->
+                                add(
+                                    "new %T(%L)",
+                                    CommonTypeNames.HASH_SET.parametrizedBy(
+                                        RoomTypeNames.TABLE_INFO_INDEX
+                                    ),
+                                    entity.indices.size,
+                                )
+                            CodeLanguage.KOTLIN ->
+                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
+                        }
+                    },
             )
             entity.indices.forEach { index ->
                 val orders =
@@ -167,14 +156,13 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
                     "%L.add(%L)",
                     indicesSetVar,
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.TABLE_INFO_INDEX,
                         "%S, %L, %L, %L",
                         index.name, // name
                         index.unique, // unique
                         listOfStrings(index.columnNames), // columns
-                        listOfStrings(orders) // orders
-                    )
+                        listOfStrings(orders), // orders
+                    ),
                 )
             }
 
@@ -183,14 +171,13 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
                 typeName = RoomTypeNames.TABLE_INFO,
                 assignExpr =
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.TABLE_INFO,
                         "%S, %L, %L, %L",
                         entity.tableName,
                         columnListVar,
                         foreignKeySetVar,
-                        indicesSetVar
-                    )
+                        indicesSetVar,
+                    ),
             )
 
             val existingVar = scope.getTmpVar("_existing$suffix")
@@ -200,34 +187,33 @@ class TableInfoValidationWriter(val entity: Entity) : ValidationWriter() {
                 "%M(%L, %S)",
                 RoomMemberNames.TABLE_INFO_READ,
                 connectionParamName,
-                entity.tableName
+                entity.tableName,
             )
 
             beginControlFlow("if (!%L.equals(%L))", expectedInfoVar, existingVar).apply {
                 addStatement(
                     "return %L",
                     XCodeBlock.ofNewInstance(
-                        language,
                         RoomTypeNames.ROOM_OPEN_DELEGATE_VALIDATION_RESULT,
                         "false, %S + %L + %S + %L",
                         "${entity.tableName}(${entity.element.qualifiedName}).\n Expected:\n",
                         expectedInfoVar,
                         "\n Found:\n",
-                        existingVar
-                    )
+                        existingVar,
+                    ),
                 )
             }
             endControlFlow()
         }
     }
 
-    private fun CodeBlockWrapper.listOfStrings(strings: List<String>): XCodeBlock {
+    private fun listOfStrings(strings: List<String>) = buildCodeBlock { language ->
         val placeholders = List(strings.size) { "%S" }.joinToString()
         val function: Any =
             when (language) {
-                CodeLanguage.JAVA -> XCodeBlock.of(language, "%T.asList", CommonTypeNames.ARRAYS)
+                CodeLanguage.JAVA -> XCodeBlock.of("%T.asList", CommonTypeNames.ARRAYS)
                 CodeLanguage.KOTLIN -> "listOf"
             }
-        return XCodeBlock.of(language, "%L($placeholders)", function, *strings.toTypedArray())
+        add("%L($placeholders)", function, *strings.toTypedArray())
     }
 }

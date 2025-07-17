@@ -18,11 +18,11 @@ package androidx.window.demo.embedding
 
 import android.os.Bundle
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.window.demo.R
+import androidx.window.demo.common.EdgeToEdgeActivity
 import androidx.window.embedding.RuleController
 import androidx.window.embedding.SplitAttributes
 import androidx.window.embedding.SplitAttributes.SplitType.Companion.SPLIT_TYPE_EXPAND
@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-open class SplitAttributesToggleActivityBase : AppCompatActivity() {
+open class SplitAttributesToggleActivityBase : EdgeToEdgeActivity() {
     internal lateinit var splitController: SplitController
     internal lateinit var ruleController: RuleController
 
@@ -96,12 +96,7 @@ open class SplitAttributesToggleActivityBase : AppCompatActivity() {
         internal val EXPAND_ATTRS =
             SplitAttributes.Builder().setSplitType(SPLIT_TYPE_EXPAND).build()
         internal val CUSTOMIZED_SPLIT_TYPES_TEXT =
-            arrayOf(
-                "ratio(0.3)",
-                "ratio(0.5)",
-                "ratio(0.7)",
-                "expand",
-            )
+            arrayOf("ratio(0.3)", "ratio(0.5)", "ratio(0.7)", "expand")
         internal val CUSTOMIZED_SPLIT_TYPES_VALUE =
             arrayOf(
                 SplitAttributes.SplitType.ratio(0.3f),

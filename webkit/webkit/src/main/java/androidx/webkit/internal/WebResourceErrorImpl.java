@@ -18,12 +18,12 @@ package androidx.webkit.internal;
 
 import android.webkit.WebResourceError;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.WebResourceErrorCompat;
 
 import org.chromium.support_lib_boundary.WebResourceErrorBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -87,9 +87,8 @@ public class WebResourceErrorImpl extends WebResourceErrorCompat {
         }
     }
 
-    @NonNull
     @Override
-    public CharSequence getDescription() {
+    public @NonNull CharSequence getDescription() {
         final ApiFeature.M feature = WebViewFeatureInternal.WEB_RESOURCE_ERROR_GET_DESCRIPTION;
         if (feature.isSupportedByFramework()) {
             return ApiHelperForM.getDescription(getFrameworksImpl());

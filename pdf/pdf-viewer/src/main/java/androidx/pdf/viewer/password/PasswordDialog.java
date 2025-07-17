@@ -16,12 +16,11 @@
 
 package androidx.pdf.viewer.password;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnShowListener;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -30,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnKeyListener;
+import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -38,31 +38,31 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import androidx.pdf.R;
 import androidx.pdf.util.Accessibility;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputLayout;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Dialog for querying password for a protected file. The dialog has 2 buttons:
  * <ul>
  * <li>Exit, exits the application,
  * <li>Open, tries to open the document with the given password. If this is not successful, the
- *     dialog stays up, and offers to try again (the controller should call {@link #retry}).
- *     If successful, the controller should call {@link #dismiss}.
+ *     dialog stays up, and offers to try again (the controller should call
+ *     {@link #showIncorrectMessage}).If successful, the controller should call {@link #dismiss}.
  * </ul>
  * <p>
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressWarnings("deprecation")
 public abstract class PasswordDialog extends DialogFragment {
-
-    private int mTextDefaultColor;
-    private int mBlueColor;
-    private int mTextErrorColor;
-    private AlertDialog mPasswordDialog;
 
     private boolean mIncorrect;
     private boolean mFinishOnCancel;
@@ -75,11 +75,23 @@ public abstract class PasswordDialog extends DialogFragment {
         this.mFinishOnCancel = finishOnCancel;
     }
 
-    @NonNull
     @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        LayoutInflater inflater = getActivity().getLayoutInflater();
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View rootView = super.onCreateView(inflater, container, savedInstanceState);
+        // Make dialog non-cancellable if required
+        if (getArguments() != null) {
+            setCancelable(getArguments().getBoolean(KEY_CANCELABLE, true));
+        }
+
+        return rootView;
+    }
+
+    @Override
+    public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+        Activity activity = requireActivity();
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_password, null);
         builder.setTitle(R.string.title_dialog_password)
                 .setView(view)
@@ -89,7 +101,7 @@ public abstract class PasswordDialog extends DialogFragment {
 
         dialog.getWindow().setSoftInputMode(LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
 
-        final EditText passwordField = (EditText) view.findViewById(R.id.password);
+        final EditText passwordField = view.findViewById(R.id.password);
         setupPasswordField(passwordField);
 
         // Hijack the positive button to NOT dismiss the dialog immediately.
@@ -97,6 +109,12 @@ public abstract class PasswordDialog extends DialogFragment {
                 new OnShowListener() {
                     @Override
                     public void onShow(DialogInterface useless) {
+                        passwordField.requestFocus();
+                        // getActivity() could be null here, hence added a safety null check
+                        // in showSoftKeyboard. If null, we'll try showing the keyboard from
+                        // onStart() instead.
+                        showSoftKeyboard(passwordField);
+
                         // TODO: Track password prompt displayed.
                         final Button open = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
                         final Button exit = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
@@ -141,16 +159,14 @@ public abstract class PasswordDialog extends DialogFragment {
                                 });
                     }
                 });
-
-        mPasswordDialog = dialog;
         return dialog;
     }
 
     private void setupPasswordField(final EditText passwordField) {
         passwordField.setFocusable(true);
+        passwordField.setFocusableInTouchMode(true);
         passwordField.requestFocus();
-        // Do not expand the text field to full screen when in landscape.
-        passwordField.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        passwordField.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         // Set the open button text with title case.
         String openText = getResources().getString(R.string.button_open);
@@ -162,6 +178,10 @@ public abstract class PasswordDialog extends DialogFragment {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_ENTER) {
                     sendPassword(passwordField);
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    showErrorOnDialogCancel();
                     return true;
                 }
                 return false;
@@ -184,23 +204,15 @@ public abstract class PasswordDialog extends DialogFragment {
     @Override
     public void onStart() {
         super.onStart();
-        mTextDefaultColor = getResources().getColor(R.color.text_default);
-        mTextErrorColor = getResources().getColor(R.color.text_error);
-        mBlueColor = getResources().getColor(R.color.google_blue);
-
         EditText textField = (EditText) getDialog().findViewById(R.id.password);
-        textField.getBackground().setColorFilter(mBlueColor, PorterDuff.Mode.SRC_ATOP);
-
-        mPasswordDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(mBlueColor);
-        mPasswordDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(mBlueColor);
-
         showSoftKeyboard(textField);
     }
 
     private void showSoftKeyboard(View view) {
-        if (view.requestFocus()) {
+        Activity activity = getActivity();
+        if (activity != null && view.requestFocus()) {
             InputMethodManager imm = (InputMethodManager)
-                    getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    activity.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
         }
     }
@@ -222,44 +234,28 @@ public abstract class PasswordDialog extends DialogFragment {
     public abstract void showErrorOnDialogCancel();
 
     /** The given password didn't work, perhaps try again? */
-    public void retry() {
-        // TODO: Track incorrect password input.
+    public void showIncorrectMessage() {
+
         mIncorrect = true;
-        EditText textField = (EditText) getDialog().findViewById(R.id.password);
+        Dialog passwordDialog = getDialog();
+        EditText textField = passwordDialog.findViewById(R.id.password);
         textField.selectAll();
 
-        swapBackground(textField, false);
-        textField.getBackground().setColorFilter(mTextErrorColor, PorterDuff.Mode.SRC_ATOP);
-
-        TextView label = (TextView) getDialog().findViewById(R.id.label);
-        label.setText(R.string.label_password_incorrect);
-        label.setTextColor(mTextErrorColor);
-
-        Accessibility.get().announce(getActivity(), getDialog().getCurrentFocus(),
+        Accessibility.get().announce(getActivity(), textField,
                 R.string.desc_password_incorrect_message);
 
-        getDialog().findViewById(R.id.password_alert).setVisibility(View.VISIBLE);
+        TextInputLayout passwordLayout = passwordDialog.findViewById(
+                R.id.pdf_password_layout);
+        passwordLayout.setError(getString(R.string.label_password_incorrect));
+
     }
 
     private void clearIncorrect() {
         mIncorrect = false;
-        TextView label = (TextView) getDialog().findViewById(R.id.label);
-        label.setText(R.string.label_password_first);
-        label.setTextColor(mTextDefaultColor);
-
-        EditText textField = (EditText) getDialog().findViewById(R.id.password);
-        swapBackground(textField, true);
-
-        getDialog().findViewById(R.id.password_alert).setVisibility(View.GONE);
+        TextInputLayout passwordLayout = (TextInputLayout) getDialog().findViewById(
+                R.id.pdf_password_layout);
+        passwordLayout.setError(null);
     }
 
-    private void swapBackground(EditText textField, boolean reverse) {
-        if (!reverse) {
-            textField.setBackground(
-                    getResources().getDrawable(R.drawable.textfield_default_mtrl_alpha));
-        } else {
-            EditText sample = new EditText(getActivity());
-            textField.setBackground(sample.getBackground());
-        }
-    }
+    public static final String KEY_CANCELABLE = "KeyCancellable";
 }

@@ -20,6 +20,10 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 
+import org.jspecify.annotations.NonNull;
+
+import java.util.List;
+
 /**
  * An object representing a dynamic type that is being prepared for evaluation by {@link
  * DynamicTypeEvaluator#bind}.
@@ -73,4 +77,14 @@ public interface BoundDynamicType extends AutoCloseable {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @VisibleForTesting
     int getDynamicNodeCost();
+
+    /**
+     * Retrieves a list of {@link DynamicTypeAnimator} objects associated with this dynamic type.
+     *
+     * @return A list of {@link DynamicTypeAnimator} objects representing animations within this
+     *     layout. The list may be empty if there are no animations.
+     *     <p>This method is intended for internal use by ui-tooling libraries
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @NonNull List<DynamicTypeAnimator> getAnimations();
 }

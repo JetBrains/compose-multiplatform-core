@@ -18,11 +18,11 @@ package com.example.androidx.widget.selection.single;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.recyclerview.selection.ItemDetailsLookup;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Access to details of an item associated with a {@link MotionEvent} instance.
@@ -37,7 +37,7 @@ final class DemoDetailsLookup extends ItemDetailsLookup<Long> {
 
     @Override
     public ItemDetails<Long> getItemDetails(@NonNull MotionEvent e) {
-        @Nullable View view = mRecView.findChildViewUnder(e.getX(), e.getY());
+        View view = mRecView.findChildViewUnder(e.getX(), e.getY());
         if (view != null) {
             ViewHolder holder = mRecView.getChildViewHolder(view);
             if (holder instanceof DemoHolder) {

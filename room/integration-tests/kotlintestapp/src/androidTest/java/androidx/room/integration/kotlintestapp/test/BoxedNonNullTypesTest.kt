@@ -27,7 +27,6 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.integration.kotlintestapp.RoomTestConfig
 import androidx.room.integration.kotlintestapp.assumeKsp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -59,7 +58,7 @@ class BoxedNonNullTypesTest {
         db =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    MyDb::class.java
+                    MyDb::class.java,
                 )
                 .build()
     }
@@ -138,14 +137,6 @@ class BoxedNonNullTypesTest {
 
     @Test // repro for: b/211822920
     fun getAsRx2ObservableUnknownNullabilityInCursor() {
-        if (RoomTestConfig.isKsp) {
-            // only in KSP we know the value is non-null, hence default to 0.
-            // in RX, it would generate code that would return null and get filtered by RxRoom
-            // Even though this becomes inconsistent between KSP and KAPT, the KSP path is more
-            // consistent with the non-observable version of the query.
-            assertThat(db.myDao().getAsRx2ObservableUnknownTypeInCursor().blockingFirst())
-                .isEqualTo(0L)
-        }
         db.myDao().insert(MyEntity(9))
         assertThat(db.myDao().getAsRx2ObservableUnknownTypeInCursor().blockingFirst()).isEqualTo(9L)
     }
@@ -181,22 +172,15 @@ class BoxedNonNullTypesTest {
         assertThat(db.myDao().getAsNullableListenableFuture().get()).isEqualTo(null)
     }
 
-    @Entity
-    data class MyEntity(
-        val value: Long,
-        @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    )
+    @Entity data class MyEntity(val value: Long, @PrimaryKey(autoGenerate = true) val id: Int = 0)
 
     @Entity
-    data class MyNullableEntity(
-        val value: Long?,
-        @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    )
+    data class MyNullableEntity(val value: Long?, @PrimaryKey(autoGenerate = true) val id: Int = 0)
 
     @Database(
         entities = [MyEntity::class, MyNullableEntity::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     abstract class MyDb : RoomDatabase() {
         abstract fun myDao(): MyDao

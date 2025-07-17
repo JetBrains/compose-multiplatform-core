@@ -34,7 +34,7 @@ public class CyclingPedalingCadenceRecord(
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val samples: List<Sample>,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : SeriesRecord<CyclingPedalingCadenceRecord.Sample> {
 
     init {
@@ -69,6 +69,10 @@ public class CyclingPedalingCadenceRecord(
         result = 31 * result + samples.hashCode()
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "CyclingPedalingCadenceRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
     }
 
     companion object {
@@ -132,6 +136,10 @@ public class CyclingPedalingCadenceRecord(
             var result = time.hashCode()
             result = 31 * result + revolutionsPerMinute.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, revolutionsPerMinute=$revolutionsPerMinute)"
         }
     }
 }

@@ -25,12 +25,12 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
+import androidx.benchmark.junit4.measureRepeatedOnMainThread
 import androidx.metrics.performance.FrameData
 import androidx.metrics.performance.JankStats
 import androidx.metrics.performance.JankStatsInternalsForTesting
 import androidx.metrics.performance.PerformanceMetricsState
 import androidx.metrics.performance.benchmark.test.R
-import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -76,26 +76,25 @@ class JankStatsBenchmark {
         }
     }
 
-    @UiThreadTest
     @Test
     fun setNewState() {
         var iteration = 0
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             iteration++
             metricsStateHolder.state?.putState("Activity$iteration", "activity")
         }
     }
 
-    @UiThreadTest
     @Test
     fun setStateOverAndOver() {
-        benchmarkRule.measureRepeated { metricsStateHolder.state?.putState("Activity", "activity") }
+        benchmarkRule.measureRepeatedOnMainThread {
+            metricsStateHolder.state?.putState("Activity", "activity")
+        }
     }
 
-    @UiThreadTest
     @Test
     fun setAndRemoveState() {
-        benchmarkRule.measureRepeated {
+        benchmarkRule.measureRepeatedOnMainThread {
             // Simply calling removeState() on the public API is not sufficient for benchmarking
             // allocations, because it will not actually be removed until later, when JankStats
             // issues data for a frame after the time the state was removed. Thus we call
@@ -119,7 +118,7 @@ class JankStatsBenchmark {
             activityRule: androidx.test.rule.ActivityTestRule<MainActivity>,
             benchmarkRule: BenchmarkRule,
             textview: TextView,
-            jankStatsImpl: JankStatsInternalsForTesting
+            jankStatsImpl: JankStatsInternalsForTesting,
         ) {
             var frameMetrics: FrameMetrics? = null
             val frameMetricsLatch = CountDownLatch(1)
@@ -135,7 +134,7 @@ class JankStatsBenchmark {
             activityRule.runOnUiThread {
                 activityRule.activity.window.addOnFrameMetricsAvailableListener(
                     listener,
-                    Handler(thread.looper)
+                    Handler(thread.looper),
                 )
                 textview.invalidate()
             }

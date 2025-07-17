@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
+@file:OptIn(ExperimentalMaterialApi::class)
 
 package androidx.compose.foundation.demos.contextmenu
 
 import android.widget.EditText
 import android.widget.TextView
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement.spacedBy
@@ -100,7 +99,7 @@ internal fun TextContextMenusDemo() {
             LabeledItem("BTF1 Password") {
                 MyTextFieldOne(
                     initialText = "Basic Text Field One",
-                    visualTransformation = PasswordVisualTransformation()
+                    visualTransformation = PasswordVisualTransformation(),
                 )
             }
 
@@ -131,7 +130,7 @@ internal fun TextContextMenusDemo() {
                             enabled = true,
                             singleLine = false,
                             visualTransformation = VisualTransformation.None,
-                            interactionSource = interactionSource
+                            interactionSource = interactionSource,
                         )
                     },
                 )
@@ -212,7 +211,7 @@ private fun MyTextFieldOne(
                 enabled = enabled,
                 singleLine = false,
                 visualTransformation = VisualTransformation.None,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         },
     )
@@ -243,7 +242,7 @@ private fun MyTextFieldTwo(
                 enabled = enabled,
                 singleLine = false,
                 visualTransformation = VisualTransformation.None,
-                interactionSource = interactionSource
+                interactionSource = interactionSource,
             )
         },
     )

@@ -32,8 +32,8 @@ import org.gradle.kotlin.dsl.named
 
 /** Allow java and Android libraries to bundle other projects inside the project jar/aar. */
 object BundleInsideHelper {
-    val CONFIGURATION_NAME = "bundleInside"
-    val REPACKAGE_TASK_NAME = "repackageBundledJars"
+    const val CONFIGURATION_NAME = "bundleInside"
+    const val REPACKAGE_TASK_NAME = "repackageBundledJars"
 
     /**
      * Creates a configuration for the users to use that will be used to bundle these dependency
@@ -115,20 +115,20 @@ object BundleInsideHelper {
         testImplementation.extendsFrom(bundle)
 
         // Relocation needed to avoid classpath conflicts with Android Studio (b/337980250)
-        // Can be removed if we migrate from using kotlinx-metadata-jvm inside of lint checks
-        val relocations = listOf(Relocation("kotlinx.metadata", "androidx.lint.kotlinx.metadata"))
+        // Can be removed if we migrate from using kotlin-metadata-jvm inside of lint checks
+        val relocations = listOf(Relocation("kotlin.metadata", "androidx.lint.kotlin.metadata"))
         val repackage = configureRepackageTaskForType(relocations, bundle, null)
         val sourceSets = extensions.getByType(SourceSetContainer::class.java)
         repackage.configure { task ->
             task.from(sourceSets.findByName("main")?.output)
-            // kotlinx-metadata-jvm has a service descriptor that needs transformation
+            // kotlin-metadata-jvm has a service descriptor that needs transformation
             task.mergeServiceFiles()
-            // Exclude Kotlin metadata files from kotlinx-metadata-jvm
+            // Exclude Kotlin metadata files from kotlin-metadata-jvm
             task.exclude(
-                "META-INF/kotlinx-metadata-jvm.kotlin_module",
-                "META-INF/kotlinx-metadata.kotlin_module",
+                "META-INF/kotlin-metadata-jvm.kotlin_module",
+                "META-INF/kotlin-metadata.kotlin_module",
                 "META-INF/metadata.jvm.kotlin_module",
-                "META-INF/metadata.kotlin_module"
+                "META-INF/metadata.kotlin_module",
             )
         }
 
@@ -145,7 +145,7 @@ object BundleInsideHelper {
     private fun Project.configureRepackageTaskForType(
         relocations: List<Relocation>?,
         configuration: Configuration,
-        dropResourcesWithSuffix: String?
+        dropResourcesWithSuffix: String?,
     ): TaskProvider<ShadowJar> {
         return tasks.register(REPACKAGE_TASK_NAME, ShadowJar::class.java) { task ->
             task.apply {
@@ -168,8 +168,11 @@ object BundleInsideHelper {
     private fun Project.createBundleConfiguration(): Configuration {
         val bundle =
             configurations.create(CONFIGURATION_NAME) {
-                it.attributes {
-                    it.attribute(Usage.USAGE_ATTRIBUTE, objects.named<Usage>(Usage.JAVA_RUNTIME))
+                it.attributes { attributes ->
+                    attributes.attribute(
+                        Usage.USAGE_ATTRIBUTE,
+                        objects.named<Usage>(Usage.JAVA_RUNTIME),
+                    )
                 }
                 it.isCanBeConsumed = false
             }

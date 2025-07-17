@@ -18,8 +18,9 @@ package androidx.work.multiprocess;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * @param <T> The remote interface subtype that usually implements {@link android.os.IBinder}.

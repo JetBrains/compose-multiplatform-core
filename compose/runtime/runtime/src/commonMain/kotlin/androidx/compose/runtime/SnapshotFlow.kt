@@ -41,13 +41,13 @@ import kotlinx.coroutines.withContext
  * usage.
  *
  * @sample androidx.compose.runtime.samples.StateFlowSample
- *
  * @param context [CoroutineContext] to use for collecting.
  */
 @Suppress("StateFlowValueCalledInComposition")
 @Composable
-fun <T> StateFlow<T>.collectAsState(context: CoroutineContext = EmptyCoroutineContext): State<T> =
-    collectAsState(value, context)
+public fun <T> StateFlow<T>.collectAsState(
+    context: CoroutineContext = EmptyCoroutineContext
+): State<T> = collectAsState(value, context)
 
 /**
  * Collects values from this [Flow] and represents its latest value via [State]. Every time there
@@ -55,14 +55,13 @@ fun <T> StateFlow<T>.collectAsState(context: CoroutineContext = EmptyCoroutineCo
  * recomposition of every [State.value] usage.
  *
  * @sample androidx.compose.runtime.samples.FlowWithInitialSample
- *
  * @param initial the value of the state will have until the first flow value is emitted.
  * @param context [CoroutineContext] to use for collecting.
  */
 @Composable
-fun <T : R, R> Flow<T>.collectAsState(
+public fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
-    context: CoroutineContext = EmptyCoroutineContext
+    context: CoroutineContext = EmptyCoroutineContext,
 ): State<R> =
     produceState(initial, this, context) {
         if (context == EmptyCoroutineContext) {
@@ -107,7 +106,7 @@ fun <T : R, R> Flow<T>.collectAsState(
  * produce the same result. It is valid for a state observer to both skip intermediate states as
  * well as run multiple times for the same state and the result should be the same.
  */
-fun <T> snapshotFlow(block: () -> T): Flow<T> = flow {
+public fun <T> snapshotFlow(block: () -> T): Flow<T> = flow {
     // Objects read the last time block was run
     val readSet = MutableScatterSet<Any>()
     val readObserver: (Any) -> Unit = {

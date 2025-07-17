@@ -20,9 +20,10 @@ import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 
@@ -35,8 +36,7 @@ public final class OutputUtil {
     private OutputUtil(){}
 
     /** Gets the absolute path from a Uri. */
-    @Nullable
-    public static String getAbsolutePathFromUri(@NonNull ContentResolver resolver,
+    public static @Nullable String getAbsolutePathFromUri(@NonNull ContentResolver resolver,
             @NonNull Uri contentUri, @NonNull String mediaStoreColumn) {
         Cursor cursor = null;
         try {

@@ -19,6 +19,8 @@ import android.database.Cursor
 import androidx.paging.PagingState
 import androidx.room.RoomDatabase
 import androidx.room.RoomSQLiteQuery
+import androidx.room.paging.CursorSQLiteStatement
+import androidx.sqlite.SQLiteStatement
 
 @Suppress("UNUSED_PARAMETER")
 abstract class RxPagingSource<K : Any, T : Any>(
@@ -34,5 +36,14 @@ abstract class RxPagingSource<K : Any, T : Any>(
         return LoadResult.Invalid()
     }
 
-    protected abstract fun convertRows(cursor: Cursor): List<T>
+    protected open fun convertRows(cursor: Cursor): List<T> {
+        return convertRows(CursorSQLiteStatement(cursor))
+    }
+
+    protected open fun convertRows(statement: SQLiteStatement): List<T> {
+        throw NotImplementedError(
+            "Unexpected call to a function with no implementation that Room is suppose to " +
+                "generate."
+        )
+    }
 }

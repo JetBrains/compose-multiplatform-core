@@ -18,11 +18,12 @@ package androidx.appsearch.app;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.localstorage.LocalStorage;
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 public class AnnotationProcessorLocalTest extends AnnotationProcessorTestBase {
     @Override

@@ -6,17 +6,19 @@ plugins {
 }
 
 android {
-    namespace 'androidx.compose.material3.integration.macrobenchmark.target'
+    namespace = "androidx.compose.material3.integration.macrobenchmark.target"
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileSdk = 35
 }
 
 dependencies {
-    implementation(project(":activity:activity-compose"))
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation(project(":compose:material3:material3"))
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
 }

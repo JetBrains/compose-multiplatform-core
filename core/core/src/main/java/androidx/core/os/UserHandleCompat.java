@@ -19,9 +19,10 @@ package androidx.core.os;
 import android.os.Build;
 import android.os.UserHandle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,10 +34,8 @@ import java.lang.reflect.Method;
  */
 public class UserHandleCompat {
 
-    @Nullable
-    private static Method sGetUserIdMethod;
-    @Nullable
-    private static Constructor<UserHandle> sUserHandleConstructor;
+    private static @Nullable Method sGetUserIdMethod;
+    private static @Nullable Constructor<UserHandle> sUserHandleConstructor;
 
     private UserHandleCompat() {
     }
@@ -44,8 +43,7 @@ public class UserHandleCompat {
     /**
      * Returns the user handle for a given uid.
      */
-    @NonNull
-    public static UserHandle getUserHandleForUid(int uid) {
+    public static @NonNull UserHandle getUserHandleForUid(int uid) {
         if (Build.VERSION.SDK_INT >= 24) {
             return Api24Impl.getUserHandleForUid(uid);
         } else {
@@ -76,8 +74,7 @@ public class UserHandleCompat {
         private Api24Impl() {
         }
 
-        @NonNull
-        static UserHandle getUserHandleForUid(int uid) {
+        static @NonNull UserHandle getUserHandleForUid(int uid) {
             return UserHandle.getUserHandleForUid(uid);
         }
     }

@@ -23,7 +23,6 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.work.Configuration
 import androidx.work.Logger
@@ -32,7 +31,7 @@ import androidx.work.WorkManager
 private val TAG = Logger.tagWithPrefix("ProcessUtils")
 
 /** @return `true` when `WorkManager` is running in the configured app process. */
-fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
+public fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
     val processName = getProcessName(context)
     return if (!configuration.defaultProcessName.isNullOrEmpty()) {
         processName == configuration.defaultProcessName
@@ -68,7 +67,6 @@ private fun getProcessName(context: Context): String? {
 
 @RequiresApi(28)
 private object Api28Impl {
-    @get:DoNotInline
     val processName: String
         get() = Application.getProcessName()
 }

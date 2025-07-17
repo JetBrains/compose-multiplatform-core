@@ -17,81 +17,130 @@
 package androidx.window.embedding
 
 import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Context
-import android.os.IBinder
+import android.os.Bundle
 import androidx.annotation.RestrictTo
 import androidx.core.util.Consumer
 import androidx.window.RequiresWindowSdkExtension
+import androidx.window.embedding.OverlayController.Companion.OVERLAY_FEATURE_VERSION
 import java.util.concurrent.Executor
 
 /**  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface EmbeddingBackend {
-    fun setRules(rules: Set<EmbeddingRule>)
+public interface EmbeddingBackend {
+    public fun setRules(rules: Set<EmbeddingRule>)
 
-    fun getRules(): Set<EmbeddingRule>
+    public fun getRules(): Set<EmbeddingRule>
 
-    fun addRule(rule: EmbeddingRule)
+    public fun addRule(rule: EmbeddingRule)
 
-    fun removeRule(rule: EmbeddingRule)
+    public fun removeRule(rule: EmbeddingRule)
 
-    fun addSplitListenerForActivity(
+    public fun addSplitListenerForActivity(
         activity: Activity,
         executor: Executor,
-        callback: Consumer<List<SplitInfo>>
+        callback: Consumer<List<SplitInfo>>,
     )
 
-    fun removeSplitListenerForActivity(consumer: Consumer<List<SplitInfo>>)
+    public fun removeSplitListenerForActivity(consumer: Consumer<List<SplitInfo>>)
 
-    val splitSupportStatus: SplitController.SplitSupportStatus
+    public val splitSupportStatus: SplitController.SplitSupportStatus
 
-    fun isActivityEmbedded(activity: Activity): Boolean
+    public fun isActivityEmbedded(activity: Activity): Boolean
+
+    @RequiresWindowSdkExtension(5)
+    public fun pinTopActivityStack(taskId: Int, splitPinRule: SplitPinRule): Boolean
+
+    @RequiresWindowSdkExtension(5) public fun unpinTopActivityStack(taskId: Int)
 
     @RequiresWindowSdkExtension(2)
-    fun setSplitAttributesCalculator(
+    public fun setSplitAttributesCalculator(
         calculator: (SplitAttributesCalculatorParams) -> SplitAttributes
     )
 
-    @RequiresWindowSdkExtension(2) fun clearSplitAttributesCalculator()
+    @RequiresWindowSdkExtension(2) public fun clearSplitAttributesCalculator()
 
-    fun getActivityStack(activity: Activity): ActivityStack?
+    public fun getActivityStack(activity: Activity): ActivityStack?
+
+    @RequiresWindowSdkExtension(5)
+    public fun setLaunchingActivityStack(options: Bundle, activityStack: ActivityStack): Bundle
+
+    @RequiresWindowSdkExtension(5)
+    public fun setOverlayCreateParams(
+        options: Bundle,
+        overlayCreateParams: OverlayCreateParams,
+    ): Bundle
+
+    @RequiresWindowSdkExtension(5)
+    public fun finishActivityStacks(activityStacks: Set<ActivityStack>)
+
+    @RequiresWindowSdkExtension(5)
+    public fun setEmbeddingConfiguration(embeddingConfig: EmbeddingConfiguration)
+
+    @RequiresWindowSdkExtension(3) public fun invalidateVisibleActivityStacks()
 
     @RequiresWindowSdkExtension(3)
-    fun setLaunchingActivityStack(options: ActivityOptions, token: IBinder): ActivityOptions
+    public fun updateSplitAttributes(splitInfo: SplitInfo, splitAttributes: SplitAttributes)
 
-    @RequiresWindowSdkExtension(3) fun invalidateTopVisibleSplitAttributes()
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    public fun setOverlayAttributesCalculator(
+        calculator: (OverlayAttributesCalculatorParams) -> OverlayAttributes
+    )
 
-    @RequiresWindowSdkExtension(3)
-    fun updateSplitAttributes(splitInfo: SplitInfo, splitAttributes: SplitAttributes)
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    public fun clearOverlayAttributesCalculator()
 
-    companion object {
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    public fun updateOverlayAttributes(overlayTag: String, overlayAttributes: OverlayAttributes)
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    public fun addOverlayInfoCallback(
+        overlayTag: String,
+        executor: Executor,
+        overlayInfoCallback: Consumer<OverlayInfo>,
+    )
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    public fun removeOverlayInfoCallback(overlayInfoCallback: Consumer<OverlayInfo>)
+
+    @RequiresWindowSdkExtension(6)
+    public fun addEmbeddedActivityWindowInfoCallbackForActivity(
+        activity: Activity,
+        callback: Consumer<EmbeddedActivityWindowInfo>,
+    )
+
+    @RequiresWindowSdkExtension(6)
+    public fun removeEmbeddedActivityWindowInfoCallbackForActivity(
+        callback: Consumer<EmbeddedActivityWindowInfo>
+    )
+
+    public companion object {
 
         private var decorator: (EmbeddingBackend) -> EmbeddingBackend = { it }
 
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        fun getInstance(context: Context): EmbeddingBackend {
+        public fun getInstance(context: Context): EmbeddingBackend {
             return decorator(ExtensionEmbeddingBackend.getInstance(context))
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        fun overrideDecorator(overridingDecorator: EmbeddingBackendDecorator) {
+        public fun overrideDecorator(overridingDecorator: EmbeddingBackendDecorator) {
             decorator = overridingDecorator::decorate
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        fun reset() {
+        public fun reset() {
             decorator = { it }
         }
     }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface EmbeddingBackendDecorator {
+public interface EmbeddingBackendDecorator {
 
     /** Returns an instance of [EmbeddingBackend] */
-    fun decorate(embeddingBackend: EmbeddingBackend): EmbeddingBackend
+    public fun decorate(embeddingBackend: EmbeddingBackend): EmbeddingBackend
 }

@@ -38,6 +38,7 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.StressTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
+import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
@@ -66,13 +67,11 @@ import org.junit.runners.Parameterized
 class OpenCloseCameraStressTest(
     val implName: String,
     val cameraConfig: CameraXConfig,
-    val cameraId: String
+    val cameraId: String,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCamera =
@@ -81,6 +80,8 @@ class OpenCloseCameraStressTest(
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
     @get:Rule val repeatRule = RepeatRule()
+
+    @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -109,7 +110,7 @@ class OpenCloseCameraStressTest(
 
         preview = createPreviewWithDeviceStateMonitor(implName, cameraDeviceStateMonitor)
         withContext(Dispatchers.Main) {
-            preview.setSurfaceProvider(SurfaceTextureProvider.createSurfaceTextureProvider())
+            preview.surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
         }
         imageCapture = ImageCapture.Builder().build()
     }
@@ -138,7 +139,7 @@ class OpenCloseCameraStressTest(
         bindUseCase_unbindAll_toCheckCameraState_repeatedly(
             preview,
             imageCapture,
-            cameraDeviceStateMonitor = cameraDeviceStateMonitor
+            cameraDeviceStateMonitor = cameraDeviceStateMonitor,
         )
     }
 
@@ -152,7 +153,7 @@ class OpenCloseCameraStressTest(
             preview,
             imageCapture,
             imageAnalysis = imageAnalysis,
-            cameraDeviceStateMonitor = cameraDeviceStateMonitor
+            cameraDeviceStateMonitor = cameraDeviceStateMonitor,
         )
     }
 
@@ -164,7 +165,7 @@ class OpenCloseCameraStressTest(
         bindUseCase_unbindAll_toCheckCameraState_repeatedly(
             preview,
             videoCapture = videoCapture,
-            cameraDeviceStateMonitor = cameraDeviceStateMonitor
+            cameraDeviceStateMonitor = cameraDeviceStateMonitor,
         )
     }
 
@@ -178,7 +179,7 @@ class OpenCloseCameraStressTest(
             preview,
             videoCapture = videoCapture,
             imageCapture = imageCapture,
-            cameraDeviceStateMonitor = cameraDeviceStateMonitor
+            cameraDeviceStateMonitor = cameraDeviceStateMonitor,
         )
     }
 
@@ -193,7 +194,7 @@ class OpenCloseCameraStressTest(
             preview,
             videoCapture = videoCapture,
             imageAnalysis = imageAnalysis,
-            cameraDeviceStateMonitor = cameraDeviceStateMonitor
+            cameraDeviceStateMonitor = cameraDeviceStateMonitor,
         )
     }
 
@@ -210,7 +211,7 @@ class OpenCloseCameraStressTest(
         videoCapture: VideoCapture<Recorder>? = null,
         imageAnalysis: ImageAnalysis? = null,
         cameraDeviceStateMonitor: CameraDeviceStateMonitor,
-        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT
+        repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
     ): Unit = runBlocking {
         for (i in 1..repeatCount) {
             cameraDeviceStateMonitor.reset()
@@ -227,7 +228,7 @@ class OpenCloseCameraStressTest(
                     lifecycleOwner,
                     cameraIdCameraSelector,
                     *listOfNotNull(preview, imageCapture, newVideoCapture, imageAnalysis)
-                        .toTypedArray()
+                        .toTypedArray(),
                 )
             }
 
@@ -245,7 +246,7 @@ class OpenCloseCameraStressTest(
     @OptIn(ExperimentalCamera2Interop::class)
     private fun createPreviewWithDeviceStateMonitor(
         implementationName: String,
-        cameraDeviceStateMonitor: CameraDeviceStateMonitor
+        cameraDeviceStateMonitor: CameraDeviceStateMonitor,
     ): Preview {
         val builder = Preview.Builder()
 

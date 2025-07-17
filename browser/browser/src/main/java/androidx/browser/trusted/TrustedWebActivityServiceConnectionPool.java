@@ -25,10 +25,11 @@ import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -62,8 +63,8 @@ public final class TrustedWebActivityServiceConnectionPool {
      * Creates a TrustedWebActivityServiceConnectionPool.
      * @param context A Context used for accessing SharedPreferences.
      */
-    @NonNull
-    public static TrustedWebActivityServiceConnectionPool create(@NonNull Context context) {
+    public static @NonNull TrustedWebActivityServiceConnectionPool create(
+            @NonNull Context context) {
         return new TrustedWebActivityServiceConnectionPool(context);
     }
 
@@ -98,10 +99,9 @@ public final class TrustedWebActivityServiceConnectionPool {
      *         It may be set to an {@link IllegalStateException} if connecting to the Service fails.
      */
     @MainThread
-    @NonNull
     @SuppressWarnings("deprecation") /* AsyncTask */
-    public ListenableFuture<TrustedWebActivityServiceConnection> connect(
-            @NonNull final Uri scope,
+    public @NonNull ListenableFuture<TrustedWebActivityServiceConnection> connect(
+            final @NonNull Uri scope,
             @NonNull Set<Token> possiblePackages,
             @NonNull Executor executor) {
         // If we have an existing connection, use it.
@@ -140,9 +140,8 @@ public final class TrustedWebActivityServiceConnectionPool {
             mConnection = connection;
         }
 
-        @Nullable
         @Override
-        protected Exception doInBackground(Void... voids) {
+        protected @Nullable Exception doInBackground(Void... voids) {
             try {
                 // We can pass newConnection to bindService here on a background thread because
                 // bindService assures us it will use newConnection on the UI thread.

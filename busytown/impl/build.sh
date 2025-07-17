@@ -42,6 +42,7 @@ fi
 
 # record the build start time
 BUILD_START_MARKER="$OUT_DIR/build.sh.start"
+rm -f "$BUILD_START_MARKER"
 touch $BUILD_START_MARKER
 # record the build number
 echo "$BUILD_NUMBER" >> "$OUT_DIR/build_number.log"
@@ -67,38 +68,6 @@ BUILD_STATUS=0
 # enable remote build cache unless explicitly disabled
 if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" ]; then
   export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
-fi
-
-# Make sure that our native dependencies are new enough for KMP/konan
-# If our existing native libraries are newer, then we don't downgrade them because
-# something else (like Bash) might be requiring the newer version.
-function areNativeLibsNewEnoughForKonan() {
-  if [[ "$(uname)" == Darwin* ]]; then
-    # we don't have any Macs having native dependencies too old to build KMP/konan
-    true
-  elif [[ -f /etc/os-release ]]; then
-    . /etc/os-release
-    version=${VERSION_ID//./}  # Remove dots for comparison
-    if (( version >= 2004 )); then
-      true
-    else
-      # on Ubuntu < 20.04 we check whether we have a sufficiently new GLIBCXX
-      gcc --print-file-name=libstdc++.so.6 | xargs readelf -a -W | grep GLIBCXX_3.4.21 >/dev/null
-    fi
-  else
-    true
-  fi
-}
-
-if ! areNativeLibsNewEnoughForKonan; then
-  KONAN_HOST_LIBS="$OUT_DIR/konan-host-libs"
-  LOG="$KONAN_HOST_LIBS.log"
-  if $SCRIPT_DIR/prepare-linux-sysroot.sh "$KONAN_HOST_LIBS" > $LOG 2>$LOG; then
-    export LD_LIBRARY_PATH=$KONAN_HOST_LIBS
-  else
-    cat $LOG >&2
-    exit 1
-  fi
 fi
 
 # list kotlin sessions in case there are several, b/279739438
@@ -144,6 +113,14 @@ fi
 # check that no unexpected modifications were made to the source repository, such as new cache directories
 DIST_DIR=$DIST_DIR $SCRIPT_DIR/verify_no_caches_in_source_repo.sh $BUILD_START_MARKER
 
+# copy problem report to DIST_DIR so we can see them
+PROBLEM_REPORTS_EXPORTED=$DIST_DIR/problem-reports
+PROBLEM_REPORTS=$OUT_DIR/androidx/build/reports/problems
+if [ -d "$PROBLEM_REPORTS" ]; then
+    rm -rf "$PROBLEM_REPORTS_EXPORTED"
+    cp -r "$PROBLEM_REPORTS" "$PROBLEM_REPORTS_EXPORTED"
+fi
+
 # copy configuration cache reports to DIST_DIR so we can see them b/250893051
 CONFIGURATION_CACHE_REPORTS_EXPORTED=$DIST_DIR/configuration-cache-reports
 CONFIGURATION_CACHE_REPORTS=$OUT_DIR/androidx/build/reports/configuration-cache
@@ -151,5 +128,8 @@ if [ -d "$CONFIGURATION_CACHE_REPORTS" ]; then
     rm -rf "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
     cp -r "$CONFIGURATION_CACHE_REPORTS" "$CONFIGURATION_CACHE_REPORTS_EXPORTED"
 fi
+
+# stop Gradle daemon to clean up after ourselves
+./gradlew --stop
 
 exit "$BUILD_STATUS"

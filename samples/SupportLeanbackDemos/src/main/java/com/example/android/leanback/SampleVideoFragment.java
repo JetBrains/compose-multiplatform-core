@@ -17,12 +17,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.session.MediaSessionCompat;
 
-import androidx.annotation.NonNull;
 import androidx.leanback.app.VideoFragmentGlueHost;
 import androidx.leanback.media.MediaPlayerAdapter;
 import androidx.leanback.media.PlaybackGlue;
 import androidx.leanback.media.PlaybackTransportControlGlue;
 import androidx.leanback.widget.PlaybackControlsRow;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Fragment demonstrating the use of {@link androidx.leanback.app.VideoFragment} to

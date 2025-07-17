@@ -16,6 +16,8 @@
 
 package androidx.compose.animation.demos.lookahead
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.animateBounds
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,13 +40,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun LookaheadWithIntrinsicsDemo() {
     Column {
@@ -53,7 +54,7 @@ fun LookaheadWithIntrinsicsDemo() {
             Column {
                 Button(
                     modifier = Modifier.padding(top = 20.dp, bottom = 20.dp),
-                    onClick = { isWide = !isWide }
+                    onClick = { isWide = !isWide },
                 ) {
                     Text("Toggle")
                 }
@@ -66,7 +67,8 @@ fun LookaheadWithIntrinsicsDemo() {
                 ) {
                     Box(
                         Modifier.animateBounds(
-                                if (isWide) Modifier.width(300.dp) else Modifier.width(150.dp)
+                                lookaheadScope = this@LookaheadScope,
+                                if (isWide) Modifier.width(300.dp) else Modifier.width(150.dp),
                             )
                             .height(50.dp)
                             .background(colors[1])
@@ -103,7 +105,7 @@ fun MatchParentDividerForText() {
                 text =
                     "This is a much much much much much much much much much much" +
                         " much much much much much much longer text",
-                modifier = Modifier.fillMaxHeight()
+                modifier = Modifier.fillMaxHeight(),
             )
         }
     }

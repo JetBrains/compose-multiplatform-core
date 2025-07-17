@@ -66,6 +66,15 @@ interface SemanticsModifierNode : DelegatableNode {
         get() = false
 
     /**
+     * Whether this semantics modifier node should be taken into account when computing the bounds
+     * of the corresponding [SemanticsNode]. By default, all nodes are considered important for
+     * computing bounds.
+     */
+    @get:Suppress("GetterSetterNames")
+    val isImportantForBounds: Boolean
+        get() = true
+
+    /**
      * Add semantics key/value pairs to the layout node, for use in testing, accessibility, etc.
      *
      * The [SemanticsPropertyReceiver] provides "key = value"-style setters for any
@@ -83,10 +92,27 @@ interface SemanticsModifierNode : DelegatableNode {
      * simplifies the structure based on [shouldMergeDescendantSemantics] and
      * [shouldClearDescendantSemantics]. For most purposes (especially accessibility, or the testing
      * of accessibility), the merged semantics tree should be used.
+     *
+     * Note: The implementation of [applySemantics] should be used to set semantic properties or
+     * semantic actions. Don't call applySemantics() from within applySemantics(). It will result in
+     * an infinite loop.
      */
     fun SemanticsPropertyReceiver.applySemantics()
 }
 
+/**
+ * Invalidate semantics associated with this node. This will reset the [SemanticsConfiguration]
+ * associated with the layout node backing this modifier node, and will re-calculate it the next
+ * time the [SemanticsConfiguration] is read.
+ *
+ * Semantics are automatically invalidated when backed by mutable state, or if the hierarchy is
+ * recomposed. In these cases [SemanticsModifierNode.applySemantics] is called and the latest
+ * semantics values are applied. However in cases where semantics properties are not backed by
+ * mutable state objects, a change to the semantic property will not trigger
+ * [SemanticsModifierNode.applySemantics]. This function can be used to manually invalidate
+ * semantics to ensure that [SemanticsModifierNode.applySemantics] will be called the next time the
+ * [SemanticsConfiguration] is read.
+ */
 fun SemanticsModifierNode.invalidateSemantics() = requireLayoutNode().invalidateSemantics()
 
 internal val SemanticsConfiguration.useMinimumTouchTarget: Boolean

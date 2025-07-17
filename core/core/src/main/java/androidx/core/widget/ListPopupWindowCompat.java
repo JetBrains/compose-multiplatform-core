@@ -21,8 +21,8 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.ListPopupWindow;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ListPopupWindow}.
@@ -94,8 +94,7 @@ public final class ListPopupWindowCompat {
      */
     @Deprecated
     @androidx.annotation.ReplaceWith(expression = "listPopupWindow.createDragToOpenListener(src)")
-    @Nullable
-    public static OnTouchListener createDragToOpenListener(
+    public static @Nullable OnTouchListener createDragToOpenListener(
             @NonNull ListPopupWindow listPopupWindow, @NonNull View src) {
         return listPopupWindow.createDragToOpenListener(src);
     }

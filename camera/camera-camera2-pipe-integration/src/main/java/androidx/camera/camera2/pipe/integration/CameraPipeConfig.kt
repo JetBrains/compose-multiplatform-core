@@ -25,21 +25,21 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraThreadConfig
 
 /** Convenience class for generating a pre-populated CameraPipe based [CameraXConfig]. */
-class CameraPipeConfig private constructor() {
-    companion object {
+public class CameraPipeConfig private constructor() {
+    public companion object {
         /** Creates a [CameraXConfig] containing a default CameraPipe implementation for CameraX. */
         @JvmStatic
-        fun defaultConfig(): CameraXConfig {
+        public fun defaultConfig(): CameraXConfig {
             return from()
         }
 
         /** Creates a [CameraXConfig] using a pre-existing [CameraPipe] instance. */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
         @JvmStatic
-        fun from(
+        public fun from(
             sharedCameraPipe: CameraPipe? = null,
             sharedAppContext: Context? = null,
-            sharedThreadConfig: CameraThreadConfig? = null
+            sharedThreadConfig: CameraThreadConfig? = null,
         ): CameraXConfig {
             val cameraFactoryProvider =
                 CameraFactoryProvider(sharedCameraPipe, sharedAppContext, sharedThreadConfig)
@@ -47,6 +47,8 @@ class CameraPipeConfig private constructor() {
                 .setCameraFactoryProvider(cameraFactoryProvider)
                 .setDeviceSurfaceManagerProvider(::CameraSurfaceAdapter)
                 .setUseCaseConfigFactoryProvider(::CameraUseCaseAdapter)
+                .setConfigImplType(CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE)
+                .setRepeatingStreamForced(true)
                 .build()
         }
     }

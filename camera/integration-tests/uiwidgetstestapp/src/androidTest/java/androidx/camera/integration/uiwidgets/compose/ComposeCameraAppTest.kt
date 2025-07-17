@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.rule.GrantPermissionRule
 import androidx.testutils.RepeatRule
 import com.google.common.truth.Truth
@@ -59,7 +60,7 @@ class ComposeCameraAppTest {
         // Skip test for b/168175357
         Assume.assumeFalse(
             "Cuttlefish has MediaCodec dequeInput/Output buffer fails issue. Unable to test.",
-            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29
+            Build.MODEL.contains("Cuttlefish") && Build.VERSION.SDK_INT == 29,
         )
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(DEFAULT_LENS_FACING))
 
@@ -69,13 +70,14 @@ class ComposeCameraAppTest {
 
     // Activity launch will render ImageCaptureScreen
     // Ensure that ImageCapture screen's PreviewView is streaming properly
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     @Test
     @RepeatRule.Repeat(times = 10)
     fun testPreviewViewStreamStateOnActivityLaunch() {
         assertStreamState(
             ComposeCameraScreen.ImageCapture,
             PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
+            androidComposeTestRule.activityRule.scenario,
         )
     }
 
@@ -84,19 +86,17 @@ class ComposeCameraAppTest {
     @Test
     @LabTestRule.LabTestOnly
     @RepeatRule.Repeat(times = 10)
+    @SdkSuppress(maxSdkVersion = 33) // b/360867144: Module crashes on API34
     fun testPreviewViewStreamStateOnNavigation() {
 
         // Get VideoCapture Navigation Tab (Node)
         val node =
             androidComposeTestRule.onNode(
-                SemanticsMatcher.expectValue(
-                        SemanticsProperties.Role,
-                        Role.Tab,
-                    )
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
                     .and(
                         SemanticsMatcher.expectValue(
                             SemanticsProperties.ContentDescription,
-                            listOf("VideoCapture")
+                            listOf("VideoCapture"),
                         )
                     )
             )
@@ -108,7 +108,7 @@ class ComposeCameraAppTest {
         assertStreamState(
             ComposeCameraScreen.VideoCapture,
             PreviewView.StreamState.STREAMING,
-            androidComposeTestRule.activityRule.scenario
+            androidComposeTestRule.activityRule.scenario,
         )
     }
 
@@ -127,7 +127,7 @@ class ComposeCameraAppTest {
                 result = async {
                     activity.waitForStreamState(
                         expectedScreen = expectedScreen,
-                        expectedState = expectedState
+                        expectedState = expectedState,
                     )
                 }
             }

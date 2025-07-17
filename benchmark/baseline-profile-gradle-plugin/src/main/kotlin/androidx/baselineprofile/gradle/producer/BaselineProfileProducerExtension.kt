@@ -33,7 +33,7 @@ open class BaselineProfileProducerExtension {
             }
             return project.extensions.create(
                 EXTENSION_NAME,
-                BaselineProfileProducerExtension::class.java
+                BaselineProfileProducerExtension::class.java,
             )
         }
     }
@@ -44,7 +44,7 @@ open class BaselineProfileProducerExtension {
      * managed devices. For example, in the following configuration, the name is `pixel6Api31`.
      *
      * ```
-     *  testOptions.managedDevices.devices {
+     *  testOptions.managedDevices.allDevices {
      *      pixel6Api31(ManagedVirtualDevice) {
      *          device = "Pixel 6"
      *          apiLevel = 31
@@ -60,6 +60,13 @@ open class BaselineProfileProducerExtension {
      * generate a baseline profile, the device is required to be rooted or api level >= 33.
      */
     var useConnectedDevices = true
+
+    /**
+     * Whether tests with Macrobenchmark rule should be skipped when running on emulator. Note that
+     * when `automaticGenerationDuringBuild` is `true` and managed devices are used benchmark will
+     * always run on emulator, causing an exception if this flag is not enabled.
+     */
+    var skipBenchmarksOnEmulator = true
 
     /** Enables the emulator display for GMD devices. This is not a stable api. */
     @Incubating var enableEmulatorDisplay = false

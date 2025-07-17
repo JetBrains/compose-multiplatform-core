@@ -25,7 +25,7 @@ import com.android.tools.lint.detector.api.CURRENT_API
 /** [IssueRegistry] containing runtime-saveable specific lint issues. */
 class RuntimeSaveableIssueRegistry : IssueRegistry() {
     // Tests are run with this version. We ensure that with ApiLintVersionsTest
-    override val api = 14
+    override val api = 16
     override val minApi = CURRENT_API
     override val issues
         get() = listOf(RememberSaveableDetector.RememberSaveableSaverParameter)
@@ -34,6 +34,6 @@ class RuntimeSaveableIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.runtime.saveable",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

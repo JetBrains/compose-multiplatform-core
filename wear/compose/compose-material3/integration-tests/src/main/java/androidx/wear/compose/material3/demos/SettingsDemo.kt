@@ -19,11 +19,8 @@ package androidx.wear.compose.material3.demos
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.Icon
@@ -32,19 +29,13 @@ import androidx.wear.compose.material3.Text
 
 @Composable
 fun SettingsDemo() {
-    // TODO: Add Scaffold and TimeText when available
-    val scalingLazyListState = rememberScalingLazyListState()
-    ScalingLazyColumn(
-        state = scalingLazyListState,
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    ScalingLazyDemo {
         item { ListHeader(modifier = Modifier.fillMaxWidth()) { Text("Settings") } }
         // Connectivity
         item {
             SettingsChip(
                 painterResourceId = R.drawable.ic_settings_connectivity,
-                text = "Connectivity"
+                text = "Connectivity",
             )
         }
         // Display
@@ -59,7 +50,7 @@ fun SettingsDemo() {
         item {
             SettingsChip(
                 painterResourceId = R.drawable.ic_settings_apps,
-                text = "Apps & Notifications"
+                text = "Apps & Notifications",
             )
         }
         // Google
@@ -80,7 +71,7 @@ fun SettingsDemo() {
         item {
             SettingsChip(
                 painterResourceId = R.drawable.ic_settings_health_profile,
-                text = "Health Profile"
+                text = "Health Profile",
             )
         }
         // Location
@@ -91,14 +82,14 @@ fun SettingsDemo() {
         item {
             SettingsChip(
                 painterResourceId = R.drawable.ic_settings_emergency,
-                text = "Safety and Emergency"
+                text = "Safety and Emergency",
             )
         }
         // Accessibility
         item {
             SettingsChip(
                 painterResourceId = R.drawable.ic_settings_accessibility,
-                text = "Accessibility"
+                text = "Accessibility",
             )
         }
         // Security
@@ -117,6 +108,6 @@ private fun SettingsChip(painterResourceId: Int, text: String) {
         modifier = Modifier.fillMaxSize(),
         colors = ButtonDefaults.filledTonalButtonColors(),
         icon = { Icon(painter = painterResource(painterResourceId), contentDescription = text) },
-        label = { Text(text) }
+        label = { Text(text) },
     )
 }

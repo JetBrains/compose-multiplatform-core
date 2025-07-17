@@ -31,9 +31,10 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.preference.DialogPreference;
 import androidx.preference.EditTextPreference;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implemented a dialog to input text.

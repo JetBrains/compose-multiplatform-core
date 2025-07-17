@@ -29,13 +29,14 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.core.ExtendableBuilder;
 import androidx.camera.core.impl.Config;
+
+import org.jspecify.annotations.NonNull;
 
 /** Utilities related to interoperability with the {@link android.hardware.camera2} APIs. */
 @ExperimentalCamera2Interop
@@ -70,9 +71,8 @@ public final class Camera2Interop {
          * @param <ValueT> The type of the value.
          * @return The current Extender.
          */
-        @NonNull
-        public <ValueT> Extender<T> setCaptureRequestOption(
-                @NonNull CaptureRequest.Key<ValueT> key, @NonNull ValueT value) {
+        public <ValueT> @NonNull Extender<T> setCaptureRequestOption(
+                CaptureRequest.@NonNull Key<ValueT> key, @NonNull ValueT value) {
             // Reify the type so we can obtain the class
             Config.Option<Object> opt = Camera2ImplConfig.createCaptureRequestOption(key);
             mBaseBuilder.getMutableConfig().insertOption(opt,
@@ -93,8 +93,7 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @RestrictTo(Scope.LIBRARY)
-        @NonNull
-        public Extender<T> setCaptureRequestTemplate(int templateType) {
+        public @NonNull Extender<T> setCaptureRequestTemplate(int templateType) {
             mBaseBuilder.getMutableConfig().insertOption(TEMPLATE_TYPE_OPTION, templateType);
             return this;
         }
@@ -119,8 +118,7 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @RequiresApi(33)
-        @NonNull
-        public Extender<T> setStreamUseCase(long streamUseCase) {
+        public @NonNull Extender<T> setStreamUseCase(long streamUseCase) {
             mBaseBuilder.getMutableConfig().insertOption(STREAM_USE_CASE_OPTION, streamUseCase);
             return this;
         }
@@ -141,9 +139,8 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        @NonNull
-        public Extender<T> setDeviceStateCallback(
-                @NonNull CameraDevice.StateCallback stateCallback) {
+        public @NonNull Extender<T> setDeviceStateCallback(
+                CameraDevice.@NonNull StateCallback stateCallback) {
             mBaseBuilder.getMutableConfig().insertOption(DEVICE_STATE_CALLBACK_OPTION,
                     stateCallback);
             return this;
@@ -166,9 +163,8 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        @NonNull
-        public Extender<T> setSessionStateCallback(
-                @NonNull CameraCaptureSession.StateCallback stateCallback) {
+        public @NonNull Extender<T> setSessionStateCallback(
+                CameraCaptureSession.@NonNull StateCallback stateCallback) {
             mBaseBuilder.getMutableConfig().insertOption(SESSION_STATE_CALLBACK_OPTION,
                     stateCallback);
             return this;
@@ -193,9 +189,8 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @SuppressLint("ExecutorRegistration")
-        @NonNull
-        public Extender<T> setSessionCaptureCallback(
-                @NonNull CameraCaptureSession.CaptureCallback captureCallback) {
+        public @NonNull Extender<T> setSessionCaptureCallback(
+                CameraCaptureSession.@NonNull CaptureCallback captureCallback) {
             mBaseBuilder.getMutableConfig().insertOption(SESSION_CAPTURE_CALLBACK_OPTION,
                     captureCallback);
             return this;
@@ -222,8 +217,7 @@ public final class Camera2Interop {
          * @return The current Extender.
          */
         @RequiresApi(28)
-        @NonNull
-        public Extender<T> setPhysicalCameraId(@NonNull String cameraId) {
+        public @NonNull Extender<T> setPhysicalCameraId(@NonNull String cameraId) {
             mBaseBuilder.getMutableConfig().insertOption(SESSION_PHYSICAL_CAMERA_ID_OPTION,
                     cameraId);
             return this;

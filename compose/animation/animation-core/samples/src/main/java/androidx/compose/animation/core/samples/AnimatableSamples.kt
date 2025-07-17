@@ -52,7 +52,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
@@ -89,7 +88,7 @@ fun AnimatableAnimateToGenericsType() {
                         // Animates to the pressed position, with the given animation spec.
                         animatedOffset.animateTo(
                             offset,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow)
+                            animationSpec = spring(stiffness = Spring.StiffnessLow),
                         )
                     }
                 }
@@ -102,7 +101,7 @@ fun AnimatableAnimateToGenericsType() {
                     // Use the animated offset as the offset of the Box.
                     IntOffset(
                         animatedOffset.value.x.roundToInt(),
-                        animatedOffset.value.y.roundToInt()
+                        animatedOffset.value.y.roundToInt(),
                     )
                 }
                 .size(40.dp)
@@ -176,7 +175,7 @@ fun AnimatableAnimationResultSample() {
     suspend fun CoroutineScope.animateBouncingOffBounds(
         animatable: Animatable<Offset, *>,
         flingVelocity: Offset,
-        parentSize: Size
+        parentSize: Size,
     ) {
         launch {
             var startVelocity = flingVelocity
@@ -222,14 +221,14 @@ fun AnimatableFadeIn() {
             alphaAnimation.animateTo(
                 targetValue = 1f,
                 // Default animationSpec uses [spring] animation, here we overwrite the default.
-                animationSpec = tween(500)
+                animationSpec = tween(500),
             )
         }
         this.graphicsLayer(alpha = alphaAnimation.value)
     }
 }
 
-@OptIn(ExperimentalAnimatableApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalAnimatableApi::class)
 @Sampled
 @Composable
 fun DeferredTargetAnimationSample() {
@@ -242,7 +241,7 @@ fun DeferredTargetAnimationSample() {
     // completes.
     fun Modifier.animateConstraints(
         sizeAnimation: DeferredTargetAnimation<IntSize, AnimationVector2D>,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
     ) =
         this.approachLayout(
             isMeasurementApproachInProgress = { lookaheadSize ->
@@ -280,9 +279,7 @@ fun DeferredTargetAnimationSample() {
             .animateConstraints(sizeAnimation, coroutineScope)
             .clickable { fullWidth = !fullWidth }
     ) {
-        Box(
-            Modifier.weight(1f).fillMaxHeight().background(Color(0xffff6f69)),
-        )
+        Box(Modifier.weight(1f).fillMaxHeight().background(Color(0xffff6f69)))
         Box(Modifier.weight(2f).fillMaxHeight().background(Color(0xffffcc5c)))
     }
 }

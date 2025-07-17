@@ -17,11 +17,14 @@
 package androidx.camera.core.imagecapture;
 
 import static android.graphics.ImageFormat.JPEG;
+import static android.graphics.ImageFormat.JPEG_R;
+import static android.graphics.ImageFormat.RAW_SENSOR;
 import static android.graphics.ImageFormat.YUV_420_888;
 
 import static androidx.camera.core.ImageCapture.ERROR_UNKNOWN;
 import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor;
 import static androidx.camera.core.internal.utils.ImageUtil.isJpegFormats;
+import static androidx.camera.core.internal.utils.ImageUtil.isRawFormats;
 import static androidx.core.util.Preconditions.checkArgument;
 import static androidx.core.util.Preconditions.checkState;
 
@@ -29,9 +32,8 @@ import static java.util.Objects.requireNonNull;
 
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
+import android.hardware.camera2.CameraCharacteristics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import androidx.camera.core.ImageCapture;
@@ -51,6 +53,10 @@ import androidx.camera.core.processing.Packet;
 
 import com.google.auto.value.AutoValue;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -61,10 +67,13 @@ import java.util.concurrent.Executor;
  */
 public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     private static final String TAG = "ProcessingNode";
-    @NonNull
-    final Executor mBlockingExecutor;
-    @Nullable
-    final InternalImageProcessor mImageProcessor;
+    final @NonNull Executor mBlockingExecutor;
+    final @Nullable InternalImageProcessor mImageProcessor;
+
+    private final @Nullable CameraCharacteristics mCameraCharacteristics;
+
+    @VisibleForTesting
+    @Nullable DngImage2Disk mDngImage2Disk;
 
     private ProcessingNode.In mInputEdge;
     private Operation<InputPacket, Packet<ImageProxy>> mInput2Packet;
@@ -84,18 +93,23 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
      *                         {@link CameraXExecutors#ioExecutor()}
      */
     @VisibleForTesting
-    ProcessingNode(@NonNull Executor blockingExecutor) {
-        this(blockingExecutor, /*imageProcessor=*/null, DeviceQuirks.getAll());
+    ProcessingNode(@NonNull Executor blockingExecutor,
+            @Nullable CameraCharacteristics cameraCharacteristics) {
+        this(blockingExecutor, cameraCharacteristics,
+                /*imageProcessor=*/null, DeviceQuirks.getAll());
     }
 
     @VisibleForTesting
-    ProcessingNode(@NonNull Executor blockingExecutor, @NonNull Quirks quirks) {
-        this(blockingExecutor, /*imageProcessor=*/null, quirks);
+    ProcessingNode(@NonNull Executor blockingExecutor,
+            @NonNull Quirks quirks,
+            @Nullable CameraCharacteristics cameraCharacteristics) {
+        this(blockingExecutor, cameraCharacteristics, /*imageProcessor=*/null, quirks);
     }
 
     ProcessingNode(@NonNull Executor blockingExecutor,
+            @Nullable CameraCharacteristics cameraCharacteristics,
             @Nullable InternalImageProcessor imageProcessor) {
-        this(blockingExecutor, imageProcessor, DeviceQuirks.getAll());
+        this(blockingExecutor, cameraCharacteristics, imageProcessor, DeviceQuirks.getAll());
     }
 
     /**
@@ -104,6 +118,7 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
      * @param imageProcessor   external effect for post-processing.
      */
     ProcessingNode(@NonNull Executor blockingExecutor,
+            @Nullable CameraCharacteristics cameraCharacteristics,
             @Nullable InternalImageProcessor imageProcessor,
             @NonNull Quirks quirks) {
         boolean isLowMemoryDevice = DeviceQuirks.get(LowMemoryQuirk.class) != null;
@@ -113,13 +128,13 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
             mBlockingExecutor = blockingExecutor;
         }
         mImageProcessor = imageProcessor;
+        mCameraCharacteristics = cameraCharacteristics;
         mQuirks = quirks;
         mHasIncorrectJpegMetadataQuirk = quirks.contains(IncorrectJpegMetadataQuirk.class);
     }
 
-    @NonNull
     @Override
-    public Void transform(@NonNull ProcessingNode.In inputEdge) {
+    public @NonNull Void transform(ProcessingNode.@NonNull In inputEdge) {
         mInputEdge = inputEdge;
         // Listen to the input edge.
         inputEdge.getEdge().setListener(
@@ -176,12 +191,20 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     void processInputPacket(@NonNull InputPacket inputPacket) {
         ProcessingRequest request = inputPacket.getProcessingRequest();
         try {
+            // If simultaneous capture RAW + JPEG, only trigger callback when both images
+            // are available and processed.
+            boolean isSimultaneousCaptureEnabled = mInputEdge.getOutputFormats().size() > 1;
             if (inputPacket.getProcessingRequest().isInMemoryCapture()) {
                 ImageProxy result = processInMemoryCapture(inputPacket);
                 mainThreadExecutor().execute(() -> request.onFinalResult(result));
             } else {
                 ImageCapture.OutputFileResults result = processOnDiskCapture(inputPacket);
-                mainThreadExecutor().execute(() -> request.onFinalResult(result));
+                boolean isProcessed =
+                        !isSimultaneousCaptureEnabled || request.getTakePictureRequest()
+                                .isFormatProcessedInSimultaneousCapture();
+                if (isProcessed) {
+                    mainThreadExecutor().execute(() -> request.onFinalResult(result));
+                }
             }
         } catch (ImageCaptureException e) {
             sendError(request, e);
@@ -196,13 +219,16 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
 
     @WorkerThread
     void processPostviewInputPacket(@NonNull InputPacket inputPacket) {
-        int format = mInputEdge.getOutputFormat();
-        checkArgument(format == YUV_420_888 || format == JPEG,
-                String.format("Postview only support YUV and JPEG output formats. "
-                        + "Output format: %s", format));
         ProcessingRequest request = inputPacket.getProcessingRequest();
         try {
             Packet<ImageProxy> image = mInput2Packet.apply(inputPacket);
+            int imageFormat = image.getFormat();
+            checkArgument(
+                    imageFormat == YUV_420_888 || imageFormat == JPEG || imageFormat == JPEG_R,
+                    String.format(
+                            "Postview only supports to convert YUV, JPEG and JPEG_R format image "
+                                    + "to the postview output bitmap. Image format: %s",
+                            imageFormat));
             Bitmap bitmap = mImage2Bitmap.apply(image);
             mainThreadExecutor().execute(() -> request.onPostviewBitmapAvailable(bitmap));
         } catch (Exception e) {
@@ -211,35 +237,109 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         }
     }
 
-    @NonNull
     @WorkerThread
-    ImageCapture.OutputFileResults processOnDiskCapture(@NonNull InputPacket inputPacket)
+    ImageCapture.@NonNull OutputFileResults processOnDiskCapture(@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
-        int format = mInputEdge.getOutputFormat();
-        checkArgument(isJpegFormats(format), String.format("On-disk capture only support JPEG and"
-                + " JPEG/R output formats. Output format: %s", format));
+        List<Integer> outputFormats = mInputEdge.getOutputFormats();
+        checkArgument(!outputFormats.isEmpty());
+        int format = outputFormats.get(0);
+        checkArgument(isJpegFormats(format)
+                || isRawFormats(format),
+                String.format("On-disk capture only support JPEG and"
+                + " JPEG/R and RAW output formats. Output format: %s", format));
         ProcessingRequest request = inputPacket.getProcessingRequest();
+        checkArgument(request.getOutputFileOptions() != null,
+                "OutputFileOptions cannot be empty");
         Packet<ImageProxy> originalImage = mInput2Packet.apply(inputPacket);
-        Packet<byte[]> jpegBytes = mImage2JpegBytes.apply(
-                Image2JpegBytes.In.of(originalImage, request.getJpegQuality()));
-        if (jpegBytes.hasCropping() || mBitmapEffect != null) {
-            jpegBytes = cropAndMaybeApplyEffect(jpegBytes, request.getJpegQuality());
+        boolean isSimultaneousCaptureEnabled = outputFormats.size() > 1;
+        if (isSimultaneousCaptureEnabled) {
+            // If simultaneous capture RAW + JPEG, use the first output file options for RAW and
+            // the second for JPEG.
+            checkArgument(request.getOutputFileOptions() != null
+                            && request.getSecondaryOutputFileOptions() != null,
+                    "The number of OutputFileOptions for simultaneous capture "
+                            + "should be at least two");
+            ImageCapture.OutputFileResults outputFileResults = null;
+            switch (originalImage.getFormat()) {
+                case RAW_SENSOR:
+                    outputFileResults = saveRawToDisk(originalImage,
+                            requireNonNull(request.getOutputFileOptions()));
+                    request.getTakePictureRequest()
+                            .markFormatProcessStatusInSimultaneousCapture(RAW_SENSOR, true);
+                    return outputFileResults;
+                case JPEG:
+                default:
+                    outputFileResults = saveJpegToDisk(originalImage,
+                            requireNonNull(request.getSecondaryOutputFileOptions()),
+                            request.getJpegQuality());
+                    request.getTakePictureRequest()
+                            .markFormatProcessStatusInSimultaneousCapture(JPEG, true);
+                    return outputFileResults;
+            }
+        } else {
+            switch (format) {
+                case RAW_SENSOR:
+                    return saveRawToDisk(originalImage,
+                            requireNonNull(request.getOutputFileOptions()));
+                case JPEG:
+                default:
+                    return saveJpegToDisk(originalImage,
+                            requireNonNull(request.getOutputFileOptions()),
+                            request.getJpegQuality());
+            }
         }
-        return mJpegBytes2Disk.apply(
-                JpegBytes2Disk.In.of(jpegBytes, requireNonNull(request.getOutputFileOptions())));
     }
 
-    @NonNull
+    private ImageCapture.@NonNull OutputFileResults saveRawToDisk(
+            @NonNull Packet<ImageProxy> originalImage,
+            ImageCapture.@NonNull OutputFileOptions outputFileOptions)
+            throws ImageCaptureException {
+
+        if (mDngImage2Disk == null) {
+            if (mCameraCharacteristics == null) {
+                throw new ImageCaptureException(ERROR_UNKNOWN,
+                        "CameraCharacteristics is null, DngCreator cannot be created", null);
+            }
+            if (originalImage.getCameraCaptureResult().getCaptureResult() == null) {
+                throw new ImageCaptureException(ERROR_UNKNOWN,
+                        "CameraCaptureResult is null, DngCreator cannot be created", null);
+            }
+            mDngImage2Disk = new DngImage2Disk(
+                    requireNonNull(mCameraCharacteristics),
+                    requireNonNull(originalImage.getCameraCaptureResult().getCaptureResult()));
+        }
+        return mDngImage2Disk.apply(DngImage2Disk.In.of(
+                originalImage.getData(),
+                originalImage.getRotationDegrees(),
+                requireNonNull(outputFileOptions)));
+    }
+
+    private ImageCapture.@NonNull OutputFileResults saveJpegToDisk(
+            @NonNull Packet<ImageProxy> originalImage,
+            ImageCapture.@NonNull OutputFileOptions outputFileOptions,
+            int jpegQuality) throws ImageCaptureException {
+        Packet<byte[]> jpegBytes = mImage2JpegBytes.apply(
+                Image2JpegBytes.In.of(originalImage, jpegQuality));
+        if (jpegBytes.hasCropping() || mBitmapEffect != null) {
+            jpegBytes = cropAndMaybeApplyEffect(jpegBytes, jpegQuality);
+        }
+        return mJpegBytes2Disk.apply(
+                JpegBytes2Disk.In.of(jpegBytes, requireNonNull(outputFileOptions)));
+    }
+
     @WorkerThread
-    ImageProxy processInMemoryCapture(@NonNull InputPacket inputPacket)
+    @NonNull ImageProxy processInMemoryCapture(@NonNull InputPacket inputPacket)
             throws ImageCaptureException {
         ProcessingRequest request = inputPacket.getProcessingRequest();
         Packet<ImageProxy> image = mInput2Packet.apply(inputPacket);
         // TODO(b/322311893): Update to handle JPEG/R as output format in the if-statement when YUV
         //  to JPEG/R and effect with JPEG/R are supported.
+        List<Integer> outputFormats = mInputEdge.getOutputFormats();
+        checkArgument(!outputFormats.isEmpty());
+        int format = outputFormats.get(0);
+
         if ((image.getFormat() == YUV_420_888 || mBitmapEffect != null
-                || mHasIncorrectJpegMetadataQuirk)
-                && mInputEdge.getOutputFormat() == JPEG) {
+                || mHasIncorrectJpegMetadataQuirk) && (format == JPEG)) {
             Packet<byte[]> jpegBytes = mImage2JpegBytes.apply(
                     Image2JpegBytes.In.of(image, request.getJpegQuality()));
             if (mBitmapEffect != null) {
@@ -247,7 +347,13 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
             }
             image = mJpegBytes2Image.apply(jpegBytes);
         }
-        return mJpegImage2Result.apply(image);
+        ImageProxy imageProxy = mJpegImage2Result.apply(image);
+        boolean isSimultaneousCaptureEnabled = outputFormats.size() > 1;
+        if (isSimultaneousCaptureEnabled) {
+            request.getTakePictureRequest()
+                    .markFormatProcessStatusInSimultaneousCapture(imageProxy.getFormat(), true);
+        }
+        return imageProxy;
     }
 
     /**
@@ -268,9 +374,11 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     /**
      * Sends {@link ImageCaptureException} to {@link TakePictureManager}.
      */
-    private static void sendError(@NonNull ProcessingRequest request,
+    private void sendError(@NonNull ProcessingRequest request,
             @NonNull ImageCaptureException e) {
-        mainThreadExecutor().execute(() -> request.onProcessFailure(e));
+        mainThreadExecutor().execute(() -> {
+            request.onProcessFailure(e);
+        });
     }
 
     /**
@@ -279,11 +387,9 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
     @AutoValue
     abstract static class InputPacket {
 
-        @NonNull
-        abstract ProcessingRequest getProcessingRequest();
+        abstract @NonNull ProcessingRequest getProcessingRequest();
 
-        @NonNull
-        abstract ImageProxy getImageProxy();
+        abstract @NonNull ImageProxy getImageProxy();
 
         static InputPacket of(@NonNull ProcessingRequest processingRequest,
                 @NonNull ImageProxy imageProxy) {
@@ -300,13 +406,13 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         /**
          * Get the main input edge that contains a {@link InputPacket} flow.
          */
-        abstract Edge<InputPacket> getEdge();
+        abstract @NonNull Edge<InputPacket> getEdge();
 
 
         /**
          * Get the postview input edge.
          */
-        abstract Edge<InputPacket> getPostviewEdge();
+        abstract @NonNull Edge<InputPacket> getPostviewEdge();
 
         /**
          * Gets the format of the image in {@link InputPacket}.
@@ -316,14 +422,17 @@ public class ProcessingNode implements Node<ProcessingNode.In, Void> {
         /**
          * The output format of the pipeline.
          *
-         * <p> For public users, only {@link ImageFormat#JPEG} and {@link ImageFormat#JPEG_R} are
-         * supported. Other formats are only used by in-memory capture in tests.
+         * <p> For public users, {@link ImageFormat#JPEG}, {@link ImageFormat#JPEG_R} and
+         * {@link ImageFormat#RAW_SENSOR}} are supported. Other formats are only used by in-memory
+         * capture in tests.
          */
-        abstract int getOutputFormat();
+        @SuppressWarnings("AutoValueImmutableFields")
+        abstract @NonNull List<Integer> getOutputFormats();
 
-        static In of(int inputFormat, int outputFormat) {
+        static In of(int inputFormat,
+                @NonNull List<Integer> outputFormats) {
             return new AutoValue_ProcessingNode_In(new Edge<>(), new Edge<>(),
-                    inputFormat, outputFormat);
+                    inputFormat, outputFormats);
         }
     }
 

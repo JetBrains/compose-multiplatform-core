@@ -28,7 +28,6 @@ import android.os.Build
 import android.os.CancellationSignal
 import android.text.TextUtils
 import android.util.Pair
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -88,7 +87,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                 0 /* SQLiteSession.TRANSACTION_MODE_DEFERRED */,
                 transactionListener,
                 0 /* connectionFlags */,
-                null /* cancellationSignal */
+                null, /* cancellationSignal */
             )
         } else if (transactionListener != null) {
             beginTransactionWithListener(transactionListener)
@@ -193,7 +192,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
             query.sql,
             EMPTY_STRING_ARRAY,
             null,
-            cancellationSignal!!
+            cancellationSignal!!,
         )
     }
 
@@ -221,7 +220,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         conflictAlgorithm: Int,
         values: ContentValues,
         whereClause: String?,
-        whereArgs: Array<out Any?>?
+        whereArgs: Array<out Any?>?,
     ): Int {
         // taken from SQLiteDatabase class.
         require(values.size() != 0) { "Empty values" }
@@ -318,23 +317,22 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
     }
 
     /** Checks if this object delegates to the same given database reference. */
-    fun isDelegate(sqLiteDatabase: SQLiteDatabase): Boolean {
+    internal fun isDelegate(sqLiteDatabase: SQLiteDatabase): Boolean {
         return delegate == sqLiteDatabase
     }
 
     @RequiresApi(30)
     internal object Api30Impl {
-        @DoNotInline
         fun execPerConnectionSQL(
             sQLiteDatabase: SQLiteDatabase,
             sql: String,
-            bindArgs: Array<out Any?>?
+            bindArgs: Array<out Any?>?,
         ) {
             sQLiteDatabase.execPerConnectionSQL(sql, bindArgs)
         }
     }
 
-    companion object {
+    private companion object {
         private val CONFLICT_VALUES =
             arrayOf("", " OR ROLLBACK ", " OR ABORT ", " OR FAIL ", " OR IGNORE ", " OR REPLACE ")
         private val EMPTY_STRING_ARRAY = arrayOfNulls<String>(0)
@@ -360,7 +358,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                             Int::class.java,
                             SQLiteTransactionListener::class.java,
                             Int::class.java,
-                            CancellationSignal::class.java
+                            CancellationSignal::class.java,
                         )
                 } catch (t: Throwable) {
                     null

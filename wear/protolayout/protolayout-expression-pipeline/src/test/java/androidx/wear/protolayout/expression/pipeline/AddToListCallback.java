@@ -16,14 +16,14 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
 public class AddToListCallback<T> implements DynamicTypeValueReceiverWithPreUpdate<T> {
     private final List<T> mListToUpdate;
-    @Nullable private final List<Boolean> mInvalidListToUpdate;
+    private final @Nullable List<Boolean> mInvalidListToUpdate;
 
     private int mPreUpdateCallCounts = 0;
     private int mUpdateCallCount = 0;

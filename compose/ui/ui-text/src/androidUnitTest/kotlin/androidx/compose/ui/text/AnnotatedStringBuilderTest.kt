@@ -21,6 +21,7 @@ import androidx.compose.ui.text.AnnotatedString.Range
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -137,7 +138,7 @@ class AnnotatedStringBuilderTest {
             createAnnotatedString(
                 text = appendedText,
                 color = appendedColor,
-                lineHeight = appendedLineHeight
+                lineHeight = appendedLineHeight,
             )
 
         val buildResult =
@@ -153,8 +154,8 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = SpanStyle(appendedColor),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
         val expectedParagraphStyles =
@@ -163,8 +164,8 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = ParagraphStyle(lineHeight = appendedLineHeight),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
         assertThat(buildResult.text).isEqualTo(expectedString)
@@ -178,14 +179,17 @@ class AnnotatedStringBuilderTest {
         val annotatedString =
             AnnotatedString(
                 text = text,
-                spanStylesOrNull =
-                    listOf(text.inclusiveRangeOf('a', 'a', item = SpanStyle(color = Color.Red))),
-                paragraphStylesOrNull =
-                    listOf(
-                        text.inclusiveRangeOf('a', 'a', item = ParagraphStyle(lineHeight = 20.sp))
-                    ),
                 annotations =
-                    listOf(text.inclusiveRangeOf('a', 'a', item = "prefix", tag = "prefixTag"))
+                    listOf(
+                        text.inclusiveRangeOf('a', 'a', item = SpanStyle(color = Color.Red)),
+                        text.inclusiveRangeOf('a', 'a', item = ParagraphStyle(lineHeight = 20.sp)),
+                        text.inclusiveRangeOf(
+                            'a',
+                            'a',
+                            item = StringAnnotation("prefix"),
+                            tag = "prefixTag",
+                        ),
+                    ),
             )
 
         // We want to test the cross product of the following cases:
@@ -211,17 +215,15 @@ class AnnotatedStringBuilderTest {
             )
         val appendedAnnotations =
             listOf(
-                appendedText.inclusiveRangeOf('b', 'f', item = 1, tag = "tag1"),
-                appendedText.inclusiveRangeOf('c', 'f', item = 2, tag = "tag2"),
-                appendedText.inclusiveRangeOf('b', 'e', item = 3, tag = "tag3"),
-                appendedText.inclusiveRangeOf('c', 'e', item = 4, tag = "tag4"),
+                appendedText.inclusiveRangeOf('b', 'f', item = 1.toAnnotation(), tag = "tag1"),
+                appendedText.inclusiveRangeOf('c', 'f', item = 2.toAnnotation(), tag = "tag2"),
+                appendedText.inclusiveRangeOf('b', 'e', item = 3.toAnnotation(), tag = "tag3"),
+                appendedText.inclusiveRangeOf('c', 'e', item = 4.toAnnotation(), tag = "tag4"),
             )
         val appendedAnnotatedString =
             AnnotatedString(
                 text = appendedText,
-                spanStylesOrNull = appendedSpanStyles,
-                paragraphStylesOrNull = appendedParagraphStyles,
-                annotations = appendedAnnotations
+                annotations = appendedSpanStyles + appendedParagraphStyles + appendedAnnotations,
             )
 
         val buildResult =
@@ -230,7 +232,7 @@ class AnnotatedStringBuilderTest {
                 append(
                     appendedAnnotatedString,
                     start = appendedText.indexOf('c'),
-                    end = appendedText.indexOf('e') + 1
+                    end = appendedText.indexOf('e') + 1,
                 )
                 toAnnotatedString()
             }
@@ -249,37 +251,43 @@ class AnnotatedStringBuilderTest {
                 expectedString.inclusiveRangeOf(
                     'a',
                     'a',
-                    item = ParagraphStyle(lineHeight = 20.sp)
+                    item = ParagraphStyle(lineHeight = 20.sp),
                 ),
                 expectedString.inclusiveRangeOf(
                     'c',
                     'c',
-                    item = ParagraphStyle(lineHeight = 40.sp)
+                    item = ParagraphStyle(lineHeight = 40.sp),
                 ),
                 expectedString.inclusiveRangeOf(
                     'd',
                     'd',
-                    item = ParagraphStyle(lineHeight = 50.sp)
+                    item = ParagraphStyle(lineHeight = 50.sp),
                 ),
-                expectedString.inclusiveRangeOf(
-                    'e',
-                    'e',
-                    item = ParagraphStyle(lineHeight = 60.sp)
-                ),
+                expectedString.inclusiveRangeOf('e', 'e', item = ParagraphStyle(lineHeight = 60.sp)),
             )
-        val expectedAnnotations =
+        val expectedStringAnnotations =
             listOf(
-                expectedString.inclusiveRangeOf('a', 'a', item = "prefix", tag = "prefixTag"),
-                expectedString.inclusiveRangeOf('c', 'e', item = 1, tag = "tag1"),
-                expectedString.inclusiveRangeOf('c', 'e', item = 2, tag = "tag2"),
-                expectedString.inclusiveRangeOf('c', 'e', item = 3, tag = "tag3"),
-                expectedString.inclusiveRangeOf('c', 'e', item = 4, tag = "tag4"),
+                expectedString.inclusiveRangeOf(
+                    'a',
+                    'a',
+                    item = "prefix".toAnnotation(),
+                    tag = "prefixTag",
+                ),
+                expectedString.inclusiveRangeOf('c', 'e', item = 1.toAnnotation(), tag = "tag1"),
+                expectedString.inclusiveRangeOf('c', 'e', item = 2.toAnnotation(), tag = "tag2"),
+                expectedString.inclusiveRangeOf('c', 'e', item = 3.toAnnotation(), tag = "tag3"),
+                expectedString.inclusiveRangeOf('c', 'e', item = 4.toAnnotation(), tag = "tag4"),
             )
 
         assertThat(buildResult.text).isEqualTo(expectedString)
         assertThat(buildResult.spanStyles).isEqualTo(expectedSpanStyles)
         assertThat(buildResult.paragraphStyles).isEqualTo(expectedParagraphStyles)
-        assertThat(buildResult.annotations).isEqualTo(expectedAnnotations)
+        assertThat(
+                buildResult.annotations?.filter {
+                    it.item !is SpanStyle && it.item !is ParagraphStyle
+                }
+            )
+            .isEqualTo(expectedStringAnnotations)
     }
 
     @Test
@@ -297,7 +305,7 @@ class AnnotatedStringBuilderTest {
             createAnnotatedString(
                 text = appendedText,
                 color = appendedColor,
-                lineHeight = appendedLineHeight
+                lineHeight = appendedLineHeight,
             )
 
         val buildResult =
@@ -314,8 +322,8 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = SpanStyle(appendedColor),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
         val expectedParagraphStyles =
@@ -324,8 +332,8 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = ParagraphStyle(lineHeight = appendedLineHeight),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
         assertThat(buildResult.text).isEqualTo(expectedString)
@@ -389,7 +397,7 @@ class AnnotatedStringBuilderTest {
                 append(
                         appendedAnnotatedString as CharSequence,
                         start = appendedText.indexOf('c'),
-                        end = appendedText.indexOf('f') + 1
+                        end = appendedText.indexOf('f') + 1,
                     )
                     .toAnnotatedString()
             }
@@ -401,8 +409,8 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = SpanStyle(appendedColor),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
         val expectedParagraphStyles =
@@ -411,24 +419,36 @@ class AnnotatedStringBuilderTest {
                 Range(
                     item = ParagraphStyle(lineHeight = appendedLineHeight),
                     start = text.length,
-                    end = expectedString.length
-                )
+                    end = expectedString.length,
+                ),
             )
 
-        val expectedAnnotations =
+        val expectedAllAnnotations =
             listOf(
+                Range(item = SpanStyle(color), start = 0, end = text.length),
+                Range(item = ParagraphStyle(lineHeight = lineHeight), start = 0, end = text.length),
+                Range(
+                    item = SpanStyle(appendedColor),
+                    start = text.length,
+                    end = expectedString.length,
+                ),
+                Range(
+                    item = ParagraphStyle(lineHeight = appendedLineHeight),
+                    start = text.length,
+                    end = expectedString.length,
+                ),
                 Range(
                     tag = appendedAnnotationTag,
-                    item = appendedAnnotation,
+                    item = appendedAnnotation.toAnnotation(),
                     start = expectedString.indexOf('d'),
-                    end = expectedString.indexOf('e') + 1
-                )
+                    end = expectedString.indexOf('e') + 1,
+                ),
             )
 
         assertThat(buildResult.text).isEqualTo(expectedString)
         assertThat(buildResult.spanStyles).isEqualTo(expectedSpanStyles)
         assertThat(buildResult.paragraphStyles).isEqualTo(expectedParagraphStyles)
-        assertThat(buildResult.annotations).isEqualTo(expectedAnnotations)
+        assertThat(buildResult.annotations).isEqualTo(expectedAllAnnotations)
     }
 
     @Test
@@ -474,7 +494,7 @@ class AnnotatedStringBuilderTest {
             arrayOf(
                 SpanStyle(color = Color.Red),
                 SpanStyle(fontStyle = FontStyle.Italic),
-                SpanStyle(fontWeight = FontWeight.Bold)
+                SpanStyle(fontWeight = FontWeight.Bold),
             )
 
         val buildResult =
@@ -534,7 +554,7 @@ class AnnotatedStringBuilderTest {
             arrayOf(
                 SpanStyle(color = Color.Red),
                 SpanStyle(fontStyle = FontStyle.Italic),
-                SpanStyle(fontWeight = FontWeight.Bold)
+                SpanStyle(fontWeight = FontWeight.Bold),
             )
 
         val buildResult =
@@ -562,7 +582,7 @@ class AnnotatedStringBuilderTest {
                 SpanStyle(color = Color.Red),
                 SpanStyle(fontStyle = FontStyle.Italic),
                 SpanStyle(fontWeight = FontWeight.Bold),
-                SpanStyle(letterSpacing = 1.2.em)
+                SpanStyle(letterSpacing = 1.2.em),
             )
 
         val buildResult =
@@ -596,7 +616,7 @@ class AnnotatedStringBuilderTest {
                 SpanStyle(color = Color.Red),
                 SpanStyle(fontStyle = FontStyle.Italic),
                 SpanStyle(fontWeight = FontWeight.Bold),
-                SpanStyle(letterSpacing = 1.2.em)
+                SpanStyle(letterSpacing = 1.2.em),
             )
 
         val buildResult =
@@ -783,12 +803,12 @@ class AnnotatedStringBuilderTest {
         val expectedSpanStyles =
             listOf(
                 Range(spanStyle1, 0, text1.length),
-                Range(spanStyle2, text1.length + 1, expectedString.length)
+                Range(spanStyle2, text1.length + 1, expectedString.length),
             )
         val expectedParagraphStyles =
             listOf(
                 Range(paragraphStyle1, 0, text1.length),
-                Range(paragraphStyle2, text1.length + 1, expectedString.length)
+                Range(paragraphStyle2, text1.length + 1, expectedString.length),
             )
 
         assertThat(buildResult.text).isEqualTo(expectedString)
@@ -1186,10 +1206,89 @@ class AnnotatedStringBuilderTest {
         assertThat(buildResult.getStringAnnotations("another tag", 4, 6)).isEmpty()
     }
 
+    @Test
+    fun pushBullet() {
+        val buildResult = buildAnnotatedString {
+            pushBullet(Bullet.Default)
+            append("text")
+            pop()
+        }
+
+        assertThat(buildResult.text).isEqualTo("text")
+        assertThat(buildResult.annotations).containsExactly(Range(Bullet.Default, 0, 4))
+    }
+
+    @Test
+    fun addBullet() {
+        val buildResult = buildAnnotatedString {
+            append("text text")
+            addBullet(Bullet.Default, 0, 4)
+        }
+
+        assertThat(buildResult.text).isEqualTo("text text")
+        assertThat(buildResult.annotations).containsExactly(Range(Bullet.Default, 0, 4))
+    }
+
+    @Test
+    fun withBulletList_nestedIndentation() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) {
+                append("text")
+                withBulletList(indentation = 5.sp) { append("text") }
+            }
+        }
+
+        // this is not a normalized result
+        assertThat(string.paragraphStyles)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun withBulletListItem_getsSettingsFromList() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) { withBulletListItem { append("text") } }
+        }
+
+        // this is not a normalized result
+        assertThat(string.annotations)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(Bullet.Default, 0, 4),
+            )
+            .inOrder()
+    }
+
+    @Test
+    fun withBulletListItem_nested_getsSettingsFromList() {
+        val string = buildAnnotatedString {
+            withBulletList(indentation = 10.sp) {
+                withBulletListItem { append("text") }
+                withBulletList(indentation = 5.sp) { withBulletListItem { append("text") } }
+            }
+        }
+
+        // this is not a normalized result
+        assertThat(string.annotations)
+            .containsExactly(
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(10.sp, 10.sp)), 0, 4),
+                Range(Bullet.Default, 0, 4),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
+                Range(ParagraphStyle(textIndent = TextIndent(15.sp, 15.sp)), 4, 8),
+                Range(Bullet.Default, 4, 8),
+            )
+            .inOrder()
+    }
+
     private fun createAnnotatedString(
         text: String,
         color: Color = Color.Red,
-        lineHeight: TextUnit = 20.sp
+        lineHeight: TextUnit = 20.sp,
     ): AnnotatedString {
         return AnnotatedString(
             text = text,
@@ -1199,13 +1298,21 @@ class AnnotatedStringBuilderTest {
                     Range(
                         item = ParagraphStyle(lineHeight = lineHeight),
                         start = 0,
-                        end = text.length
+                        end = text.length,
                     )
-                )
+                ),
         )
     }
 
     /** Returns a [Range] from the index of [start] to the index of [end], both inclusive. */
-    private fun <T> String.inclusiveRangeOf(start: Char, end: Char, item: T, tag: String = "") =
-        Range(tag = tag, item = item, start = indexOf(start), end = indexOf(end) + 1)
+    private fun <T : AnnotatedString.Annotation> String.inclusiveRangeOf(
+        start: Char,
+        end: Char,
+        item: T,
+        tag: String = "",
+    ) = Range(tag = tag, item = item, start = indexOf(start), end = indexOf(end) + 1)
+
+    private fun Int.toAnnotation() = StringAnnotation(this.toString())
+
+    private fun String.toAnnotation() = StringAnnotation(this)
 }

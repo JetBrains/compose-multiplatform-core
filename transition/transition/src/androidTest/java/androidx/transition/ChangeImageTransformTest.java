@@ -35,13 +35,13 @@ import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.transition.test.R;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
 import javax.annotation.Nullable;

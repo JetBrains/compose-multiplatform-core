@@ -16,15 +16,14 @@
 
 package androidx.test.uiautomator;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /** An enumeration used to specify the primary direction of certain gestures. */
 public enum Direction {
     LEFT, RIGHT, UP, DOWN;
 
     /** Returns the reverse of the given direction. */
-    @NonNull
-    public static Direction reverse(@NonNull Direction direction) {
+    public static @NonNull Direction reverse(@NonNull Direction direction) {
         switch (direction) {
             case LEFT:
                 return RIGHT;

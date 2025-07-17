@@ -19,7 +19,7 @@ package androidx.camera.extensions.internal.sessionprocessor;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.SessionConfiguration;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -32,14 +32,12 @@ interface Camera2SessionConfig {
      * Returns all the {@link Camera2OutputConfig}s that will be used to create
      * {@link android.hardware.camera2.params.OutputConfiguration}.
      */
-    @NonNull
-    List<Camera2OutputConfig> getOutputConfigs();
+    @NonNull List<Camera2OutputConfig> getOutputConfigs();
 
     /**
      * Gets all the parameters to create the session parameters with.
      */
-    @NonNull
-    Map<CaptureRequest.Key<?>, Object> getSessionParameters();
+    @NonNull Map<CaptureRequest.Key<?>, Object> getSessionParameters();
 
     /**
      * Gets the template id used for creating {@link CaptureRequest}s to be passed in

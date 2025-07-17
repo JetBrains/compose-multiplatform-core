@@ -23,6 +23,9 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.benchmark.Outputs
 import androidx.benchmark.Shell
+import androidx.benchmark.ShellFile
+import androidx.benchmark.UserFile
+import androidx.benchmark.UserInfo
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.perfetto.PerfettoCapture.PerfettoSdkConfig.InitialProcessState
 import androidx.benchmark.perfetto.PerfettoHelper.Companion.isAbiSupported
@@ -57,14 +60,15 @@ public class PerfettoCapture(
         inMemoryTrace("start perfetto") {
             // Write config proto to dir that shell can read
             //     We use `.pb` even with textproto so we'll only ever have one file
-            val configProtoFile = File(Outputs.dirUsableByAppAndShell, "trace_config.pb")
-            try {
-                inMemoryTrace("write config") {
-                    config.writeTo(configProtoFile)
-                    if (Outputs.forceFilesForShellAccessible) {
-                        configProtoFile.setReadable(true, /* ownerOnly= */ false)
-                    }
+            val configProtoFile =
+                if (UserInfo.currentUserId > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    ShellFile.inTempDir("trace_config.pb")
+                } else {
+                    UserFile.inOutputsDir("trace_config.pb")
                 }
+
+            try {
+                inMemoryTrace("write config") { config.writeTo(configProtoFile) }
                 inMemoryTrace("start perfetto process") {
                     helper.startCollecting(configProtoFile.absolutePath, config.isTextProto)
                 }
@@ -79,8 +83,10 @@ public class PerfettoCapture(
      * @param destinationPath Absolute path to write perfetto trace to. Must be shell-writable, such
      *   as result of `context.getExternalFilesDir(null)` or other similar `external` paths.
      */
-    public fun stop(destinationPath: String) =
-        inMemoryTrace("stop perfetto") { helper.stopCollecting(destinationPath) }
+    public fun stop(destinationPath: String, inMemoryTracingLabel: String?) =
+        inMemoryTrace("stop perfetto") {
+            helper.stopCollecting(destinationPath, inMemoryTracingLabel)
+        }
 
     /**
      * Enables Perfetto SDK tracing in the [PerfettoSdkConfig.targetPackage]
@@ -99,7 +105,7 @@ public class PerfettoCapture(
                     InitialProcessState.Alive -> false
                     InitialProcessState.NotAlive -> true
                     InitialProcessState.Unknown -> Shell.isPackageAlive(config.targetPackage)
-                }
+                },
         )
 
     @RequiresApi(30) // TODO(234351579): Support API < 30
@@ -113,7 +119,7 @@ public class PerfettoCapture(
     private fun enableAndroidxTracingPerfetto(
         targetPackage: String,
         provideBinariesIfMissing: Boolean,
-        isColdStartupTracing: Boolean
+        isColdStartupTracing: Boolean,
     ): Pair<Int, String> {
         if (!isAbiSupported()) {
             throw IllegalStateException("Unsupported ABI (${Build.SUPPORTED_ABIS.joinToString()})")
@@ -140,7 +146,7 @@ public class PerfettoCapture(
                     listOf(stdout, stderr)
                         .filter { it.isNotBlank() }
                         .joinToString(separator = System.lineSeparator())
-                }
+                },
             )
 
         // try without supplying external Perfetto SDK tracing binaries
@@ -195,7 +201,7 @@ public class PerfettoCapture(
                         binaryMissingResponseString(
                             responseNoSideloading.requiredVersion,
                             response
-                                .message // note: we're using the error from the sideloading attempt
+                                .message, // note: we're using the error from the sideloading attempt
                         )
                     } else {
                         "Error: ${response.message}."
@@ -224,21 +230,21 @@ public class PerfettoCapture(
             )
 
         val mvTmpFileDstFile = { srcFile: File, dstFile: File ->
-            Shell.executeScriptSilent("mkdir -p ${dstFile.parentFile!!.path}")
-            Shell.executeScriptSilent("mv ${srcFile.path} ${dstFile.path}")
+            Shell.mkdir(dstFile.parentFile!!.path)
+            Shell.mv(srcFile.path, dstFile.path)
         }
 
         return PerfettoSdkHandshake.LibrarySource.apkLibrarySource(
             baseApk,
             Outputs.dirUsableByAppAndShell,
-            mvTmpFileDstFile
+            mvTmpFileDstFile,
         )
     }
 
     class PerfettoSdkConfig(
         val targetPackage: String,
         val processState: InitialProcessState,
-        val provideBinariesIfMissing: Boolean = true
+        val provideBinariesIfMissing: Boolean = true,
     ) {
         /** State of process before tracing begins. */
         enum class InitialProcessState {
@@ -249,7 +255,7 @@ public class PerfettoCapture(
             Alive,
 
             /** trigger cold start vs running tracing based on a check if process is alive */
-            Unknown
+            Unknown,
         }
     }
 }

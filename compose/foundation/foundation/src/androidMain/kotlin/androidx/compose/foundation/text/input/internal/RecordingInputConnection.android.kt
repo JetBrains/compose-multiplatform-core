@@ -32,7 +32,6 @@ import android.view.inputmethod.HandwritingGesture
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputContentInfo
 import android.view.inputmethod.PreviewableHandwritingGesture
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.input.internal.HandwritingGestureApi34.performHandwritingGesture
@@ -72,7 +71,7 @@ internal class RecordingInputConnection(
     val autoCorrect: Boolean,
     val legacyTextFieldState: LegacyTextFieldState? = null,
     val textFieldSelectionManager: TextFieldSelectionManager? = null,
-    val viewConfiguration: ViewConfiguration? = null
+    val viewConfiguration: ViewConfiguration? = null,
 ) : InputConnection {
 
     /** The depth of the batch session. 0 means no session. */
@@ -121,10 +120,7 @@ internal class RecordingInputConnection(
      * This function may emits updateSelection and updateExtractedText to notify IMEs that the text
      * contents has changed if needed.
      */
-    fun updateInputState(
-        state: TextFieldValue,
-        inputMethodManager: InputMethodManager,
-    ) {
+    fun updateInputState(state: TextFieldValue, inputMethodManager: InputMethodManager) {
         if (!isActive) return
 
         if (DEBUG) {
@@ -136,7 +132,7 @@ internal class RecordingInputConnection(
         if (extractedTextMonitorMode) {
             inputMethodManager.updateExtractedText(
                 currentExtractedTextRequestToken,
-                state.toExtractedText()
+                state.toExtractedText(),
             )
         }
 
@@ -154,7 +150,7 @@ internal class RecordingInputConnection(
             state.selection.min,
             state.selection.max,
             compositionStart,
-            compositionEnd
+            compositionEnd,
         )
     }
 
@@ -362,7 +358,7 @@ internal class RecordingInputConnection(
             includeInsertionMarker,
             includeCharacterBounds,
             includeEditorBounds,
-            includeLineBounds
+            includeLineBounds,
         )
         return true
     }
@@ -450,7 +446,7 @@ internal class RecordingInputConnection(
     override fun performHandwritingGesture(
         gesture: HandwritingGesture,
         executor: Executor?,
-        consumer: IntConsumer?
+        consumer: IntConsumer?,
     ) {
         if (DEBUG) {
             logDebug("performHandwritingGestures($gesture, $executor, $consumer)")
@@ -462,7 +458,7 @@ internal class RecordingInputConnection(
                 gesture,
                 viewConfiguration,
                 executor,
-                consumer
+                consumer,
             ) {
                 addEditCommandWithBatch(it)
             }
@@ -471,7 +467,7 @@ internal class RecordingInputConnection(
 
     override fun previewHandwritingGesture(
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         if (DEBUG) {
             logDebug("previewHandwritingGesture($gesture, $cancellationSignal)")
@@ -481,7 +477,7 @@ internal class RecordingInputConnection(
                 legacyTextFieldState,
                 textFieldSelectionManager,
                 gesture,
-                cancellationSignal
+                cancellationSignal,
             )
         }
         return false
@@ -556,7 +552,7 @@ internal class RecordingInputConnection(
     override fun commitContent(
         inputContentInfo: InputContentInfo,
         flags: Int,
-        opts: Bundle?
+        opts: Bundle?,
     ): Boolean = ensureActive {
         if (DEBUG) {
             logDebug("commitContent($inputContentInfo, $flags, $opts)")
@@ -588,7 +584,6 @@ private fun TextFieldValue.toExtractedText(): ExtractedText {
 @RequiresApi(34)
 private object Api34LegacyPerformHandwritingGestureImpl {
 
-    @DoNotInline
     fun performHandwritingGesture(
         legacyTextFieldState: LegacyTextFieldState?,
         textFieldSelectionManager: TextFieldSelectionManager?,
@@ -596,14 +591,14 @@ private object Api34LegacyPerformHandwritingGestureImpl {
         viewConfiguration: ViewConfiguration?,
         executor: Executor?,
         consumer: IntConsumer?,
-        editCommandConsumer: (EditCommand) -> Unit
+        editCommandConsumer: (EditCommand) -> Unit,
     ) {
         val result =
             legacyTextFieldState?.performHandwritingGesture(
                 gesture,
                 textFieldSelectionManager,
                 viewConfiguration,
-                editCommandConsumer
+                editCommandConsumer,
             ) ?: InputConnection.HANDWRITING_GESTURE_RESULT_FAILED
 
         if (consumer == null) return
@@ -614,17 +609,16 @@ private object Api34LegacyPerformHandwritingGestureImpl {
         }
     }
 
-    @DoNotInline
     fun previewHandwritingGesture(
         legacyTextFieldState: LegacyTextFieldState?,
         textFieldSelectionManager: TextFieldSelectionManager?,
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean {
         return legacyTextFieldState?.previewHandwritingGesture(
             gesture,
             textFieldSelectionManager,
-            cancellationSignal
+            cancellationSignal,
         ) ?: false
     }
 }

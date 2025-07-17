@@ -19,7 +19,6 @@ package androidx.compose.ui.graphics
 import android.annotation.SuppressLint
 import android.graphics.Canvas
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -49,19 +48,19 @@ internal object CanvasUtils {
                                 .getDeclaredMethod(
                                     "getDeclaredMethod",
                                     String::class.java,
-                                    arrayOf<Class<*>>()::class.java
+                                    arrayOf<Class<*>>()::class.java,
                                 )
                         reorderBarrierMethod =
                             getDeclaredMethod.invoke(
                                 Canvas::class.java,
                                 "insertReorderBarrier",
-                                emptyArray<Class<*>>()
+                                emptyArray<Class<*>>(),
                             ) as Method?
                         inorderBarrierMethod =
                             getDeclaredMethod.invoke(
                                 Canvas::class.java,
                                 "insertInorderBarrier",
-                                emptyArray<Class<*>>()
+                                emptyArray<Class<*>>(),
                             ) as Method?
                     } else {
                         reorderBarrierMethod =
@@ -93,7 +92,6 @@ internal object CanvasUtils {
 
 @RequiresApi(29)
 private object CanvasZHelper {
-    @DoNotInline
     fun enableZ(canvas: Canvas, enable: Boolean) {
         if (enable) {
             canvas.enableZ()

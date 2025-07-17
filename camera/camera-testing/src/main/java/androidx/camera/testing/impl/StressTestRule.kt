@@ -21,7 +21,7 @@ import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
-class StressTestRule : TestRule {
+public class StressTestRule : TestRule {
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
             override fun evaluate() {
@@ -33,7 +33,7 @@ class StressTestRule : TestRule {
                     (System.currentTimeMillis() - startTime).let { execTime ->
                         Log.i(
                             "StressTestRule",
-                            "StressTestExecutedTest:${description.displayName} ExecutedTime:$execTime"
+                            "StressTestExecutedTest:${description.displayName} ExecutedTime:$execTime",
                         )
                     }
                 }

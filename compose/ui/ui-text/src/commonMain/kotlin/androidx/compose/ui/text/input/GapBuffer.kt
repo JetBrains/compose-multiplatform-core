@@ -18,6 +18,7 @@ package androidx.compose.ui.text.input
 
 import androidx.annotation.RestrictTo
 import androidx.compose.ui.text.InternalTextApi
+import androidx.compose.ui.text.internal.requirePrecondition
 
 /**
  * Like [toCharArray] but copies the entire source string. Workaround for compiler error when giving
@@ -41,7 +42,7 @@ internal expect fun String.toCharArray(
     destination: CharArray,
     destinationOffset: Int,
     startIndex: Int,
-    endIndex: Int
+    endIndex: Int,
 )
 
 /**
@@ -186,8 +187,8 @@ private class GapBuffer(initBuffer: CharArray, initGapStart: Int, initGapEnd: In
      * @param builder The output string builder
      */
     fun append(builder: StringBuilder) {
-        builder.append(buffer, 0, gapStart)
-        builder.append(buffer, gapEnd, capacity - gapEnd)
+        builder.appendRange(buffer, 0, gapStart)
+        builder.appendRange(buffer, gapEnd, capacity)
     }
 
     /**
@@ -238,10 +239,10 @@ class PartialGapBuffer(var text: String) {
      * @param text a text to replace
      */
     fun replace(start: Int, end: Int, text: String) {
-        require(start <= end) {
+        requirePrecondition(start <= end) {
             "start index must be less than or equal to end index: $start > $end"
         }
-        require(start >= 0) { "start must be non-negative, but was $start" }
+        requirePrecondition(start >= 0) { "start must be non-negative, but was $start" }
 
         val buffer = buffer
         if (buffer == null) { // First time to create gap buffer
@@ -259,7 +260,7 @@ class PartialGapBuffer(var text: String) {
                 charArray,
                 charArray.size - rightCopyCount,
                 end,
-                end + rightCopyCount
+                end + rightCopyCount,
             )
 
             // Copy given text into buffer
@@ -269,7 +270,7 @@ class PartialGapBuffer(var text: String) {
                 GapBuffer(
                     charArray,
                     initGapStart = leftCopyCount + text.length,
-                    initGapEnd = charArray.size - rightCopyCount
+                    initGapEnd = charArray.size - rightCopyCount,
                 )
             bufStart = start - leftCopyCount
             bufEnd = end + rightCopyCount

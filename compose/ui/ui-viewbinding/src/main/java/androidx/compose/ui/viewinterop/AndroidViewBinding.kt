@@ -65,7 +65,6 @@ import androidx.viewbinding.ViewBinding
  * improvements.
  *
  * @sample androidx.compose.ui.samples.AndroidViewBindingSample
- *
  * @param factory The block creating the [ViewBinding] to be composed.
  * @param modifier The modifier to be applied to the layout.
  * @param update The callback to be invoked after the layout is inflated and upon recomposition to
@@ -75,7 +74,7 @@ import androidx.viewbinding.ViewBinding
 fun <T : ViewBinding> AndroidViewBinding(
     factory: (inflater: LayoutInflater, parent: ViewGroup, attachToParent: Boolean) -> T,
     modifier: Modifier = Modifier,
-    update: T.() -> Unit = {}
+    update: T.() -> Unit = {},
 ) {
     AndroidViewBinding(factory = factory, modifier = modifier, onReset = null, update = update)
 }
@@ -126,7 +125,6 @@ fun <T : ViewBinding> AndroidViewBinding(
  * by calling the [factory].
  *
  * @sample androidx.compose.ui.samples.AndroidViewBindingReusableSample
- *
  * @param factory The block creating the [ViewBinding] to be composed.
  * @param modifier The modifier to be applied to the layout.
  * @param onReset A callback invoked as a signal that the view is about to be attached to the
@@ -147,7 +145,7 @@ fun <T : ViewBinding> AndroidViewBinding(
     modifier: Modifier = Modifier,
     onReset: (T.() -> Unit)? = null,
     onRelease: T.() -> Unit = {},
-    update: T.() -> Unit = {}
+    update: T.() -> Unit = {},
 ) {
     val localView = LocalView.current
     // Find the parent fragment, if one exists. This will let us ensure that
@@ -194,7 +192,7 @@ fun <T : ViewBinding> AndroidViewBinding(
                 }
             }
         },
-        update = { view -> view.getBinding<T>().update() }
+        update = { view -> view.getBinding<T>().update() },
     )
 }
 
@@ -205,7 +203,7 @@ private fun <T : ViewBinding> View.getBinding(): T = getTag(R.id.binding_referen
 
 private fun forEachFragmentContainerView(
     viewGroup: ViewGroup,
-    action: (FragmentContainerView) -> Unit
+    action: (FragmentContainerView) -> Unit,
 ) {
     if (viewGroup is FragmentContainerView) {
         action(viewGroup)

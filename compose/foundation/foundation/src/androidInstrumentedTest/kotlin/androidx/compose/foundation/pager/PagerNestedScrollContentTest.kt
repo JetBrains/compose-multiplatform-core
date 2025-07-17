@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyList
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
@@ -69,7 +70,6 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config = config) {
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldNotPropagateUnconsumedFlings() {
         // Arrange
@@ -82,10 +82,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 reverseLayout = false,
                 state = rememberLazyListState(),
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -105,7 +106,6 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         assertEquals(pagerState.currentPageOffsetFraction, 0f, 0.01f)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldCancelFlingIfOnEdge() {
         // Arrange
@@ -128,10 +128,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 flingBehavior = flingInspector,
                 state = rememberLazyListState(initialFirstVisibleItemIndex = 8),
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -154,7 +155,6 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         assertThat(pagerState.currentPageOffsetFraction).isNotEqualTo(previousOffset)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldPropagateCrossAxisUnconsumedFlings() {
         // Arrange
@@ -165,7 +165,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     scrollAvailable += available
                     return Offset.Zero
@@ -173,7 +173,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     postFlingVelocity = available
                     return Velocity.Zero
@@ -181,7 +181,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             }
         createPager(
             pageCount = { DefaultPageCount },
-            nestedScrollConnection = dataCapturingConnection
+            nestedScrollConnection = dataCapturingConnection,
         ) {
             LazyList(
                 modifier = Modifier.fillMaxSize(),
@@ -191,10 +191,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 reverseLayout = false,
                 state = rememberLazyListState(),
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -221,7 +222,6 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         assertThat(mainAxisScrollAvailable.absoluteValue).isEqualTo(0f)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldPropagateScrollCorrectly() {
         // Arrange
@@ -235,10 +235,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 reverseLayout = false,
                 state = lazyListState,
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -272,7 +273,6 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         assertThat(pagerState.currentPageOffsetFraction).isEqualTo(0f)
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldEnsurePagerIsSettled_WhenDirectionChanges() {
         // Arrange
@@ -288,10 +288,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 reverseLayout = false,
                 state = lazyListState,
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -333,7 +334,6 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         rule.onNodeWithTag(TestTag).performTouchInput { up() }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
     @Test
     fun nestedScrollContent_shouldEnsurePagerIsSettled_WhenCrossDirectionScrolls() {
         // Arrange
@@ -349,10 +349,11 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 reverseLayout = false,
                 state = lazyListState,
                 userScrollEnabled = true,
+                overscrollEffect = rememberOverscrollEffect(),
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -401,8 +402,10 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         val rowColumnContent: @Composable (Int) -> Unit = { page ->
             repeat(DefaultPageCount) { item ->
                 val columnFocusRequester =
-                    FocusRequester().apply {
-                        if (item == 3 && page == 5) innerListFocusRequester = this
+                    remember(item, page) {
+                        FocusRequester().apply {
+                            if (item == 3 && page == 5) innerListFocusRequester = this
+                        }
                     }
                 Box(
                     modifier =
@@ -414,7 +417,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                             }
                             .size(150.dp)
                             .focusable(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     BasicText(text = "page=$page-item=$item")
                 }
@@ -424,10 +427,12 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             modifier = Modifier.fillMaxSize(),
             pageCount = { DefaultPageCount },
             initialPage = 3,
-            pageSize = { PageSize.Fixed(100.dp) }
+            pageSize = { PageSize.Fixed(100.dp) },
         ) { page ->
             val focusRequester =
-                FocusRequester().apply { if (page == 5) pagerFocusRequester = this }
+                remember(page) {
+                    FocusRequester().apply { if (page == 5) pagerFocusRequester = this }
+                }
             val rowColumnModifier =
                 Modifier.focusRequester(focusRequester).verticalScroll(rememberScrollState())
 
@@ -497,7 +502,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         createPager(
             modifier = Modifier.fillMaxSize(),
             pageCount = { DefaultPageCount },
-            initialPage = 3
+            initialPage = 3,
         ) { page ->
             val focusRequester = remember {
                 FocusRequester().apply { if (page == 5) pagerFocusRequester = this }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// VERSION: v0_32
+// VERSION: v0_103
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.wear.compose.material3.tokens
@@ -22,7 +22,7 @@ package androidx.wear.compose.material3.tokens
 import androidx.compose.ui.unit.dp
 
 internal object ListSubHeaderTokens {
-    val ContentColor = ColorSchemeKeyTokens.OnBackground
-    val ContentTypography = TypographyKeyTokens.TitleMedium
+    val ContentColor = ColorSchemeKeyTokens.OnSurface
+    val ContentTypography = TypographyKeyTokens.TitleSmall
     val Height = 48.0.dp
 }

@@ -114,6 +114,16 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                     orientation = LinearLayout.VERTICAL
                 }
 
+            // Calling setContentView when the window is attached will make the window dispatch
+            // WindowInsets again. To avoid the insets dispatched by window affecting this test,
+            // here:
+            // 1. exits the onActivity scope after calling setContentView,
+            // 2. lets the window dispatch WindowInsets, and then
+            // 3. adds the rest views to viewRoot in the next message.
+            it.setContentView(viewRoot)
+        }
+
+        activityTestRule.scenario.onActivity {
             viewPager =
                 ViewPager2(it).apply {
                     layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f)
@@ -131,8 +141,6 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                 tag = "SIBLING"
                 viewRoot.addView(this)
             }
-
-            it.setContentView(viewRoot)
         }
     }
 
@@ -175,7 +183,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                     "expected: $expectedRecordedSize time\n" +
                     "actual:   ${recordedInsets.size} time(s)",
                 recordedInsets.size,
-                equalTo(expectedRecordedSize)
+                equalTo(expectedRecordedSize),
             )
 
             if (expectInsetsOnAllPages) {
@@ -186,7 +194,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                         "expected: ${recordedInsets[0].systemWindowInsets}\n" +
                         "actual:   ${dispatchedWindowInsets.systemWindowInsets}",
                     recordedInsets[0],
-                    equalTo(dispatchedWindowInsets)
+                    equalTo(dispatchedWindowInsets),
                 )
             }
             // else: no insets recorded, so nothing to check
@@ -205,7 +213,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                 "expected: $expectedRecordedSize time\n" +
                 "actual:   ${siblingInsets.size} time(s)",
             siblingInsets.size,
-            equalTo(expectedRecordedSize)
+            equalTo(expectedRecordedSize),
         )
 
         if (expectInsetsInSibling) {
@@ -216,7 +224,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
                     "expected: ${siblingInsets[0].systemWindowInsets}\n" +
                     "actual:   ${dispatchedWindowInsets.systemWindowInsets}",
                 siblingInsets[0],
-                equalTo(dispatchedWindowInsets)
+                equalTo(dispatchedWindowInsets),
             )
         }
     }
@@ -236,7 +244,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
 
     private inner class FragmentAdapter(
         activity: FragmentActivity,
-        private val consumeInsets: Boolean
+        private val consumeInsets: Boolean,
     ) : FragmentStateAdapter(activity) {
         override fun getItemCount(): Int {
             return numPages
@@ -253,7 +261,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View {
             return InsetsRecordingView(inflater.context, recordedInsets, consumeInsets).apply {
                 layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
@@ -265,7 +273,7 @@ class OnApplyWindowInsetsListenerTest(private val config: TestConfig) {
     private class InsetsRecordingView(
         context: Context,
         private val recordedInsets: MutableList<WindowInsetsCompat>,
-        private val consumeInsets: Boolean
+        private val consumeInsets: Boolean,
     ) : View(context) {
         init {
             ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->

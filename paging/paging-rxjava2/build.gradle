@@ -21,12 +21,13 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -52,14 +53,13 @@ dependencies {
 
 androidx {
     name = "Paging-RXJava2"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Android Paging-RXJava2"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
     samples(project(":paging:paging-samples"))
 }
 
 android {
-    namespace "androidx.paging.rxjava2"
+    namespace = "androidx.paging.rxjava2"
 }

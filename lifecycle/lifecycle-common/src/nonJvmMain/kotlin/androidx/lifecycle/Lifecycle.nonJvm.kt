@@ -20,13 +20,14 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CoroutineScope
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public actual class AtomicReference<V> actual constructor(value: V) {
-    private val delegate = atomic(value)
+public actual class AtomicReference<V> actual constructor(initialValue: V) {
 
-    public actual fun get(): V = delegate.value
+    private val base = atomic(initialValue)
 
-    public actual fun compareAndSet(expect: V, newValue: V): Boolean =
-        delegate.compareAndSet(expect, newValue)
+    public actual fun get(): V = base.value
+
+    public actual fun compareAndSet(expectedValue: V, newValue: V): Boolean =
+        base.compareAndSet(expectedValue, newValue)
 }
 
 public actual abstract class LifecycleCoroutineScope internal actual constructor() :

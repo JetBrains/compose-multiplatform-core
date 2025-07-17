@@ -44,13 +44,13 @@ public class WearNavigator : Navigator<WearNavigator.Destination>() {
     override fun navigate(
         entries: List<NavBackStackEntry>,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ) {
         entries.forEach { entry -> state.pushWithTransition(entry) }
         isPop.value = false
     }
 
-    override fun createDestination() = Destination(this) {}
+    override fun createDestination(): Destination = Destination(this) {}
 
     override fun popBackStack(popUpTo: NavBackStackEntry, savedState: Boolean) {
         state.popWithTransition(popUpTo, savedState)
@@ -74,7 +74,7 @@ public class WearNavigator : Navigator<WearNavigator.Destination>() {
     @NavDestination.ClassType(Composable::class)
     public class Destination(
         navigator: WearNavigator,
-        internal val content: @Composable (NavBackStackEntry) -> Unit
+        internal val content: @Composable (NavBackStackEntry) -> Unit,
     ) : NavDestination(navigator)
 
     internal companion object {

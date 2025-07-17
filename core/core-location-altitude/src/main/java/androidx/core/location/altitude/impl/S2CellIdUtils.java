@@ -16,7 +16,7 @@
 
 package androidx.core.location.altitude.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -117,7 +117,7 @@ final class S2CellIdUtils {
      * <p>Inserts in the order of down, right, up, and left directions, in that order. All
      * neighbors are guaranteed to be distinct.
      */
-    static void getEdgeNeighbors(long s2CellId, @NonNull long[] neighbors) {
+    static void getEdgeNeighbors(long s2CellId, long @NonNull [] neighbors) {
         int level = getLevel(s2CellId);
         int size = levelToSizeIj(level);
         int face = getFace(s2CellId);
@@ -210,8 +210,7 @@ final class S2CellIdUtils {
      * Encodes the S2 cell id to compact text strings suitable for display or indexing. Cells at
      * lower levels (i.e., larger cells) are encoded into fewer characters.
      */
-    @NonNull
-    static String getToken(long s2CellId) {
+    static @NonNull String getToken(long s2CellId) {
         if (s2CellId == 0) {
             return "X";
         }
@@ -425,8 +424,7 @@ final class S2CellIdUtils {
         return 1.0 + machEps;
     }
 
-    @NonNull
-    private static UvTransform[] createUvTransforms() {
+    private static UvTransform @NonNull [] createUvTransforms() {
         UvTransform[] uvTransforms = new UvTransform[NUM_FACES];
         uvTransforms[0] =
                 new UvTransform() {
@@ -509,8 +507,7 @@ final class S2CellIdUtils {
         return uvTransforms;
     }
 
-    @NonNull
-    private static XyzTransform[] createXyzTransforms() {
+    private static XyzTransform @NonNull [] createXyzTransforms() {
         XyzTransform[] xyzTransforms = new XyzTransform[NUM_FACES];
         xyzTransforms[0] =
                 new XyzTransform() {

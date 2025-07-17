@@ -20,8 +20,9 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
 
-import androidx.annotation.Nullable;
 import androidx.camera.core.impl.Quirk;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * <p>QuirkSummary

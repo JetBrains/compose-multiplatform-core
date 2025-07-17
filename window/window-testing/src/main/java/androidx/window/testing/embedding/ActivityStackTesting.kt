@@ -18,9 +18,6 @@
 package androidx.window.testing.embedding
 
 import android.app.Activity
-import android.os.Binder
-import androidx.annotation.RestrictTo
-import androidx.annotation.VisibleForTesting
 import androidx.window.embedding.ActivityStack
 
 /**
@@ -37,12 +34,7 @@ import androidx.window.embedding.ActivityStack
 @Suppress("FunctionName")
 @JvmName("createTestActivityStack")
 @JvmOverloads
-fun TestActivityStack(
+public fun TestActivityStack(
     activitiesInProcess: List<Activity> = emptyList(),
     isEmpty: Boolean = false,
 ): ActivityStack = ActivityStack(activitiesInProcess, isEmpty)
-
-@RestrictTo(RestrictTo.Scope.LIBRARY)
-@VisibleForTesting
-@JvmField
-val TEST_ACTIVITY_STACK_TOKEN = Binder()

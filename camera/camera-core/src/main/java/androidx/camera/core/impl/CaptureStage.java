@@ -16,7 +16,7 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link CaptureConfig} with an identifier.
@@ -29,8 +29,7 @@ public interface CaptureStage {
     /**
      * Returns the configuration for the capture.
      */
-    @NonNull
-    CaptureConfig getCaptureConfig();
+    @NonNull CaptureConfig getCaptureConfig();
 
     /**
      * A capture stage which contains no additional implementation options

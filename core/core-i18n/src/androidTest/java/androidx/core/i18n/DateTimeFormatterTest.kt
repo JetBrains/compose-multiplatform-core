@@ -16,11 +16,9 @@
 
 package androidx.core.i18n
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.core.i18n.DateTimeFormatterSkeletonOptions as SkeletonOptions
-import androidx.core.os.BuildCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -41,7 +39,6 @@ import org.junit.runner.RunWith
 
 /** Must execute on an Android device. */
 @RunWith(AndroidJUnit4::class)
-@SuppressLint("ClassVerificationFailure")
 class DateTimeFormatterTest {
     companion object {
         // Lollipop introduced Locale.toLanguageTag and Locale.forLanguageTag
@@ -206,7 +203,6 @@ class DateTimeFormatterTest {
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = AVAILABLE_LANGUAGE_TAG)
-    @androidx.core.os.BuildCompat.PrereleaseSdkCheck
     // Without `Locale.forLanguageTag` we can't even build a locale with `-u-` extension.
     fun testSystemSupportForExtensionU() {
         val enUsForceH11 = Locale.forLanguageTag("en-US-u-hc-h11")
@@ -223,7 +219,7 @@ class DateTimeFormatterTest {
         // Official bug: https://unicode-org.atlassian.net/browse/ICU-11870
         val expectedUs23 =
             when {
-                BuildCompat.isAtLeastV() -> "21:42:12"
+                Build.VERSION.SDK_INT >= 35 -> "21:42:12"
                 else -> expectedUs
             }
         val expectedUs24: String = expectedUs23
@@ -269,7 +265,7 @@ class DateTimeFormatterTest {
                 DateTimeFormatter(
                     appContext,
                     builder.setHour(SkeletonOptions.Hour.NUMERIC).build(),
-                    locale
+                    locale,
                 )
             // en-US default is h12, but hc forces it to 24
             assertEquals(expectedUs24, formatter.format(testDate))
@@ -278,7 +274,7 @@ class DateTimeFormatterTest {
                 DateTimeFormatter(
                     appContext,
                     builder.setHour(SkeletonOptions.Hour.NUMERIC).build(),
-                    locale
+                    locale,
                 )
             assertEquals(expectedUs12, formatter.format(testDate)) // hc is ignored
         }
@@ -287,7 +283,7 @@ class DateTimeFormatterTest {
             DateTimeFormatter(
                 appContext,
                 builder.setHour(SkeletonOptions.Hour.FORCE_12H_NUMERIC).build(),
-                locale
+                locale,
             )
         assertEquals(expectedUs12, formatter.format(testDate)) // force to h12
 
@@ -295,7 +291,7 @@ class DateTimeFormatterTest {
             DateTimeFormatter(
                 appContext,
                 builder.setHour(SkeletonOptions.Hour.FORCE_24H_NUMERIC).build(),
-                locale
+                locale,
             )
         assertEquals(expectedUs24, formatter.format(testDate)) // force to h12
     }
@@ -386,12 +382,12 @@ class DateTimeFormatterTest {
         dateBc.set(-42, Calendar.SEPTEMBER, 21)
         assertEquals(
             "Sep 43 BC", // There is no year 0, so -42 means 43 BC
-            DateTimeFormatter(appContext, builder.build(), Locale.US).format(dateBc)
+            DateTimeFormatter(appContext, builder.build(), Locale.US).format(dateBc),
         )
 
         assertEquals(
             "Sep 2021 AD",
-            DateTimeFormatter(appContext, builder.build(), Locale.US).format(testDate)
+            DateTimeFormatter(appContext, builder.build(), Locale.US).format(testDate),
         )
 
         assertEquals(
@@ -399,9 +395,9 @@ class DateTimeFormatterTest {
             DateTimeFormatter(
                     appContext,
                     builder.setEra(SkeletonOptions.Era.WIDE).build(),
-                    Locale.US
+                    Locale.US,
                 )
-                .format(testDate)
+                .format(testDate),
         )
     }
 
@@ -417,7 +413,7 @@ class DateTimeFormatterTest {
 
         assertEquals(
             "Sun, September 19, 2021",
-            DateTimeFormatter(appContext, builder.build(), Locale.US).format(testDate)
+            DateTimeFormatter(appContext, builder.build(), Locale.US).format(testDate),
         )
     }
 
@@ -439,7 +435,7 @@ class DateTimeFormatterTest {
             19, // Date
             21,
             42,
-            12
+            12,
         ) // Time
 
         var options = builder.build()
@@ -449,7 +445,7 @@ class DateTimeFormatterTest {
                 isIcuAvailable -> "9:42 PM Mountain Daylight Time"
                 else -> "8:42 PM Pacific Daylight Time"
             },
-            DateTimeFormatter(appContext, options, locale).format(coloradoTime)
+            DateTimeFormatter(appContext, options, locale).format(coloradoTime),
         )
 
         options = builder.setTimezone(SkeletonOptions.Timezone.SHORT).build()
@@ -459,7 +455,7 @@ class DateTimeFormatterTest {
                 isIcuAvailable -> "9:42 PM MDT"
                 else -> "8:42 PM PDT"
             },
-            DateTimeFormatter(appContext, options, locale).format(coloradoTime)
+            DateTimeFormatter(appContext, options, locale).format(coloradoTime),
         )
 
         options = builder.setTimezone(SkeletonOptions.Timezone.SHORT_GENERIC).build()
@@ -469,7 +465,7 @@ class DateTimeFormatterTest {
                 isIcuAvailable -> "9:42 PM MT"
                 else -> "8:42 PM PDT"
             },
-            DateTimeFormatter(appContext, options, locale).format(coloradoTime)
+            DateTimeFormatter(appContext, options, locale).format(coloradoTime),
         )
 
         options = builder.setTimezone(SkeletonOptions.Timezone.SHORT_OFFSET).build()
@@ -479,7 +475,7 @@ class DateTimeFormatterTest {
                 isIcuAvailable -> "9:42 PM GMT-6"
                 else -> "8:42 PM PDT"
             },
-            DateTimeFormatter(appContext, options, locale).format(coloradoTime)
+            DateTimeFormatter(appContext, options, locale).format(coloradoTime),
         )
     }
 

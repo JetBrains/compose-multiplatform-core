@@ -15,7 +15,7 @@ package androidx.leanback.widget;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A PresenterSelector is used to obtain a {@link Presenter} for a given Object.
@@ -25,16 +25,14 @@ public abstract class PresenterSelector {
     /**
      * Returns a presenter for the given item.
      */
-    @Nullable
-    public abstract Presenter getPresenter(@Nullable Object item);
+    public abstract @Nullable Presenter getPresenter(@Nullable Object item);
 
     /**
      * Returns an array of all possible presenters.  The returned array should
      * not be modified.
      */
     @SuppressLint("NullableCollection")
-    @Nullable
-    public Presenter[] getPresenters() {
+    public Presenter @Nullable [] getPresenters() {
         return null;
     }
 }

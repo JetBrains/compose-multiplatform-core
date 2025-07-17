@@ -107,6 +107,9 @@ class NestedScrollDispatcher {
 
     internal var nestedScrollNode: NestedScrollNode? = null
 
+    // caches last known parent for fling clean up use.
+    internal var lastKnownParentNode: NestedScrollNode? = null
+
     // lambda to calculate the most outer nested scroll scope for this dispatcher on demand
     internal var calculateNestedScrollScope: () -> CoroutineScope? = { scope }
 
@@ -143,7 +146,9 @@ class NestedScrollDispatcher {
 
     /**
      * Parent to be set when attached to nested scrolling chain. `null` is valid and means there no
-     * nested scrolling parent above
+     * nested scrolling parent above. The last known attached parent might be used in case this
+     * dispatcher is not attached to any node, that is [nestedScrollNode?.parentNestedScrollNode] is
+     * null.
      */
     internal val parent: NestedScrollConnection?
         get() = nestedScrollNode?.parentNestedScrollNode
@@ -175,7 +180,7 @@ class NestedScrollDispatcher {
     fun dispatchPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         return parent?.onPostScroll(consumed, available, source) ?: Offset.Zero
     }
@@ -204,8 +209,20 @@ class NestedScrollDispatcher {
      * @param available velocity that is left for ancestors to consume
      * @return velocity that has been consumed by all the ancestors
      */
+    @OptIn(ExperimentalComposeUiApi::class)
     suspend fun dispatchPostFling(consumed: Velocity, available: Velocity): Velocity {
-        return parent?.onPostFling(consumed, available) ?: Velocity.Zero
+        // lastKnownParentNode can be used to send clean up signals.
+        // If this dispatcher's regular parent is not present it means either it never attached or
+        // it was detached. If it was detached we have information about its last known parent so
+        // we use it to send the post fling signal. We don't need to do the same for the other
+        // methods because the problem with parity in this API comes from a node that detaches
+        // during a fling. By the time a node detaches it already sent the onPreFling event and
+        // consumers of Nested Scroll might expect an onPostFling event to close the cycle.
+        return if (parent == null) {
+            lastKnownParentNode?.onPostFling(consumed, available) ?: Velocity.Zero
+        } else {
+            parent?.onPostFling(consumed, available) ?: Velocity.Zero
+        }
     }
 }
 
@@ -217,7 +234,7 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
         return when (this) {
             UserInput -> "UserInput"
             SideEffect -> "SideEffect"
-            @OptIn(ExperimentalComposeUiApi::class) Relocate -> "Relocate"
+            Relocate -> "Relocate"
             else -> "Invalid"
         }
     }
@@ -243,8 +260,8 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.UserInput",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.UserInput"
-                )
+                        "NestedScrollSource.Companion.UserInput",
+                ),
         )
         val Drag: NestedScrollSource = UserInput
 
@@ -255,15 +272,12 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.SideEffect",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.SideEffect"
-                )
+                        "NestedScrollSource.Companion.SideEffect",
+                ),
         )
         val Fling: NestedScrollSource = SideEffect
 
         /** Relocating when a component asks parents to scroll to bring it into view. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-        @get:ExperimentalComposeUiApi
-        @ExperimentalComposeUiApi
         @Deprecated("Do not use. Will be removed in the future.")
         val Relocate: NestedScrollSource = NestedScrollSource(3)
 
@@ -274,8 +288,8 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.UserInput",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.UserInput"
-                )
+                        "NestedScrollSource.Companion.UserInput",
+                ),
         )
         val Wheel: NestedScrollSource = UserInput
     }
@@ -348,12 +362,12 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
  */
 fun Modifier.nestedScroll(
     connection: NestedScrollConnection,
-    dispatcher: NestedScrollDispatcher? = null
+    dispatcher: NestedScrollDispatcher? = null,
 ): Modifier = this then NestedScrollElement(connection, dispatcher)
 
 private class NestedScrollElement(
     val connection: NestedScrollConnection,
-    val dispatcher: NestedScrollDispatcher?
+    val dispatcher: NestedScrollDispatcher?,
 ) : ModifierNodeElement<NestedScrollNode>() {
     override fun create(): NestedScrollNode {
         return NestedScrollNode(connection, dispatcher)

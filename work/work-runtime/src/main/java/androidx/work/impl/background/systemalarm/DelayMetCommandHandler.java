@@ -23,8 +23,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.WorkerThread;
 import androidx.work.Logger;
@@ -38,10 +36,13 @@ import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.utils.WakeLocks;
 import androidx.work.impl.utils.WorkTimer;
 
-import java.util.concurrent.Executor;
-
 import kotlinx.coroutines.CoroutineDispatcher;
 import kotlinx.coroutines.Job;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.concurrent.Executor;
 
 /**
  * This is a command handler which attempts to run a work spec given its id.
@@ -96,7 +97,7 @@ public class DelayMetCommandHandler implements
     private final Executor mSerialExecutor;
     private final Executor mMainThreadExecutor;
 
-    @Nullable private PowerManager.WakeLock mWakeLock;
+    private PowerManager.@Nullable WakeLock mWakeLock;
     private boolean mHasConstraints;
     private final StartStopToken mToken;
     private final CoroutineDispatcher mCoroutineDispatcher;

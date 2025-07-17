@@ -25,7 +25,7 @@ import androidx.annotation.FloatRange
  * @param modifyParentData provides a parentData, given the parentData provided through the
  *   modifier's chain.
  */
-public fun CurvedModifier.parentDataModifier(modifyParentData: (Any?) -> Any?) =
+public fun CurvedModifier.parentDataModifier(modifyParentData: (Any?) -> Any?): CurvedModifier =
     this.then { child -> ParentDataWrapper(child, modifyParentData) }
 
 /**
@@ -37,17 +37,15 @@ public fun CurvedModifier.parentDataModifier(modifyParentData: (Any?) -> Any?) =
  * Example usage:
  *
  * @sample androidx.wear.compose.foundation.samples.CurvedWeight
- *
  * @param weight The proportional size to give to this element, as related to the total of all
  *   weighted siblings. Must be positive.
  */
-public fun CurvedModifier.weight(@FloatRange(from = 0.0, fromInclusive = false) weight: Float) =
-    parentDataModifier { parentData ->
-        require(weight > 0f) { "Weights must be positive." }
-        ((parentData as? CurvedScopeParentData) ?: CurvedScopeParentData()).also {
-            it.weight = weight
-        }
-    }
+public fun CurvedModifier.weight(
+    @FloatRange(from = 0.0, fromInclusive = false) weight: Float
+): CurvedModifier = parentDataModifier { parentData ->
+    require(weight > 0f) { "Weights must be positive." }
+    ((parentData as? CurvedScopeParentData) ?: CurvedScopeParentData()).also { it.weight = weight }
+}
 
 internal class ParentDataWrapper(child: CurvedChild, val modifyParentData: (Any?) -> Any?) :
     BaseCurvedChildWrapper(child) {

@@ -19,21 +19,20 @@ package androidx.camera.testing.impl.fakes;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Fake {@link DeferrableSurface} for testing.
  */
 public class FakeDeferrableSurface extends DeferrableSurface {
 
-    @NonNull
-    private final ListenableFuture<Surface> mFuture;
-    @NonNull
-    CallbackToFutureAdapter.Completer<Surface> mCompleter;
+    private final @NonNull ListenableFuture<Surface> mFuture;
+    CallbackToFutureAdapter.@NonNull Completer<Surface> mCompleter;
 
     public FakeDeferrableSurface(@NonNull Size size, int imageFormat) {
         super(size, imageFormat);
@@ -44,9 +43,8 @@ public class FakeDeferrableSurface extends DeferrableSurface {
                 });
     }
 
-    @NonNull
     @Override
-    protected ListenableFuture<Surface> provideSurface() {
+    protected @NonNull ListenableFuture<Surface> provideSurface() {
         return mFuture;
     }
 

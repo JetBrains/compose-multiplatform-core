@@ -19,6 +19,7 @@ package androidx.compose.ui.graphics.vector
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
 import androidx.compose.runtime.Composition
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,8 +68,8 @@ const val RootGroupName = "VectorRootGroup"
         ReplaceWith(
             "rememberVectorPainter(defaultWidth, defaultHeight, viewportWidth, " +
                 "viewportHeight, name, tintColor, tintBlendMode, false, content)",
-            "androidx.compose.ui.graphics.vector"
-        )
+            "androidx.compose.ui.graphics.vector",
+        ),
 )
 @Composable
 @ComposableOpenTarget(-1)
@@ -80,7 +81,7 @@ fun rememberVectorPainter(
     name: String = RootGroupName,
     tintColor: Color = Color.Unspecified,
     tintBlendMode: BlendMode = BlendMode.SrcIn,
-    content: @Composable @VectorComposable (viewportWidth: Float, viewportHeight: Float) -> Unit
+    content: @Composable @VectorComposable (viewportWidth: Float, viewportHeight: Float) -> Unit,
 ): VectorPainter =
     rememberVectorPainter(
         defaultWidth,
@@ -91,7 +92,7 @@ fun rememberVectorPainter(
         tintColor,
         tintBlendMode,
         false,
-        content
+        content,
     )
 
 /**
@@ -125,7 +126,7 @@ fun rememberVectorPainter(
     tintColor: Color = Color.Unspecified,
     tintBlendMode: BlendMode = BlendMode.SrcIn,
     autoMirror: Boolean = false,
-    content: @Composable @VectorComposable (viewportWidth: Float, viewportHeight: Float) -> Unit
+    content: @Composable @VectorComposable (viewportWidth: Float, viewportHeight: Float) -> Unit,
 ): VectorPainter {
     val density = LocalDensity.current
     val defaultSize = density.obtainSizePx(defaultWidth, defaultHeight)
@@ -139,10 +140,10 @@ fun rememberVectorPainter(
                 viewportSize = viewport,
                 name = name,
                 intrinsicColorFilter = intrinsicColorFilter,
-                autoMirror = autoMirror
+                autoMirror = autoMirror,
             )
             val compositionContext = rememberCompositionContext()
-            this.composition =
+            val composition =
                 remember(viewportWidth, viewportHeight, content) {
                     val curComp = this.composition
                     val next =
@@ -154,6 +155,8 @@ fun rememberVectorPainter(
                     next.setContent { content(viewport.width, viewport.height) }
                     next
                 }
+            this.composition = composition
+            DisposableEffect(this) { onDispose { composition.dispose() } }
         }
 }
 
@@ -171,7 +174,7 @@ fun rememberVectorPainter(image: ImageVector): VectorPainter {
         createVectorPainterFromImageVector(
             density,
             image,
-            GroupComponent().apply { createGroupComponent(image.root) }
+            GroupComponent().apply { createGroupComponent(image.root) },
         )
     }
 }
@@ -320,7 +323,7 @@ private fun Density.obtainSizePx(defaultWidth: Dp, defaultHeight: Dp) =
 private fun obtainViewportSize(defaultSize: Size, viewportWidth: Float, viewportHeight: Float) =
     Size(
         if (viewportWidth.isNaN()) defaultSize.width else viewportWidth,
-        if (viewportHeight.isNaN()) defaultSize.height else viewportHeight
+        if (viewportHeight.isNaN()) defaultSize.height else viewportHeight,
     )
 
 /**
@@ -353,7 +356,7 @@ internal fun VectorPainter.configureVectorPainter(
 internal fun createVectorPainterFromImageVector(
     density: Density,
     imageVector: ImageVector,
-    root: GroupComponent
+    root: GroupComponent,
 ): VectorPainter {
     val defaultSize = density.obtainSizePx(imageVector.defaultWidth, imageVector.defaultHeight)
     val viewport =
@@ -365,7 +368,7 @@ internal fun createVectorPainterFromImageVector(
             name = imageVector.name,
             intrinsicColorFilter =
                 createColorFilter(imageVector.tintColor, imageVector.tintBlendMode),
-            autoMirror = imageVector.autoMirror
+            autoMirror = imageVector.autoMirror,
         )
 }
 
@@ -446,7 +449,7 @@ fun RenderVectorGroup(group: VectorGroup, configs: Map<String, VectorConfig> = e
                 trimPathEnd =
                     config.getOrDefault(VectorProperty.TrimPathEnd, vectorNode.trimPathEnd),
                 trimPathOffset =
-                    config.getOrDefault(VectorProperty.TrimPathOffset, vectorNode.trimPathOffset)
+                    config.getOrDefault(VectorProperty.TrimPathOffset, vectorNode.trimPathOffset),
             )
         } else if (vectorNode is VectorGroup) {
             val config = configs[vectorNode.name] ?: object : VectorConfig {}
@@ -461,7 +464,7 @@ fun RenderVectorGroup(group: VectorGroup, configs: Map<String, VectorConfig> = e
                     config.getOrDefault(VectorProperty.TranslateY, vectorNode.translationY),
                 pivotX = config.getOrDefault(VectorProperty.PivotX, vectorNode.pivotX),
                 pivotY = config.getOrDefault(VectorProperty.PivotY, vectorNode.pivotY),
-                clipPathData = config.getOrDefault(VectorProperty.PathData, vectorNode.clipPathData)
+                clipPathData = config.getOrDefault(VectorProperty.PathData, vectorNode.clipPathData),
             ) {
                 RenderVectorGroup(group = vectorNode, configs = configs)
             }

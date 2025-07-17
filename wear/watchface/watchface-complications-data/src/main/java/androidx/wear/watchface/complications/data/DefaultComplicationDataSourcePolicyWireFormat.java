@@ -22,12 +22,13 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.wearable.complications.ComplicationData;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.versionedparcelable.ParcelField;
 import androidx.versionedparcelable.ParcelUtils;
 import androidx.versionedparcelable.VersionedParcelable;
 import androidx.versionedparcelable.VersionedParcelize;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -38,8 +39,7 @@ public final class DefaultComplicationDataSourcePolicyWireFormat
         implements VersionedParcelable, Parcelable {
 
     @ParcelField(1)
-    @NonNull
-    public List<ComponentName> mDefaultDataSourcesToTry;
+    public @NonNull List<ComponentName> mDefaultDataSourcesToTry;
 
     @ParcelField(2)
     public int mFallbackSystemDataSource;

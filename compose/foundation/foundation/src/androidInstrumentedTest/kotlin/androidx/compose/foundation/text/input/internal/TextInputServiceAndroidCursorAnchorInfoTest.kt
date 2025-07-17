@@ -22,6 +22,7 @@ import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedText
 import android.view.inputmethod.InputConnection
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.ComposeInputMethodManagerTestRule
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.snapshots.ObserverHandle
@@ -89,7 +90,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 selectionStart: Int,
                 selectionEnd: Int,
                 compositionStart: Int,
-                compositionEnd: Int
+                compositionEnd: Int,
             ) {}
 
             override fun sendKeyEvent(event: KeyEvent) {}
@@ -127,13 +128,13 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
                 TestLayoutCoordinates(
                     windowOffset = coreNodeOffset,
                     size = coreNodeSize,
-                    isAttached = true
+                    isAttached = true,
                 )
             decoratorNodeCoordinates =
                 TestLayoutCoordinates(
                     windowOffset = decoratorNodeOffset,
                     size = decoratorNodeSize,
-                    isAttached = true
+                    isAttached = true,
                 )
         }
 
@@ -175,7 +176,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             TransformedTextFieldState(
                 textFieldState = textFieldState,
                 inputTransformation = null,
-                codepointTransformation = null
+                codepointTransformation = null,
             )
 
         backgroundScope.launch(Dispatchers.Unconfined) {
@@ -324,7 +325,7 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             TransformedTextFieldState(
                 textFieldState = textFieldState,
                 inputTransformation = null,
-                codepointTransformation = null
+                codepointTransformation = null,
             )
 
         launch(Dispatchers.Unconfined) {
@@ -341,13 +342,14 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
             textFieldState = transformedState,
             textStyle = TextStyle.Default,
             singleLine = false,
-            softWrap = false
+            softWrap = false,
+            keyboardOptions = KeyboardOptions.Default,
         )
         layoutState.layoutWithNewMeasureInputs(
             density = defaultDensity,
             fontFamilyResolver = createFontFamilyResolver(context, coroutineContext),
             layoutDirection = LayoutDirection.Ltr,
-            constraints = Constraints()
+            constraints = Constraints(),
         )
     }
 
@@ -369,18 +371,22 @@ internal class TextInputServiceAndroidCursorAnchorInfoTest {
 
         override fun localToWindow(relativeToLocal: Offset): Offset = relativeToLocal + windowOffset
 
+        override fun localToScreen(relativeToLocal: Offset): Offset = relativeToLocal + windowOffset
+
         override fun localToRoot(relativeToLocal: Offset): Offset = relativeToLocal
 
         override fun localPositionOf(
             sourceCoordinates: LayoutCoordinates,
-            relativeToSource: Offset
+            relativeToSource: Offset,
         ): Offset = sourceCoordinates.localToWindow(relativeToSource) - windowOffset
 
         override fun localBoundingBoxOf(
             sourceCoordinates: LayoutCoordinates,
-            clipBounds: Boolean
+            clipBounds: Boolean,
         ): Rect =
             Rect(localPositionOf(sourceCoordinates, Offset.Zero), sourceCoordinates.size.toSize())
+
+        override fun transformFrom(sourceCoordinates: LayoutCoordinates, matrix: Matrix) {}
 
         override fun transformToScreen(matrix: Matrix) {
             matrix.translate(windowOffset.x, windowOffset.y, 0f)

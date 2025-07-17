@@ -61,7 +61,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
     @Deprecated(
         "Use asClassName().toJavaPoet() to be clear the name is for JavaPoet.",
         replaceWith =
-            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet")
+            ReplaceWith("asClassName().toJavaPoet()", "androidx.room.compiler.codegen.toJavaPoet"),
     )
     override val className: ClassName by lazy { xClassName.java }
 
@@ -88,12 +88,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
     private val _declaredFields by lazy {
         ElementFilter.fieldsIn(element.enclosedElements)
             .filterNot { it.kind == ElementKind.ENUM_CONSTANT }
-            .map {
-                JavacFieldElement(
-                    env = env,
-                    element = it,
-                )
-            }
+            .map { JavacFieldElement(env = env, element = it) }
             // To be consistent with KSP consider delegates to not have a backing field.
             .filterNot { it.kotlinMetadata?.isDelegated() == true }
     }
@@ -142,7 +137,8 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
     }
 
     override fun isRecordClass(): Boolean {
-        return element.kind == ElementKind.RECORD
+        val recordType = env.findType("java.lang.Record") ?: return false
+        return superClass?.let { recordType.isAssignableFrom(it) } == true
     }
 
     override fun findPrimaryConstructor(): JavacConstructorElement? {
@@ -212,7 +208,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
         env.wrap(
             typeMirror = element.asType(),
             kotlinType = kotlinMetadata?.type,
-            elementNullability = element.nullability
+            elementNullability = element.nullability,
         )
     }
 
@@ -229,7 +225,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
             env.wrap<JavacType>(
                 typeMirror = superClass,
                 kotlinType = kotlinMetadata?.superType,
-                elementNullability = element.nullability
+                elementNullability = element.nullability,
             )
         }
     }
@@ -244,7 +240,7 @@ internal sealed class JavacTypeElement(env: JavacProcessingEnv, override val ele
             env.wrap<JavacType>(
                 typeMirror = it,
                 kotlinType = superTypesFromKotlinMetadata[interfaceName.canonicalName()],
-                elementNullability = element.nullability
+                elementNullability = element.nullability,
             )
         }
     }

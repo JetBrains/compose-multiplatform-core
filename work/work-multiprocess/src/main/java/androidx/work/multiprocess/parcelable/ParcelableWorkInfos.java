@@ -20,9 +20,10 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.WorkInfo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +42,7 @@ public class ParcelableWorkInfos implements Parcelable {
         mInfos = infos;
     }
 
-    @NonNull
-    public List<WorkInfo> getWorkInfos() {
+    public @NonNull List<WorkInfo> getWorkInfos() {
         return mInfos;
     }
 

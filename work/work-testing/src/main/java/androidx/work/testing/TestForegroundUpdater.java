@@ -20,13 +20,14 @@ import static androidx.concurrent.futures.CallbackToFutureAdapter.getFuture;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.ForegroundInfo;
 import androidx.work.ForegroundUpdater;
 import androidx.work.Logger;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -38,9 +39,8 @@ public class TestForegroundUpdater implements ForegroundUpdater {
 
     private static final String TAG = Logger.tagWithPrefix("TestForegroundUpdater");
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> setForegroundAsync(
+    public @NonNull ListenableFuture<Void> setForegroundAsync(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull ForegroundInfo foregroundInfo) {

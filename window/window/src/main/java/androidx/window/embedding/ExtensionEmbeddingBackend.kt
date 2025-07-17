@@ -17,13 +17,11 @@
 package androidx.window.embedding
 
 import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.IBinder
+import android.os.Bundle
 import android.util.Log
-import androidx.annotation.DoNotInline
 import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
@@ -31,13 +29,14 @@ import androidx.collection.ArraySet
 import androidx.core.util.Consumer
 import androidx.window.RequiresWindowSdkExtension
 import androidx.window.WindowProperties
+import androidx.window.WindowSdkExtensions
 import androidx.window.core.BuildConfig
 import androidx.window.core.ConsumerAdapter
-import androidx.window.core.ExtensionsUtil
 import androidx.window.core.PredicateAdapter
 import androidx.window.core.VerificationMode
 import androidx.window.embedding.EmbeddingInterfaceCompat.EmbeddingCallbackInterface
 import androidx.window.embedding.ExtensionEmbeddingBackend.Api31Impl.isSplitPropertyEnabled
+import androidx.window.embedding.OverlayController.Companion.OVERLAY_FEATURE_VERSION
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
@@ -49,15 +48,15 @@ constructor(
     private val applicationContext: Context,
     @field:VisibleForTesting
     @field:GuardedBy("globalLock")
-    var embeddingExtension: EmbeddingInterfaceCompat?
+    var embeddingExtension: EmbeddingInterfaceCompat?,
 ) : EmbeddingBackend {
 
     @VisibleForTesting val splitChangeCallbacks: CopyOnWriteArrayList<SplitListenerWrapper>
-    private val splitInfoEmbeddingCallback = EmbeddingCallbackImpl()
+    private val embeddingCallback = EmbeddingCallbackImpl()
 
     init {
         splitChangeCallbacks = CopyOnWriteArrayList<SplitListenerWrapper>()
-        embeddingExtension?.setEmbeddingCallback(splitInfoEmbeddingCallback)
+        embeddingExtension?.setEmbeddingCallback(embeddingCallback)
     }
 
     companion object {
@@ -88,18 +87,30 @@ constructor(
             applicationContext: Context
         ): EmbeddingInterfaceCompat? {
             var impl: EmbeddingInterfaceCompat? = null
+            val version = WindowSdkExtensions.getInstance().extensionVersion
             try {
                 if (
-                    isExtensionVersionSupported(ExtensionsUtil.safeVendorApiLevel) &&
-                        EmbeddingCompat.isEmbeddingAvailable()
+                    isExtensionVersionSupported(version) && EmbeddingCompat.isEmbeddingAvailable()
                 ) {
                     impl =
                         EmbeddingBackend::class.java.classLoader?.let { loader ->
+                            val embeddingExtension = EmbeddingCompat.embeddingComponent()
+                            val adapter = EmbeddingAdapter(PredicateAdapter(loader))
                             EmbeddingCompat(
-                                EmbeddingCompat.embeddingComponent(),
-                                EmbeddingAdapter(PredicateAdapter(loader)),
+                                embeddingExtension,
+                                adapter,
                                 ConsumerAdapter(loader),
-                                applicationContext
+                                applicationContext,
+                                if (version >= OVERLAY_FEATURE_VERSION) {
+                                    OverlayControllerImpl(embeddingExtension, adapter)
+                                } else {
+                                    null
+                                },
+                                if (version >= 6) {
+                                    ActivityWindowInfoCallbackController(embeddingExtension)
+                                } else {
+                                    null
+                                },
                             )
                         }
                     // TODO(b/190433400): Check API conformance
@@ -248,7 +259,7 @@ constructor(
     internal class SplitListenerWrapper(
         private val activity: Activity,
         private val executor: Executor,
-        val callback: Consumer<List<SplitInfo>>
+        val callback: Consumer<List<SplitInfo>>,
     ) {
         private var lastValue: List<SplitInfo>? = null
 
@@ -266,7 +277,7 @@ constructor(
     override fun addSplitListenerForActivity(
         activity: Activity,
         executor: Executor,
-        callback: Consumer<List<SplitInfo>>
+        callback: Consumer<List<SplitInfo>>,
     ) {
         globalLock.withLock {
             if (embeddingExtension == null) {
@@ -279,11 +290,7 @@ constructor(
 
             val callbackWrapper = SplitListenerWrapper(activity, executor, callback)
             splitChangeCallbacks.add(callbackWrapper)
-            if (splitInfoEmbeddingCallback.lastInfo != null) {
-                callbackWrapper.accept(splitInfoEmbeddingCallback.lastInfo!!)
-            } else {
-                callbackWrapper.accept(emptyList())
-            }
+            callbackWrapper.accept(embeddingCallback.lastInfo)
         }
     }
 
@@ -299,17 +306,23 @@ constructor(
     }
 
     /**
-     * Extension callback implementation of the split information. Keeps track of last reported
+     * Extension callback implementation of the embedding information. Keeps track of last reported
      * values.
      */
     internal inner class EmbeddingCallbackImpl : EmbeddingCallbackInterface {
-        var lastInfo: List<SplitInfo>? = null
+        var lastInfo: List<SplitInfo> = emptyList()
+
+        var lastActivityStacks: List<ActivityStack> = emptyList()
 
         override fun onSplitInfoChanged(splitInfo: List<SplitInfo>) {
             lastInfo = splitInfo
             for (callbackWrapper in splitChangeCallbacks) {
                 callbackWrapper.accept(splitInfo)
             }
+        }
+
+        override fun onActivityStackChanged(activityStacks: List<ActivityStack>) {
+            lastActivityStacks = activityStacks
         }
     }
 
@@ -337,6 +350,16 @@ constructor(
         return embeddingExtension?.isActivityEmbedded(activity) ?: false
     }
 
+    @RequiresWindowSdkExtension(5)
+    override fun pinTopActivityStack(taskId: Int, splitPinRule: SplitPinRule): Boolean {
+        return embeddingExtension?.pinTopActivityStack(taskId, splitPinRule) ?: false
+    }
+
+    @RequiresWindowSdkExtension(5)
+    override fun unpinTopActivityStack(taskId: Int) {
+        embeddingExtension?.unpinTopActivityStack(taskId)
+    }
+
     @RequiresWindowSdkExtension(2)
     override fun setSplitAttributesCalculator(
         calculator: (SplitAttributesCalculatorParams) -> SplitAttributes
@@ -349,33 +372,51 @@ constructor(
         globalLock.withLock { embeddingExtension?.clearSplitAttributesCalculator() }
     }
 
-    override fun getActivityStack(activity: Activity): ActivityStack? {
+    override fun getActivityStack(activity: Activity): ActivityStack? =
         globalLock.withLock {
-            val lastInfo: List<SplitInfo> = splitInfoEmbeddingCallback.lastInfo ?: return null
-            for (info in lastInfo) {
-                if (activity !in info) {
-                    continue
-                }
-                if (activity in info.primaryActivityStack) {
-                    return info.primaryActivityStack
-                }
-                if (activity in info.secondaryActivityStack) {
-                    return info.secondaryActivityStack
-                }
-            }
-            return null
+            embeddingCallback.lastActivityStacks.find { activityStack -> activity in activityStack }
+                ?: getActivityStackFromSplitInfoList(activity)
         }
+
+    @GuardedBy("globalLock")
+    private fun getActivityStackFromSplitInfoList(activity: Activity): ActivityStack? {
+        for (info in embeddingCallback.lastInfo) {
+            if (activity !in info) {
+                continue
+            }
+            if (activity in info.primaryActivityStack) {
+                return info.primaryActivityStack
+            }
+            if (activity in info.secondaryActivityStack) {
+                return info.secondaryActivityStack
+            }
+        }
+        return null
+    }
+
+    @RequiresWindowSdkExtension(5)
+    override fun setLaunchingActivityStack(options: Bundle, activityStack: ActivityStack): Bundle =
+        embeddingExtension?.setLaunchingActivityStack(options, activityStack) ?: options
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun setOverlayCreateParams(
+        options: Bundle,
+        overlayCreateParams: OverlayCreateParams,
+    ): Bundle = embeddingExtension?.setOverlayCreateParams(options, overlayCreateParams) ?: options
+
+    @RequiresWindowSdkExtension(5)
+    override fun finishActivityStacks(activityStacks: Set<ActivityStack>) {
+        embeddingExtension?.finishActivityStacks(activityStacks)
+    }
+
+    @RequiresWindowSdkExtension(5)
+    override fun setEmbeddingConfiguration(embeddingConfig: EmbeddingConfiguration) {
+        embeddingExtension?.setEmbeddingConfiguration(embeddingConfig)
     }
 
     @RequiresWindowSdkExtension(3)
-    override fun setLaunchingActivityStack(
-        options: ActivityOptions,
-        token: IBinder
-    ): ActivityOptions = embeddingExtension?.setLaunchingActivityStack(options, token) ?: options
-
-    @RequiresWindowSdkExtension(3)
-    override fun invalidateTopVisibleSplitAttributes() {
-        embeddingExtension?.invalidateTopVisibleSplitAttributes()
+    override fun invalidateVisibleActivityStacks() {
+        embeddingExtension?.invalidateVisibleActivityStacks()
     }
 
     @RequiresWindowSdkExtension(3)
@@ -383,22 +424,71 @@ constructor(
         embeddingExtension?.updateSplitAttributes(splitInfo, splitAttributes)
     }
 
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun setOverlayAttributesCalculator(
+        calculator: (OverlayAttributesCalculatorParams) -> OverlayAttributes
+    ) {
+        embeddingExtension?.setOverlayAttributesCalculator(calculator)
+    }
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun clearOverlayAttributesCalculator() {
+        embeddingExtension?.clearOverlayAttributesCalculator()
+    }
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun updateOverlayAttributes(overlayTag: String, overlayAttributes: OverlayAttributes) {
+        embeddingExtension?.updateOverlayAttributes(overlayTag, overlayAttributes)
+    }
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun addOverlayInfoCallback(
+        overlayTag: String,
+        executor: Executor,
+        overlayInfoCallback: Consumer<OverlayInfo>,
+    ) {
+        embeddingExtension?.addOverlayInfoCallback(overlayTag, executor, overlayInfoCallback)
+            // Send an empty OverlayInfo if the extension does not exist.
+            ?: overlayInfoCallback.accept(
+                OverlayInfo(overlayTag, currentOverlayAttributes = null, activityStack = null)
+            )
+    }
+
+    @RequiresWindowSdkExtension(OVERLAY_FEATURE_VERSION)
+    override fun removeOverlayInfoCallback(overlayInfoCallback: Consumer<OverlayInfo>) {
+        embeddingExtension?.removeOverlayInfoCallback(overlayInfoCallback)
+    }
+
+    @RequiresWindowSdkExtension(6)
+    override fun addEmbeddedActivityWindowInfoCallbackForActivity(
+        activity: Activity,
+        callback: Consumer<EmbeddedActivityWindowInfo>,
+    ) {
+        embeddingExtension?.addEmbeddedActivityWindowInfoCallbackForActivity(activity, callback)
+    }
+
+    @RequiresWindowSdkExtension(6)
+    override fun removeEmbeddedActivityWindowInfoCallbackForActivity(
+        callback: Consumer<EmbeddedActivityWindowInfo>
+    ) {
+        embeddingExtension?.removeEmbeddedActivityWindowInfoCallbackForActivity(callback)
+    }
+
     @RequiresApi(31)
     private object Api31Impl {
-        @DoNotInline
         fun isSplitPropertyEnabled(context: Context): SplitController.SplitSupportStatus {
             val property =
                 try {
                     context.packageManager.getProperty(
                         WindowProperties.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED,
-                        context.packageName
+                        context.packageName,
                     )
                 } catch (e: PackageManager.NameNotFoundException) {
                     if (BuildConfig.verificationMode == VerificationMode.LOG) {
                         Log.w(
                             TAG,
                             WindowProperties.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED +
-                                " must be set and enabled in AndroidManifest.xml to use splits APIs."
+                                " must be set and enabled in AndroidManifest.xml to use splits APIs.",
                         )
                     }
                     return SplitController.SplitSupportStatus.SPLIT_ERROR_PROPERTY_NOT_DECLARED
@@ -415,7 +505,7 @@ constructor(
                     Log.w(
                         TAG,
                         WindowProperties.PROPERTY_ACTIVITY_EMBEDDING_SPLITS_ENABLED +
-                            " must have a boolean value"
+                            " must have a boolean value",
                     )
                 }
                 return SplitController.SplitSupportStatus.SPLIT_ERROR_PROPERTY_NOT_DECLARED

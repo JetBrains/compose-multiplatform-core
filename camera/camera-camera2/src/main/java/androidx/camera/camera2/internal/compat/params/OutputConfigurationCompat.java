@@ -22,12 +22,13 @@ import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.internal.compat.ApiCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -115,6 +116,11 @@ public final class OutputConfigurationCompat {
         }
     }
 
+    @RequiresApi(33)
+    public OutputConfigurationCompat(@NonNull OutputConfiguration outputConfiguration) {
+        mImpl = OutputConfigurationCompatApi33Impl.wrap(outputConfiguration);
+    }
+
     private OutputConfigurationCompat(@NonNull OutputConfigurationCompatImpl impl) {
         mImpl = impl;
     }
@@ -130,8 +136,7 @@ public final class OutputConfigurationCompat {
      * @return an equivalent {@link OutputConfigurationCompat} object, or {@code null} if not
      * supported.
      */
-    @Nullable
-    public static OutputConfigurationCompat wrap(@Nullable Object outputConfiguration) {
+    public static @Nullable OutputConfigurationCompat wrap(@Nullable Object outputConfiguration) {
         if (outputConfiguration == null) {
             return null;
         }
@@ -221,8 +226,7 @@ public final class OutputConfigurationCompat {
      *
      */
     @RestrictTo(Scope.LIBRARY)
-    @Nullable
-    public String getPhysicalCameraId() {
+    public @Nullable String getPhysicalCameraId() {
         return mImpl.getPhysicalCameraId();
     }
 
@@ -337,8 +341,7 @@ public final class OutputConfigurationCompat {
      * the
      * first one as specified in the constructor or {@link OutputConfigurationCompat#addSurface}.
      */
-    @Nullable
-    public Surface getSurface() {
+    public @Nullable Surface getSurface() {
         return mImpl.getSurface();
     }
 
@@ -350,8 +353,7 @@ public final class OutputConfigurationCompat {
      * the constructor and {@link OutputConfigurationCompat#addSurface}. The list should not be
      * modified.
      */
-    @NonNull
-    public List<Surface> getSurfaces() {
+    public @NonNull List<Surface> getSurfaces() {
         return mImpl.getSurfaces();
     }
 
@@ -497,8 +499,7 @@ public final class OutputConfigurationCompat {
      * @return an equivalent android.hardware.camera2.params.OutputConfiguration object, or {@code
      * null} if not supported.
      */
-    @Nullable
-    public Object unwrap() {
+    public @Nullable Object unwrap() {
         return mImpl.getOutputConfiguration();
     }
 
@@ -509,8 +510,7 @@ public final class OutputConfigurationCompat {
 
         void setMirrorMode(int mirrorMode);
 
-        @Nullable
-        String getPhysicalCameraId();
+        @Nullable String getPhysicalCameraId();
 
         void setPhysicalCameraId(@Nullable String physicalCameraId);
 
@@ -528,14 +528,12 @@ public final class OutputConfigurationCompat {
 
         long getStreamUseCase();
 
-        @Nullable
-        Surface getSurface();
+        @Nullable Surface getSurface();
 
         List<Surface> getSurfaces();
 
         int getSurfaceGroupId();
 
-        @Nullable
-        Object getOutputConfiguration();
+        @Nullable Object getOutputConfiguration();
     }
 }

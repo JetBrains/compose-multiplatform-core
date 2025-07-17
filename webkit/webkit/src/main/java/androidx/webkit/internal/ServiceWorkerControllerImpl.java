@@ -18,8 +18,6 @@ package androidx.webkit.internal;
 
 import android.webkit.ServiceWorkerController;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.ServiceWorkerClientCompat;
 import androidx.webkit.ServiceWorkerControllerCompat;
@@ -27,6 +25,8 @@ import androidx.webkit.ServiceWorkerWebSettingsCompat;
 
 import org.chromium.support_lib_boundary.ServiceWorkerControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Implementation of {@link ServiceWorkerControllerCompat}.
@@ -71,9 +71,8 @@ public class ServiceWorkerControllerImpl extends ServiceWorkerControllerCompat {
         return mBoundaryInterface;
     }
 
-    @NonNull
     @Override
-    public ServiceWorkerWebSettingsCompat getServiceWorkerWebSettings() {
+    public @NonNull ServiceWorkerWebSettingsCompat getServiceWorkerWebSettings() {
         return mWebSettings;
     }
 

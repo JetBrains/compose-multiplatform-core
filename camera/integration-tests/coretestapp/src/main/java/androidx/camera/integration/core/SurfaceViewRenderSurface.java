@@ -27,12 +27,12 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewStub;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,8 +57,7 @@ public final class SurfaceViewRenderSurface {
      * @param renderer Renderer which will be used to update the SurfaceView.
      * @return The inflated SurfaceView.
      */
-    @NonNull
-    public static SurfaceView inflateNonBlockingWith(@NonNull ViewStub viewStub,
+    public static @NonNull SurfaceView inflateNonBlockingWith(@NonNull ViewStub viewStub,
             @NonNull OpenGLRenderer renderer) {
         return inflateWith(viewStub, renderer, /*nonBlocking=*/true);
     }
@@ -71,14 +70,12 @@ public final class SurfaceViewRenderSurface {
      * @param renderer Renderer which will be used to update the SurfaceView.
      * @return The inflated SurfaceView.
      */
-    @NonNull
-    public static SurfaceView inflateWith(@NonNull ViewStub viewStub,
+    public static @NonNull SurfaceView inflateWith(@NonNull ViewStub viewStub,
             @NonNull OpenGLRenderer renderer) {
         return inflateWith(viewStub, renderer, /*nonBlocking=*/false);
     }
 
-    @NonNull
-    private static SurfaceView inflateWith(@NonNull ViewStub viewStub,
+    private static @NonNull SurfaceView inflateWith(@NonNull ViewStub viewStub,
             @NonNull OpenGLRenderer renderer, boolean nonBlocking) {
         Log.d(TAG, "Inflating SurfaceView into view stub (non-blocking = " + nonBlocking + ").");
         if (nonBlocking) {
@@ -183,8 +180,7 @@ public final class SurfaceViewRenderSurface {
      * Returns a surface with {@link SurfaceControl} or null if {@link SurfaceControl} can't be
      * supported.
      */
-    @Nullable
-    static Pair<Surface, SurfaceControl> createSurfaceControlSurfaceAndReparent(
+    static @Nullable Pair<Surface, SurfaceControl> createSurfaceControlSurfaceAndReparent(
             @NonNull SurfaceView surfaceView, int format, int width, int height) {
         if (Build.VERSION.SDK_INT < 29) {
             return null;
@@ -208,7 +204,6 @@ public final class SurfaceViewRenderSurface {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static SurfaceControl createSurfaceControl(int format, int width, int height) {
             return new SurfaceControl.Builder()
                     .setName("ChildSurfaceControl")
@@ -217,17 +212,14 @@ public final class SurfaceViewRenderSurface {
                     .build();
         }
 
-        @DoNotInline
         static Surface createSurface(SurfaceControl from) {
             return new Surface(from);
         }
 
-        @DoNotInline
         static SurfaceControl getSurfaceControl(SurfaceView surfaceView) {
             return surfaceView.getSurfaceControl();
         }
 
-        @DoNotInline
         static void reparent(SurfaceControl sc, SurfaceControl newParent) {
             SurfaceControl.Transaction transaction = new SurfaceControl.Transaction();
             transaction.reparent(sc, newParent).setVisibility(sc, true).apply();

@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.testTag
@@ -46,11 +45,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(
-    ExperimentalTestApi::class,
-    ExperimentalComposeUiApi::class,
-    ExperimentalTvMaterial3Api::class
-)
+@OptIn(ExperimentalTestApi::class, ExperimentalTvMaterial3Api::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class CardContainerTest {
@@ -69,7 +64,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -101,7 +96,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -131,7 +126,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 
@@ -162,7 +157,7 @@ class CardContainerTest {
                         SampleImage()
                     }
                 },
-                title = { Text("${count.value}") }
+                title = { Text("${count.value}") },
             )
         }
 

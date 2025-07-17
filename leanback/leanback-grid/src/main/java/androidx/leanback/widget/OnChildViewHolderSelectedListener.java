@@ -17,10 +17,11 @@ package androidx.leanback.widget;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.widget.ItemAlignmentFacet.ItemAlignmentDef;
 import androidx.recyclerview.widget.RecyclerView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for receiving notification when a child of this ViewGroup has been selected.
@@ -54,7 +55,7 @@ public abstract class OnChildViewHolderSelectedListener {
      *                    0 if there is no ItemAlignmentDef defined for the item.
      */
     public void onChildViewHolderSelected(@NonNull RecyclerView parent,
-            @Nullable RecyclerView.ViewHolder child,
+            RecyclerView.@Nullable ViewHolder child,
             int position, int subposition) {
     }
 
@@ -71,6 +72,6 @@ public abstract class OnChildViewHolderSelectedListener {
      *                    0 if there is no ItemAlignmentDef defined for the item.
      */
     public void onChildViewHolderSelectedAndPositioned(@NonNull RecyclerView parent,
-            @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
+            RecyclerView.@Nullable ViewHolder child, int position, int subposition) {
     }
 }

@@ -23,8 +23,6 @@ import android.os.PowerManager;
 import android.text.TextUtils;
 
 import androidx.annotation.MainThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.Logger;
@@ -39,6 +37,9 @@ import androidx.work.impl.utils.WakeLocks;
 import androidx.work.impl.utils.WorkTimer;
 import androidx.work.impl.utils.taskexecutor.SerialExecutor;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +72,7 @@ public class SystemAlarmDispatcher implements ExecutionListener {
     final List<Intent> mIntents;
     Intent mCurrentIntent;
 
-    @Nullable
-    private CommandsCompletedListener mCompletedListener;
+    private @Nullable CommandsCompletedListener mCompletedListener;
 
     private StartStopTokens mStartStopTokens;
     private final WorkLauncher mWorkLauncher;
@@ -89,7 +89,7 @@ public class SystemAlarmDispatcher implements ExecutionListener {
             @Nullable WorkLauncher launcher
     ) {
         mContext = context.getApplicationContext();
-        mStartStopTokens = new StartStopTokens();
+        mStartStopTokens = StartStopTokens.create();
         mWorkManager = workManager != null ? workManager : WorkManagerImpl.getInstance(context);
         mCommandHandler = new CommandHandler(
                 mContext, mWorkManager.getConfiguration().getClock(), mStartStopTokens);
@@ -140,7 +140,7 @@ public class SystemAlarmDispatcher implements ExecutionListener {
      * @return <code>true</code> when the command was added to the command processor queue.
      */
     @MainThread
-    public boolean add(@NonNull final Intent intent, final int startId) {
+    public boolean add(final @NonNull Intent intent, final int startId) {
         Logger.get().debug(TAG, "Adding command " + intent + " (" + startId + ")");
         assertMainThread();
         String action = intent.getAction();

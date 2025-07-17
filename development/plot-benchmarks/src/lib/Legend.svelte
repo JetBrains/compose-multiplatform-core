@@ -4,13 +4,15 @@
   export let items: LegendItem[];
 
   const handlerFactory = (item: LegendItem) => {
-    return (event: Event) => {
-      // https://www.chartjs.org/docs/latest/samples/legend/html.html
-      chart.setDatasetVisibility(
-        item.datasetIndex,
-        !chart.isDatasetVisible(item.datasetIndex)
-      );
-      chart.update();
+    return (_: Event) => {
+      if (item.datasetIndex !== undefined) {
+        // https://www.chartjs.org/docs/latest/samples/legend/html.html
+        chart.setDatasetVisibility(
+          item.datasetIndex,
+          !chart.isDatasetVisible(item.datasetIndex)
+        );
+        chart.update();
+      }
     };
   };
 </script>
@@ -27,7 +29,7 @@
       <span
         class="box"
         style="background: {item.fillStyle}; border-color: {item.strokeStyle}; border-width: {item.lineWidth}px;"
-      />
+      ></span>
       <span
         class="label"
         style="text-decoration: {item.hidden ? 'line-through' : ''};"

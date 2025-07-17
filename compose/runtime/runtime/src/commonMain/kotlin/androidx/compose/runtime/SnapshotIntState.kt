@@ -21,13 +21,17 @@ package androidx.compose.runtime
 
 import androidx.compose.runtime.internal.JvmDefaultWithCompatibility
 import androidx.compose.runtime.snapshots.AutoboxingStateValueProperty
+import androidx.compose.runtime.snapshots.GlobalSnapshot
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.snapshots.SnapshotId
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.snapshots.StateFactoryMarker
 import androidx.compose.runtime.snapshots.StateObjectImpl
 import androidx.compose.runtime.snapshots.StateRecord
+import androidx.compose.runtime.snapshots.currentSnapshot
 import androidx.compose.runtime.snapshots.overwritable
 import androidx.compose.runtime.snapshots.readable
+import androidx.compose.runtime.snapshots.toSnapshotId
 import androidx.compose.runtime.snapshots.withCurrent
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
@@ -50,7 +54,7 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntState(value)
+public fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntState(value)
 
 /**
  * A value holder where reads to the [intValue] property during the execution of a [Composable]
@@ -61,17 +65,17 @@ fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntSta
  */
 @Stable
 @JvmDefaultWithCompatibility
-interface IntState : State<Int> {
+public interface IntState : State<Int> {
     @get:AutoboxingStateValueProperty("intValue")
     override val value: Int
         @Suppress("AutoBoxing") get() = intValue
 
-    val intValue: Int
+    public val intValue: Int
 }
 
 /** Permits property delegation of `val`s using `by` for [IntState]. */
 @Suppress("NOTHING_TO_INLINE")
-inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<*>): Int = intValue
+public inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<*>): Int = intValue
 
 /**
  * A value holder where reads to the [intValue] property during the execution of a [Composable]
@@ -85,7 +89,7 @@ inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<*>): In
  */
 @Stable
 @JvmDefaultWithCompatibility
-interface MutableIntState : IntState, MutableState<Int> {
+public interface MutableIntState : IntState, MutableState<Int> {
     @get:AutoboxingStateValueProperty("intValue")
     @set:AutoboxingStateValueProperty("intValue")
     override var value: Int
@@ -99,7 +103,11 @@ interface MutableIntState : IntState, MutableState<Int> {
 
 /** Permits property delegation of `var`s using `by` for [MutableIntState]. */
 @Suppress("NOTHING_TO_INLINE")
-inline operator fun MutableIntState.setValue(thisObj: Any?, property: KProperty<*>, value: Int) {
+public inline operator fun MutableIntState.setValue(
+    thisObj: Any?,
+    property: KProperty<*>,
+    value: Int,
+) {
     intValue = value
 }
 
@@ -121,12 +129,12 @@ internal open class SnapshotMutableIntStateImpl(value: Int) :
     StateObjectImpl(), MutableIntState, SnapshotMutableState<Int> {
 
     private var next =
-        IntStateStateRecord(value).also {
-            if (Snapshot.isInSnapshot) {
-                it.next =
-                    IntStateStateRecord(value).also { next ->
-                        next.snapshotId = Snapshot.PreexistingSnapshotId
-                    }
+        currentSnapshot().let { snapshot ->
+            IntStateStateRecord(snapshot.snapshotId, value).also {
+                if (snapshot !is GlobalSnapshot) {
+                    it.next =
+                        IntStateStateRecord(Snapshot.PreexistingSnapshotId.toSnapshotId(), value)
+                }
             }
         }
 
@@ -158,7 +166,7 @@ internal open class SnapshotMutableIntStateImpl(value: Int) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord
+        applied: StateRecord,
     ): StateRecord? {
         val currentRecord = current as IntStateStateRecord
         val appliedRecord = applied as IntStateStateRecord
@@ -176,11 +184,15 @@ internal open class SnapshotMutableIntStateImpl(value: Int) :
     val debuggerDisplayValue: Int
         @JvmName("getDebuggerDisplayValue") get() = next.withCurrent { it.value }
 
-    private class IntStateStateRecord(var value: Int) : StateRecord() {
+    private class IntStateStateRecord(snapshotId: SnapshotId, var value: Int) :
+        StateRecord(snapshotId) {
         override fun assign(value: StateRecord) {
             this.value = (value as IntStateStateRecord).value
         }
 
-        override fun create(): StateRecord = IntStateStateRecord(value)
+        override fun create(): StateRecord = create(currentSnapshot().snapshotId)
+
+        override fun create(snapshotId: SnapshotId): StateRecord =
+            IntStateStateRecord(snapshotId, value)
     }
 }

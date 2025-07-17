@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,28 +38,31 @@ dependencies {
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation("androidx.activity:activity-compose:1.5.0")
-    implementation("androidx.compose.animation:animation:1.2.1")
-    implementation("androidx.compose.foundation:foundation:1.6.0")
-    implementation("androidx.compose.foundation:foundation-layout:1.6.0")
-    implementation("androidx.compose.material:material:1.2.1")
-    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.compose.animation:animation:1.8.1")
+    implementation("androidx.compose.foundation:foundation:1.8.1")
+    implementation("androidx.compose.foundation:foundation-layout:1.8.1")
+    implementation("androidx.compose.material:material:1.8.1")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha04")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation(project(":compose:material3:material3"))
-    implementation("androidx.compose.runtime:runtime:1.2.1")
-    implementation("androidx.compose.ui:ui:1.2.1")
-    implementation("androidx.compose.ui:ui-text:1.2.1")
+    implementation("androidx.compose.runtime:runtime:1.8.1")
+    implementation("androidx.compose.ui:ui:1.8.2")
+    implementation("androidx.compose.ui:ui-text:1.8.1")
     implementation("androidx.savedstate:savedstate-ktx:1.2.1")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.4.1")
-
-    debugImplementation("androidx.compose.ui:ui-tooling:1.4.1")
+    implementation("androidx.compose.ui:ui-tooling:1.8.1")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.8.1")
+    implementation("androidx.graphics:graphics-shapes:1.0.1")
 }
 
 androidx {
     name = "Compose Material3 Components Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2021"
     description = "Contains the sample code for the AndroidX Compose Material You components."
 }
 
 android {
-    namespace "androidx.compose.material3.samples"
+    compileSdk = 35
+
+    namespace = "androidx.compose.material3.samples"
 }

@@ -29,11 +29,10 @@ import kotlin.math.roundToLong
  * Contains the current scroll position represented by the first visible page and the first visible
  * page scroll offset.
  */
-@OptIn(ExperimentalFoundationApi::class)
 internal class PagerScrollPosition(
     currentPage: Int = 0,
     currentPageOffsetFraction: Float = 0.0f,
-    val state: PagerState
+    val state: PagerState,
 ) {
     var currentPage by mutableIntStateOf(currentPage)
         private set
@@ -50,7 +49,7 @@ internal class PagerScrollPosition(
         LazyLayoutNearestRangeState(
             currentPage,
             NearestItemsSlidingWindowSize,
-            NearestItemsExtraItemCount
+            NearestItemsExtraItemCount,
         )
 
     /** Updates the current scroll position based on the results of the last measurement. */
@@ -83,6 +82,7 @@ internal class PagerScrollPosition(
         lastKnownCurrentPageKey = null
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     fun matchPageWithKey(itemProvider: PagerLazyLayoutItemProvider, index: Int): Int {
         val newIndex = itemProvider.findIndexByKey(lastKnownCurrentPageKey, index)
         if (index != newIndex) {

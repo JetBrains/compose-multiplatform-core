@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -25,10 +24,12 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.util.fastIsFinite
 
 internal class TailModifierNode : Modifier.Node() {
     init {
@@ -57,10 +58,10 @@ internal class TailModifierNode : Modifier.Node() {
 }
 
 internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(layoutNode) {
-    @OptIn(ExperimentalComposeUiApi::class) override val tail = TailModifierNode()
+    override val tail = TailModifierNode()
 
     init {
-        @OptIn(ExperimentalComposeUiApi::class) tail.updateCoordinator(this)
+        tail.updateCoordinator(this)
     }
 
     override var lookaheadDelegate: LookaheadDelegate? =
@@ -160,8 +161,6 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
         // our position in order ot know how to offset the value we provided).
         if (isShallowPlacing) return
 
-        onPlaced()
-
         layoutNode.measurePassDelegate.onNodePlaced()
     }
 
@@ -183,13 +182,12 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun hitTestChild(
         hitTestSource: HitTestSource,
         pointerPosition: Offset,
         hitTestResult: HitTestResult,
-        isTouchEvent: Boolean,
-        isInLayer: Boolean
+        pointerType: PointerType,
+        isInLayer: Boolean,
     ) {
         var inLayer = isInLayer
         var hitTestChildren = false
@@ -198,8 +196,9 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
             if (withinLayerBounds(pointerPosition)) {
                 hitTestChildren = true
             } else if (
-                isTouchEvent &&
-                    distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize).isFinite()
+                pointerType == PointerType.Touch &&
+                    distanceInMinimumTouchTarget(pointerPosition, minimumTouchTargetSize)
+                        .fastIsFinite()
             ) {
                 inLayer = false
                 hitTestChildren = true
@@ -217,14 +216,14 @@ internal class InnerNodeCoordinator(layoutNode: LayoutNode) : NodeCoordinator(la
                             child,
                             pointerPosition,
                             hitTestResult,
-                            isTouchEvent,
-                            inLayer
+                            pointerType,
+                            inLayer,
                         )
                         val wasHit = hitTestResult.hasHit()
                         val continueHitTest: Boolean
                         if (!wasHit) {
                             continueHitTest = true
-                        } else if (hitTestResult.shouldSharePointerInputWithSibling) {
+                        } else if (child.outerCoordinator.shouldSharePointerInputWithSiblings()) {
                             hitTestResult.acceptHits()
                             continueHitTest = true
                         } else {

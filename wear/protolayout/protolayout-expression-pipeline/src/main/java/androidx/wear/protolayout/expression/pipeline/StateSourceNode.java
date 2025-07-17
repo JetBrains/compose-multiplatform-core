@@ -16,7 +16,6 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicType;
@@ -24,12 +23,14 @@ import androidx.wear.protolayout.expression.DynamicDataKey;
 import androidx.wear.protolayout.expression.PlatformDataKey;
 import androidx.wear.protolayout.expression.proto.DynamicDataProto.DynamicDataValue;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.function.Function;
 
 class StateSourceNode<T>
         implements DynamicDataSourceNode<T>,
                 DynamicTypeValueReceiverWithPreUpdate<DynamicDataValue> {
-    @NonNull private static final String RESERVED_NAMESPACE = "protolayout";
+    private static final @NonNull String RESERVED_NAMESPACE = "protolayout";
     private final DataStore mDataStore;
     private final DynamicDataKey<?> mKey;
     private final Function<DynamicDataValue, T> mStateExtractor;
@@ -109,8 +110,7 @@ class StateSourceNode<T>
         mInitialDataSent = true;
     }
 
-    @NonNull
-    static <T extends DynamicType> DynamicDataKey<T> createKey(
+    static <T extends DynamicType> @NonNull DynamicDataKey<T> createKey(
             @NonNull String namespace, @NonNull String key) {
         if (namespace.isEmpty()) {
             return new AppDataKey<T>(key);

@@ -26,6 +26,9 @@ import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
 import androidx.camera.core.CameraSelector.DEFAULT_FRONT_CAMERA
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
+import androidx.camera.integration.view.MainActivity.CAMERA_DIRECTION_BACK
+import androidx.camera.integration.view.MainActivity.CAMERA_DIRECTION_FRONT
+import androidx.camera.integration.view.MainActivity.INTENT_EXTRA_CAMERA_DIRECTION
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -60,16 +63,23 @@ class ComposeUiFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View {
         val bundle: Bundle? = requireActivity().intent.extras
         if (bundle != null) {
             val scaleTypeId =
                 bundle.getInt(
                     MainActivity.INTENT_EXTRA_SCALE_TYPE,
-                    MainActivity.DEFAULT_SCALE_TYPE_ID
+                    MainActivity.DEFAULT_SCALE_TYPE_ID,
                 )
             currentScaleType = PreviewView.ScaleType.values()[scaleTypeId]
+
+            lensFacing =
+                when (bundle.getString(INTENT_EXTRA_CAMERA_DIRECTION, CAMERA_DIRECTION_BACK)) {
+                    CAMERA_DIRECTION_BACK -> LENS_FACING_BACK
+                    CAMERA_DIRECTION_FRONT -> LENS_FACING_FRONT
+                    else -> LENS_FACING_BACK
+                }
         }
         val previewView = PreviewView(requireContext())
         previewView.scaleType = currentScaleType
@@ -82,6 +92,7 @@ class ComposeUiFragment : Fragment() {
             CameraController.VIDEO_CAPTURE or CameraController.IMAGE_CAPTURE
         )
         previewView.controller = cameraController
+        updateCameraOrientation()
         cameraController.bindToLifecycle(viewLifecycleOwner)
 
         return ComposeView(requireContext()).apply { setContent { AddPreviewView(previewView) } }
@@ -93,14 +104,8 @@ class ComposeUiFragment : Fragment() {
     }
 
     private fun onToggleCamera() {
-        cameraController.cameraSelector =
-            if (lensFacing == LENS_FACING_BACK) {
-                lensFacing = LENS_FACING_FRONT
-                DEFAULT_FRONT_CAMERA
-            } else {
-                lensFacing = LENS_FACING_BACK
-                DEFAULT_BACK_CAMERA
-            }
+        lensFacing = if (lensFacing == LENS_FACING_BACK) LENS_FACING_FRONT else LENS_FACING_BACK
+        updateCameraOrientation()
     }
 
     private fun onToggleEffect() {
@@ -112,6 +117,14 @@ class ComposeUiFragment : Fragment() {
                 cameraController.setEffects(setOf(toneMappingEffect))
                 true
             }
+    }
+
+    private fun updateCameraOrientation() {
+        if (lensFacing == LENS_FACING_BACK) {
+            cameraController.cameraSelector = DEFAULT_BACK_CAMERA
+        } else {
+            cameraController.cameraSelector = DEFAULT_FRONT_CAMERA
+        }
     }
 
     private fun onTakePicture() {
@@ -127,30 +140,26 @@ class ComposeUiFragment : Fragment() {
         previewView.layoutParams =
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+                ViewGroup.LayoutParams.MATCH_PARENT,
             )
         Box(modifier = Modifier.fillMaxSize()) {
             AndroidView(factory = { previewView })
             Column(
                 modifier = Modifier.fillMaxSize().padding(20.dp),
-                verticalArrangement = Arrangement.Bottom
+                verticalArrangement = Arrangement.Bottom,
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceAround,
                     // Distribute buttons with spacing
                 ) {
-                    Button(
-                        onClick = ::onToggleEffect,
-                    ) {
-                        Text("Effect")
-                    }
+                    Button(onClick = ::onToggleEffect) { Text("Effect") }
                     Button(onClick = ::onToggleCamera) { Text("Toggle") }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    horizontalArrangement = Arrangement.SpaceAround,
                 ) {
                     Button(onClick = ::onTakePicture) { Text("Capture") }
                     Button(onClick = ::onRecord) { Text("Record") }

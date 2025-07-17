@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
+import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.fastRoundToInt
 import kotlin.math.max
 
@@ -54,7 +55,6 @@ import kotlin.math.max
  * @param contentScale strategy for scaling [painter] if its size does not match the content size
  * @param alpha opacity of [painter]
  * @param colorFilter optional [ColorFilter] to apply to [painter]
- *
  * @sample androidx.compose.ui.samples.PainterModifierSample
  */
 fun Modifier.paint(
@@ -63,7 +63,7 @@ fun Modifier.paint(
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Inside,
     alpha: Float = DefaultAlpha,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
 ) =
     this then
         PainterElement(
@@ -72,7 +72,7 @@ fun Modifier.paint(
             alignment = alignment,
             contentScale = contentScale,
             alpha = alpha,
-            colorFilter = colorFilter
+            colorFilter = colorFilter,
         )
 
 /**
@@ -84,7 +84,6 @@ fun Modifier.paint(
  * @param contentScale strategy for scaling [painter] if its size does not match the content size
  * @param alpha opacity of [painter]
  * @param colorFilter optional [ColorFilter] to apply to [painter]
- *
  * @sample androidx.compose.ui.samples.PainterModifierSample
  */
 private data class PainterElement(
@@ -93,7 +92,7 @@ private data class PainterElement(
     val alignment: Alignment,
     val contentScale: ContentScale,
     val alpha: Float,
-    val colorFilter: ColorFilter?
+    val colorFilter: ColorFilter?,
 ) : ModifierNodeElement<PainterNode>() {
     override fun create(): PainterNode {
         return PainterNode(
@@ -152,7 +151,7 @@ private class PainterNode(
     var alignment: Alignment = Alignment.Center,
     var contentScale: ContentScale = ContentScale.Inside,
     var alpha: Float = DefaultAlpha,
-    var colorFilter: ColorFilter? = null
+    var colorFilter: ColorFilter? = null,
 ) : LayoutModifierNode, Modifier.Node(), DrawModifierNode {
 
     /**
@@ -167,7 +166,7 @@ private class PainterNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(modifyConstraints(constraints))
         return layout(placeable.width, placeable.height) { placeable.placeRelative(0, 0) }
@@ -175,7 +174,7 @@ private class PainterNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return if (useIntrinsicSize) {
             val constraints = modifyConstraints(Constraints(maxHeight = height))
@@ -188,7 +187,7 @@ private class PainterNode(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return if (useIntrinsicSize) {
             val constraints = modifyConstraints(Constraints(maxHeight = height))
@@ -201,7 +200,7 @@ private class PainterNode(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int {
         return if (useIntrinsicSize) {
             val constraints = modifyConstraints(Constraints(maxWidth = width))
@@ -214,7 +213,7 @@ private class PainterNode(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int {
         return if (useIntrinsicSize) {
             val constraints = modifyConstraints(Constraints(maxWidth = width))
@@ -263,7 +262,7 @@ private class PainterNode(
             // the provided bounds
             return constraints.copy(
                 minWidth = constraints.maxWidth,
-                minHeight = constraints.maxHeight
+                minHeight = constraints.maxHeight,
             )
         }
 
@@ -331,7 +330,7 @@ private class PainterNode(
             alignment.align(
                 IntSize(scaledSize.width.fastRoundToInt(), scaledSize.height.fastRoundToInt()),
                 IntSize(size.width.fastRoundToInt(), size.height.fastRoundToInt()),
-                layoutDirection
+                layoutDirection,
             )
 
         val dx = alignedPosition.x.toFloat()
@@ -349,9 +348,10 @@ private class PainterNode(
         drawContent()
     }
 
-    private fun Size.hasSpecifiedAndFiniteWidth() = this != Size.Unspecified && width.isFinite()
+    private fun Size.hasSpecifiedAndFiniteWidth() = this != Size.Unspecified && width.fastIsFinite()
 
-    private fun Size.hasSpecifiedAndFiniteHeight() = this != Size.Unspecified && height.isFinite()
+    private fun Size.hasSpecifiedAndFiniteHeight() =
+        this != Size.Unspecified && height.fastIsFinite()
 
     override fun toString(): String =
         "PainterModifier(" +

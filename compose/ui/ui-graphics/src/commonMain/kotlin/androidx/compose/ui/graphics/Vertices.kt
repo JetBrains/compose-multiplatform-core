@@ -25,7 +25,7 @@ class Vertices(
     positions: List<Offset>,
     textureCoordinates: List<Offset>,
     colors: List<Color>,
-    indices: List<Int>
+    indices: List<Int>,
 ) /*extends NativeFieldWrapperClass2*/ {
 
     val positions: FloatArray
@@ -34,13 +34,12 @@ class Vertices(
     val indices: ShortArray
 
     init {
-        val outOfBounds: (Int) -> Boolean = { it < 0 || it >= positions.size }
         if (textureCoordinates.size != positions.size)
-            throw IllegalArgumentException("positions and textureCoordinates lengths must match.")
+            throwIllegalArgumentException("positions and textureCoordinates lengths must match.")
         if (colors.size != positions.size)
-            throw IllegalArgumentException("positions and colors lengths must match.")
-        if (indices.fastAny(outOfBounds))
-            throw IllegalArgumentException(
+            throwIllegalArgumentException("positions and colors lengths must match.")
+        if (indices.fastAny { it < 0 || it >= positions.size })
+            throwIllegalArgumentException(
                 "indices values must be valid indices " + "in the positions list."
             )
 

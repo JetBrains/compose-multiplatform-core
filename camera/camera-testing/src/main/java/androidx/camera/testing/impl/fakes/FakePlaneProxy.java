@@ -16,8 +16,9 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.ImageProxy;
+
+import org.jspecify.annotations.NonNull;
 
 import java.nio.ByteBuffer;
 
@@ -26,8 +27,7 @@ import java.nio.ByteBuffer;
  */
 public class FakePlaneProxy implements ImageProxy.PlaneProxy {
 
-    @NonNull
-    private final ByteBuffer mByteBuffer;
+    private final @NonNull ByteBuffer mByteBuffer;
 
     private final int mRowStride;
 
@@ -49,9 +49,8 @@ public class FakePlaneProxy implements ImageProxy.PlaneProxy {
         return mPixelStride;
     }
 
-    @NonNull
     @Override
-    public ByteBuffer getBuffer() {
+    public @NonNull ByteBuffer getBuffer() {
         return mByteBuffer;
     }
 }

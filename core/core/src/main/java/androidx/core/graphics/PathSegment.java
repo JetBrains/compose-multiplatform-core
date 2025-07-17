@@ -21,7 +21,7 @@ import static androidx.core.util.Preconditions.checkNotNull;
 import android.graphics.Path;
 import android.graphics.PointF;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A line segment that represents an approximate fraction of a {@link Path} after
@@ -42,8 +42,7 @@ public final class PathSegment {
     }
 
     /** The start point of the line segment. */
-    @NonNull
-    public PointF getStart() {
+    public @NonNull PointF getStart() {
         return mStart;
     }
 
@@ -55,8 +54,7 @@ public final class PathSegment {
     }
 
     /** The end point of the line segment. */
-    @NonNull
-    public PointF getEnd() {
+    public @NonNull PointF getEnd() {
         return mEnd;
     }
 

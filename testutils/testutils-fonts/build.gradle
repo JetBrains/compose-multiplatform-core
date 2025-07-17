@@ -21,15 +21,17 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    android()
+    androidLibrary {
+        namespace = "androidx.testutils.fonts"
+        androidResources.enable = true
+    }
     desktop()
 }
 
@@ -37,21 +39,12 @@ dependencies {
     commonMainImplementation(libs.kotlinStdlib)
 }
 
-android {
-    sourceSets {
-        main {
-            res.srcDirs += "src/commonMain/resources"
-            res.srcDirs += "src/androidMain/res"
-            java.srcDirs += "src/androidMain/java"
-            assets.srcDirs += "src/androidMain/assets"
-        }
-    }
-}
-
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
 }
 
-android {
-    namespace "androidx.testutils.fonts"
+androidComponents {
+    onVariants(selector().all(), { variant ->
+        variant.sources.res.addStaticSourceDirectory("src/commonMain/resources")
+    })
 }

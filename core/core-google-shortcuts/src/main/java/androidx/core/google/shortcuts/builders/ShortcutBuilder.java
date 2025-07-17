@@ -23,11 +23,12 @@ import static androidx.core.google.shortcuts.builders.Constants.SHORTCUT_LABEL_K
 import static androidx.core.google.shortcuts.builders.Constants.SHORTCUT_TYPE;
 import static androidx.core.google.shortcuts.builders.Constants.SHORTCUT_URL_KEY;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.google.android.gms.appindex.builders.IndexableBuilder;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Builder for the Shortcut Corpus.
@@ -42,34 +43,29 @@ public class ShortcutBuilder extends IndexableBuilder<ShortcutBuilder> {
     }
 
     /** Sets the label for the shortcut. */
-    @NonNull
-    public ShortcutBuilder setShortcutLabel(@NonNull String shortcutLabel) {
+    public @NonNull ShortcutBuilder setShortcutLabel(@NonNull String shortcutLabel) {
         setName(shortcutLabel);
         return put(SHORTCUT_LABEL_KEY, shortcutLabel);
     }
 
     /** Sets the description for the shortcut. */
-    @NonNull
-    public ShortcutBuilder setShortcutDescription(@NonNull String shortcutDescription) {
+    public @NonNull ShortcutBuilder setShortcutDescription(@NonNull String shortcutDescription) {
         setDescription(shortcutDescription);
         return put(SHORTCUT_DESCRIPTION_KEY, shortcutDescription);
     }
 
     /** Sets the {@link android.content.Intent} url for the shortcut. */
-    @NonNull
-    public ShortcutBuilder setShortcutUrl(@NonNull String shortcutUrl) {
+    public @NonNull ShortcutBuilder setShortcutUrl(@NonNull String shortcutUrl) {
         return put(SHORTCUT_URL_KEY, shortcutUrl);
     }
 
     /** Sets one or more capabilities for the shortcut. */
-    @NonNull
-    public ShortcutBuilder setCapability(@NonNull CapabilityBuilder... capability) {
+    public @NonNull ShortcutBuilder setCapability(CapabilityBuilder @NonNull ... capability) {
         mCapabilities = capability;
         return put(SHORTCUT_CAPABILITY_KEY, capability);
     }
 
-    @Nullable
-    public CapabilityBuilder[] getCapabilities() {
+    public CapabilityBuilder @Nullable [] getCapabilities() {
         return mCapabilities;
     }
 }

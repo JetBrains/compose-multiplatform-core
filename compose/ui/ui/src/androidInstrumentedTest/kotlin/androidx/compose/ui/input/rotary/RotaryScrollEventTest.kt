@@ -16,6 +16,9 @@
 
 package androidx.compose.ui.input.rotary
 
+import android.content.Context
+import android.hardware.input.InputManager
+import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_SCROLL
 import android.view.View
 import android.view.ViewConfiguration
@@ -38,13 +41,16 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.InputDeviceCompat.SOURCE_ROTARY_ENCODER
 import androidx.core.view.ViewConfigurationCompat.getScaledHorizontalScrollFactor
 import androidx.core.view.ViewConfigurationCompat.getScaledVerticalScrollFactor
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.view.MotionEventBuilder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -274,6 +280,56 @@ class RotaryScrollEventTest {
     }
 
     @Test
+    fun verticalRotaryEventContainsDeviceId() {
+        // Ignore on all devices which doesn't have rotary input.
+        Assume.assumeTrue(findRotaryInputDevice() != 0)
+
+        // Arrange.
+        ContentWithInitialFocus {
+            Box(
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
+            )
+        }
+
+        // Act.
+        @OptIn(ExperimentalTestApi::class)
+        rule.onRoot().performRotaryScrollInput { rotateToScrollVertically(3.0f) }
+
+        // Assert.
+        rule.runOnIdle { assertThat(receivedEvent?.inputDeviceId).isGreaterThan(1) }
+    }
+
+    @Test
+    fun horizontalRotaryEventContainsDeviceId() {
+        // Ignore on all devices which doesn't have rotary input.
+        Assume.assumeTrue(findRotaryInputDevice() != 0)
+
+        // Arrange.
+        ContentWithInitialFocus {
+            Box(
+                modifier =
+                    Modifier.onRotaryScrollEvent {
+                            receivedEvent = it
+                            true
+                        }
+                        .focusable(initiallyFocused = true)
+            )
+        }
+
+        // Act.
+        @OptIn(ExperimentalTestApi::class)
+        rule.onRoot().performRotaryScrollInput { rotateToScrollHorizontally(3.0f) }
+
+        // Assert.
+        rule.runOnIdle { assertThat(receivedEvent?.inputDeviceId).isGreaterThan(1) }
+    }
+
+    @Test
     fun rotaryEventHasTime() {
         val TIME = 1234567890L
 
@@ -452,6 +508,41 @@ class RotaryScrollEventTest {
         }
     }
 
+    @Test
+    fun onRotary_views_Interop() {
+        // Arrange
+        var eventFromOnView: MotionEvent? = null
+        lateinit var buttonView: View
+
+        rule.setFocusableContent {
+            AndroidView(
+                factory = { context ->
+                    android.widget.Button(context).apply {
+                        isFocusable = true
+                        isFocusableInTouchMode = true
+                        text = "Text"
+                        setOnGenericMotionListener { view, event ->
+                            if (view == this) {
+                                eventFromOnView = event
+                            }
+                            false
+                        }
+
+                        buttonView = this
+                    }
+                }
+            )
+        }
+        rule.runOnIdle { buttonView.requestFocus() }
+
+        // Act.
+        @OptIn(ExperimentalTestApi::class)
+        rule.onRoot().performRotaryScrollInput { rotateToScrollVertically(3.0f) }
+
+        // Assert.
+        rule.runOnIdle { assertThat(eventFromOnView).isNotNull() }
+    }
+
     private fun Modifier.focusable(initiallyFocused: Boolean = false) =
         this.then(if (initiallyFocused) Modifier.focusRequester(initialFocus) else Modifier)
             .focusTarget()
@@ -468,10 +559,28 @@ class RotaryScrollEventTest {
         get() =
             getScaledHorizontalScrollFactor(
                 ViewConfiguration.get(rootView.context),
-                rootView.context
+                rootView.context,
             )
 
     private val verticalScrollFactor: Float
         get() =
             getScaledVerticalScrollFactor(ViewConfiguration.get(rootView.context), rootView.context)
+}
+
+internal fun findRotaryInputDevice(): Int {
+    with(
+        ApplicationProvider.getApplicationContext<Context>().getSystemService(Context.INPUT_SERVICE)
+            as InputManager
+    ) {
+        inputDeviceIds.forEach { deviceId ->
+            getInputDevice(deviceId)?.apply {
+                motionRanges
+                    .find { it.source == SOURCE_ROTARY_ENCODER }
+                    ?.let {
+                        return deviceId
+                    }
+            }
+        }
+    }
+    return 0
 }

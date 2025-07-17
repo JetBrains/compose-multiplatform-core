@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -36,19 +36,31 @@ dependencies {
     implementation(libs.kotlinSerializationCore)
 
     implementation(project(":compose:integration-tests:demos:common"))
+    implementation(project(":compose:animation:animation"))
     implementation(project(":compose:foundation:foundation"))
+    implementation(project(":compose:foundation:foundation-layout"))
+    implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:material:material"))
+    implementation(project(":compose:runtime:runtime-saveable"))
+    implementation(project(":compose:ui:ui"))
+    implementation(project(":compose:ui:ui-graphics"))
+    implementation(project(":compose:ui:ui-text"))
+    implementation(project(":compose:ui:ui-unit"))
+    implementation(project(":navigation:navigation-common"))
+    implementation(project(":navigation:navigation-runtime"))
     implementation(project(":navigation:navigation-compose"))
     implementation(project(":navigation:navigation-compose:navigation-compose-samples"))
+    implementation("androidx.compose.material:material-icons-core:1.7.2")
 }
 
 androidx {
     name = "Compose Navigation Demos"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2020"
     description = "This is a project for Navigation demos."
 }
 
 android {
-    namespace "androidx.navigation.compose.demos"
+    compileSdk = 35
+    namespace = "androidx.navigation.compose.demos"
 }

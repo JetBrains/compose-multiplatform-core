@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.12.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha08)" variant="all" version="8.12.0-alpha08">
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24, or core library desugaring (current min is 21): `java.util.function.Supplier#get`"
+        errorLine1="        return mSupportedOperations.get();"
+        errorLine2="                                    ~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/creation/profile/Profile.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Painter setTextureShader("
+        errorLine2="           ~~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/creation/Painter.java"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public int addNamedColor(String name, int color) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/androidx/compose/remote/creation/profile/WidgetsProfileWriterV6.java"/>
+    </issue>
+
+</issues>

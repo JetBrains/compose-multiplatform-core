@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.os.Build
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isGoogleDevice
 import androidx.camera.camera2.pipe.integration.compat.workaround.TargetAspectRatio
 import androidx.camera.core.impl.Quirk
 
@@ -28,22 +29,22 @@ import androidx.camera.core.impl.Quirk
  *
  * @see androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio
  */
-class Nexus4AndroidLTargetAspectRatioQuirk : Quirk {
+public class Nexus4AndroidLTargetAspectRatioQuirk : Quirk {
     /** Get the corrected aspect ratio. */
     @TargetAspectRatio.Ratio
-    fun getCorrectedAspectRatio(): Int {
+    public fun getCorrectedAspectRatio(): Int {
         return TargetAspectRatio.RATIO_MAX_JPEG
     }
 
-    companion object {
+    public companion object {
         // List of devices with the issue.
         private val DEVICE_MODELS =
             listOf(
                 "NEXUS 4" // b/158749159
             )
 
-        fun isEnabled(): Boolean {
-            return "GOOGLE".equals(Build.BRAND, ignoreCase = true) &&
+        public fun isEnabled(): Boolean {
+            return isGoogleDevice() &&
                 Build.VERSION.SDK_INT < 23 &&
                 DEVICE_MODELS.contains(Build.MODEL.uppercase())
         }

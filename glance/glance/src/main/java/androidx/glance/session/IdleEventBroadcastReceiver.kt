@@ -22,7 +22,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.PowerManager
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -33,7 +32,7 @@ internal class IdleEventBroadcastReceiver(val onIdle: () -> Unit) : BroadcastRec
             listOf(
                 PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED,
                 PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED,
-                PowerManager.ACTION_LOW_POWER_STANDBY_ENABLED_CHANGED
+                PowerManager.ACTION_LOW_POWER_STANDBY_ENABLED_CHANGED,
             )
         val filter = IntentFilter().apply { events.forEach { addAction(it) } }
     }
@@ -57,7 +56,6 @@ internal class IdleEventBroadcastReceiver(val onIdle: () -> Unit) : BroadcastRec
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 private object Api33Impl {
-    @DoNotInline
     fun isLightIdleOrLowPowerStandby(pm: PowerManager): Boolean {
         return pm.isLowPowerStandbyEnabled || pm.isDeviceLightIdleMode
     }
@@ -65,7 +63,6 @@ private object Api33Impl {
 
 @RequiresApi(Build.VERSION_CODES.M)
 private object Api23Impl {
-    @DoNotInline
     fun isIdle(pm: PowerManager): Boolean {
         return pm.isDeviceIdleMode
     }

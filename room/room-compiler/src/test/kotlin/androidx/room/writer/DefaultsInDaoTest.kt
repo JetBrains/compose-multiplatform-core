@@ -27,7 +27,6 @@ import androidx.room.processor.DaoProcessor
 import androidx.room.testing.context
 import com.google.common.truth.StringSubject
 import createVerifierFromEntitiesAndViews
-import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -42,11 +41,11 @@ import org.junit.runners.Parameterized.Parameters
  * For Java default method tests, we have DefaultDaoMethodsTest in TestApp.
  */
 @RunWith(Parameterized::class)
-class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
+class DefaultsInDaoTest(private val jvmDefaultMode: String) {
     @Test
     fun abstractDao() {
         val defaultWithCompatibilityAnnotation =
-            if (jvmDefaultMode == JvmDefaultMode.ALL_COMPATIBILITY) {
+            if (jvmDefaultMode == "all-compatibility") {
                 "@JvmDefaultWithoutCompatibility"
             } else {
                 ""
@@ -69,7 +68,7 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
             @Dao
             abstract class SubjectDao : BaseDao<User>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
             generated.contains("public void upsert(final User obj)")
@@ -97,11 +96,11 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
             @Dao
             interface SubjectDao : BaseDao<User>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
             generated.contains("public void upsert(final User obj)")
-            if (jvmDefaultMode == JvmDefaultMode.DISABLE) {
+            if (jvmDefaultMode == "disable") {
                 generated.contains("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
             } else {
                 generated.contains("SubjectDao.super.upsert(")
@@ -130,14 +129,14 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
             @Dao
             interface SubjectDao : BaseDao<User>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
             generated.contains(
                 "public Object upsert(final User obj, " +
                     "final Continuation<? super Unit> \$completion)"
             )
-            if (jvmDefaultMode == JvmDefaultMode.DISABLE) {
+            if (jvmDefaultMode == "disable") {
                 generated.contains("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
             } else {
                 generated.contains("SubjectDao.super.upsert(")
@@ -166,24 +165,23 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         compileInEachDefaultsMode(
             source = source,
-            jvmTarget = "11" // private functions in interface require target jvm 9+
+            jvmTarget = "11", // private functions in interface require target jvm 9+
         ) {}
     }
 
     private fun compileInEachDefaultsMode(
         source: Source,
         jvmTarget: String = "1.8",
-        handler: (StringSubject) -> Unit
+        handler: (StringSubject) -> Unit,
     ) {
         runProcessorTest(
             sources = listOf(source, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
             javacArguments = listOf("-source", jvmTarget),
-            kotlincArguments =
-                listOf("-jvm-target=$jvmTarget", "-Xjvm-default=${jvmDefaultMode.description}")
+            kotlincArguments = listOf("-jvm-target=$jvmTarget", "-Xjvm-default=${jvmDefaultMode}"),
         ) { invocation ->
             invocation.roundEnv
                 .getElementsAnnotatedWith(androidx.room.Dao::class.qualifiedName!!)
@@ -196,7 +194,7 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
                             baseContext = invocation.context,
                             element = dao,
                             dbType = dbType,
-                            dbVerifier = createVerifierFromEntitiesAndViews(invocation)
+                            dbVerifier = createVerifierFromEntitiesAndViews(invocation),
                         )
                     val parsedDao = parser.process()
                     DaoWriter(
@@ -206,8 +204,8 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
                                 TypeWriter.WriterContext(
                                     codeLanguage = CodeLanguage.JAVA,
                                     javaLambdaSyntaxAvailable = true,
-                                    targetPlatforms = setOf(XProcessingEnv.Platform.JVM)
-                                )
+                                    targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                                ),
                         )
                         .write(invocation.processingEnv)
                     invocation.assertCompilationResult {
@@ -221,11 +219,6 @@ class DefaultsInDaoTest(private val jvmDefaultMode: JvmDefaultMode) {
     companion object {
         @JvmStatic
         @Parameters(name = "jvmDefaultMode={0}")
-        fun modes() =
-            listOf(
-                JvmDefaultMode.ALL_COMPATIBILITY,
-                JvmDefaultMode.ALL_INCOMPATIBLE,
-                JvmDefaultMode.DISABLE,
-            )
+        fun modes() = listOf("all-compatibility", "all", "disable")
     }
 }

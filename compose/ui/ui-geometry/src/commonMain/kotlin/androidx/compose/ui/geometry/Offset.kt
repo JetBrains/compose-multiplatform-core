@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
+
 package androidx.compose.ui.geometry
 
 import androidx.compose.runtime.Immutable
@@ -24,8 +26,8 @@ import androidx.compose.ui.util.unpackFloat1
 import androidx.compose.ui.util.unpackFloat2
 import kotlin.math.sqrt
 
-/** Constructs an Offset from the given relative x and y offsets */
-@Stable fun Offset(x: Float, y: Float) = Offset(packFloats(x, y))
+/** Constructs an Offset from the given relative [x] and [y] offsets */
+@Stable inline fun Offset(x: Float, y: Float) = Offset(packFloats(x, y))
 
 /**
  * An immutable 2D floating-point offset.
@@ -34,9 +36,9 @@ import kotlin.math.sqrt
  * 1. As representing a point in Cartesian space a specified distance from a separately-maintained
  *    origin. For example, the top-left position of children in the [RenderBox] protocol is
  *    typically represented as an [Offset] from the top left of the parent box.
- * 2. As a vector that can be applied to coordinates. For example, when painting a [RenderObject],
- *    the parent is passed an [Offset] from the screen's origin which it can add to the offsets of
- *    its children to find the [Offset] from the screen's origin to each of the children.
+ * 2. As a vector that can be applied to coordinates. For example, when painting a widget, the
+ *    parent is passed an [Offset] from the screen's origin which it can add to the offsets of its
+ *    children to find the [Offset] from the screen's origin to each of the children.
  *
  * Because a particular [Offset] can be interpreted as one sense at one time then as the other sense
  * at a later time, the same class is used for both senses.
@@ -44,19 +46,26 @@ import kotlin.math.sqrt
  * See also:
  * * [Size], which represents a vector describing the size of a rectangle.
  *
- * Creates an offset. The first argument sets [x], the horizontal component, and the second sets
- * [y], the vertical component.
+ * To create an [Offset], call the top-level function that accepts an x/y pair of coordinates:
+ * ```
+ * val offset = Offset(x, y)
+ * ```
+ *
+ * The primary constructor of [Offset] is intended to be used with the [packedValue] property to
+ * allow storing offsets in arrays or collections of primitives without boxing.
+ *
+ * @param packedValue [Long] value encoding the [x] and [y] components of the [Offset]. Encoded
+ *   values can be obtained by using the [packedValue] property of existing [Offset] instances.
  */
-@Suppress("NOTHING_TO_INLINE")
 @Immutable
 @kotlin.jvm.JvmInline
-value class Offset internal constructor(internal val packedValue: Long) {
+value class Offset(val packedValue: Long) {
     @Stable
-    val x: Float
+    inline val x: Float
         get() = unpackFloat1(packedValue)
 
     @Stable
-    val y: Float
+    inline val y: Float
         get() = unpackFloat2(packedValue)
 
     @Stable inline operator fun component1(): Float = x
@@ -97,10 +106,10 @@ value class Offset internal constructor(internal val packedValue: Long) {
      * - True otherwise
      */
     @Stable
-    fun isValid(): Boolean {
-        // Take the unsigned packed floats and see if they are < InfinityBase + 1 (first NaN)
+    inline fun isValid(): Boolean {
+        // Take the unsigned packed floats and see if they are > InfinityBase (any NaN)
         val v = packedValue and DualUnsignedFloatMask
-        return (v - DualFirstNaN) and Uint64High32 == Uint64High32
+        return (v + DualLoadedSignificand) and Uint64High32 == 0L
     }
 
     /**
@@ -137,7 +146,7 @@ value class Offset internal constructor(internal val packedValue: Long) {
      * pointing in the reverse direction.
      */
     @Stable
-    operator fun unaryMinus(): Offset {
+    inline operator fun unaryMinus(): Offset {
         return Offset(packedValue xor DualFloatSignBit)
     }
 
@@ -153,7 +162,7 @@ value class Offset internal constructor(internal val packedValue: Long) {
         return Offset(
             packFloats(
                 unpackFloat1(packedValue) - unpackFloat1(other.packedValue),
-                unpackFloat2(packedValue) - unpackFloat2(other.packedValue)
+                unpackFloat2(packedValue) - unpackFloat2(other.packedValue),
             )
         )
     }
@@ -169,7 +178,7 @@ value class Offset internal constructor(internal val packedValue: Long) {
         return Offset(
             packFloats(
                 unpackFloat1(packedValue) + unpackFloat1(other.packedValue),
-                unpackFloat2(packedValue) + unpackFloat2(other.packedValue)
+                unpackFloat2(packedValue) + unpackFloat2(other.packedValue),
             )
         )
     }
@@ -242,14 +251,14 @@ fun lerp(start: Offset, stop: Offset, fraction: Float): Offset {
     return Offset(
         packFloats(
             lerp(unpackFloat1(start.packedValue), unpackFloat1(stop.packedValue), fraction),
-            lerp(unpackFloat2(start.packedValue), unpackFloat2(stop.packedValue), fraction)
+            lerp(unpackFloat2(start.packedValue), unpackFloat2(stop.packedValue), fraction),
         )
     )
 }
 
 /** True if both x and y values of the [Offset] are finite. NaN values are not considered finite. */
 @Stable
-val Offset.isFinite: Boolean
+inline val Offset.isFinite: Boolean
     get() {
         // Mask out the sign bit and do an equality check in each 32-bit lane
         // against the "infinity base" mask (to check whether each packed float
@@ -260,12 +269,12 @@ val Offset.isFinite: Boolean
 
 /** `false` when this is [Offset.Unspecified]. */
 @Stable
-val Offset.isSpecified: Boolean
+inline val Offset.isSpecified: Boolean
     get() = packedValue and DualUnsignedFloatMask != UnspecifiedPackedFloats
 
 /** `true` when this is [Offset.Unspecified]. */
 @Stable
-val Offset.isUnspecified: Boolean
+inline val Offset.isUnspecified: Boolean
     get() = packedValue and DualUnsignedFloatMask == UnspecifiedPackedFloats
 
 /**

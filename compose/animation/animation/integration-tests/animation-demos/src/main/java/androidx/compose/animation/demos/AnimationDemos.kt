@@ -38,7 +38,9 @@ import androidx.compose.animation.demos.layoutanimation.ScaleEnterExitDemo
 import androidx.compose.animation.demos.layoutanimation.ScreenTransitionDemo
 import androidx.compose.animation.demos.layoutanimation.ShrineCartDemo
 import androidx.compose.animation.demos.lookahead.AnimateBoundsModifierDemo
+import androidx.compose.animation.demos.lookahead.AnimateBoundsOnFloatingToolbarDemo
 import androidx.compose.animation.demos.lookahead.CraneDemo
+import androidx.compose.animation.demos.lookahead.LookaheadInScrollingColumn
 import androidx.compose.animation.demos.lookahead.LookaheadLayoutWithAlignmentLinesDemo
 import androidx.compose.animation.demos.lookahead.LookaheadSamplesDemo
 import androidx.compose.animation.demos.lookahead.LookaheadWithAnimatedContentSize
@@ -52,6 +54,7 @@ import androidx.compose.animation.demos.lookahead.LookaheadWithScaffold
 import androidx.compose.animation.demos.lookahead.LookaheadWithSubcompose
 import androidx.compose.animation.demos.lookahead.LookaheadWithTabRowDemo
 import androidx.compose.animation.demos.lookahead.ScreenSizeChangeDemo
+import androidx.compose.animation.demos.sharedelement.SharedElementDemos
 import androidx.compose.animation.demos.singlevalue.SingleValueAnimationDemo
 import androidx.compose.animation.demos.statetransition.CrossfadeDemo
 import androidx.compose.animation.demos.statetransition.DoubleTapToLikeDemo
@@ -82,6 +85,7 @@ val AnimationDemos =
     DemoCategory(
         "Animation",
         listOf(
+            ComposableDemo("Shared Element Demos") { SharedElementDemos() },
             DemoCategory(
                 "State Transition Demos",
                 listOf(
@@ -91,7 +95,7 @@ val AnimationDemos =
                     ComposableDemo("Infinite transition") { InfiniteTransitionDemo() },
                     ComposableDemo("Multi-dimensional prop") { MultiDimensionalAnimationDemo() },
                     ComposableDemo("Repeating rotation") { RepeatedRotationDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "Layout Animation Demos",
@@ -114,7 +118,7 @@ val AnimationDemos =
                     ComposableDemo("Scaled Enter/Exit") { ScaleEnterExitDemo() },
                     ComposableDemo("Shrine Cart") { ShrineCartDemo() },
                     ComposableDemo("Screen Transition") { ScreenTransitionDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "\uD83E\uDD7C\uD83E\uDDD1\u200D\uD83D\uDD2C Lookahead Animation Demos",
@@ -144,7 +148,11 @@ val AnimationDemos =
                     },
                     ComposableDemo("Lookahead With Tab Row") { LookaheadWithTabRowDemo() },
                     ComposableDemo("Lookahead With Scaffold") { LookaheadWithScaffold() },
-                )
+                    ComposableDemo("Lookahead With Scroll") { LookaheadInScrollingColumn() },
+                    ComposableDemo("Floating Toolbar w/ AnimateBounds") {
+                        AnimateBoundsOnFloatingToolbarDemo()
+                    },
+                ),
             ),
             DemoCategory(
                 "Suspend Animation Demos",
@@ -163,13 +171,11 @@ val AnimationDemos =
                     },
                     ComposableDemo("Arc Offset Demo") { ArcOffsetDemo() },
                     ComposableDemo("Periodic Spline Demo") { PeriodicMonoSplineDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "Graphics Animation Demos",
-                listOf(
-                    ComposableDemo("Animated Vector Graphics") { AnimatedVectorGraphicsDemo() },
-                )
+                listOf(ComposableDemo("Animated Vector Graphics") { AnimatedVectorGraphicsDemo() }),
             ),
             DemoCategory(
                 "⛔ DO NOT ENTER ⛔",
@@ -184,7 +190,7 @@ val AnimationDemos =
                     ComposableDemo("AnimatedVisibility with Content Size Change") {
                         AnimatedVisibilityContentSizeChange()
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "Visual Aid \uD83D\uDC40 \uD83D\uDC40",
@@ -193,7 +199,7 @@ val AnimationDemos =
                     ComposableDemo("Row Arrangements Demo (Landscape)") { RowConfigurationDemo() },
                     ComposableDemo("Easing Functions Demo") { EasingInfoDemo() },
                     ComposableDemo("Path Easing Function Demo") { PathEasingSample() },
-                )
+                ),
             ),
             DemoCategory(
                 "\uD83C\uDF89 Fun Demos",
@@ -203,7 +209,7 @@ val AnimationDemos =
                     ComposableDemo("Chat screen") { ChatScreen() },
                     ComposableDemo("Game of fling") { FlingGameDemo() },
                     ComposableDemo("Spring chain") { SpringChainDemo() },
-                )
-            )
-        )
+                ),
+            ),
+        ),
     )

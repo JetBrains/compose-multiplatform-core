@@ -31,12 +31,12 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
         val _result: MutableList<MyEntity> = mutableListOf()
         while (_stmt.step()) {
           val _item: MyEntity
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           _item = MyEntity(_tmpPk)
           _result.add(_item)
         }

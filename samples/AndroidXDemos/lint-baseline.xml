@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha12" type="baseline" client="gradle" dependencies="false" name="AGP (8.4.0-alpha12)" variant="all" version="8.4.0-alpha12">
+<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
 
     <issue
         id="OnClick"
@@ -155,51 +155,6 @@
         errorLine2="                                       ~~~~~">
         <location
             file="src/main/java/com/example/androidx/widget/AsyncListUtilActivity.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method added in API level 29; however, the containing class com.example.androidx.app.AppCompatDefaultNightModeBootAwareActivity is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="                        .detectImplicitDirectBoot()"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/example/androidx/app/AppCompatDefaultNightModeBootAwareActivity.java"/>
-    </issue>
-
-    <issue
-        id="ClassVerificationFailure"
-        message="This call references a method added in API level 24; however, the containing class com.example.androidx.widget.selection.fancy.FancySelectionDemoActivity.OnContextClickListener is reachable from earlier API levels and will fail run-time class verification."
-        errorLine1="            if (view.showContextMenu(x, y)) {"
-        errorLine2="                     ~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/example/androidx/widget/selection/fancy/FancySelectionDemoActivity.java"/>
-    </issue>
-
-    <issue
-        id="NullabilityAnnotationsDetector"
-        message="Use `@androidx.annotation.NonNull` instead of `@org.jetbrains.annotations.NotNull`"
-        errorLine1="        @NotNull"
-        errorLine2="        ~~~~~~~~">
-        <location
-            file="src/main/java/com/example/androidx/widget/RemoveLargeItemsDemo.java"/>
-    </issue>
-
-    <issue
-        id="NullabilityAnnotationsDetector"
-        message="Use `@androidx.annotation.NonNull` instead of `@org.jetbrains.annotations.NotNull`"
-        errorLine1="        public MyViewHolder onCreateViewHolder(@NotNull ViewGroup parent, int viewType) {"
-        errorLine2="                                               ~~~~~~~~">
-        <location
-            file="src/main/java/com/example/androidx/widget/RemoveLargeItemsDemo.java"/>
-    </issue>
-
-    <issue
-        id="NullabilityAnnotationsDetector"
-        message="Use `@androidx.annotation.NonNull` instead of `@org.jetbrains.annotations.NotNull`"
-        errorLine1="        public void onBindViewHolder(@NotNull MyViewHolder myViewHolder, int position) {"
-        errorLine2="                                     ~~~~~~~~">
-        <location
-            file="src/main/java/com/example/androidx/widget/RemoveLargeItemsDemo.java"/>
     </issue>
 
     <issue
@@ -1108,8 +1063,8 @@
     <issue
         id="UnknownNullness"
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,"
-        errorLine2="                                 ~~~~~~~~~~~~~~">
+        errorLine1="        public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,"
+        errorLine2="                                           ~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/example/androidx/app/DialogFragmentUsage.java"/>
     </issue>
@@ -1801,8 +1756,8 @@
     <issue
         id="UnknownNullness"
         message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
-        errorLine1="        public Loader&lt;Cursor> onCreateLoader(int id, Bundle bundle) {"
-        errorLine2="                                                     ~~~~~~">
+        errorLine1="        public @NonNull Loader&lt;Cursor> onCreateLoader(int id, Bundle bundle) {"
+        errorLine2="                                                              ~~~~~~">
         <location
             file="src/main/java/com/example/androidx/graphics/PaletteActivity.java"/>
     </issue>

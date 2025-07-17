@@ -22,10 +22,11 @@ import android.os.SystemClock;
 import android.text.format.DateUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.os.OperationCanceledException;
 import androidx.loader.app.LoaderManager;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -269,8 +270,7 @@ public abstract class AsyncTaskLoader<D> extends Loader<D> {
      * @see #cancelLoadInBackground
      * @see #onCanceled
      */
-    @Nullable
-    public abstract D loadInBackground();
+    public abstract @Nullable D loadInBackground();
 
     /**
      * Calls {@link #loadInBackground()}.
@@ -284,8 +284,7 @@ public abstract class AsyncTaskLoader<D> extends Loader<D> {
      *
      * @see #loadInBackground
      */
-    @Nullable
-    protected D onLoadInBackground() {
+    protected @Nullable D onLoadInBackground() {
         return loadInBackground();
     }
 
@@ -325,9 +324,8 @@ public abstract class AsyncTaskLoader<D> extends Loader<D> {
      *
      * @return the {@link Executor} to use for this {@link Loader}'s {@link android.os.AsyncTask}s.
      */
-    @NonNull
     @SuppressWarnings("deprecation") /* AsyncTask */
-    protected Executor getExecutor() {
+    protected @NonNull Executor getExecutor() {
         return android.os.AsyncTask.THREAD_POOL_EXECUTOR;
     }
 
@@ -339,7 +337,7 @@ public abstract class AsyncTaskLoader<D> extends Loader<D> {
     @Override
     @Deprecated
     public void dump(@NonNull String prefix, @Nullable FileDescriptor fd,
-            @NonNull PrintWriter writer, @Nullable String[] args) {
+            @NonNull PrintWriter writer, String @Nullable [] args) {
         super.dump(prefix, fd, writer, args);
         if (mTask != null) {
             writer.print(prefix); writer.print("mTask="); writer.print(mTask);

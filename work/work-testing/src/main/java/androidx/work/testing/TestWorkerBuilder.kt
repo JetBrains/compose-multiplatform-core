@@ -30,6 +30,7 @@ import java.util.concurrent.Executor
  * @param context The application [Context]
  * @param executor The [Executor] that the [Worker] runs on
  * @param inputData The input data for the [Worker]
+ * @param tags The tags associated with this [Worker]
  * @param runAttemptCount The run attempt count of the [Worker]
  * @param triggeredContentUris The list of triggered content [Uri]s
  * @param triggeredContentAuthorities The list of triggered content authorities
@@ -42,7 +43,7 @@ public inline fun <reified W : Worker> TestWorkerBuilder(
     tags: List<String> = emptyList(),
     runAttemptCount: Int = 1,
     triggeredContentUris: List<Uri> = emptyList(),
-    triggeredContentAuthorities: List<String> = emptyList()
+    triggeredContentAuthorities: List<String> = emptyList(),
 ): TestWorkerBuilder<W> {
     val builder = TestWorkerBuilder.from(context, W::class.java, executor)
     builder.apply {

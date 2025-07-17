@@ -30,8 +30,8 @@ import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Drawable that wraps a bitmap and can be drawn with rounded corners. You can create a
@@ -67,16 +67,14 @@ public abstract class RoundedBitmapDrawable extends Drawable {
     /**
      * Returns the paint used to render this drawable.
      */
-    @NonNull
-    public final Paint getPaint() {
+    public final @NonNull Paint getPaint() {
         return mPaint;
     }
 
     /**
      * Returns the bitmap used by this drawable to render. May be null.
      */
-    @Nullable
-    public final Bitmap getBitmap() {
+    public final @Nullable Bitmap getBitmap() {
         return mBitmap;
     }
 

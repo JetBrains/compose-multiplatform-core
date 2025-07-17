@@ -18,60 +18,50 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.VisibilityModifier
 import androidx.room.compiler.codegen.XFunSpec
-import androidx.room.compiler.codegen.XFunSpec.Builder.Companion.addStatement
 import androidx.room.compiler.codegen.XTypeSpec
 import androidx.room.ext.CommonTypeNames
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.SQLiteDriverTypeNames
-import androidx.room.ext.SupportDbTypeNames
 import androidx.room.solver.CodeGenScope
-import androidx.room.vo.FieldWithIndex
-import androidx.room.vo.Fields
-import androidx.room.vo.Pojo
+import androidx.room.vo.DataClass
+import androidx.room.vo.Properties
+import androidx.room.vo.PropertyWithIndex
 import androidx.room.vo.ShortcutEntity
 import androidx.room.vo.columnNames
 
 class EntityUpdateAdapterWriter
 private constructor(
     val tableName: String,
-    val pojo: Pojo,
-    val primaryKeyFields: Fields,
-    val onConflict: String
+    val dataClass: DataClass,
+    val primaryKeyFields: Properties,
+    val onConflict: String,
 ) {
     companion object {
         fun create(entity: ShortcutEntity, onConflict: String) =
             EntityUpdateAdapterWriter(
                 tableName = entity.tableName,
-                pojo = entity.pojo,
-                primaryKeyFields = entity.primaryKey.fields,
-                onConflict = onConflict
+                dataClass = entity.dataClass,
+                primaryKeyFields = entity.primaryKey.properties,
+                onConflict = onConflict,
             )
     }
 
-    fun createAnonymous(typeWriter: TypeWriter, dbParam: String, useDriverApi: Boolean): XTypeSpec {
-        return if (useDriverApi) {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage)
-            } else {
-                XTypeSpec.anonymousClassBuilder(typeWriter.codeLanguage, "%L", dbParam)
-            }
+    fun createAnonymous(typeWriter: TypeWriter): XTypeSpec {
+        return XTypeSpec.anonymousClassBuilder()
             .apply {
                 superclass(
-                    if (useDriverApi) {
-                        RoomTypeNames.DELETE_OR_UPDATE_ADAPTER.parametrizedBy(pojo.typeName)
-                    } else {
-                        RoomTypeNames.DELETE_OR_UPDATE_ADAPTER_COMPAT.parametrizedBy(pojo.typeName)
-                    }
+                    RoomTypeNames.DELETE_OR_UPDATE_ADAPTER.parametrizedBy(dataClass.typeName)
                 )
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "createQuery",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             returns(CommonTypeNames.STRING)
-                            val pojoCols = pojo.columnNames.joinToString(",") { "`$it` = ?" }
+                            val dataClassCols =
+                                dataClass.columnNames.joinToString(",") { "`$it` = ?" }
                             val pkFieldsCols =
                                 primaryKeyFields.columnNames.joinToString(" AND ") { "`$it` = ?" }
                             val query = buildString {
@@ -80,7 +70,7 @@ private constructor(
                                 } else {
                                     append("UPDATE `$tableName` SET")
                                 }
-                                append(" $pojoCols")
+                                append(" $dataClassCols")
                                 append(" WHERE")
                                 append(" $pkFieldsCols")
                             }
@@ -90,46 +80,37 @@ private constructor(
                 )
                 addFunction(
                     XFunSpec.builder(
-                            language = language,
                             name = "bind",
                             visibility = VisibilityModifier.PROTECTED,
-                            isOverride = true
+                            isOverride = true,
                         )
                         .apply {
                             val stmtParam = "statement"
-                            addParameter(
-                                if (useDriverApi) {
-                                    SQLiteDriverTypeNames.STATEMENT
-                                } else {
-                                    SupportDbTypeNames.SQLITE_STMT
-                                },
-                                stmtParam
-                            )
+                            addParameter(stmtParam, SQLiteDriverTypeNames.STATEMENT)
                             val entityParam = "entity"
-                            addParameter(pojo.typeName, entityParam)
-                            val mappedField = FieldWithIndex.byOrder(pojo.fields)
-                            val bindScope =
-                                CodeGenScope(writer = typeWriter, useDriverApi = useDriverApi)
-                            FieldReadWriteWriter.bindToStatement(
+                            addParameter(entityParam, dataClass.typeName)
+                            val mappedField = PropertyWithIndex.byOrder(dataClass.properties)
+                            val bindScope = CodeGenScope(writer = typeWriter)
+                            PropertyReadWriteWriter.bindToStatement(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
-                                fieldsWithIndices = mappedField,
-                                scope = bindScope
+                                propertiesWithIndices = mappedField,
+                                scope = bindScope,
                             )
-                            val pkeyStart = pojo.fields.size
+                            val pkeyStart = dataClass.properties.size
                             val mappedPrimaryKeys =
                                 primaryKeyFields.mapIndexed { index, field ->
-                                    FieldWithIndex(
-                                        field = field,
+                                    PropertyWithIndex(
+                                        property = field,
                                         indexVar = "${pkeyStart + index + 1}",
-                                        alwaysExists = true
+                                        alwaysExists = true,
                                     )
                                 }
-                            FieldReadWriteWriter.bindToStatement(
+                            PropertyReadWriteWriter.bindToStatement(
                                 ownerVar = entityParam,
                                 stmtParamVar = stmtParam,
-                                fieldsWithIndices = mappedPrimaryKeys,
-                                scope = bindScope
+                                propertiesWithIndices = mappedPrimaryKeys,
+                                scope = bindScope,
                             )
                             addCode(bindScope.generate())
                         }

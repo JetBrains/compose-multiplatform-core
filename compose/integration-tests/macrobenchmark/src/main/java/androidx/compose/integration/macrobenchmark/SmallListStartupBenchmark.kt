@@ -32,24 +32,17 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class SmallListStartupBenchmark(
     private val startupMode: StartupMode,
-    private val compilationMode: CompilationMode
+    private val compilationMode: CompilationMode,
 ) {
     @get:Rule val benchmarkRule = MacrobenchmarkRule()
-
-    /**
-     * Temporary, tracking for b/231455742
-     *
-     * Note that this tracing only exists on more recent API levels
-     */
-    private val metrics = getStartupMetrics()
 
     @Test
     fun startup() =
         benchmarkRule.measureStartup(
             compilationMode = compilationMode,
             startupMode = startupMode,
-            metrics = metrics,
-            packageName = "androidx.compose.integration.macrobenchmark.target"
+            metrics = getStartupMetrics(),
+            packageName = "androidx.compose.integration.macrobenchmark.target",
         ) {
             action = "androidx.compose.integration.macrobenchmark.target.LAZY_COLUMN_ACTIVITY"
             putExtra("ITEM_COUNT", 5)

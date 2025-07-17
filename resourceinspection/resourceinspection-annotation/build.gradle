@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,13 +29,13 @@ plugins {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.1.0")
+    api(libs.jspecify)
+    implementation("androidx.annotation:annotation:1.8.1")
 }
 
 androidx {
     name = "Resource Inspection - Annotations"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Annotation processors for Android resource and layout inspection"
-    metalavaK2UastEnabled = true
 }

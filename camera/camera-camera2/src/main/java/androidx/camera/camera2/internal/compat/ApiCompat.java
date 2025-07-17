@@ -24,9 +24,9 @@ import android.hardware.camera2.params.OutputConfiguration;
 import android.util.Size;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A helper class to address ClassVerificationFailure.
@@ -49,7 +49,6 @@ public final class ApiCompat {
         /**
          * @see CameraDevice#close()
          */
-        @DoNotInline
         public static void close(@NonNull CameraDevice cameraDevice) {
             cameraDevice.close();
         }
@@ -67,9 +66,8 @@ public final class ApiCompat {
         /**
          * @see CameraCaptureSession.StateCallback#onSurfacePrepared(CameraCaptureSession, Surface)
          */
-        @DoNotInline
         public static void onSurfacePrepared(
-                @NonNull CameraCaptureSession.StateCallback callback,
+                CameraCaptureSession.@NonNull StateCallback callback,
                 @NonNull CameraCaptureSession session,
                 @NonNull Surface surface) {
             callback.onSurfacePrepared(session, surface);
@@ -89,9 +87,8 @@ public final class ApiCompat {
          * @see CameraCaptureSession.CaptureCallback#onCaptureBufferLost(CameraCaptureSession,
          * CaptureRequest, Surface, long)
          */
-        @DoNotInline
         public static void onCaptureBufferLost(
-                @NonNull CameraCaptureSession.CaptureCallback callback,
+                CameraCaptureSession.@NonNull CaptureCallback callback,
                 @NonNull CameraCaptureSession session,
                 @NonNull CaptureRequest request,
                 @NonNull Surface surface,
@@ -112,9 +109,8 @@ public final class ApiCompat {
         /**
          * @see CameraCaptureSession.StateCallback#onCaptureQueueEmpty(CameraCaptureSession)
          */
-        @DoNotInline
         public static void onCaptureQueueEmpty(
-                @NonNull CameraCaptureSession.StateCallback callback,
+                CameraCaptureSession.@NonNull StateCallback callback,
                 @NonNull CameraCaptureSession session) {
             callback.onCaptureQueueEmpty(session);
         }
@@ -122,10 +118,8 @@ public final class ApiCompat {
         /**
          * @see OutputConfiguration
          */
-        @DoNotInline
-        @NonNull
-        public static <T> OutputConfiguration newOutputConfiguration(@NonNull Size surfaceSize,
-                @NonNull Class<T> klass) {
+        public static <T> @NonNull OutputConfiguration newOutputConfiguration(
+                @NonNull Size surfaceSize, @NonNull Class<T> klass) {
             return new OutputConfiguration(surfaceSize, klass);
         }
     }
@@ -142,9 +136,8 @@ public final class ApiCompat {
         /**
          * @see CameraManager.AvailabilityCallback#onCameraAccessPrioritiesChanged()
          */
-        @DoNotInline
         public static void onCameraAccessPrioritiesChanged(
-                @NonNull CameraManager.AvailabilityCallback callback) {
+                CameraManager.@NonNull AvailabilityCallback callback) {
             callback.onCameraAccessPrioritiesChanged();
         }
     }

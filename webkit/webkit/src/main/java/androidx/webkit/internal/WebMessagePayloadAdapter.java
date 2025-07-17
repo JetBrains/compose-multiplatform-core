@@ -16,11 +16,11 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.webkit.WebMessageCompat;
 
 import org.chromium.support_lib_boundary.WebMessagePayloadBoundaryInterface;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -31,23 +31,22 @@ import java.util.Objects;
 public class WebMessagePayloadAdapter implements WebMessagePayloadBoundaryInterface {
     private final @WebMessagePayloadType int mType;
     private final @Nullable String mString;
-    private final @Nullable byte[] mArrayBuffer;
+    private final byte @Nullable [] mArrayBuffer;
 
-    public WebMessagePayloadAdapter(@Nullable final String data) {
+    public WebMessagePayloadAdapter(final @Nullable String data) {
         mType = WebMessageCompat.TYPE_STRING;
         mString = data;
         mArrayBuffer = null;
     }
 
-    public WebMessagePayloadAdapter(@NonNull final byte[] arrayBuffer) {
+    public WebMessagePayloadAdapter(final byte @NonNull [] arrayBuffer) {
         mType = WebMessageCompat.TYPE_ARRAY_BUFFER;
         mString = null;
         mArrayBuffer = arrayBuffer;
     }
 
     @Override
-    @NonNull
-    public String[] getSupportedFeatures() {
+    public String @NonNull [] getSupportedFeatures() {
         // getType, getAsString and getAsArrayBuffer are covered by
         // WEB_MESSAGE_ARRAY_BUFFER.
         return new String[0];
@@ -58,16 +57,14 @@ public class WebMessagePayloadAdapter implements WebMessagePayloadBoundaryInterf
         return mType;
     }
 
-    @Nullable
     @Override
-    public String getAsString() {
+    public @Nullable String getAsString() {
         checkType(WebMessagePayloadType.TYPE_STRING);
         return mString;
     }
 
-    @NonNull
     @Override
-    public byte[] getAsArrayBuffer() {
+    public byte @NonNull [] getAsArrayBuffer() {
         checkType(WebMessagePayloadType.TYPE_ARRAY_BUFFER);
         return Objects.requireNonNull(mArrayBuffer);
     }

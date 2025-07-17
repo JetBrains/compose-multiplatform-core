@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.hardware.camera2.params.StreamConfigurationMap
 import android.os.Build
 import android.util.Size
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isMotorolaDevice
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.Quirk
 
@@ -32,9 +33,9 @@ import androidx.camera.core.impl.Quirk
  * TODO: enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class ExtraSupportedOutputSizeQuirk : Quirk {
+public class ExtraSupportedOutputSizeQuirk : Quirk {
     /** Returns the extra supported resolutions on the device. */
-    fun getExtraSupportedResolutions(format: Int): Array<Size> {
+    public fun getExtraSupportedResolutions(format: Int): Array<Size> {
         return if (
             (format == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE && isMotoE5Play)
         ) {
@@ -45,7 +46,7 @@ class ExtraSupportedOutputSizeQuirk : Quirk {
     }
 
     /** Returns the extra supported resolutions on the device. */
-    fun <T> getExtraSupportedResolutions(klass: Class<T>): Array<Size> {
+    public fun <T> getExtraSupportedResolutions(klass: Class<T>): Array<Size> {
         return if (StreamConfigurationMap.isOutputSupportedFor(klass) && isMotoE5Play) {
             motoE5PlayExtraSupportedResolutions
         } else {
@@ -64,14 +65,12 @@ class ExtraSupportedOutputSizeQuirk : Quirk {
                 // SD (640:480 is already included in the original list)
             )
 
-    companion object {
-        fun isEnabled(): Boolean {
+    public companion object {
+        public fun isEnabled(): Boolean {
             return isMotoE5Play
         }
 
         internal val isMotoE5Play: Boolean
-            get() =
-                "motorola".equals(Build.BRAND, ignoreCase = true) &&
-                    "moto e5 play".equals(Build.MODEL, ignoreCase = true)
+            get() = isMotorolaDevice() && "moto e5 play".equals(Build.MODEL, ignoreCase = true)
     }
 }

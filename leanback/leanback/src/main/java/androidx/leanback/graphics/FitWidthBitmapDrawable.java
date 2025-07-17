@@ -26,8 +26,9 @@ import android.os.Build;
 import android.util.IntProperty;
 import android.util.Property;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Subclass of {@link Drawable} that can be used to draw a bitmap into a region. Bitmap
@@ -57,9 +58,8 @@ public class FitWidthBitmapDrawable extends Drawable {
             mOffset = other.mOffset;
         }
 
-        @NonNull
         @Override
-        public Drawable newDrawable() {
+        public @NonNull Drawable newDrawable() {
             return new FitWidthBitmapDrawable(this);
         }
 

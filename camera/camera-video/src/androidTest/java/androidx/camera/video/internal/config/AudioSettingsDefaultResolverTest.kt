@@ -18,13 +18,16 @@ package androidx.camera.video.internal.config
 
 import android.media.AudioFormat
 import android.media.MediaRecorder
+import android.os.Build
 import android.util.Range
+import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.video.AudioSpec
 import androidx.camera.video.internal.audio.AudioSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -35,30 +38,42 @@ class AudioSettingsDefaultResolverTest {
 
     @Test
     fun sampleRateRangeResolvesToSupportedSampleRate() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
+        )
         val audioSpecs =
             listOf(
                 AudioSpec.builder().build(),
                 AudioSpec.builder().setSampleRate(Range(0, 1000)).build(),
                 AudioSpec.builder().setSampleRate(Range(1000, 10000)).build(),
-                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build()
+                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build(),
             )
 
         audioSpecs.forEach {
-            val audioSettings = AudioSettingsDefaultResolver(it).get()
+            val audioSettings = AudioSettingsDefaultResolver(it, null).get()
             assertThat(
-                AudioSource.isSettingsSupported(
-                    audioSettings.sampleRate,
-                    audioSettings.channelCount,
-                    audioSettings.audioFormat
+                    AudioSource.isSettingsSupported(
+                        audioSettings.captureSampleRate,
+                        audioSettings.channelCount,
+                        audioSettings.audioFormat,
+                    )
                 )
-            )
+                .isTrue()
         }
     }
 
     @Test
     fun audioSpecDefaultProducesValidSourceEnum() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
+        )
         val audioSpec = AudioSpec.builder().build()
-        val resolvedAudioSourceEnum = AudioSettingsDefaultResolver(audioSpec).get().audioSource
+        val resolvedAudioSourceEnum =
+            AudioSettingsDefaultResolver(audioSpec, null).get().audioSource
 
         assertThat(resolvedAudioSourceEnum)
             .isAnyOf(MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.AudioSource.MIC)
@@ -66,8 +81,14 @@ class AudioSettingsDefaultResolverTest {
 
     @Test
     fun audioSpecDefaultProducesValidSourceFormat() {
+        // Skip for b/264902324
+        assumeFalse(
+            "Emulator API 30 crashes running this test.",
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
+        )
         val audioSpec = AudioSpec.builder().build()
-        val resolvedAudioSourceFormat = AudioSettingsDefaultResolver(audioSpec).get().audioFormat
+        val resolvedAudioSourceFormat =
+            AudioSettingsDefaultResolver(audioSpec, null).get().audioFormat
 
         assertThat(resolvedAudioSourceFormat).isNotEqualTo(AudioFormat.ENCODING_INVALID)
     }

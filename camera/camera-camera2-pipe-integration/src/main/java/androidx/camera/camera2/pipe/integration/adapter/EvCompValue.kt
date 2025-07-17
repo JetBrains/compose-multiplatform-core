@@ -23,11 +23,11 @@ import androidx.camera.core.ExposureState
 
 /** Immutable adaptor to the ExposureState interface. */
 @SuppressLint("UnsafeOptInUsageError")
-data class EvCompValue(
+public data class EvCompValue(
     private val supported: Boolean,
     private val index: Int,
     private val range: Range<Int>,
-    private val step: Rational
+    private val step: Rational,
 ) : ExposureState {
     override fun getExposureCompensationIndex(): Int = index
 

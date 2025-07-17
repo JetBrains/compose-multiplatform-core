@@ -17,7 +17,6 @@
 package androidx.compose.ui.modifier
 
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.internal.JvmDefaultWithCompatibility
 import androidx.compose.ui.platform.InspectorInfo
@@ -43,7 +42,6 @@ interface ModifierLocalConsumer : Modifier.Element {
  * the left of this modifier, or above this modifier in the layout tree.
  */
 @Stable
-@ExperimentalComposeUiApi
 fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit): Modifier {
     return this.then(
         ModifierLocalConsumerImpl(
@@ -51,7 +49,7 @@ fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit):
             debugInspectorInfo {
                 name = "modifierLocalConsumer"
                 properties["consumer"] = consumer
-            }
+            },
         )
     )
 }
@@ -59,7 +57,7 @@ fun Modifier.modifierLocalConsumer(consumer: ModifierLocalReadScope.() -> Unit):
 @Stable
 private class ModifierLocalConsumerImpl(
     val consumer: ModifierLocalReadScope.() -> Unit,
-    debugInspectorInfo: InspectorInfo.() -> Unit
+    debugInspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierLocalConsumer, InspectorValueInfo(debugInspectorInfo) {
 
     override fun onModifierLocalsUpdated(scope: ModifierLocalReadScope) {

@@ -19,11 +19,12 @@ package androidx.wear.protolayout.renderer.common;
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
 import androidx.wear.protolayout.proto.StateProto.State;
 import androidx.wear.protolayout.renderer.common.Constants.UpdateRequestReason;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -91,8 +92,7 @@ public interface ProviderStatsLogger {
      * logged to statsd only when {@link #logInflationFinished} is called.
      */
     @UiThread
-    @NonNull
-    InflaterStatsLogger createInflaterStatsLogger();
+    @NonNull InflaterStatsLogger createInflaterStatsLogger();
 
     /** Makes the end of inflation and log the inflation results. */
     @UiThread

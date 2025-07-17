@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.materialcore.ImageWithScrimPainter
 import kotlin.math.min
 
 /**
@@ -115,7 +116,7 @@ public fun Card(
         shape = shape,
         interactionSource = interactionSource,
         role = role,
-        ripple = rippleOrFallbackImplementation(),
+        ripple = ripple(),
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
@@ -207,12 +208,12 @@ public fun AppCard(
         containerPainter = backgroundPainter,
         interactionSource = null,
         shape = MaterialTheme.shapes.large,
-        ripple = rippleOrFallbackImplementation(),
+        ripple = ripple(),
         appImage = appImage?.let { { appImage() } },
         appName = {
             CompositionLocalProvider(
                 LocalContentColor provides appColor,
-                LocalTextStyle provides MaterialTheme.typography.caption1
+                LocalTextStyle provides MaterialTheme.typography.caption1,
             ) {
                 appName()
             }
@@ -228,11 +229,11 @@ public fun AppCard(
         title = {
             CompositionLocalProvider(
                 LocalContentColor provides titleColor,
-                LocalTextStyle provides MaterialTheme.typography.title3
+                LocalTextStyle provides MaterialTheme.typography.title3,
             ) {
                 title()
             }
-        }
+        },
     ) {
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
@@ -317,12 +318,12 @@ public fun TitleCard(
         interactionSource = null,
         role = null,
         shape = MaterialTheme.shapes.large,
-        ripple = rippleOrFallbackImplementation(),
+        ripple = ripple(),
     ) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 CompositionLocalProvider(
                     LocalContentColor provides titleColor,
@@ -376,12 +377,12 @@ public object CardDefaults {
             MaterialTheme.colors.onSurfaceVariant
                 .copy(alpha = 0.20f)
                 .compositeOver(MaterialTheme.colors.background),
-        gradientDirection: LayoutDirection = LocalLayoutDirection.current
+        gradientDirection: LayoutDirection = LocalLayoutDirection.current,
     ): Painter {
         return BrushPainter(
             FortyFiveDegreeLinearGradient(
                 colors = listOf(startBackgroundColor, endBackgroundColor),
-                ltr = gradientDirection == LayoutDirection.Ltr
+                ltr = gradientDirection == LayoutDirection.Ltr,
             )
         )
     }
@@ -407,13 +408,13 @@ public object CardDefaults {
                 colors =
                     listOf(
                         MaterialTheme.colors.surface.copy(alpha = 1.0f),
-                        MaterialTheme.colors.surface.copy(alpha = 0f)
+                        MaterialTheme.colors.surface.copy(alpha = 0f),
                     )
-            )
+            ),
     ): Painter {
         return ImageWithScrimPainter(
             imagePainter = backgroundImagePainter,
-            brush = backgroundImageScrimBrush
+            brush = backgroundImageScrimBrush,
         )
     }
 
@@ -426,7 +427,7 @@ public object CardDefaults {
             start = CardHorizontalPadding,
             top = CardVerticalPadding,
             end = CardHorizontalPadding,
-            bottom = CardVerticalPadding
+            bottom = CardVerticalPadding,
         )
 
     /** The default size of the app icon/image when used inside a [AppCard]. */
@@ -440,7 +441,7 @@ internal constructor(
     private val colors: List<Color>,
     private val stops: List<Float>? = null,
     private val tileMode: TileMode = TileMode.Clamp,
-    private val ltr: Boolean
+    private val ltr: Boolean,
 ) : ShaderBrush() {
 
     override fun createShader(size: Size): Shader {
@@ -452,7 +453,7 @@ internal constructor(
             colorStops = stops,
             from = from,
             to = to,
-            tileMode = tileMode
+            tileMode = tileMode,
         )
     }
 

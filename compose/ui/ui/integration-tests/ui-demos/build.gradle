@@ -23,6 +23,9 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:ui:ui:ui-samples"))
     implementation(project(":compose:material:material"))
+    implementation(project(":compose:material3:material3"))
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
+    implementation(project(":navigation:navigation-compose"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-livedata"))
     implementation(project(":compose:ui:ui"))
@@ -39,12 +42,13 @@ dependencies {
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.1.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
-    debugImplementation(project(":compose:ui:ui-tooling"))
+    implementation(project(":compose:ui:ui-tooling"))
 }
 
 android {
+    compileSdk = 35
     buildFeatures {
-        viewBinding true
+        viewBinding = true
     }
-    namespace "androidx.compose.ui.demos"
+    namespace = "androidx.compose.ui.demos"
 }

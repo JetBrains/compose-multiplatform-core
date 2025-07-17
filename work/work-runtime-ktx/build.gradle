@@ -21,27 +21,29 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.KotlinTarget
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
-    api project(":work:work-runtime")
+    api(project(":work:work-runtime"))
 }
 
 androidx {
     name = "WorkManager Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
     inceptionYear = "2018"
     description = "Android WorkManager Kotlin Extensions"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.work.ktx"
+    compileSdk = 35
+    namespace = "androidx.work.ktx"
 }

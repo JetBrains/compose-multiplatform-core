@@ -25,7 +25,7 @@ import com.android.tools.lint.detector.api.Issue
 
 class ComposeIssueRegistry : IssueRegistry() {
     override val minApi = CURRENT_API
-    override val api = 14
+    override val api = 16
     override val issues
         get(): List<Issue> {
             return listOf(
@@ -38,7 +38,8 @@ class ComposeIssueRegistry : IssueRegistry() {
                 CommonModuleIncompatibilityDetector.REFERENCE_ISSUE,
                 CommonModuleIncompatibilityDetector.EXTENDS_LAMBDA_ISSUE,
                 PrimitiveInCollectionDetector.ISSUE,
-                LambdaStructuralEqualityDetector.ISSUE
+                LambdaStructuralEqualityDetector.ISSUE,
+                ModifierNodeElementDataClassWithLambdaDetector.ISSUE,
             )
         }
 
@@ -46,6 +47,6 @@ class ComposeIssueRegistry : IssueRegistry() {
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "compose:lint:internal-lint-checks",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

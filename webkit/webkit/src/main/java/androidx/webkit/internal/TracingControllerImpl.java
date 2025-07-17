@@ -16,13 +16,13 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.webkit.TracingConfig;
 import androidx.webkit.TracingController;
 
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.OutputStream;
 import java.util.concurrent.Executor;

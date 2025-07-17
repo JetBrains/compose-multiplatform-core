@@ -16,6 +16,7 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.mock.InlineLinear
 import androidx.compose.runtime.mock.Linear
 import androidx.compose.runtime.mock.MockViewValidator
 import androidx.compose.runtime.mock.View
@@ -181,7 +182,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberedObject.all { it.isLive }
@@ -271,7 +272,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
             assertTrue("Expected all remember observers to be kept alive") {
                 rememberObservers.all { it.isLive }
@@ -324,7 +325,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -380,7 +381,7 @@ class MovableContentTests {
             assertEquals(
                 expected = marker,
                 actual = root.findFirst { it.name == "Marker" },
-                message = "Expected marker node to move with the movable content"
+                message = "Expected marker node to move with the movable content",
             )
         }
 
@@ -1332,10 +1333,10 @@ class MovableContentTests {
 
     @Test
     fun movableContentOfTheSameFunctionShouldHaveStableKeys() = compositionTest {
-        val hashList1 = mutableListOf<Int>()
-        val hashList2 = mutableListOf<Int>()
-        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHash) }
-        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHash) }
+        val hashList1 = mutableListOf<CompositeKeyHashCode>()
+        val hashList2 = mutableListOf<CompositeKeyHashCode>()
+        val composable1: @Composable () -> Unit = { hashList1.add(currentCompositeKeyHashCode) }
+        val composable2: @Composable () -> Unit = { hashList2.add(currentCompositeKeyHashCode) }
         val movableContent1A = movableContentOf(composable1)
         val movableContent1B = movableContentOf(composable1)
         val movableContent2A = movableContentOf(composable2)
@@ -1351,7 +1352,7 @@ class MovableContentTests {
             movableContent2B()
         }
 
-        fun List<Int>.assertAllTheSame() = forEach { assertEquals(it, first()) }
+        fun List<CompositeKeyHashCode>.assertAllTheSame() = forEach { assertEquals(it, first()) }
         hashList1.assertAllTheSame()
         hashList2.assertAllTheSame()
         assertNotEquals(hashList1.first(), hashList2.first())
@@ -1359,10 +1360,10 @@ class MovableContentTests {
 
     @Test
     fun keyInsideMovableContentShouldntChangeWhenRecomposed() = compositionTest {
-        val hashList = mutableListOf<Int>()
+        val hashList = mutableListOf<CompositeKeyHashCode>()
         val counter = mutableStateOf(0)
         val movableContent = movableContentOf {
-            hashList.add(currentCompositeKeyHash)
+            hashList.add(currentCompositeKeyHashCode)
             Text("counter=${counter.value}")
         }
         compose { movableContent() }
@@ -1541,7 +1542,210 @@ class MovableContentTests {
         condition = false
         expectChanges()
         revalidate()
+        verifyConsistent()
+
         condition = true
+        expectChanges()
+        revalidate()
+        verifyConsistent()
+    }
+
+    @Test // 362539770
+    fun movableContent_nestedMovableContent_direct() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                wrapper()
+            } else {
+                common()
+            }
+        }
+
+        validate {
+            Text("Outer")
+            if (condition) {
+                Text("Wrapper start")
+            }
+            Text("Generated state: 0")
+            if (condition) {
+                Text("Wrapper end")
+            }
+        }
+
+        condition = false
+        expectChanges()
+        revalidate()
+
+        condition = true
+        expectChanges()
+        revalidate()
+    }
+
+    @Test // 362539770
+    @OptIn(ExperimentalComposeApi::class)
+    fun movableContent_nestedMovableContent_disabled() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                wrapper()
+            } else {
+                common()
+            }
+        }
+
+        var expectedState = 0
+        validate {
+            Text("Outer")
+            if (condition) {
+                Text("Wrapper start")
+            }
+            Text("Generated state: $expectedState")
+            if (condition) {
+                Text("Wrapper end")
+            }
+        }
+
+        ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = false
+        try {
+            // With moving nested content disabled the call to common() will generate new
+            // state when it moves out of the containing movable content.
+            expectedState = 1
+            condition = false
+            expectChanges()
+            revalidate()
+
+            condition = true
+            expectChanges()
+            revalidate()
+        } finally {
+            ComposeRuntimeFlags.isMovingNestedMovableContentEnabled = true
+        }
+    }
+
+    @Test
+    fun movableContent_nestedMovableContent_simpleMove() = compositionTest {
+        var data = 0
+
+        var condition by mutableStateOf(true)
+
+        val common = movableContentOf {
+            val state = remember { data++ }
+            Text("Generated state: $state")
+        }
+
+        val wrapper = movableContentOf {
+            Text("Wrapper start")
+            common()
+            Text("Wrapper end")
+        }
+
+        compose {
+            Text("Outer")
+            if (condition) {
+                Linear { wrapper() }
+            } else {
+                wrapper()
+            }
+        }
+
+        validate {
+            Text("Outer")
+            if (condition) {
+                Linear {
+                    Text("Wrapper start")
+                    Text("Generated state: 0")
+                    Text("Wrapper end")
+                }
+            } else {
+                Text("Wrapper start")
+                Text("Generated state: 0")
+                Text("Wrapper end")
+            }
+        }
+
+        condition = false
+        expectChanges()
+        revalidate()
+
+        condition = true
+        expectChanges()
+        revalidate()
+    }
+
+    @Test
+    fun movableContent_nestedMovableContent_tree() = compositionTest {
+        var data = 0
+
+        @Composable
+        fun Leaf() {
+            val value = remember { data++ }
+            Text("Data $value")
+        }
+
+        val level0 = Array(16) { movableContentOf { Leaf() } }
+        val level1 =
+            Array(8) { it ->
+                movableContentOf {
+                    level0[it * 2]()
+                    level0[it * 2 + 1]()
+                }
+            }
+        val level2 =
+            Array(4) {
+                movableContentOf {
+                    level1[it * 2]()
+                    level1[it * 2 + 1]()
+                }
+            }
+        val level3 =
+            Array(2) {
+                movableContentOf {
+                    level2[it * 2]()
+                    level2[it * 2 + 1]()
+                }
+            }
+
+        var displayTree by mutableStateOf(false)
+
+        compose { if (displayTree) level3.forEach { it() } else level0.forEach { it() } }
+
+        validate { repeat(16) { Text("Data $it") } }
+
+        displayTree = true
+        expectChanges()
+        revalidate()
+
+        displayTree = false
         expectChanges()
         revalidate()
     }
@@ -1571,6 +1775,37 @@ class MovableContentTests {
         toggle = !toggle
         expectChanges()
         revalidate()
+    }
+
+    @Test // 365802563
+    fun movableContent_movingChildOfDeletedNode() = compositionTest {
+        var index by mutableIntStateOf(0)
+        val content = movableContentOf { Text("Some text") }
+        compose {
+            for (i in index..3) {
+                InlineLinear { content() }
+            }
+            for (i in 0..index) {
+                InlineLinear { content() }
+            }
+        }
+        validate {
+            for (i in index..3) {
+                Linear { Text("Some text") }
+            }
+            for (i in 0..index) {
+                Linear { Text("Some text") }
+            }
+        }
+
+        index++
+        advance()
+
+        index++
+        advance()
+
+        index++
+        advance()
     }
 }
 
@@ -1602,7 +1837,7 @@ private fun MockViewValidator.Column(block: MockViewValidator.() -> Unit) {
 private fun Text(text: String) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Text" } },
-        update = { set(text) { attributes["text"] = it } }
+        update = { set(text) { attributes["text"] = it } },
     )
 }
 
@@ -1624,7 +1859,7 @@ private fun MockViewValidator.Marker() {
 private fun Marker(value: Int) {
     ComposeNode<View, ViewApplier>(
         factory = { View().also { it.name = "Marker" } },
-        update = { set(value) { attributes["value"] = it } }
+        update = { set(value) { attributes["value"] = it } },
     )
 }
 

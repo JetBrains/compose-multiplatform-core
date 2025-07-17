@@ -68,12 +68,11 @@ private fun dropUnlessStateIsAtLeast(
  *   [State.STARTED].
  * @return A decorated function that invoke [block] only if the lifecycle state is at least
  *   [State.STARTED].
- *
  * @sample androidx.lifecycle.compose.samples.DropUnlessStarted
  */
 @CheckResult
 @Composable
-fun dropUnlessStarted(
+public fun dropUnlessStarted(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.STARTED, lifecycleOwner, block)
@@ -91,12 +90,11 @@ fun dropUnlessStarted(
  *   [State.RESUMED].
  * @return A decorated function that invoke [block] only if the lifecycle state is at least
  *   [State.RESUMED].
- *
  * @sample androidx.lifecycle.compose.samples.DropUnlessResumed
  */
 @CheckResult
 @Composable
-fun dropUnlessResumed(
+public fun dropUnlessResumed(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
     block: () -> Unit,
 ): () -> Unit = dropUnlessStateIsAtLeast(State.RESUMED, lifecycleOwner, block)

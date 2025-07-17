@@ -19,9 +19,10 @@ package androidx.sqlite.inspection;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.inspection.InspectorEnvironment;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -45,14 +46,12 @@ class RoomInvalidationRegistry implements Invalidation {
     /**
      * Might be null if application does not ship with Room.
      */
-    @Nullable
-    private final InvalidationTrackerInvoker mInvoker;
+    private final @Nullable InvalidationTrackerInvoker mInvoker;
 
     /**
      * The list of InvalidationTracker instances.
      */
-    @Nullable
-    private List<WeakReference<?>> mInvalidationInstances = null;
+    private @Nullable List<WeakReference<?>> mInvalidationInstances = null;
 
     RoomInvalidationRegistry(InspectorEnvironment environment) {
         mEnvironment = environment;
@@ -85,8 +84,7 @@ class RoomInvalidationRegistry implements Invalidation {
         mInvalidationInstances = null;
     }
 
-    @NonNull
-    private List<WeakReference<?>> getInvalidationTrackerInstances() {
+    private @NonNull List<WeakReference<?>> getInvalidationTrackerInstances() {
         List<WeakReference<?>> cached = mInvalidationInstances;
         if (cached != null) {
             return cached;
@@ -105,8 +103,7 @@ class RoomInvalidationRegistry implements Invalidation {
         return cached;
     }
 
-    @Nullable
-    private InvalidationTrackerInvoker findInvalidationTrackerClass() {
+    private @Nullable InvalidationTrackerInvoker findInvalidationTrackerClass() {
         try {
             ClassLoader classLoader = RoomInvalidationRegistry.class.getClassLoader();
             if (classLoader != null) {
@@ -124,8 +121,7 @@ class RoomInvalidationRegistry implements Invalidation {
      */
     static class InvalidationTrackerInvoker {
         public final Class<?> invalidationTrackerClass;
-        @Nullable
-        private final Method mRefreshMethod;
+        private final @Nullable Method mRefreshMethod;
 
         InvalidationTrackerInvoker(Class<?> invalidationTrackerClass) {
             this.invalidationTrackerClass = invalidationTrackerClass;

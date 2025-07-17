@@ -18,14 +18,16 @@ package androidx.paging.samples.java;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.Nullable;
 import androidx.paging.PagingData;
 import androidx.paging.PagingDataTransforms;
 
-import java.util.concurrent.Executor;
-
 import io.reactivex.Flowable;
+
 import kotlin.NotImplementedError;
+
+import org.jspecify.annotations.Nullable;
+
+import java.util.concurrent.Executor;
 
 /**
  * NOTE - MANUALLY COPIED SAMPLE

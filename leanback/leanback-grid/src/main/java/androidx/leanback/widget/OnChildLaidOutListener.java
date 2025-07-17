@@ -18,7 +18,7 @@ package androidx.leanback.widget;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for receiving notification when a child of this

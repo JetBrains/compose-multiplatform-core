@@ -16,11 +16,12 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.SynchronizedCaptureSession;
 import androidx.camera.camera2.internal.compat.quirk.CaptureSessionOnClosedNotCalledQuirk;
 import androidx.camera.core.impl.Quirks;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,8 +37,8 @@ import java.util.Set;
  */
 public class ForceCloseCaptureSession {
 
-    @Nullable
-    private final CaptureSessionOnClosedNotCalledQuirk mCaptureSessionOnClosedNotCalledQuirk;
+    private final @Nullable CaptureSessionOnClosedNotCalledQuirk
+            mCaptureSessionOnClosedNotCalledQuirk;
 
     /** Constructor of the ForceCloseCaptureSession workaround */
     public ForceCloseCaptureSession(@NonNull Quirks deviceQuirks) {

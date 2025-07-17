@@ -20,6 +20,7 @@ import android.content.ComponentName
 import android.os.Bundle
 import androidx.credentials.CredentialOption.Companion.createFrom
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert
@@ -34,7 +35,7 @@ class GetCustomCredentialOptionTest {
     fun constructor_emptyType_throws() {
         Assert.assertThrows(
             "Expected empty type to throw IAE",
-            IllegalArgumentException::class.java
+            IllegalArgumentException::class.java,
         ) {
             GetCustomCredentialOption("", Bundle(), Bundle(), false, false)
         }
@@ -65,7 +66,7 @@ class GetCustomCredentialOptionTest {
                 true,
                 false,
                 emptySet(),
-                expectedOverwrittenPriorityHint
+                expectedOverwrittenPriorityHint,
             )
 
         assertThat(customCredentialOption.typePriorityHint)
@@ -86,7 +87,7 @@ class GetCustomCredentialOptionTest {
         val expectedPriorityCategoryValue = EXPECTED_CUSTOM_DEFAULT_PRIORITY
         expectedBundle.putInt(
             CredentialOption.BUNDLE_KEY_TYPE_PRIORITY_VALUE,
-            expectedPriorityCategoryValue
+            expectedPriorityCategoryValue,
         )
 
         val option =
@@ -96,7 +97,7 @@ class GetCustomCredentialOptionTest {
                 expectedCandidateQueryDataBundle,
                 expectedSystemProvider,
                 expectedAutoSelectAllowed,
-                expectedAllowedProviders
+                expectedAllowedProviders,
             )
 
         assertThat(option.type).isEqualTo(expectedType)
@@ -128,7 +129,7 @@ class GetCustomCredentialOptionTest {
                 expectedSystemProvider,
                 expectedAutoSelectAllowed,
                 expectedAllowedProviders,
-                expectedPriorityHint
+                expectedPriorityHint,
             )
 
         val convertedOption =
@@ -137,7 +138,7 @@ class GetCustomCredentialOptionTest {
                 option.requestData,
                 option.candidateQueryData,
                 option.isSystemProviderRequired,
-                option.allowedProviders
+                option.allowedProviders,
             )
 
         assertThat(convertedOption).isInstanceOf(GetCustomCredentialOption::class.java)
@@ -151,6 +152,45 @@ class GetCustomCredentialOptionTest {
         assertThat(actualOption.allowedProviders)
             .containsAtLeastElementsIn(expectedAllowedProviders)
         assertThat(actualOption.typePriorityHint).isEqualTo(expectedPriorityHint)
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun frameworkConversion_frameworkClass_success() {
+        val expectedType = "TYPE"
+        val expectedBundle = Bundle()
+        expectedBundle.putString("Test", "Test")
+        val expectedCandidateQueryDataBundle = Bundle()
+        expectedCandidateQueryDataBundle.putBoolean("key", true)
+        val expectedSystemProvider = true
+        val expectedAutoSelectAllowed = false
+        val expectedAllowedProviders: Set<ComponentName> =
+            setOf(ComponentName("pkg", "cls"), ComponentName("pkg2", "cls2"))
+        val expectedPriorityHint = CredentialOption.PRIORITY_OIDC_OR_SIMILAR
+        val option =
+            GetCustomCredentialOption(
+                expectedType,
+                expectedBundle,
+                expectedCandidateQueryDataBundle,
+                expectedSystemProvider,
+                expectedAutoSelectAllowed,
+                expectedAllowedProviders,
+                expectedPriorityHint,
+            )
+
+        val convertedOption =
+            createFrom(
+                android.credentials.CredentialOption.Builder(
+                        option.type,
+                        option.requestData,
+                        option.candidateQueryData,
+                    )
+                    .setAllowedProviders(option.allowedProviders)
+                    .setIsSystemProviderRequired(option.isSystemProviderRequired)
+                    .build()
+            )
+
+        assertEquals(convertedOption, option)
     }
 
     private companion object {

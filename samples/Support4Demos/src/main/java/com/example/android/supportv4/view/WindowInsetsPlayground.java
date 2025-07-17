@@ -30,7 +30,6 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -38,6 +37,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.android.supportv4.R;
 import com.example.android.supportv4.graphics.DrawableCompatActivity;
+
+import org.jspecify.annotations.Nullable;
 
 @SuppressWarnings("deprecation")
 public class WindowInsetsPlayground extends Activity {

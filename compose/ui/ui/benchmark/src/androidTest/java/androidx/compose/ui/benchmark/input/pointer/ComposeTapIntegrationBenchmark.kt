@@ -38,7 +38,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Benchmark for simply tapping on an item in Compose.
+ * Benchmark for simply tapping on an item in Compose. The benchmark uses pointerInput (ui) +
+ * detectTapGestures (foundation) to track simple clicks (with no movement between down and up).
+ * That means it is using some functionality from the foundation layer for the benchmark. For a
+ * benchmark with pure ui layer functionality, see [ComposeOneFingerInputUIOnlyBenchmark].
  *
  * The intent is to measure the speed of all parts necessary for a normal tap starting from
  * [MotionEvent]s getting dispatched to a particular view. The test therefore includes hit testing
@@ -102,7 +105,7 @@ class ComposeTapIntegrationBenchmark {
                     0,
                     arrayOf(PointerProperties(0)),
                     arrayOf(PointerCoords(0f, y)),
-                    rootView
+                    rootView,
                 )
 
             val up =
@@ -113,7 +116,7 @@ class ComposeTapIntegrationBenchmark {
                     0,
                     arrayOf(PointerProperties(0)),
                     arrayOf(PointerCoords(0f, y)),
-                    rootView
+                    rootView,
                 )
 
             benchmarkRule.measureRepeatedOnUiThread {
@@ -155,7 +158,7 @@ class ComposeTapIntegrationBenchmark {
                             }
                         }
                         .fillMaxWidth()
-                        .requiredHeight(itemHeightDp)
+                        .requiredHeight(itemHeightDp),
             )
         }
     }

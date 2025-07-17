@@ -18,6 +18,7 @@ package androidx.window.embedding
 
 import android.content.ComponentName
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Rect
 import androidx.window.core.ActivityComponentInfo
 import androidx.window.embedding.SplitRule.Companion.SPLIT_MAX_ASPECT_RATIO_LANDSCAPE_DEFAULT
@@ -45,11 +46,14 @@ internal class SplitPlaceHolderRuleTest {
     @Test
     fun equalsImpliesHashCode() {
         val filter = ActivityFilter(ActivityComponentInfo("a", "b"), "ACTION")
-        val placeholderIntent = Intent()
-        val firstRule = SplitPlaceholderRule.Builder(setOf(filter), placeholderIntent).build()
-        val secondRule = SplitPlaceholderRule.Builder(setOf(filter), placeholderIntent).build()
+        val firstRule = SplitPlaceholderRule.Builder(setOf(filter), Intent()).build()
+        val secondRule = SplitPlaceholderRule.Builder(setOf(filter), Intent()).build()
         assertEquals(firstRule, secondRule)
         assertEquals(firstRule.hashCode(), secondRule.hashCode())
+
+        // The hashCode should be consistent to the predetermined value.
+        // Note that the value should be updated whenever hashCode calculation is changed.
+        assertEquals(1986646852, firstRule.hashCode())
     }
 
     /*------------------------------Builder Test------------------------------*/
@@ -72,6 +76,7 @@ internal class SplitPlaceHolderRuleTest {
             SplitAttributes.Builder()
                 .setSplitType(SplitAttributes.SplitType.ratio(0.5f))
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LOCALE)
+                .setAnimationParams(EmbeddingAnimationParams.Builder().build())
                 .build()
         assertEquals(expectedSplitLayout, rule.defaultSplitAttributes)
         assertTrue(rule.checkParentBounds(density, validBounds))
@@ -91,6 +96,14 @@ internal class SplitPlaceHolderRuleTest {
             SplitAttributes.Builder()
                 .setSplitType(SplitAttributes.SplitType.ratio(0.3f))
                 .setLayoutDirection(SplitAttributes.LayoutDirection.LEFT_TO_RIGHT)
+                .setAnimationParams(
+                    EmbeddingAnimationParams.Builder()
+                        .setAnimationBackground(
+                            EmbeddingAnimationBackground.createColorBackground(Color.GREEN)
+                        )
+                        .setCloseAnimation(EmbeddingAnimationParams.AnimationSpec.JUMP_CUT)
+                        .build()
+                )
                 .build()
         val rule =
             SplitPlaceholderRule.Builder(filters, intent)

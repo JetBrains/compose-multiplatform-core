@@ -17,7 +17,6 @@
 package androidx.camera.integration.core
 
 import android.content.Context
-import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
@@ -39,15 +38,19 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.integration.core.util.CameraPipeUtil
+import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
+import androidx.camera.testing.impl.util.Camera2InteropUtil
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
@@ -55,13 +58,12 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assume
+import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -85,16 +87,14 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
 class CaptureOptionSubmissionTest(
-    private val selectorName: String,
+    private val testName: String,
     private val cameraSelector: CameraSelector,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -109,7 +109,7 @@ class CaptureOptionSubmissionTest(
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
 
     // Capture callback added to session, so only a repeating capture callback, not non-repeating
-    private lateinit var sessionCaptureCallback: CaptureCallback
+    private lateinit var sessionCaptureCallback: Camera2CaptureCallbackImpl
 
     @Before
     fun setUp(): Unit = runBlocking {
@@ -117,7 +117,7 @@ class CaptureOptionSubmissionTest(
 
         ProcessCameraProvider.configureInstance(cameraConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
-        sessionCaptureCallback = CaptureCallback()
+        sessionCaptureCallback = Camera2CaptureCallbackImpl()
 
         withContext(Dispatchers.Main) {
             fakeLifecycleOwner = FakeLifecycleOwner()
@@ -140,16 +140,6 @@ class CaptureOptionSubmissionTest(
 
     @Test
     fun canSubmitSupportedAeTargetFpsRanges_whenTargetFrameRateSetToPreviewOnly() = runBlocking {
-        assumeTrue(
-            "TODO(b/331900702): Enable when the bug is fixed at camera-pipe",
-            implName != CameraPipeConfig::class.simpleName
-        )
-
-        assumeTrue(
-            "TODO(b/332235883): Enable for legacy when the bug is resolved",
-            !isHwLevelLegacy()
-        )
-
         // At least 2 FPS ranges should be checked as the submitted range may just be from template
         getSupportedFpsRanges().forEach { targetFpsRange ->
             if (targetFpsRange.upper > 30) {
@@ -183,16 +173,6 @@ class CaptureOptionSubmissionTest(
     @Test
     fun canSubmitSupportedAeTargetFpsRanges_whenTargetFrameRateSetToVideoCaptureOnly() =
         runBlocking {
-            assumeTrue(
-                "TODO(b/331900702): Enable when the bug is fixed at camera-pipe",
-                implName != CameraPipeConfig::class.simpleName
-            )
-
-            assumeTrue(
-                "TODO(b/332235883): Enable for legacy when the bug is resolved",
-                !isHwLevelLegacy()
-            )
-
             // At least 2 FPS ranges should be checked as the submitted range may be from template
             getSupportedFpsRanges().forEach { targetFpsRange ->
                 if (targetFpsRange.upper > 30) {
@@ -211,6 +191,8 @@ class CaptureOptionSubmissionTest(
 
                 bindUseCases(
                     listOf(
+                        // Binds Preview together to ensure that a repeating will be started
+                        Preview.Builder(),
                         VideoCapture.Builder(Recorder.Builder().build())
                             .setTargetFrameRate(targetFpsRange),
                     )
@@ -228,20 +210,48 @@ class CaptureOptionSubmissionTest(
             }
         }
 
+    @Test
+    fun canApplyAeFpsRangeWorkaround() = runBlocking {
+        val targetFpsRange = getAeFpsRangeFromQuirks()
+        assumeFalse(
+            "AeFpsRange workaround is applied only on LEGACY level devices.",
+            targetFpsRange == null || FRAME_RATE_RANGE_UNSPECIFIED.equals(targetFpsRange),
+        )
+
+        var lastSubmittedFpsRange: Range<Int>? = null
+        val result =
+            sessionCaptureCallback.verify { captureRequest, _ ->
+                captureRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE]?.let {
+                    lastSubmittedFpsRange = it
+                }
+                captureRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE] == targetFpsRange
+            }
+
+        bindUseCases(listOf(Preview.Builder()))
+
+        val isCompleted = result.awaitUntil(timeoutMillis = 10000)
+        assertWithMessage(
+                "Test failed for targetFpsRange = $targetFpsRange" +
+                    ", lastSubmittedFpsRange = $lastSubmittedFpsRange"
+            )
+            .that(isCompleted)
+            .isTrue()
+    }
+
+    private fun getAeFpsRangeFromQuirks(): Range<Int>? = runBlocking {
+        val camera =
+            withContext(Dispatchers.Main) {
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector)
+            }
+
+        val quirks = (camera.cameraInfo as CameraInfoInternal).cameraQuirks
+        quirks.getAll(AeFpsRangeQuirk::class.java).firstOrNull()?.targetAeFpsRange
+    }
+
     // TODO: b/332464991 - Add a FPS test adding different FPS ranges to Preview & VideoCapture
 
     @Test
     fun canSetAeTargetFpsRangeWithCamera2Interop() = runBlocking {
-        assumeTrue(
-            "TODO(b/331900702): Enable when the bug is fixed at camera-pipe",
-            implName != CameraPipeConfig::class.simpleName
-        )
-
-        assumeTrue(
-            "TODO(b/332235883): Enable for legacy when the bug is resolved",
-            !isHwLevelLegacy()
-        )
-
         // At least 2 FPS ranges should be checked as the submitted range may just be from template
         getSupportedFpsRanges().forEach { targetFpsRange ->
             if (targetFpsRange.upper > 30) {
@@ -268,7 +278,7 @@ class CaptureOptionSubmissionTest(
                         Camera2Interop.Extender(it)
                             .setCaptureRequestOption(
                                 CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                targetFpsRange
+                                targetFpsRange,
                             )
                     }
                 )
@@ -291,18 +301,12 @@ class CaptureOptionSubmissionTest(
 
     @Test
     fun canOverwriteFpsRangeWithCamera2Interop_whenAnotherSetViaSetTargetFrameRate() = runBlocking {
+        val targetFpsRange = getSupportedFpsRanges().firstOrNull { it.upper <= 30 }
+        val interopFpsRange = getSupportedFpsRanges().lastOrNull { it.upper <= 30 }
         assumeTrue(
-            "TODO(b/331900702): Enable when the bug is fixed at camera-pipe",
-            implName != CameraPipeConfig::class.simpleName
+            "Run the test only when two different supported FPS ranges can be found.",
+            targetFpsRange != null && interopFpsRange != null && targetFpsRange != interopFpsRange,
         )
-
-        assumeTrue(
-            "TODO(b/332235883): Enable for legacy when the bug is resolved",
-            !isHwLevelLegacy()
-        )
-
-        val targetFpsRange = getSupportedFpsRanges().first { it.upper <= 30 }
-        val interopFpsRange = getSupportedFpsRanges().last { it.upper <= 30 }
 
         var lastSubmittedFpsRange: Range<Int>? = null
         val result =
@@ -315,16 +319,16 @@ class CaptureOptionSubmissionTest(
 
         bindUseCases(
             listOf(
-                Preview.Builder().setTargetFrameRate(targetFpsRange),
+                Preview.Builder().setTargetFrameRate(targetFpsRange!!),
                 // since Preview & VideoCapture already has FPS APIs, Camera2Interop isn't needed
                 // when they are bound.
                 ImageCapture.Builder().also {
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                            interopFpsRange
+                            interopFpsRange!!,
                         )
-                }
+                },
             )
         )
 
@@ -344,7 +348,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Preview stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -357,7 +361,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder().setPreviewStabilizationEnabled(true),
-                VideoCapture.Builder(Recorder.Builder().build())
+                VideoCapture.Builder(Recorder.Builder().build()),
             )
         )
 
@@ -376,7 +380,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -389,7 +393,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder(),
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -409,12 +413,12 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Preview stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
+            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON),
         )
 
         var lastSubmittedMode: Int? = null
@@ -427,7 +431,7 @@ class CaptureOptionSubmissionTest(
         bindUseCases(
             listOf(
                 Preview.Builder().setPreviewStabilizationEnabled(true),
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -446,7 +450,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(targetStabilizationMode)
+            getSupportedStabilizationModes().contains(targetStabilizationMode),
         )
 
         var lastSubmittedMode: Int? = null
@@ -465,7 +469,7 @@ class CaptureOptionSubmissionTest(
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CONTROL_VIDEO_STABILIZATION_MODE,
-                            targetStabilizationMode
+                            targetStabilizationMode,
                         )
                 }
             )
@@ -486,7 +490,7 @@ class CaptureOptionSubmissionTest(
 
         assumeTrue(
             "Video stabilization not supported",
-            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
+            getSupportedStabilizationModes().contains(CONTROL_VIDEO_STABILIZATION_MODE_ON),
         )
 
         var lastSubmittedMode: Int? = null
@@ -505,10 +509,10 @@ class CaptureOptionSubmissionTest(
                     Camera2Interop.Extender(it)
                         .setCaptureRequestOption(
                             CONTROL_VIDEO_STABILIZATION_MODE,
-                            targetStabilizationMode
+                            targetStabilizationMode,
                         )
                 },
-                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true)
+                VideoCapture.Builder(Recorder.Builder().build()).setVideoStabilizationEnabled(true),
             )
         )
 
@@ -571,10 +575,10 @@ class CaptureOptionSubmissionTest(
                     builder
                         .also {
                             if (index == 0) { // adding to just one use case is enough
-                                CameraPipeUtil.setCameraCaptureSessionCallback(
+                                Camera2InteropUtil.setCameraCaptureSessionCallback(
                                     implName,
                                     it,
-                                    sessionCaptureCallback
+                                    sessionCaptureCallback,
                                 )
                             }
                         }
@@ -597,7 +601,7 @@ class CaptureOptionSubmissionTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 cameraSelector,
-                *useCases.toTypedArray()
+                *useCases.toTypedArray(),
             )
         }
     }
@@ -606,62 +610,34 @@ class CaptureOptionSubmissionTest(
         withContext(Dispatchers.Main) { cameraProvider.unbindAll() }
     }
 
-    class CaptureCallback : CameraCaptureSession.CaptureCallback() {
-        data class Verification(
-            val condition:
-                (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean,
-            val isVerified: CompletableDeferred<Unit>
-        )
-
-        private var pendingVerifications = mutableListOf<Verification>()
-
-        /** Returns a [Deferred] representing if verification has been completed */
-        fun verify(
-            condition:
-                (captureRequest: CaptureRequest, captureResult: TotalCaptureResult) -> Boolean =
-                { _, _ ->
-                    false
-                },
-        ): Deferred<Unit> =
-            CompletableDeferred<Unit>().apply {
-                val verification = Verification(condition, this)
-                pendingVerifications.add(verification)
-
-                invokeOnCompletion { pendingVerifications.remove(verification) }
-            }
-
-        override fun onCaptureCompleted(
-            session: CameraCaptureSession,
-            request: CaptureRequest,
-            result: TotalCaptureResult
-        ) {
-            pendingVerifications.forEach {
-                if (it.condition(request, result)) {
-                    it.isVerified.complete(Unit)
-                }
-            }
-        }
-    }
-
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "selector={0},config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
-                ),
-                arrayOf(
-                    "back",
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                ),
-                // front camera is not important with the current test, but may be required in
-                // future
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors()
+                    .getOrElse(0, { CameraSelector.DEFAULT_BACK_CAMERA })
+                    .let { selector ->
+                        val lens = selector.lensFacing
+                        add(
+                            arrayOf(
+                                "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                                selector,
+                                Camera2Config::class.simpleName,
+                                Camera2Config.defaultConfig(),
+                            )
+                        )
+                        add(
+                            arrayOf(
+                                "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                                selector,
+                                CameraPipeConfig::class.simpleName,
+                                CameraPipeConfig.defaultConfig(),
+                            )
+                        )
+                    }
+            }
+        // Test on multiple cameras is not important with the current test, but may be required in
+        // future
     }
 }

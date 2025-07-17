@@ -16,8 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represent a {@link DynamicDataKey} that references real-time data from the platform.
@@ -34,7 +35,7 @@ import androidx.annotation.RestrictTo;
  */
 public final class PlatformDataKey<T extends DynamicBuilders.DynamicType>
         extends DynamicDataKey<T> {
-    @NonNull private static final String RESERVED_NAMESPACE = "protolayout";
+    private static final @NonNull String RESERVED_NAMESPACE = "protolayout";
 
     /**
      * Create a {@link PlatformDataKey} with the specified key in the given namespace.

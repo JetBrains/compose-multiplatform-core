@@ -44,8 +44,6 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.GridView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.CircularIntArray;
 import androidx.core.view.ViewCompat;
@@ -55,6 +53,9 @@ import androidx.recyclerview.widget.OrientationHelper;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.Recycler;
 import androidx.recyclerview.widget.RecyclerView.State;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -1093,7 +1094,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public boolean checkLayoutParams(@Nullable RecyclerView.LayoutParams lp) {
+    public boolean checkLayoutParams(RecyclerView.@Nullable LayoutParams lp) {
         return lp instanceof LayoutParams;
     }
 
@@ -1114,9 +1115,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    public RecyclerView.LayoutParams generateDefaultLayoutParams() {
+    public RecyclerView.@NonNull LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
     }
@@ -1124,9 +1124,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    public RecyclerView.LayoutParams generateLayoutParams(@NonNull Context context,
+    public RecyclerView.@NonNull LayoutParams generateLayoutParams(@NonNull Context context,
             @NonNull AttributeSet attrs) {
         return new LayoutParams(context, attrs);
     }
@@ -1134,9 +1133,9 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    public RecyclerView.LayoutParams generateLayoutParams(@NonNull ViewGroup.LayoutParams lp) {
+    public RecyclerView.@NonNull LayoutParams generateLayoutParams(
+            ViewGroup.@NonNull LayoutParams lp) {
         if (lp instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) lp);
         } else if (lp instanceof RecyclerView.LayoutParams) {
@@ -2091,7 +2090,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void removeAndRecycleAllViews(@NonNull RecyclerView.Recycler recycler) {
+    public void removeAndRecycleAllViews(RecyclerView.@NonNull Recycler recycler) {
         if (DEBUG) Log.v(TAG, "removeAndRecycleAllViews " + getChildCount());
         for (int i = getChildCount() - 1; i >= 0; i--) {
             removeAndRecycleViewAt(i, recycler);
@@ -2102,28 +2101,19 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     // and scroll to the view if framework focus on it.
     private void focusToViewInLayout(boolean hadFocus, boolean alignToView, int extraDelta,
             int extraDeltaSecondary) {
-        View focusView = findViewByPosition(mFocusPosition);
-        if (focusView != null && alignToView) {
-            scrollToView(focusView, false, extraDelta, extraDeltaSecondary);
+        View bestFocusableView = findBestViewToFocus();
+        if (bestFocusableView ==  null) {
+            return;
         }
-        if (focusView != null && hadFocus && !focusView.hasFocus()) {
-            focusView.requestFocus();
-        } else if (!hadFocus && !mBaseGridView.hasFocus()) {
-            if (focusView != null && focusView.hasFocusable()) {
-                mBaseGridView.focusableViewAvailable(focusView);
-            } else {
-                for (int i = 0, count = getChildCount(); i < count; i++) {
-                    focusView = getChildAt(i);
-                    if (focusView != null && focusView.hasFocusable()) {
-                        mBaseGridView.focusableViewAvailable(focusView);
-                        break;
-                    }
-                }
-            }
-            // focusViewAvailable() might focus to the view, scroll to it if that is the case.
-            if (alignToView && focusView != null && focusView.hasFocus()) {
-                scrollToView(focusView, false, extraDelta, extraDeltaSecondary);
-            }
+        if (alignToView) {
+            scrollToView(bestFocusableView, false, extraDelta, extraDeltaSecondary);
+        }
+        if (hadFocus && !bestFocusableView.hasFocus()) {
+            bestFocusableView.requestFocus();
+        }
+        // When the grid view had no focus, we just inform that there is a focusable child instead.
+        if (!hadFocus && !mBaseGridView.hasFocus()) {
+            mBaseGridView.focusableViewAvailable(bestFocusableView);
         }
     }
 
@@ -2204,8 +2194,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
 
     // Lays out items based on the current scroll position
     @Override
-    public void onLayoutChildren(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state) {
+    public void onLayoutChildren(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state) {
         if (DEBUG) {
             Log.v(getTag(), "layoutChildren start numRows " + mNumRows
                     + " inPreLayout " + state.isPreLayout()
@@ -2433,7 +2423,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int scrollHorizontallyBy(int dx, @NonNull Recycler recycler,
-            @NonNull RecyclerView.State state) {
+            RecyclerView.@NonNull State state) {
         if (DEBUG) Log.v(getTag(), "scrollHorizontallyBy " + dx);
         if ((mFlag & PF_LAYOUT_ENABLED) == 0 || !hasDoneFirstLayout()) {
             return 0;
@@ -2453,7 +2443,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public int scrollVerticallyBy(int dy, @NonNull Recycler recycler,
-            @NonNull RecyclerView.State state) {
+            RecyclerView.@NonNull State state) {
         if (DEBUG) Log.v(getTag(), "scrollVerticallyBy " + dy);
         if ((mFlag & PF_LAYOUT_ENABLED) == 0 || !hasDoneFirstLayout()) {
             return 0;
@@ -2810,7 +2800,7 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void startSmoothScroll(@NonNull RecyclerView.SmoothScroller smoothScroller) {
+    public void startSmoothScroll(RecyclerView.@NonNull SmoothScroller smoothScroller) {
         skipSmoothScrollerOnStopInternal();
         super.startSmoothScroll(smoothScroller);
         if (smoothScroller.isRunning() && smoothScroller instanceof GridLinearSmoothScroller) {
@@ -3043,8 +3033,6 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
             return;
         }
         if (!view.hasFocus() && mBaseGridView.hasFocus()) {
-            // transfer focus to the child if it does not have focus yet (e.g. triggered
-            // by setSelection())
             view.requestFocus();
         }
         if ((mFlag & PF_SCROLL_ENABLED) == 0 && smooth) {
@@ -3054,6 +3042,38 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
                 || extraDelta != 0 || extraDeltaSecondary != 0) {
             scrollGrid(sTwoInts[0] + extraDelta, sTwoInts[1] + extraDeltaSecondary, smooth);
         }
+    }
+
+    private @Nullable View findBestViewToFocus() {
+        View initiallyFocusedView = null;
+        if (mFocusPosition != NO_POSITION) {
+            initiallyFocusedView = findViewByPosition(mFocusPosition);
+            if (initiallyFocusedView != null
+                    && (initiallyFocusedView.hasFocus() || initiallyFocusedView.hasFocusable())) {
+                return initiallyFocusedView;
+            }
+        }
+        // NO_POSITION == -1, so it is safe to start the search from mFocusPosition + 1
+        for (int nextIdx = mFocusPosition + 1; nextIdx < getItemCount(); nextIdx++) {
+            View candidate = findViewByPosition(nextIdx);
+            if (candidate == null) {
+                break;
+            }
+            if (candidate.hasFocus() || candidate.hasFocusable()) {
+                return candidate;
+            }
+        }
+        for (int prevIdx = mFocusPosition - 1; prevIdx >= 0; prevIdx--) {
+            View candidate = findViewByPosition(prevIdx);
+            if (candidate == null) {
+                break;
+            }
+            if (candidate.hasFocusable()) {
+                return candidate;
+            }
+        }
+        // If nothing is focusable, we still want to scroll to mFocusPosition
+        return initiallyFocusedView;
     }
 
     boolean getScrollPosition(View view, View childView, int[] deltas) {
@@ -3255,9 +3275,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         return (mFlag & PF_FOCUS_SEARCH_DISABLED) != 0;
     }
 
-    @Nullable
     @Override
-    public View onInterceptFocusSearch(@Nullable View focused, int direction) {
+    public @Nullable View onInterceptFocusSearch(@Nullable View focused, int direction) {
         if ((mFlag & PF_FOCUS_SEARCH_DISABLED) != 0) {
             return focused;
         }
@@ -3636,8 +3655,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void onAdapterChanged(@Nullable RecyclerView.Adapter oldAdapter,
-            @Nullable RecyclerView.Adapter newAdapter) {
+    public void onAdapterChanged(RecyclerView.@Nullable Adapter oldAdapter,
+            RecyclerView.@Nullable Adapter newAdapter) {
         if (DEBUG) Log.v(getTag(), "onAdapterChanged to " + newAdapter);
         if (oldAdapter != null) {
             discardLayoutInfo();
@@ -3716,9 +3735,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
-    @NonNull
     @Override
-    public Parcelable onSaveInstanceState() {
+    public @NonNull Parcelable onSaveInstanceState() {
         if (DEBUG) Log.v(getTag(), "onSaveInstanceState getSelection() " + getSelection());
         SavedState ss = new SavedState();
         // save selected index
@@ -3759,8 +3777,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public int getRowCountForAccessibility(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state) {
+    public int getRowCountForAccessibility(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state) {
         if (mOrientation == HORIZONTAL && mGrid != null) {
             return mGrid.getNumRows();
         }
@@ -3768,8 +3786,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public int getColumnCountForAccessibility(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state) {
+    public int getColumnCountForAccessibility(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state) {
         if (mOrientation == VERTICAL && mGrid != null) {
             return mGrid.getNumRows();
         }
@@ -3777,8 +3795,8 @@ public final class GridLayoutManager extends RecyclerView.LayoutManager {
     }
 
     @Override
-    public void onInitializeAccessibilityNodeInfoForItem(@NonNull RecyclerView.Recycler recycler,
-            @NonNull RecyclerView.State state, @NonNull View host,
+    public void onInitializeAccessibilityNodeInfoForItem(RecyclerView.@NonNull Recycler recycler,
+            RecyclerView.@NonNull State state, @NonNull View host,
             @NonNull AccessibilityNodeInfoCompat info) {
         ViewGroup.LayoutParams lp = host.getLayoutParams();
         if (mGrid == null || !(lp instanceof LayoutParams)) {

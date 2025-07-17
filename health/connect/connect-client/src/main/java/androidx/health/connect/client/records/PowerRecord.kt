@@ -36,7 +36,7 @@ public class PowerRecord(
     override val endTime: Instant,
     override val endZoneOffset: ZoneOffset?,
     override val samples: List<Sample>,
-    override val metadata: Metadata = Metadata.EMPTY,
+    override val metadata: Metadata,
 ) : SeriesRecord<PowerRecord.Sample> {
 
     init {
@@ -71,6 +71,10 @@ public class PowerRecord(
         result = 31 * result + samples.hashCode()
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "PowerRecord(startTime=$startTime, startZoneOffset=$startZoneOffset, endTime=$endTime, endZoneOffset=$endZoneOffset, samples=$samples, metadata=$metadata)"
     }
 
     companion object {
@@ -126,10 +130,7 @@ public class PowerRecord(
      * @param power Power generated, in [Power] unit. Valid range: 0-100000 Watts.
      * @see PowerRecord
      */
-    public class Sample(
-        val time: Instant,
-        val power: Power,
-    ) {
+    public class Sample(val time: Instant, val power: Power) {
 
         init {
             power.requireNotLess(other = power.zero(), name = "power")
@@ -156,6 +157,10 @@ public class PowerRecord(
             var result = time.hashCode()
             result = 31 * result + power.hashCode()
             return result
+        }
+
+        override fun toString(): String {
+            return "Sample(time=$time, power=$power)"
         }
     }
 }

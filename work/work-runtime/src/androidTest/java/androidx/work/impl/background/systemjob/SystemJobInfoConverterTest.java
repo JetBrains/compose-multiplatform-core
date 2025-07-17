@@ -230,8 +230,10 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
 
     @Test
     @SmallTest
-    @SdkSuppress(minSdkVersion = 29)
+    @SdkSuppress(minSdkVersion = 29, maxSdkVersion = 34)
     public void testConvert_setImportantWhileForeground() {
+        // Switch maxSdkVersion to 35 after B gets an official SDK version.
+        // setImportantWhileInForeground() turns into a no-op starting API 36.
         WorkSpec workSpec = getTestWorkSpecWithConstraints(new Constraints.Builder().build());
         workSpec.lastEnqueueTime = System.currentTimeMillis();
         JobInfo jobInfo = mConverter.convert(workSpec, JOB_ID);
@@ -399,6 +401,20 @@ public class SystemJobInfoConverterTest extends WorkManagerTest {
         } else {
             assertEquals(jobInfo.getNetworkType(), JobInfo.NETWORK_TYPE_METERED);
         }
+    }
+
+    @Test
+    @SmallTest
+    public void testEnsureTraceTags() {
+        if (Build.VERSION.SDK_INT < 35) {
+            return;
+        }
+
+        final String id = "id";
+        WorkSpec workSpec = new WorkSpec(id, TestWorker.class.getName());
+        workSpec.setTraceTag(TestWorker.class.getSimpleName());
+        JobInfo jobInfo = mConverter.convert(workSpec, JOB_ID);
+        assertEquals(jobInfo.getTraceTag(), TestWorker.class.getSimpleName());
     }
 
     private WorkSpec getTestWorkSpecWithConstraints(Constraints constraints) {

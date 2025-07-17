@@ -30,7 +30,7 @@ import android.view.inputmethod.InputConnection
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
-import androidx.compose.ui.input.pointer.PositionCalculator
+import androidx.compose.ui.input.pointer.MatrixPositionCalculator
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextInputServiceAndroid.TextInputCommand.HideKeyboard
@@ -57,7 +57,7 @@ private const val DEBUG_CLASS = "TextInputServiceAndroid"
 )
 internal class TextInputServiceAndroid(
     val view: View,
-    rootPositionCalculator: PositionCalculator,
+    rootPositionCalculator: MatrixPositionCalculator,
     private val inputMethodManager: InputMethodManager,
     private val inputCommandProcessorExecutor: Executor = Choreographer.getInstance().asExecutor(),
 ) : PlatformTextInputService {
@@ -70,7 +70,7 @@ internal class TextInputServiceAndroid(
         StartInput,
         StopInput,
         ShowKeyboard,
-        HideKeyboard
+        HideKeyboard,
     }
 
     /**
@@ -118,12 +118,8 @@ internal class TextInputServiceAndroid(
 
     constructor(
         view: View,
-        positionCalculator: PositionCalculator
-    ) : this(
-        view,
-        positionCalculator,
-        InputMethodManagerImpl(view),
-    )
+        positionCalculator: MatrixPositionCalculator,
+    ) : this(view, positionCalculator, InputMethodManagerImpl(view))
 
     init {
         if (DEBUG) {
@@ -163,7 +159,7 @@ internal class TextInputServiceAndroid(
                             includeInsertionMarker: Boolean,
                             includeCharacterBounds: Boolean,
                             includeEditorBounds: Boolean,
-                            includeLineBounds: Boolean
+                            includeLineBounds: Boolean,
                         ) {
                             cursorAnchorInfoController.requestUpdate(
                                 immediate,
@@ -171,7 +167,7 @@ internal class TextInputServiceAndroid(
                                 includeInsertionMarker,
                                 includeCharacterBounds,
                                 includeEditorBounds,
-                                includeLineBounds
+                                includeLineBounds,
                             )
                         }
 
@@ -183,7 +179,7 @@ internal class TextInputServiceAndroid(
                                 }
                             }
                         }
-                    }
+                    },
             )
             .also {
                 ics.add(WeakReference(it))
@@ -200,7 +196,7 @@ internal class TextInputServiceAndroid(
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ) {
         if (DEBUG) {
             Log.d(TAG, "$DEBUG_CLASS.startInput")
@@ -270,6 +266,19 @@ internal class TextInputServiceAndroid(
     }
 
     private fun processInputCommands() {
+        // If the associated view is not focused anymore, we should check whether the focus has
+        // transitioned into another Editor.
+        if (!view.isFocused) {
+            val focusedView = view.rootView.findFocus()
+            // If a view is focused and is an editor, we can skip the queued up commands since the
+            // new editor is going to manage the keyboard and the input session. Otherwise we should
+            // process the queue since it probably contains StopInput or HideKeyboard calls to
+            // clean up after us.
+            if (focusedView?.onCheckIsTextEditor() == true) {
+                textInputCommandQueue.clear()
+                return
+            }
+        }
         // Multiple commands may have been queued up in the channel while this function was
         // waiting to be resumed. We don't execute the commands as they come in because making a
         // bunch of calls to change the actual IME quickly can result in flickers. Instead, we
@@ -328,7 +337,7 @@ internal class TextInputServiceAndroid(
                 Log.d(
                     TAG,
                     "$DEBUG_CLASS.textInputCommandEventLoop.$command " +
-                        "(startInput=$startInput, showKeyboard=$showKeyboard)"
+                        "(startInput=$startInput, showKeyboard=$showKeyboard)",
                 )
             }
         }
@@ -379,7 +388,7 @@ internal class TextInputServiceAndroid(
                     selectionStart = newValue.selection.min,
                     selectionEnd = newValue.selection.max,
                     compositionStart = state.composition?.min ?: -1,
-                    compositionEnd = state.composition?.max ?: -1
+                    compositionEnd = state.composition?.max ?: -1,
                 )
             }
             return
@@ -413,7 +422,7 @@ internal class TextInputServiceAndroid(
                 rect.left.roundToInt(),
                 rect.top.roundToInt(),
                 rect.right.roundToInt(),
-                rect.bottom.roundToInt()
+                rect.bottom.roundToInt(),
             )
 
         // Requesting rectangle too early after obtaining focus may bring view into wrong place
@@ -437,7 +446,7 @@ internal class TextInputServiceAndroid(
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) {
         cursorAnchorInfoController.updateTextLayoutResult(
             textFieldValue,
@@ -445,7 +454,7 @@ internal class TextInputServiceAndroid(
             textLayoutResult,
             textFieldToRootTransform,
             innerTextFieldBounds,
-            decorationBoxBounds
+            decorationBoxBounds,
         )
     }
 

@@ -21,12 +21,13 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.util.Uris;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -45,18 +46,15 @@ public class ContentOpenable implements Openable, Parcelable {
      * The content-type that this content should be opened as (e.g. when more than one
      * available).
      */
-    @Nullable
-    private final String mContentType;
+    private final @Nullable String mContentType;
 
     /**
      * If not null, this {@link Openable} will open an image preview of the actual contents.
      * The preview will be requested with these specified dimensions.
      */
-    @Nullable
-    private final Dimensions mSize;
+    private final @Nullable Dimensions mSize;
 
-    @Nullable
-    private Open mOpen;
+    private @Nullable Open mOpen;
 
     /** Creates an {@link Openable} for the contents @ uri with its default content-type. */
     public ContentOpenable(@NonNull Uri uri) {
@@ -86,13 +84,11 @@ public class ContentOpenable implements Openable, Parcelable {
         this.mSize = size;
     }
 
-    @NonNull
-    public Uri getContentUri() {
+    public @NonNull Uri getContentUri() {
         return mContentUri;
     }
 
-    @Nullable
-    public Dimensions getSize() {
+    public @Nullable Dimensions getSize() {
         return mSize;
     }
 
@@ -103,9 +99,8 @@ public class ContentOpenable implements Openable, Parcelable {
      *
      * @return The {@link androidx.pdf.data.Openable.Open} for this Openable.
      */
-    @NonNull
     @Override
-    public Open openWith(@NonNull Opener opener) throws IOException {
+    public @NonNull Open openWith(@NonNull Opener opener) throws IOException {
         /*
          * We want to explicitly return {@link Opener#open(ContentOpenable)} every time instead
          * of just
@@ -120,8 +115,7 @@ public class ContentOpenable implements Openable, Parcelable {
     }
 
     @Override
-    @Nullable
-    public String getContentType() {
+    public @Nullable String getContentType() {
         return mContentType;
     }
 
@@ -130,9 +124,8 @@ public class ContentOpenable implements Openable, Parcelable {
         return mOpen != null ? mOpen.length() : -1;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format("%s [%s]: %s / @%s", TAG, mContentType, mContentUri, mSize);
     }
 

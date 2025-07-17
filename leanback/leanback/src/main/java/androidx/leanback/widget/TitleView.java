@@ -26,9 +26,10 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Title view for a leanback fragment.
@@ -126,8 +127,7 @@ public class TitleView extends FrameLayout implements TitleViewAdapter.Provider 
     /**
      * Returns the title text.
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         return mTextView.getText();
     }
 
@@ -143,8 +143,7 @@ public class TitleView extends FrameLayout implements TitleViewAdapter.Provider 
     /**
      * Returns the badge drawable.
      */
-    @Nullable
-    public Drawable getBadgeDrawable() {
+    public @Nullable Drawable getBadgeDrawable() {
         return mBadgeView.getDrawable();
     }
 
@@ -160,23 +159,21 @@ public class TitleView extends FrameLayout implements TitleViewAdapter.Provider 
     /**
      *  Returns the view for the search affordance.
      */
-    @NonNull
-    public View getSearchAffordanceView() {
+    public @NonNull View getSearchAffordanceView() {
         return mSearchOrbView;
     }
 
     /**
      * Sets the {@link SearchOrbView.Colors} used to draw the search affordance.
      */
-    public void setSearchAffordanceColors(@NonNull SearchOrbView.Colors colors) {
+    public void setSearchAffordanceColors(SearchOrbView.@NonNull Colors colors) {
         mSearchOrbView.setOrbColors(colors);
     }
 
     /**
      * Returns the {@link SearchOrbView.Colors} used to draw the search affordance.
      */
-    @Nullable
-    public SearchOrbView.Colors getSearchAffordanceColors() {
+    public SearchOrbView.@Nullable Colors getSearchAffordanceColors() {
         return mSearchOrbView.getOrbColors();
     }
 
@@ -226,8 +223,7 @@ public class TitleView extends FrameLayout implements TitleViewAdapter.Provider 
     }
 
     @Override
-    @NonNull
-    public TitleViewAdapter getTitleViewAdapter() {
+    public @NonNull TitleViewAdapter getTitleViewAdapter() {
         return mTitleViewAdapter;
     }
 }

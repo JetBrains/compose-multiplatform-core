@@ -15,6 +15,7 @@
  */
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -348,25 +349,26 @@ class LongSetTest {
         assertEquals(
             "${order[0].toLong()}, ${order[1].toLong()}, ${order[2].toLong()}, " +
                 "${order[3].toLong()}, ${order[4].toLong()}",
-            set.joinToString()
+            set.joinToString(),
         )
         assertEquals(
-            "x${order[0].toLong()}, ${order[1].toLong()}, ${order[2].toLong()}...",
-            set.joinToString(prefix = "x", postfix = "y", limit = 3)
+            "x${order[0].toLong()}, ${order[1].toLong()}, ${order[2].toLong()}, ...y",
+            set.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${order[0].toLong()}-${order[1].toLong()}-${order[2].toLong()}-" +
                 "${order[3].toLong()}-${order[4].toLong()}<",
-            set.joinToString(separator = "-", prefix = ">", postfix = "<")
+            set.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            set.joinToString(limit = 3) { names[it.toInt()] }
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
+            set.joinToString(limit = 3) { names[it.toInt()] },
         )
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val set = MutableLongSet()
         set += 1L
@@ -549,5 +551,46 @@ class LongSetTest {
         assertTrue(3L in set)
         assertTrue(4L in set)
         assertFalse(5L in set)
+    }
+
+    @Test
+    fun buildLongSetFunction() {
+        val contract: Boolean
+        val set = buildLongSet {
+            contract = true
+            add(1L)
+            add(2L)
+        }
+        assertTrue(contract)
+        assertEquals(2, set.size)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+    }
+
+    @Test
+    fun buildLongSetWithCapacityFunction() {
+        val contract: Boolean
+        val set =
+            buildLongSet(20) {
+                contract = true
+                add(1L)
+                add(2L)
+            }
+        assertTrue(contract)
+        assertEquals(2, set.size)
+        assertTrue(set.capacity >= 18)
+        assertTrue(1L in set)
+        assertTrue(2L in set)
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val set = mutableLongSetOf()
+
+        for (i in 0..1000000) {
+            set.add(i.toLong())
+            set.remove(i.toLong())
+            assertTrue(set.capacity < 16, "Set grew larger than 16 after step $i")
+        }
     }
 }

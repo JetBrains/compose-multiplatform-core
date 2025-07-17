@@ -17,6 +17,7 @@
 package androidx.lifecycle
 
 import androidx.kruth.assertWithMessage
+import androidx.testutils.lifecycle.FakeLifecycleOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -24,6 +25,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
+@IgnoreWebTarget
 class WithLifecycleStateTest {
     @Test
     fun testInitialResumed() = runLifecycleTest {

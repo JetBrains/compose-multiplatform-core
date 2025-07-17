@@ -24,8 +24,6 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.debugview.DebugAppSearchManager;
@@ -39,6 +37,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A fragment for displaying a {@link GenericDocument} object.
@@ -60,8 +61,7 @@ public class DocumentFragment extends Fragment {
     /**
      * Factory for creating a {@link DocumentFragment} instance.
      */
-    @NonNull
-    public static DocumentFragment createDocumentFragment(
+    public static @NonNull DocumentFragment createDocumentFragment(
             @NonNull String namespace, @NonNull String id) {
         DocumentFragment documentFragment = new DocumentFragment();
         Bundle args = new Bundle();
@@ -80,10 +80,9 @@ public class DocumentFragment extends Fragment {
         }
     }
 
-    @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-            @Nullable Bundle savedInstanceState) {
+    public @Nullable View onCreateView(@NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_document, container, false);
     }

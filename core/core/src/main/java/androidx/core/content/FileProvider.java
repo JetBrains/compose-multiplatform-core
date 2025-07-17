@@ -45,15 +45,14 @@ import android.text.TextUtils;
 import android.webkit.MimeTypeMap;
 
 import androidx.annotation.CallSuper;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
 import androidx.core.content.res.ResourcesCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.File;
@@ -96,12 +95,11 @@ import java.util.Map;
  * <p>
  * <b>Defining a FileProvider</b>
  * <p>
- * Extend FileProvider with a default constructor, and call super with an XML resource file that
- * specifies the available files (see below for the structure of the XML file):
+ * Extend FileProvider with a default constructor:
  * <pre class="prettyprint">
  * public class MyFileProvider extends FileProvider {
  *    public MyFileProvider() {
- *        super(R.xml.file_paths)
+ *        ...
  *    }
  * }
  * </pre>
@@ -355,11 +353,10 @@ import java.util.Map;
  * </p>
  */
 public class FileProvider extends ContentProvider {
-    private static final String[] COLUMNS = {
-            OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE };
+    private static final String[] COLUMNS = {OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE};
 
-    private static final String
-            META_DATA_FILE_PROVIDER_PATHS = "android.support.FILE_PROVIDER_PATHS";
+    private static final String META_DATA_FILE_PROVIDER_PATHS =
+            "android.support.FILE_PROVIDER_PATHS";
 
     private static final String TAG_ROOT_PATH = "root-path";
     private static final String TAG_FILES_PATH = "files-path";
@@ -379,18 +376,13 @@ public class FileProvider extends ContentProvider {
     @GuardedBy("sCache")
     private static final HashMap<String, PathStrategy> sCache = new HashMap<>();
 
-    @NonNull
-    private final Object mLock = new Object();
-
+    private final @NonNull Object mLock = new Object();
+    private final int mResourceId;
     @GuardedBy("mLock")
     private String mAuthority;
-
     // Do NOT access directly! Use getLocalPathStrategy() instead.
     @GuardedBy("mLock")
-    @Nullable
-    private PathStrategy mLocalPathStrategy;
-
-    private final int mResourceId;
+    private @Nullable PathStrategy mLocalPathStrategy;
 
     public FileProvider() {
         this(ResourcesCompat.ID_NULL);
@@ -398,47 +390,6 @@ public class FileProvider extends ContentProvider {
 
     protected FileProvider(@XmlRes int resourceId) {
         mResourceId = resourceId;
-    }
-
-    /**
-     * The default FileProvider implementation does not need to be initialized. If you want to
-     * override this method, you must provide your own subclass of FileProvider.
-     */
-    @Override
-    public boolean onCreate() {
-        return true;
-    }
-
-    /**
-     * After the FileProvider is instantiated, this method is called to provide the system with
-     * information about the provider.
-     *
-     * @param context A {@link Context} for the current component.
-     * @param info A {@link ProviderInfo} for the new provider.
-     */
-    @SuppressWarnings("StringSplitter")
-    @CallSuper
-    @Override
-    public void attachInfo(@NonNull Context context, @NonNull ProviderInfo info) {
-        super.attachInfo(context, info);
-
-        // Check our security attributes.
-        if (info.exported) {
-            // Our intent here is to help application developers to avoid *accidentally* opening up
-            // this provider to the "world" which may lead to vulnerabilities in their applications.
-            throw new SecurityException("Provider must not be exported");
-        }
-        if (!info.grantUriPermissions) {
-            throw new SecurityException("Provider must grant uri permissions");
-        }
-
-        final String authority = info.authority.split(";")[0];
-        synchronized (mLock) {
-            mAuthority = authority;
-        }
-        synchronized (sCache) {
-            sCache.remove(authority);
-        }
     }
 
     /**
@@ -452,14 +403,14 @@ public class FileProvider extends ContentProvider {
      * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
      * meta-data element. See the Class Overview for more information.
      *
-     * @param context A {@link Context} for the current component.
+     * @param context   A {@link Context} for the current component.
      * @param authority The authority of a {@link FileProvider} defined in a
-     *            {@code <provider>} element in your app's manifest.
-     * @param file A {@link File} pointing to the filename for which you want a
-     * <code>content</code> {@link Uri}.
+     *                  {@code <provider>} element in your app's manifest.
+     * @param file      A {@link File} pointing to the filename for which you want a
+     *                  <code>content</code> {@link Uri}.
      * @return A content URI for the file.
      * @throws IllegalArgumentException When the given {@link File} is outside
-     * the paths supported by the provider.
+     *                                  the paths supported by the provider.
      */
     public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
             @NonNull File file) {
@@ -478,200 +429,22 @@ public class FileProvider extends ContentProvider {
      * <code>content</code> {@link Uri} for file paths defined in their <code>&lt;paths&gt;</code>
      * meta-data element. See the Class Overview for more information.
      *
-     * @param context A {@link Context} for the current component.
-     * @param authority The authority of a {@link FileProvider} defined in a
-     *            {@code <provider>} element in your app's manifest.
-     * @param file A {@link File} pointing to the filename for which you want a
-     * <code>content</code> {@link Uri}.
+     * @param context     A {@link Context} for the current component.
+     * @param authority   The authority of a {@link FileProvider} defined in a
+     *                    {@code <provider>} element in your app's manifest.
+     * @param file        A {@link File} pointing to the filename for which you want a
+     *                    <code>content</code> {@link Uri}.
      * @param displayName The filename to be displayed. This can be used if the original filename
-     * is undesirable.
+     *                    is undesirable.
      * @return A content URI for the file.
      * @throws IllegalArgumentException When the given {@link File} is outside
-     * the paths supported by the provider.
+     *                                  the paths supported by the provider.
      */
     @SuppressLint("StreamFiles")
-    @NonNull
-    public static Uri getUriForFile(@NonNull Context context, @NonNull String authority,
+    public static @NonNull Uri getUriForFile(@NonNull Context context, @NonNull String authority,
             @NonNull File file, @NonNull String displayName) {
         Uri uri = getUriForFile(context, authority, file);
         return uri.buildUpon().appendQueryParameter(DISPLAYNAME_FIELD, displayName).build();
-    }
-
-    /**
-     * Use a content URI returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()} to get information about a file
-     * managed by the FileProvider.
-     * FileProvider reports the column names defined in {@link OpenableColumns}:
-     * <ul>
-     * <li>{@link OpenableColumns#DISPLAY_NAME}</li>
-     * <li>{@link OpenableColumns#SIZE}</li>
-     * </ul>
-     * For more information, see
-     * {@link ContentProvider#query(Uri, String[], String, String[], String)
-     * ContentProvider.query()}.
-     *
-     * @param uri A content URI returned by {@link #getUriForFile}.
-     * @param projection The list of columns to put into the {@link Cursor}. If null all columns are
-     * included.
-     * @param selection Selection criteria to apply. If null then all data that matches the content
-     * URI is returned.
-     * @param selectionArgs An array of {@link String}, containing arguments to bind to
-     * the <i>selection</i> parameter. The <i>query</i> method scans <i>selection</i> from left to
-     * right and iterates through <i>selectionArgs</i>, replacing the current "?" character in
-     * <i>selection</i> with the value at the current position in <i>selectionArgs</i>. The
-     * values are bound to <i>selection</i> as {@link String} values.
-     * @param sortOrder A {@link String} containing the column name(s) on which to sort
-     * the resulting {@link Cursor}.
-     * @return A {@link Cursor} containing the results of the query.
-     *
-     */
-    @NonNull
-    @Override
-    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
-            @Nullable String[] selectionArgs,
-            @Nullable String sortOrder) {
-        // ContentProvider has already checked granted permissions
-        final File file = getLocalPathStrategy().getFileForUri(uri);
-        String displayName = uri.getQueryParameter(DISPLAYNAME_FIELD);
-
-        if (projection == null) {
-            projection = COLUMNS;
-        }
-
-        String[] cols = new String[projection.length];
-        Object[] values = new Object[projection.length];
-        int i = 0;
-        for (String col : projection) {
-            if (OpenableColumns.DISPLAY_NAME.equals(col)) {
-                cols[i] = OpenableColumns.DISPLAY_NAME;
-                values[i++] = (displayName == null) ? file.getName() : displayName;
-            } else if (OpenableColumns.SIZE.equals(col)) {
-                cols[i] = OpenableColumns.SIZE;
-                values[i++] = file.length();
-            }
-        }
-
-        cols = copyOf(cols, i);
-        values = copyOf(values, i);
-
-        final MatrixCursor cursor = new MatrixCursor(cols, 1);
-        cursor.addRow(values);
-        return cursor;
-    }
-
-    /**
-     * Returns the MIME type of a content URI returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
-     *
-     * @param uri A content URI returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
-     * @return If the associated file has an extension, the MIME type associated with that
-     * extension; otherwise <code>application/octet-stream</code>.
-     */
-    @Nullable
-    @Override
-    public String getType(@NonNull Uri uri) {
-        // ContentProvider has already checked granted permissions
-        final File file = getLocalPathStrategy().getFileForUri(uri);
-
-        final int lastDot = file.getName().lastIndexOf('.');
-        if (lastDot >= 0) {
-            final String extension = file.getName().substring(lastDot + 1);
-            final String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-            if (mime != null) {
-                return mime;
-            }
-        }
-
-        return "application/octet-stream";
-    }
-
-    /**
-     * Unrestricted version of getType
-     * called, when caller does not have corresponding permissions
-     */
-    //@Override
-    @SuppressWarnings("MissingOverride")
-    @Nullable
-    public String getTypeAnonymous(@NonNull Uri uri) {
-        return "application/octet-stream";
-    }
-
-    /**
-     * By default, this method throws an {@link UnsupportedOperationException}. You must
-     * subclass FileProvider if you want to provide different functionality.
-     */
-    @Override
-    public Uri insert(@NonNull Uri uri, @NonNull ContentValues values) {
-        throw new UnsupportedOperationException("No external inserts");
-    }
-
-    /**
-     * By default, this method throws an {@link UnsupportedOperationException}. You must
-     * subclass FileProvider if you want to provide different functionality.
-     */
-    @Override
-    public int update(@NonNull Uri uri, @NonNull ContentValues values, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
-        throw new UnsupportedOperationException("No external updates");
-    }
-
-    /**
-     * Deletes the file associated with the specified content URI, as
-     * returned by {@link #getUriForFile(Context, String, File) getUriForFile()}. Notice that this
-     * method does <b>not</b> throw an {@link IOException}; you must check its return value.
-     *
-     * @param uri A content URI for a file, as returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
-     * @param selection Ignored. Set to {@code null}.
-     * @param selectionArgs Ignored. Set to {@code null}.
-     * @return 1 if the delete succeeds; otherwise, 0.
-     */
-    @Override
-    public int delete(@NonNull Uri uri, @Nullable String selection,
-            @Nullable String[] selectionArgs) {
-        // ContentProvider has already checked granted permissions
-        final File file = getLocalPathStrategy().getFileForUri(uri);
-        return file.delete() ? 1 : 0;
-    }
-
-    /**
-     * By default, FileProvider automatically returns the
-     * {@link ParcelFileDescriptor} for a file associated with a <code>content://</code>
-     * {@link Uri}. To get the {@link ParcelFileDescriptor}, call
-     * {@link ContentResolver#openFileDescriptor(Uri, String)
-     * ContentResolver.openFileDescriptor}.
-     *
-     * To override this method, you must provide your own subclass of FileProvider.
-     *
-     * @param uri A content URI associated with a file, as returned by
-     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
-     * @param mode Access mode for the file. May be "r" for read-only access, "rw" for read and
-     * write access, or "rwt" for read and write access that truncates any existing file.
-     * @return A new {@link ParcelFileDescriptor} with which you can access the file.
-     */
-    @SuppressLint("UnknownNullness") // b/171012356
-    @Override
-    public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
-            throws FileNotFoundException {
-        // ContentProvider has already checked granted permissions
-        final File file = getLocalPathStrategy().getFileForUri(uri);
-        final int fileMode = modeToMode(mode);
-        return ParcelFileDescriptor.open(file, fileMode);
-    }
-
-    /** Return the local {@link PathStrategy}, creating it if necessary. */
-    @NonNull
-    private PathStrategy getLocalPathStrategy() {
-        synchronized (mLock) {
-            requireNonNull(mAuthority, "mAuthority is null. Did you override attachInfo and "
-                    + "did not call super.attachInfo()?");
-
-            if (mLocalPathStrategy == null) {
-                mLocalPathStrategy = getPathStrategy(getContext(), mAuthority, mResourceId);
-            }
-            return mLocalPathStrategy;
-        }
     }
 
     /**
@@ -700,8 +473,7 @@ public class FileProvider extends ContentProvider {
 
     @VisibleForTesting
     static XmlResourceParser getFileProviderPathsMetaData(Context context, String authority,
-            @Nullable ProviderInfo info,
-            int resourceId) {
+            @Nullable ProviderInfo info, int resourceId) {
         if (info == null) {
             throw new IllegalArgumentException(
                     "Couldn't find meta-data for provider with authority " + authority);
@@ -712,8 +484,8 @@ public class FileProvider extends ContentProvider {
             info.metaData.putInt(META_DATA_FILE_PROVIDER_PATHS, resourceId);
         }
 
-        final XmlResourceParser in = info.loadXmlMetaData(
-                context.getPackageManager(), META_DATA_FILE_PROVIDER_PATHS);
+        final XmlResourceParser in = info.loadXmlMetaData(context.getPackageManager(),
+                META_DATA_FILE_PROVIDER_PATHS);
         if (in == null) {
             throw new IllegalArgumentException(
                     "Missing " + META_DATA_FILE_PROVIDER_PATHS + " meta-data");
@@ -732,8 +504,8 @@ public class FileProvider extends ContentProvider {
             throws IOException, XmlPullParserException {
         final SimplePathStrategy strat = new SimplePathStrategy(authority);
 
-        final ProviderInfo info = context.getPackageManager()
-                .resolveContentProvider(authority, PackageManager.GET_META_DATA);
+        final ProviderInfo info = context.getPackageManager().resolveContentProvider(authority,
+                PackageManager.GET_META_DATA);
         final XmlResourceParser in = getFileProviderPathsMetaData(context, authority, info,
                 resourceId);
 
@@ -779,6 +551,282 @@ public class FileProvider extends ContentProvider {
         }
 
         return strat;
+    }
+
+    /**
+     * Copied from ContentResolver.java
+     */
+    private static int modeToMode(String mode) {
+        int modeBits;
+        if ("r".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
+        } else if ("w".equals(mode) || "wt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else if ("wa".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_APPEND;
+        } else if ("rw".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE;
+        } else if ("rwt".equals(mode)) {
+            modeBits = ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE
+                    | ParcelFileDescriptor.MODE_TRUNCATE;
+        } else {
+            throw new IllegalArgumentException("Invalid mode: " + mode);
+        }
+        return modeBits;
+    }
+
+    private static File buildPath(File base, String... segments) {
+        File cur = base;
+        for (String segment : segments) {
+            if (segment != null) {
+                cur = new File(cur, segment);
+            }
+        }
+        return cur;
+    }
+
+    private static String[] copyOf(String[] original, int newLength) {
+        final String[] result = new String[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
+    private static Object[] copyOf(Object[] original, int newLength) {
+        final Object[] result = new Object[newLength];
+        System.arraycopy(original, 0, result, 0, newLength);
+        return result;
+    }
+
+    private static @NonNull String removeTrailingSlash(@NonNull String path) {
+        if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
+            return path.substring(0, path.length() - 1);
+        } else {
+            return path;
+        }
+    }
+
+    /**
+     * The default FileProvider implementation does not need to be initialized. If you want to
+     * override this method, you must provide your own subclass of FileProvider.
+     */
+    @Override
+    public boolean onCreate() {
+        return true;
+    }
+
+    /**
+     * After the FileProvider is instantiated, this method is called to provide the system with
+     * information about the provider.
+     *
+     * @param context A {@link Context} for the current component.
+     * @param info    A {@link ProviderInfo} for the new provider.
+     */
+    @SuppressWarnings("StringSplitter")
+    @CallSuper
+    @Override
+    public void attachInfo(@NonNull Context context, @NonNull ProviderInfo info) {
+        super.attachInfo(context, info);
+
+        // Check our security attributes.
+        if (info.exported) {
+            // Our intent here is to help application developers to avoid *accidentally* opening up
+            // this provider to the "world" which may lead to vulnerabilities in their applications.
+            throw new SecurityException("Provider must not be exported");
+        }
+        if (!info.grantUriPermissions) {
+            throw new SecurityException("Provider must grant uri permissions");
+        }
+        if (info.authority == null || info.authority.trim().isEmpty()) {
+            throw new SecurityException("Provider must have a non-empty authority");
+        }
+
+        final String authority = info.authority.split(";")[0];
+        synchronized (mLock) {
+            mAuthority = authority;
+        }
+        synchronized (sCache) {
+            sCache.remove(authority);
+        }
+    }
+
+    /**
+     * Use a content URI returned by
+     * {@link #getUriForFile(Context, String, File) getUriForFile()} to get information about a file
+     * managed by the FileProvider.
+     * FileProvider reports the column names defined in {@link OpenableColumns}:
+     * <ul>
+     * <li>{@link OpenableColumns#DISPLAY_NAME}</li>
+     * <li>{@link OpenableColumns#SIZE}</li>
+     * </ul>
+     * For more information, see
+     * {@link ContentProvider#query(Uri, String[], String, String[], String)
+     * ContentProvider.query()}.
+     *
+     * @param uri           A content URI returned by {@link #getUriForFile}.
+     * @param projection    The list of columns to put into the {@link Cursor}. If null all
+     *                      columns are
+     *                      included.
+     * @param selection     Selection criteria to apply. If null then all data that matches the
+     *                      content
+     *                      URI is returned.
+     * @param selectionArgs An array of {@link String}, containing arguments to bind to
+     *                      the <i>selection</i> parameter. The <i>query</i> method scans
+     *                      <i>selection</i> from left to
+     *                      right and iterates through <i>selectionArgs</i>, replacing the
+     *                      current "?" character in
+     *                      <i>selection</i> with the value at the current position in
+     *                      <i>selectionArgs</i>. The
+     *                      values are bound to <i>selection</i> as {@link String} values.
+     * @param sortOrder     A {@link String} containing the column name(s) on which to sort
+     *                      the resulting {@link Cursor}.
+     * @return A {@link Cursor} containing the results of the query.
+     */
+    @Override
+    public @NonNull Cursor query(@NonNull Uri uri, String @Nullable [] projection,
+            @Nullable String selection, String @Nullable [] selectionArgs,
+            @Nullable String sortOrder) {
+        // ContentProvider has already checked granted permissions
+        final File file = getLocalPathStrategy().getFileForUri(uri);
+        String displayName = uri.getQueryParameter(DISPLAYNAME_FIELD);
+
+        if (projection == null) {
+            projection = COLUMNS;
+        }
+
+        String[] cols = new String[projection.length];
+        Object[] values = new Object[projection.length];
+        int i = 0;
+        for (String col : projection) {
+            if (OpenableColumns.DISPLAY_NAME.equals(col)) {
+                cols[i] = OpenableColumns.DISPLAY_NAME;
+                values[i++] = (displayName == null) ? file.getName() : displayName;
+            } else if (OpenableColumns.SIZE.equals(col)) {
+                cols[i] = OpenableColumns.SIZE;
+                values[i++] = file.length();
+            }
+        }
+
+        cols = copyOf(cols, i);
+        values = copyOf(values, i);
+
+        final MatrixCursor cursor = new MatrixCursor(cols, 1);
+        cursor.addRow(values);
+        return cursor;
+    }
+
+    /**
+     * Returns the MIME type of a content URI returned by
+     * {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     *
+     * @param uri A content URI returned by
+     *            {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     * @return If the associated file has an extension, the MIME type associated with that
+     * extension; otherwise <code>application/octet-stream</code>.
+     */
+    @Override
+    public @Nullable String getType(@NonNull Uri uri) {
+        // ContentProvider has already checked granted permissions
+        final File file = getLocalPathStrategy().getFileForUri(uri);
+
+        final int lastDot = file.getName().lastIndexOf('.');
+        if (lastDot >= 0) {
+            final String extension = file.getName().substring(lastDot + 1);
+            final String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+            if (mime != null) {
+                return mime;
+            }
+        }
+
+        return "application/octet-stream";
+    }
+
+    /**
+     * Unrestricted version of getType
+     * called, when caller does not have corresponding permissions
+     */
+    //@Override
+    @SuppressWarnings("MissingOverride")
+    public @Nullable String getTypeAnonymous(@NonNull Uri uri) {
+        return "application/octet-stream";
+    }
+
+    /**
+     * By default, this method throws an {@link UnsupportedOperationException}. You must
+     * subclass FileProvider if you want to provide different functionality.
+     */
+    @Override
+    public Uri insert(@NonNull Uri uri, @NonNull ContentValues values) {
+        throw new UnsupportedOperationException("No external inserts");
+    }
+
+    /**
+     * By default, this method throws an {@link UnsupportedOperationException}. You must
+     * subclass FileProvider if you want to provide different functionality.
+     */
+    @Override
+    public int update(@NonNull Uri uri, @NonNull ContentValues values, @Nullable String selection,
+            String @Nullable [] selectionArgs) {
+        throw new UnsupportedOperationException("No external updates");
+    }
+
+    /**
+     * Deletes the file associated with the specified content URI, as
+     * returned by {@link #getUriForFile(Context, String, File) getUriForFile()}. Notice that this
+     * method does <b>not</b> throw an {@link IOException}; you must check its return value.
+     *
+     * @param uri           A content URI for a file, as returned by
+     *                      {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     * @param selection     Ignored. Set to {@code null}.
+     * @param selectionArgs Ignored. Set to {@code null}.
+     * @return 1 if the delete succeeds; otherwise, 0.
+     */
+    @Override
+    public int delete(@NonNull Uri uri, @Nullable String selection,
+            String @Nullable [] selectionArgs) {
+        // ContentProvider has already checked granted permissions
+        final File file = getLocalPathStrategy().getFileForUri(uri);
+        return file.delete() ? 1 : 0;
+    }
+
+    /**
+     * By default, FileProvider automatically returns the
+     * {@link ParcelFileDescriptor} for a file associated with a <code>content://</code>
+     * {@link Uri}. To get the {@link ParcelFileDescriptor}, call
+     * {@link ContentResolver#openFileDescriptor(Uri, String)
+     * ContentResolver.openFileDescriptor}.
+     *
+     * To override this method, you must provide your own subclass of FileProvider.
+     *
+     * @param uri  A content URI associated with a file, as returned by
+     *             {@link #getUriForFile(Context, String, File) getUriForFile()}.
+     * @param mode Access mode for the file. May be "r" for read-only access, "rw" for read and
+     *             write access, or "rwt" for read and write access that truncates any existing
+     *             file.
+     * @return A new {@link ParcelFileDescriptor} with which you can access the file.
+     */
+    @SuppressLint("UnknownNullness") // b/171012356
+    @Override
+    public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
+            throws FileNotFoundException {
+        // ContentProvider has already checked granted permissions
+        final File file = getLocalPathStrategy().getFileForUri(uri);
+        final int fileMode = modeToMode(mode);
+        return ParcelFileDescriptor.open(file, fileMode);
+    }
+
+    /** Return the local {@link PathStrategy}, creating it if necessary. */
+    private @NonNull PathStrategy getLocalPathStrategy() {
+        synchronized (mLock) {
+            requireNonNull(mAuthority, "mAuthority is null. Did you override attachInfo and "
+                    + "did not call super.attachInfo()?");
+
+            if (mLocalPathStrategy == null) {
+                mLocalPathStrategy = getPathStrategy(getContext(), mAuthority, mResourceId);
+            }
+            return mLocalPathStrategy;
+        }
     }
 
     /**
@@ -837,8 +885,8 @@ public class FileProvider extends ContentProvider {
                 // Resolve to canonical path to keep path checking fast
                 root = root.getCanonicalFile();
             } catch (IOException e) {
-                throw new IllegalArgumentException(
-                        "Failed to resolve canonical path for " + root, e);
+                throw new IllegalArgumentException("Failed to resolve canonical path for " + root,
+                        e);
             }
 
             mRoots.put(name, root);
@@ -878,8 +926,8 @@ public class FileProvider extends ContentProvider {
 
             // Encode the tag and path separately
             path = Uri.encode(mostSpecific.getKey()) + '/' + Uri.encode(path, "/");
-            return new Uri.Builder().scheme("content")
-                    .authority(mAuthority).encodedPath(path).build();
+            return new Uri.Builder().scheme("content").authority(mAuthority).encodedPath(
+                    path).build();
         }
 
         @Override
@@ -887,6 +935,11 @@ public class FileProvider extends ContentProvider {
             String path = uri.getEncodedPath();
 
             final int splitIndex = path.indexOf('/', 1);
+            if (splitIndex == -1) {
+                // If the URI is trying to access a root path (e.g. content://authority/tag)
+                // there will be no trailing slash in `path`, returning root paths is not allowed.
+                throw new IllegalArgumentException("Unable to find path from root: " + uri);
+            }
             final String tag = Uri.decode(path.substring(1, splitIndex));
             path = Uri.decode(path.substring(splitIndex + 1));
 
@@ -910,80 +963,17 @@ public class FileProvider extends ContentProvider {
         }
 
         /**
-         * Check if the given file is located "under" the given root.
+         * Check if the given `filePath` is located as a descendant of the supplied `rootPath`.
          */
         private boolean belongsToRoot(@NonNull String filePath, @NonNull String rootPath) {
-            // If we naively did the
-            //    filePath.startsWith(rootPath)
-            // check, we would miss cases such as the following:
-            //    rootPath="files/data"
-            //    filePath="files/data2"
-            // Thus we'll have to do more here.
-
-            // Remove trailing '/'s (if any) first.
+            // Both `filePath` and `rootPath` are typically gained via methods (e.g.
+            // `getCanonicalPath`) which strip trailing slashes already. However this may not
+            // always be true in the future, so retain this defensive check.
             filePath = removeTrailingSlash(filePath);
             rootPath = removeTrailingSlash(rootPath);
 
-            return filePath.equals(rootPath) || filePath.startsWith(rootPath + '/');
-        }
-    }
-
-    /**
-     * Copied from ContentResolver.java
-     */
-    private static int modeToMode(String mode) {
-        int modeBits;
-        if ("r".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_ONLY;
-        } else if ("w".equals(mode) || "wt".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_TRUNCATE;
-        } else if ("wa".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_WRITE_ONLY
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_APPEND;
-        } else if ("rw".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
-                    | ParcelFileDescriptor.MODE_CREATE;
-        } else if ("rwt".equals(mode)) {
-            modeBits = ParcelFileDescriptor.MODE_READ_WRITE
-                    | ParcelFileDescriptor.MODE_CREATE
-                    | ParcelFileDescriptor.MODE_TRUNCATE;
-        } else {
-            throw new IllegalArgumentException("Invalid mode: " + mode);
-        }
-        return modeBits;
-    }
-
-    private static File buildPath(File base, String... segments) {
-        File cur = base;
-        for (String segment : segments) {
-            if (segment != null) {
-                cur = new File(cur, segment);
-            }
-        }
-        return cur;
-    }
-
-    private static String[] copyOf(String[] original, int newLength) {
-        final String[] result = new String[newLength];
-        System.arraycopy(original, 0, result, 0, newLength);
-        return result;
-    }
-
-    private static Object[] copyOf(Object[] original, int newLength) {
-        final Object[] result = new Object[newLength];
-        System.arraycopy(original, 0, result, 0, newLength);
-        return result;
-    }
-
-    @NonNull
-    private static String removeTrailingSlash(@NonNull String path) {
-        if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
-            return path.substring(0, path.length() - 1);
-        } else {
-            return path;
+            // The `filePath` _must_ reside as a descendant of the `rootPath`
+            return filePath.startsWith(rootPath + '/');
         }
     }
 
@@ -993,7 +983,6 @@ public class FileProvider extends ContentProvider {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static File[] getExternalMediaDirs(Context context) {
             // Deprecated, otherwise this would belong on ContextCompat as a public method.
             return context.getExternalMediaDirs();

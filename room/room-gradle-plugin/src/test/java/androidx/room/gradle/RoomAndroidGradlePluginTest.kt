@@ -39,7 +39,7 @@ class RoomAndroidGradlePluginTest {
         projectName: String,
         backend: ProcessingBackend = ProcessingBackend.JAVAC,
         projectRoot: File = projectSetup.rootDir,
-        schemaDslLines: List<String> = listOf("schemaDirectory(\"\$projectDir/schemas\")")
+        schemaDslLines: List<String> = listOf("schemaDirectory(\"\$projectDir/schemas\")"),
     ) {
         // copy test project
         File("src/test/test-data/$projectName").copyRecursively(projectRoot)
@@ -180,7 +180,7 @@ class RoomAndroidGradlePluginTest {
         searchAndReplace(
             file = projectSetup.rootDir.resolve("src/main/java/room/testapp/MyEntity.java"),
             search = "// Insert-change",
-            replace = "public String text;"
+            replace = "public String text;",
         )
 
         // Incremental build, new schema for version 1 is generated and copied.
@@ -239,7 +239,7 @@ class RoomAndroidGradlePluginTest {
         searchAndReplace(
             file = projectSetup.rootDir.resolve("src/main/java/room/testapp/$dbFile"),
             search = "version = 1",
-            replace = "version = 2"
+            replace = "version = 2",
         )
 
         // Incremental build, due to the version change a new schema file is generated.
@@ -268,8 +268,8 @@ class RoomAndroidGradlePluginTest {
             schemaDslLines =
                 listOf(
                     "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
-                    "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")"
-                )
+                    "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")",
+                ),
         )
 
         File(projectSetup.rootDir, "build.gradle")
@@ -293,7 +293,59 @@ class RoomAndroidGradlePluginTest {
         runGradleTasks(
                 CLEAN_TASK,
                 "compileFlavorOneDebugJavaWithJavac",
-                "compileFlavorTwoDebugJavaWithJavac"
+                "compileFlavorTwoDebugJavaWithJavac",
+            )
+            .let { result ->
+                result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":compileFlavorTwoDebugJavaWithJavac", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorOne", TaskOutcome.SUCCESS)
+                result.assertTaskOutcome(":copyRoomSchemasFlavorTwo", TaskOutcome.SUCCESS)
+            }
+        // Check schema files are generated for both flavor, each in its own folder.
+        val flavorOneSchema =
+            projectSetup.rootDir.resolve("schemas/flavorOne/room.testapp.MyDatabase/1.json")
+        val flavorTwoSchema =
+            projectSetup.rootDir.resolve("schemas/flavorTwo/room.testapp.MyDatabase/1.json")
+        assertThat(flavorOneSchema.exists()).isTrue()
+        assertThat(flavorTwoSchema.exists()).isTrue()
+        // Check the schemas in both flavors are different
+        assertThat(flavorOneSchema.readText()).isNotEqualTo(flavorTwoSchema.readText())
+    }
+
+    @Test
+    fun testFlavoredProjectPriority() {
+        setup(
+            projectName = "flavored-project",
+            schemaDslLines =
+                listOf(
+                    "schemaDirectory(\"\$projectDir/schemasAll/\")",
+                    "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
+                    "schemaDirectory(\"flavorTwo\", \"\$projectDir/schemas/flavorTwo\")",
+                ),
+        )
+
+        File(projectSetup.rootDir, "build.gradle")
+            .appendText(
+                """
+            android {
+                flavorDimensions "mode"
+                productFlavors {
+                    flavorOne {
+                        dimension "mode"
+                    }
+                    flavorTwo {
+                        dimension "mode"
+                    }
+                }
+            }
+            """
+                    .trimIndent()
+            )
+
+        runGradleTasks(
+                CLEAN_TASK,
+                "compileFlavorOneDebugJavaWithJavac",
+                "compileFlavorTwoDebugJavaWithJavac",
             )
             .let { result ->
                 result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
@@ -320,8 +372,8 @@ class RoomAndroidGradlePluginTest {
             schemaDslLines =
                 listOf(
                     "schemaDirectory(\"\$projectDir/schemas\")",
-                    "schemaDirectory(\"staging\", \"\$projectDir/schemas/staging\")"
-                )
+                    "schemaDirectory(\"staging\", \"\$projectDir/schemas/staging\")",
+                ),
         )
 
         File(projectSetup.rootDir, "build.gradle")
@@ -361,14 +413,31 @@ class RoomAndroidGradlePluginTest {
     }
 
     @Test
-    fun testEmptyDirConfigProject() {
+    fun testNoSchemaDirForAndroidAssetsProject() {
+        setup(
+            projectName = "simple-project",
+            schemaDslLines = listOf("schemaDirectory(\"\$projectDir/schemas\")"),
+        )
+
+        // Remove source files but keep plugin configured (no schema exported)
+        projectSetup.rootDir.resolve("src/main/java").deleteRecursively()
+
+        val copyRoomSchemaTaskName = ":copyRoomSchemasToAndroidTestAssetsDebugAndroidTest"
+        val result = runGradleTasks(CLEAN_TASK, copyRoomSchemaTaskName, expectFailure = false)
+        // Validate copy task is skipped due to no schemas
+        result.assertTaskOutcome(copyRoomSchemaTaskName, TaskOutcome.NO_SOURCE)
+    }
+
+    @Test
+    fun testEmptyStringConfigProject() {
         setup(projectName = "simple-project", schemaDslLines = listOf("schemaDirectory(\"\")"))
 
         runGradleTasks(CLEAN_TASK, COMPILE_TASK, expectFailure = true).let { result ->
             assertThat(result.output)
                 .contains(
-                    "The Room schema directory path for Android variant 'debug' must not be empty."
+                    "Failed to query the value of task ':copyRoomSchemas' property 'schemaDirectory'."
                 )
+            assertThat(result.output).contains("Cannot convert '' to File.")
         }
     }
 
@@ -377,9 +446,7 @@ class RoomAndroidGradlePluginTest {
         setup(
             projectName = "flavored-project",
             schemaDslLines =
-                listOf(
-                    "schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")",
-                )
+                listOf("schemaDirectory(\"flavorOne\", \"\$projectDir/schemas/flavorOne\")"),
         )
 
         File(projectSetup.rootDir, "build.gradle")
@@ -404,7 +471,7 @@ class RoomAndroidGradlePluginTest {
                 CLEAN_TASK,
                 "compileFlavorOneDebugJavaWithJavac",
                 "compileFlavorTwoDebugJavaWithJavac",
-                expectFailure = true
+                expectFailure = true,
             )
             .let { result ->
                 assertThat(result.output)
@@ -419,10 +486,7 @@ class RoomAndroidGradlePluginTest {
         setup(
             projectName = "flavored-project",
             backend = backend,
-            schemaDslLines =
-                listOf(
-                    "schemaDirectory(\"\$projectDir/schemas\")",
-                )
+            schemaDslLines = listOf("schemaDirectory(\"\$projectDir/schemas\")"),
         )
 
         File(projectSetup.rootDir, "build.gradle")
@@ -447,7 +511,7 @@ class RoomAndroidGradlePluginTest {
                 CLEAN_TASK,
                 "compileFlavorOneDebugJavaWithJavac",
                 "compileFlavorTwoDebugJavaWithJavac",
-                expectFailure = true
+                expectFailure = true,
             )
             .let { result ->
                 result.assertTaskOutcome(":compileFlavorOneDebugJavaWithJavac", TaskOutcome.SUCCESS)
@@ -462,13 +526,13 @@ class RoomAndroidGradlePluginTest {
     private fun runGradleTasks(
         vararg args: String,
         projectDir: File = projectSetup.rootDir,
-        expectFailure: Boolean = false
+        expectFailure: Boolean = false,
     ) = runGradle(*args, projectDir = projectDir, expectFailure = expectFailure)
 
     enum class ProcessingBackend(val isForKotlin: Boolean) {
         JAVAC(false),
         KAPT(true),
-        KSP(true)
+        KSP(true),
     }
 
     companion object {

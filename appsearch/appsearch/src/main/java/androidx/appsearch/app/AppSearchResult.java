@@ -20,8 +20,11 @@ import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.exceptions.AppSearchException;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 import androidx.appsearch.util.LogUtil;
 import androidx.core.util.ObjectsCompat;
 import androidx.core.util.Preconditions;
@@ -29,12 +32,16 @@ import androidx.core.util.Preconditions;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Information about the success or failure of an AppSearch call.
  *
  * @param <ValueType> The type of result object for successful calls.
  */
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings("JSpecifyNullness")
 public final class AppSearchResult<ValueType> {
     private static final String TAG = "AppSearchResult";
 
@@ -54,9 +61,13 @@ public final class AppSearchResult<ValueType> {
             RESULT_SECURITY_ERROR,
             RESULT_DENIED,
             RESULT_RATE_LIMITED,
+            RESULT_ALREADY_EXISTS,
+            RESULT_ABORTED,
+            RESULT_UNAVAILABLE
     })
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public @interface ResultCode {}
 
     /** The call was successful. */
@@ -101,22 +112,51 @@ public final class AppSearchResult<ValueType> {
     /**
      * The requested operation is denied for the caller. This error is logged and returned for
      * denylist rejections.
-     * <!--@exportToFramework:hide-->
      */
-    // TODO(b/279047435): unhide this the next time we can make API changes
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_DENIED_AND_RESULT_RATE_LIMITED)
+    @ExperimentalAppSearchApi
     public static final int RESULT_DENIED = 9;
 
     /**
-     * The caller has hit AppSearch's rate limit and the requested operation has been rejected.
-     * <!--@exportToFramework:hide-->
+     * The caller has hit AppSearch's rate limit and the requested operation has been rejected. The
+     * caller is recommended to reschedule tasks with exponential backoff.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    // TODO(b/279047435): unhide this the next time we can make API changes
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_DENIED_AND_RESULT_RATE_LIMITED)
+    @ExperimentalAppSearchApi
     public static final int RESULT_RATE_LIMITED = 10;
 
-    private final @ResultCode int mResultCode;
-    @Nullable private final ValueType mResultValue;
-    @Nullable private final String mErrorMessage;
+    /** The operation is invalid because the resource already exists and can't be replaced. */
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ALREADY_EXISTS)
+    @ExperimentalAppSearchApi
+    public static final int RESULT_ALREADY_EXISTS = 12;
+
+    /**
+     * The operation is aborted because an internal state change invalidated the results of the
+     * request. New requests should be able to process correctly and callers may, therefore, wish to
+     * retry.
+     *
+     * <p>Note: if retrying, the caller should restart the request at the topmost API level. For
+     * example, if {@link SearchResults#getNextPageAsync} throws an exception with code
+     * {@link #RESULT_ABORTED}, then the caller should restart the search via
+     * {@link AppSearchSession#search} API with a new {@link SearchResults} object, instead of
+     * calling {@link SearchResults#getNextPageAsync} again with the original {@link SearchResults}
+     * object.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_ABORTED)
+    @ExperimentalAppSearchApi
+    public static final int RESULT_ABORTED = 13;
+
+    /**
+     * An error occurred due to AppSearch not having the necessary resources to execute the API
+     * call.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_RESULT_UNAVAILABLE)
+    @ExperimentalAppSearchApi
+    public static final int RESULT_UNAVAILABLE = 14;
+
+    @ResultCode private final int mResultCode;
+    private final @Nullable ValueType mResultValue;
+    private final @Nullable String mErrorMessage;
 
     private AppSearchResult(
             @ResultCode int resultCode,
@@ -146,8 +186,7 @@ public final class AppSearchResult<ValueType> {
      *
      * @throws IllegalStateException if this {@link AppSearchResult} is not successful.
      */
-    @Nullable
-    public ValueType getResultValue() {
+    public @Nullable ValueType getResultValue() {
         if (!isSuccess()) {
             throw new IllegalStateException("AppSearchResult is a failure: " + this);
         }
@@ -162,8 +201,7 @@ public final class AppSearchResult<ValueType> {
      * documentation of the particular {@link AppSearchSession} call producing this
      * {@link AppSearchResult} for what is returned by {@link #getErrorMessage}.
      */
-    @Nullable
-    public String getErrorMessage() {
+    public @Nullable String getErrorMessage() {
         return mErrorMessage;
     }
 
@@ -187,8 +225,7 @@ public final class AppSearchResult<ValueType> {
     }
 
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         if (isSuccess()) {
             return "[SUCCESS]: " + mResultValue;
         }
@@ -201,8 +238,7 @@ public final class AppSearchResult<ValueType> {
      * @param value An optional value to associate with the successful result of the operation
      *              being performed.
      */
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newSuccessfulResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newSuccessfulResult(
             @Nullable ValueType value) {
         return new AppSearchResult<>(RESULT_OK, value, /*errorMessage=*/ null);
     }
@@ -213,8 +249,7 @@ public final class AppSearchResult<ValueType> {
      * @param resultCode One of the constants documented in {@link AppSearchResult#getResultCode}.
      * @param errorMessage An optional string describing the reason or nature of the failure.
      */
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newFailedResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newFailedResult(
             @ResultCode int resultCode, @Nullable String errorMessage) {
         return new AppSearchResult<>(resultCode, /*resultValue=*/ null, errorMessage);
     }
@@ -225,8 +260,7 @@ public final class AppSearchResult<ValueType> {
      * @exportToFramework:hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> newFailedResult(
+    public static @NonNull <ValueType> AppSearchResult<ValueType> newFailedResult(
             @NonNull AppSearchResult<?> otherFailedResult) {
         Preconditions.checkState(!otherFailedResult.isSuccess(),
                 "Cannot convert a success result to a failed result");
@@ -236,8 +270,8 @@ public final class AppSearchResult<ValueType> {
 
     /** @exportToFramework:hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public static <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static @NonNull <ValueType> AppSearchResult<ValueType> throwableToFailedResult(
             @NonNull Throwable t) {
         // Log for traceability. NOT_FOUND is logged at VERBOSE because this error can occur during
         // the regular operation of the system (b/183550974). Everything else is indicative of an
@@ -257,7 +291,11 @@ public final class AppSearchResult<ValueType> {
 
         String exceptionClass = t.getClass().getSimpleName();
         @AppSearchResult.ResultCode int resultCode;
-        if (t instanceof IllegalStateException || t instanceof NullPointerException) {
+        if (t instanceof CancellationException || t instanceof InterruptedException) {
+            resultCode = AppSearchResult.RESULT_ABORTED;
+        } else if (t instanceof IllegalStateException
+                || t instanceof NullPointerException
+                || t instanceof ExecutionException) {
             resultCode = AppSearchResult.RESULT_INTERNAL_ERROR;
         } else if (t instanceof IllegalArgumentException) {
             resultCode = AppSearchResult.RESULT_INVALID_ARGUMENT;

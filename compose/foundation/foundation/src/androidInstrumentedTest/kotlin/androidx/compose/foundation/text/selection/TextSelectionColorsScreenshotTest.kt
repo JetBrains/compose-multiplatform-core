@@ -16,8 +16,7 @@
 
 package androidx.compose.foundation.text.selection
 
-import android.os.Build
-import androidx.compose.foundation.GOLDEN_UI
+import androidx.compose.foundation.GOLDEN_FOUNDATION
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -55,12 +54,12 @@ import org.junit.runner.RunWith
  */
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TextSelectionColorsScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
 
-    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_UI)
+    @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_FOUNDATION)
 
     @Test
     fun text_defaultSelectionColors() {
@@ -150,19 +149,11 @@ private fun TextTestContent(textSelectionColors: TextSelectionColors) {
     CompositionLocalProvider(LocalTextSelectionColors provides textSelectionColors) {
         Row(Modifier.testTag(Tag), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             // Manually draw selection handles as we cannot screenshot the ones drawn in the popup
-            SelectionHandleIcon(
-                modifier = Modifier,
-                iconVisible = { true },
-                isLeft = true,
-            )
+            SelectionHandleIcon(modifier = Modifier, iconVisible = { true }, isLeft = true)
 
             SelectionContainer { BasicText(Text) }
 
-            SelectionHandleIcon(
-                modifier = Modifier,
-                iconVisible = { true },
-                isLeft = false,
-            )
+            SelectionHandleIcon(modifier = Modifier, iconVisible = { true }, isLeft = false)
         }
     }
 }
@@ -179,6 +170,6 @@ private val TextFieldText =
     TextFieldValue(
         text = "Selected text",
         selection = TextRange(0, 8),
-        composition = TextRange(0, 8)
+        composition = TextRange(0, 8),
     )
 private const val Tag = "TestTag"

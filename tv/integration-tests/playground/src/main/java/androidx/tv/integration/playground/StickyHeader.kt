@@ -16,6 +16,7 @@
 
 package androidx.tv.integration.playground
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,34 +41,20 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.foundation.ExperimentalTvFoundationApi
-import androidx.tv.foundation.lazy.list.TvLazyColumn
 
-data class MonthActivity(
-    val month: String,
-    val activities: List<String>,
-)
+data class MonthActivity(val month: String, val activities: List<String>)
 
 val monthActivities =
     listOf(
-        MonthActivity(
-            month = "October 2022",
-            activities = buildActivities(),
-        ),
-        MonthActivity(
-            month = "September 2022",
-            activities = buildActivities(),
-        ),
-        MonthActivity(
-            month = "August 2022",
-            activities = buildActivities(),
-        ),
+        MonthActivity(month = "October 2022", activities = buildActivities()),
+        MonthActivity(month = "September 2022", activities = buildActivities()),
+        MonthActivity(month = "August 2022", activities = buildActivities()),
     )
 
-@OptIn(ExperimentalTvFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun StickyHeaderContent() {
-    TvLazyColumn(modifier = Modifier.fillMaxWidth()) {
+    LazyColumn(modifier = Modifier.fillMaxWidth()) {
         monthActivities.forEachIndexed { monthIndex, monthActivity ->
             val isLastMonth = monthIndex == monthActivities.lastIndex
 
@@ -112,7 +100,7 @@ private fun MonthActivityComponent(boxScope: BoxScope, activity: String) {
                         shape = RoundedCornerShape(10.dp),
                     )
                     .focusable(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Text(text = activity, color = Color.White)
         }
@@ -121,11 +109,7 @@ private fun MonthActivityComponent(boxScope: BoxScope, activity: String) {
 
 @Composable
 private fun MonthHeader(month: String) {
-    Text(
-        text = month,
-        fontSize = 20.sp,
-        color = Color.White,
-    )
+    Text(text = month, fontSize = 20.sp, color = Color.White)
 }
 
 @Composable
@@ -138,5 +122,5 @@ private fun MonthDivider() {
 
 private fun buildActivities(
     count: Int = 10,
-    buildActivity: (index: Int) -> String = { "Activity $it" }
+    buildActivity: (index: Int) -> String = { "Activity $it" },
 ): List<String> = (0..count).map(buildActivity)

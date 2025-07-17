@@ -23,9 +23,12 @@ import android.view.DisplayListCanvas
 import android.view.RenderNode
 import android.view.View
 import androidx.annotation.RequiresApi
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.CanvasHolder
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
 
@@ -41,12 +44,14 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
 
     private var internalCompositingStrategy = CompositingStrategy.Auto
 
+    private var layerPaint: Paint? = null
+
     init {
         if (needToValidateAccess) {
             // This is only to force loading the DisplayListCanvas class and causing the
             // MRenderNode to fail with a NoClassDefFoundError during construction instead of
             // later.
-            @Suppress("UNUSED_VARIABLE") val displayListCanvas: DisplayListCanvas? = null
+            @Suppress("UNUSED_VARIABLE", "unused") val displayListCanvas: DisplayListCanvas? = null
 
             // Ensure that we can access properties of the RenderNode. We want to force an
             // exception here if there is a problem accessing any of these so that we can
@@ -215,25 +220,60 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
             renderNode.alpha = value
         }
 
+    override var blendMode: BlendMode = BlendMode.SrcOver
+        set(value) {
+            field = value
+            obtainLayerPaint().apply { blendMode = value }
+            updateLayerProperties()
+        }
+
+    override var colorFilter: ColorFilter? = null
+        set(value) {
+            field = value
+            obtainLayerPaint().apply { colorFilter = value }
+            updateLayerProperties()
+        }
+
     override var compositingStrategy: CompositingStrategy
         get() = internalCompositingStrategy
         set(value) {
-            when (value) {
-                CompositingStrategy.Offscreen -> {
-                    renderNode.setLayerType(View.LAYER_TYPE_HARDWARE)
-                    renderNode.setHasOverlappingRendering(true)
-                }
-                CompositingStrategy.ModulateAlpha -> {
-                    renderNode.setLayerType(View.LAYER_TYPE_NONE)
-                    renderNode.setHasOverlappingRendering(false)
-                }
-                else -> { // CompositingStrategy.Auto
-                    renderNode.setLayerType(View.LAYER_TYPE_NONE)
-                    renderNode.setHasOverlappingRendering(true)
-                }
-            }
             internalCompositingStrategy = value
+            updateLayerProperties()
         }
+
+    private fun updateLayerProperties() {
+        if (requiresCompositingLayer()) {
+            renderNode.applyCompositingStrategy(CompositingStrategy.Offscreen)
+        } else {
+            renderNode.applyCompositingStrategy(internalCompositingStrategy)
+        }
+    }
+
+    private fun requiresCompositingLayer(): Boolean =
+        compositingStrategy == CompositingStrategy.Offscreen || requiresLayerPaint()
+
+    private fun requiresLayerPaint(): Boolean =
+        blendMode != BlendMode.SrcOver || colorFilter != null
+
+    private fun obtainLayerPaint(): Paint = layerPaint ?: Paint().also { layerPaint = it }
+
+    private fun RenderNode.applyCompositingStrategy(compositingStrategy: CompositingStrategy) {
+        when (compositingStrategy) {
+            CompositingStrategy.Offscreen -> {
+                setLayerType(View.LAYER_TYPE_HARDWARE)
+                setLayerPaint(layerPaint?.asFrameworkPaint())
+                setHasOverlappingRendering(true)
+            }
+            CompositingStrategy.ModulateAlpha -> {
+                setLayerType(View.LAYER_TYPE_NONE)
+                setHasOverlappingRendering(false)
+            }
+            else -> {
+                setLayerType(View.LAYER_TYPE_NONE)
+                setHasOverlappingRendering(true)
+            }
+        }
+    }
 
     internal fun getLayerType(): Int =
         when (internalCompositingStrategy) {
@@ -329,7 +369,9 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
             clipToBounds = clipToBounds,
             alpha = renderNode.alpha,
             renderEffect = renderEffect,
-            compositingStrategy = internalCompositingStrategy
+            blendMode = blendMode,
+            colorFilter = colorFilter,
+            compositingStrategy = internalCompositingStrategy,
         )
 
     override fun discardDisplayList() {
@@ -352,11 +394,11 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             RenderNodeVerificationHelper28.setAmbientShadowColor(
                 renderNode,
-                RenderNodeVerificationHelper28.getAmbientShadowColor(renderNode)
+                RenderNodeVerificationHelper28.getAmbientShadowColor(renderNode),
             )
             RenderNodeVerificationHelper28.setSpotShadowColor(
                 renderNode,
-                RenderNodeVerificationHelper28.getSpotShadowColor(renderNode)
+                RenderNodeVerificationHelper28.getSpotShadowColor(renderNode),
             )
         }
     }
@@ -376,22 +418,18 @@ internal class RenderNodeApi23(val ownerView: AndroidComposeView) : DeviceRender
 @RequiresApi(Build.VERSION_CODES.P)
 private object RenderNodeVerificationHelper28 {
 
-    @androidx.annotation.DoNotInline
     fun getAmbientShadowColor(renderNode: RenderNode): Int {
         return renderNode.ambientShadowColor
     }
 
-    @androidx.annotation.DoNotInline
     fun setAmbientShadowColor(renderNode: RenderNode, target: Int) {
         renderNode.ambientShadowColor = target
     }
 
-    @androidx.annotation.DoNotInline
     fun getSpotShadowColor(renderNode: RenderNode): Int {
         return renderNode.spotShadowColor
     }
 
-    @androidx.annotation.DoNotInline
     fun setSpotShadowColor(renderNode: RenderNode, target: Int) {
         renderNode.spotShadowColor = target
     }
@@ -400,7 +438,6 @@ private object RenderNodeVerificationHelper28 {
 @RequiresApi(Build.VERSION_CODES.N)
 private object RenderNodeVerificationHelper24 {
 
-    @androidx.annotation.DoNotInline
     fun discardDisplayList(renderNode: RenderNode) {
         renderNode.discardDisplayList()
     }
@@ -409,7 +446,6 @@ private object RenderNodeVerificationHelper24 {
 @RequiresApi(Build.VERSION_CODES.M)
 private object RenderNodeVerificationHelper23 {
 
-    @androidx.annotation.DoNotInline
     fun destroyDisplayListData(renderNode: RenderNode) {
         renderNode.destroyDisplayListData()
     }

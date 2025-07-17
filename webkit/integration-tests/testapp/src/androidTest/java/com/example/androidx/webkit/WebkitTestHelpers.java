@@ -34,12 +34,12 @@ import static org.hamcrest.Matchers.hasToString;
 import android.content.Context;
 
 import androidx.annotation.IdRes;
-import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.test.espresso.web.webdriver.Locator;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.webkit.WebViewFeature;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Assume;
 
 /**

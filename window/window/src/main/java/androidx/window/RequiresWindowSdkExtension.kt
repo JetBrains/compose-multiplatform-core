@@ -27,7 +27,6 @@ import androidx.annotation.IntRange
  * exceptions or unexpected results.
  *
  * @param version the minimum required [WindowSdkExtensions] version of the denoted target
- *
  * @sample androidx.window.samples.annotateRequiresWindowSdkExtension
  */
 @MustBeDocumented
@@ -41,7 +40,7 @@ import androidx.annotation.IntRange
     AnnotationTarget.FIELD,
     AnnotationTarget.PROPERTY,
 )
-annotation class RequiresWindowSdkExtension(
+public annotation class RequiresWindowSdkExtension(
     /** The minimum required [WindowSdkExtensions] version of the denoted target */
     @IntRange(from = 1) val version: Int
 )

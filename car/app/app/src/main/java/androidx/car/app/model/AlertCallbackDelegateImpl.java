@@ -23,27 +23,28 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.SuppressLint;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.IOnDoneCallback;
 import androidx.car.app.OnDoneCallback;
+import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.KeepFields;
 import androidx.car.app.utils.RemoteUtils;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Implementation class for {@link AlertCallbackDelegate} to allow IPC for cancel events.
  *
  */
 @RestrictTo(LIBRARY)
+@CarProtocol
 @KeepFields
 public class AlertCallbackDelegateImpl implements AlertCallbackDelegate {
-    @Nullable
-    private final IAlertCallback mCallback;
+    private final @Nullable IAlertCallback mCallback;
 
-    @NonNull
     @SuppressLint("ExecutorRegistration")
-    public static AlertCallbackDelegate create(@NonNull AlertCallback callback) {
+    public static @NonNull AlertCallbackDelegate create(@NonNull AlertCallback callback) {
         return new AlertCallbackDelegateImpl(callback);
     }
 
@@ -76,6 +77,7 @@ public class AlertCallbackDelegateImpl implements AlertCallbackDelegate {
         }
     }
 
+    @CarProtocol
     @KeepFields // We need to keep these stub for Bundler serialization logic.
     private static class AlertCallbackStub extends IAlertCallback.Stub {
         private final AlertCallback mCallback;

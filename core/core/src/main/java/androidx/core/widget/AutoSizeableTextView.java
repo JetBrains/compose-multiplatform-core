@@ -21,8 +21,9 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.os.Build;
 import android.util.TypedValue;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface which allows a {@link android.widget.TextView} to receive background auto-sizing calls
@@ -100,7 +101,7 @@ public interface AutoSizeableTextView {
      * @see #getAutoSizeMaxTextSize()
      * @see #getAutoSizeTextAvailableSizes()
      */
-    void setAutoSizeTextTypeUniformWithPresetSizes(@NonNull int[] presetSizes, int unit)
+    void setAutoSizeTextTypeUniformWithPresetSizes(int @NonNull [] presetSizes, int unit)
             throws IllegalArgumentException;
 
     /**

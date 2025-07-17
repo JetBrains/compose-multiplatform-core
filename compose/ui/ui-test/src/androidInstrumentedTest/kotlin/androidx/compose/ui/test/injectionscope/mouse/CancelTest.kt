@@ -20,7 +20,6 @@ import androidx.compose.testutils.expectError
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Enter
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Press
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.injectionscope.mouse.Common.PrimaryButton
 import androidx.compose.ui.test.injectionscope.mouse.Common.runMouseInputInjectionTest
@@ -32,7 +31,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTestApi::class)
 class CancelTest {
     @Test
     fun cancel() =
@@ -47,7 +45,7 @@ class CancelTest {
                 arrayOf(
                     { this.verifyMouseEvent(0, Enter, false, Offset.Zero) },
                     { this.verifyMouseEvent(0, Press, true, Offset.Zero, PrimaryButton) },
-                )
+                ),
         )
 
     @Test

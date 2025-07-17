@@ -16,6 +16,7 @@
 package androidx.credentials.provider.ui;
 
 import static androidx.credentials.CredentialOption.BUNDLE_KEY_IS_AUTO_SELECT_ALLOWED;
+import static androidx.credentials.provider.ui.UiUtils.testBiometricPromptData;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -25,17 +26,18 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import android.app.PendingIntent;
-import android.app.slice.Slice;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.credentials.PublicKeyCredential;
 import androidx.credentials.R;
 import androidx.credentials.TestUtilsKt;
 import androidx.credentials.provider.BeginGetPublicKeyCredentialOption;
+import androidx.credentials.provider.BiometricPromptData;
 import androidx.credentials.provider.PublicKeyCredentialEntry;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -46,8 +48,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.time.Instant;
+
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 26)
+@SdkSuppress(minSdkVersion = 26) // Instant usage
 @SmallTest
 public class PublicKeyCredentialEntryJavaTest {
     private static final CharSequence USERNAME = "title";
@@ -64,8 +67,10 @@ public class PublicKeyCredentialEntryJavaTest {
                     "{\"key1\":{\"key2\":{\"key3\":\"value3\"}}}");
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private final Intent mIntent = new Intent();
-    private final PendingIntent mPendingIntent = PendingIntent.getActivity(mContext, 0, mIntent,
+    private final PendingIntent mPendingIntent = PendingIntent.getActivity(mContext, 0,
+            mIntent,
             PendingIntent.FLAG_IMMUTABLE);
+
     @Test
     public void build_requiredParamsOnly_success() {
         PublicKeyCredentialEntry entry = constructWithRequiredParamsOnly();
@@ -75,11 +80,20 @@ public class PublicKeyCredentialEntryJavaTest {
     }
     @Test
     public void build_allParams_success() {
-        PublicKeyCredentialEntry entry = constructWithAllParams();
+        PublicKeyCredentialEntry entry = constructWithAllParams(/*nullBiometricPromptData=*/ false);
         assertNotNull(entry);
         assertThat(entry.getType()).isEqualTo(PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL);
         assertEntryWithAllParams(entry);
     }
+
+    @Test
+    public void build_allParamsForcedBiometricPromptDataNull_success() {
+        PublicKeyCredentialEntry entry = constructWithAllParams(/*nullBiometricPromptData=*/ true);
+        assertNotNull(entry);
+        assertThat(entry.getType()).isEqualTo(PublicKeyCredential.TYPE_PUBLIC_KEY_CREDENTIAL);
+        assertEntryWithAllParams(entry);
+    }
+
     @Test
     public void build_withNullUsername_throwsNPE() {
         assertThrows("Expected null username to throw NPE", NullPointerException.class,
@@ -110,7 +124,7 @@ public class PublicKeyCredentialEntryJavaTest {
         PublicKeyCredentialEntry entry = new PublicKeyCredentialEntry.Builder(mContext, USERNAME,
                 mPendingIntent, mBeginOption).build();
         assertThat(TestUtilsKt.equals(entry.getIcon(),
-                Icon.createWithResource(mContext, R.drawable.ic_passkey))).isTrue();
+                Icon.createWithResource(mContext, R.drawable.adx_ic_passkey))).isTrue();
     }
     @Test
     public void build_nullTypeDisplayName_defaultDisplayNameSet() {
@@ -139,9 +153,11 @@ public class PublicKeyCredentialEntryJavaTest {
     }
     @Test
     @SdkSuppress(minSdkVersion = 34)
+    @SuppressWarnings("deprecation")
     public void fromCredentialEntry_success() {
-        PublicKeyCredentialEntry originalEntry = constructWithAllParams();
-        Slice slice = PublicKeyCredentialEntry.toSlice(originalEntry);
+        PublicKeyCredentialEntry originalEntry =
+                constructWithAllParams(/*nullBiometricPromptData=*/ true);
+        android.app.slice.Slice slice = PublicKeyCredentialEntry.toSlice(originalEntry);
         assertNotNull(slice);
         PublicKeyCredentialEntry entry = PublicKeyCredentialEntry.fromCredentialEntry(
                 new android.service.credentials.CredentialEntry("id", slice));
@@ -160,10 +176,11 @@ public class PublicKeyCredentialEntryJavaTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 28)
+    @SuppressWarnings("deprecation")
     public void isDefaultIcon_noIconSetFromSlice_returnsTrue() {
         PublicKeyCredentialEntry entry = new PublicKeyCredentialEntry
                 .Builder(mContext, USERNAME, mPendingIntent, mBeginOption).build();
-        Slice slice = PublicKeyCredentialEntry.toSlice(entry);
+        android.app.slice.Slice slice = PublicKeyCredentialEntry.toSlice(entry);
 
         assertNotNull(slice);
 
@@ -175,11 +192,12 @@ public class PublicKeyCredentialEntryJavaTest {
 
     @Test
     @SdkSuppress(minSdkVersion = 28)
+    @SuppressWarnings("deprecation")
     public void isDefaultIcon_customIconAfterSlice_returnsFalse() {
         PublicKeyCredentialEntry entry = new PublicKeyCredentialEntry
                 .Builder(mContext, USERNAME, mPendingIntent, mBeginOption)
                 .setIcon(ICON).build();
-        Slice slice = PublicKeyCredentialEntry.toSlice(entry);
+        android.app.slice.Slice slice = PublicKeyCredentialEntry.toSlice(entry);
 
         assertNotNull(slice);
 
@@ -221,11 +239,20 @@ public class PublicKeyCredentialEntryJavaTest {
         return new PublicKeyCredentialEntry.Builder(mContext, USERNAME, mPendingIntent,
                 mBeginOption).build();
     }
-    private PublicKeyCredentialEntry constructWithAllParams() {
-        return new PublicKeyCredentialEntry.Builder(mContext, USERNAME, mPendingIntent,
+    private PublicKeyCredentialEntry constructWithAllParams(boolean nullBiometricPromptData) {
+        PublicKeyCredentialEntry.Builder testBuilder = new PublicKeyCredentialEntry
+                .Builder(mContext, USERNAME, mPendingIntent,
                 mBeginOption).setAutoSelectAllowed(IS_AUTO_SELECT_ALLOWED).setDisplayName(
                 DISPLAYNAME).setLastUsedTime(Instant.ofEpochMilli(LAST_USED_TIME)).setIcon(
-                ICON).setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT).build();
+                ICON).setDefaultIconPreferredAsSingleProvider(SINGLE_PROVIDER_ICON_BIT);
+        if (Build.VERSION.SDK_INT >= 35) {
+            BiometricPromptData biometricPromptData = null;
+            if (!nullBiometricPromptData) {
+                biometricPromptData = testBiometricPromptData();
+            }
+            testBuilder.setBiometricPromptData(biometricPromptData);
+        }
+        return testBuilder.build();
     }
     private void assertEntryWithRequiredParams(PublicKeyCredentialEntry entry) {
         assertThat(USERNAME.equals(entry.getUsername()));
@@ -234,6 +261,7 @@ public class PublicKeyCredentialEntryJavaTest {
                 DEFAULT_SINGLE_PROVIDER_ICON_BIT);
         assertThat(entry.getAffiliatedDomain()).isNull();
         assertThat(entry.getEntryGroupId()).isEqualTo(USERNAME);
+        assertThat(entry.getBiometricPromptData()).isNull();
     }
     private void assertEntryWithAllParams(PublicKeyCredentialEntry entry) {
         assertThat(USERNAME.equals(entry.getUsername()));
@@ -247,5 +275,11 @@ public class PublicKeyCredentialEntryJavaTest {
                 SINGLE_PROVIDER_ICON_BIT);
         assertThat(entry.getAffiliatedDomain()).isNull();
         assertThat(entry.getEntryGroupId()).isEqualTo(USERNAME);
+        if (Build.VERSION.SDK_INT >= 35 && entry.getBiometricPromptData() != null) {
+            assertThat(entry.getBiometricPromptData().getAllowedAuthenticators()).isEqualTo(
+                    testBiometricPromptData().getAllowedAuthenticators());
+        } else {
+            assertThat(entry.getBiometricPromptData()).isNull();
+        }
     }
 }

@@ -49,9 +49,7 @@ import androidx.tv.material3.tokens.Elevation
  * Samples:
  *
  * @sample androidx.tv.material3.samples.ButtonSample
- *
  * @sample androidx.tv.material3.samples.LikeButtonSample
- *
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
  * @param onLongClick called when this button is long clicked (long-pressed).
@@ -88,7 +86,7 @@ fun Button(
     border: ButtonBorder = ButtonDefaults.border(),
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     ButtonImpl(
         onClick = onClick,
@@ -103,7 +101,7 @@ fun Button(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -124,7 +122,6 @@ fun Button(
  * Samples:
  *
  * @sample androidx.tv.material3.samples.OutlinedButtonSample
- *
  * @param onClick called when this button is clicked
  * @param modifier the [Modifier] to be applied to this button
  * @param onLongClick called when this button is long clicked (long-pressed).
@@ -161,7 +158,7 @@ fun OutlinedButton(
     border: ButtonBorder = OutlinedButtonDefaults.border(),
     contentPadding: PaddingValues = OutlinedButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     ButtonImpl(
         onClick = onClick,
@@ -176,7 +173,7 @@ fun OutlinedButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -194,7 +191,7 @@ private fun ButtonImpl(
     border: ButtonBorder,
     contentPadding: PaddingValues,
     interactionSource: MutableInteractionSource?,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier.semantics { role = Role.Button },
@@ -207,19 +204,19 @@ private fun ButtonImpl(
         colors = colors.toClickableSurfaceColors(),
         tonalElevation = tonalElevation,
         border = border.toClickableSurfaceBorder(),
-        interactionSource = interactionSource
+        interactionSource = interactionSource,
     ) {
         ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
             Row(
                 modifier =
                     Modifier.defaultMinSize(
                             minWidth = BaseButtonDefaults.MinWidth,
-                            minHeight = BaseButtonDefaults.MinHeight
+                            minHeight = BaseButtonDefaults.MinHeight,
                         )
                         .padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
-                content = content
+                content = content,
             )
         }
     }

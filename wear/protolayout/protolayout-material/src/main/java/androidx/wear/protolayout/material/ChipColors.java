@@ -19,8 +19,9 @@ package androidx.wear.protolayout.material;
 import static androidx.wear.protolayout.ColorBuilders.argb;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents the background and content colors used in {@link Chip}.
@@ -30,10 +31,10 @@ import androidx.wear.protolayout.ColorBuilders.ColorProp;
  * styled {@link Chip}.
  */
 public class ChipColors {
-    @NonNull private final ColorProp mBackgroundColor;
-    @NonNull private final ColorProp mIconColor;
-    @NonNull private final ColorProp mContentColor;
-    @NonNull private final ColorProp mSecondaryContentColor;
+    private final @NonNull ColorProp mBackgroundColor;
+    private final @NonNull ColorProp mIconColor;
+    private final @NonNull ColorProp mContentColor;
+    private final @NonNull ColorProp mSecondaryContentColor;
 
     /**
      * Constructor for the {@link ChipColors} object.
@@ -108,8 +109,7 @@ public class ChipColors {
      * Returns a {@link ChipColors} object, using the current Primary colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ChipColors primaryChipColors(@NonNull Colors colors) {
+    public static @NonNull ChipColors primaryChipColors(@NonNull Colors colors) {
         return new ChipColors(colors.getPrimary(), colors.getOnPrimary());
     }
 
@@ -117,32 +117,27 @@ public class ChipColors {
      * Returns a {@link ChipColors} object, using the current Surface colors from the given {@link
      * Colors}.
      */
-    @NonNull
-    public static ChipColors secondaryChipColors(@NonNull Colors colors) {
+    public static @NonNull ChipColors secondaryChipColors(@NonNull Colors colors) {
         return new ChipColors(colors.getSurface(), colors.getOnSurface());
     }
 
     /** The background color to be used on {@link Chip}. */
-    @NonNull
-    public ColorProp getBackgroundColor() {
+    public @NonNull ColorProp getBackgroundColor() {
         return mBackgroundColor;
     }
 
     /** The icon color to be used on {@link Chip}. */
-    @NonNull
-    public ColorProp getIconColor() {
+    public @NonNull ColorProp getIconColor() {
         return mIconColor;
     }
 
     /** The main text color to be used on {@link Chip}. */
-    @NonNull
-    public ColorProp getContentColor() {
+    public @NonNull ColorProp getContentColor() {
         return mContentColor;
     }
 
     /** The label text color to be used on {@link Chip}. */
-    @NonNull
-    public ColorProp getSecondaryContentColor() {
+    public @NonNull ColorProp getSecondaryContentColor() {
         return mSecondaryContentColor;
     }
 }

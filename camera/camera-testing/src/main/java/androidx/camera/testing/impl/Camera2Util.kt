@@ -29,13 +29,13 @@ import androidx.annotation.DoNotInline
 import kotlinx.coroutines.CompletableDeferred
 
 /** Convenient suspend functions for invoking camera2 APIs. */
-object Camera2Util {
+public object Camera2Util {
     /** Open the camera device and return the [CameraDevice] instance. */
     @DoNotInline
-    suspend fun openCameraDevice(
+    public suspend fun openCameraDevice(
         cameraManager: CameraManager,
         cameraId: String,
-        handler: Handler
+        handler: Handler,
     ): CameraDevice {
         val deferred = CompletableDeferred<CameraDevice>()
         cameraManager.openCamera(
@@ -55,16 +55,16 @@ object Camera2Util {
                     )
                 }
             },
-            handler
+            handler,
         )
         return deferred.await()
     }
 
     /** Creates and returns a configured [CameraCaptureSession]. */
-    suspend fun openCaptureSession(
+    public suspend fun openCaptureSession(
         cameraDevice: CameraDevice,
         surfaceList: List<Surface>,
-        handler: Handler
+        handler: Handler,
     ): CameraCaptureSession {
         val deferred = CompletableDeferred<CameraCaptureSession>()
         @Suppress("deprecation")
@@ -80,7 +80,7 @@ object Camera2Util {
                     deferred.completeExceptionally(RuntimeException("onConfigureFailed"))
                 }
             },
-            handler
+            handler,
         )
         return deferred.await()
     }
@@ -89,11 +89,11 @@ object Camera2Util {
      * Submits a single capture request to the [CameraCaptureSession] and returns the
      * [TotalCaptureResult].
      */
-    suspend fun submitSingleRequest(
+    public suspend fun submitSingleRequest(
         cameraDevice: CameraDevice,
         session: CameraCaptureSession,
         surfaces: List<Surface>,
-        handler: Handler
+        handler: Handler,
     ): TotalCaptureResult {
         val builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE)
         for (surface in surfaces) {
@@ -106,7 +106,7 @@ object Camera2Util {
                 override fun onCaptureCompleted(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
-                    result: TotalCaptureResult
+                    result: TotalCaptureResult,
                 ) {
                     deferredCapture.complete(result)
                 }
@@ -114,12 +114,12 @@ object Camera2Util {
                 override fun onCaptureFailed(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
-                    failure: CaptureFailure
+                    failure: CaptureFailure,
                 ) {
                     deferredCapture.completeExceptionally(RuntimeException("capture failed"))
                 }
             },
-            handler
+            handler,
         )
         return deferredCapture.await()
     }
@@ -127,11 +127,11 @@ object Camera2Util {
     /**
      * Starts the repeating request, and invokes the given block when [TotalCaptureResult] arrives.
      */
-    fun startRepeating(
+    public fun startRepeating(
         cameraDevice: CameraDevice,
         session: CameraCaptureSession,
         surfaces: List<Surface>,
-        blockForCaptureResult: (TotalCaptureResult) -> Unit
+        blockForCaptureResult: (TotalCaptureResult) -> Unit,
     ) {
         val builder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
         for (surface in surfaces) {
@@ -144,7 +144,7 @@ object Camera2Util {
                 override fun onCaptureCompleted(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
-                    result: TotalCaptureResult
+                    result: TotalCaptureResult,
                 ) {
                     blockForCaptureResult.invoke(result)
                 }
@@ -152,12 +152,12 @@ object Camera2Util {
                 override fun onCaptureFailed(
                     session: CameraCaptureSession,
                     request: CaptureRequest,
-                    failure: CaptureFailure
+                    failure: CaptureFailure,
                 ) {
                     deferredCapture.completeExceptionally(RuntimeException("capture failed"))
                 }
             },
-            Handler(Looper.getMainLooper())
+            Handler(Looper.getMainLooper()),
         )
     }
 }

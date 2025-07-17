@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -59,7 +58,7 @@ fun DrawWithCacheModifierSample() {
                 Brush.linearGradient(
                     colors = listOf(Color.Red, Color.Blue),
                     start = Offset.Zero,
-                    end = Offset(size.width, size.height)
+                    end = Offset(size.width, size.height),
                 )
             onDrawBehind { drawRect(gradient) }
         }
@@ -85,7 +84,7 @@ fun DrawWithCacheModifierStateParameterSample() {
                     Brush.linearGradient(
                         colors = if (toggle) colors1 else colors2,
                         start = Offset.Zero,
-                        end = Offset(size.width, size.height)
+                        end = Offset(size.width, size.height),
                     )
                 onDrawBehind { drawRect(gradient) }
             }
@@ -110,7 +109,7 @@ fun DrawWithCacheContentSample() {
                         lineTo(0f, viewportHeight)
                         close()
                     },
-                fill = SolidColor(Color.Black)
+                fill = SolidColor(Color.Black),
             )
         }
     Image(
@@ -122,17 +121,16 @@ fun DrawWithCacheContentSample() {
                     Brush.linearGradient(
                         colors = listOf(Color.Red, Color.Blue),
                         start = Offset.Zero,
-                        end = Offset(0f, size.height)
+                        end = Offset(0f, size.height),
                     )
                 onDrawWithContent {
                     drawContent()
                     drawRect(gradient, blendMode = BlendMode.Plus)
                 }
-            }
+            },
     )
 }
 
-@ExperimentalComposeUiApi
 @Sampled
 @Composable
 fun DrawModifierNodeSample() {

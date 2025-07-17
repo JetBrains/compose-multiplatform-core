@@ -17,9 +17,7 @@
 // This project contains tests for code contained in buildSrc
 // This project is stored outside of buildSrc/ so that waiting for these tests to complete doesn't delay the rest of the build
 
-import androidx.build.LibraryType
-import androidx.build.KotlinTarget
-import androidx.build.Publish
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -54,18 +52,31 @@ sourceSets {
 apply from: "${buildscript.sourceFile.parentFile.parent}/buildSrc/shared-dependencies.gradle"
 
 dependencies {
+    api(libs.javaxInject)
+    api(libs.shadow)
+    api(libs.guavaAndroid)
+    api(libs.kotlinGradlePluginApi)
+    api(libs.kotlinNativeUtils)
+    api(libs.kotlinStdlib)
+
     implementation(project(":benchmark:benchmark-gradle-plugin"))
     implementation(project(":inspection:inspection-gradle-plugin"))
     implementation(project(":stableaidl:stableaidl-gradle-plugin"))
     implementation(project(":binarycompatibilityvalidator:binarycompatibilityvalidator"))
     implementation(project.ext.findGradleKotlinDsl())
+    implementation(libs.kotlinGradlePluginAnnotations)
+    implementation(libs.kotlinToolingCore)
+    implementation(libs.binaryCompatibilityValidator)
+    implementation(libs.jetbrainsBinaryCompatibilityValidator)
+    implementation(libs.xmlApis)
+
+    testImplementation(libs.checkmark)
+    testImplementation libs.hamcrestCore
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":internal-testutils-gradle-plugin"))
     testImplementation(project(":internal-testutils-truth"))
     testImplementation(gradleTestKit())
-    testImplementation(libs.checkmark)
-    testImplementation(libs.toml)
 }
 
 tasks.withType(Test).configureEach {
@@ -74,9 +85,7 @@ tasks.withType(Test).configureEach {
 }
 
 androidx {
-    type = LibraryType.GRADLE_PLUGIN
-    publish = Publish.NONE
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+    type = SoftwareType.INTERNAL_GRADLE_PLUGIN
 }
 
 // Also do style checking of the buildSrc project from within this project

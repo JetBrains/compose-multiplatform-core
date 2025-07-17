@@ -16,33 +16,49 @@
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.application")
+    id("androidx.privacysandboxplugin")
     id("org.jetbrains.kotlin.android")
 }
 
 android {
-    namespace 'androidx.privacysandbox.ui.integration.testsdkprovider'
-
-    defaultConfig {
-        applicationId "androidx.privacysandbox.ui.integration.testsdkprovider"
-        minSdk 33
-    }
+    compileSdk = 36
+    namespace = "androidx.privacysandbox.ui.integration.testsdkprovider"
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
         }
     }
+
+    privacySandbox {
+        enable = true
+    }
+
+    experimentalProperties["android.privacySandboxSdk.apiGenerator"] =
+            project.dependencies.create(project(":privacysandbox:tools:tools-apigenerator"))
+    experimentalProperties["android.privacySandboxSdk.apiGenerator.generatedRuntimeDependencies"] =
+            [libs.kotlinStdlib.get(),
+             libs.kotlinCoroutinesAndroid.get(),
+             libs.kotlinCoroutinesCore.get(),
+             project.dependencies.create(project(":privacysandbox:ui:ui-core")),
+             project.dependencies.create(project(":privacysandbox:ui:ui-client"))
+            ]
 }
 
 dependencies {
     api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.6.0")
-    implementation project(':privacysandbox:ui:integration-tests:testaidl')
-    implementation project(':privacysandbox:ui:integration-tests:sdkproviderutils')
-    implementation project(':privacysandbox:ui:ui-core')
-    implementation project(':privacysandbox:ui:ui-provider')
-    implementation project(':privacysandbox:sdkruntime:sdkruntime-client')
-    implementation project(':privacysandbox:ui:ui-client')
-    implementation project(':webkit:webkit')
+    api("androidx.annotation:annotation:1.8.1")
+    implementation(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
+    implementation(project(":privacysandbox:ui:integration-tests:sdkproviderutils"))
+    implementation(project(":privacysandbox:ui:ui-provider"))
+    implementation(project(":webkit:webkit"))
+    implementation(project(":privacysandbox:ui:integration-tests:mediateesdkproviderwrapper"))
+
+    // Add library dependencies at head - to override the dependencies that will be added by
+    // privacysandboxplugin.
+    ksp(project(':privacysandbox:tools:tools-apicompiler'))
+    implementation(project(':privacysandbox:tools:tools'))
+    implementation(project(":privacysandbox:ui:ui-core"))
+    implementation(project(':privacysandbox:activity:activity-core'))
+    implementation(project(':privacysandbox:activity:activity-provider'))
 }

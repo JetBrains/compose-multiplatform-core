@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -39,8 +39,8 @@ dependencies {
     implementation("androidx.emoji2:emoji2:1.2.0")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
 
-    androidTestImplementation(libs.bundles.espressoContrib, excludes.espresso)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.bundles.espressoContrib)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
@@ -52,23 +52,17 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 21
         vectorDrawables.useSupportLibrary = true
     }
-    sourceSets {
-        androidTest.assets.srcDirs += project.rootDir.absolutePath + "/../../golden/emoji2/emoji2-emojipicker"
-    }
-
-    namespace "androidx.emoji2.emojipicker"
-    testOptions.unitTests.includeAndroidResources = true
+    namespace = "androidx.emoji2.emojipicker"
 }
 
 androidx {
     name = "Emoji2 Emoji Picker"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "This library provides the latest emoji support and emoji picker UI to input " +
             "emoji in current and older devices"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
+    addGoldenImageAssets()
 }

@@ -16,7 +16,6 @@
 
 package androidx.camera.testing.impl.fakes;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.ExtendableBuilder;
@@ -25,6 +24,8 @@ import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.ReadableConfig;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Wrapper for an empty Config
@@ -39,9 +40,8 @@ public final class FakeConfig implements ReadableConfig {
         mConfig = config;
     }
 
-    @NonNull
     @Override
-    public Config getConfig() {
+    public @NonNull Config getConfig() {
         return mConfig;
     }
 
@@ -55,8 +55,7 @@ public final class FakeConfig implements ReadableConfig {
         }
 
         @Override
-        @NonNull
-        public MutableConfig getMutableConfig() {
+        public @NonNull MutableConfig getMutableConfig() {
             return mOptionsBundle;
         }
 
@@ -66,8 +65,7 @@ public final class FakeConfig implements ReadableConfig {
          * @return A {@link FakeConfig} populated with the current state.
          */
         @Override
-        @NonNull
-        public FakeConfig build() {
+        public @NonNull FakeConfig build() {
             return new FakeConfig(OptionsBundle.from(mOptionsBundle));
         }
     }

@@ -18,7 +18,7 @@ package androidx.core.widget;
 
 import android.widget.ListView;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Helper for accessing features in {@link ListView}.

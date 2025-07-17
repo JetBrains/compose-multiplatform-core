@@ -16,7 +16,6 @@
 
 package androidx.compose.material
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,7 +46,7 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ScaffoldScreenshotTest {
 
     @get:Rule val composeTestRule = createComposeRule()
@@ -62,7 +61,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = false,
                     showBottomAppBar = false,
                     showSnackbar = false,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -78,7 +77,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = true,
                     showBottomAppBar = false,
                     showSnackbar = false,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -94,7 +93,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = false,
                     showBottomAppBar = true,
                     showSnackbar = false,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -110,7 +109,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = true,
                     showBottomAppBar = true,
                     showSnackbar = false,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -128,7 +127,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.Start,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -146,7 +145,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.Start,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -163,7 +162,7 @@ class ScaffoldScreenshotTest {
                     showBottomAppBar = false,
                     showSnackbar = false,
                     showFab = true,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -181,7 +180,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -199,7 +198,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -217,7 +216,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.Start,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -235,7 +234,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.Start,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -252,7 +251,7 @@ class ScaffoldScreenshotTest {
                     showBottomAppBar = false,
                     showSnackbar = false,
                     showFab = true,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -270,7 +269,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -288,7 +287,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -307,7 +306,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.Start,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -326,7 +325,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.Start,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -344,7 +343,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     dockedFab = false,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -363,7 +362,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -382,7 +381,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -400,7 +399,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     dockedFab = true,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -419,7 +418,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = true,
                     fabCutout = false,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -438,7 +437,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -457,7 +456,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -476,7 +475,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.Start,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -495,7 +494,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.Start,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -513,7 +512,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     dockedFab = false,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -532,7 +531,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -551,7 +550,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = false,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -569,7 +568,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = false,
                     showFab = true,
                     dockedFab = true,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -588,7 +587,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = false
+                    rtl = false,
                 )
             }
         }
@@ -607,7 +606,7 @@ class ScaffoldScreenshotTest {
                     showFab = true,
                     dockedFab = true,
                     fabPosition = FabPosition.End,
-                    rtl = true
+                    rtl = true,
                 )
             }
         }
@@ -623,7 +622,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = false,
                     showBottomAppBar = false,
                     showSnackbar = true,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -639,7 +638,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = true,
                     showBottomAppBar = false,
                     showSnackbar = true,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -655,7 +654,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = false,
                     showBottomAppBar = true,
                     showSnackbar = true,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -671,7 +670,7 @@ class ScaffoldScreenshotTest {
                     showTopAppBar = true,
                     showBottomAppBar = true,
                     showSnackbar = true,
-                    showFab = false
+                    showFab = false,
                 )
             }
         }
@@ -689,7 +688,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = true,
                     showFab = true,
                     dockedFab = false,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -707,7 +706,7 @@ class ScaffoldScreenshotTest {
                     showSnackbar = true,
                     showFab = true,
                     dockedFab = true,
-                    fabPosition = FabPosition.Center
+                    fabPosition = FabPosition.Center,
                 )
             }
         }
@@ -751,7 +750,7 @@ private fun ScreenshotScaffold(
     dockedFab: Boolean = false,
     fabCutout: Boolean = true,
     fabPosition: FabPosition = FabPosition.End,
-    rtl: Boolean = false
+    rtl: Boolean = false,
 ) {
     val topAppBar =
         @Composable {
@@ -820,10 +819,10 @@ private fun ScreenshotScaffold(
                     ) {
                         Text(
                             text = "Scaffold Content",
-                            modifier = Modifier.fillMaxSize().wrapContentSize()
+                            modifier = Modifier.fillMaxSize().wrapContentSize(),
                         )
                     }
-                }
+                },
             )
         }
     }

@@ -24,13 +24,14 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.wear.protolayout.proto.ResourceProto.AndroidImageResourceByContentUri;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.AndroidImageResourceByContentUriResolver;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.ResourceAccessException;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -40,12 +41,12 @@ import java.util.concurrent.Executor;
 /** Resource resolver for Android resources, accessed by Content URI. */
 public class DefaultAndroidImageResourceByContentUriResolver
         implements AndroidImageResourceByContentUriResolver {
-    @NonNull private static final String TAG = "AndroidContentUriResolver";
+    private static final @NonNull String TAG = "AndroidContentUriResolver";
 
-    @NonNull private final ContentUriValidator mContentUriValidator;
-    @NonNull private final Resources mPackageResources;
-    @NonNull private final ContentResolver mContentResolver;
-    @NonNull private final Executor mLoadExecutor;
+    private final @NonNull ContentUriValidator mContentUriValidator;
+    private final @NonNull Resources mPackageResources;
+    private final @NonNull ContentResolver mContentResolver;
+    private final @NonNull Executor mLoadExecutor;
 
     public DefaultAndroidImageResourceByContentUriResolver(
             @NonNull Context appContext,
@@ -59,9 +60,8 @@ public class DefaultAndroidImageResourceByContentUriResolver
         this.mLoadExecutor = loadExecutor;
     }
 
-    @NonNull
-    private Drawable getDrawableBlocking(@NonNull AndroidImageResourceByContentUri resource)
-            throws ResourceAccessException {
+    private @NonNull Drawable getDrawableBlocking(
+            @NonNull AndroidImageResourceByContentUri resource) throws ResourceAccessException {
         Uri resourceUri = Uri.parse(resource.getContentUri());
         if (!mContentUriValidator.validateUri(resourceUri)) {
             throw new IllegalArgumentException(
@@ -84,9 +84,8 @@ public class DefaultAndroidImageResourceByContentUriResolver
         }
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Drawable> getDrawable(
+    public @NonNull ListenableFuture<Drawable> getDrawable(
             @NonNull AndroidImageResourceByContentUri resource) {
         ResolvableFuture<Drawable> resolvableFuture = ResolvableFuture.create();
         mLoadExecutor.execute(

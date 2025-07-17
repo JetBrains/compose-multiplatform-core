@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,31 +32,26 @@ plugins {
 dependencies {
     api(libs.kotlinStdlib)
     // Add dependencies here
-    api("androidx.annotation:annotation:1.2.0")
+    api("androidx.annotation:annotation:1.8.1")
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testRules)
+    androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(project(":core:core"))
 }
 
 androidx {
     name = "Core Internationalization"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_I18N
     inceptionYear = "2022"
     description = "This library provides functionality for good internationalization (messages, plurals, date / time formatting)."
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
-    namespace "androidx.core.i18n"
+    compileSdk = 35
+    namespace = "androidx.core.i18n"
     defaultConfig {
-    }
-    lintOptions {
-        lintConfig = file("lint.xml")
     }
 }

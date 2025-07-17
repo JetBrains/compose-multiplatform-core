@@ -36,12 +36,12 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.TextView;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Abstract base class which presents a dialog associated with a {@link DialogPreference}. Since
@@ -150,9 +150,8 @@ public abstract class PreferenceDialogFragment extends android.app.DialogFragmen
         }
     }
 
-    @NonNull
     @Override
-    public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
+    public @NonNull Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
         final Context context = getActivity();
         mWhichButtonClicked = DialogInterface.BUTTON_NEGATIVE;
 
@@ -209,7 +208,7 @@ public abstract class PreferenceDialogFragment extends android.app.DialogFragmen
      * @deprecated Use {@link PreferenceDialogFragmentCompat} instead
      */
     @Deprecated
-    protected void onPrepareDialogBuilder(@NonNull AlertDialog.Builder builder) {}
+    protected void onPrepareDialogBuilder(AlertDialog.@NonNull Builder builder) {}
 
     /**
      * Returns whether the preference needs to display a soft input method when the dialog is
@@ -253,8 +252,7 @@ public abstract class PreferenceDialogFragment extends android.app.DialogFragmen
      * @deprecated Use {@link PreferenceDialogFragmentCompat} instead
      */
     @Deprecated
-    @Nullable
-    protected View onCreateDialogView(@NonNull Context context) {
+    protected @Nullable View onCreateDialogView(@NonNull Context context) {
         final int resId = mDialogLayoutRes;
         if (resId == 0) {
             return null;
@@ -327,7 +325,6 @@ public abstract class PreferenceDialogFragment extends android.app.DialogFragmen
         /**
          * Shows the IME on demand for the given {@link Window}.
          */
-        @DoNotInline
         static void showIme(@NonNull Window dialogWindow) {
             dialogWindow.getDecorView().getWindowInsetsController().show(WindowInsets.Type.ime());
         }

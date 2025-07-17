@@ -37,9 +37,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.arch.core.util.Function;
@@ -51,6 +48,8 @@ import androidx.work.Logger;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.Operation;
 import androidx.work.PeriodicWorkRequest;
+import androidx.work.StopReason;
+import androidx.work.TracerKt;
 import androidx.work.WorkContinuation;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
@@ -76,16 +75,20 @@ import androidx.work.multiprocess.RemoteWorkManager;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import kotlin.Unit;
 
 import kotlinx.coroutines.CoroutineScope;
 import kotlinx.coroutines.flow.Flow;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
 /**
  * A concrete implementation of {@link WorkManager}.
- *
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WorkManagerImpl extends WorkManager {
@@ -147,6 +150,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     /**
+     *
      */
     @SuppressWarnings("deprecation")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -189,11 +193,10 @@ public class WorkManagerImpl extends WorkManager {
      * you want to use a custom {@link Configuration} object and have disabled
      * WorkManagerInitializer.
      *
-     * @param context A {@link Context} object for configuration purposes. Internally, this class
-     *                will call {@link Context#getApplicationContext()}, so you may safely pass in
-     *                any Context without risking a memory leak.
+     * @param context       A {@link Context} object for configuration purposes. Internally, this
+     *                      class will call {@link Context#getApplicationContext()}, so you may
+     *                      safely pass in any Context without risking a memory leak.
      * @param configuration The {@link Configuration} for used to set up WorkManager.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void initialize(@NonNull Context context, @NonNull Configuration configuration) {
@@ -263,8 +266,7 @@ public class WorkManagerImpl extends WorkManager {
      * @return The application {@link Context} associated with this WorkManager.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public Context getApplicationContext() {
+    public @NonNull Context getApplicationContext() {
         return mContext;
     }
 
@@ -272,25 +274,22 @@ public class WorkManagerImpl extends WorkManager {
      * @return The {@link WorkDatabase} instance associated with this WorkManager.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public WorkDatabase getWorkDatabase() {
+    public @NonNull WorkDatabase getWorkDatabase() {
         return mWorkDatabase;
     }
 
     /**
      * @return workmanager's CoroutineScope
      */
-    @NonNull
-    CoroutineScope getWorkManagerScope() {
+    @NonNull CoroutineScope getWorkManagerScope() {
         return mWorkManagerScope;
     }
 
     /**
      * @return The {@link Configuration} instance associated with this WorkManager.
      */
-    @NonNull
     @Override
-    public Configuration getConfiguration() {
+    public @NonNull Configuration getConfiguration() {
         return mConfiguration;
     }
 
@@ -331,14 +330,12 @@ public class WorkManagerImpl extends WorkManager {
      * @return the {@link Trackers} used by {@link WorkManager}
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @NonNull
-    public Trackers getTrackers() {
+    public @NonNull Trackers getTrackers() {
         return mTrackers;
     }
 
     @Override
-    @NonNull
-    public Operation enqueue(
+    public @NonNull Operation enqueue(
             @NonNull List<? extends WorkRequest> requests) {
 
         // This error is not being propagated as part of the Operation, as we want the
@@ -371,9 +368,8 @@ public class WorkManagerImpl extends WorkManager {
         return new WorkContinuationImpl(this, uniqueWorkName, existingWorkPolicy, requests);
     }
 
-    @NonNull
     @Override
-    public Operation enqueueUniqueWork(@NonNull String uniqueWorkName,
+    public @NonNull Operation enqueueUniqueWork(@NonNull String uniqueWorkName,
             @NonNull ExistingWorkPolicy existingWorkPolicy,
             @NonNull List<OneTimeWorkRequest> requests) {
         return new WorkContinuationImpl(this, uniqueWorkName,
@@ -381,8 +377,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     @Override
-    @NonNull
-    public Operation enqueueUniquePeriodicWork(
+    public @NonNull Operation enqueueUniquePeriodicWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingPeriodicWorkPolicy existingPeriodicWorkPolicy,
             @NonNull PeriodicWorkRequest request) {
@@ -399,8 +394,7 @@ public class WorkManagerImpl extends WorkManager {
     /**
      * Creates a {@link WorkContinuation} for the given unique {@link PeriodicWorkRequest}.
      */
-    @NonNull
-    public WorkContinuationImpl createWorkContinuationForUniquePeriodicWork(
+    public @NonNull WorkContinuationImpl createWorkContinuationForUniquePeriodicWork(
             @NonNull String uniqueWorkName,
             @NonNull ExistingPeriodicWorkPolicy existingPeriodicWorkPolicy,
             @NonNull PeriodicWorkRequest periodicWork) {
@@ -423,13 +417,12 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     @Override
-    public @NonNull Operation cancelAllWorkByTag(@NonNull final String tag) {
+    public @NonNull Operation cancelAllWorkByTag(final @NonNull String tag) {
         return CancelWorkRunnable.forTag(tag, this);
     }
 
     @Override
-    @NonNull
-    public Operation cancelUniqueWork(@NonNull String uniqueWorkName) {
+    public @NonNull Operation cancelUniqueWork(@NonNull String uniqueWorkName) {
         return CancelWorkRunnable.forName(uniqueWorkName, this);
     }
 
@@ -438,9 +431,8 @@ public class WorkManagerImpl extends WorkManager {
         return CancelWorkRunnable.forAll(this);
     }
 
-    @NonNull
     @Override
-    public PendingIntent createCancelPendingIntent(@NonNull UUID id) {
+    public @NonNull PendingIntent createCancelPendingIntent(@NonNull UUID id) {
         Intent intent = createCancelWorkIntent(mContext, id.toString());
         int flags = FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= 31) {
@@ -463,7 +455,7 @@ public class WorkManagerImpl extends WorkManager {
 
     @Override
     public @NonNull Operation pruneWork() {
-        return PruneWorkRunnableKt.pruneWork(mWorkDatabase, mWorkTaskExecutor);
+        return PruneWorkRunnableKt.pruneWork(mWorkDatabase, mConfiguration, mWorkTaskExecutor);
     }
 
     @Override
@@ -485,9 +477,8 @@ public class WorkManagerImpl extends WorkManager {
                 mWorkTaskExecutor);
     }
 
-    @NonNull
     @Override
-    public Flow<WorkInfo> getWorkInfoByIdFlow(@NonNull UUID id) {
+    public @NonNull Flow<WorkInfo> getWorkInfoByIdFlow(@NonNull UUID id) {
         return getWorkStatusPojoFlowDataForIds(getWorkDatabase().workSpecDao(), id);
     }
 
@@ -496,9 +487,8 @@ public class WorkManagerImpl extends WorkManager {
         return StatusRunnable.forUUID(mWorkDatabase, mWorkTaskExecutor, id);
     }
 
-    @NonNull
     @Override
-    public Flow<List<WorkInfo>> getWorkInfosByTagFlow(@NonNull String tag) {
+    public @NonNull Flow<List<WorkInfo>> getWorkInfosByTagFlow(@NonNull String tag) {
         WorkSpecDao workSpecDao = mWorkDatabase.workSpecDao();
         return getWorkStatusPojoFlowForTag(workSpecDao,
                 mWorkTaskExecutor.getTaskCoroutineDispatcher(), tag);
@@ -521,8 +511,7 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     @Override
-    @NonNull
-    public LiveData<List<WorkInfo>> getWorkInfosForUniqueWorkLiveData(
+    public @NonNull LiveData<List<WorkInfo>> getWorkInfosForUniqueWorkLiveData(
             @NonNull String uniqueWorkName) {
         WorkSpecDao workSpecDao = mWorkDatabase.workSpecDao();
         LiveData<List<WorkSpec.WorkInfoPojo>> inputLiveData =
@@ -533,24 +522,22 @@ public class WorkManagerImpl extends WorkManager {
                 mWorkTaskExecutor);
     }
 
-    @NonNull
     @Override
-    public Flow<List<WorkInfo>> getWorkInfosForUniqueWorkFlow(@NonNull String uniqueWorkName) {
+    public @NonNull Flow<List<WorkInfo>> getWorkInfosForUniqueWorkFlow(
+            @NonNull String uniqueWorkName) {
         WorkSpecDao workSpecDao = mWorkDatabase.workSpecDao();
         return getWorkStatusPojoFlowForName(workSpecDao,
                 mWorkTaskExecutor.getTaskCoroutineDispatcher(), uniqueWorkName);
     }
 
     @Override
-    @NonNull
-    public ListenableFuture<List<WorkInfo>> getWorkInfosForUniqueWork(
+    public @NonNull ListenableFuture<List<WorkInfo>> getWorkInfosForUniqueWork(
             @NonNull String uniqueWorkName) {
-        return StatusRunnable.forUniqueWork(mWorkDatabase, mWorkTaskExecutor,  uniqueWorkName);
+        return StatusRunnable.forUniqueWork(mWorkDatabase, mWorkTaskExecutor, uniqueWorkName);
     }
 
-    @NonNull
     @Override
-    public LiveData<List<WorkInfo>> getWorkInfosLiveData(
+    public @NonNull LiveData<List<WorkInfo>> getWorkInfosLiveData(
             @NonNull WorkQuery workQuery) {
         RawWorkInfoDao rawWorkInfoDao = mWorkDatabase.rawWorkInfoDao();
         LiveData<List<WorkSpec.WorkInfoPojo>> inputLiveData =
@@ -562,23 +549,20 @@ public class WorkManagerImpl extends WorkManager {
                 mWorkTaskExecutor);
     }
 
-    @NonNull
     @Override
-    public Flow<List<WorkInfo>> getWorkInfosFlow(@NonNull WorkQuery workQuery) {
+    public @NonNull Flow<List<WorkInfo>> getWorkInfosFlow(@NonNull WorkQuery workQuery) {
         RawWorkInfoDao rawWorkInfoDao = mWorkDatabase.rawWorkInfoDao();
         return getWorkInfoPojosFlow(rawWorkInfoDao, mWorkTaskExecutor.getTaskCoroutineDispatcher(),
                 RawQueries.toRawQuery(workQuery));
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<List<WorkInfo>> getWorkInfos(@NonNull WorkQuery workQuery) {
+    public @NonNull ListenableFuture<List<WorkInfo>> getWorkInfos(@NonNull WorkQuery workQuery) {
         return StatusRunnable.forWorkQuerySpec(mWorkDatabase, mWorkTaskExecutor, workQuery);
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<UpdateResult> updateWork(@NonNull WorkRequest request) {
+    public @NonNull ListenableFuture<UpdateResult> updateWork(@NonNull WorkRequest request) {
         return WorkerUpdater.updateWorkImpl(this, request);
     }
 
@@ -593,10 +577,10 @@ public class WorkManagerImpl extends WorkManager {
     }
 
     /**
+     *
      */
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public RemoteWorkManager getRemoteWorkManager() {
+    public @Nullable RemoteWorkManager getRemoteWorkManager() {
         if (mRemoteWorkManager == null) {
             synchronized (sLock) {
                 if (mRemoteWorkManager == null) {
@@ -616,37 +600,42 @@ public class WorkManagerImpl extends WorkManager {
 
     /**
      * @param id The {@link WorkSpec} id to stop when running in the context of a
-     *                   foreground service.
+     *           foreground service.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public void stopForegroundWork(@NonNull WorkGenerationalId id) {
+    public void stopForegroundWork(@NonNull WorkGenerationalId id, @StopReason int reason) {
         mWorkTaskExecutor.executeOnTaskThread(new StopWorkRunnable(mProcessor,
-                new StartStopToken(id), true));
+                new StartStopToken(id), true, reason));
     }
 
     /**
      * Reschedules all the eligible work. Useful for cases like, app was force stopped or
      * BOOT_COMPLETED, TIMEZONE_CHANGED and TIME_SET for AlarmManager.
-     *
      */
     public void rescheduleEligibleWork() {
-        // TODO (rahulrav@) Make every scheduler do its own cancelAll().
-        if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
-            SystemJobScheduler.cancelAllInAllNamespaces(getApplicationContext());
-        }
+        // Delegate to the getter so mocks continue to work when testing.
+        Configuration configuration = getConfiguration();
+        TracerKt.traced(configuration.getTracer(), "ReschedulingWork", () -> {
+            // This gives us an easy way to clear persisted work state, and then reschedule work
+            // that WorkManager is aware of. Ideally, we do something similar for other
+            // persistent schedulers.
+            if (Build.VERSION.SDK_INT >= WorkManagerImpl.MIN_JOB_SCHEDULER_API_LEVEL) {
+                SystemJobScheduler.cancelAllInAllNamespaces(getApplicationContext());
+            }
 
-        // Reset scheduled state.
-        getWorkDatabase().workSpecDao().resetScheduledState();
+            // Reset scheduled state.
+            getWorkDatabase().workSpecDao().resetScheduledState();
 
-        // Delegate to the WorkManager's schedulers.
-        // Using getters here so we can use from a mocked instance
-        // of WorkManagerImpl.
-        Schedulers.schedule(getConfiguration(), getWorkDatabase(), getSchedulers());
+            // Delegate to the WorkManager's schedulers.
+            // Using getters here so we can use from a mocked instance
+            // of WorkManagerImpl.
+            Schedulers.schedule(getConfiguration(), getWorkDatabase(), getSchedulers());
+            return Unit.INSTANCE;
+        });
     }
 
     /**
      * A way for {@link ForceStopRunnable} to tell {@link WorkManagerImpl} that it has completed.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void onForceStopRunnableCompleted() {
@@ -664,11 +653,10 @@ public class WorkManagerImpl extends WorkManager {
      * {@link RescheduleReceiver}
      * after a call to {@link BroadcastReceiver#goAsync()}. Once {@link ForceStopRunnable} is done,
      * we can safely call {@link BroadcastReceiver.PendingResult#finish()}.
-     *
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public void setReschedulePendingResult(
-            @NonNull BroadcastReceiver.PendingResult rescheduleReceiverResult) {
+            BroadcastReceiver.@NonNull PendingResult rescheduleReceiverResult) {
         synchronized (sLock) {
             // if we have two broadcast in the row, finish old one and use new one
             if (mRescheduleReceiverResult != null) {
@@ -709,7 +697,6 @@ public class WorkManagerImpl extends WorkManager {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean isDeviceProtectedStorage(Context context) {
             return context.isDeviceProtectedStorage();
         }

@@ -19,8 +19,9 @@ package androidx.sqlite.inspection;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.inspection.ArtTooling;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,8 +38,7 @@ class SqlDelightInvalidation implements Invalidation {
     private final @NonNull Class<?> mQueryClass;
     private final @NonNull Method mNotifyDataChangeMethod;
 
-    @NonNull
-    static Invalidation create(@NonNull ArtTooling artTooling) {
+    static @NonNull Invalidation create(@NonNull ArtTooling artTooling) {
         ClassLoader classLoader = SqlDelightInvalidation.class.getClassLoader();
         Objects.requireNonNull(classLoader);
         try {

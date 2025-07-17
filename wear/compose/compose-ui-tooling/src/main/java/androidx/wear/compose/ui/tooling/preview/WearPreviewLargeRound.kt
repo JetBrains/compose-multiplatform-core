@@ -24,7 +24,6 @@ import androidx.wear.tooling.preview.devices.WearDevices
  * round Wear device ([WearDevices.LARGE_ROUND]).
  *
  * @sample androidx.wear.compose.material.samples.ButtonWithIconPreview
- *
  * @see [WearDevices.LARGE_ROUND]
  */
 @Preview(
@@ -32,6 +31,6 @@ import androidx.wear.tooling.preview.devices.WearDevices
     backgroundColor = 0xff000000,
     showBackground = true,
     group = "Devices - Large Round",
-    showSystemUi = true
+    showSystemUi = true,
 )
 public annotation class WearPreviewLargeRound()

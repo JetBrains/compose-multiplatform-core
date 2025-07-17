@@ -45,7 +45,7 @@ class TypeAssignmentTest {
                 Map<String, String> mStringMap;
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
     }
 

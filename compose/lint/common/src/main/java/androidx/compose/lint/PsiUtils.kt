@@ -17,14 +17,15 @@
 package androidx.compose.lint
 
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiJavaFile
+import com.intellij.psi.PsiClassOwner
+import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.util.InheritanceUtil
 
 /** Returns whether [this] has [packageName] as its package name. */
-fun PsiMethod.isInPackageName(packageName: PackageName): Boolean {
-    val actual = (containingFile as? PsiJavaFile)?.packageName
+fun PsiMember.isInPackageName(packageName: PackageName): Boolean {
+    val actual = (containingFile as? PsiClassOwner)?.packageName
     return packageName.javaPackageName == actual
 }
 

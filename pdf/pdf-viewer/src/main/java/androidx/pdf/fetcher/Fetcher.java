@@ -19,7 +19,6 @@ package androidx.pdf.fetcher;
 import android.content.Context;
 import android.net.Uri;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.ContentOpenable;
 import androidx.pdf.data.FileOpenable;
@@ -31,6 +30,8 @@ import androidx.pdf.models.Dimensions;
 import androidx.pdf.util.Preconditions;
 import androidx.pdf.util.StrictModeUtils;
 import androidx.pdf.util.Uris;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.FileNotFoundException;
 
@@ -54,16 +55,14 @@ public class Fetcher extends Opener {
     /**
      *
      */
-    @NonNull
-    public static Fetcher build(@NonNull Context context) {
+    public static @NonNull Fetcher build(@NonNull Context context) {
         return build(context, DEFAULT_NUM_THREADS);
     }
 
     /**
      *
      */
-    @NonNull
-    public static Fetcher build(@NonNull Context context, int numThreads) {
+    public static @NonNull Fetcher build(@NonNull Context context, int numThreads) {
         // TODO: StrictMode: disk read 144ms
         return StrictModeUtils.bypassAndReturn(
                 () -> new Fetcher(context, new DiskCache(context), numThreads));
@@ -74,43 +73,39 @@ public class Fetcher extends Opener {
         this.mCache = diskCache;
     }
 
-    @NonNull
-    public DiskCache getCache() {
+    public @NonNull DiskCache getCache() {
         return mCache;
     }
 
     /** Loads the contents of a local {@link Uri} into an {@link Openable}. */
-    @NonNull
-    public FutureValue<Openable> loadLocal(@NonNull Uri localUri) {
+    public @NonNull FutureValue<Openable> loadLocal(@NonNull Uri localUri) {
         Preconditions.checkArgument(Uris.isLocal(localUri),
                 "Use fetch() for http URLs " + localUri);
         return Uris.isContentUri(localUri) ? loadContent(localUri) : loadFile(localUri);
     }
 
     /** Fetches (opens) a content Uri into an {@link Openable}. */
-    @NonNull
-    public FutureValue<Openable> loadContent(@NonNull Uri contentUri) {
+    public @NonNull FutureValue<Openable> loadContent(@NonNull Uri contentUri) {
         String useType = getContentType(contentUri);
         return loadContent(contentUri, useType);
     }
 
     /** Loads (prepares for opening) a content Uri into an {@link Openable}. */
-    @NonNull
-    public FutureValue<Openable> loadContent(@NonNull Uri contentUri, @NonNull String useType) {
+    public @NonNull FutureValue<Openable> loadContent(@NonNull Uri contentUri,
+            @NonNull String useType) {
         Openable content = new ContentOpenable(contentUri, useType);
         return UiFutureValues.immediateValue(content);
     }
 
     /** Loads (prepares for opening) a content Uri into an {@link Openable}. */
-    @NonNull
-    public FutureValue<Openable> loadContent(@NonNull Uri contentUri, @NonNull Dimensions size) {
+    public @NonNull FutureValue<Openable> loadContent(@NonNull Uri contentUri,
+            @NonNull Dimensions size) {
         Openable content = new ContentOpenable(contentUri, size);
         return UiFutureValues.immediateValue(content);
     }
 
     /** Loads (prepares for opening) a file Uri into an {@link Openable}. */
-    @NonNull
-    public FutureValue<Openable> loadFile(@NonNull Uri fileUri) {
+    public @NonNull FutureValue<Openable> loadFile(@NonNull Uri fileUri) {
         try {
             Openable content = new FileOpenable(fileUri);
             return UiFutureValues.immediateValue(content);

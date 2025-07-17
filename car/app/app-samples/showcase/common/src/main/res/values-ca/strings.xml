@@ -81,8 +81,8 @@
     <string name="dial" msgid="3145707439707628311">"Marca"</string>
     <string name="address" msgid="9010635942573581302">"Adreça"</string>
     <string name="phone" msgid="2504766809811627577">"Telèfon"</string>
-    <string name="fail_start_nav" msgid="6921321606009212189">"S\'ha produït un error en iniciar la navegació"</string>
-    <string name="fail_start_dialer" msgid="1471602619507306261">"S\'ha produït un error en iniciar el telèfon"</string>
+    <string name="fail_start_nav" msgid="6921321606009212189">"Hi ha hagut un error en iniciar la navegació"</string>
+    <string name="fail_start_dialer" msgid="1471602619507306261">"Hi ha hagut un error en iniciar el telèfon"</string>
     <string name="car_hardware_demo_title" msgid="3679106197233262689">"Demostració del maquinari del cotxe"</string>
     <string name="car_hardware_info" msgid="1244783247616395012">"Informació sobre el maquinari del cotxe"</string>
     <string name="model_info" msgid="494224423025683030">"Informació del model"</string>
@@ -231,6 +231,11 @@
     <string name="msg_template_demo_title" msgid="3895210951340409473">"Demostració d\'una plantilla de missatge"</string>
     <string name="msg_template_demo_text" msgid="2275291617716161409">"El missatge va aquí.\nMés text a la segona línia."</string>
     <string name="short_msg_template_demo_title" msgid="6798738013668580714">"Demostració d\'una plantilla de missatge curt"</string>
+    <string name="sectioned_item_template_demo_title" msgid="8377594346379786774">"Demostració d\'una plantilla d\'elements amb seccions"</string>
+    <string name="sectioned_item_template_radio_button_section_title" msgid="1014325865070733609">"Secció de botons d\'opció"</string>
+    <string name="sectioned_item_template_toggle_section_title" msgid="3197227971733559949">"Commuta la secció"</string>
+    <string name="sectioned_item_template_lots_of_rows_section_title" msgid="1501401956386938735">"Secció amb moltes files"</string>
+    <string name="sectioned_item_template_grid_item_section_title" msgid="565528119467142741">"Secció d\'elements de la quadrícula"</string>
     <string name="pane_template_demo_title" msgid="7804292600060341608">"Demostració d\'una plantilla de subfinestra"</string>
     <string name="place_list_template_demo_title" msgid="2054022985455460469">"Demostració d\'una plantilla de llista de llocs"</string>
     <string name="browse_places_title" msgid="7246005909846715898">"Cerca llocs"</string>
@@ -321,6 +326,7 @@
     <string name="secondary_actions_test_subtitle" msgid="6985282813402073703">"Només es pot seleccionar l\'acció secundària"</string>
     <string name="decoration_test_title" msgid="8450127046762442244">"Prova de decoració"</string>
     <string name="secondary_actions_decoration_test_title" msgid="6282873404859209490">"Accions secundàries i decoració"</string>
+    <string name="secondary_actions_decoration_test_title_long" msgid="3700606949229899169">"Fila amb accions secundàries i decoració amb un títol molt llarg"</string>
     <string name="secondary_actions_decoration_test_subtitle" msgid="155884606592724532">"La fila també es pot seleccionar"</string>
     <string name="secondary_action_toast" msgid="5076434693504006565">"S\'ha seleccionat l\'acció secundària"</string>
     <string name="row_primary_action_toast" msgid="756516694751965204">"S\'ha seleccionat l\'acció principal de la fila"</string>

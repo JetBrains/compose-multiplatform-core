@@ -26,7 +26,7 @@ import androidx.room.compiler.processing.util.XTestInvocation
 import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.processor.Context
 import androidx.room.processor.ProcessorErrors.CANNOT_FIND_COLUMN_TYPE_ADAPTER
-import androidx.room.processor.ProcessorErrors.CANNOT_FIND_CURSOR_READER
+import androidx.room.processor.ProcessorErrors.CANNOT_FIND_STMT_READER
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -38,7 +38,7 @@ class BuiltInConverterFlagsTest {
     fun enums_disabledInDb() {
         compile(dbAnnotation = createTypeConvertersCode(enums = DISABLED)) {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val myEnum: MyEnum")
-            hasError(CANNOT_FIND_CURSOR_READER, "val myEnum: MyEnum")
+            hasError(CANNOT_FIND_STMT_READER, "val myEnum: MyEnum")
             hasErrorCount(2)
         }
     }
@@ -47,7 +47,7 @@ class BuiltInConverterFlagsTest {
     fun uuid_disabledInDb() {
         compile(dbAnnotation = createTypeConvertersCode(uuid = DISABLED)) {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuid: UUID")
-            hasError(CANNOT_FIND_CURSOR_READER, "val uuid: UUID")
+            hasError(CANNOT_FIND_STMT_READER, "val uuid: UUID")
             hasErrorCount(2)
         }
     }
@@ -56,7 +56,7 @@ class BuiltInConverterFlagsTest {
     fun byteBuffer_disabledInDb() {
         compile(dbAnnotation = createTypeConvertersCode(byteBuffer = DISABLED)) {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val blob: ByteBuffer")
-            hasError(CANNOT_FIND_CURSOR_READER, "val blob: ByteBuffer")
+            hasError(CANNOT_FIND_STMT_READER, "val blob: ByteBuffer")
             hasErrorCount(2)
         }
     }
@@ -66,7 +66,7 @@ class BuiltInConverterFlagsTest {
         compile(
             dbAnnotation = createTypeConvertersCode(enums = DISABLED, uuid = DISABLED),
             daoAnnotation = createTypeConvertersCode(enums = ENABLED, uuid = ENABLED),
-            entityAnnotation = createTypeConvertersCode(enums = ENABLED, uuid = ENABLED)
+            entityAnnotation = createTypeConvertersCode(enums = ENABLED, uuid = ENABLED),
         ) {
             // success
         }
@@ -81,11 +81,11 @@ class BuiltInConverterFlagsTest {
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val uuid: UUID")
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val myEnum: MyEnum")
             hasError(CANNOT_FIND_COLUMN_TYPE_ADAPTER, "val blob: ByteBuffer")
-            // even though it is enabled in dao or db, since pojo processing will visit the pojo,
-            // we'll still get errors for these because entity disabled them
-            hasError(CANNOT_FIND_CURSOR_READER, "val uuid: UUID")
-            hasError(CANNOT_FIND_CURSOR_READER, "val myEnum: MyEnum")
-            hasError(CANNOT_FIND_CURSOR_READER, "val blob: ByteBuffer")
+            // even though it is enabled in dao or db, since data class processing will visit the
+            // data class, we'll still get errors for these because entity disabled them
+            hasError(CANNOT_FIND_STMT_READER, "val uuid: UUID")
+            hasError(CANNOT_FIND_STMT_READER, "val myEnum: MyEnum")
+            hasError(CANNOT_FIND_STMT_READER, "val blob: ByteBuffer")
             hasErrorCount(6)
         }
     }
@@ -98,7 +98,7 @@ class BuiltInConverterFlagsTest {
             daoAnnotation =
                 createTypeConvertersCode(enums = DISABLED, uuid = DISABLED, byteBuffer = DISABLED),
             entityAnnotation =
-                createTypeConvertersCode(enums = ENABLED, uuid = ENABLED, byteBuffer = ENABLED)
+                createTypeConvertersCode(enums = ENABLED, uuid = ENABLED, byteBuffer = ENABLED),
         ) {
             // success since we only fetch full objects.
         }
@@ -130,13 +130,13 @@ class BuiltInConverterFlagsTest {
         entityAnnotation: String = "",
         daoAnnotation: String = "",
         dbAnnotation: String = "",
-        assertion: XTestInvocation.() -> Unit
+        assertion: XTestInvocation.() -> Unit,
     ) {
         val source =
             buildSource(
                 entityAnnotation = entityAnnotation,
                 daoAnnotation = daoAnnotation,
-                dbAnnotation = dbAnnotation
+                dbAnnotation = dbAnnotation,
             )
         runProcessorTest(
             sources = listOf(source),
@@ -147,7 +147,7 @@ class BuiltInConverterFlagsTest {
                 .process(
                     env = invocation.processingEnv,
                     elementsByAnnotation = mapOf(Database::class.qualifiedName!! to setOf(subject)),
-                    false
+                    false,
                 )
             invocation.assertCompilationResult {
                 generatedSourceFileWithPath("MyDatabase_Impl.java")
@@ -195,14 +195,14 @@ class BuiltInConverterFlagsTest {
                 abstract val myDao: MyDao
             }
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 
     private fun createTypeConvertersCode(
         enums: BuiltInTypeConverters.State? = null,
         uuid: BuiltInTypeConverters.State? = null,
-        byteBuffer: BuiltInTypeConverters.State? = null
+        byteBuffer: BuiltInTypeConverters.State? = null,
     ): String {
         val builtIns =
             listOfNotNull(

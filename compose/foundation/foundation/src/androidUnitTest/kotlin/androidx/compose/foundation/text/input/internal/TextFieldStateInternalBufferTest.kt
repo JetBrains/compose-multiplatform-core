@@ -16,11 +16,11 @@
 
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldCharSequence
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.ui.text.TextRange
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.fail
@@ -28,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(JUnit4::class)
 class TextFieldStateInternalBufferTest {
 
@@ -51,7 +50,7 @@ class TextFieldStateInternalBufferTest {
             if (restart) resetCalled++ else selectionCalled++
         }
 
-        state.editAsUser { commitText("X", 1) }
+        state.withImeScope { commitText("X", 1) }
         val newState = state.value
 
         assertThat(newState.toString()).isEqualTo("XABCDE")
@@ -73,7 +72,7 @@ class TextFieldStateInternalBufferTest {
             if (restart) resetCalled++ else selectionCalled++
         }
 
-        state.editAsUser { setSelection(0, 2) }
+        state.withImeScope { setSelection(0, 2) }
         val newState = state.value
 
         assertThat(newState.toString()).isEqualTo("ABCDE")
@@ -90,9 +89,6 @@ class TextFieldStateInternalBufferTest {
 
         var resetCalled = 0
         var selectionCalled = 0
-        state.addImeContentListener { _, _, restart ->
-            if (restart) resetCalled++ else selectionCalled++
-        }
 
         val initialBuffer = state.mainBuffer
         state.syncMainBufferToTemporaryBuffer(
@@ -101,13 +97,17 @@ class TextFieldStateInternalBufferTest {
         assertThat(state.mainBuffer).isNotSameInstanceAs(initialBuffer)
 
         val updatedBuffer = state.mainBuffer
+
+        state.addImeContentListener { _, _, restart ->
+            if (restart) resetCalled++ else selectionCalled++
+        }
         state.syncMainBufferToTemporaryBuffer(
             TextFieldCharSequence("qwerty", TextRange.Zero, TextRange.Zero)
         )
         assertThat(state.mainBuffer).isSameInstanceAs(updatedBuffer)
 
-        assertThat(resetCalled).isEqualTo(2)
-        assertThat(selectionCalled).isEqualTo(0)
+        assertThat(resetCalled).isEqualTo(0)
+        assertThat(selectionCalled).isEqualTo(1)
     }
 
     @Test
@@ -128,8 +128,9 @@ class TextFieldStateInternalBufferTest {
         state.syncMainBufferToTemporaryBuffer(newTextFieldValue)
 
         assertThat(state.mainBuffer).isNotSameInstanceAs(initialBuffer)
-        assertThat(resetCalled).isEqualTo(2)
-        assertThat(selectionCalled).isEqualTo(0)
+        // no composing region, reset shouldn't be called
+        assertThat(resetCalled).isEqualTo(0)
+        assertThat(selectionCalled).isEqualTo(2)
     }
 
     @Test
@@ -138,22 +139,22 @@ class TextFieldStateInternalBufferTest {
 
         var resetCalled = 0
         var selectionCalled = 0
-        state.addImeContentListener { _, _, restart ->
-            if (restart) resetCalled++ else selectionCalled++
-        }
 
         val textFieldValue = TextFieldCharSequence("qwerty", TextRange.Zero, TextRange.Zero)
         state.syncMainBufferToTemporaryBuffer(textFieldValue)
         val initialBuffer = state.mainBuffer
 
+        state.addImeContentListener { _, _, restart ->
+            if (restart) resetCalled++ else selectionCalled++
+        }
         val newTextFieldValue = TextFieldCharSequence(textFieldValue, selection = TextRange(1))
         state.syncMainBufferToTemporaryBuffer(newTextFieldValue)
 
         assertThat(state.mainBuffer).isSameInstanceAs(initialBuffer)
-        assertThat(newTextFieldValue.selection.start).isEqualTo(state.mainBuffer.selectionStart)
-        assertThat(newTextFieldValue.selection.end).isEqualTo(state.mainBuffer.selectionEnd)
-        assertThat(resetCalled).isEqualTo(2)
-        assertThat(selectionCalled).isEqualTo(0)
+        assertThat(newTextFieldValue.selection.start).isEqualTo(state.mainBuffer.selection.start)
+        assertThat(newTextFieldValue.selection.end).isEqualTo(state.mainBuffer.selection.end)
+        assertThat(resetCalled).isEqualTo(0)
+        assertThat(selectionCalled).isEqualTo(1)
     }
 
     @Test
@@ -162,27 +163,24 @@ class TextFieldStateInternalBufferTest {
 
         var resetCalled = 0
         var selectionCalled = 0
-        state.addImeContentListener { _, _, restart ->
-            if (restart) resetCalled++ else selectionCalled++
-        }
 
         val textFieldValue = TextFieldCharSequence("qwerty", TextRange.Zero, TextRange(1))
         state.syncMainBufferToTemporaryBuffer(textFieldValue)
         val initialBuffer = state.mainBuffer
 
+        state.addImeContentListener { _, _, restart ->
+            if (restart) resetCalled++ else selectionCalled++
+        }
         // composition can not be set from app, IME owns it.
-        assertThat(EditingBuffer.NOWHERE).isEqualTo(initialBuffer.compositionStart)
-        assertThat(EditingBuffer.NOWHERE).isEqualTo(initialBuffer.compositionEnd)
+        assertThat(initialBuffer.composition).isNull()
 
-        val newTextFieldValue =
-            TextFieldCharSequence(textFieldValue, textFieldValue.selection, composition = null)
+        val newTextFieldValue = TextFieldCharSequence("qwerty", TextRange.Zero, composition = null)
         state.syncMainBufferToTemporaryBuffer(newTextFieldValue)
 
         assertThat(state.mainBuffer).isSameInstanceAs(initialBuffer)
-        assertThat(EditingBuffer.NOWHERE).isEqualTo(state.mainBuffer.compositionStart)
-        assertThat(EditingBuffer.NOWHERE).isEqualTo(state.mainBuffer.compositionEnd)
-        assertThat(resetCalled).isEqualTo(2)
-        assertThat(selectionCalled).isEqualTo(0)
+        assertThat(state.mainBuffer.composition).isNull()
+        assertThat(resetCalled).isEqualTo(0)
+        assertThat(selectionCalled).isEqualTo(1)
     }
 
     @Test
@@ -199,8 +197,8 @@ class TextFieldStateInternalBufferTest {
 
         val initialBuffer = state.mainBuffer
 
-        assertThat(initialSelection.start).isEqualTo(initialBuffer.selectionStart)
-        assertThat(initialSelection.end).isEqualTo(initialBuffer.selectionEnd)
+        assertThat(initialSelection.start).isEqualTo(initialBuffer.selection.start)
+        assertThat(initialSelection.end).isEqualTo(initialBuffer.selection.end)
 
         val updatedSelection = TextRange(3, 0)
         val newTextFieldValue = TextFieldCharSequence(textFieldValue, selection = updatedSelection)
@@ -208,10 +206,11 @@ class TextFieldStateInternalBufferTest {
         state.syncMainBufferToTemporaryBuffer(newTextFieldValue)
 
         assertThat(state.mainBuffer).isSameInstanceAs(initialBuffer)
-        assertThat(updatedSelection.start).isEqualTo(initialBuffer.selectionStart)
-        assertThat(updatedSelection.end).isEqualTo(initialBuffer.selectionEnd)
-        assertThat(resetCalled).isEqualTo(1)
-        assertThat(selectionCalled).isEqualTo(0)
+        assertThat(updatedSelection.start).isEqualTo(initialBuffer.selection.start)
+        assertThat(updatedSelection.end).isEqualTo(initialBuffer.selection.end)
+        // content does not change so restart input is unexpected
+        assertThat(resetCalled).isEqualTo(0)
+        assertThat(selectionCalled).isEqualTo(1)
     }
 
     @Test
@@ -225,7 +224,7 @@ class TextFieldStateInternalBufferTest {
         }
 
         // set the initial value
-        state.editAsUser {
+        state.withImeScope {
             commitText("ab", 0)
             setComposingRegion(0, 2)
         }
@@ -248,7 +247,7 @@ class TextFieldStateInternalBufferTest {
         val composition = TextRange(0, 2)
 
         // set the initial value
-        state.editAsUser {
+        state.withImeScope {
             commitText("ab", 0)
             setComposingRegion(composition.start, composition.end)
         }
@@ -258,7 +257,7 @@ class TextFieldStateInternalBufferTest {
         state.syncMainBufferToTemporaryBuffer(newValue)
 
         assertThat(state.text.toString()).isEqualTo(newValue.toString())
-        assertThat(state.composition).isEqualTo(composition)
+        assertThat(state.composition).isEqualTo(TextRange(0, 2))
     }
 
     @Test
@@ -266,7 +265,7 @@ class TextFieldStateInternalBufferTest {
         val state = TextFieldState()
 
         // set the initial value
-        state.editAsUser {
+        state.withImeScope {
             commitText("ab", 0)
             setComposingRegion(-1, -1)
         }
@@ -285,7 +284,7 @@ class TextFieldStateInternalBufferTest {
         val state = TextFieldState()
 
         // set the initial value
-        state.editAsUser {
+        state.withImeScope {
             commitText("ab", 0)
             setComposingRegion(0, 2)
         }
@@ -300,14 +299,14 @@ class TextFieldStateInternalBufferTest {
     }
 
     @Test
-    fun compositionIsNotCleared_when_onlySelectionChanged() {
+    fun compositionIsCleared_when_onlySelectionChanged() {
         val state = TextFieldState()
 
         val composition = TextRange(0, 2)
         val selection = TextRange(0, 2)
 
         // set the initial value
-        state.editAsUser {
+        state.withImeScope {
             commitText("ab", 0)
             setComposingRegion(composition.start, composition.end)
             setSelection(selection.start, selection.end)
@@ -319,12 +318,12 @@ class TextFieldStateInternalBufferTest {
             TextFieldCharSequence(
                 state.text,
                 selection = newSelection,
-                composition = state.composition
+                composition = state.composition,
             )
         state.syncMainBufferToTemporaryBuffer(newValue)
 
         assertThat(state.text.toString()).isEqualTo(newValue.toString())
-        assertThat(state.composition).isEqualTo(composition)
+        assertThat(state.composition).isNull()
         assertThat(state.selection).isEqualTo(newSelection)
     }
 
@@ -335,13 +334,13 @@ class TextFieldStateInternalBufferTest {
                 TextFieldCharSequence(
                     "abc",
                     selection = TextRange(3),
-                    composition = TextRange(0, 3)
+                    composition = TextRange(0, 3),
                 )
             )
 
         val initialBuffer = state.mainBuffer
 
-        state.editAsUser { commitText("d", 4) }
+        state.withImeScope { commitText("d", 4) }
 
         val value = state.text
 
@@ -356,13 +355,13 @@ class TextFieldStateInternalBufferTest {
                 TextFieldCharSequence(
                     "abc",
                     selection = TextRange(3),
-                    composition = TextRange(0, 3)
+                    composition = TextRange(0, 3),
                 )
             )
 
         val initialBuffer = state.mainBuffer
 
-        state.editAsUser { commitText("d", 4) }
+        state.withImeScope { commitText("d", 4) }
 
         val value = state.text
 
@@ -377,7 +376,7 @@ class TextFieldStateInternalBufferTest {
                 TextFieldCharSequence(
                     "abc",
                     selection = TextRange(3),
-                    composition = TextRange(0, 3)
+                    composition = TextRange(0, 3),
                 )
             )
 
@@ -390,12 +389,7 @@ class TextFieldStateInternalBufferTest {
 
         val initialBuffer = state.mainBuffer
 
-        state.editAsUser(
-            inputTransformation = { revertAllChanges() },
-            restartImeIfContentChanges = false
-        ) {
-            commitText("d", 4)
-        }
+        state.withImeScope(inputTransformation = { revertAllChanges() }) { commitText("d", 4) }
 
         val value = state.text
 
@@ -414,7 +408,7 @@ class TextFieldStateInternalBufferTest {
             fail("filter ran, old=\"${originalValue}\", new=\"${toTextFieldCharSequence()}\"")
         }
 
-        state.editAsUser(inputTransformation, restartImeIfContentChanges = false) {}
+        state.withImeScope(inputTransformation) {}
     }
 
     @Test
@@ -426,12 +420,7 @@ class TextFieldStateInternalBufferTest {
             fail("filter ran, old=\"${originalValue}\", new=\"${toTextFieldCharSequence()}\"")
         }
 
-        state.editAsUser(
-            inputTransformation = inputTransformation,
-            restartImeIfContentChanges = false
-        ) {
-            finishComposingText()
-        }
+        state.withImeScope(inputTransformation = inputTransformation) { finishComposingText() }
     }
 
     @Test
@@ -443,12 +432,7 @@ class TextFieldStateInternalBufferTest {
             fail("filter ran, old=\"${originalValue}\", new=\"${toTextFieldCharSequence()}\"")
         }
 
-        state.editAsUser(
-            inputTransformation = inputTransformation,
-            restartImeIfContentChanges = false
-        ) {
-            finishComposingText()
-        }
+        state.withImeScope(inputTransformation = inputTransformation) { finishComposingText() }
     }
 
     @Test
@@ -464,10 +448,7 @@ class TextFieldStateInternalBufferTest {
             )
         }
 
-        state.editAsUser(
-            inputTransformation = inputTransformation,
-            restartImeIfContentChanges = false
-        ) {
+        state.withImeScope(inputTransformation = inputTransformation) {
             setComposingRegion(0, 5)
             commitText("hello", 1)
             setSelection(2, 2)
@@ -491,12 +472,7 @@ class TextFieldStateInternalBufferTest {
             assertThat(new.selection).isEqualTo(TextRange(0, 5))
         }
 
-        state.editAsUser(
-            inputTransformation = inputTransformation,
-            restartImeIfContentChanges = false
-        ) {
-            setSelection(0, 5)
-        }
+        state.withImeScope(inputTransformation = inputTransformation) { setSelection(0, 5) }
     }
 
     @Test
@@ -516,11 +492,8 @@ class TextFieldStateInternalBufferTest {
             assertThat(new.toString()).isEqualTo("world")
         }
 
-        state.editAsUser(
-            inputTransformation = inputTransformation,
-            restartImeIfContentChanges = false
-        ) {
-            deleteAll()
+        state.withImeScope(inputTransformation = inputTransformation) {
+            edit { delete(0, length) }
             commitText("world", 1)
             setSelection(2, 2)
         }
@@ -532,7 +505,7 @@ class TextFieldStateInternalBufferTest {
             TextFieldCharSequence("hello", selection = TextRange(5), composition = TextRange(0, 5))
         val state = TextFieldState(initialValue)
 
-        state.editAsUser { setComposingRegion(2, 3) }
+        state.withImeScope { setComposingRegion(2, 3) }
 
         assertThat(state.composition).isEqualTo(TextRange(2, 3))
     }
@@ -543,17 +516,13 @@ class TextFieldStateInternalBufferTest {
             TextFieldCharSequence("hello", selection = TextRange(5), composition = TextRange(0, 5))
         val state = TextFieldState(initialValue)
 
-        state.editAsUser { setComposingRegion(2, 3) }
+        state.withImeScope { setComposingRegion(2, 3) }
 
         assertThat(state.composition).isEqualTo(TextRange(2, 3))
     }
 
     private fun TextFieldState(value: TextFieldCharSequence) =
         TextFieldState(value.toString(), value.selection)
-
-    private fun TextFieldState.editAsUser(block: EditingBuffer.() -> Unit) {
-        editAsUser(inputTransformation = null, restartImeIfContentChanges = false, block = block)
-    }
 
     private fun TextFieldState.addImeContentListener(
         listener: (TextFieldCharSequence, TextFieldCharSequence, Boolean) -> Unit
@@ -567,10 +536,21 @@ class TextFieldStateInternalBufferTest {
         textFieldCharSequence: TextFieldCharSequence
     ) {
         syncMainBufferToTemporaryBuffer(
-            textFieldBuffer = TextFieldBuffer(textFieldCharSequence),
-            newComposition = textFieldCharSequence.composition,
+            temporaryBuffer = TextFieldBuffer(textFieldCharSequence),
             textChanged = !textFieldCharSequence.contentEquals(mainBuffer.toString()),
             selectionChanged = textFieldCharSequence.selection != mainBuffer.selection,
         )
+    }
+}
+
+internal fun TextFieldState.withImeScope(
+    inputTransformation: InputTransformation? = null,
+    block: ImeEditCommandScope.() -> Unit,
+) {
+    val transformedState = TransformedTextFieldState(this, inputTransformation)
+    with(DefaultImeEditCommandScope(transformedState)) {
+        beginBatchEdit()
+        block()
+        endBatchEdit()
     }
 }

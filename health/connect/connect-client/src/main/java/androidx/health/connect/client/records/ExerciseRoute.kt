@@ -46,6 +46,10 @@ class ExerciseRoute constructor(val route: List<Location>) {
         return route.hashCode()
     }
 
+    override fun toString(): String {
+        return "ExerciseRoute(route=$route)"
+    }
+
     /**
      * Represents a single location point recorded during an exercise.
      *
@@ -64,7 +68,7 @@ class ExerciseRoute constructor(val route: List<Location>) {
         val longitude: Double,
         val horizontalAccuracy: Length? = null,
         val verticalAccuracy: Length? = null,
-        val altitude: Length? = null
+        val altitude: Length? = null,
     ) {
 
         companion object {
@@ -81,11 +85,11 @@ class ExerciseRoute constructor(val route: List<Location>) {
             longitude.requireNotMore(other = MAX_LONGITUDE, name = "longitude")
             horizontalAccuracy?.requireNotLess(
                 other = horizontalAccuracy.zero(),
-                name = "horizontalAccuracy"
+                name = "horizontalAccuracy",
             )
             verticalAccuracy?.requireNotLess(
                 other = verticalAccuracy.zero(),
-                name = "verticalAccuracy"
+                name = "verticalAccuracy",
             )
         }
 
@@ -111,6 +115,10 @@ class ExerciseRoute constructor(val route: List<Location>) {
             result = 31 * result + (verticalAccuracy?.hashCode() ?: 0)
             result = 31 * result + (altitude?.hashCode() ?: 0)
             return result
+        }
+
+        override fun toString(): String {
+            return "Location(time=$time, latitude=$latitude, longitude=$longitude, horizontalAccuracy=$horizontalAccuracy, verticalAccuracy=$verticalAccuracy, altitude=$altitude)"
         }
     }
 }

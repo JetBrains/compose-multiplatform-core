@@ -34,7 +34,7 @@ private constructor(
     private val onLoadSdkMethod: Method,
     private val beforeUnloadSdkMethod: Method,
     private val sandboxedSdkCompatBuilder: SandboxedSdkCompatBuilderV1,
-    private val loadSdkCompatExceptionBuilder: LoadSdkCompatExceptionBuilderV1
+    private val loadSdkCompatExceptionBuilder: LoadSdkCompatExceptionBuilderV1,
 ) : LocalSdkProvider(sdkProvider) {
 
     @SuppressLint("BanUncheckedReflection") // using reflection on library classes
@@ -48,7 +48,7 @@ private constructor(
             throw LoadSdkCompatException(
                 LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
                 "Failed during onLoadSdk call",
-                ex
+                ex,
             )
         }
     }
@@ -61,7 +61,7 @@ private constructor(
     internal class SandboxedSdkCompatBuilderV1
     private constructor(
         private val sdkInfo: SandboxedSdkInfo?,
-        private val getInterfaceMethod: Method
+        private val getInterfaceMethod: Method,
     ) {
 
         @SuppressLint("BanUncheckedReflection") // calling method on SandboxedSdkCompat class
@@ -74,13 +74,13 @@ private constructor(
 
             fun create(
                 classLoader: ClassLoader,
-                sdkConfig: LocalSdkConfig
+                sdkConfig: LocalSdkConfig,
             ): SandboxedSdkCompatBuilderV1 {
                 val sandboxedSdkCompatClass =
                     Class.forName(
-                        SandboxedSdkCompat::class.java.name,
+                        "androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat",
                         /* initialize = */ false,
-                        classLoader
+                        classLoader,
                     )
                 val getInterfaceMethod = sandboxedSdkCompatClass.getMethod("getInterface")
                 val sdkInfo = sdkInfo(sdkConfig)
@@ -100,11 +100,14 @@ private constructor(
     internal class LoadSdkCompatExceptionBuilderV1
     private constructor(
         private val getLoadSdkErrorCodeMethod: Method,
-        private val getExtraInformationMethod: Method
+        private val getExtraInformationMethod: Method,
     ) {
         @SuppressLint("BanUncheckedReflection") // calling method on LoadSdkCompatException class
         fun tryRebuildCompatException(rawException: Throwable): Throwable {
-            if (rawException.javaClass.name != LoadSdkCompatException::class.java.name) {
+            if (
+                rawException.javaClass.name !=
+                    "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException"
+            ) {
                 return rawException
             }
 
@@ -115,14 +118,14 @@ private constructor(
                     loadSdkErrorCode,
                     rawException.message,
                     rawException.cause,
-                    extraInformation
+                    extraInformation,
                 )
             } catch (ex: Throwable) {
                 // failed to rebuild, just wrap original
                 LoadSdkCompatException(
                     LoadSdkCompatException.LOAD_SDK_INTERNAL_ERROR,
                     "Failed to rebuild exception with error ${ex.message}",
-                    rawException
+                    rawException,
                 )
             }
         }
@@ -131,9 +134,9 @@ private constructor(
             fun create(classLoader: ClassLoader): LoadSdkCompatExceptionBuilderV1 {
                 val loadSdkCompatExceptionClass =
                     Class.forName(
-                        LoadSdkCompatException::class.java.name,
+                        "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException",
                         /* initialize = */ false,
-                        classLoader
+                        classLoader,
                     )
                 val getLoadSdkErrorCodeMethod =
                     loadSdkCompatExceptionClass.getMethod("getLoadSdkErrorCode")
@@ -141,7 +144,7 @@ private constructor(
                     loadSdkCompatExceptionClass.getMethod("getExtraInformation")
                 return LoadSdkCompatExceptionBuilderV1(
                     getLoadSdkErrorCodeMethod,
-                    getExtraInformationMethod
+                    getExtraInformationMethod,
                 )
             }
         }
@@ -153,7 +156,7 @@ private constructor(
         fun create(
             classLoader: ClassLoader,
             sdkConfig: LocalSdkConfig,
-            appContext: Context
+            appContext: Context,
         ): SdkProviderV1 {
             val sdkProviderClass =
                 Class.forName(sdkConfig.entryPoint, /* initialize= */ false, classLoader)
@@ -175,7 +178,7 @@ private constructor(
                 onLoadSdkMethod,
                 beforeUnloadSdkMethod,
                 sandboxedSdkCompatBuilder,
-                loadSdkCompatExceptionBuilder
+                loadSdkCompatExceptionBuilder,
             )
         }
     }

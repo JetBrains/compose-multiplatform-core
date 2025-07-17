@@ -19,7 +19,6 @@ package androidx.compose.ui.platform
 import android.content.Context
 import android.graphics.Typeface
 import android.os.Build
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.ResourceFont
@@ -36,7 +35,7 @@ internal class AndroidFontResourceLoader(private val context: Context) : Font.Re
 
     @Deprecated(
         "Replaced by FontFamily.Resolver, this method should not be called",
-        replaceWith = ReplaceWith("FontFamily.Resolver.resolve(font, )")
+        replaceWith = ReplaceWith("FontFamily.Resolver.resolve(font, )"),
     )
     override fun load(font: Font): Typeface {
         return when (font) {
@@ -59,7 +58,6 @@ internal class AndroidFontResourceLoader(private val context: Context) : Font.Re
 @RequiresApi(26)
 private object AndroidFontResourceLoaderHelper {
     @RequiresApi(26)
-    @DoNotInline
     fun create(context: Context, resourceId: Int): Typeface {
         return context.resources.getFont(resourceId)
     }

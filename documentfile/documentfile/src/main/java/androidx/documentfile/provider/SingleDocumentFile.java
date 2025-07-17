@@ -20,8 +20,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 class SingleDocumentFile extends DocumentFile {
     private Context mContext;
@@ -43,21 +43,18 @@ class SingleDocumentFile extends DocumentFile {
         throw new UnsupportedOperationException();
     }
 
-    @NonNull
     @Override
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return mUri;
     }
 
     @Override
-    @Nullable
-    public String getName() {
+    public @Nullable String getName() {
         return DocumentsContractApi19.getName(mContext, mUri);
     }
 
     @Override
-    @Nullable
-    public String getType() {
+    public @Nullable String getType() {
         return DocumentsContractApi19.getType(mContext, mUri);
     }
 
@@ -110,9 +107,8 @@ class SingleDocumentFile extends DocumentFile {
         return DocumentsContractApi19.exists(mContext, mUri);
     }
 
-    @NonNull
     @Override
-    public DocumentFile[] listFiles() {
+    public DocumentFile @NonNull [] listFiles() {
         throw new UnsupportedOperationException();
     }
 

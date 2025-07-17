@@ -20,8 +20,8 @@ import android.net.Uri;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,8 +36,8 @@ class RawDocumentFile extends DocumentFile {
     }
 
     @Override
-    @Nullable
-    public DocumentFile createFile(@NonNull String mimeType, @NonNull String displayName) {
+    public @Nullable DocumentFile createFile(@NonNull String mimeType,
+            @NonNull String displayName) {
         // Tack on extension when valid MIME type provided
         final String extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType);
         if (extension != null) {
@@ -57,8 +57,7 @@ class RawDocumentFile extends DocumentFile {
     }
 
     @Override
-    @Nullable
-    public DocumentFile createDirectory(@NonNull String displayName) {
+    public @Nullable DocumentFile createDirectory(@NonNull String displayName) {
         final File target = new File(mFile, displayName);
         if (target.isDirectory() || target.mkdir()) {
             return new RawDocumentFile(this, target);
@@ -67,9 +66,8 @@ class RawDocumentFile extends DocumentFile {
         }
     }
 
-    @NonNull
     @Override
-    public Uri getUri() {
+    public @NonNull Uri getUri() {
         return Uri.fromFile(mFile);
     }
 
@@ -79,8 +77,7 @@ class RawDocumentFile extends DocumentFile {
     }
 
     @Override
-    @Nullable
-    public String getType() {
+    public @Nullable String getType() {
         if (mFile.isDirectory()) {
             return null;
         } else {
@@ -134,9 +131,8 @@ class RawDocumentFile extends DocumentFile {
         return mFile.exists();
     }
 
-    @NonNull
     @Override
-    public DocumentFile[] listFiles() {
+    public DocumentFile @NonNull [] listFiles() {
         final ArrayList<DocumentFile> results = new ArrayList<>();
         final File[] files = mFile.listFiles();
         if (files != null) {

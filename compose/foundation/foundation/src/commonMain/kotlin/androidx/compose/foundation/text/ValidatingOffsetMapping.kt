@@ -16,18 +16,19 @@
 
 package androidx.compose.foundation.text
 
+import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import kotlin.math.min
-import org.jetbrains.annotations.VisibleForTesting
 
 internal val ValidatingEmptyOffsetMappingIdentity: OffsetMapping =
     ValidatingOffsetMapping(
         delegate = OffsetMapping.Identity,
         originalLength = 0,
-        transformedLength = 0
+        transformedLength = 0,
     )
 
 internal fun VisualTransformation.filterWithValidation(text: AnnotatedString): TransformedText {
@@ -43,8 +44,8 @@ internal fun VisualTransformation.filterWithValidation(text: AnnotatedString): T
         ValidatingOffsetMapping(
             delegate = delegate.offsetMapping,
             originalLength = text.length,
-            transformedLength = delegate.text.length
-        )
+            transformedLength = delegate.text.length,
+        ),
     )
 }
 
@@ -80,7 +81,7 @@ internal fun TransformedText.throwIfNotValidTransform(originalLength: Int, limit
 private class ValidatingOffsetMapping(
     private val delegate: OffsetMapping,
     private val originalLength: Int,
-    private val transformedLength: Int
+    private val transformedLength: Int,
 ) : OffsetMapping {
 
     /**
@@ -113,7 +114,7 @@ private class ValidatingOffsetMapping(
 }
 
 private fun validateTransformedToOriginal(originalOffset: Int, originalLength: Int, offset: Int) {
-    check(originalOffset in 0..originalLength) {
+    checkPrecondition(originalOffset in 0..originalLength) {
         "OffsetMapping.transformedToOriginal returned invalid mapping: " +
             "$offset -> $originalOffset is not in range of original text " +
             "[0, $originalLength]"
@@ -123,9 +124,9 @@ private fun validateTransformedToOriginal(originalOffset: Int, originalLength: I
 private fun validateOriginalToTransformed(
     transformedOffset: Int,
     transformedLength: Int,
-    offset: Int
+    offset: Int,
 ) {
-    check(transformedOffset in 0..transformedLength) {
+    checkPrecondition(transformedOffset in 0..transformedLength) {
         "OffsetMapping.originalToTransformed returned invalid mapping: " +
             "$offset -> $transformedOffset is not in range of transformed text " +
             "[0, $transformedLength]"

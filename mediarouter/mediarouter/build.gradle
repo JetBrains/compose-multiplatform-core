@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -42,23 +42,18 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     implementation("androidx.appcompat:appcompat-resources:1.2.0")
 
-    // TODO(b/307906685) Change to the stable version with the next release.
-    // See b/307906685#comment6 for details.
-    implementation("androidx.annotation:annotation-experimental:1.4.0-rc01")
+    implementation("androidx.annotation:annotation-experimental:1.4.1")
 
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
 
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
-    androidTestImplementation(project(":media:version-compat-tests:lib"))
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":mediarouter:mediarouter-testing"))
 }
 
@@ -66,17 +61,16 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.mediarouter"
+    namespace = "androidx.mediarouter"
 }
 
 androidx {
     name = "MediaRouter"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2013"
     description = "Android MediaRouter Support Library"
     failOnDeprecationWarnings = false
-    metalavaK2UastEnabled = true
+    // TODO: b/326456246
+    optOutJSpecify = true
+    enableRobolectric()
 }

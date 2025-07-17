@@ -29,7 +29,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Before
@@ -49,7 +49,7 @@ class NavDrawerActivityTest {
         androidx.test.rule.ActivityTestRule(
             OldTranslateActivity::class.java,
             /* initialTouchMode = */ false,
-            /* launchActivity = */ false
+            /* launchActivity = */ false,
         )
 
     private lateinit var activity: OldTranslateActivity
@@ -81,7 +81,7 @@ class NavDrawerActivityTest {
         // Rotate the screen.
         UITestUtils.rotateScreen(
             InstrumentationRegistry.getInstrumentation(),
-            originalScreenOrientation
+            originalScreenOrientation,
         )
 
         // Close the top activity.

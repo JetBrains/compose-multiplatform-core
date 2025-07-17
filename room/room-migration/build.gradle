@@ -22,8 +22,10 @@
  * modifying its settings.
  */
 
+
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
@@ -32,14 +34,12 @@ plugins {
 }
 
 androidXMultiplatform {
-    enableBinaryCompatibilityValidator = true
-
-    jvm() {
-        withJava()
-    }
+    jvm()
     mac()
     linux()
     ios()
+    tvos()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -48,7 +48,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 implementation(project(":room:room-common"))
-                implementation(libs.kotlinSerializationJson)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
             }
         }
         commonTest {
@@ -70,7 +70,7 @@ androidXMultiplatform {
             dependsOn(commonMain)
             dependencies {
                 api(libs.okio)
-                implementation(libs.kotlinSerializationJsonOkio)
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.8.1")
             }
         }
         targets.configureEach { target ->
@@ -85,8 +85,8 @@ androidXMultiplatform {
 
 androidx {
     name = "Room Migration"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room Migration"
-    legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

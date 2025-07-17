@@ -75,7 +75,7 @@ fun AnimatedNav() {
                         .clickable(onClick = { navController.navigate(SharedElement) })
                         .padding(horizontal = 16.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    contentAlignment = Alignment.CenterStart
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Text("AnimationNav")
                 }
@@ -85,7 +85,7 @@ fun AnimatedNav() {
                         .clickable(onClick = { navController.navigate(TopAppBarShared) })
                         .padding(horizontal = 16.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    contentAlignment = Alignment.CenterStart
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Text("Top Bar Shared Element")
                 }
@@ -103,65 +103,77 @@ fun SharedElementAnimationNav() {
     SharedTransitionLayout {
         val selectFirst = mutableStateOf(true)
         NavHost(navController, startDestination = RedBox) {
-            composable<RedBox> { RedBox(this, selectFirst) { navController.navigate(BlueBox) } }
-            composable<BlueBox> { BlueBox(this, selectFirst) { navController.popBackStack() } }
+            composable<RedBox> {
+                RedBox(this@SharedTransitionLayout, this, selectFirst) {
+                    navController.navigate(BlueBox)
+                }
+            }
+            composable<BlueBox> {
+                BlueBox(this@SharedTransitionLayout, this, selectFirst) {
+                    navController.popBackStack()
+                }
+            }
         }
     }
 }
 
-context(SharedTransitionScope)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RedBox(
+    sharedScope: SharedTransitionScope,
     scope: AnimatedContentScope,
     selectFirst: MutableState<Boolean>,
-    onNavigate: () -> Unit
+    onNavigate: () -> Unit,
 ) {
-    Box(
-        Modifier.sharedBounds(
-                rememberSharedContentState("name"),
-                scope,
-                renderInOverlayDuringTransition = selectFirst.value
-            )
-            .clickable(
-                onClick = {
-                    selectFirst.value = !selectFirst.value
-                    onNavigate()
-                }
-            )
-            .background(Color.Red)
-            .size(100.dp)
-    ) {
-        Text("start", color = Color.White)
+    with(sharedScope) {
+        Box(
+            Modifier.sharedBounds(
+                    rememberSharedContentState("name"),
+                    scope,
+                    renderInOverlayDuringTransition = selectFirst.value,
+                )
+                .clickable(
+                    onClick = {
+                        selectFirst.value = !selectFirst.value
+                        onNavigate()
+                    }
+                )
+                .background(Color.Red)
+                .size(100.dp)
+        ) {
+            Text("start", color = Color.White)
+        }
     }
 }
 
-context(SharedTransitionScope)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun BlueBox(
+    sharedScope: SharedTransitionScope,
     scope: AnimatedContentScope,
     selectFirst: MutableState<Boolean>,
-    onPopBack: () -> Unit
+    onPopBack: () -> Unit,
 ) {
-    Box(
-        Modifier.offset(180.dp, 180.dp)
-            .sharedBounds(
-                rememberSharedContentState("name"),
-                scope,
-                renderInOverlayDuringTransition = !selectFirst.value
-            )
-            .clickable(
-                onClick = {
-                    selectFirst.value = !selectFirst.value
-                    onPopBack()
-                }
-            )
-            .alpha(0.5f)
-            .background(Color.Blue)
-            .size(180.dp)
-    ) {
-        Text("finish", color = Color.White)
+    with(sharedScope) {
+        Box(
+            Modifier.offset(180.dp, 180.dp)
+                .sharedBounds(
+                    rememberSharedContentState("name"),
+                    scope,
+                    renderInOverlayDuringTransition = !selectFirst.value,
+                )
+                .clickable(
+                    onClick = {
+                        selectFirst.value = !selectFirst.value
+                        onPopBack()
+                    }
+                )
+                .alpha(0.5f)
+                .background(Color.Blue)
+                .size(180.dp)
+        ) {
+            Text("finish", color = Color.White)
+        }
     }
 }
 
@@ -174,7 +186,7 @@ fun TopAppBarElement() {
             composable<First>(
                 enterTransition = { slideIntoContainer(SlideDirection.Right) },
                 exitTransition = { slideOutOfContainer(SlideDirection.Left) },
-                popExitTransition = { slideOutOfContainer(SlideDirection.Right) }
+                popExitTransition = { slideOutOfContainer(SlideDirection.Right) },
             ) {
                 Column {
                     TopAppBar(
@@ -182,8 +194,8 @@ fun TopAppBarElement() {
                         modifier =
                             Modifier.sharedElement(
                                 rememberSharedContentState("appBar"),
-                                this@composable
-                            )
+                                this@composable,
+                            ),
                     )
                     Text("first", color = Color.White)
                     Button(onClick = { navController.navigate(Second) }) {
@@ -194,7 +206,7 @@ fun TopAppBarElement() {
             composable<Second>(
                 enterTransition = { slideIntoContainer(SlideDirection.Right) },
                 exitTransition = { slideOutOfContainer(SlideDirection.Left) },
-                popExitTransition = { slideOutOfContainer(SlideDirection.Right) }
+                popExitTransition = { slideOutOfContainer(SlideDirection.Right) },
             ) {
                 Column {
                     TopAppBar(
@@ -202,8 +214,8 @@ fun TopAppBarElement() {
                         modifier =
                             Modifier.sharedElement(
                                 rememberSharedContentState("appBar"),
-                                this@composable
-                            )
+                                this@composable,
+                            ),
                     )
                     Text("second", color = Color.White)
                     Button(onClick = { navController.navigate(Third) }) {
@@ -214,7 +226,7 @@ fun TopAppBarElement() {
             composable<Third>(
                 enterTransition = { slideIntoContainer(SlideDirection.Right) },
                 exitTransition = { slideOutOfContainer(SlideDirection.Left) },
-                popExitTransition = { slideOutOfContainer(SlideDirection.Right) }
+                popExitTransition = { slideOutOfContainer(SlideDirection.Right) },
             ) {
                 Column {
                     Text("third", color = Color.White)

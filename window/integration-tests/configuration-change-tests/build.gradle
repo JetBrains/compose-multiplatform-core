@@ -30,7 +30,7 @@ plugins {
 }
 
 android {
-    namespace "androidx.window.integration"
+    namespace = "androidx.window.integration"
 }
 
 dependencies {

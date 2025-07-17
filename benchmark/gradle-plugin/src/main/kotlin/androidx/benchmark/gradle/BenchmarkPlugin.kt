@@ -24,7 +24,7 @@ import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.TestedExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.UnknownTaskException
+import org.gradle.api.Task
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.api.tasks.TaskContainer
 
@@ -78,7 +78,7 @@ class BenchmarkPlugin : Plugin<Project> {
     private fun configureWithAndroidExtension(
         project: Project,
         extension: TestedExtension,
-        componentsExtension: AndroidComponentsExtension<*, *, *>
+        componentsExtension: AndroidComponentsExtension<*, *, *>,
     ) {
         val defaultConfig = extension.defaultConfig
         val testBuildType = "release"
@@ -101,33 +101,34 @@ class BenchmarkPlugin : Plugin<Project> {
         extension.buildTypes.named(testBuildType).configure { it.isDefault = true }
 
         if (
-            !project.rootProject.hasProperty("android.injected.invoked.from.ide") &&
+            !project.providers.gradleProperty("android.injected.invoked.from.ide").isPresent &&
                 !testInstrumentationArgs.containsKey("androidx.benchmark.output.enable")
         ) {
             // NOTE: This argument is checked by ResultWriter to enable CI reports.
             defaultConfig.testInstrumentationRunnerArguments["androidx.benchmark.output.enable"] =
                 "true"
 
-            if (!project.findProperty(ADDITIONAL_TEST_OUTPUT_KEY).toString().toBoolean()) {
+            if (
+                !project.providers
+                    .gradleProperty(ADDITIONAL_TEST_OUTPUT_KEY)
+                    .getOrElse("false")
+                    .toBoolean()
+            ) {
                 defaultConfig.testInstrumentationRunnerArguments["no-isolated-storage"] = "1"
             }
         }
 
         val adbPathProvider = componentsExtension.sdkComponents.adb.map { it.asFile.absolutePath }
 
-        if (!project.rootProject.tasks.exists("lockClocks")) {
-            project.rootProject.tasks.register("lockClocks", LockClocksTask::class.java).configure {
-                it.adbPath.set(adbPathProvider)
-                it.coresArg.set(
-                    project.findProperty("androidx.benchmark.lockClocks.cores")?.toString() ?: ""
-                )
-            }
+        project.tasks.maybeRegister("lockClocks", LockClocksTask::class.java).configure {
+            it.adbPath.set(adbPathProvider)
+            it.coresArg.set(
+                project.providers.gradleProperty("androidx.benchmark.lockClocks.cores").orElse("")
+            )
         }
 
-        if (!project.rootProject.tasks.exists("unlockClocks")) {
-            project.rootProject.tasks
-                .register("unlockClocks", UnlockClocksTask::class.java)
-                .configure { it.adbPath.set(adbPathProvider) }
+        project.tasks.maybeRegister("unlockClocks", UnlockClocksTask::class.java).configure {
+            it.adbPath.set(adbPathProvider)
         }
 
         val extensionVariants =
@@ -159,7 +160,12 @@ class BenchmarkPlugin : Plugin<Project> {
                     project.layout.buildDirectory.dir(
                         "outputs/connected_android_test_additional_output"
                     )
-                if (!project.properties[ADDITIONAL_TEST_OUTPUT_KEY].toString().toBoolean()) {
+                if (
+                    !project.providers
+                        .gradleProperty(ADDITIONAL_TEST_OUTPUT_KEY)
+                        .getOrElse("false")
+                        .toBoolean()
+                ) {
                     // Only enable pulling benchmark data through this plugin on older versions of
                     // AGP that do not yet enable this flag.
                     project.tasks
@@ -182,7 +188,7 @@ class BenchmarkPlugin : Plugin<Project> {
                             it.logger.info(
                                 "Benchmark",
                                 "Benchmark report files generated at " +
-                                    outputDir.get().asFile.absolutePath
+                                    outputDir.get().asFile.absolutePath,
                             )
                         }
                     }
@@ -224,11 +230,10 @@ class BenchmarkPlugin : Plugin<Project> {
         }
     }
 
-    private fun TaskContainer.exists(taskName: String) =
+    private fun <T : Task> TaskContainer.maybeRegister(taskName: String, type: Class<T>) =
         try {
-            named(taskName)
-            true
-        } catch (e: UnknownTaskException) {
-            false
+            named(taskName, type)
+        } catch (e: Exception) {
+            register(taskName, type)
         }
 }

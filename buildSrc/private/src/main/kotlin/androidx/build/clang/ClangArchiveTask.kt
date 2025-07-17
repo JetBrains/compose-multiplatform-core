@@ -42,7 +42,6 @@ abstract class ClangArchiveTask @Inject constructor(private val workerExecutor: 
         group = "Build"
     }
 
-    @Suppress("UnstableApiUsage") // ServiceReference is incubating since 8.0
     @get:ServiceReference(KonanBuildService.KEY)
     abstract val konanBuildService: Property<KonanBuildService>
 

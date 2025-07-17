@@ -21,12 +21,12 @@ import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -117,12 +117,10 @@ public final class GrammaticalInflectionManagerCompat {
     static class Api34Impl {
         private Api34Impl() {}
 
-        @DoNotInline
         static int getApplicationGrammaticalGender(Context context) {
             return getGrammaticalInflectionManager(context).getApplicationGrammaticalGender();
         }
 
-        @DoNotInline
         static void setRequestedApplicationGrammaticalGender(
                 Context context, int grammaticalGender) {
             getGrammaticalInflectionManager(context)

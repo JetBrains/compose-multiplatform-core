@@ -28,18 +28,18 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.integration.adapter.CameraControlStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraInfoAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
-import androidx.camera.camera2.pipe.integration.adapter.EncoderProfilesProviderAdapter
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
-import androidx.camera.camera2.pipe.integration.compat.workaround.AeFpsRange
 import androidx.camera.camera2.pipe.integration.compat.workaround.MeteringRegionCorrection
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpAutoFlashAEModeDisabler
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
+import androidx.camera.camera2.pipe.integration.impl.ComboRequestListener
 import androidx.camera.camera2.pipe.integration.impl.EvCompControl
 import androidx.camera.camera2.pipe.integration.impl.FocusMeteringControl
+import androidx.camera.camera2.pipe.integration.impl.LowLightBoostControl
 import androidx.camera.camera2.pipe.integration.impl.State3AControl
 import androidx.camera.camera2.pipe.integration.impl.TorchControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
@@ -48,6 +48,8 @@ import androidx.camera.camera2.pipe.integration.internal.CameraFovInfo
 import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.impl.ImageFormatConstants
+import androidx.camera.core.internal.StreamSpecsCalculator.Companion.NO_OP_STREAM_SPECS_CALCULATOR
+import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -84,10 +86,21 @@ object FakeCameraInfoAdapterCreator {
             CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES to
                 arrayOf(Range(12, 30), Range(24, 24), Range(30, 30), Range(60, 60)),
             CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to
-                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA)
+                intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA),
         )
 
-    private val zoomControl = ZoomControl(useCaseThreads, FakeZoomCompat())
+    private val zoomControl = ZoomControl(FakeZoomCompat())
+
+    fun createCameraQuirks(
+        metadata: androidx.camera.camera2.pipe.CameraMetadata = FakeCameraMetadata(),
+        streamConfigurationMapCompat: StreamConfigurationMapCompat =
+            StreamConfigurationMapCompat(
+                streamConfigurationMap,
+                OutputSizesCorrector(metadata, streamConfigurationMap),
+            ),
+    ): CameraQuirks {
+        return CameraQuirks(metadata, streamConfigurationMapCompat)
+    }
 
     fun createCameraInfoAdapter(
         cameraId: CameraId = CAMERA_ID_0,
@@ -99,10 +112,10 @@ object FakeCameraInfoAdapterCreator {
                     physicalMetadata =
                         mapOf(
                             PHYSICAL_CAMERA_ID_5 to FakeCameraMetadata(),
-                            PHYSICAL_CAMERA_ID_6 to FakeCameraMetadata()
-                        )
+                            PHYSICAL_CAMERA_ID_6 to FakeCameraMetadata(),
+                        ),
                 ),
-                cameraId
+                cameraId,
             ),
         zoomControl: ZoomControl = this.zoomControl,
         cameraDevices: CameraDevices =
@@ -110,27 +123,22 @@ object FakeCameraInfoAdapterCreator {
                 defaultCameraBackendId = CameraBackendId(cameraId.value),
                 concurrentCameraBackendIds = emptySet(),
                 cameraMetadataMap =
-                    mapOf(CameraBackendId(cameraId.value) to listOf(cameraProperties.metadata))
-            )
+                    mapOf(CameraBackendId(cameraId.value) to listOf(cameraProperties.metadata)),
+            ),
     ): CameraInfoAdapter {
-        val fakeUseCaseCamera = FakeUseCaseCamera()
+        val fakeRequestControl = FakeUseCaseCameraRequestControl()
         val fakeStreamConfigurationMap =
             StreamConfigurationMapCompat(
                 streamConfigurationMap,
-                OutputSizesCorrector(cameraProperties.metadata, streamConfigurationMap)
+                OutputSizesCorrector(cameraProperties.metadata, streamConfigurationMap),
             )
         val fakeCameraQuirks =
-            CameraQuirks(
-                cameraProperties.metadata,
-                fakeStreamConfigurationMap,
-            )
+            createCameraQuirks(cameraProperties.metadata, fakeStreamConfigurationMap)
+        val fakeEncoderProfilesProvider = FakeEncoderProfilesProvider.Builder().build()
         val state3AControl =
-            State3AControl(
-                    cameraProperties,
-                    NoOpAutoFlashAEModeDisabler,
-                    AeFpsRange(fakeCameraQuirks),
-                )
-                .apply { useCaseCamera = fakeUseCaseCamera }
+            State3AControl(cameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                requestControl = fakeRequestControl
+            }
         return CameraInfoAdapter(
             cameraProperties,
             CameraConfig(cameraId),
@@ -139,6 +147,12 @@ object FakeCameraInfoAdapterCreator {
                 zoomControl,
                 EvCompControl(FakeEvCompCompat()),
                 TorchControl(cameraProperties, state3AControl, useCaseThreads),
+                LowLightBoostControl(
+                    cameraProperties.metadata,
+                    state3AControl,
+                    useCaseThreads,
+                    ComboRequestListener(),
+                ),
             ),
             CameraCallbackMap(),
             FocusMeteringControl(
@@ -150,11 +164,12 @@ object FakeCameraInfoAdapterCreator {
                     useCaseThreads,
                     FakeZoomCompat(),
                 )
-                .apply { useCaseCamera = fakeUseCaseCamera },
+                .apply { requestControl = fakeRequestControl },
             fakeCameraQuirks,
-            EncoderProfilesProviderAdapter(cameraId.value, fakeCameraQuirks.quirks),
+            fakeEncoderProfilesProvider,
             fakeStreamConfigurationMap,
             CameraFovInfo(cameraDevices, cameraProperties),
+            NO_OP_STREAM_SPECS_CALCULATOR,
         )
     }
 }

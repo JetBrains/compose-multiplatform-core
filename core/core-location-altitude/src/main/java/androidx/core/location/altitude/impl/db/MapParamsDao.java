@@ -16,16 +16,16 @@
 
 package androidx.core.location.altitude.impl.db;
 
-import androidx.annotation.Nullable;
 import androidx.room.Dao;
 import androidx.room.Query;
+
+import org.jspecify.annotations.Nullable;
 
 /** Provides data access for entities within the MapParams table. */
 @Dao
 public interface MapParamsDao {
 
     /** Returns the most current map parameters. */
-    @Nullable
     @Query("SELECT * FROM MapParams ORDER BY id DESC LIMIT 1")
-    MapParamsEntity getCurrent();
+    @Nullable MapParamsEntity getCurrent();
 }

@@ -16,18 +16,24 @@
 
 package androidx.privacysandbox.sdkruntime.client.controller
 
+import android.content.Context
 import android.os.Binder
 import android.os.Bundle
 import androidx.privacysandbox.sdkruntime.client.activity.LocalSdkActivityHandlerRegistry
+import androidx.privacysandbox.sdkruntime.client.controller.impl.LocalClientImportanceListenerRegistry
 import androidx.privacysandbox.sdkruntime.core.AppOwnedSdkSandboxInterfaceCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.SandboxedSdkCompat
+import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.ActivityHolder
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
 import androidx.privacysandbox.sdkruntime.core.controller.LoadSdkCallback
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.Executor
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,15 +42,29 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LocalControllerTest {
 
+    private lateinit var applicationContext: Context
     private lateinit var localSdkRegistry: StubLocalSdkRegistry
     private lateinit var appOwnedSdkRegistry: StubAppOwnedSdkInterfaceRegistry
     private lateinit var controller: LocalController
 
     @Before
     fun setUp() {
+        applicationContext = ApplicationProvider.getApplicationContext()
         localSdkRegistry = StubLocalSdkRegistry()
         appOwnedSdkRegistry = StubAppOwnedSdkInterfaceRegistry()
-        controller = LocalController(SDK_PACKAGE_NAME, localSdkRegistry, appOwnedSdkRegistry)
+        controller =
+            LocalController(
+                SDK_PACKAGE_NAME,
+                applicationContext,
+                localSdkRegistry,
+                appOwnedSdkRegistry,
+            )
+    }
+
+    @After
+    fun tearDown() {
+        LocalSdkActivityHandlerRegistry.unregisterAllActivityHandlersForSdk(SDK_PACKAGE_NAME)
+        LocalClientImportanceListenerRegistry.unregisterAllListenersForSdk(SDK_PACKAGE_NAME)
     }
 
     @Test
@@ -123,7 +143,12 @@ class LocalControllerTest {
             )
 
         val anotherSdkController =
-            LocalController("LocalControllerTest.anotherSdk", localSdkRegistry, appOwnedSdkRegistry)
+            LocalController(
+                "LocalControllerTest.anotherSdk",
+                applicationContext,
+                localSdkRegistry,
+                appOwnedSdkRegistry,
+            )
         val anotherSdkHandler =
             object : SdkSandboxActivityHandlerCompat {
                 override fun onActivityCreated(activityHolder: ActivityHolder) {
@@ -155,6 +180,47 @@ class LocalControllerTest {
         assertThat(registeredHandler).isNull()
     }
 
+    @Test
+    fun getClientPackageName_returnsAppPackageName() {
+        val result = controller.getClientPackageName()
+        assertThat(result).isEqualTo(applicationContext.getPackageName())
+    }
+
+    @Test
+    fun registerSdkSandboxClientImportanceListener_delegateToLocalClientImportanceListenerRegistry() {
+        val executor = Executor { p -> p.run() }
+        val listener =
+            object : SdkSandboxClientImportanceListenerCompat {
+                override fun onForegroundImportanceChanged(isForeground: Boolean) {
+                    // do nothing
+                }
+            }
+
+        controller.registerSdkSandboxClientImportanceListener(executor, listener)
+
+        val isRegistered =
+            LocalClientImportanceListenerRegistry.isRegistered(SDK_PACKAGE_NAME, executor, listener)
+        assertThat(isRegistered).isTrue()
+    }
+
+    @Test
+    fun unregisterSdkSandboxClientImportanceListener_delegateToLocalClientImportanceListenerRegistry() {
+        val executor = Executor { p -> p.run() }
+        val listener =
+            object : SdkSandboxClientImportanceListenerCompat {
+                override fun onForegroundImportanceChanged(isForeground: Boolean) {
+                    // do nothing
+                }
+            }
+
+        controller.registerSdkSandboxClientImportanceListener(executor, listener)
+        controller.unregisterSdkSandboxClientImportanceListener(listener)
+
+        val isRegistered =
+            LocalClientImportanceListenerRegistry.isRegistered(SDK_PACKAGE_NAME, executor, listener)
+        assertThat(isRegistered).isFalse()
+    }
+
     private class StubLocalSdkRegistry : SdkRegistry {
 
         var getLoadedSdksResult: List<SandboxedSdkCompat> = emptyList()
@@ -169,15 +235,21 @@ class LocalControllerTest {
             throw IllegalStateException("Unexpected call")
         }
 
-        override fun loadSdk(sdkName: String, params: Bundle): SandboxedSdkCompat {
+        override fun loadSdk(
+            sdkName: String,
+            params: Bundle,
+            executor: Executor,
+            callback: LoadSdkCallback,
+        ) {
             lastLoadSdkName = sdkName
             lastLoadSdkParams = params
 
             if (loadSdkError != null) {
-                throw loadSdkError!!
+                executor.execute { callback.onError(loadSdkError!!) }
+                return
             }
 
-            return loadSdkResult!!
+            executor.execute { callback.onResult(loadSdkResult!!) }
         }
 
         override fun unloadSdk(sdkName: String) {

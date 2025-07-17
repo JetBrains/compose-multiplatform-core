@@ -16,7 +16,6 @@
 
 package androidx.compose.runtime.snapshots
 
-import androidx.compose.runtime.ExperimentalComposeApi
 import kotlin.test.Test
 import kotlin.test.assertSame
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,10 +24,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.test.IgnoreJsTarget
+import kotlinx.test.IgnoreNativeTarget
+import kotlinx.test.IgnoreWasmTarget
 
-@OptIn(ExperimentalComposeApi::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class SnapshotContextElementTests {
+    // TODO: b/409725929
     @Test
+    @IgnoreJsTarget
+    @IgnoreWasmTarget
+    @IgnoreNativeTarget
     fun coroutineEntersExpectedSnapshot() =
         runTest(UnconfinedTestDispatcher()) {
             val snapshot = Snapshot.takeSnapshot()
@@ -42,6 +48,8 @@ class SnapshotContextElementTests {
         }
 
     @Test
+    @IgnoreJsTarget
+    @IgnoreNativeTarget
     fun snapshotRestoredAfterResume() {
         val snapshotOne = Snapshot.takeSnapshot()
         val snapshotTwo = Snapshot.takeSnapshot()

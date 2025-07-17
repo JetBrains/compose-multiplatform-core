@@ -24,11 +24,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.autofill.inline.common.SlicedContent;
 import androidx.autofill.inline.v1.InlineSuggestionUi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Renderer class responsible for rendering the inline suggestion UI.
@@ -41,8 +42,7 @@ public final class Renderer {
     /**
      * Returns all the supported versions wrapped in a {@link Bundle}.
      */
-    @NonNull
-    public static Bundle getSupportedInlineUiVersionsAsBundle() {
+    public static @NonNull Bundle getSupportedInlineUiVersionsAsBundle() {
         Bundle bundle = new Bundle();
         VersionUtils.writeSupportedVersions(bundle);
         return bundle;
@@ -56,8 +56,7 @@ public final class Renderer {
      * version or {@code null} when the UI version indicated by the slice is either unsupported
      * by the Renderer, or not provided in the {@code styles}.
      */
-    @Nullable
-    public static View render(@NonNull Context context, @NonNull Slice content,
+    public static @Nullable View render(@NonNull Context context, @NonNull Slice content,
             @NonNull Bundle styles) {
         String contentVersion = SlicedContent.getVersion(content);
         if (!VersionUtils.isVersionSupported(contentVersion)) {
@@ -92,8 +91,7 @@ public final class Renderer {
      * @param content the UI content which contains a {@link PendingIntent} representing the
      *                attribution information
      */
-    @Nullable
-    public static PendingIntent getAttributionIntent(@NonNull Slice content) {
+    public static @Nullable PendingIntent getAttributionIntent(@NonNull Slice content) {
         String contentVersion = SlicedContent.getVersion(content);
         if (!VersionUtils.isVersionSupported(contentVersion)) {
             Log.w(TAG, "Content version unsupported.");

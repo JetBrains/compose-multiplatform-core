@@ -32,7 +32,7 @@ class SplitAttributesCalculatorParamsTest {
 
     @Test
     fun testSplitAttributesCalculatorParams() {
-        val parentWindowMetrics = WindowMetrics(Rect())
+        val parentWindowMetrics = WindowMetrics(Rect(), density = 1f)
         val parentConfiguration = Configuration()
         val parentWindowLayoutInfo = WindowLayoutInfo(emptyList())
         val defaultSplitAttributes = SplitAttributes.Builder().build()
@@ -46,7 +46,7 @@ class SplitAttributesCalculatorParamsTest {
                 parentWindowLayoutInfo,
                 defaultSplitAttributes,
                 areDefaultConstraintsSatisfied,
-                splitRuleTag
+                splitRuleTag,
             )
 
         assertEquals(parentWindowMetrics, params.parentWindowMetrics)
@@ -59,7 +59,7 @@ class SplitAttributesCalculatorParamsTest {
 
     @Test
     fun testToString() {
-        val parentWindowMetrics = WindowMetrics(Rect())
+        val parentWindowMetrics = WindowMetrics(Rect(), density = 1f)
         val parentConfiguration = Configuration()
         val parentWindowLayoutInfo = WindowLayoutInfo(emptyList())
         val defaultSplitAttributes = SplitAttributes.Builder().build()
@@ -73,7 +73,7 @@ class SplitAttributesCalculatorParamsTest {
                     parentWindowLayoutInfo,
                     defaultSplitAttributes,
                     areDefaultConstraintsSatisfied,
-                    splitRuleTag
+                    splitRuleTag,
                 )
                 .toString()
 

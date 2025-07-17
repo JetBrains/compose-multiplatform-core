@@ -22,7 +22,7 @@ import android.os.Build.VERSION;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Implements foreground drawable before M and falls back to M's foreground implementation.

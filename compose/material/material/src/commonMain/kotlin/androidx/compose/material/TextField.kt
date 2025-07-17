@@ -17,6 +17,7 @@
 package androidx.compose.material
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -25,11 +26,21 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldLineLimits.MultiLine
+import androidx.compose.foundation.text.input.TextFieldLineLimits.SingleLine
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.TextFieldDefaults.indicatorLine
+import androidx.compose.material.internal.subtractConstraintSafely
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -59,6 +70,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.coerceAtLeast
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
 import androidx.compose.ui.util.fastFirst
@@ -67,8 +80,8 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * <a href="https://material.io/components/text-fields#filled-text-field" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
  *
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
@@ -78,9 +91,16 @@ import kotlin.math.roundToInt
  *
  * If you are looking for an outlined version, see [OutlinedTextField].
  *
+ * This overload of [TextField] uses [TextFieldState] to keep track of its text content and position
+ * of the cursor or selection.
+ *
  * A simple single line text field looks like:
  *
  * @sample androidx.compose.material.samples.SimpleTextFieldSample
+ *
+ * You can control the initial text input and selection:
+ *
+ * @sample androidx.compose.material.samples.TextFieldWithInitialValueAndSelection
  *
  * You may provide a placeholder:
  *
@@ -98,13 +118,155 @@ import kotlin.math.roundToInt
  *
  * @sample androidx.compose.material.samples.TextFieldWithHelperMessage
  *
- * Password text field example:
- *
- * @sample androidx.compose.material.samples.PasswordTextField
- *
  * Hiding a software keyboard on IME action performed:
  *
  * @sample androidx.compose.material.samples.TextFieldWithHideKeyboardOnImeAction
+ * @param state [TextFieldState] object that holds the internal editing state of this text field.
+ * @param modifier a [Modifier] for this text field
+ * @param enabled controls the enabled state of the [TextField]. When `false`, the text field will
+ *   be neither editable nor focusable, the input of the text field will not be selectable, visually
+ *   text field will appear in the disabled UI state
+ * @param readOnly controls the editable state of the [TextField]. When `true`, the text field can
+ *   not be modified, however, a user can focus it and copy text from it. Read-only text fields are
+ *   usually used to display pre-filled forms that user can not edit
+ * @param textStyle the style to be applied to the input text. The default [textStyle] uses the
+ *   [LocalTextStyle] defined by the theme
+ * @param label the optional label to be displayed inside the text field container. The default text
+ *   style for internal [Text] is [Typography.caption] when the text field is in focus and
+ *   [Typography.subtitle1] when the text field is not in focus
+ * @param placeholder the optional placeholder to be displayed when the text field is in focus and
+ *   the input text is empty. The default text style for internal [Text] is [Typography.subtitle1]
+ * @param leadingIcon the optional leading icon to be displayed at the beginning of the text field
+ *   container
+ * @param trailingIcon the optional trailing icon to be displayed at the end of the text field
+ *   container
+ * @param isError indicates if the text field's current value is in error. If set to true, the
+ *   label, bottom indicator and trailing icon by default will be displayed in error color
+ * @param inputTransformation Optional [InputTransformation] that will be used to transform changes
+ *   to the [TextFieldState] made by the user. The transformation will be applied to changes made by
+ *   hardware and software keyboard events, pasting or dropping text, accessibility services, and
+ *   tests. The transformation will _not_ be applied when changing the [state] programmatically, or
+ *   when the transformation is changed. If the transformation is changed on an existing text field,
+ *   it will be applied to the next user edit. the transformation will not immediately affect the
+ *   current [state].
+ * @param outputTransformation An [OutputTransformation] that transforms how the contents of the
+ *   text field are presented.
+ * @param keyboardOptions software keyboard options that contains configuration such as
+ *   [KeyboardType] and [ImeAction].
+ * @param onKeyboardAction Called when the user presses the action button in the input method editor
+ *   (IME), or by pressing the enter key on a hardware keyboard. By default this parameter is null,
+ *   and would execute the default behavior for a received IME Action e.g., [ImeAction.Done] would
+ *   close the keyboard, [ImeAction.Next] would switch the focus to the next focusable item on the
+ *   screen.
+ * @param lineLimits Whether the text field should be [SingleLine], scroll horizontally, and ignore
+ *   newlines; or [MultiLine] and grow and scroll vertically. If [SingleLine] is passed, all newline
+ *   characters ('\n') within the text will be replaced with regular whitespace (' '), ensuring that
+ *   the contents of the text field are presented in a single line.
+ * @param scrollState Scroll state that manages either horizontal or vertical scroll of the text
+ *   field. If [lineLimits] is [SingleLine], this text field is treated as single line with
+ *   horizontal scroll behavior. In other cases the text field becomes vertically scrollable.
+ * @param shape the shape of the text field's container
+ * @param colors [TextFieldColors] that will be used to resolve color of the text, content
+ *   (including label, placeholder, leading and trailing icons, indicator line) and background for
+ *   this text field in different states. See [TextFieldDefaults.textFieldColors]
+ * @param interactionSource an optional hoisted [MutableInteractionSource] for observing and
+ *   emitting [Interaction]s for this text field. You can use this to change the text field's
+ *   appearance or preview the text field in different states. Note that if `null` is provided,
+ *   interactions will still happen internally.
+ */
+@Composable
+fun TextField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    textStyle: TextStyle = LocalTextStyle.current,
+    label: @Composable (() -> Unit)? = null,
+    placeholder: @Composable (() -> Unit)? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
+    inputTransformation: InputTransformation? = null,
+    outputTransformation: OutputTransformation? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    onKeyboardAction: KeyboardActionHandler? = null,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
+    scrollState: ScrollState = rememberScrollState(),
+    shape: Shape = TextFieldDefaults.TextFieldShape,
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
+    interactionSource: MutableInteractionSource? = null,
+) {
+    @Suppress("NAME_SHADOWING")
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
+    // If color is not provided via the text style, use content color as a default
+    val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
+    val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
+
+    BasicTextField(
+        state = state,
+        modifier =
+            modifier
+                .indicatorLine(enabled, isError, interactionSource, colors)
+                .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
+                .defaultMinSize(
+                    minWidth = TextFieldDefaults.MinWidth,
+                    minHeight = TextFieldDefaults.MinHeight,
+                ),
+        enabled = enabled,
+        readOnly = readOnly,
+        textStyle = mergedTextStyle,
+        cursorBrush = SolidColor(colors.cursorColor(isError).value),
+        inputTransformation = inputTransformation,
+        outputTransformation = outputTransformation,
+        keyboardOptions = keyboardOptions,
+        onKeyboardAction = onKeyboardAction,
+        interactionSource = interactionSource,
+        scrollState = scrollState,
+        lineLimits = lineLimits,
+        decorator = { innerTextField ->
+            val textPostTransformation =
+                if (outputTransformation == null) {
+                    state.text.toString()
+                } else {
+                    // TODO: use constructor to create TextFieldBuffer from TextFieldState when
+                    // available
+                    lateinit var buffer: TextFieldBuffer
+                    state.edit { buffer = this }
+                    // after edit completes, mutations on buffer are ineffective
+                    with(outputTransformation) { buffer.transformOutput() }
+                    buffer.asCharSequence().toString()
+                }
+
+            TextFieldDefaults.TextFieldDecorationBox(
+                value = textPostTransformation,
+                visualTransformation = VisualTransformation.None,
+                innerTextField = innerTextField,
+                placeholder = placeholder,
+                label = label,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                singleLine = lineLimits == SingleLine,
+                enabled = enabled,
+                isError = isError,
+                interactionSource = interactionSource,
+                shape = shape,
+                colors = colors,
+            )
+        },
+    )
+}
+
+/**
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
+ *
+ * Filled text fields have more visual emphasis than outlined text fields, making them stand out
+ * when surrounded by other content and components.
+ *
+ * ![Filled text field
+ * image](https://developer.android.com/images/reference/androidx/compose/material/filled-text-field.png)
+ *
+ * If you are looking for an outlined version, see [OutlinedTextField].
  *
  * If apart from input text change you also want to observe the cursor location, selection range, or
  * IME composition use the TextField overload with the [TextFieldValue] parameter instead.
@@ -179,7 +341,7 @@ fun TextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -187,7 +349,6 @@ fun TextField(
     val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         modifier =
@@ -196,7 +357,7 @@ fun TextField(
                 .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                 .defaultMinSize(
                     minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minHeight = TextFieldDefaults.MinHeight,
                 ),
         onValueChange = onValueChange,
         enabled = enabled,
@@ -228,13 +389,13 @@ fun TextField(
                     shape = shape,
                     colors = colors,
                 )
-            }
+            },
     )
 }
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun TextField(
@@ -257,7 +418,7 @@ fun TextField(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape =
         MaterialTheme.shapes.small.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize),
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     TextField(
         value,
@@ -279,13 +440,13 @@ fun TextField(
         1,
         interactionSource,
         shape,
-        colors
+        colors,
     )
 }
 
 /**
- * <a href="https://material.io/components/text-fields#filled-text-field" class="external"
- * target="_blank">Material Design filled text field</a>.
+ * [Material Design filled text
+ * field](https://m2.material.io/components/text-fields#filled-text-field).
  *
  * Filled text fields have more visual emphasis than outlined text fields, making them stand out
  * when surrounded by other content and components.
@@ -293,11 +454,8 @@ fun TextField(
  * ![Filled text field
  * image](https://developer.android.com/images/reference/androidx/compose/material/filled-text-field.png)
  *
- * If you are looking for an outlined version, see [OutlinedTextField].
- *
- * See example usage:
- *
- * @sample androidx.compose.material.samples.TextFieldSample
+ * If you are looking for an outlined version, see [OutlinedTextField]. For a text field
+ * specifically designed for passwords or other secure content, see [SecureTextField].
  *
  * This overload provides access to the input text, cursor position, selection range and IME
  * composition. If you only want to observe an input text change, use the TextField overload with
@@ -373,7 +531,7 @@ fun TextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -381,7 +539,6 @@ fun TextField(
     val textColor = textStyle.color.takeOrElse { colors.textColor(enabled).value }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
 
-    @OptIn(ExperimentalMaterialApi::class)
     BasicTextField(
         value = value,
         modifier =
@@ -390,7 +547,7 @@ fun TextField(
                 .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                 .defaultMinSize(
                     minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minHeight = TextFieldDefaults.MinHeight,
                 ),
         onValueChange = onValueChange,
         enabled = enabled,
@@ -422,13 +579,13 @@ fun TextField(
                     shape = shape,
                     colors = colors,
                 )
-            }
+            },
     )
 }
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun TextField(
@@ -450,7 +607,7 @@ fun TextField(
     maxLines: Int = Int.MAX_VALUE,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     TextField(
         value,
@@ -472,7 +629,7 @@ fun TextField(
         1,
         interactionSource,
         shape,
-        colors
+        colors,
     )
 }
 
@@ -490,7 +647,7 @@ internal fun TextFieldLayout(
     trailing: @Composable (() -> Unit)?,
     singleLine: Boolean,
     animationProgress: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ) {
     val measurePolicy =
         remember(singleLine, animationProgress, paddingValues) {
@@ -502,16 +659,16 @@ internal fun TextFieldLayout(
         content = {
             if (leading != null) {
                 Box(
-                    modifier = Modifier.layoutId(LeadingId).then(IconDefaultSizeModifier),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.layoutId(LeadingId).minimumInteractiveComponentSize(),
+                    contentAlignment = Alignment.Center,
                 ) {
                     leading()
                 }
             }
             if (trailing != null) {
                 Box(
-                    modifier = Modifier.layoutId(TrailingId).then(IconDefaultSizeModifier),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.layoutId(TrailingId).minimumInteractiveComponentSize(),
+                    contentAlignment = Alignment.Center,
                 ) {
                     trailing()
                 }
@@ -532,7 +689,7 @@ internal fun TextFieldLayout(
                             (endTextFieldPadding - HorizontalIconPadding).coerceAtLeast(0.dp)
                         } else {
                             endTextFieldPadding
-                        }
+                        },
                 )
             if (placeholder != null) {
                 placeholder(Modifier.layoutId(PlaceholderId).then(padding))
@@ -547,18 +704,18 @@ internal fun TextFieldLayout(
                 textField()
             }
         },
-        measurePolicy = measurePolicy
+        measurePolicy = measurePolicy,
     )
 }
 
 private class TextFieldMeasurePolicy(
     private val singleLine: Boolean,
     private val animationProgress: Float,
-    private val paddingValues: PaddingValues
+    private val paddingValues: PaddingValues,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val topPaddingValue = paddingValues.calculateTopPadding().roundToPx()
         val bottomPaddingValue = paddingValues.calculateBottomPadding().roundToPx()
@@ -584,7 +741,7 @@ private class TextFieldMeasurePolicy(
         val labelConstraints =
             looseConstraints.offset(
                 vertical = -bottomPaddingValue,
-                horizontal = -occupiedSpaceHorizontally
+                horizontal = -occupiedSpaceHorizontally,
             )
         val labelPlaceable =
             measurables.fastFirstOrNull { it.layoutId == LabelId }?.measure(labelConstraints)
@@ -607,7 +764,7 @@ private class TextFieldMeasurePolicy(
                 .copy(minHeight = 0)
                 .offset(
                     vertical = verticalConstraintOffset,
-                    horizontal = -occupiedSpaceHorizontally
+                    horizontal = -occupiedSpaceHorizontally,
                 )
         val textFieldPlaceable =
             measurables.fastFirst { it.layoutId == TextFieldId }.measure(textFieldConstraints)
@@ -626,7 +783,7 @@ private class TextFieldMeasurePolicy(
                 textFieldPlaceable.width,
                 widthOrZero(labelPlaceable),
                 widthOrZero(placeholderPlaceable),
-                constraints
+                constraints,
             )
         val height =
             calculateHeight(
@@ -638,7 +795,7 @@ private class TextFieldMeasurePolicy(
                 heightOrZero(placeholderPlaceable),
                 constraints,
                 density,
-                paddingValues
+                paddingValues,
             )
 
         return layout(width, height) {
@@ -657,7 +814,7 @@ private class TextFieldMeasurePolicy(
                     labelEndPosition,
                     effectiveLabelBaseline + topPadding,
                     animationProgress,
-                    density
+                    density,
                 )
             } else {
                 placeWithoutLabel(
@@ -669,7 +826,7 @@ private class TextFieldMeasurePolicy(
                     trailingPlaceable,
                     singleLine,
                     density,
-                    paddingValues
+                    paddingValues,
                 )
             }
         }
@@ -677,7 +834,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         return intrinsicHeight(measurables, width) { intrinsicMeasurable, w ->
             intrinsicMeasurable.maxIntrinsicHeight(w)
@@ -686,7 +843,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         return intrinsicHeight(measurables, width) { intrinsicMeasurable, w ->
             intrinsicMeasurable.minIntrinsicHeight(w)
@@ -695,7 +852,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         return intrinsicWidth(measurables, height) { intrinsicMeasurable, h ->
             intrinsicMeasurable.maxIntrinsicWidth(h)
@@ -704,7 +861,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         return intrinsicWidth(measurables, height) { intrinsicMeasurable, h ->
             intrinsicMeasurable.minIntrinsicWidth(h)
@@ -714,7 +871,7 @@ private class TextFieldMeasurePolicy(
     private fun intrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
         height: Int,
-        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int
+        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int,
     ): Int {
         val textFieldWidth =
             intrinsicMeasurer(measurables.fastFirst { it.layoutId == TextFieldId }, height)
@@ -740,14 +897,14 @@ private class TextFieldMeasurePolicy(
             textFieldWidth = textFieldWidth,
             labelWidth = labelWidth,
             placeholderWidth = placeholderWidth,
-            constraints = ZeroConstraints
+            constraints = Constraints(),
         )
     }
 
     private fun IntrinsicMeasureScope.intrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
         width: Int,
-        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int
+        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int,
     ): Int {
         var remainingWidth = width
         val leadingHeight =
@@ -755,7 +912,7 @@ private class TextFieldMeasurePolicy(
                 .fastFirstOrNull { it.layoutId == LeadingId }
                 ?.let {
                     remainingWidth =
-                        remainingWidth.substractConstraintSafely(
+                        remainingWidth.subtractConstraintSafely(
                             it.maxIntrinsicWidth(Constraints.Infinity)
                         )
                     intrinsicMeasurer(it, width)
@@ -765,7 +922,7 @@ private class TextFieldMeasurePolicy(
                 .fastFirstOrNull { it.layoutId == TrailingId }
                 ?.let {
                     remainingWidth =
-                        remainingWidth.substractConstraintSafely(
+                        remainingWidth.subtractConstraintSafely(
                             it.maxIntrinsicWidth(Constraints.Infinity)
                         )
                     intrinsicMeasurer(it, width)
@@ -790,18 +947,11 @@ private class TextFieldMeasurePolicy(
             leadingHeight = leadingHeight,
             trailingHeight = trailingHeight,
             placeholderHeight = placeholderHeight,
-            constraints = ZeroConstraints,
+            constraints = Constraints(),
             density = density,
-            paddingValues = paddingValues
+            paddingValues = paddingValues,
         )
     }
-}
-
-private fun Int.substractConstraintSafely(from: Int): Int {
-    if (this == Constraints.Infinity) {
-        return this
-    }
-    return this - from
 }
 
 private fun calculateWidth(
@@ -810,11 +960,11 @@ private fun calculateWidth(
     textFieldWidth: Int,
     labelWidth: Int,
     placeholderWidth: Int,
-    constraints: Constraints
+    constraints: Constraints,
 ): Int {
     val middleSection = maxOf(textFieldWidth, labelWidth, placeholderWidth)
     val wrappedWidth = leadingWidth + middleSection + trailingWidth
-    return max(wrappedWidth, constraints.minWidth)
+    return constraints.constrainWidth(wrappedWidth)
 }
 
 private fun calculateHeight(
@@ -826,7 +976,7 @@ private fun calculateHeight(
     placeholderHeight: Int,
     constraints: Constraints,
     density: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ): Int {
     val paddingToLabel = TextFieldTopPadding.value * density
     val topPaddingValue = paddingValues.calculateTopPadding().value * density
@@ -839,10 +989,8 @@ private fun calculateHeight(
         } else {
             topPaddingValue + inputFieldHeight + bottomPaddingValue
         }
-    return maxOf(
-        middleSectionHeight.roundToInt(),
-        max(leadingHeight, trailingHeight),
-        constraints.minHeight
+    return constraints.constrainHeight(
+        maxOf(middleSectionHeight.roundToInt(), leadingHeight, trailingHeight)
     )
 }
 
@@ -862,15 +1010,15 @@ private fun Placeable.PlacementScope.placeWithLabel(
     labelEndPosition: Int,
     textPosition: Int,
     animationProgress: Float,
-    density: Float
+    density: Float,
 ) {
     leadingPlaceable?.placeRelative(
         0,
-        Alignment.CenterVertically.align(leadingPlaceable.height, height)
+        Alignment.CenterVertically.align(leadingPlaceable.height, height),
     )
     trailingPlaceable?.placeRelative(
         width - trailingPlaceable.width,
-        Alignment.CenterVertically.align(trailingPlaceable.height, height)
+        Alignment.CenterVertically.align(trailingPlaceable.height, height),
     )
     labelPlaceable?.let {
         // if it's a single line, the label's start position is in the center of the
@@ -907,17 +1055,17 @@ private fun Placeable.PlacementScope.placeWithoutLabel(
     trailingPlaceable: Placeable?,
     singleLine: Boolean,
     density: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ) {
     val topPadding = (paddingValues.calculateTopPadding().value * density).roundToInt()
 
     leadingPlaceable?.placeRelative(
         0,
-        Alignment.CenterVertically.align(leadingPlaceable.height, height)
+        Alignment.CenterVertically.align(leadingPlaceable.height, height),
     )
     trailingPlaceable?.placeRelative(
         width - trailingPlaceable.width,
-        Alignment.CenterVertically.align(trailingPlaceable.height, height)
+        Alignment.CenterVertically.align(trailingPlaceable.height, height),
     )
 
     // Single line text field without label places its input center vertically. Multiline text

@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.integration.compat.quirk
 import android.os.Build
 import android.util.Range
 import android.util.Size
+import androidx.camera.camera2.pipe.integration.compat.quirk.Device.isSamsungDevice
 import androidx.camera.core.impl.Quirk
 import androidx.camera.core.impl.SurfaceConfig.ConfigType
 
@@ -36,7 +37,7 @@ import androidx.camera.core.impl.SurfaceConfig.ConfigType
  * Galaxy A3 (2017) SM-A320FL, Samsung Galaxy J5 Prime SM-G570M, Samsung Galaxy J7 Prime SM-G610F,
  * Samsung Galaxy J7 Prime SM-G610M
  */
-class ExtraCroppingQuirk : Quirk {
+public class ExtraCroppingQuirk : Quirk {
     /**
      * Get a verified resolution that is guaranteed to work.
      *
@@ -46,7 +47,7 @@ class ExtraCroppingQuirk : Quirk {
      * @return null if no resolution provided, in which case the calling code should fallback to
      *   user provided target resolution.
      */
-    fun getVerifiedResolution(configType: ConfigType): Size? {
+    public fun getVerifiedResolution(configType: ConfigType): Size? {
         return if (isSamsungDistortion) {
             // The following resolutions are needed for both the front and the back camera.
             when (configType) {
@@ -58,7 +59,7 @@ class ExtraCroppingQuirk : Quirk {
         } else null
     }
 
-    companion object {
+    public companion object {
         private val SAMSUNG_DISTORTION_MODELS_TO_API_LEVEL_MAP: MutableMap<String, Range<Int>?> =
             mutableMapOf(
                 "SM-T580" to null,
@@ -66,10 +67,10 @@ class ExtraCroppingQuirk : Quirk {
                 "SM-A320FL" to null,
                 "SM-G570M" to null,
                 "SM-G610F" to null,
-                "SM-G610M" to Range(21, 26)
+                "SM-G610M" to Range(21, 26),
             )
 
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             return isSamsungDistortion
         }
 
@@ -77,7 +78,7 @@ class ExtraCroppingQuirk : Quirk {
         internal val isSamsungDistortion: Boolean
             get() {
                 val isDeviceModelContained =
-                    ("samsung".equals(Build.BRAND, ignoreCase = true) &&
+                    (isSamsungDevice() &&
                         SAMSUNG_DISTORTION_MODELS_TO_API_LEVEL_MAP.containsKey(
                             Build.MODEL.uppercase()
                         ))

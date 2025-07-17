@@ -19,6 +19,7 @@ package androidx.camera.view
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import android.util.LayoutDirection
 import android.util.Size
 import androidx.camera.core.SurfaceRequest
@@ -43,7 +44,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
     private val layoutDirection: Int,
     private val isFrontCamera: Boolean,
     private val uiPoint: PointF,
-    private val expectedMeteringPoint: PointF
+    private val expectedMeteringPoint: PointF,
 ) {
 
     companion object {
@@ -74,6 +75,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
 
         // Crop rect with the same aspect ratio as the view.
         private val VIEW_CROP_RECT = Rect(15, 10, 39, 28)
+        private val SENSOR_RECT = Rect(0, 0, 4000, 3000)
 
         @JvmStatic
         @Parameterized.Parameters
@@ -90,7 +92,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     LayoutDirection.LTR,
                     BACK_CAMERA,
                     PointF(0F, 0F),
-                    PointF(0F, 0F)
+                    PointF(0F, 0F),
                 ),
 
                 // Device with front camera. The metering point is flipped.
@@ -103,7 +105,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     LayoutDirection.LTR,
                     FRONT_CAMERA,
                     PointF(0F, 0F),
-                    PointF(1F, 0F)
+                    PointF(1F, 0F),
                 ),
 
                 // Device in sensor orientation with crop rect.
@@ -118,8 +120,8 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     PointF(0F, 0F),
                     PointF(
                         VIEW_CROP_RECT.left.toFloat() / VIEW_SIZE.width,
-                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height
-                    )
+                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height,
+                    ),
                 ),
 
                 // Device in natural orientation with crop rect.
@@ -134,8 +136,8 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     PointF(VIEW_SIZE_90.width.toFloat(), 0F),
                     PointF(
                         VIEW_CROP_RECT.left.toFloat() / VIEW_SIZE.width,
-                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height
-                    )
+                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height,
+                    ),
                 ),
 
                 // Device in locked portrait mode with 270° rotation and crop rect.
@@ -150,8 +152,8 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     PointF(0F, VIEW_SIZE_90.height.toFloat()),
                     PointF(
                         VIEW_CROP_RECT.left.toFloat() / VIEW_SIZE.width,
-                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height
-                    )
+                        VIEW_CROP_RECT.top.toFloat() / VIEW_SIZE.height,
+                    ),
                 ),
 
                 // FIT type.
@@ -164,7 +166,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     LayoutDirection.LTR,
                     BACK_CAMERA,
                     PointF(12F, 0F),
-                    PointF(0F, 0F)
+                    PointF(0F, 0F),
                 ),
 
                 // FIT type with RTL
@@ -177,7 +179,7 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     LayoutDirection.RTL,
                     BACK_CAMERA,
                     PointF(0F, 0F),
-                    PointF(0F, 0F)
+                    PointF(0F, 0F),
                 ),
 
                 // FILL type with mismatched crop rect. (viewport not set)
@@ -190,13 +192,45 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                     LayoutDirection.LTR,
                     BACK_CAMERA,
                     PointF(0F, 0F),
-                    PointF(0F, 0.125F)
-                )
+                    PointF(0F, 0.125F),
+                ),
             )
         }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+    private fun getSurfaceNormalizedPt(sensorNormalizedPt: PointF): PointF {
+        val matrix = getSensorToBufferTransformMatrix(surfaceSize)
+
+        val normalization = Matrix()
+        normalization.setRectToRect(
+            RectF(0f, 0f, surfaceSize.width.toFloat(), surfaceSize.height.toFloat()),
+            RectF(0f, 0f, 1f, 1f),
+            Matrix.ScaleToFit.FILL,
+        )
+        matrix.postConcat(normalization)
+        val pointArray =
+            floatArrayOf(
+                sensorNormalizedPt.x * SENSOR_RECT.width(),
+                sensorNormalizedPt.y * SENSOR_RECT.height(),
+            )
+        matrix.mapPoints(pointArray)
+        return PointF(pointArray[0], pointArray[1])
+    }
+
+    private fun getSensorToBufferTransformMatrix(surfaceSize: Size): Matrix {
+        val fullSensorRectF = RectF(SENSOR_RECT)
+        val sensorToUseCaseTransformation = Matrix()
+        val srcRect = RectF(0f, 0f, surfaceSize.width.toFloat(), surfaceSize.height.toFloat())
+        sensorToUseCaseTransformation.setRectToRect(
+            srcRect,
+            fullSensorRectF,
+            Matrix.ScaleToFit.CENTER,
+        )
+        sensorToUseCaseTransformation.invert(sensorToUseCaseTransformation)
+        return sensorToUseCaseTransformation
+    }
 
     @Test
     fun verifyMeteringPoint() {
@@ -209,19 +243,21 @@ class PreviewViewMeteringPointFactoryDeviceTest(
                 rotationDegrees,
                 FAKE_TARGET_ROTATION,
                 /*hasCameraTransform=*/ true,
-                /*sensorToBufferTransform=*/ Matrix(),
-                /*mirroring=*/ false
+                /*sensorToBufferTransform=*/ getSensorToBufferTransformMatrix(surfaceSize),
+                /*mirroring=*/ false,
             ),
             surfaceSize,
-            isFrontCamera
+            isFrontCamera,
         )
         val meteringPointFactory = PreviewViewMeteringPointFactory(previewTransformation)
+        meteringPointFactory.setSensorRect(SENSOR_RECT)
 
         // Act.
         instrumentation.runOnMainSync {
             meteringPointFactory.recalculate(previewViewSize, layoutDirection)
         }
-        val meteringPoint = meteringPointFactory.convertPoint(uiPoint.x, uiPoint.y)
+        val meteringPoint =
+            getSurfaceNormalizedPt(meteringPointFactory.convertPoint(uiPoint.x, uiPoint.y))
 
         // Assert.
         assertThat(meteringPoint.x).isWithin(FLOAT_ERROR).of(expectedMeteringPoint.x)

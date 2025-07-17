@@ -20,25 +20,34 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.pm.ServiceInfo;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.support.customtabs.IAuthTabCallback;
 import android.support.customtabs.ICustomTabsCallback;
 import android.support.customtabs.ICustomTabsService;
 import android.text.TextUtils;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.browser.auth.AuthTabCallback;
+import androidx.browser.auth.AuthTabIntent;
+import androidx.browser.auth.AuthTabSession;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Class to communicate with a {@link CustomTabsService} and create
@@ -71,10 +80,13 @@ public class CustomTabsClient {
      * @return Whether the binding was successful.
      */
     public static boolean bindCustomTabsService(@NonNull Context context,
-            @Nullable String packageName, @NonNull CustomTabsServiceConnection connection) {
+            @NonNull String packageName, @NonNull CustomTabsServiceConnection connection) {
         connection.setApplicationContext(context.getApplicationContext());
         Intent intent = new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION);
-        if (!TextUtils.isEmpty(packageName)) intent.setPackage(packageName);
+        if (packageName.isEmpty()) {
+            throw new IllegalArgumentException("Service Intents must be explicit");
+        }
+        intent.setPackage(packageName);
         return context.bindService(intent, connection,
                 Context.BIND_AUTO_CREATE | Context.BIND_WAIVE_PRIORITY);
     }
@@ -95,10 +107,13 @@ public class CustomTabsClient {
      * @return Whether the binding was successful.
      */
     public static boolean bindCustomTabsServicePreservePriority(@NonNull Context context,
-            @Nullable String packageName, @NonNull CustomTabsServiceConnection connection) {
+            @NonNull String packageName, @NonNull CustomTabsServiceConnection connection) {
         connection.setApplicationContext(context.getApplicationContext());
         Intent intent = new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION);
-        if (!TextUtils.isEmpty(packageName)) intent.setPackage(packageName);
+        if (packageName.isEmpty()) {
+            throw new IllegalArgumentException("Service Intents must be explicit");
+        }
+        intent.setPackage(packageName);
         return context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
@@ -242,7 +257,7 @@ public class CustomTabsClient {
      *         use this to relay session specific calls.
      *         Null if the service failed to respond (threw a RemoteException).
      */
-    public @Nullable CustomTabsSession newSession(@Nullable final CustomTabsCallback callback) {
+    public @Nullable CustomTabsSession newSession(final @Nullable CustomTabsCallback callback) {
         return newSessionInternal(callback, null);
     }
 
@@ -264,7 +279,7 @@ public class CustomTabsClient {
      *         If {@code null} is returned, attempt using {@link #newSession(CustomTabsCallback)}
      *         which is supported with older browsers.
      */
-    public @Nullable CustomTabsSession newSession(@Nullable final CustomTabsCallback callback,
+    public @Nullable CustomTabsSession newSession(final @Nullable CustomTabsCallback callback,
             int id) {
         return newSessionInternal(callback, createSessionId(mApplicationContext, id));
     }
@@ -275,17 +290,186 @@ public class CustomTabsClient {
      *
      * {@see PendingSession}
      */
-    @ExperimentalPendingSession
-    @NonNull
-    public static CustomTabsSession.PendingSession newPendingSession(
-            @NonNull Context context, @Nullable final CustomTabsCallback callback, int id) {
+    public static CustomTabsSession.@NonNull PendingSession newPendingSession(
+            @NonNull Context context, final @Nullable CustomTabsCallback callback, int id) {
         PendingIntent sessionId = createSessionId(context, id);
 
         return new CustomTabsSession.PendingSession(callback, sessionId);
     }
 
+    /**
+     * Creates a new pending session with a callback. This session can be converted to a standard
+     * session using {@link #attachSession} after connection.
+     *
+     * @param context The {@link Context} to use.
+     * @param id The session id.
+     * @param executor The {@link Executor} to be used to execute the callbacks.
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session.
+     * @return The newly created {@link AuthTabSession.PendingSession}.
+     */
+    @ExperimentalPendingSession
+    public static AuthTabSession.@NonNull PendingSession createPendingAuthTabSession(
+            @NonNull Context context, int id, @NonNull Executor executor,
+            @NonNull AuthTabCallback callback) {
+        PendingIntent sessionId = createSessionId(context, id);
+
+        return new AuthTabSession.PendingSession(sessionId, executor, callback);
+    }
+
+    /**
+     * Creates a new pending session without a callback. This session can be converted to a standard
+     * session using {@link #attachSession} after connection.
+     *
+     * @param context The {@link Context} to use.
+     * @param id      The session id.
+     * @return The newly created {@link AuthTabSession.PendingSession}.
+     */
+    @ExperimentalPendingSession
+    public static AuthTabSession.@NonNull PendingSession createPendingAuthTabSession(
+            @NonNull Context context, int id) {
+        PendingIntent sessionId = createSessionId(context, id);
+
+        return new AuthTabSession.PendingSession(sessionId, null, null);
+    }
+
+    /**
+     * Creates a new session through an ICustomTabsService with the optional callback. This session
+     * can be used to associate any related communication through the service with an intent and
+     * then later with a Custom Tab. The client can then send later service calls or intents to
+     * through same session-intent-Custom Tab association.
+     *
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session. Can be null.
+     * @param executor The {@link Executor} to be used to execute the callbacks. If null, the
+     *                 callbacks will be received on the UI thread.
+     * @return The session object that was created as a result of the transaction. The client can
+     * use this to relay session specific calls. Null if the service failed to respond
+     * (threw a RemoteException).
+     */
+    @Nullable
+    public AuthTabSession newAuthTabSession(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor) {
+        return newAuthTabSessionInternal(callback, executor, null);
+    }
+
+    /**
+     * Creates a new session through an ICustomTabsService with the optional callback. This session
+     * can be used to associate any related communication through the service with an intent and
+     * then later with a Custom Tab. The client can then send later service calls or intents to
+     * through same session-intent-Custom Tab association.
+     *
+     * @param callback The callback through which the client will receive updates about the created
+     *                 session. Can be null.
+     * @param executor The {@link Executor} to be used to execute the callbacks. If null, the
+     *                 callbacks will be received on the UI thread.
+     * @param id       The session id. If the session with the specified id already exists for
+     *                 the given client application, the new callback is supplied to that session
+     *                 and
+     *                 further attempts to launch URLs using that session will update the
+     *                 existing Auth
+     *                 Tab instead of launching a new one.
+     * @return The session object that was created as a result of the transaction. The client can
+     * use this to relay session specific calls. Null if the service failed to respond
+     * (threw a RemoteException).
+     */
+    @Nullable
+    public AuthTabSession newAuthTabSession(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor, int id) {
+        return newAuthTabSessionInternal(callback, executor,
+                createSessionId(mApplicationContext, id));
+    }
+
+    @Nullable
+    private AuthTabSession newAuthTabSessionInternal(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor, @Nullable PendingIntent sessionId) {
+        IAuthTabCallback.Stub wrapper = createAuthTabCallbackWrapper(callback, executor);
+
+        try {
+            boolean success;
+
+            Bundle extras = new Bundle();
+            extras.putParcelable(CustomTabsIntent.EXTRA_SESSION_ID, sessionId);
+            success = mService.newAuthTabSession(wrapper, extras);
+
+            if (!success) return null;
+        } catch (RemoteException e) {
+            return null;
+        }
+        return new AuthTabSession(wrapper, mServiceComponentName, sessionId);
+    }
+
+    private IAuthTabCallback.Stub createAuthTabCallbackWrapper(@Nullable AuthTabCallback callback,
+            @Nullable Executor executor) {
+        return new IAuthTabCallback.Stub() {
+            private final Executor mExecutor = executor != null ? executor : new Handler(
+                    Looper.getMainLooper())::post;
+
+            @Override
+            public void onNavigationEvent(int navigationEvent, Bundle extras)
+                    throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onNavigationEvent(navigationEvent, extras));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public void onExtraCallback(String callbackName, Bundle args) throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onExtraCallback(callbackName, args));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public Bundle onExtraCallbackWithResult(String callbackName, Bundle args)
+                    throws RemoteException {
+                if (callback == null) return Bundle.EMPTY;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    return callback.onExtraCallbackWithResult(callbackName, args);
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+
+            @Override
+            public void onWarmupCompleted(Bundle extras) throws RemoteException {
+                if (callback == null) return;
+                long identity = Binder.clearCallingIdentity();
+                try {
+                    mExecutor.execute(() -> callback.onWarmupCompleted(extras));
+                } finally {
+                    Binder.restoreCallingIdentity(identity);
+                }
+            }
+        };
+    }
+
+    /**
+     * Associate {@link AuthTabSession.PendingSession} with the service and turn it into an
+     * {@link AuthTabSession}.
+     *
+     * @param session The {@link AuthTabSession.PendingSession} to attach.
+     * @return The {@link AuthTabSession} that was created, or null if the browser doesn't support
+     * this feature.
+     */
+    @ExperimentalPendingSession
+    @Nullable
+    public AuthTabSession attachAuthTabSession(AuthTabSession.@NonNull PendingSession session) {
+        return newAuthTabSessionInternal(session.getCallback(), session.getExecutor(),
+                session.getId());
+    }
+
     private @Nullable CustomTabsSession newSessionInternal(
-            @Nullable final CustomTabsCallback callback, @Nullable PendingIntent sessionId) {
+            final @Nullable CustomTabsCallback callback, @Nullable PendingIntent sessionId) {
         ICustomTabsCallback.Stub wrapper = createCallbackWrapper(callback);
 
         try {
@@ -320,7 +504,7 @@ public class CustomTabsClient {
     }
 
     private ICustomTabsCallback.Stub createCallbackWrapper(
-            @Nullable final CustomTabsCallback callback) {
+            final @Nullable CustomTabsCallback callback) {
         return new ICustomTabsCallback.Stub() {
             private Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -463,10 +647,69 @@ public class CustomTabsClient {
      * and turn it into a {@link CustomTabsSession}.
      *
      */
-    @ExperimentalPendingSession
     @SuppressWarnings("NullAway") // TODO: b/141869399
-    @Nullable
-    public CustomTabsSession attachSession(@NonNull CustomTabsSession.PendingSession session) {
+    public @Nullable CustomTabsSession attachSession(
+            CustomTabsSession.@NonNull PendingSession session) {
         return newSessionInternal(session.getCallback(), session.getId());
+    }
+
+    /**
+     * Check whether the Custom Tabs provider supports multi-network feature {@link
+     * CustomTabsIntent.Builder#setNetwork}, i.e. be able to bind a custom tab to a
+     * particular network.
+     *
+     * @param context Application context.
+     * @param provider the package name of Custom Tabs provider.
+     * @return whether a Custom Tabs provider supports multi-network feature.
+     * @see CustomTabsIntent.Builder#setNetwork and CustomTabsService#CATEGORY_SET_NETWORK.
+     */
+    public static boolean isSetNetworkSupported(@NonNull Context context,
+            @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_SET_NETWORK);
+    }
+
+    /**
+     * Checks whether the Custom Tabs provider supports Auth Tab. See {@link AuthTabIntent} for more
+     * information on how to launch an Auth Tab.
+     *
+     * @param context The application {@link Context}.
+     * @param provider The package name of the Custom Tabs provider.
+     * @return Whether the Custom Tabs provider supports Auth Tab.
+     * @see CustomTabsService#CATEGORY_AUTH_TAB
+     */
+    public static boolean isAuthTabSupported(@NonNull Context context,
+            @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_AUTH_TAB);
+    }
+
+    /**
+     * Checks whether the Custom Tabs provider supports Ephemeral Browsing.
+     *
+     * @param context The application {@link Context}.
+     * @param provider The package name of the Custom Tabs provider.
+     * @return Whether the Custom Tabs provider supports Ephemeral Browsing.
+     * @see CustomTabsService#CATEGORY_EPHEMERAL_BROWSING
+     */
+    public static boolean isEphemeralBrowsingSupported(@NonNull Context context,
+            @NonNull String provider) {
+        return packageHasCategory(context, provider, CustomTabsService.CATEGORY_EPHEMERAL_BROWSING);
+    }
+
+    private static boolean packageHasCategory(@NonNull Context context, @NonNull String provider,
+            @NonNull String category) {
+        PackageManager pm = context.getPackageManager();
+        List<ResolveInfo> services = pm.queryIntentServices(
+                new Intent(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION),
+                PackageManager.GET_RESOLVED_FILTER);
+        for (ResolveInfo service : services) {
+            ServiceInfo serviceInfo = service.serviceInfo;
+            if (serviceInfo != null && provider.equals(serviceInfo.packageName)) {
+                IntentFilter filter = service.filter;
+                if (filter != null && filter.hasCategory(category)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

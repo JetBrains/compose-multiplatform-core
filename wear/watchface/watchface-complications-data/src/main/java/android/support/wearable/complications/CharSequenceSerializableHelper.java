@@ -18,9 +18,10 @@ package android.support.wearable.complications;
 
 import android.text.SpannableString;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.text.HtmlCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;

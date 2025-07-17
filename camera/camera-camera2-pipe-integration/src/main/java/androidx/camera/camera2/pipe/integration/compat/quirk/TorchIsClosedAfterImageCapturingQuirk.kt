@@ -26,10 +26,11 @@ import androidx.camera.core.impl.Quirk
  * - Description: The Torch is unexpectedly turned off after taking a picture.
  * - Device(s): Redmi 4X, Redmi 5A, Redmi Note 5 (Pro), Mi A1, Mi A2, Mi A2 lite and Redmi 6 Pro.
  */
-@SuppressLint("CameraXQuirksClassDetector") // TODO(b/270421716): enable when kotlin is supported.
-class TorchIsClosedAfterImageCapturingQuirk : Quirk {
+@SuppressLint("CameraXQuirksClassDetector")
+// TODO(b/270421716): enable when kotlin is supported.
+public class TorchIsClosedAfterImageCapturingQuirk : Quirk {
 
-    companion object {
+    public companion object {
         // List of devices with the issue. See b/228272227.
         private val BUILD_MODELS =
             listOf(
@@ -41,9 +42,10 @@ class TorchIsClosedAfterImageCapturingQuirk : Quirk {
                 "redmi note 5", // Xiaomi Redmi Note 5
                 "redmi note 5 pro", // Xiaomi Redmi Note 5 Pro
                 "redmi 6 pro", // Xiaomi Redmi 6 Pro
+                "redmi note 6 pro", // Xiaomi Redmi Note 6 Pro
             )
 
-        fun isEnabled(): Boolean {
+        public fun isEnabled(): Boolean {
             return BUILD_MODELS.contains(Build.MODEL.lowercase())
         }
     }

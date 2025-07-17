@@ -22,7 +22,6 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
-import androidx.annotation.DoNotInline
 import androidx.annotation.IdRes
 import androidx.annotation.RequiresApi
 import androidx.core.os.bundleOf
@@ -90,6 +89,7 @@ private fun getPendingIntentForAction(
                                 translationContext,
                                 viewId,
                                 ActionTrampolineType.CALLBACK,
+                                flags.toString(),
                             )
                     }
                 },
@@ -106,6 +106,7 @@ private fun getPendingIntentForAction(
                                 translationContext,
                                 viewId,
                                 ActionTrampolineType.CALLBACK,
+                                flags.toString(),
                             )
                     }
                 }
@@ -114,7 +115,7 @@ private fun getPendingIntentForAction(
             ) {
                 ApplyActionApi26Impl.getForegroundServicePendingIntent(
                     context = translationContext.context,
-                    intent = intent
+                    intent = intent,
                 )
             } else {
                 PendingIntent.getService(
@@ -136,6 +137,7 @@ private fun getPendingIntentForAction(
                                 translationContext,
                                 viewId,
                                 ActionTrampolineType.CALLBACK,
+                                flags.toString(),
                             )
                     }
                 },
@@ -147,10 +149,9 @@ private fun getPendingIntentForAction(
                 translationContext.context,
                 0,
                 ActionCallbackBroadcastReceiver.createIntent(
-                        translationContext.context,
+                        translationContext,
                         action.callbackClass,
-                        translationContext.appWidgetId,
-                        editParams(action.parameters)
+                        editParams(action.parameters),
                     )
                     .apply {
                         data =
@@ -206,7 +207,7 @@ private fun getPendingIntentForAction(
                         PendingIntent.FLAG_MUTABLE
                     } else {
                         mutability
-                    }
+                    },
             )
         }
         else -> error("Cannot create PendingIntent for action type: $action")
@@ -217,14 +218,14 @@ private fun getFillInIntentForAction(
     action: Action,
     translationContext: TranslationContext,
     @IdRes viewId: Int,
-    editParams: (ActionParameters) -> ActionParameters = { it }
+    editParams: (ActionParameters) -> ActionParameters = { it },
 ): Intent =
     when (action) {
         is StartActivityAction -> {
             getStartActivityIntent(
                     action = action,
                     translationContext = translationContext,
-                    params = editParams(action.parameters)
+                    params = editParams(action.parameters),
                 )
                 .apply {
                     if (data == null) {
@@ -233,6 +234,7 @@ private fun getFillInIntentForAction(
                                 translationContext,
                                 viewId,
                                 ActionTrampolineType.CALLBACK,
+                                flags.toString(),
                             )
                     }
                 }
@@ -260,10 +262,9 @@ private fun getFillInIntentForAction(
         }
         is RunCallbackAction -> {
             ActionCallbackBroadcastReceiver.createIntent(
-                    context = translationContext.context,
-                    callbackClass = action.callbackClass,
-                    appWidgetId = translationContext.appWidgetId,
-                    parameters = editParams(action.parameters)
+                    translationContext,
+                    action.callbackClass,
+                    editParams(action.parameters),
                 )
                 .applyTrampolineIntent(
                     translationContext,
@@ -349,22 +350,18 @@ private fun getStartActivityIntent(
 @RequiresApi(Build.VERSION_CODES.S)
 private object ApplyActionApi31Impl {
 
-    @DoNotInline
     fun setOnCheckedChangeResponse(rv: RemoteViews, viewId: Int, intent: PendingIntent) {
         rv.setOnCheckedChangeResponse(viewId, RemoteViews.RemoteResponse.fromPendingIntent(intent))
     }
 
-    @DoNotInline
     fun setOnCheckedChangeResponse(rv: RemoteViews, viewId: Int, intent: Intent) {
         rv.setOnCheckedChangeResponse(viewId, RemoteViews.RemoteResponse.fromFillInIntent(intent))
     }
 
-    @DoNotInline
     fun unsetOnCheckedChangeResponse(rv: RemoteViews, viewId: Int) {
         rv.setOnCheckedChangeResponse(viewId, RemoteViews.RemoteResponse())
     }
 
-    @DoNotInline
     fun unsetOnClickResponse(rv: RemoteViews, viewId: Int) {
         rv.setOnClickResponse(viewId, RemoteViews.RemoteResponse())
     }
@@ -372,14 +369,12 @@ private object ApplyActionApi31Impl {
 
 @RequiresApi(Build.VERSION_CODES.Q)
 private object ApplyActionApi29Impl {
-    @DoNotInline
     fun setIntentIdentifier(intent: Intent, viewId: Int): Intent =
         intent.apply { identifier = viewId.toString() }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 private object ApplyActionApi26Impl {
-    @DoNotInline
     fun getForegroundServicePendingIntent(context: Context, intent: Intent): PendingIntent {
         return PendingIntent.getForegroundService(
             context,

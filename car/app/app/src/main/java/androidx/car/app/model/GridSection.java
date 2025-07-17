@@ -18,14 +18,15 @@ package androidx.car.app.model;
 
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.car.app.annotations.CarProtocol;
 import androidx.car.app.annotations.ExperimentalCarApi;
 import androidx.car.app.annotations.KeepFields;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,13 +39,14 @@ import java.util.Objects;
 @ExperimentalCarApi
 @CarProtocol
 @KeepFields
-public class GridSection extends Section<GridItem> {
+public final class GridSection extends Section<GridItem> {
     /** Defines possible sizes of the grid items within a grid section. */
     @IntDef(
             value = {
                     ITEM_SIZE_SMALL,
                     ITEM_SIZE_MEDIUM,
-                    ITEM_SIZE_LARGE
+                    ITEM_SIZE_LARGE,
+                    ITEM_SIZE_EXTRA_LARGE,
             })
     @Retention(RetentionPolicy.SOURCE)
     @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -62,6 +64,10 @@ public class GridSection extends Section<GridItem> {
     /** Renders the items within the section in a large format. */
     @ItemSize
     public static final int ITEM_SIZE_LARGE = 3;
+
+    /** Renders the items within the section in an extra large sized format. */
+    @ItemSize
+    public static final int ITEM_SIZE_EXTRA_LARGE = 4;
 
     /** Defines the possible shapes of the images shown on the grid items within a grid section. */
     @IntDef(
@@ -139,16 +145,15 @@ public class GridSection extends Section<GridItem> {
                 && mItemSize == section.mItemSize;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "GridSection { itemSize: " + mItemSize + ", itemImageShape: " + mItemImageShape
                 + ", " + super.toString() + " }";
     }
 
     /** A builder that constructs {@link GridSection} instances. */
     @ExperimentalCarApi
-    public static class Builder extends BaseBuilder<GridItem, Builder> {
+    public static final class Builder extends BaseBuilder<GridItem, Builder> {
         @ItemSize
         private int mItemSize = ITEM_SIZE_SMALL;
 
@@ -160,17 +165,9 @@ public class GridSection extends Section<GridItem> {
             super();
         }
 
-        /** Create a new {@link GridSection} builder, copying values from an existing instance. */
-        public Builder(@NonNull GridSection gridSection) {
-            super(gridSection);
-            mItemSize = gridSection.mItemSize;
-            mItemImageShape = gridSection.mItemImageShape;
-        }
-
         /** Sets the size of the items within this section. */
-        @NonNull
         @CanIgnoreReturnValue
-        public Builder setItemSize(@ItemSize int itemSize) {
+        public @NonNull Builder setItemSize(@ItemSize int itemSize) {
             mItemSize = itemSize;
             return this;
         }
@@ -179,16 +176,14 @@ public class GridSection extends Section<GridItem> {
          * Sets how the images of all grid items within this section should be rendered. Uses
          * {@link #ITEM_IMAGE_SHAPE_UNSET} by default.
          */
-        @NonNull
         @CanIgnoreReturnValue
-        public Builder setItemImageShape(@ItemImageShape int itemImageShape) {
+        public @NonNull Builder setItemImageShape(@ItemImageShape int itemImageShape) {
             mItemImageShape = itemImageShape;
             return this;
         }
 
         /** Creates a new {@link GridSection} based off the state of this builder. */
-        @NonNull
-        public GridSection build() {
+        public @NonNull GridSection build() {
             return new GridSection(this);
         }
     }

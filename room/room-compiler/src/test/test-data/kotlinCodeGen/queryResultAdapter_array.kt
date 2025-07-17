@@ -31,18 +31,18 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
-        val _cursorIndexOfOther2: Int = getColumnIndexOrThrow(_stmt, "other2")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfOther2: Int = getColumnIndexOrThrow(_stmt, "other2")
         val _listResult: MutableList<MyEntity> = mutableListOf()
         while (_stmt.step()) {
           val _item: MyEntity
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           val _tmpOther2: Long
-          _tmpOther2 = _stmt.getLong(_cursorIndexOfOther2)
+          _tmpOther2 = _stmt.getLong(_columnIndexOfOther2)
           _item = MyEntity(_tmpPk,_tmpOther,_tmpOther2)
           _listResult.add(_item)
         }
@@ -59,18 +59,18 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
-        val _cursorIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
-        val _cursorIndexOfOther2: Int = getColumnIndexOrThrow(_stmt, "other2")
+        val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
+        val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
+        val _columnIndexOfOther2: Int = getColumnIndexOrThrow(_stmt, "other2")
         val _listResult: MutableList<MyEntity> = mutableListOf()
         while (_stmt.step()) {
           val _item: MyEntity
           val _tmpPk: Int
-          _tmpPk = _stmt.getLong(_cursorIndexOfPk).toInt()
+          _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
           val _tmpOther: String
-          _tmpOther = _stmt.getText(_cursorIndexOfOther)
+          _tmpOther = _stmt.getText(_columnIndexOfOther)
           val _tmpOther2: Long
-          _tmpOther2 = _stmt.getLong(_cursorIndexOfOther2)
+          _tmpOther2 = _stmt.getLong(_columnIndexOfOther2)
           _item = MyEntity(_tmpPk,_tmpOther,_tmpOther2)
           _listResult.add(_item)
         }

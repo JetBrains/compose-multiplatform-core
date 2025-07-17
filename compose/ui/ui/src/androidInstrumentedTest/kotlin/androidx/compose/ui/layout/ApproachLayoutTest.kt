@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.CompositionLocalProvider
@@ -34,7 +35,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Modifier.Node
 import androidx.compose.ui.background
@@ -69,7 +69,6 @@ class ApproachLayoutTest {
 
     // Test that measurement approach has no effect on parent or child when
     // isMeasurementApproachProgress returns false
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun toggleIsMeasurementApproachInProgress() {
         var isComplete by mutableStateOf(true)
@@ -111,7 +110,7 @@ class ApproachLayoutTest {
                             val constraints =
                                 Constraints.fixed(
                                     lookaheadSize.width - 20,
-                                    lookaheadSize.height - 20
+                                    lookaheadSize.height - 20,
                                 )
                             measurable.measure(constraints).run {
                                 layout(lookaheadSize.width - 20, lookaheadSize.height - 20) {
@@ -145,12 +144,12 @@ class ApproachLayoutTest {
                                             if (isComplete) {
                                                 assertEquals(
                                                     lookaheadPositionInParent,
-                                                    it.positionInParent()
+                                                    it.positionInParent(),
                                                 )
                                             } else {
                                                 assertNotEquals(
                                                     lookaheadPositionInParent,
-                                                    it.positionInParent()
+                                                    it.positionInParent(),
                                                 )
                                             }
                                         }
@@ -172,7 +171,6 @@ class ApproachLayoutTest {
     }
 
     // Test that placement approach has no effect when _both measure & place approaches_ complete
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun toggleIsPlacementApproachComplete() {
         var isMeasurementApproachComplete by mutableStateOf(true)
@@ -208,7 +206,7 @@ class ApproachLayoutTest {
                         }
                         .approachLayout(
                             isMeasurementApproachInProgress = { !isMeasurementApproachComplete },
-                            isPlacementApproachInProgress = { !isPlacementApproachComplete }
+                            isPlacementApproachInProgress = { !isPlacementApproachComplete },
                         ) { measurable, _ ->
                             // Intentionally use different constraints, placement and report
                             // different
@@ -217,7 +215,7 @@ class ApproachLayoutTest {
                             val constraints =
                                 Constraints.fixed(
                                     lookaheadSize.width - 20,
-                                    lookaheadSize.height - 20
+                                    lookaheadSize.height - 20,
                                 )
                             measurable.measure(constraints).run {
                                 layout(lookaheadSize.width - 20, lookaheadSize.height - 20) {
@@ -297,7 +295,6 @@ class ApproachLayoutTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun activeParentNestedApproachNode() {
         var parentMeasureApproachComplete by mutableStateOf(false)
@@ -317,10 +314,9 @@ class ApproachLayoutTest {
                     return !parentMeasureApproachComplete
                 }
 
-                @ExperimentalComposeUiApi
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(Constraints.fixed(600, 600)).run {
                         layout(600, 600) { place(0, 0) }
@@ -339,7 +335,7 @@ class ApproachLayoutTest {
                         )
                         .requiredSize(700.dp, 700.dp)
                         .then(TestApproachElement(parentApproachNode)),
-                    propagateMinConstraints = true
+                    propagateMinConstraints = true,
                 ) {
                     Box(
                         Modifier.layout { measurable, constraints ->
@@ -413,7 +409,6 @@ class ApproachLayoutTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun activeChildNestedApproachNode() {
         var parentMeasureApproachComplete by mutableStateOf(true)
@@ -433,10 +428,9 @@ class ApproachLayoutTest {
                     return !parentMeasureApproachComplete
                 }
 
-                @ExperimentalComposeUiApi
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(Constraints.fixed(600, 600)).run {
                         layout(600, 600) { place(0, 0) }
@@ -455,7 +449,7 @@ class ApproachLayoutTest {
                         )
                         .requiredSize(700.dp, 700.dp)
                         .then(TestApproachElement(parentApproachNode)),
-                    propagateMinConstraints = true
+                    propagateMinConstraints = true,
                 ) {
                     Box(
                         Modifier.layout { measurable, constraints ->
@@ -539,10 +533,9 @@ class ApproachLayoutTest {
                     return !measurementComplete
                 }
 
-                @ExperimentalComposeUiApi
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(constraints).run {
                         layout(width, height) { place(0, 0) }
@@ -586,10 +579,9 @@ class ApproachLayoutTest {
                     return false
                 }
 
-                @ExperimentalComposeUiApi
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable
                         .measure(
@@ -612,10 +604,9 @@ class ApproachLayoutTest {
                     return false
                 }
 
-                @ExperimentalComposeUiApi
                 override fun ApproachMeasureScope.approachMeasure(
                     measurable: Measurable,
-                    constraints: Constraints
+                    constraints: Constraints,
                 ): MeasureResult {
                     return measurable.measure(constraints).run {
                         layout(width, height) { place(0, 0) }
@@ -645,7 +636,6 @@ class ApproachLayoutTest {
         rule.runOnIdle { assertEquals(Offset(-100f, -100f), position) }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun testIsApproachCompleteCalledWhenSiblingRemovedInScroll() {
         var isInColumn by mutableStateOf(false)
@@ -705,7 +695,7 @@ class ApproachLayoutTest {
                                             layout(placeable.width, placeable.height) {
                                                 placeable.place(0, 0)
                                             }
-                                        }
+                                        },
                                     )
                                     .onPlaced {
                                         // Also consume the coordinates here, this is necessary to
@@ -721,7 +711,7 @@ class ApproachLayoutTest {
                         // Secondary slot - when not in Column
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.BottomEnd
+                            contentAlignment = Alignment.BottomEnd,
                         ) {
                             if (!isInColumn) {
                                 movableContent()
@@ -752,7 +742,6 @@ class ApproachLayoutTest {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     @Test
     fun testLookaheadApproachCoordinates_togglingDirectManipulationPlacement() {
         var toggleDmp by mutableStateOf(true)
@@ -798,12 +787,12 @@ class ApproachLayoutTest {
                                                                 sourceCoordinates =
                                                                     it.toLookaheadCoordinates(),
                                                                 includeMotionFrameOfReference =
-                                                                    false
+                                                                    false,
                                                             )
                                                 }
                                                 placeable.place(0, 0)
                                             }
-                                        }
+                                        },
                                     )
                         )
                     }
@@ -822,11 +811,81 @@ class ApproachLayoutTest {
         assertEquals(200f, positionExcludingDmp.y)
     }
 
+    @Test
+    fun testApproachIntrinsicQueryBeforeLookaheadMeasurement() {
+        val lookaheadSizes = mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        val minIntrinsicSizes =
+            mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        val maxIntrinsicSizes =
+            mutableListOf(IntSize.Zero, IntSize.Zero, IntSize.Zero, IntSize.Zero)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                LookaheadScope {
+                    Layout(
+                        content = {
+                            repeat(4) {
+                                Box(
+                                    Modifier.wrapContentSize()
+                                        .approachLayout({ true }) { m, _ ->
+                                            lookaheadSizes[it] = lookaheadSize
+                                            m.measure(constraints = lookaheadConstraints).run {
+                                                layout(width, height) { place(0, 0) }
+                                            }
+                                        }
+                                        .requiredSize(((it + 1) * 100).dp)
+                                )
+                            }
+                        },
+                        Modifier.fillMaxSize(),
+                    ) { measurables, constraints ->
+                        val placeablesFromMeasurePass =
+                            // Only measure half of the children during measure pass and immediately
+                            // query *all* children's intrinsics. This will cause lookahead measure
+                            // for the other half of the children to happen in the placement
+                            // pass, well after the intrinsics are queried during approach.
+                            measurables.drop(2).map { it.measure(constraints) }
+                        measurables.forEachIndexed { id, measurable ->
+                            minIntrinsicSizes[id] =
+                                IntSize(
+                                    measurable.minIntrinsicWidth(constraints.maxHeight),
+                                    measurable.minIntrinsicHeight(constraints.maxWidth),
+                                )
+
+                            maxIntrinsicSizes[id] =
+                                IntSize(
+                                    measurable.maxIntrinsicWidth(constraints.maxHeight),
+                                    measurable.maxIntrinsicHeight(constraints.maxWidth),
+                                )
+                        }
+                        layout(400, 400) {
+                            val placeablesFromLayoutPass =
+                                measurables.take(2).map { it.measure(constraints) }
+                            (placeablesFromMeasurePass + placeablesFromLayoutPass).forEach {
+                                it.place(0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        repeat(4) {
+            val expectedSize = IntSize(100 * (it + 1), 100 * (it + 1))
+            assertEquals(expectedSize, lookaheadSizes[it])
+        }
+    }
+
     private class TestPlacementScope : Placeable.PlacementScope() {
         override val parentWidth: Int
             get() = TODO("Not yet implemented")
 
         override val parentLayoutDirection: LayoutDirection
+            get() = TODO("Not yet implemented")
+
+        override val density: Float
+            get() = TODO("Not yet implemented")
+
+        override val fontScale: Float
             get() = TODO("Not yet implemented")
     }
 

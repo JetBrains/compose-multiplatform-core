@@ -77,7 +77,7 @@ class BoundsTest : ToolingTest() {
                 arrayOf(
                         0.dp.roundToPx(), // Root
                         10.dp.roundToPx(), // Column
-                        15.dp.roundToPx() // Text
+                        15.dp.roundToPx(), // Text
                     )
                     .forEachIndexed { index, value ->
                         Assert.assertTrue(boundingBoxes[index] in value - 1..value + 1)
@@ -182,6 +182,6 @@ class BoundsTest : ToolingTest() {
         }
         latch.await(1, TimeUnit.SECONDS)
 
-        Assert.assertTrue(slotTableRecord.store.size < 3)
+        assertThat(slotTableRecord.store.size).isLessThan(3)
     }
 }

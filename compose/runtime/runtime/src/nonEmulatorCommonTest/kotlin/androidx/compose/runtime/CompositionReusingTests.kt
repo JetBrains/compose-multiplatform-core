@@ -101,7 +101,7 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 
@@ -138,20 +138,20 @@ class CompositionReusingTests {
         assertNotEquals(
             nonRecycledText,
             findTextWith("Non-recyclable key"),
-            "Expected non-recyclable text to be replaced"
+            "Expected non-recyclable text to be replaced",
         )
     }
 
     @Test
     fun compositeHashCodeReflectsReusableChanges() = compositionTest {
         var key by mutableStateOf(0)
-        var lastCompositeHash = 0
+        var lastCompositeHash = EmptyCompositeKeyHashCode
 
         compose {
             ReusableContent(key) {
                 Linear {
                     Text("Key = $key")
-                    lastCompositeHash = currentCompositeKeyHash
+                    lastCompositeHash = currentCompositeKeyHashCode
                 }
             }
         }
@@ -169,13 +169,13 @@ class CompositionReusingTests {
     fun compositeHashCodeIsConsistent() = compositionTest {
         var key by mutableStateOf(0)
         var localValue by mutableStateOf(0)
-        var lastCompositeHash = 0
+        var lastCompositeHash = EmptyCompositeKeyHashCode
 
         compose {
             ReusableContent(key) {
                 Linear {
                     Text("Key = $key: $localValue")
-                    lastCompositeHash = currentCompositeKeyHash
+                    lastCompositeHash = currentCompositeKeyHashCode
                 }
             }
         }
@@ -853,6 +853,34 @@ class CompositionReusingTests {
         assertEquals(2, rememberedState.rememberCount)
         assertEquals(1, rememberedState.forgottenCount)
         assertEquals(0, rememberedState.abandonCount)
+    }
+
+    @Test
+    fun reusableContentHost_movableContent() = compositionTest {
+        var active by mutableStateOf(true)
+        var state by mutableIntStateOf(0)
+        var subcomposition: Composition? = null
+        val movableContent = movableContentOf { Text("State: $state") }
+
+        compose {
+            if (active) {
+                val context = rememberCompositionContext()
+                if (subcomposition == null) {
+                    subcomposition =
+                        Composition(ViewApplier(root), context).apply {
+                            setContent { movableContent() }
+                        }
+                }
+            }
+        }
+
+        state++
+        active = false
+        advance()
+
+        // Validate that detaching the composition will not leave the composition in an invalid
+        // state.
+        subcomposition?.setContent { Text("This is a test") }
     }
 }
 

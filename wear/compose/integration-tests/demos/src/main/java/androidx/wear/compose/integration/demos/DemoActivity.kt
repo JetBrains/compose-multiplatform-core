@@ -17,6 +17,7 @@
 package androidx.wear.compose.integration.demos
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -25,6 +26,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
@@ -33,13 +36,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.wear.compose.integration.demos.common.ActivityDemo
 import androidx.wear.compose.integration.demos.common.Demo
 import androidx.wear.compose.integration.demos.common.DemoCategory
 import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material3.demos.RobotoFlexTypography
+import java.io.FileNotFoundException
 
 /** Main [Activity] for Wear Compose related demos. */
 class DemoActivity : ComponentActivity() {
@@ -50,9 +59,15 @@ class DemoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val recents = RecentsHandler()
+
         ComposeView(this)
             .also { setContentView(it) }
             .setContent {
+                // Load & save recents as needed when apps got to background/foreground
+                recents.Persist()
+                val allDemos = recents.addRecentsMenu(WearComposeDemos)
+
                 hostView = LocalView.current
                 focusManager = LocalFocusManager.current
                 val activityStarter =
@@ -61,28 +76,84 @@ class DemoActivity : ComponentActivity() {
                     }
                 val navigator =
                     rememberSaveable(
-                        saver =
-                            Navigator.Saver(
-                                WearComposeDemos,
-                                onBackPressedDispatcher,
-                                activityStarter
-                            )
+                        saver = Navigator.Saver(allDemos, onBackPressedDispatcher, activityStarter)
                     ) {
-                        Navigator(WearComposeDemos, onBackPressedDispatcher, activityStarter)
+                        Navigator(allDemos, onBackPressedDispatcher, activityStarter)
                     }
                 MaterialTheme {
-                    DemoApp(
-                        currentDemo = navigator.currentDemo,
-                        parentDemo = navigator.parentDemo,
-                        onNavigateTo = { demo -> navigator.navigateTo(demo) },
-                        onNavigateBack = {
-                            if (!navigator.navigateBack()) {
-                                ActivityCompat.finishAffinity(this)
-                            }
-                        }
-                    )
+                    androidx.wear.compose.material3.MaterialTheme(
+                        typography = RobotoFlexTypography
+                    ) {
+                        DemoApp(
+                            currentDemo = navigator.currentDemo,
+                            parentDemo = navigator.parentDemo,
+                            onNavigateTo = { demo ->
+                                recents.addDemoToRecents(demo)
+                                navigator.navigateTo(demo)
+                            },
+                            onNavigateBack = {
+                                if (!navigator.navigateBack()) {
+                                    ActivityCompat.finishAffinity(this)
+                                }
+                            },
+                        )
+                    }
                 }
             }
+    }
+}
+
+private class RecentsHandler() {
+    private val recents = mutableListOf<Demo>()
+
+    fun addRecentsMenu(demos: DemoCategory) =
+        DemoCategory(demos.title, listOf(DemoCategory("Recents", recents)) + demos.demos)
+
+    fun addDemoToRecents(demo: Demo) {
+        if (demo.title == "Recents") return // :)
+        recents.indexOf(demo).let { if (it >= 0) recents.removeAt(it) }
+        recents.add(0, demo)
+        while (recents.size > 20) recents.removeAt(20)
+    }
+
+    @Composable
+    fun Persist() {
+        val context = LocalContext.current
+
+        load(context)
+        val lifecycle = LocalLifecycleOwner.current.lifecycle
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> save(context)
+                Lifecycle.Event.ON_RESUME -> load(context)
+                else -> {} // Nothing else matters
+            }
+        }
+
+        DisposableEffect(Unit) {
+            lifecycle.addObserver(observer)
+            onDispose { lifecycle.removeObserver(observer) }
+        }
+    }
+
+    private val STATE_FNAME = "recents.txt"
+
+    private fun load(context: Context) {
+        try {
+            val data = context.openFileInput(STATE_FNAME).use { it.readBytes() }
+            recents.clear()
+            String(data).split("\n").forEach {
+                findDemo(WearComposeDemos, it)?.let { demo -> recents.add(demo) }
+            }
+        } catch (e: FileNotFoundException) {
+            // Can happen on first run.
+        }
+    }
+
+    private fun save(context: Context) {
+        context.openFileOutput(STATE_FNAME, Context.MODE_PRIVATE).use {
+            it.write(recents.joinToString(separator = "\n") { it.title }.toByteArray())
+        }
     }
 }
 
@@ -91,12 +162,12 @@ private constructor(
     private val backDispatcher: OnBackPressedDispatcher,
     private val launchActivityDemo: (ActivityDemo<*>) -> Unit,
     initialDemo: Demo,
-    private val backStack: MutableList<Demo>
+    private val backStack: MutableList<Demo>,
 ) {
     constructor(
         rootDemo: Demo,
         backDispatcher: OnBackPressedDispatcher,
-        launchActivityDemo: (ActivityDemo<*>) -> Unit
+        launchActivityDemo: (ActivityDemo<*>) -> Unit,
     ) : this(backDispatcher, launchActivityDemo, rootDemo, mutableListOf<Demo>())
 
     private val onBackPressed =
@@ -146,7 +217,7 @@ private constructor(
         fun Saver(
             rootDemo: DemoCategory,
             backDispatcher: OnBackPressedDispatcher,
-            launchActivityDemo: (ActivityDemo<*>) -> Unit
+            launchActivityDemo: (ActivityDemo<*>) -> Unit,
         ): Saver<Navigator, *> =
             listSaver<Navigator, String>(
                 save = { navigator ->
@@ -160,21 +231,21 @@ private constructor(
                         }
                     val initial = backStack.removeAt(backStack.lastIndex)
                     Navigator(backDispatcher, launchActivityDemo, initial, backStack)
-                }
+                },
             )
+    }
+}
 
-        private fun findDemo(demo: Demo, title: String): Demo? {
-            if (demo.title == title) {
-                return demo
+private fun findDemo(demo: Demo, title: String): Demo? {
+    if (demo.title == title) {
+        return demo
+    }
+    if (demo is DemoCategory) {
+        demo.demos.forEach { child ->
+            findDemo(child, title)?.let {
+                return it
             }
-            if (demo is DemoCategory) {
-                demo.demos.forEach { child ->
-                    findDemo(child, title)?.let {
-                        return it
-                    }
-                }
-            }
-            return null
         }
     }
+    return null
 }

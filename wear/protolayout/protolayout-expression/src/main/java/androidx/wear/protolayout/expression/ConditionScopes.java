@@ -16,8 +16,9 @@
 
 package androidx.wear.protolayout.expression;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicType;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.function.Function;
 
@@ -48,14 +49,12 @@ public class ConditionScopes {
         }
 
         /** Sets the value to use as the value when true in a conditional expression. */
-        @NonNull
-        public IfTrueScope<T, RawT> use(T valueWhenTrue) {
+        public @NonNull IfTrueScope<T, RawT> use(T valueWhenTrue) {
             return new IfTrueScope<>(valueWhenTrue, conditionBuilder, rawTypeMapper);
         }
 
         /** Sets the value to use as the value when true in a conditional expression. */
-        @NonNull
-        public IfTrueScope<T, RawT> use(RawT valueWhenTrue) {
+        public @NonNull IfTrueScope<T, RawT> use(RawT valueWhenTrue) {
             return use(rawTypeMapper.apply(valueWhenTrue));
         }
     }

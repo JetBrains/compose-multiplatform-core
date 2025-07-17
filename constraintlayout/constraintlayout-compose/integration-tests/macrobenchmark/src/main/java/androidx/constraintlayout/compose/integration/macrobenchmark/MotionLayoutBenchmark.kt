@@ -115,13 +115,13 @@ class MotionLayoutBenchmark {
     private fun MacrobenchmarkRule.motionBenchmark(
         composableName: String,
         setupBlock: MacrobenchmarkScope.() -> Unit = {},
-        measureBlock: MacrobenchmarkScope.() -> Unit
+        measureBlock: MacrobenchmarkScope.() -> Unit,
     ) {
         measureRepeated(
             packageName = PACKAGE_NAME,
             metrics = listOf(FrameTimingMetric()),
             compilationMode = CompilationMode.DEFAULT,
-            iterations = 10,
+            iterations = 8,
             // HOT causes issues with the measure block logic where multiple click actions are
             // triggered at once
             startupMode = StartupMode.WARM,
@@ -134,7 +134,7 @@ class MotionLayoutBenchmark {
                 device.waitForComposeIdle()
                 setupBlock()
             },
-            measureBlock = measureBlock
+            measureBlock = measureBlock,
         )
     }
 
@@ -158,7 +158,7 @@ class MotionLayoutBenchmark {
     internal enum class NewMessageMode(val composableName: String) {
         Json("NewMessageJson"),
         Dsl("NewMessageDsl"),
-        OptimizedDsl("OptimizedNewMessageDsl")
+        OptimizedDsl("OptimizedNewMessageDsl"),
     }
 
     private fun UiDevice.waitForComposeIdle(timeoutMs: Long = 3000) {

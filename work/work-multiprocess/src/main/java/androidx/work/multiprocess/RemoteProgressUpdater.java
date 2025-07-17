@@ -18,12 +18,13 @@ package androidx.work.multiprocess;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.work.Data;
 import androidx.work.ProgressUpdater;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.UUID;
 
@@ -33,9 +34,8 @@ import java.util.UUID;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteProgressUpdater implements ProgressUpdater {
-    @NonNull
     @Override
-    public ListenableFuture<Void> updateProgress(
+    public @NonNull ListenableFuture<Void> updateProgress(
             @NonNull Context context,
             @NonNull UUID id,
             @NonNull Data data) {

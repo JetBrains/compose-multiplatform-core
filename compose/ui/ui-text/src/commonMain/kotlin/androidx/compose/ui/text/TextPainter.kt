@@ -81,7 +81,7 @@ object TextPainter {
                     alpha = alpha,
                     shadow = shadow,
                     decoration = textDecoration,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 )
             } else {
                 val color =
@@ -95,7 +95,7 @@ object TextPainter {
                     color = color,
                     shadow = shadow,
                     decoration = textDecoration,
-                    drawStyle = drawStyle
+                    drawStyle = drawStyle,
                 )
             }
         } finally {
@@ -138,7 +138,6 @@ object TextPainter {
  *   Otherwise, [Size.height] either defines where the text is clipped ([TextOverflow.Clip]) or
  *   becomes no-op.
  * @param blendMode Blending algorithm to be applied to the text
- *
  * @sample androidx.compose.ui.text.samples.DrawTextAnnotatedStringSample
  */
 fun DrawScope.drawText(
@@ -149,9 +148,9 @@ fun DrawScope.drawText(
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
-    placeholders: List<AnnotatedString.Range<Placeholder>> = emptyList(),
+    placeholders: List<AnnotatedString.Range<Placeholder>> = listOf(),
     size: Size = Size.Unspecified,
-    blendMode: BlendMode = DrawScope.DefaultBlendMode
+    blendMode: BlendMode = DrawScope.DefaultBlendMode,
 ) {
     val textLayoutResult =
         textMeasurer.measure(
@@ -163,7 +162,7 @@ fun DrawScope.drawText(
             placeholders = placeholders,
             constraints = textLayoutConstraints(size, topLeft),
             layoutDirection = layoutDirection,
-            density = this
+            density = this,
         )
 
     withTransform({
@@ -203,9 +202,7 @@ fun DrawScope.drawText(
  *   Otherwise, [Size.height] either defines where the text is clipped ([TextOverflow.Clip]) or
  *   becomes no-op.
  * @param blendMode Blending algorithm to be applied to the text
- *
  * @sample androidx.compose.ui.text.samples.DrawTextSample
- *
  * @sample androidx.compose.ui.text.samples.DrawTextStyledSample
  */
 fun DrawScope.drawText(
@@ -217,7 +214,7 @@ fun DrawScope.drawText(
     softWrap: Boolean = true,
     maxLines: Int = Int.MAX_VALUE,
     size: Size = Size.Unspecified,
-    blendMode: BlendMode = DrawScope.DefaultBlendMode
+    blendMode: BlendMode = DrawScope.DefaultBlendMode,
 ) {
     val textLayoutResult =
         textMeasurer.measure(
@@ -228,7 +225,7 @@ fun DrawScope.drawText(
             maxLines = maxLines,
             constraints = textLayoutConstraints(size, topLeft),
             layoutDirection = layoutDirection,
-            density = this
+            density = this,
         )
 
     withTransform({
@@ -254,9 +251,7 @@ fun DrawScope.drawText(
  * @param textDecoration The decorations to paint on the text (e.g., an underline).
  * @param drawStyle Whether or not the text is stroked or filled in.
  * @param blendMode Blending algorithm to be applied to the text
- *
  * @sample androidx.compose.ui.text.samples.DrawTextMeasureInLayoutSample
- *
  * @sample androidx.compose.ui.text.samples.DrawTextDrawWithCacheSample
  */
 fun DrawScope.drawText(
@@ -267,7 +262,7 @@ fun DrawScope.drawText(
     shadow: Shadow? = null,
     textDecoration: TextDecoration? = null,
     drawStyle: DrawStyle? = null,
-    blendMode: BlendMode = DrawScope.DefaultBlendMode
+    blendMode: BlendMode = DrawScope.DefaultBlendMode,
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
@@ -288,7 +283,7 @@ fun DrawScope.drawText(
                 newShadow,
                 newTextDecoration,
                 newDrawStyle,
-                blendMode
+                blendMode,
             )
         } else {
             textLayoutResult.multiParagraph.paint(
@@ -297,7 +292,7 @@ fun DrawScope.drawText(
                 newShadow,
                 newTextDecoration,
                 newDrawStyle,
-                blendMode
+                blendMode,
             )
         }
     }
@@ -327,7 +322,7 @@ fun DrawScope.drawText(
     shadow: Shadow? = null,
     textDecoration: TextDecoration? = null,
     drawStyle: DrawStyle? = null,
-    blendMode: BlendMode = DrawScope.DefaultBlendMode
+    blendMode: BlendMode = DrawScope.DefaultBlendMode,
 ) {
     val newShadow = shadow ?: textLayoutResult.layoutInput.style.shadow
     val newTextDecoration = textDecoration ?: textLayoutResult.layoutInput.style.textDecoration
@@ -344,7 +339,7 @@ fun DrawScope.drawText(
             newShadow,
             newTextDecoration,
             newDrawStyle,
-            blendMode
+            blendMode,
         )
     }
 }
@@ -358,7 +353,7 @@ private fun DrawTransform.clip(textLayoutResult: TextLayoutResult) {
             left = 0f,
             top = 0f,
             right = textLayoutResult.size.width.toFloat(),
-            bottom = textLayoutResult.size.height.toFloat()
+            bottom = textLayoutResult.size.height.toFloat(),
         )
     }
 }

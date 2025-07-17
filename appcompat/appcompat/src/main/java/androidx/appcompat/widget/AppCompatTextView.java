@@ -17,6 +17,7 @@
 package androidx.appcompat.widget;
 
 import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
+import static androidx.appcompat.widget.AppCompatTextHelper.FontVariationSettingsManager;
 import static androidx.appcompat.widget.ViewUtils.SDK_LEVEL_SUPPORTS_AUTOSIZE;
 
 import android.annotation.SuppressLint;
@@ -39,12 +40,11 @@ import android.widget.TextView;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.Px;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.graphics.TypefaceCompat;
 import androidx.core.text.PrecomputedTextCompat;
@@ -53,6 +53,9 @@ import androidx.core.widget.AutoSizeableTextView;
 import androidx.core.widget.TextViewCompat;
 import androidx.core.widget.TintableCompoundDrawablesView;
 import androidx.resourceinspection.annotation.AppCompatShadowedAttributes;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -87,20 +90,29 @@ import java.util.concurrent.Future;
 public class AppCompatTextView extends TextView implements TintableBackgroundView,
         TintableCompoundDrawablesView, AutoSizeableTextView, EmojiCompatConfigurationView {
 
+    private static final String TAG = "AppCompatTextView";
     private final AppCompatBackgroundHelper mBackgroundTintHelper;
     private final AppCompatTextHelper mTextHelper;
     private final AppCompatTextClassifierHelper mTextClassifierHelper;
     @SuppressWarnings("NotNullFieldNotInitialized") // initialized in getter
-    @NonNull
-    private AppCompatEmojiTextHelper mEmojiTextViewHelper;
+    private @NonNull AppCompatEmojiTextHelper mEmojiTextViewHelper;
 
     private boolean mIsSetTypefaceProcessing = false;
 
-    @Nullable
-    private SuperCaller mSuperCaller = null;
+    private @Nullable SuperCaller mSuperCaller = null;
 
-    @Nullable
-    private Future<PrecomputedTextCompat> mPrecomputedTextFuture;
+    private @Nullable Future<PrecomputedTextCompat> mPrecomputedTextFuture;
+
+    private FontVariationSettingsManager mFontVariationSettingsManager;
+    @RequiresApi(26)
+    @VisibleForTesting
+    @NonNull FontVariationSettingsManager getFontVariationSettingsManager() {
+        if (mFontVariationSettingsManager == null) {
+            mFontVariationSettingsManager = new FontVariationSettingsManager(this,
+                        AppCompatTextView.super::setTypeface);
+        }
+        return mFontVariationSettingsManager;
+    }
 
     public AppCompatTextView(@NonNull Context context) {
         this(context, null);
@@ -132,8 +144,7 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This may be called from super constructors.
      */
-    @NonNull
-    private AppCompatEmojiTextHelper getEmojiTextViewHelper() {
+    private @NonNull AppCompatEmojiTextHelper getEmojiTextViewHelper() {
         //noinspection ConstantConditions
         if (mEmojiTextViewHelper == null) {
             mEmojiTextViewHelper = new AppCompatEmojiTextHelper(this);
@@ -160,7 +171,6 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#setBackgroundTintList(android.view.View, ColorStateList)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
@@ -173,12 +183,10 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#getBackgroundTintList(android.view.View)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    @Nullable
-    public ColorStateList getSupportBackgroundTintList() {
+    public @Nullable ColorStateList getSupportBackgroundTintList() {
         return mBackgroundTintHelper != null
                 ? mBackgroundTintHelper.getSupportBackgroundTintList() : null;
     }
@@ -186,11 +194,10 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#setBackgroundTintMode(android.view.View, PorterDuff.Mode)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    public void setSupportBackgroundTintMode(@Nullable PorterDuff.Mode tintMode) {
+    public void setSupportBackgroundTintMode(PorterDuff.@Nullable Mode tintMode) {
         if (mBackgroundTintHelper != null) {
             mBackgroundTintHelper.setSupportBackgroundTintMode(tintMode);
         }
@@ -199,12 +206,10 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
     /**
      * This should be accessed via
      * {@link androidx.core.view.ViewCompat#getBackgroundTintMode(android.view.View)}
-     *
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    @Nullable
-    public PorterDuff.Mode getSupportBackgroundTintMode() {
+    public PorterDuff.@Nullable Mode getSupportBackgroundTintMode() {
         return mBackgroundTintHelper != null
                 ? mBackgroundTintHelper.getSupportBackgroundTintMode() : null;
     }
@@ -217,8 +222,33 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
         }
     }
 
+    /**
+     * Set font variation settings.
+     * See {@link TextView#setFontVariationSettings(String)} for details.
+     * <p>
+     * <em>Note:</em> Due to performance optimizations,
+     * {@code getPaint().getFontVariationSettings()} will be less reliable than if not using
+     * AppCompatTextView.  You should prefer {@link #getFontVariationSettings()}, which will be more
+     * accurate. However, neither approach will work correctly if using Typeface objects with
+     * embedded font variation settings.
+     */
+    // Reference comparison with mLastKnownTypefaceSetOnPaint is intended;
+    // it should in fact be the exact instance, because we set it.
+    @SuppressWarnings("ReferenceEquality")
+    @RequiresApi(26)
     @Override
-    public void setFilters(@SuppressWarnings("ArrayReturn") @NonNull InputFilter[] filters) {
+    public boolean setFontVariationSettings(@Nullable String variationSettings) {
+        return getFontVariationSettingsManager().setFontVariationSettings(variationSettings);
+    }
+
+    @RequiresApi(26)
+    @Override
+    public @Nullable String getFontVariationSettings() {
+        return getFontVariationSettingsManager().getFontVariationSettings();
+    }
+
+    @Override
+    public void setFilters(@SuppressWarnings("ArrayReturn") InputFilter @NonNull [] filters) {
         super.setFilters(getEmojiTextViewHelper().getFilters(filters));
     }
 
@@ -329,7 +359,7 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @Override
-    public void setAutoSizeTextTypeUniformWithPresetSizes(@NonNull int[] presetSizes, int unit)
+    public void setAutoSizeTextTypeUniformWithPresetSizes(int @NonNull [] presetSizes, int unit)
             throws IllegalArgumentException {
         if (SDK_LEVEL_SUPPORTS_AUTOSIZE) {
             getSuperCaller().setAutoSizeTextTypeUniformWithPresetSizes(presetSizes, unit);
@@ -493,14 +523,13 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      */
     @Override
     public void setCustomSelectionActionModeCallback(
-            @Nullable ActionMode.Callback actionModeCallback) {
+            ActionMode.@Nullable Callback actionModeCallback) {
         super.setCustomSelectionActionModeCallback(
                 TextViewCompat.wrapCustomSelectionActionModeCallback(this, actionModeCallback));
     }
 
     @Override
-    @Nullable
-    public ActionMode.Callback getCustomSelectionActionModeCallback() {
+    public ActionMode.@Nullable Callback getCustomSelectionActionModeCallback() {
         return TextViewCompat.unwrapCustomSelectionActionModeCallback(
                 super.getCustomSelectionActionModeCallback());
     }
@@ -512,8 +541,7 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      * @return a current {@link PrecomputedTextCompat.Params}
      * @see PrecomputedTextCompat
      */
-    @NonNull
-    public PrecomputedTextCompat.Params getTextMetricsParamsCompat() {
+    public PrecomputedTextCompat.@NonNull Params getTextMetricsParamsCompat() {
         return TextViewCompat.getTextMetricsParams(this);
     }
 
@@ -524,7 +552,7 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      *
      * @see PrecomputedTextCompat
      */
-    public void setTextMetricsParamsCompat(@NonNull PrecomputedTextCompat.Params params) {
+    public void setTextMetricsParamsCompat(PrecomputedTextCompat.@NonNull Params params) {
         TextViewCompat.setTextMetricsParams(this, params);
     }
 
@@ -579,8 +607,7 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      */
     @Override
     @RequiresApi(api = 26)
-    @NonNull
-    public TextClassifier getTextClassifier() {
+    public @NonNull TextClassifier getTextClassifier() {
         // The null check is necessary because getTextClassifier is called when we are invoking
         // the super class's constructor.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P || mTextClassifierHelper == null) {
@@ -686,10 +713,9 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      * @see #setSupportCompoundDrawablesTintList(ColorStateList)
      *
      */
-    @Nullable
     @Override
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public ColorStateList getSupportCompoundDrawablesTintList() {
+    public @Nullable ColorStateList getSupportCompoundDrawablesTintList() {
         return mTextHelper.getCompoundDrawableTintList();
     }
 
@@ -727,10 +753,9 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      * @see #setSupportCompoundDrawablesTintMode(PorterDuff.Mode)
      *
      */
-    @Nullable
     @Override
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public PorterDuff.Mode getSupportCompoundDrawablesTintMode() {
+    public PorterDuff.@Nullable Mode getSupportCompoundDrawablesTintMode() {
         return mTextHelper.getCompoundDrawableTintMode();
     }
 
@@ -749,9 +774,29 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
      */
     @Override
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    public void setSupportCompoundDrawablesTintMode(@Nullable PorterDuff.Mode tintMode) {
+    public void setSupportCompoundDrawablesTintMode(PorterDuff.@Nullable Mode tintMode) {
         mTextHelper.setCompoundDrawableTintMode(tintMode);
         mTextHelper.applyCompoundDrawablesTints();
+    }
+
+    @Override
+    public void setTypeface(@Nullable Typeface tf) {
+        if (Build.VERSION.SDK_INT >= 26) {
+            getFontVariationSettingsManager().setTypeface(tf);
+        } else {
+            super.setTypeface(tf);
+        }
+    }
+
+    @Override
+    // Code inspection reveals that the superclass method can return null.
+    @SuppressWarnings("InvalidNullabilityOverride")
+    public @Nullable Typeface getTypeface() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            return getFontVariationSettingsManager().getTypeface();
+        } else {
+            return super.getTypeface();
+        }
     }
 
     @Override
@@ -763,14 +808,16 @@ public class AppCompatTextView extends TextView implements TintableBackgroundVie
             // TODO(nona): Remove this once Android X minSdkVersion moves to API21.
             return;
         }
-        Typeface finalTypeface = null;
+        final Typeface finalTypeface;
         if (tf != null && style > 0) {
             finalTypeface = TypefaceCompat.create(getContext(), tf, style);
+        } else {
+            finalTypeface = tf;
         }
 
         mIsSetTypefaceProcessing = true;
         try {
-            super.setTypeface(finalTypeface != null ? finalTypeface : tf, style);
+            super.setTypeface(finalTypeface, style);
         } finally {
             mIsSetTypefaceProcessing = false;
         }

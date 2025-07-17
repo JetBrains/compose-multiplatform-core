@@ -17,6 +17,7 @@
 package androidx.compose.ui
 
 import androidx.annotation.RestrictTo
+import kotlin.jvm.JvmInline
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -54,7 +55,7 @@ private constructor(private val currentSessionHolder: AtomicReference<Session<T>
      */
     suspend fun <R> withSessionCancellingPrevious(
         sessionInitializer: (CoroutineScope) -> T,
-        session: suspend (data: T) -> R
+        session: suspend (data: T) -> R,
     ): R = coroutineScope {
         val newSession = Session(job = coroutineContext.job, value = sessionInitializer(this))
         currentSessionHolder.getAndSet(newSession)?.job?.cancelAndJoin()

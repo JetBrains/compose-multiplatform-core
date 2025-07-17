@@ -19,6 +19,7 @@ package androidx.compose.ui.tooling
 import androidx.compose.ui.tooling.data.Group
 import androidx.compose.ui.tooling.data.UiToolingDataApi
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import kotlin.collections.removeLast as removeLastKt
 
 /** Tries to find the [Class] of the [PreviewParameterProvider] corresponding to the given FQN. */
 internal fun String.asPreviewProviderClass(): Class<out PreviewParameterProvider<*>>? {
@@ -40,7 +41,7 @@ internal fun String.asPreviewProviderClass(): Class<out PreviewParameterProvider
  */
 internal fun getPreviewProviderParameters(
     parameterProviderClass: Class<out PreviewParameterProvider<*>>?,
-    parameterProviderIndex: Int
+    parameterProviderIndex: Int,
 ): Array<Any?> {
     if (parameterProviderClass != null) {
         try {
@@ -114,12 +115,12 @@ internal fun Group.findAll(predicate: (Group) -> Boolean): List<Group> {
 private fun findGroupsThatMatchPredicate(
     root: Group,
     predicate: (Group) -> Boolean,
-    findOnlyFirst: Boolean = false
+    findOnlyFirst: Boolean = false,
 ): List<Group> {
     val result = mutableListOf<Group>()
     val stack = mutableListOf(root)
     while (stack.isNotEmpty()) {
-        val current = stack.removeLast()
+        val current = stack.removeLastKt()
         if (predicate(current)) {
             if (findOnlyFirst) {
                 return listOf(current)

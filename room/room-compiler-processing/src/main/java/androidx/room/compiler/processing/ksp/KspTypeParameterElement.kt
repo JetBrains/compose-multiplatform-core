@@ -16,6 +16,7 @@
 
 package androidx.room.compiler.processing.ksp
 
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XAnnotated
 import androidx.room.compiler.processing.XMemberContainer
 import androidx.room.compiler.processing.XType
@@ -26,7 +27,7 @@ import com.squareup.javapoet.TypeVariableName
 
 internal class KspTypeParameterElement(
     env: KspProcessingEnv,
-    override val declaration: KSTypeParameter
+    override val declaration: KSTypeParameter,
 ) :
     KspElement(env, declaration),
     XTypeParameterElement,
@@ -36,8 +37,11 @@ internal class KspTypeParameterElement(
         get() = declaration.name.asString()
 
     override val typeVariableName: TypeVariableName by lazy {
-        TypeVariableName.get(name, *bounds.map { it.typeName }.toTypedArray())
+        asTypeVariableName().java as TypeVariableName
     }
+
+    override fun asTypeVariableName() =
+        XTypeName.getTypeVariableName(name, bounds.map { it.asTypeName() })
 
     override val enclosingElement: KspMemberContainer by lazy {
         declaration.requireEnclosingMemberContainer(env)
@@ -47,6 +51,10 @@ internal class KspTypeParameterElement(
         declaration.bounds
             .map { env.wrap(it, it.resolve()) }
             .toList()
+            // In Kotlin the order doesn't matter but in Java class bound should go
+            // before interface bounds:
+            // https://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.4
+            .sortedBy { it.typeElement?.isInterface() ?: false }
             .ifEmpty { listOf(env.requireType(Any::class).makeNullable()) }
     }
 

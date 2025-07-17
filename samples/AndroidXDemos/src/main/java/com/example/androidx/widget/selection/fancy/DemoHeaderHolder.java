@@ -21,9 +21,9 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 final class DemoHeaderHolder extends DemoHolder {
 

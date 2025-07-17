@@ -20,7 +20,6 @@ import static androidx.appsearch.compiler.IntrospectionHelper.DOCUMENT_ANNOTATIO
 
 import static javax.lang.model.util.ElementFilter.typesIn;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import com.google.auto.common.BasicAnnotationProcessor;
@@ -30,6 +29,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.squareup.javapoet.JavaFile;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,8 +89,7 @@ public class AppSearchCompiler extends BasicAnnotationProcessor {
             "AppSearchCompiler.RestrictGeneratedCodeToLib";
 
     @Override
-    @NonNull
-    public SourceVersion getSupportedSourceVersion() {
+    public @NonNull SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
 
@@ -277,8 +277,7 @@ public class AppSearchCompiler extends BasicAnnotationProcessor {
          * @param delimiter The delimiter used to separate the strings, which should not have
          *                  appeared in any of the strings in the set.
          */
-        @NonNull
-        private static String generateStringSetHash(@NonNull Set<String> set,
+        private static @NonNull String generateStringSetHash(@NonNull Set<String> set,
                 @NonNull String delimiter) throws NoSuchAlgorithmException {
             List<String> sortedList = new ArrayList<>(set);
             Collections.sort(sortedList);

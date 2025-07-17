@@ -19,11 +19,12 @@ package androidx.camera.camera2.internal;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat;
+import androidx.camera.camera2.internal.compat.quirk.CaptureSessionShouldUseMrirQuirk;
+import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
+import androidx.camera.camera2.interop.Camera2CaptureRequestConfigurator;
 import androidx.camera.camera2.interop.CaptureRequestOptions;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.ImageAnalysis;
@@ -51,6 +52,9 @@ import androidx.camera.core.streamsharing.StreamSharing;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,18 +93,14 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
     private final ScheduledExecutorService mScheduledExecutorService;
     private final CaptureSession mCaptureSession;
     private List<DeferrableSurface> mOutputSurfaces = new ArrayList<>();
-    @Nullable
-    private SessionConfig mSessionConfig;
-    @Nullable
-    private Camera2RequestProcessor mRequestProcessor;
-    @Nullable
-    private SessionConfig mProcessorSessionConfig;
+    private @Nullable SessionConfig mSessionConfig;
+    private @Nullable Camera2RequestProcessor mRequestProcessor;
+    private @Nullable SessionConfig mProcessorSessionConfig;
 
     private static final long TIMEOUT_GET_SURFACE_IN_MS = 5000L;
     private ProcessorState mProcessorState;
     private static List<DeferrableSurface> sHeldProcessorSurfaces = new ArrayList<>();
-    @Nullable
-    private volatile List<CaptureConfig> mPendingCaptureConfigs = null;
+    private volatile @Nullable List<CaptureConfig> mPendingCaptureConfigs = null;
     private final SessionProcessorCaptureCallback mSessionProcessorCaptureCallback;
 
     private CaptureRequestOptions mSessionOptions = new CaptureRequestOptions.Builder().build();
@@ -123,8 +123,11 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
     ProcessingCaptureSession(@NonNull SessionProcessor sessionProcessor,
             @NonNull Camera2CameraInfoImpl camera2CameraInfoImpl,
             @NonNull DynamicRangesCompat dynamicRangesCompat, @NonNull Executor executor,
-            @NonNull ScheduledExecutorService scheduledExecutorService) {
-        mCaptureSession = new CaptureSession(dynamicRangesCompat);
+            @NonNull ScheduledExecutorService scheduledExecutorService,
+            @Nullable Camera2CaptureRequestConfigurator captureRequestConfigurator) {
+        mCaptureSession = new CaptureSession(dynamicRangesCompat,
+                DeviceQuirks.get(CaptureSessionShouldUseMrirQuirk.class) != null,
+                captureRequestConfigurator);
         mSessionProcessor = sessionProcessor;
         mCamera2CameraInfoImpl = camera2CameraInfoImpl;
         mExecutor = executor;
@@ -136,10 +139,9 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
         Logger.d(TAG, "New ProcessingCaptureSession (id=" + mInstanceId + ")");
     }
 
-    @NonNull
     @Override
-    public ListenableFuture<Void> open(@NonNull SessionConfig sessionConfig,
-            @NonNull CameraDevice cameraDevice, @NonNull SynchronizedCaptureSession.Opener opener) {
+    public @NonNull ListenableFuture<Void> open(@NonNull SessionConfig sessionConfig,
+            @NonNull CameraDevice cameraDevice, SynchronizedCaptureSession.@NonNull Opener opener) {
         Preconditions.checkArgument(mProcessorState == ProcessorState.UNINITIALIZED,
                 "Invalid state state:" + mProcessorState);
         Preconditions.checkArgument(!sessionConfig.getSurfaces().isEmpty(),
@@ -382,7 +384,7 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
                 break;
             case ON_CAPTURE_SESSION_STARTED:
                 for (CaptureConfig captureConfig : captureConfigs) {
-                    if (captureConfig.getTemplateType() == CameraDevice.TEMPLATE_STILL_CAPTURE) {
+                    if (isTemplateTypeForStillCapture(captureConfig.getTemplateType())) {
                         issueStillCaptureRequest(captureConfig);
                     } else {
                         issueTriggerRequest(captureConfig);
@@ -397,6 +399,12 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
                 break;
         }
     }
+
+    private boolean isTemplateTypeForStillCapture(int templateType) {
+        return templateType == CameraDevice.TEMPLATE_STILL_CAPTURE
+                || templateType == CameraDevice.TEMPLATE_VIDEO_SNAPSHOT;
+    }
+
     void issueStillCaptureRequest(@NonNull CaptureConfig captureConfig) {
         CaptureRequestOptions.Builder builder =
                 CaptureRequestOptions.Builder.from(
@@ -478,8 +486,7 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
      * {@inheritDoc}
      */
     @Override
-    @NonNull
-    public ListenableFuture<Void> release(boolean abortInFlightCaptures) {
+    public @NonNull ListenableFuture<Void> release(boolean abortInFlightCaptures) {
         Logger.d(TAG, "release (id=" + mInstanceId + ") mProcessorState=" + mProcessorState);
 
         ListenableFuture<Void> future = mCaptureSession.release(abortInFlightCaptures);
@@ -535,18 +542,16 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
     /**
      * {@inheritDoc}
      */
-    @Nullable
     @Override
-    public SessionConfig getSessionConfig() {
+    public @Nullable SessionConfig getSessionConfig() {
         return mSessionConfig;
     }
 
     /**
      * {@inheritDoc}
      */
-    @NonNull
     @Override
-    public List<CaptureConfig> getCaptureConfigs() {
+    public @NonNull List<CaptureConfig> getCaptureConfigs() {
         return mPendingCaptureConfigs != null ? mPendingCaptureConfigs : Collections.emptyList();
     }
 
@@ -614,9 +619,18 @@ final class ProcessingCaptureSession implements CaptureSessionInterface {
         }
 
         if (mProcessorState == ProcessorState.ON_CAPTURE_SESSION_STARTED) {
-            mSessionOptions =
-                    CaptureRequestOptions.Builder.from(sessionConfig.getImplementationOptions())
-                            .build();
+            CaptureRequestOptions.Builder requestOptionsbuilder =
+                    CaptureRequestOptions.Builder.from(sessionConfig.getImplementationOptions());
+
+            // Applying stabilization mode
+            Integer stabilizationMode =
+                    Camera2CaptureRequestBuilder.getVideoStabilizationModeFromCaptureConfig(
+                            sessionConfig.getRepeatingCaptureConfig());
+            if (stabilizationMode != null) {
+                requestOptionsbuilder.setCaptureRequestOption(
+                        CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, stabilizationMode);
+            }
+            mSessionOptions = requestOptionsbuilder.build();
             updateParameters(mSessionOptions, mStillCaptureOptions);
 
             // We can't disable only preview stream but enable ImageAnalysis in Extensions.

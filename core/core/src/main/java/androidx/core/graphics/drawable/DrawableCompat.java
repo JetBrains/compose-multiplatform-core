@@ -29,12 +29,11 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.ViewCompat;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -167,7 +166,7 @@ public final class DrawableCompat {
      * @param drawable The Drawable against which to invoke the method.
      * @param tintMode A Porter-Duff blending mode
      */
-    public static void setTintMode(@NonNull Drawable drawable, @Nullable PorterDuff.Mode tintMode) {
+    public static void setTintMode(@NonNull Drawable drawable, PorterDuff.@Nullable Mode tintMode) {
         if (Build.VERSION.SDK_INT >= 21) {
             Api21Impl.setTintMode(drawable, tintMode);
         } else if (drawable instanceof TintAwareDrawable) {
@@ -193,7 +192,7 @@ public final class DrawableCompat {
      * Applies the specified theme to this Drawable and its children.
      */
     @SuppressWarnings("unused")
-    public static void applyTheme(@NonNull Drawable drawable, @NonNull Resources.Theme theme) {
+    public static void applyTheme(@NonNull Drawable drawable, Resources.@NonNull Theme theme) {
         if (Build.VERSION.SDK_INT >= 21) {
             Api21Impl.applyTheme(drawable, theme);
         }
@@ -217,8 +216,7 @@ public final class DrawableCompat {
      * @return the current color filter, or {@code null} if none set
      */
     @SuppressWarnings("unused")
-    @Nullable
-    public static ColorFilter getColorFilter(@NonNull Drawable drawable) {
+    public static @Nullable ColorFilter getColorFilter(@NonNull Drawable drawable) {
         if (Build.VERSION.SDK_INT >= 21) {
             return Api21Impl.getColorFilter(drawable);
         } else {
@@ -277,7 +275,7 @@ public final class DrawableCompat {
      */
     public static void inflate(@NonNull Drawable drawable, @NonNull Resources res,
             @NonNull XmlPullParser parser, @NonNull AttributeSet attrs,
-            @Nullable Resources.Theme theme)
+            Resources.@Nullable Theme theme)
             throws XmlPullParserException, IOException {
         if (Build.VERSION.SDK_INT >= 21) {
             Api21Impl.inflate(drawable, res, parser, attrs, theme);
@@ -317,8 +315,7 @@ public final class DrawableCompat {
      * @see #setTintMode(Drawable, PorterDuff.Mode)
      * @see #unwrap(Drawable)
      */
-    @NonNull
-    public static Drawable wrap(@NonNull Drawable drawable) {
+    public static @NonNull Drawable wrap(@NonNull Drawable drawable) {
         if (Build.VERSION.SDK_INT >= 23) {
             return drawable;
         } else if (Build.VERSION.SDK_INT >= 21) {
@@ -438,49 +435,40 @@ public final class DrawableCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static void setHotspot(Drawable drawable, float x, float y) {
             drawable.setHotspot(x, y);
         }
 
-        @DoNotInline
         static void setTint(Drawable drawable, int tintColor) {
             drawable.setTint(tintColor);
         }
 
-        @DoNotInline
         static void setTintList(Drawable drawable, ColorStateList tint) {
             drawable.setTintList(tint);
         }
 
-        @DoNotInline
         static void setTintMode(Drawable drawable, PorterDuff.Mode tintMode) {
             drawable.setTintMode(tintMode);
         }
 
-        @DoNotInline
         static void applyTheme(Drawable drawable, Resources.Theme t) {
             drawable.applyTheme(t);
         }
 
-        @DoNotInline
         static boolean canApplyTheme(Drawable drawable) {
             return drawable.canApplyTheme();
         }
 
-        @DoNotInline
         static ColorFilter getColorFilter(Drawable drawable) {
             return drawable.getColorFilter();
         }
 
-        @DoNotInline
         static void inflate(Drawable drawable, Resources r, XmlPullParser parser,
                 AttributeSet attrs, Resources.Theme theme)
                 throws XmlPullParserException, IOException {
             drawable.inflate(r, parser, attrs, theme);
         }
 
-        @DoNotInline
         static void setHotspotBounds(Drawable drawable, int left, int top, int right, int bottom) {
             drawable.setHotspotBounds(left, top, right, bottom);
         }
@@ -492,12 +480,10 @@ public final class DrawableCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static boolean setLayoutDirection(Drawable drawable, int layoutDirection) {
             return drawable.setLayoutDirection(layoutDirection);
         }
 
-        @DoNotInline
         static int getLayoutDirection(Drawable drawable) {
             return drawable.getLayoutDirection();
         }

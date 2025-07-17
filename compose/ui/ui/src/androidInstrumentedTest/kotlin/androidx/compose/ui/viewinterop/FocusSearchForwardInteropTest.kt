@@ -16,16 +16,24 @@
 
 package androidx.compose.ui.viewinterop
 
+import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.O
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.KeyEvent.ACTION_DOWN
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import android.widget.LinearLayout
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
@@ -49,6 +57,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,7 +81,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun singleFocusableComposable() {
         // Arrange.
-        setContent { FocusableComponent(composable) }
+        setTestContent { FocusableComponent(composable) }
 
         // Act.
         rule.focusSearchForward()
@@ -84,7 +93,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun singleFocusableView() {
         // Arrange.
-        setContent { AndroidView({ FocusableView(it).apply { view = this } }) }
+        setTestContent { AndroidView({ FocusableView(it).apply { view = this } }) }
 
         // Act.
         rule.focusSearchForward()
@@ -96,7 +105,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun singleViewInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply { addView(FocusableView(it).apply { view = this }) }
             })
@@ -112,7 +121,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewViewInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(FocusableView(it).apply { view1 = this })
@@ -135,7 +144,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun focusedViewViewInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(FocusableView(it).apply { view1 = this })
@@ -155,11 +164,10 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
         }
     }
 
-    @SdkSuppress(minSdkVersion = O) // b/327628485
     @Test
     fun focusedComposableViewInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(ComposeView(it).apply { setContent { FocusableComponent(composable) } })
@@ -179,19 +187,20 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
 
     @Test
     fun focusedComposableWithFocusableView_view_inLinearLayout() {
+        assumeTrue(
+            @OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isPre26FocusFinderFixEnabled ||
+                SDK_INT >= 26 ||
+                !moveFocusProgrammatically
+        )
+
         // Arrange.
-        var isComposableFocused = false
-        setContent {
+        setTestContent {
             AndroidView({ context ->
                 LinearLayout(context).apply {
                     addView(
                         ComposeView(context).apply {
                             setContent {
-                                Row(
-                                    Modifier.testTag(composable)
-                                        .onFocusChanged { isComposableFocused = it.isFocused }
-                                        .focusable()
-                                ) {
+                                Row(Modifier.testTag(composable).focusable()) {
                                     AndroidView({ FocusableView(it).apply { view1 = this } })
                                 }
                             }
@@ -202,19 +211,18 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
             })
         }
         rule.onNodeWithTag(composable).requestFocus()
-        rule.waitUntil { isComposableFocused }
 
         // Act.
-        rule.focusSearchForward(waitForIdle = false)
+        rule.focusSearchForward()
 
         // Assert.
-        rule.waitUntil { !isComposableFocused && view1.isFocused }
+        rule.runOnIdle { assertThat(view1.isFocused).isTrue() }
     }
 
     @Test
     fun viewViewRolloverInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(FocusableView(it).apply { view1 = this })
@@ -234,11 +242,10 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
         }
     }
 
-    @SdkSuppress(minSdkVersion = O) // b/318971623
     @Test
     fun viewComposableViewInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(FocusableView(it).apply { view1 = this })
@@ -258,11 +265,10 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
         rule.runOnIdle { assertThat(view2.isFocused).isFalse() }
     }
 
-    @SdkSuppress(minSdkVersion = O) // b/318971623
     @Test
     fun viewViewComposableInLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             AndroidView({
                 LinearLayout(it).apply {
                     addView(FocusableView(it).apply { view1 = this })
@@ -287,7 +293,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun movingAcrossLinearLayouts() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({
                     LinearLayout(it).apply {
@@ -318,7 +324,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun composableToLinearLayout() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable1)
                 AndroidView({
@@ -343,7 +349,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun linearLayoutToComposable() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({
                     LinearLayout(it).apply {
@@ -368,7 +374,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun composableViewInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable)
                 AndroidView({ FocusableView(it).apply { view = this } })
@@ -386,7 +392,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun focusedComposableViewInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable)
                 AndroidView({ FocusableView(it).apply { view = this } })
@@ -405,7 +411,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun composableViewRolloverInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable)
                 AndroidView({ FocusableView(it).apply { view = this } })
@@ -424,7 +430,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewComposableInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({ FocusableView(it).apply { view = this } })
                 FocusableComponent(composable)
@@ -442,7 +448,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun focusedViewComposableInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({ FocusableView(it).apply { view = this } })
                 FocusableComponent(composable)
@@ -461,7 +467,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewComposableRolloverInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({ FocusableView(it).apply { view = this } })
                 FocusableComponent(composable)
@@ -480,15 +486,15 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewViewInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView(
                     factory = { FocusableView(it).apply { view1 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState1 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState1 = it },
                 )
                 AndroidView(
                     factory = { FocusableView(it).apply { view2 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState2 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState2 = it },
                 )
             }
         }
@@ -512,15 +518,15 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewViewRolloverInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView(
                     factory = { FocusableView(it).apply { view1 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState1 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState1 = it },
                 )
                 AndroidView(
                     factory = { FocusableView(it).apply { view2 = this } },
-                    modifier = Modifier.onFocusChanged { wrapperState2 = it }
+                    modifier = Modifier.onFocusChanged { wrapperState2 = it },
                 )
             }
         }
@@ -544,7 +550,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun composableViewComposableInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable1)
                 AndroidView({ FocusableView(it).apply { view = this } })
@@ -565,7 +571,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun composableComposableViewInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 FocusableComponent(composable1)
                 FocusableComponent(composable2)
@@ -586,7 +592,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewComposableViewInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 AndroidView({ FocusableView(it).apply { view1 = this } })
                 FocusableComponent(composable)
@@ -607,7 +613,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
     @Test
     fun viewViewComposableInRow() {
         // Arrange.
-        setContent {
+        setTestContent {
             Row {
                 Box {
                     AndroidView({ FocusableView(it).apply { view1 = this } }, Modifier.size(50.dp))
@@ -631,8 +637,47 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
         rule.onNodeWithTag(composable).assertIsNotFocused()
     }
 
-    private fun ComposeContentTestRule.focusSearchForward(waitForIdle: Boolean = true) {
-        if (waitForIdle) waitForIdle()
+    @Test
+    fun focusableInTouchMode() {
+        val tag = "tag"
+        lateinit var editText: EditText
+        lateinit var composeView: ComposeView
+        setTestContent {
+            AndroidView(
+                {
+                    LinearLayout(it).also { linearLayout ->
+                        linearLayout.orientation = LinearLayout.VERTICAL
+                        linearLayout.addView(EditText(linearLayout.context))
+                        editText = EditText(linearLayout.context)
+                        editText.setSingleLine()
+                        editText.setText("1")
+                        editText.inputType = EditorInfo.TYPE_NUMBER_VARIATION_NORMAL
+                        editText.imeOptions = EditorInfo.IME_FLAG_NAVIGATE_NEXT
+                        linearLayout.addView(editText)
+                        composeView =
+                            ComposeView(linearLayout.context).apply {
+                                setContent {
+                                    Column { TextField("Hello World", {}, Modifier.testTag(tag)) }
+                                }
+                            }
+                        linearLayout.addView(composeView)
+                    }
+                },
+                Modifier.safeContentPadding(),
+            )
+        }
+        rule.runOnIdle {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.setInTouchMode(true)
+            editText.requestFocusFromTouch()
+        }
+        rule.waitUntil { rule.runOnUiThread { editText.isFocused } }
+        rule.waitForIdle()
+        rule.runOnIdle { editText.onEditorAction(EditorInfo.IME_ACTION_NEXT) }
+        rule.onNodeWithTag(tag).assertIsFocused()
+    }
+
+    private fun ComposeContentTestRule.focusSearchForward() {
         if (moveFocusProgrammatically) {
             runOnUiThread { focusManager.moveFocus(FocusDirection.Next) }
         } else {
@@ -641,7 +686,7 @@ class FocusSearchForwardInteropTest(private val moveFocusProgrammatically: Boole
         }
     }
 
-    private fun setContent(composable: @Composable () -> Unit) {
+    private fun setTestContent(composable: @Composable () -> Unit) {
         rule.setContent {
             focusManager = LocalFocusManager.current
             composable.invoke()

@@ -16,6 +16,7 @@
 package androidx.compose.material3
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -112,7 +113,7 @@ class BadgeTest {
                 shape = shape,
                 shapeColor = errorColor,
                 backgroundColor = Color.White,
-                shapeOverlapPixelCount = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -127,11 +128,12 @@ class BadgeTest {
         val anchorBounds = rule.onNodeWithTag(TestAnchorTag).getUnclippedBoundsInRoot()
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right - BadgeOffset,
-            expectedTop = anchorBounds.top
+            expectedTop = anchorBounds.top,
         )
     }
 
     @Test
+    @SdkSuppress(maxSdkVersion = 34) // b/384973010: Failing on SDK 35
     fun badgeBox_shortContent_position() {
         rule.setMaterialContent(lightColorScheme()) {
             BadgedBox(badge = { Badge { Text("8") } }) {
@@ -146,7 +148,7 @@ class BadgeTest {
             -BadgeWithContentHorizontalOffset + BadgeWithContentHorizontalPadding
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right + totalBadgeHorizontalOffset,
-            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset
+            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset,
         )
     }
 
@@ -165,7 +167,7 @@ class BadgeTest {
             -BadgeWithContentHorizontalOffset + BadgeWithContentHorizontalPadding
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right + totalBadgeHorizontalOffset,
-            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset
+            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset,
         )
     }
 
@@ -177,11 +179,11 @@ class BadgeTest {
                 modifier =
                     Modifier.testTag(TestBadgeTag).semantics {
                         this.contentDescription = "more than 99 new email"
-                    }
+                    },
             ) {
                 Text(
                     "inbox",
-                    Modifier.semantics { this.contentDescription = "inbox" }.testTag(TestAnchorTag)
+                    Modifier.semantics { this.contentDescription = "inbox" }.testTag(TestAnchorTag),
                 )
             }
         }
@@ -206,7 +208,13 @@ class BadgeTest {
         val badgeTag = "badgeTag"
 
         rule.setMaterialContent(lightColorScheme()) {
-            Box(modifier = Modifier.size(50.dp).testTag(greatGrandParentTag)) {
+            Box(
+                modifier =
+                    Modifier.background(Color.Blue)
+                        .badgeBounds()
+                        .size(50.dp)
+                        .testTag(greatGrandParentTag)
+            ) {
                 Box {
                     BadgedBox(
                         badge = { Badge(modifier = Modifier.testTag(badgeTag)) { Text("999+") } }

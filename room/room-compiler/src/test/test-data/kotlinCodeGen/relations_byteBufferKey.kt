@@ -1,4 +1,5 @@
 import androidx.room.RoomDatabase
+import androidx.room.util.ByteArrayWrapper
 import androidx.room.util.appendPlaceholders
 import androidx.room.util.getColumnIndex
 import androidx.room.util.getColumnIndexOrThrow
@@ -6,7 +7,6 @@ import androidx.room.util.performBlocking
 import androidx.room.util.recursiveFetchMap
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteStatement
-import java.nio.ByteBuffer
 import javax.`annotation`.processing.Generated
 import kotlin.ByteArray
 import kotlin.Int
@@ -35,12 +35,12 @@ public class MyDao_Impl(
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        val _cursorIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
-        val _cursorIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
-        val _collectionArtist: MutableMap<ByteBuffer, Artist?> = mutableMapOf()
+        val _columnIndexOfSongId: Int = getColumnIndexOrThrow(_stmt, "songId")
+        val _columnIndexOfArtistKey: Int = getColumnIndexOrThrow(_stmt, "artistKey")
+        val _collectionArtist: MutableMap<ByteArrayWrapper, Artist?> = mutableMapOf()
         while (_stmt.step()) {
-          val _tmpKey: ByteBuffer
-          _tmpKey = ByteBuffer.wrap(_stmt.getBlob(_cursorIndexOfArtistKey))
+          val _tmpKey: ByteArrayWrapper
+          _tmpKey = ByteArrayWrapper(_stmt.getBlob(_columnIndexOfArtistKey))
           _collectionArtist.put(_tmpKey, null)
         }
         _stmt.reset()
@@ -49,20 +49,20 @@ public class MyDao_Impl(
         if (_stmt.step()) {
           val _tmpSong: Song
           val _tmpSongId: Long
-          _tmpSongId = _stmt.getLong(_cursorIndexOfSongId)
+          _tmpSongId = _stmt.getLong(_columnIndexOfSongId)
           val _tmpArtistKey: ByteArray
-          _tmpArtistKey = _stmt.getBlob(_cursorIndexOfArtistKey)
+          _tmpArtistKey = _stmt.getBlob(_columnIndexOfArtistKey)
           _tmpSong = Song(_tmpSongId,_tmpArtistKey)
           val _tmpArtist: Artist?
-          val _tmpKey_1: ByteBuffer
-          _tmpKey_1 = ByteBuffer.wrap(_stmt.getBlob(_cursorIndexOfArtistKey))
+          val _tmpKey_1: ByteArrayWrapper
+          _tmpKey_1 = ByteArrayWrapper(_stmt.getBlob(_columnIndexOfArtistKey))
           _tmpArtist = _collectionArtist.get(_tmpKey_1)
           if (_tmpArtist == null) {
             error("Relationship item 'artist' was expected to be NON-NULL but is NULL in @Relation involving a parent column named 'artistKey' and entityColumn named 'artistId'.")
           }
           _result = SongWithArtist(_tmpSong,_tmpArtist)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <SongWithArtist>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'SongWithArtist'.")
         }
         _result
       } finally {
@@ -71,9 +71,8 @@ public class MyDao_Impl(
     }
   }
 
-  private fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection,
-      _map: MutableMap<ByteBuffer, Artist?>) {
-    val __mapKeySet: Set<ByteBuffer> = _map.keys
+  private fun __fetchRelationshipArtistAsArtist(_connection: SQLiteConnection, _map: MutableMap<ByteArrayWrapper, Artist?>) {
+    val __mapKeySet: Set<ByteArrayWrapper> = _map.keys
     if (__mapKeySet.isEmpty()) {
       return
     }
@@ -91,8 +90,8 @@ public class MyDao_Impl(
     val _sql: String = _stringBuilder.toString()
     val _stmt: SQLiteStatement = _connection.prepare(_sql)
     var _argIndex: Int = 1
-    for (_item: ByteBuffer in __mapKeySet) {
-      _stmt.bindBlob(_argIndex, _item.array())
+    for (_item: ByteArrayWrapper in __mapKeySet) {
+      _stmt.bindBlob(_argIndex, _item.array)
       _argIndex++
     }
     try {
@@ -100,14 +99,14 @@ public class MyDao_Impl(
       if (_itemKeyIndex == -1) {
         return
       }
-      val _cursorIndexOfArtistId: Int = 0
+      val _columnIndexOfArtistId: Int = 0
       while (_stmt.step()) {
-        val _tmpKey: ByteBuffer
-        _tmpKey = ByteBuffer.wrap(_stmt.getBlob(_itemKeyIndex))
+        val _tmpKey: ByteArrayWrapper
+        _tmpKey = ByteArrayWrapper(_stmt.getBlob(_itemKeyIndex))
         if (_map.containsKey(_tmpKey)) {
           val _item_1: Artist
           val _tmpArtistId: ByteArray
-          _tmpArtistId = _stmt.getBlob(_cursorIndexOfArtistId)
+          _tmpArtistId = _stmt.getBlob(_columnIndexOfArtistId)
           _item_1 = Artist(_tmpArtistId)
           _map.put(_tmpKey, _item_1)
         }

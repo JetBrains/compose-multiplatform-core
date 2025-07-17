@@ -25,9 +25,10 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class EditTextPreferenceDialogFragmentCompat extends PreferenceDialogFragmentCompat {
 
@@ -46,8 +47,7 @@ public class EditTextPreferenceDialogFragmentCompat extends PreferenceDialogFrag
     private long mShowRequestTime = -1;
     private static final int SHOW_REQUEST_TIMEOUT = 1000;
 
-    @NonNull
-    public static EditTextPreferenceDialogFragmentCompat newInstance(@NonNull String key) {
+    public static @NonNull EditTextPreferenceDialogFragmentCompat newInstance(@NonNull String key) {
         final EditTextPreferenceDialogFragmentCompat
                 fragment = new EditTextPreferenceDialogFragmentCompat();
         final Bundle b = new Bundle(1);

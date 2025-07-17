@@ -16,6 +16,7 @@
 
 package androidx.compose.material.navigation.samples
 
+import androidx.annotation.Sampled
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ private object Destinations {
     const val Sheet = "SHEET"
 }
 
+@Sampled
 @Composable
 fun BottomSheetNavDemo() {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
@@ -50,7 +52,7 @@ fun BottomSheetNavDemo() {
                     showSheet = {
                         navController.navigate(Destinations.Sheet + "?arg=From Home Screen")
                     },
-                    showFeed = { navController.navigate(Destinations.Feed) }
+                    showFeed = { navController.navigate(Destinations.Feed) },
                 )
             }
             composable(Destinations.Feed) { Text("Feed!") }
@@ -61,7 +63,7 @@ fun BottomSheetNavDemo() {
                     showAnotherSheet = {
                         navController.navigate(Destinations.Sheet + "?arg=${UUID.randomUUID()}")
                     },
-                    arg = arg
+                    arg = arg,
                 )
             }
         }

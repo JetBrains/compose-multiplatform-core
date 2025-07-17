@@ -35,12 +35,27 @@ class MetricResultTest {
     }
 
     @Test
+    fun zeros() {
+        val metricResult = MetricResult("test", listOf(0.0, 0.0))
+        assertEquals(0.0, metricResult.min, 0.0)
+        assertEquals(0.0, metricResult.max, 0.0)
+        assertEquals(0.0, metricResult.median, 0.0)
+        assertEquals(0.0, metricResult.standardDeviation, 0.0)
+        assertEquals(0.0, metricResult.coefficientOfVariation, 0.0)
+
+        assertEquals(0, metricResult.minIndex)
+        assertEquals(0, metricResult.maxIndex)
+        assertEquals(1, metricResult.medianIndex)
+    }
+
+    @Test
     fun repeat() {
         val metricResult = MetricResult("test", listOf(10.0, 10.0, 10.0, 10.0))
         assertEquals(10.0, metricResult.min, 0.0)
         assertEquals(10.0, metricResult.max, 0.0)
         assertEquals(10.0, metricResult.median, 0.0)
         assertEquals(0.0, metricResult.standardDeviation, 0.0)
+        assertEquals(0.0, metricResult.coefficientOfVariation, 0.0)
 
         assertEquals(0, metricResult.minIndex)
         assertEquals(0, metricResult.maxIndex)
@@ -54,6 +69,7 @@ class MetricResultTest {
         assertEquals(10.0, metricResult.max, 0.0)
         assertEquals(10.0, metricResult.median, 0.0)
         assertEquals(0.0, metricResult.standardDeviation, 0.0)
+        assertEquals(0.0, metricResult.coefficientOfVariation, 0.0)
 
         assertEquals(0, metricResult.minIndex)
         assertEquals(0, metricResult.maxIndex)
@@ -67,6 +83,7 @@ class MetricResultTest {
         assertEquals(100.0, metricResult.max, 0.0)
         assertEquals(0.0, metricResult.min, 0.0)
         assertEquals(29.3, metricResult.standardDeviation, 0.05)
+        assertEquals(0.586, metricResult.coefficientOfVariation, 0.0005)
 
         assertEquals(0, metricResult.minIndex)
         assertEquals(100, metricResult.maxIndex)
@@ -87,7 +104,7 @@ class MetricResultTest {
             assertEquals(
                 it.toDouble(),
                 MetricResult.getPercentile(listOf(0.0, 25.0, 50.0, 75.0, 100.0), it),
-                0.01
+                0.01,
             )
         }
     }

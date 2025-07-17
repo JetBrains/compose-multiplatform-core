@@ -17,10 +17,10 @@
 package androidx.compose.runtime.snapshots
 
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.SynchronizedObject
 import androidx.compose.runtime.external.kotlinx.collections.immutable.PersistentMap
 import androidx.compose.runtime.external.kotlinx.collections.immutable.persistentHashMapOf
-import androidx.compose.runtime.synchronized
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import kotlin.jvm.JvmName
 
 /**
@@ -32,15 +32,14 @@ import kotlin.jvm.JvmName
  * @see androidx.compose.runtime.mutableStateMapOf
  */
 @Stable
-class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
+public class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
     override var firstStateRecord: StateRecord =
         persistentHashMapOf<K, V>().let { map ->
-            StateMapStateRecord(map).also {
-                if (Snapshot.isInSnapshot) {
+            val snapshot = currentSnapshot()
+            StateMapStateRecord(snapshot.snapshotId, map).also {
+                if (snapshot !is GlobalSnapshot) {
                     it.next =
-                        StateMapStateRecord(map).also { next ->
-                            next.snapshotId = Snapshot.PreexistingSnapshotId
-                        }
+                        StateMapStateRecord(Snapshot.PreexistingSnapshotId.toSnapshotId(), map)
                 }
             }
         }
@@ -65,18 +64,18 @@ class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
      * It is recommended to use [toMap] when using returning the value of this map from
      * [androidx.compose.runtime.snapshotFlow].
      */
-    fun toMap(): Map<K, V> = readable.map
+    public fun toMap(): Map<K, V> = readable.map
 
-    override val size
+    override val size: Int
         get() = readable.map.size
 
-    override fun containsKey(key: K) = readable.map.containsKey(key)
+    override fun containsKey(key: K): Boolean = readable.map.containsKey(key)
 
-    override fun containsValue(value: V) = readable.map.containsValue(value)
+    override fun containsValue(value: V): Boolean = readable.map.containsValue(value)
 
-    override fun get(key: K) = readable.map[key]
+    override fun get(key: K): V? = readable.map[key]
 
-    override fun isEmpty() = readable.map.isEmpty()
+    override fun isEmpty(): Boolean = readable.map.isEmpty()
 
     override val entries: MutableSet<MutableMap.MutableEntry<K, V>> = SnapshotMapEntrySet(this)
     override val keys: MutableSet<K> = SnapshotMapKeySet(this)
@@ -88,11 +87,11 @@ class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
             "SnapshotStateMap(value=${it.map})@${hashCode()}"
         }
 
-    override fun clear() = update { persistentHashMapOf() }
+    override fun clear(): Unit = update { persistentHashMapOf() }
 
     override fun put(key: K, value: V): V? = mutate { it.put(key, value) }
 
-    override fun putAll(from: Map<out K, V>) = mutate { it.putAll(from) }
+    override fun putAll(from: Map<out K, V>): Unit = mutate { it.putAll(from) }
 
     override fun remove(key: K): V? = mutate { it.remove(key) }
 
@@ -167,37 +166,39 @@ class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
             val builder = oldMap!!.builder()
             result = block(builder)
             val newMap = builder.build()
-            if (
-                newMap == oldMap ||
-                    writable {
-                        synchronized(sync) {
-                            if (modification == currentModification) {
-                                map = newMap
-                                modification++
-                                true
-                            } else false
-                        }
-                    }
-            )
-                break
+            if (newMap == oldMap || writable { attemptUpdate(currentModification, newMap) }) break
         }
         return result
     }
 
+    private fun StateMapStateRecord<K, V>.attemptUpdate(
+        currentModification: Int,
+        newMap: PersistentMap<K, V>,
+    ) =
+        synchronized(sync) {
+            if (modification == currentModification) {
+                map = newMap
+                modification++
+                true
+            } else false
+        }
+
     private inline fun update(block: (PersistentMap<K, V>) -> PersistentMap<K, V>) = withCurrent {
         val newMap = block(map)
-        if (newMap !== map)
-            writable {
-                synchronized(sync) {
-                    map = newMap
-                    modification++
-                }
-            }
+        if (newMap !== map) writable { commitUpdate(newMap) }
     }
+
+    // NOTE: do not inline this method to avoid class verification failures, see b/369909868
+    private fun StateMapStateRecord<K, V>.commitUpdate(newMap: PersistentMap<K, V>) =
+        synchronized(sync) {
+            map = newMap
+            modification++
+        }
 
     /** Implementation class of [SnapshotStateMap]. Do not use. */
     internal class StateMapStateRecord<K, V>
-    internal constructor(internal var map: PersistentMap<K, V>) : StateRecord() {
+    internal constructor(snapshotId: SnapshotId, internal var map: PersistentMap<K, V>) :
+        StateRecord(snapshotId) {
         internal var modification = 0
 
         override fun assign(value: StateRecord) {
@@ -208,7 +209,10 @@ class SnapshotStateMap<K, V> : StateObject, MutableMap<K, V> {
             }
         }
 
-        override fun create(): StateRecord = StateMapStateRecord(map)
+        override fun create(): StateRecord = StateMapStateRecord(currentSnapshot().snapshotId, map)
+
+        override fun create(snapshotId: SnapshotId): StateRecord =
+            StateMapStateRecord(snapshotId, map)
     }
 }
 
@@ -317,13 +321,14 @@ private class SnapshotMapValueSet<K, V>(map: SnapshotStateMap<K, V>) :
  * additional contention introduced by this lock is nominal.
  *
  * In code the requires this lock and calls `writable` (or other operation that acquires the
- * snapshot global lock), this lock *MUST* be acquired first to avoid deadlocks.
+ * snapshot global lock), this lock *MUST* be acquired last to avoid deadlocks. In other words, the
+ * lock must be taken in the `writable` lambda, if `writable` is used.
  */
-private val sync = SynchronizedObject()
+private val sync = makeSynchronizedObject()
 
 private abstract class StateMapMutableIterator<K, V>(
     val map: SnapshotStateMap<K, V>,
-    val iterator: Iterator<Map.Entry<K, V>>
+    val iterator: Iterator<Map.Entry<K, V>>,
 ) {
     protected var modification = map.modification
     protected var current: Map.Entry<K, V>? = null
@@ -361,7 +366,7 @@ private abstract class StateMapMutableIterator<K, V>(
 
 private class StateMapMutableEntriesIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<MutableMap.MutableEntry<K, V>> {
     override fun next(): MutableMap.MutableEntry<K, V> {
         advance()
@@ -385,7 +390,7 @@ private class StateMapMutableEntriesIterator<K, V>(
 
 private class StateMapMutableKeysIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<K> {
     override fun next(): K {
         val result = next ?: throw IllegalStateException()
@@ -396,7 +401,7 @@ private class StateMapMutableKeysIterator<K, V>(
 
 private class StateMapMutableValuesIterator<K, V>(
     map: SnapshotStateMap<K, V>,
-    iterator: Iterator<Map.Entry<K, V>>
+    iterator: Iterator<Map.Entry<K, V>>,
 ) : StateMapMutableIterator<K, V>(map, iterator), MutableIterator<V> {
     override fun next(): V {
         val result = next ?: throw IllegalStateException()

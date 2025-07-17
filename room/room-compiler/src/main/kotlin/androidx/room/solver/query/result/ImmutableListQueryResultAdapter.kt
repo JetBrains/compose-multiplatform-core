@@ -17,18 +17,17 @@
 package androidx.room.solver.query.result
 
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
 import androidx.room.compiler.processing.XType
 import androidx.room.ext.GuavaTypeNames
 import androidx.room.solver.CodeGenScope
 
 class ImmutableListQueryResultAdapter(
     private val typeArg: XType,
-    private val rowAdapter: RowAdapter
+    private val rowAdapter: RowAdapter,
 ) : QueryResultAdapter(listOf(rowAdapter)) {
-    override fun convert(outVarName: String, cursorVarName: String, scope: CodeGenScope) {
+    override fun convert(outVarName: String, stmtVarName: String, scope: CodeGenScope) {
         scope.builder.apply {
-            rowAdapter.onCursorReady(cursorVarName = cursorVarName, scope = scope)
+            rowAdapter.onStatementReady(stmtVarName = stmtVarName, scope = scope)
             val collectionType = GuavaTypeNames.IMMUTABLE_LIST.parametrizedBy(typeArg.asTypeName())
             val immutableListBuilderType =
                 GuavaTypeNames.IMMUTABLE_LIST_BUILDER.parametrizedBy(typeArg.asTypeName())
@@ -36,18 +35,14 @@ class ImmutableListQueryResultAdapter(
             addLocalVariable(
                 name = immutableListBuilderName,
                 typeName = immutableListBuilderType,
-                assignExpr =
-                    XCodeBlock.of(
-                        language = language,
-                        "%T.builder()",
-                        GuavaTypeNames.IMMUTABLE_LIST
-                    )
+                assignExpr = XCodeBlock.of("%T.builder()", GuavaTypeNames.IMMUTABLE_LIST),
             )
 
             val tmpVarName = scope.getTmpVar("_item")
-            beginControlFlow("while (%L.moveToNext())", cursorVarName).apply {
+            val stepName = "step"
+            beginControlFlow("while (%L.$stepName())", stmtVarName).apply {
                 addLocalVariable(name = tmpVarName, typeName = typeArg.asTypeName())
-                rowAdapter.convert(tmpVarName, cursorVarName, scope)
+                rowAdapter.convert(tmpVarName, stmtVarName, scope)
                 addStatement("%L.add(%L)", immutableListBuilderName, tmpVarName)
             }
             endControlFlow()
@@ -55,7 +50,7 @@ class ImmutableListQueryResultAdapter(
                 name = outVarName,
                 typeName = collectionType,
                 assignExprFormat = "%L.build()",
-                immutableListBuilderName
+                immutableListBuilderName,
             )
         }
     }

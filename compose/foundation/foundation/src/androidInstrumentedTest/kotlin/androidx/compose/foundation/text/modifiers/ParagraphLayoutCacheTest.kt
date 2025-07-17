@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
 import androidx.compose.foundation.text.toIntPx
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -78,6 +79,33 @@ class ParagraphLayoutCacheTest {
 
             assertThat(textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr))
                 .isEqualTo((fontSize.toPx() * text.length).toIntPx())
+        }
+    }
+
+    @Test
+    fun minIntrinsicsHeight_respectsMinLines() {
+        with(density) {
+            val fontSize = 20.sp
+            val text = "A"
+            val singleLineLayout =
+                ParagraphLayoutCache(
+                        text = text,
+                        style = createTextStyle(fontSize = fontSize),
+                        fontFamilyResolver = fontFamilyResolver,
+                        minLines = 1,
+                    )
+                    .also { it.density = this }
+            val withMinLinesLayout =
+                ParagraphLayoutCache(
+                        text = text,
+                        style = createTextStyle(fontSize = fontSize),
+                        fontFamilyResolver = fontFamilyResolver,
+                        minLines = 3,
+                    )
+                    .also { it.density = this }
+
+            assertThat(withMinLinesLayout.intrinsicHeight(200, LayoutDirection.Ltr))
+                .isEqualTo(singleLineLayout.intrinsicHeight(200, LayoutDirection.Ltr) * 3)
         }
     }
 
@@ -222,6 +250,54 @@ class ParagraphLayoutCacheTest {
     }
 
     @Test
+    fun TextLayoutResult_layout_withStartEllipsis_withoutSoftWrap() {
+        val fontSize = 20f
+        val textDelegate =
+            ParagraphLayoutCache(
+                    text = "Hello World! Hello World! Hello World! Hello World!",
+                    style = createTextStyle(fontSize = fontSize.sp),
+                    fontFamilyResolver = fontFamilyResolver,
+                    softWrap = false,
+                    overflow = TextOverflow.StartEllipsis,
+                )
+                .also { it.density = density }
+
+        textDelegate.layoutWithConstraints(Constraints.fixed(0, 0), LayoutDirection.Ltr)
+        // Makes width smaller than needed.
+        val width = textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr) / 2
+        val constraints = Constraints(maxWidth = width)
+        textDelegate.layoutWithConstraints(constraints, LayoutDirection.Ltr)
+        val layoutResult = textDelegate.paragraph!!
+
+        assertThat(layoutResult.lineCount).isEqualTo(1)
+        assertThat(layoutResult.isLineEllipsized(0)).isTrue()
+    }
+
+    @Test
+    fun TextLayoutResult_layout_withMiddleEllipsis_withoutSoftWrap() {
+        val fontSize = 20f
+        val textDelegate =
+            ParagraphLayoutCache(
+                    text = "Hello World! Hello World! Hello World! Hello World!",
+                    style = createTextStyle(fontSize = fontSize.sp),
+                    fontFamilyResolver = fontFamilyResolver,
+                    softWrap = false,
+                    overflow = TextOverflow.MiddleEllipsis,
+                )
+                .also { it.density = density }
+
+        textDelegate.layoutWithConstraints(Constraints.fixed(0, 0), LayoutDirection.Ltr)
+        // Makes width smaller than needed.
+        val width = textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr) / 2
+        val constraints = Constraints(maxWidth = width)
+        textDelegate.layoutWithConstraints(constraints, LayoutDirection.Ltr)
+        val layoutResult = textDelegate.paragraph!!
+
+        assertThat(layoutResult.lineCount).isEqualTo(1)
+        assertThat(layoutResult.isLineEllipsized(0)).isTrue()
+    }
+
+    @Test
     fun TextLayoutResult_layoutWithLimitedHeight_withEllipsis() {
         val fontSize = 20f
 
@@ -237,7 +313,7 @@ class ParagraphLayoutCacheTest {
         val constraints =
             Constraints(
                 maxWidth = textDelegate.maxIntrinsicWidth(LayoutDirection.Ltr) / 4,
-                maxHeight = (fontSize * 2.7).roundToInt() // fully fits at most 2 lines
+                maxHeight = (fontSize * 2.7).roundToInt(), // fully fits at most 2 lines
             )
         textDelegate.layoutWithConstraints(constraints, LayoutDirection.Ltr)
         val layoutResult = textDelegate.paragraph!!
@@ -276,7 +352,7 @@ class ParagraphLayoutCacheTest {
                     style = createTextStyle(fontSize = 1.sp),
                     fontFamilyResolver = fontFamilyResolver,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 5
+                    maxLines = 5,
                 )
                 .also { it.density = density }
         textDelegate.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
@@ -291,7 +367,7 @@ class ParagraphLayoutCacheTest {
                 fontFamilyResolver,
                 emptyList(),
                 maxLines = 5,
-                ellipsis = true
+                overflow = TextOverflow.Ellipsis,
             )
         assertThat(actual.height).isEqualTo(expected.height)
     }
@@ -328,14 +404,50 @@ class ParagraphLayoutCacheTest {
         assertThat(subject.slowCreateTextLayoutResultOrNull(style = style)).isNotNull()
     }
 
+    @Test
+    fun hugeString_doesntCrash() {
+        val text = "A".repeat(100_000)
+        val style = createTextStyle(fontSize = 100.sp)
+        val subject =
+            ParagraphLayoutCache(text, style, fontFamilyResolver).also { it.density = density }
+        subject.layoutWithConstraints(Constraints(), LayoutDirection.Ltr)
+    }
+
+    @Test
+    fun history_isRecorded() {
+        val text = "Hello, World"
+        val subject =
+            ParagraphLayoutCache(
+                    text = text,
+                    style = TextStyle(fontSize = 100.sp),
+                    fontFamilyResolver = fontFamilyResolver,
+                )
+                .also { it.density = density }
+
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.update(
+            text = "Hello again, World",
+            style = TextStyle(fontSize = 100.sp),
+            fontFamilyResolver = fontFamilyResolver,
+            overflow = TextOverflow.Clip,
+            softWrap = true,
+            maxLines = Int.MAX_VALUE,
+            minLines = DefaultMinLines,
+        )
+        subject.layoutWithConstraints(Constraints.fixed(100, 100), LayoutDirection.Ltr)
+        subject.density = Density(2f, 3f)
+
+        assertThat(subject.historyFlag).isEqualTo(0b011101101)
+    }
+
     private fun createTextStyle(
         fontSize: TextUnit,
-        letterSpacing: TextUnit = TextUnit.Unspecified
+        letterSpacing: TextUnit = TextUnit.Unspecified,
     ): TextStyle {
         return TextStyle(
             fontSize = fontSize,
             fontFamily = fontFamily,
-            letterSpacing = letterSpacing
+            letterSpacing = letterSpacing,
         )
     }
 }

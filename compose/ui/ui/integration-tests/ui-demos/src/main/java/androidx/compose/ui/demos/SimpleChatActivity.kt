@@ -48,7 +48,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -57,7 +56,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-@SuppressLint("ClassVerificationFailure")
 class SimpleChatActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,10 +73,12 @@ class SimpleChatActivity : ComponentActivity() {
 private data class Message(val content: String, val isReceived: Boolean = true)
 
 @SuppressLint("NullAnnotationGroup")
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun SimpleChatPage() {
     val messages = remember { mutableStateListOf<Message>() }
+    for (i in 1..40) {
+        messages.add(Message("test msg $i", isReceived = i % 2 == 0))
+    }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     Scaffold(
@@ -90,9 +90,9 @@ private fun SimpleChatPage() {
                     Text(
                         "Conversation Page",
                         modifier = Modifier.testTag("tool_bar_name"),
-                        fontSize = 30.sp
+                        fontSize = 30.sp,
                     )
-                }
+                },
             )
         },
         bottomBar = {
@@ -102,7 +102,7 @@ private fun SimpleChatPage() {
                     coroutineScope.launch { listState.animateScrollToItem(messages.size) }
                 }
             )
-        }
+        },
     ) { contentPadding ->
         Box(modifier = Modifier.padding(contentPadding)) {
             // testTagsAsResourceId and testTag is for compose to map testTag to resource-id.
@@ -134,7 +134,7 @@ private fun MessageCard(message: Message) {
                 message.content,
                 fontSize = 20.sp,
                 modifier =
-                    Modifier.testTag(if (message.isReceived) "message_received" else "message_sent")
+                    Modifier.testTag(if (message.isReceived) "message_received" else "message_sent"),
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -150,7 +150,7 @@ private fun MessageUpdater(onMessageAdded: (message: String, isReceived: Boolean
             modifier = Modifier.weight(1.0f),
             value = text,
             onValueChange = { text = it },
-            placeholder = { Text("Input message here") }
+            placeholder = { Text("Input message here") },
         )
 
         Button(

@@ -33,12 +33,14 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.test.EmptyTestActivity
 import androidx.fragment.compose.test.R
+import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -98,6 +100,68 @@ class AndroidFragmentTest {
     }
 
     @Test
+    fun addAfterStateSaved() {
+        lateinit var number: MutableState<Int>
+        testRule.setContent {
+            number = remember { mutableStateOf(0) }
+            if (number.value > 0) {
+                AndroidFragment<FragmentForCompose>()
+            }
+        }
+
+        testRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+
+        testRule.runOnIdle { number.value = 1 }
+
+        testRule.waitForIdle()
+
+        testRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+
+        onView(withText("Show me on Screen")).check(matches(isDisplayed()))
+
+        testRule.runOnIdle { number.value = 0 }
+
+        testRule.waitForIdle()
+
+        // Validate that the fragment was removed
+        val fragment =
+            testRule.activity.supportFragmentManager.fragments.firstOrNull {
+                it is FragmentForCompose
+            }
+        assertThat(fragment).isNull()
+    }
+
+    @Test
+    fun addAndRemoveAfterStateSaved() {
+        lateinit var number: MutableState<Int>
+        testRule.setContent {
+            number = remember { mutableStateOf(0) }
+            if (number.value > 0) {
+                AndroidFragment<FragmentForCompose>()
+            }
+        }
+
+        testRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+
+        testRule.runOnIdle { number.value = 1 }
+
+        testRule.waitForIdle()
+
+        testRule.runOnIdle { number.value = 0 }
+
+        testRule.waitForIdle()
+
+        testRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+
+        // Validate that the fragment was removed
+        val fragment =
+            testRule.activity.supportFragmentManager.fragments.firstOrNull {
+                it is FragmentForCompose
+            }
+        assertThat(fragment).isNull()
+    }
+
+    @Test
     fun recomposeInsideKey() {
 
         lateinit var number: MutableState<Int>
@@ -116,9 +180,44 @@ class AndroidFragmentTest {
 
         onView(withText("Show me on Screen")).check(matches(isDisplayed()))
     }
+
+    @Test
+    fun recomposeWhenSwapFragmentClass() {
+
+        lateinit var clazz: MutableState<Class<out Fragment>>
+        testRule.setContent {
+            clazz = remember { mutableStateOf(FragmentForCompose::class.java) }
+            AndroidFragment(
+                clazz = clazz.value,
+                arguments = bundleOf("name" to clazz.value.simpleName),
+            )
+        }
+
+        testRule.waitForIdle()
+
+        onView(withText("My name is ${FragmentForCompose::class.simpleName}"))
+            .check(matches(isDisplayed()))
+
+        testRule.runOnIdle { clazz.value = FragmentForCompose2::class.java }
+
+        testRule.waitForIdle()
+
+        onView(withText("My name is ${FragmentForCompose2::class.simpleName}"))
+            .check(matches(isDisplayed()))
+    }
 }
 
 class FragmentForCompose : Fragment(R.layout.content) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val name = arguments?.getString("name")
+        if (name != null) {
+            val textView = view.findViewById<TextView>(R.id.text)
+            textView.text = "My name is $name"
+        }
+    }
+}
+
+class FragmentForCompose2 : Fragment(R.layout.content) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val name = arguments?.getString("name")
         if (name != null) {

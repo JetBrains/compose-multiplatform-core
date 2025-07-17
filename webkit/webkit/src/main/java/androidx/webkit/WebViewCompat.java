@@ -22,18 +22,23 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.Handler;
 import android.os.Looper;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.IntRange;
 import androidx.annotation.RequiresFeature;
+import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.UiThread;
+import androidx.annotation.VisibleForTesting;
 import androidx.webkit.internal.ApiFeature;
 import androidx.webkit.internal.ApiHelperForM;
 import androidx.webkit.internal.ApiHelperForO;
@@ -50,13 +55,20 @@ import androidx.webkit.internal.WebViewRenderProcessClientFrameworkAdapter;
 import androidx.webkit.internal.WebViewRenderProcessImpl;
 
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -66,7 +78,12 @@ public class WebViewCompat {
     private static final Uri WILDCARD_URI = Uri.parse("*");
     private static final Uri EMPTY_URI = Uri.parse("");
 
-    private WebViewCompat() {} // Don't allow instances of this class to be constructed.
+    private static boolean sShouldCacheProvider = true;
+    private static final WeakHashMap<WebView, WebViewProviderAdapter> sProviderAdapterCache =
+            new WeakHashMap<>();
+
+    private WebViewCompat() {
+    } // Don't allow instances of this class to be constructed.
 
     /**
      * Callback interface supplied to {@link #postVisualStateCallback} for receiving
@@ -96,11 +113,11 @@ public class WebViewCompat {
          * {@code file:} or {@code content:} URLs, see {@link WebViewAssetLoader} for serving local
          * content under {@code http:} or {@code https:} domain.
          *
-         * @param view The {@link WebView} containing the frame which sent this message.
-         * @param message The message from JavaScript.
+         * @param view         The {@link WebView} containing the frame which sent this message.
+         * @param message      The message from JavaScript.
          * @param sourceOrigin The origin of the frame that the message is from.
-         * @param isMainFrame {@code true} If the message is from the main frame.
-         * @param replyProxy Used to reply back to the JavaScript object.
+         * @param isMainFrame  {@code true} If the message is from the main frame.
+         * @param replyProxy   Used to reply back to the JavaScript object.
          */
         @UiThread
         void onPostMessage(@NonNull WebView view, @NonNull WebMessageCompat message,
@@ -161,7 +178,7 @@ public class WebViewCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#VISUAL_STATE_CALLBACK}.
      *
-     * @param webview The WebView to post to.
+     * @param webview   The WebView to post to.
      * @param requestId An id that will be returned in the callback to allow callers to match
      *                  requests with callbacks.
      * @param callback  The callback to be invoked.
@@ -170,7 +187,7 @@ public class WebViewCompat {
     @RequiresFeature(name = WebViewFeature.VISUAL_STATE_CALLBACK,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void postVisualStateCallback(@NonNull WebView webview, long requestId,
-            @NonNull final VisualStateCallback callback) {
+            final @NonNull VisualStateCallback callback) {
         ApiFeature.M feature = WebViewFeatureInternal.VISUAL_STATE_CALLBACK;
         if (feature.isSupportedByFramework()) {
             ApiHelperForM.postVisualStateCallback(webview, requestId, callback);
@@ -201,11 +218,16 @@ public class WebViewCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#START_SAFE_BROWSING}.
      *
-     * @param context Application Context.
+     * @param context  Application Context.
      * @param callback will be called on the UI thread with {@code true} if initialization is
-     * successful, {@code false} otherwise.
+     *                 successful, {@code false} otherwise.
+     * @deprecated In WebView version 122.0.6174.0 and later, this initialization is done
+     * automatically, so there is no need to call this API. If called, this API will invoke
+     * the {@code callback} immediately with {@code true}, given that Safe Browsing
+     * is enabled and supported on the device.
      */
     @AnyThread
+    @Deprecated
     @RequiresFeature(name = WebViewFeature.START_SAFE_BROWSING,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void startSafeBrowsing(@NonNull Context context,
@@ -243,10 +265,11 @@ public class WebViewCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#SAFE_BROWSING_ALLOWLIST}.
      *
-     * @param hosts the set of hosts for which to skip Safe Browsing checks
+     * @param hosts    the set of hosts for which to skip Safe Browsing checks
      * @param callback will be called with {@code true} if hosts are successfully added to the
-     * allowlist, {@code false} if any hosts are malformed. The callback will be run on the UI
-     * thread
+     *                 allowlist, {@code false} if any hosts are malformed. The callback will be
+     *                 run on the UI
+     *                 thread
      */
     @AnyThread
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_ALLOWLIST,
@@ -294,11 +317,11 @@ public class WebViewCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#SAFE_BROWSING_WHITELIST}.
      *
-     * @param hosts the list of hosts
+     * @param hosts    the list of hosts
      * @param callback will be called with {@code true} if hosts are successfully added to the
-     * allowlist. It will be called with {@code false} if any hosts are malformed. The callback
-     * will be run on the UI thread
-     *
+     *                 allowlist. It will be called with {@code false} if any hosts are malformed
+     *                 . The callback
+     *                 will be run on the UI thread
      * @deprecated Please use {@link #setSafeBrowsingAllowlist(Set, ValueCallback)} instead.
      */
     @AnyThread
@@ -321,10 +344,9 @@ public class WebViewCompat {
      * @return the url pointing to a privacy policy document which can be displayed to users.
      */
     @AnyThread
-    @NonNull
     @RequiresFeature(name = WebViewFeature.SAFE_BROWSING_PRIVACY_POLICY_URL,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static Uri getSafeBrowsingPrivacyPolicyUrl() {
+    public static @NonNull Uri getSafeBrowsingPrivacyPolicyUrl() {
         ApiFeature.O_MR1 feature =
                 WebViewFeatureInternal.SAFE_BROWSING_PRIVACY_POLICY_URL;
         if (feature.isSupportedByFramework()) {
@@ -345,13 +367,13 @@ public class WebViewCompat {
      * uninstalled. It can also be changed through a Developer Setting.
      * If the WebView package changes, any app process that has loaded WebView will be killed. The
      * next time the app starts and loads WebView it will use the new WebView package instead.
+     *
      * @return the current WebView package, or {@code null} if there is none.
      */
     // Note that this API is not protected by a {@link androidx.webkit.WebViewFeature} since
     // this feature is not dependent on the WebView APK.
     @AnyThread
-    @Nullable
-    public static PackageInfo getCurrentWebViewPackage(@NonNull Context context) {
+    public static @Nullable PackageInfo getCurrentWebViewPackage(@NonNull Context context) {
         PackageInfo info = getCurrentLoadedWebViewPackage();
         if (info != null) return info;
 
@@ -362,13 +384,12 @@ public class WebViewCompat {
     }
 
     /**
-     * @see #getCurrentWebViewPackage(Context)
      * @return the loaded WebView package, or null if no WebView is created.
+     * @see #getCurrentWebViewPackage(Context)
      */
     @AnyThread
-    @Nullable
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    public static PackageInfo getCurrentLoadedWebViewPackage() {
+    public static @Nullable PackageInfo getCurrentLoadedWebViewPackage() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return ApiHelperForO.getCurrentWebViewPackage();
         } else { // L-N
@@ -428,6 +449,15 @@ public class WebViewCompat {
     }
 
     private static WebViewProviderAdapter getProvider(WebView webview) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CACHE_PROVIDER;
+        if (feature.isSupportedByWebView() && sShouldCacheProvider) {
+            WebViewProviderAdapter adapter = sProviderAdapterCache.get(webview);
+            if (adapter == null) {
+                adapter = new WebViewProviderAdapter(createProvider(webview));
+                sProviderAdapterCache.put(webview, adapter);
+            }
+            return adapter;
+        }
         return new WebViewProviderAdapter(createProvider(webview));
     }
 
@@ -450,7 +480,7 @@ public class WebViewCompat {
     @UiThread
     @RequiresFeature(name = WebViewFeature.CREATE_WEB_MESSAGE_CHANNEL,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static @NonNull WebMessagePortCompat[] createWebMessageChannel(
+    public static WebMessagePortCompat @NonNull [] createWebMessageChannel(
             @NonNull WebView webview) {
         final ApiFeature.M feature = WebViewFeatureInternal.CREATE_WEB_MESSAGE_CHANNEL;
         if (feature.isSupportedByFramework()) {
@@ -719,14 +749,13 @@ public class WebViewCompat {
      * This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#WEB_MESSAGE_LISTENER}.
      *
-     * @param webView The {@link WebView} instance that we are interacting with.
-     * @param jsObjectName The name for the injected JavaScript object for this {@link
-     *         WebMessageListener}.
+     * @param webView            The {@link WebView} instance that we are interacting with.
+     * @param jsObjectName       The name for the injected JavaScript object for this {@link
+     *                           WebMessageListener}.
      * @param allowedOriginRules A set of matching rules for the allowed origins.
-     * @param listener The {@link WebMessageListener WebMessageListener} to handle postMessage()
-     *         calls on the JavaScript object.
+     * @param listener           The {@link WebMessageListener WebMessageListener} to handle
+     *                           postMessage() calls on the JavaScript object.
      * @throws IllegalArgumentException If one of the {@code allowedOriginRules} is invalid.
-     *
      * @see JavaScriptReplyProxy
      * @see WebMessageListener
      */
@@ -758,10 +787,9 @@ public class WebViewCompat {
      * This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#WEB_MESSAGE_LISTENER}.
      *
-     * @param webview The WebView object to remove from.
+     * @param webview      The WebView object to remove from.
      * @param jsObjectName The JavaScript object's name that was previously passed to {@link
-     *         #addWebMessageListener(WebView, String, Set, WebMessageListener)}.
-     *
+     *                     #addWebMessageListener(WebView, String, Set, WebMessageListener)}.
      * @see #addWebMessageListener(WebView, String, Set, WebMessageListener)
      */
     // UI thread not currently enforced, but required
@@ -803,8 +831,8 @@ public class WebViewCompat {
      * <p>This method should only be called if {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#DOCUMENT_START_SCRIPT}.
      *
-     * @param webview The {@link WebView} instance that we are interacting with.
-     * @param script The JavaScript script to be executed.
+     * @param webview            The {@link WebView} instance that we are interacting with.
+     * @param script             The JavaScript script to be executed.
      * @param allowedOriginRules A set of matching rules for the allowed origins.
      * @return the {@link ScriptHandler}, which is a handle for removing the script.
      * @throws IllegalArgumentException If one of the {@code allowedOriginRules} is invalid.
@@ -897,8 +925,8 @@ public class WebViewCompat {
      * returns true for {@link WebViewFeature#GET_WEB_VIEW_RENDERER}.
      *
      * @return the {@link WebViewRenderProcess} renderer handle associated
-     *         with this {@link android.webkit.WebView}, or {@code null} if
-     *         WebView is not running in multiprocess mode.
+     * with this {@link android.webkit.WebView}, or {@code null} if
+     * WebView is not running in multiprocess mode.
      */
     @UiThread
     @RequiresFeature(name = WebViewFeature.GET_WEB_VIEW_RENDERER,
@@ -929,21 +957,13 @@ public class WebViewCompat {
      * Callbacks represent renderer events from the perspective of this WebView, and may or may
      * not be correlated with renderer events affecting other WebViews.
      *
-     * <p>The renderer client encapsulates callbacks relevant to WebView renderer
-     * state. See {@link WebViewRenderProcessClient} for details.
-     *
-     * <p>Although many WebView instances may share a single underlying renderer, and renderers may
-     * live either in the application process, or in a sandboxed process that is isolated from
-     * the application process, instances of {@link WebViewRenderProcessClient} are set per-WebView.
-     * Callbacks represent renderer events from the perspective of this WebView, and may or may
-     * not be correlated with renderer events affecting other WebViews.
-     *
      * <p>This method should only be called if
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE}.
      *
-     * @param webview the {@link WebView} on which to monitor responsiveness.
-     * @param executor the {@link Executor} that will be used to execute callbacks.
+     * @param webview                    the {@link WebView} on which to monitor responsiveness.
+     * @param executor                   the {@link Executor} that will be used to execute
+     *                                   callbacks.
      * @param webViewRenderProcessClient the {@link WebViewRenderProcessClient} to set for
      *                                   callbacks.
      */
@@ -955,7 +975,7 @@ public class WebViewCompat {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     public static void setWebViewRenderProcessClient(
             @NonNull WebView webview,
-            @NonNull /* @CallbackExecutor */ Executor executor,
+            /* @CallbackExecutor */ @NonNull Executor executor,
             @NonNull WebViewRenderProcessClient webViewRenderProcessClient) {
         final ApiFeature.Q feature =
                 WebViewFeatureInternal.WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE;
@@ -974,7 +994,8 @@ public class WebViewCompat {
     /**
      * Sets the renderer client object associated with this WebView.
      *
-     * <p>See {@link WebViewCompat#setWebViewRenderProcessClient(WebView,Executor,WebViewRenderProcessClient)} for
+     * <p>See
+     * {@link WebViewCompat#setWebViewRenderProcessClient(WebView, Executor, WebViewRenderProcessClient)} for
      * details, with the following differences:
      *
      * <p>Callbacks will execute directly on the thread on which this WebView was instantiated.
@@ -986,7 +1007,7 @@ public class WebViewCompat {
      * {@link WebViewFeature#isFeatureSupported(String)}
      * returns true for {@link WebViewFeature#WEB_VIEW_RENDERER_CLIENT_BASIC_USAGE}.
      *
-     * @param webview the {@link WebView} on which to monitor responsiveness.
+     * @param webview                    the {@link WebView} on which to monitor responsiveness.
      * @param webViewRenderProcessClient the {@link WebViewRenderProcessClient} to set for
      *                                   callbacks.
      */
@@ -1017,7 +1038,7 @@ public class WebViewCompat {
      *
      * @return the {@link WebViewRenderProcessClient} object associated with this WebView, if
      * one has been set via
-     * {@link #setWebViewRenderProcessClient(WebView,WebViewRenderProcessClient)} or {@code null}
+     * {@link #setWebViewRenderProcessClient(WebView, WebViewRenderProcessClient)} or {@code null}
      * otherwise.
      */
     @UiThread
@@ -1035,7 +1056,7 @@ public class WebViewCompat {
                 return null;
             }
             return ((WebViewRenderProcessClientFrameworkAdapter) renderer)
-                .getFrameworkRenderProcessClient();
+                    .getFrameworkRenderProcessClient();
         } else if (feature.isSupportedByWebView()) {
             checkThread(webview);
             return getProvider(webview).getWebViewRenderProcessClient();
@@ -1072,7 +1093,8 @@ public class WebViewCompat {
      * variations metadata, such as requests to Google web properties. The returned string will be a
      * base64 encoded ClientVariations proto:
      * <a href="https://source.chromium.org/chromium/chromium/src/+/main:components/variations/proto/client_variations.proto">
-     * https://source.chromium.org/chromium/chromium/src/+/main:components/variations/proto/client_variations.proto</a>
+     * https://source.chromium.org/chromium/chromium/src/+/main:components/variations/proto
+     * /client_variations.proto</a>
      *
      * @return the variations header. The string may be empty if the header is not available.
      * @see WebView#loadUrl(String, java.util.Map)
@@ -1099,14 +1121,14 @@ public class WebViewCompat {
      * <li> This method will create the profile if it doesn't exist.
      * </ul>
      *
-     * @param webView the WebView to modify.
+     * @param webView     the WebView to modify.
      * @param profileName the name of the profile to use in the passed {@code webView}.
      * @throws IllegalStateException if the WebView has been destroyed.
      * @throws IllegalStateException if the previous profile has been accessed via a call to
-     * {@link WebViewCompat#getProfile(WebView)}.
+     *                               {@link WebViewCompat#getProfile(WebView)}.
      * @throws IllegalStateException if the profile has already been set previously via this method.
      * @throws IllegalStateException if {@link WebView#evaluateJavascript(String, ValueCallback)} is
-     * called on the WebView before this method.
+     *                               called on the WebView before this method.
      * @throws IllegalStateException if the WebView has previously navigated to a web page.
      */
     @UiThread
@@ -1135,11 +1157,10 @@ public class WebViewCompat {
      * @throws IllegalStateException if the WebView has been destroyed.
      */
     @UiThread
-    @NonNull
     @RequiresFeature(
             name = WebViewFeature.MULTI_PROFILE,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public static Profile getProfile(@NonNull WebView webView) {
+    public static @NonNull Profile getProfile(@NonNull WebView webView) {
         final ApiFeature.NoFramework feature = WebViewFeatureInternal.MULTI_PROFILE;
         if (feature.isSupportedByWebView()) {
             return getProvider(webView).getProfile();
@@ -1171,7 +1192,7 @@ public class WebViewCompat {
      * Mute or un-mute this WebView.
      *
      * @param webView the WebView for which to control muting.
-     * @param mute true to mute the WebView; false to un-mute the WebView.
+     * @param mute    true to mute the WebView; false to un-mute the WebView.
      */
     // UI thread not currently enforced, but required
     @UiThread
@@ -1186,6 +1207,362 @@ public class WebViewCompat {
         }
     }
 
+    /**
+     * Denotes that the startUpWebView API surface is experimental.
+     * <p>
+     * It may change without warning and should not be relied upon for non-experimental purposes.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    public @interface ExperimentalAsyncStartUp {
+    }
+
+    /**
+     * Callback interface for
+     * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewStartUpCallback)}.
+     */
+    @ExperimentalAsyncStartUp
+    public interface WebViewStartUpCallback {
+        /**
+         * Called when WebView startup completes successfully.
+         *
+         * @param result The async startup result.
+         */
+        void onSuccess(@NonNull WebViewStartUpResult result);
+    }
+
+    /**
+     * Asynchronously trigger WebView startup.
+     * <p>
+     * WebView startup is a time-consuming process that is normally triggered during the first
+     * usage of WebView related APIs. WebView startup happens once per process.
+     * For example, the first call to {@code new WebView()} can take longer to
+     * complete than future calls due to WebView startup being triggered. The Android
+     * UI thread remains blocked till the startup completes.
+     * <p>
+     * This method allows callers to trigger WebView startup at a time of their choosing.
+     * <p>
+     * There are performance improvements this API provides.
+     * This method ensures that the portions of WebView startup which are able to run in the
+     * background will do so. Other portions of startup will still run on the UI thread.
+     * <p>
+     * Any APIs in {@code android.webkit} and {@code androidx.webkit} (including
+     * {@link WebViewFeature}) MUST only be called after the callback is invoked in order to
+     * ensure the maximum benefit.
+     * There is no feature check or call to {@link WebViewFeature} required for using this method.
+     * <p>
+     * This API can be called multiple times. The callback will be called promptly if startup
+     * has already completed.
+     * <p>
+     * This is an experimental API and unsuitable for non-experimental use.
+     * This method can be removed in future versions of the library.
+     *
+     * @param context  Application Context.
+     * @param config   configuration for startup.
+     * @param callback the callback triggered when WebView startup is complete. This will be called
+     *                 on the main looper (Looper.getMainLooper()).
+     */
+    @ExperimentalAsyncStartUp
+    @AnyThread
+    public static void startUpWebView(
+            @NonNull Context context,
+            @NonNull WebViewStartUpConfig config,
+            @NonNull WebViewStartUpCallback callback) {
+        config.getBackgroundExecutor().execute(() -> {
+            // Invoke provider init.
+            WebViewGlueCommunicator.getWebViewClassLoader();
+            if (WebViewFeatureInternal.ASYNC_WEBVIEW_STARTUP.isSupportedByWebView()) {
+                // We want to ensure that the callback is run on the Android main looper. The callee
+                // doesn't guarantee this. It's also desirable to post it to make sure that we don't
+                // run the app's callback synchronously from inside startChromiumLocked:
+                // - This helps avoid making the blocking task longer.
+                // - If the app's callback has a problem the stack trace will hopefully make it
+                // clearer that it's not WebView's fault since WebView code will not be in the
+                // stack trace.
+                getFactory().startUpWebView(config, (result) -> {
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onSuccess(result));
+                });
+                return;
+            }
+            if (config.shouldRunUiThreadStartUpTasks()) {
+                // This method implicitly does WebView startup.
+                WebSettings.getDefaultUserAgent(context.getApplicationContext());
+            } else {
+                // On versions of WebView without the underlying support for the API the only part
+                // of startup we can do without blocking the UI thread already happened during
+                // `getWebViewClassLoader` above and so there's nothing more to do.
+            }
+            // Trigger the callback from the main looper.
+            // The framework doesn't support providing any diagnostic information, therefore,
+            // returning `null` for every method.
+            new Handler(Looper.getMainLooper()).post(
+                    () -> callback.onSuccess(new NullReturningWebViewStartUpResult()));
+        });
+    }
+
+    /**
+     * Sets the default {@link android.net.TrafficStats} tag to use when accounting socket traffic
+     * caused by WebView. If set, this tag is global for all requests sent by the WebView library
+     * within your app.
+     *
+     * <p>If no tag is set (e.g. this method isn't called), then Android accounts for the socket
+     * traffic caused by WebView as if the tag value were set to 0. See
+     * {@link android.net.TrafficStats#setThreadStatsTag(int)} for more information.
+     *
+     * <p><b>NOTE</b>: Setting a tag disallows sharing of sockets with requests with other tags,
+     * which may adversely affect performance by prohibiting connection sharing. In other words, use
+     * of multiplexed sockets (e.g. HTTP/2 and QUIC) will only be allowed if all requests have
+     * the same socket tag. To minimize impact, you should not change the value of this tag often.
+     *
+     * @param tag the tag value used when accounting for socket traffic caused by the WebView
+     *            library in your app. <em>Tags between {@code 0xFFFFFF00} and {@code 0xFFFFFFFF}
+     *            are reserved and used internally by system services like
+     *            {@link android.app.DownloadManager} when performing traffic on behalf of an
+     *            application</em>.
+     */
+    @AnyThread
+    @RequiresFeature(name = WebViewFeature.DEFAULT_TRAFFICSTATS_TAGGING,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    public static void setDefaultTrafficStatsTag(int tag) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.DEFAULT_TRAFFICSTATS_TAGGING;
+        if (feature.isSupportedByWebView()) {
+            getFactory().getStatics().setDefaultTrafficStatsTag(tag);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    @ExperimentalAsyncStartUp
+    private static class NullReturningWebViewStartUpResult implements WebViewStartUpResult {
+        @Override
+        public Long getTotalTimeInUiThreadMillis() {
+            return null;
+        }
+
+        @Override
+        public Long getMaxTimePerTaskInUiThreadMillis() {
+            return null;
+        }
+
+        @Override
+        public List<BlockingStartUpLocation> getBlockingStartUpLocations() {
+            return null;
+        }
+    }
+
+    /**
+     * Denotes that the PrerenderUrl API surface is experimental.
+     * <p>
+     * It may change without warning and should not be relied upon for non-experimental purposes.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    public @interface ExperimentalUrlPrerender {
+    }
+
+    /**
+     * Starts a URL prerender request for this WebView. Must be called from the UI thread.
+     * <p>
+     * This WebView will use a URL request matching algorithm during execution
+     * of all variants of {@link android.webkit.WebView#loadUrl(String)} for
+     * determining if there was a prerender request executed for the
+     * provided URL. This includes prerender requests that are "in progress".
+     * If a prerender request is matched, WebView will leverage that for
+     * handling the URL, otherwise the URL will be handled normally (i.e.
+     * through a network request).
+     * <p>
+     * Applications will still be responsible for calling
+     * {@link android.webkit.WebView#loadUrl(String)} to display web contents
+     * in a WebView.
+     * <p>
+     * A prerendered page can also match a navigation initiated by clicking a
+     * hyperlink.
+     * <p>
+     * Only supports HTTPS scheme.
+     * <p>
+     * The {@link CancellationSignal} will make the best effort to cancel an
+     * in-flight prerender request; however cancellation it is not guaranteed.
+     *
+     * @param webView            the WebView for which we trigger the prerender request.
+     * @param url                the url associated with the prerender request.
+     * @param cancellationSignal used to trigger prerender cancellation.
+     * @param callbackExecutor   the executor to resolve the callback with.
+     * @param callback           callbacks for reporting result back to application.
+     */
+    @RequiresFeature(name = WebViewFeature.PRERENDER_WITH_URL,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrerender
+    public static void prerenderUrlAsync(
+            @NonNull WebView webView,
+            @NonNull String url,
+            @Nullable CancellationSignal cancellationSignal,
+            @NonNull Executor callbackExecutor,
+            @NonNull PrerenderOperationCallback callback) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PRERENDER_WITH_URL;
+        if (feature.isSupportedByWebView()) {
+            getProvider(webView).prerenderUrlAsync(url, cancellationSignal, callbackExecutor,
+                    callback);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * The same as
+     * {@link WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)},
+     * but allows customizing the request by providing {@link SpeculativeLoadingParameters}.
+     *
+     * @param webView            the WebView for which we trigger the prerender request.
+     * @param url                the url associated with the prerender request.
+     * @param cancellationSignal used to trigger prerender cancellation.
+     * @param callbackExecutor   the executor to resolve the callback with.
+     * @param params             parameters to customize the prerender request.
+     * @param callback           callbacks for reporting result back to application.
+     */
+    @RequiresFeature(name = WebViewFeature.PRERENDER_WITH_URL,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalUrlPrerender
+    @Profile.ExperimentalUrlPrefetch
+    public static void prerenderUrlAsync(
+            @NonNull WebView webView,
+            @NonNull String url,
+            @Nullable CancellationSignal cancellationSignal,
+            @NonNull Executor callbackExecutor,
+            @NonNull SpeculativeLoadingParameters params,
+            @NonNull PrerenderOperationCallback callback) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.PRERENDER_WITH_URL;
+        if (feature.isSupportedByWebView()) {
+            getProvider(webView).prerenderUrlAsync(url, cancellationSignal, callbackExecutor,
+                    params,
+                    callback);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Denotes that the WebViewCompat#saveState API surface is experimental.
+     * <p>
+     * It may change without warning and should not be relied upon for non-experimental purposes.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    public @interface ExperimentalSaveState {
+    }
+
+    /**
+     * Saves the state of the provided WebView, such as for use with
+     * {@link android.app.Activity#onSaveInstanceState}. This is an extension of
+     * {@link WebView#saveState(Bundle)} and the returned state can be restored through
+     * {@link WebView#restoreState(Bundle)}.
+     *
+     * @param webView             the {@link WebView} whose state is to be saved.
+     * @param outState            the {@link Bundle} to store the state in.
+     * @param maxSizeBytes        the maximum size (in bytes) that the returned state can be. If the
+     *                            WebView contains more state, history entries further back will
+     *                            not be
+     *                            saved.
+     * @param includeForwardState whether to include entries that can only be reached through going
+     *                            forward in history (such as through {@link WebView#goForward()}.
+     *                            Some apps don't give the user a way to go forward, so won't need
+     *                            to save the forward history.
+     */
+    @RequiresFeature(name = WebViewFeature.SAVE_STATE,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @ExperimentalSaveState
+    public static void saveState(@NonNull WebView webView,
+            @NonNull Bundle outState,
+            @IntRange(from = 1) int maxSizeBytes,
+            boolean includeForwardState) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.SAVE_STATE;
+        if (feature.isSupportedByWebView()) {
+            getProvider(webView).saveState(outState, maxSizeBytes, includeForwardState);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Denotes that the WebViewCompat#setShouldCacheProvider API surface is experimental.
+     * <p>
+     * It may change without warning and should not be relied upon for non-experimental purposes.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+    @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
+    public @interface ExperimentalCacheProvider {
+    }
+
+    /**
+     * Enables or disables caching of WebView provider objects (objects internal to the
+     * androidx.webkit library). Caching should have no effect on behavior but will improve
+     * performance.
+     *
+     * @param shouldCacheProvider whether to enable caching of WebView provider objects.
+     */
+    @RequiresFeature(name = WebViewFeature.CACHE_PROVIDER,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @AnyThread
+    @ExperimentalCacheProvider
+    public static void setShouldCacheProvider(boolean shouldCacheProvider) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.CACHE_PROVIDER;
+        if (feature.isSupportedByWebView()) {
+            sShouldCacheProvider = shouldCacheProvider;
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Sets the {@link WebNavigationClient} for the given {@link WebView}.
+     *
+     * @param webView The {@link WebView} to set the client for.
+     * @param client  The {@link WebNavigationClient} to set.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static void setWebNavigationClient(@NonNull WebView webView,
+            @NonNull WebNavigationClient client) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
+        if (feature.isSupportedByWebView()) {
+            getProvider(webView).setWebNavigationClient(client);
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Gets the {@link WebNavigationClient} currently set for the given {@link WebView}.
+     *
+     * @param webView The {@link WebView} to get the client from.
+     * @return The {@link WebNavigationClient} currently set, or {@code null} if none is set.
+     * @throws UnsupportedOperationException if the
+     *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
+     *                                       feature is not supported.
+     */
+    @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    @UiThread
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static @NonNull WebNavigationClient getWebNavigationClient(@NonNull WebView webView) {
+        ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
+        if (feature.isSupportedByWebView()) {
+            return getProvider(webView).getWebNavigationClient();
+        } else {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+    }
 
     private static WebViewProviderFactory getFactory() {
         return WebViewGlueCommunicator.getFactory();
@@ -1218,5 +1595,11 @@ public class WebViewCompat {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    @VisibleForTesting
+    /*package*/ static WeakHashMap<WebView, WebViewProviderAdapter>
+            getProviderAdapterCacheForTesting() {
+        return sProviderAdapterCache;
     }
 }

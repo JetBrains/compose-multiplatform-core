@@ -16,10 +16,16 @@
 
 package androidx.appsearch.playservicesstorage.converter;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchBlobHandle;
+import androidx.appsearch.app.EmbeddingVector;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GenericDocument;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates between Gms and Jetpack versions of {@link GenericDocument}.
@@ -34,8 +40,8 @@ public final class GenericDocumentToGmsConverter {
      * Translates a jetpack {@link androidx.appsearch.app.GenericDocument} into a Gms
      * {@link com.google.android.gms.appsearch.GenericDocument}.
      */
-    @NonNull
-    public static com.google.android.gms.appsearch.GenericDocument toGmsGenericDocument(
+    @OptIn(markerClass = ExperimentalAppSearchApi.class)
+    public static com.google.android.gms.appsearch.@NonNull GenericDocument toGmsGenericDocument(
             @NonNull GenericDocument jetpackDocument) {
         Preconditions.checkNotNull(jetpackDocument);
         com.google.android.gms.appsearch.GenericDocument.Builder<
@@ -71,6 +77,14 @@ public final class GenericDocumentToGmsConverter {
                 }
                 gmsBuilder.setPropertyDocument(propertyName,
                         gmsSubDocuments);
+            } else if (property instanceof EmbeddingVector[]) {
+                // TODO(b/326656531): Remove this once embedding search APIs are available.
+                throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
+                        + " is not available on this AppSearch implementation.");
+            } else if (property instanceof AppSearchBlobHandle[]) {
+                // TODO(b/273591938): Remove this once blob APIs are available.
+                throw new UnsupportedOperationException(Features.BLOB_STORAGE
+                        + " is not available on this AppSearch implementation.");
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s",
@@ -85,9 +99,8 @@ public final class GenericDocumentToGmsConverter {
      * Translates a Gms {@link com.google.android.gms.appsearch.GenericDocument}
      * into a jetpack {@link androidx.appsearch.app.GenericDocument}.
      */
-    @NonNull
-    public static GenericDocument toJetpackGenericDocument(
-            @NonNull com.google.android.gms.appsearch.GenericDocument
+    public static @NonNull GenericDocument toJetpackGenericDocument(
+            com.google.android.gms.appsearch.@NonNull GenericDocument
                     gmsDocument) {
         Preconditions.checkNotNull(gmsDocument);
         GenericDocument.Builder<GenericDocument.Builder<?>> jetpackBuilder =
@@ -121,6 +134,8 @@ public final class GenericDocumentToGmsConverter {
                 }
                 jetpackBuilder.setPropertyDocument(propertyName, jetpackSubDocuments);
             } else {
+                // TODO(b/326656531) : Add an entry for EmbeddingVector once it becomes
+                //  available in gms-appsearch.
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
                                 property.getClass().toString()));

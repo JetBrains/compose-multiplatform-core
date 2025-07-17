@@ -20,8 +20,8 @@ import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link Parcelable} implementation that should be used by inheritance
@@ -72,8 +72,7 @@ public abstract class AbsSavedState implements Parcelable {
         mSuperState = superState != null ? superState : EMPTY_STATE;
     }
 
-    @Nullable
-    public final Parcelable getSuperState() {
+    public final @Nullable Parcelable getSuperState() {
         return mSuperState;
     }
 

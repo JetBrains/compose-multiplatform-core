@@ -17,44 +17,36 @@
 package androidx.build.testConfiguration
 
 import androidx.build.AndroidXExtension
-import androidx.build.AndroidXImplPlugin
 import androidx.build.AndroidXImplPlugin.Companion.FINALIZE_TEST_CONFIGS_WITH_APKS_TASK
+import androidx.build.androidXExtension
 import androidx.build.asFilenamePrefix
 import androidx.build.dependencyTracker.AffectedModuleDetector
 import androidx.build.getFileInTestConfigDirectory
-import androidx.build.getPrivacySandboxFilesDirectory
-import androidx.build.getSupportRootFolder
 import androidx.build.hasBenchmarkPlugin
 import androidx.build.isMacrobenchmark
 import androidx.build.isPresubmitBuild
-import androidx.build.multiplatformExtension
 import com.android.build.api.artifact.Artifacts
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.ApkOutputProviders
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
-import com.android.build.api.variant.HasAndroidTest
 import com.android.build.api.variant.HasDeviceTests
-import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.TestAndroidComponentsExtension
-import com.android.build.api.variant.TestVariant
 import com.android.build.api.variant.Variant
+import java.util.function.Consumer
+import kotlin.math.max
 import org.gradle.api.Project
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
 import org.gradle.api.attributes.Usage
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 
 /**
  * Creates and configures the test config generation task for a project. Configuration includes
@@ -67,64 +59,109 @@ private fun Project.createTestConfigurationGenerationTask(
     minSdk: Int,
     testRunner: Provider<String>,
     instrumentationRunnerArgs: Provider<Map<String, String>>,
-    variant: Variant?
+    variant: Variant?,
+    projectIsolationEnabled: Boolean,
 ) {
-    val xmlName = "${path.asFilenamePrefix()}$variantName.xml"
-    val jsonName = "_${path.asFilenamePrefix()}$variantName.json"
-    rootProject.tasks.named<ModuleInfoGenerator>("createModuleInfo").configure {
-        it.testModules.add(
-            TestModule(
-                name = xmlName,
-                path = listOf(projectDir.toRelativeString(getSupportRootFolder()))
-            )
+    val copyTestApksTask = registerCopyTestApksTask(variantName, artifacts, variant)
+
+    if (isPrivacySandboxEnabled()) {
+        /*
+        Privacy Sandbox SDKs could be installed starting from PRIVACY_SANDBOX_MIN_API_LEVEL.
+        Separate compat config generated for lower api levels.
+        */
+        registerGenerateTestConfigurationTask(
+            "${GENERATE_PRIVACY_SANDBOX_MAIN_TEST_CONFIGURATION_TASK}$variantName",
+            TestConfigType.PRIVACY_SANDBOX_MAIN,
+            xmlName = "${path.asFilenamePrefix()}$variantName.xml",
+            jsonName = null, // Privacy sandbox not yet supported in JSON configs
+            copyTestApksTask.flatMap { it.outputApplicationId },
+            copyTestApksTask.flatMap { it.outputTestApk },
+            minSdk = max(minSdk, PRIVACY_SANDBOX_MIN_API_LEVEL),
+            testRunner,
+            instrumentationRunnerArgs,
+            variant,
+            projectIsolationEnabled,
+        )
+
+        registerGenerateTestConfigurationTask(
+            "${GENERATE_PRIVACY_SANDBOX_COMPAT_TEST_CONFIGURATION_TASK}${variantName}",
+            TestConfigType.PRIVACY_SANDBOX_COMPAT,
+            xmlName = "${path.asFilenamePrefix()}${variantName}Compat.xml",
+            jsonName = null, // Privacy sandbox not yet supported in JSON configs
+            copyTestApksTask.flatMap { it.outputApplicationId },
+            copyTestApksTask.flatMap { it.outputTestApk },
+            minSdk,
+            testRunner,
+            instrumentationRunnerArgs,
+            variant,
+            projectIsolationEnabled,
+        )
+    } else {
+        registerGenerateTestConfigurationTask(
+            "${GENERATE_TEST_CONFIGURATION_TASK}$variantName",
+            TestConfigType.DEFAULT,
+            xmlName = "${path.asFilenamePrefix()}$variantName.xml",
+            jsonName = "_${path.asFilenamePrefix()}$variantName.json",
+            copyTestApksTask.flatMap { it.outputApplicationId },
+            copyTestApksTask.flatMap { it.outputTestApk },
+            minSdk,
+            testRunner,
+            instrumentationRunnerArgs,
+            variant,
+            projectIsolationEnabled,
         )
     }
-    val generateTestConfigurationTask =
-        tasks.register(
-            "${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}$variantName",
-            GenerateTestConfigurationTask::class.java
-        ) { task ->
-            val androidXExtension = extensions.getByType<AndroidXExtension>()
-            if (isPrivacySandboxEnabled()) {
-                // TODO (b/309610890): Replace for dependency on AGP artifact.
-                val extractedPrivacySandboxSdkApksDir =
-                    layout.buildDirectory.dir(
-                        "intermediates/extracted_apks_from_privacy_sandbox_sdks"
-                    )
-                task.privacySandboxSdkApks.from(
-                    files(extractedPrivacySandboxSdkApksDir) {
-                        it.builtBy("buildPrivacySandboxSdkApksForDebug")
-                    }
-                )
-                // TODO (b/309610890): Replace for dependency on AGP artifact.
-                val usesSdkSplitDir =
-                    layout.buildDirectory.dir(
-                        "intermediates/uses_sdk_library_split_for_local_deployment"
-                    )
-                task.privacySandboxUsesSdkSplit.from(
-                    files(usesSdkSplitDir) {
-                        it.builtBy("generateDebugAdditionalSplitForPrivacySandboxDeployment")
-                    }
-                )
-                task.outputPrivacySandboxFilenamesPrefix.set(
-                    "${path.asFilenamePrefix()}-$variantName"
-                )
-                task.outputPrivacySandboxFiles.set(
-                    getPrivacySandboxFilesDirectory().map {
-                        it.dir("${path.asFilenamePrefix()}-$variantName")
-                    }
-                )
-            }
+}
 
-            task.testFolder.set(artifacts.get(SingleArtifact.APK))
-            task.testLoader.set(artifacts.getBuiltArtifactsLoader())
-            task.outputTestApk.set(
-                getFileInTestConfigDirectory("${path.asFilenamePrefix()}-$variantName.apk")
-            )
+private fun Project.registerCopyTestApksTask(
+    variantName: String,
+    artifacts: Artifacts,
+    variant: Variant?,
+): TaskProvider<CopyTestApksTask> {
+    return tasks.register("${COPY_TEST_APKS_TASK}$variantName", CopyTestApksTask::class.java) { task
+        ->
+        task.testFolder.set(artifacts.get(SingleArtifact.APK))
+        task.testLoader.set(artifacts.getBuiltArtifactsLoader())
+
+        task.outputApplicationId.set(layout.buildDirectory.file("$variantName-appId.txt"))
+        task.outputTestApk.set(
+            getFileInTestConfigDirectory("${path.asFilenamePrefix()}-$variantName.apk")
+        )
+
+        // Skip task if getTestSourceSetsForAndroid is empty, even if
+        //  androidXExtension.deviceTests.enabled is set to true
+        task.androidTestSourceCode.from(getTestSourceSetsForAndroid(variant))
+        val androidXExtension = extensions.getByType<AndroidXExtension>()
+        task.enabled = androidXExtension.deviceTests.enabled
+        AffectedModuleDetector.configureTaskGuard(task)
+    }
+}
+
+private fun Project.registerGenerateTestConfigurationTask(
+    taskName: String,
+    configType: TestConfigType,
+    xmlName: String,
+    jsonName: String?,
+    applicationIdFile: Provider<RegularFile>,
+    testApk: Provider<RegularFile>,
+    minSdk: Int,
+    testRunner: Provider<String>,
+    instrumentationRunnerArgs: Provider<Map<String, String>>,
+    variant: Variant?,
+    projectIsolationEnabled: Boolean,
+) {
+    val generateTestConfigurationTask =
+        tasks.register(taskName, GenerateTestConfigurationTask::class.java) { task ->
+            task.testConfigType.set(configType)
+
+            task.applicationId.set(project.providers.fileContents(applicationIdFile).asText)
+            task.testApk.set(testApk)
+
+            val androidXExtension = extensions.getByType<AndroidXExtension>()
             task.additionalApkKeys.set(androidXExtension.additionalDeviceTestApkKeys)
             task.additionalTags.set(androidXExtension.additionalDeviceTestTags)
             task.outputXml.set(getFileInTestConfigDirectory(xmlName))
-            task.outputJson.set(getFileInTestConfigDirectory(jsonName))
+            jsonName?.let { task.outputJson.set(getFileInTestConfigDirectory(it)) }
             task.presubmit.set(isPresubmitBuild())
             task.instrumentationArgs.putAll(instrumentationRunnerArgs)
             task.minSdk.set(minSdk)
@@ -137,9 +174,13 @@ private fun Project.createTestConfigurationGenerationTask(
             task.enabled = androidXExtension.deviceTests.enabled
             AffectedModuleDetector.configureTaskGuard(task)
         }
-    rootProject.tasks
-        .findByName(FINALIZE_TEST_CONFIGS_WITH_APKS_TASK)!!
-        .dependsOn(generateTestConfigurationTask)
+    if (!projectIsolationEnabled) {
+        rootProject.tasks
+            .findByName(FINALIZE_TEST_CONFIGS_WITH_APKS_TASK)!!
+            .dependsOn(generateTestConfigurationTask)
+        addToModuleInfo(testName = xmlName, projectIsolationEnabled)
+    }
+    androidXExtension.testModuleNames.add(xmlName)
 }
 
 /**
@@ -152,7 +193,7 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     fun outputAppApkFile(
         variant: Variant,
         appProjectPath: String,
-        instrumentationProjectPath: String?
+        instrumentationProjectPath: String?,
     ): Provider<RegularFile> {
         var filename = appProjectPath.asFilenamePrefix()
         if (instrumentationProjectPath != null) {
@@ -165,15 +206,24 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     // For application modules, the instrumentation apk is generated in the module itself
     extensions.findByType(ApplicationAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().withBuildType("debug")) { variant ->
-            tasks.named(
-                "${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}${variant.name}AndroidTest",
-                GenerateTestConfigurationTask::class.java
-            ) { task ->
-                task.appFolder.set(variant.artifacts.get(SingleArtifact.APK))
-                task.appLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+            if (isPrivacySandboxEnabled()) {
+                addAppApksToPrivacySandboxTestConfigsGeneration(
+                    testVariantName = "${variant.name}AndroidTest",
+                    variant,
+                    variant.outputProviders,
+                )
+            } else {
+                // TODO(b/347956800): Migrate to ApkOutputProviders after testing on PrivacySandbox
+                addAppApkFromArtifactsToTestConfigGeneration(
+                    testVariantName = "${variant.name}AndroidTest",
+                    variant,
+                    configureAction = { task ->
+                        task.appFolder.set(variant.artifacts.get(SingleArtifact.APK))
 
-                // The target project is the same being evaluated
-                task.outputAppApk.set(outputAppApkFile(variant, path, null))
+                        // The target project is the same being evaluated
+                        task.outputAppApk.set(outputAppApkFile(variant, path, null))
+                    },
+                )
             }
         }
     }
@@ -184,52 +234,64 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
     // from the application one.
     extensions.findByType(TestAndroidComponentsExtension::class.java)?.apply {
         onVariants(selector().all()) { variant ->
-            tasks.named(
-                "${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}${variant.name}",
-                GenerateTestConfigurationTask::class.java
-            ) { task ->
-                task.appLoader.set(variant.artifacts.getBuiltArtifactsLoader())
-
-                // The target app path is defined in the targetProjectPath field in the android
-                // extension of the test module
-                val targetProjectPath =
-                    project.extensions.getByType(TestExtension::class.java).targetProjectPath
-                        ?: throw IllegalStateException(
+            if (isPrivacySandboxEnabled()) {
+                addAppApksToPrivacySandboxTestConfigsGeneration(
+                    testVariantName = variant.name,
+                    variant,
+                    variant.outputProviders,
+                )
+            } else {
+                // TODO(b/347956800): Migrate to ApkOutputProviders after b/378675038
+                addAppApkFromArtifactsToTestConfigGeneration(
+                    testVariantName = variant.name,
+                    variant,
+                    configureAction = { task ->
+                        // The target app path is defined in the targetProjectPath field in the
+                        // android extension of the test module
+                        val targetProjectPath =
+                            project.extensions
+                                .getByType(TestExtension::class.java)
+                                .targetProjectPath
+                                ?: throw IllegalStateException(
+                                    """
+                                Module `$path` does not have a targetProjectPath defined.
                             """
-                        Module `$path` does not have a targetProjectPath defined.
-                    """
-                                .trimIndent()
-                        )
-                task.outputAppApk.set(outputAppApkFile(variant, targetProjectPath, path))
+                                        .trimIndent()
+                                )
+                        task.outputAppApk.set(outputAppApkFile(variant, targetProjectPath, path))
 
-                task.appFileCollection.from(
-                    configurations
-                        .named("${variant.name}TestedApks")
-                        .get()
-                        .incoming
-                        .artifactView {
-                            it.attributes { container ->
-                                container.attribute(ARTIFACT_TYPE_ATTRIBUTE, "apk")
-                            }
-                        }
-                        .files
+                        task.appFileCollection.from(
+                            configurations
+                                .named("${variant.name}TestedApks")
+                                .get()
+                                .incoming
+                                .artifactView {
+                                    it.attributes { container ->
+                                        container.attribute(ARTIFACT_TYPE_ATTRIBUTE, "apk")
+                                    }
+                                }
+                                .files
+                        )
+                    },
                 )
             }
         }
     }
 
-    // For library modules we only look at the build type debug. The target app project can be
+    // For library modules we only look at the build type release. The target app project can be
     // specified through the androidX extension, through: targetAppProjectForInstrumentationTest
     // and targetAppProjectVariantForInstrumentationTest.
     extensions.findByType(LibraryAndroidComponentsExtension::class.java)?.apply {
-        onVariants(selector().withBuildType("debug")) { variant ->
+        onVariants(selector().withBuildType("release")) { variant ->
             val targetAppProject =
                 androidXExtension.deviceTests.targetAppProject ?: return@onVariants
             val targetAppProjectVariant = androidXExtension.deviceTests.targetAppVariant
 
             // Recreate the same configuration existing for test modules to pull the artifact
             // from the application module specified in the deviceTests extension.
-            @Suppress("UnstableApiUsage") // Incubating dependencyFactory APIs
+            @Suppress(
+                "UnstableApiUsage"
+            ) // Incubating dependencyFactory APIs https://github.com/gradle/gradle/issues/33923
             val configuration =
                 configurations.create("${variant.name}TestedApks") { config ->
                     config.isCanBeResolved = true
@@ -237,218 +299,110 @@ fun Project.addAppApkToTestConfigGeneration(androidXExtension: AndroidXExtension
                     config.attributes {
                         it.attribute(
                             BuildTypeAttr.ATTRIBUTE,
-                            objects.named(targetAppProjectVariant)
+                            objects.named(targetAppProjectVariant),
                         )
                         it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
                     }
                     config.dependencies.add(project.dependencyFactory.create(targetAppProject))
                 }
 
-            tasks.named(
-                "${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}${variant.name}AndroidTest",
-                GenerateTestConfigurationTask::class.java
-            ) { task ->
-                task.appLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+            addAppApkFromArtifactsToTestConfigGeneration(
+                testVariantName = "${variant.name}AndroidTest",
+                variant,
+                configureAction = { task ->
+                    // The target app path is defined in the androidx extension
+                    task.outputAppApk.set(outputAppApkFile(variant, targetAppProject.path, path))
 
-                // The target app path is defined in the androidx extension
-                task.outputAppApk.set(outputAppApkFile(variant, targetAppProject.path, path))
-
-                task.appFileCollection.from(
-                    configuration.incoming
-                        .artifactView { view ->
-                            view.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, "apk") }
-                        }
-                        .files
-                )
-            }
+                    task.appFileCollection.from(
+                        configuration.incoming
+                            .artifactView { view ->
+                                view.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, "apk") }
+                            }
+                            .files
+                    )
+                },
+            )
         }
     }
 }
 
-private fun getOrCreateMediaTestConfigTask(
-    project: Project
-): TaskProvider<GenerateMediaTestConfigurationTask> {
-    val parentProject = project.parent!!
-    if (
-        !parentProject.tasks
-            .withType(GenerateMediaTestConfigurationTask::class.java)
-            .names
-            .contains("support-media-test${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}")
-    ) {
-        val task =
-            parentProject.tasks.register(
-                "support-media-test${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}",
-                GenerateMediaTestConfigurationTask::class.java
-            ) { task ->
-                AffectedModuleDetector.configureTaskGuard(task)
-            }
-        project.rootProject.tasks.findByName(FINALIZE_TEST_CONFIGS_WITH_APKS_TASK)!!.dependsOn(task)
-        return task
-    } else {
-        return parentProject.tasks
-            .withType(GenerateMediaTestConfigurationTask::class.java)
-            .named("support-media-test${AndroidXImplPlugin.GENERATE_TEST_CONFIGURATION_TASK}")
-    }
-}
-
-private fun Project.createOrUpdateMediaTestConfigurationGenerationTask(
-    variantName: String,
-    artifacts: Artifacts,
-    minSdk: Int,
-    testRunner: Provider<String>,
+private fun Project.addAppApkFromArtifactsToTestConfigGeneration(
+    testVariantName: String,
+    variant: Variant,
+    configureAction: Consumer<CopyApkFromArtifactsTask>,
 ) {
-    val mediaTask = getOrCreateMediaTestConfigTask(this)
-
-    fun getJsonName(clientToT: Boolean, serviceToT: Boolean, clientTests: Boolean): String {
-        return "_mediaClient${
-            if (clientToT) "ToT" else "Previous"
-        }Service${
-            if (serviceToT) "ToT" else "Previous"
-        }${
-            if (clientTests) "Client" else "Service"
-        }Tests$variantName.json"
-    }
-
-    fun ModuleInfoGenerator.addTestModule(clientToT: Boolean, serviceToT: Boolean) {
-        // We don't test the combination of previous versions of service and client as that is not
-        // useful data. We always want at least one tip of tree project.
-        if (!clientToT && !serviceToT) return
-        testModules.add(
-            TestModule(
-                name =
-                    getJsonName(clientToT = clientToT, serviceToT = serviceToT, clientTests = true),
-                path = listOf(projectDir.toRelativeString(getSupportRootFolder()))
-            )
-        )
-        testModules.add(
-            TestModule(
-                name =
-                    getJsonName(
-                        clientToT = clientToT,
-                        serviceToT = serviceToT,
-                        clientTests = false
-                    ),
-                path = listOf(projectDir.toRelativeString(getSupportRootFolder()))
-            )
-        )
-    }
-    val isClient = this.name.contains("client")
-    val isPrevious = this.name.contains("previous")
-
-    rootProject.tasks.named<ModuleInfoGenerator>("createModuleInfo").configure {
-        if (isClient) {
-            it.addTestModule(clientToT = !isPrevious, serviceToT = false)
-            it.addTestModule(clientToT = !isPrevious, serviceToT = true)
-        } else {
-            it.addTestModule(clientToT = true, serviceToT = !isPrevious)
-            it.addTestModule(clientToT = false, serviceToT = !isPrevious)
-        }
-    }
-    mediaTask.configure {
-        if (isClient) {
-            if (isPrevious) {
-                it.clientPreviousFolder.set(artifacts.get(SingleArtifact.APK))
-                it.clientPreviousLoader.set(artifacts.getBuiltArtifactsLoader())
-            } else {
-                it.clientToTFolder.set(artifacts.get(SingleArtifact.APK))
-                it.clientToTLoader.set(artifacts.getBuiltArtifactsLoader())
-            }
-        } else {
-            if (isPrevious) {
-                it.servicePreviousFolder.set(artifacts.get(SingleArtifact.APK))
-                it.servicePreviousLoader.set(artifacts.getBuiltArtifactsLoader())
-            } else {
-                it.serviceToTFolder.set(artifacts.get(SingleArtifact.APK))
-                it.serviceToTLoader.set(artifacts.getBuiltArtifactsLoader())
-            }
-        }
-        it.jsonClientPreviousServiceToTClientTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = false, serviceToT = true, clientTests = true)
-            )
-        )
-        it.jsonClientPreviousServiceToTServiceTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = false, serviceToT = true, clientTests = false)
-            )
-        )
-        it.jsonClientToTServicePreviousClientTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = true, serviceToT = false, clientTests = true)
-            )
-        )
-        it.jsonClientToTServicePreviousServiceTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = true, serviceToT = false, clientTests = false)
-            )
-        )
-        it.jsonClientToTServiceToTClientTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = true, serviceToT = true, clientTests = true)
-            )
-        )
-        it.jsonClientToTServiceToTServiceTests.set(
-            getFileInTestConfigDirectory(
-                getJsonName(clientToT = true, serviceToT = true, clientTests = false)
-            )
-        )
-        it.totClientApk.set(getFileInTestConfigDirectory("mediaClientToT$variantName.apk"))
-        it.previousClientApk.set(
-            getFileInTestConfigDirectory("mediaClientPrevious$variantName.apk")
-        )
-        it.totServiceApk.set(getFileInTestConfigDirectory("mediaServiceToT$variantName.apk"))
-        it.previousServiceApk.set(
-            getFileInTestConfigDirectory("mediaServicePrevious$variantName.apk")
-        )
-        it.minSdk.set(minSdk)
-        it.testRunner.set(testRunner)
-        it.presubmit.set(isPresubmitBuild())
-        AffectedModuleDetector.configureTaskGuard(it)
+    val copyApkTask = registerCopyAppApkFromArtifactsTask(variant, configureAction)
+    tasks.named(
+        "${GENERATE_TEST_CONFIGURATION_TASK}$testVariantName",
+        GenerateTestConfigurationTask::class.java,
+    ) { t ->
+        t.appApksModel.set(copyApkTask.flatMap(CopyApkFromArtifactsTask::outputAppApksModel))
     }
 }
 
-@Suppress("UnstableApiUsage") // usage of HasDeviceTests
-fun Project.configureTestConfigGeneration(commonExtension: CommonExtension<*, *, *, *, *, *>) {
+// TODO(b/347956800): Call from createTestConfigurationGenerationTask() after b/378674313
+// TODO(b/347956800): Use tasks providers directly instead of tasks.named after b/378674313
+@Suppress("UnstableApiUsage") // ApkOutputProviders b/397701480
+private fun Project.addAppApksToPrivacySandboxTestConfigsGeneration(
+    testVariantName: String,
+    variant: Variant,
+    outputProviders: ApkOutputProviders,
+) {
+    val copyTestApksTask =
+        tasks.named("${COPY_TEST_APKS_TASK}${testVariantName}", CopyTestApksTask::class.java)
+    val excludeTestApk = copyTestApksTask.flatMap(CopyTestApksTask::outputTestApk)
+
+    val copyMainApksTask =
+        registerCopyPrivacySandboxMainAppApksTask(variant, outputProviders, excludeTestApk)
+    tasks.named(
+        "${GENERATE_PRIVACY_SANDBOX_MAIN_TEST_CONFIGURATION_TASK}${testVariantName}",
+        GenerateTestConfigurationTask::class.java,
+    ) { t ->
+        t.appApksModel.set(
+            copyMainApksTask.flatMap(CopyApksFromOutputProviderTask::outputAppApksModel)
+        )
+    }
+
+    val copyCompatApksTask =
+        registerCopyPrivacySandboxCompatAppApksTask(variant, outputProviders, excludeTestApk)
+    tasks.named(
+        "${GENERATE_PRIVACY_SANDBOX_COMPAT_TEST_CONFIGURATION_TASK}${testVariantName}",
+        GenerateTestConfigurationTask::class.java,
+    ) { t ->
+        t.appApksModel.set(
+            copyCompatApksTask.flatMap(CopyApksFromOutputProviderTask::outputAppApksModel)
+        )
+    }
+}
+
+fun Project.configureTestConfigGeneration(projectIsolationEnabled: Boolean) {
     extensions.getByType(AndroidComponentsExtension::class.java).apply {
         onVariants { variant ->
             when {
                 variant is HasDeviceTests -> {
-                    variant.deviceTests.forEach { deviceTest ->
-                        when {
-                            path.contains("media:version-compat-tests:") -> {
-                                createOrUpdateMediaTestConfigurationGenerationTask(
-                                    deviceTest.name,
-                                    deviceTest.artifacts,
-                                    // replace minSdk after b/328495232 is fixed
-                                    commonExtension.defaultConfig.minSdk!!,
-                                    deviceTest.instrumentationRunner,
-                                )
-                            }
-                            else -> {
-                                createTestConfigurationGenerationTask(
-                                    deviceTest.name,
-                                    deviceTest.artifacts,
-                                    // replace minSdk after b/328495232 is fixed
-                                    commonExtension.defaultConfig.minSdk!!,
-                                    deviceTest.instrumentationRunner,
-                                    deviceTest.instrumentationRunnerArguments,
-                                    variant
-                                )
-                            }
-                        }
+                    variant.deviceTests.forEach { (_, deviceTest) ->
+                        createTestConfigurationGenerationTask(
+                            deviceTest.name,
+                            deviceTest.artifacts,
+                            @Suppress("UnstableApiUsage") // b/409617582
+                            deviceTest.minSdk.apiLevel,
+                            deviceTest.instrumentationRunner,
+                            deviceTest.instrumentationRunnerArguments,
+                            variant,
+                            projectIsolationEnabled,
+                        )
                     }
                 }
                 project.plugins.hasPlugin("com.android.test") -> {
+                    val testExtension = project.extensions.getByType<TestExtension>()
                     createTestConfigurationGenerationTask(
                         variant.name,
                         variant.artifacts,
-                        // replace minSdk after b/328495232 is fixed
-                        commonExtension.defaultConfig.minSdk!!,
-                        provider { commonExtension.defaultConfig.testInstrumentationRunner!! },
-                        provider {
-                            commonExtension.defaultConfig.testInstrumentationRunnerArguments
-                        },
-                        variant
+                        variant.minSdk.apiLevel,
+                        provider { testExtension.defaultConfig.testInstrumentationRunner!! },
+                        provider { testExtension.defaultConfig.testInstrumentationRunnerArguments },
+                        variant,
+                        projectIsolationEnabled,
                     )
                 }
             }
@@ -456,66 +410,14 @@ fun Project.configureTestConfigGeneration(commonExtension: CommonExtension<*, *,
     }
 }
 
-@Suppress("UnstableApiUsage")
-fun Project.configureTestConfigGeneration(
-    kotlinMultiplatformAndroidTarget: KotlinMultiplatformAndroidTarget,
-    componentsExtension: KotlinMultiplatformAndroidComponentsExtension
-) {
-    componentsExtension.onVariant { variant ->
-        variant.deviceTests.forEach { deviceTest ->
-            createTestConfigurationGenerationTask(
-                deviceTest.name,
-                deviceTest.artifacts,
-                // replace minSdk after b/328495232 is fixed
-                kotlinMultiplatformAndroidTarget.minSdk!!,
-                deviceTest.instrumentationRunner,
-                deviceTest.instrumentationRunnerArguments,
-                null
-            )
-        }
-    }
-}
-
-private fun Project.getTestSourceSetsForAndroid(variant: Variant?): List<FileCollection> {
-    val testSourceFileCollections = mutableListOf<FileCollection>()
-    when (variant) {
-        is TestVariant -> {
-            // com.android.test modules keep test code in main sourceset
-            variant.sources.java?.all?.let { sourceSet ->
-                testSourceFileCollections.add(files(sourceSet))
-            }
-            // Add kotlin-android main source set
-            extensions
-                .findByType(KotlinAndroidProjectExtension::class.java)
-                ?.sourceSets
-                ?.find { it.name == "main" }
-                ?.let { testSourceFileCollections.add(it.kotlin.sourceDirectories) }
-            // Note, don't have to add kotlin-multiplatform as it is not compatible with
-            // com.android.test modules
-        }
-        is HasAndroidTest -> {
-            variant.androidTest?.sources?.java?.all?.let {
-                testSourceFileCollections.add(files(it))
-            }
-        }
-    }
-
-    // Add kotlin-android androidTest source set
-    extensions
-        .findByType(KotlinAndroidProjectExtension::class.java)
-        ?.sourceSets
-        ?.find { it.name == "androidTest" }
-        ?.let { testSourceFileCollections.add(it.kotlin.sourceDirectories) }
-
-    // Add kotlin-multiplatform androidInstrumentedTest target source sets
-    multiplatformExtension
-        ?.targets
-        ?.filterIsInstance<KotlinAndroidTarget>()
-        ?.mapNotNull { it.compilations.find { it.name == "debugAndroidTest" } }
-        ?.flatMap { it.allKotlinSourceSets }
-        ?.mapTo(testSourceFileCollections) { it.kotlin.sourceDirectories }
-    return testSourceFileCollections
-}
-
 private fun Project.isPrivacySandboxEnabled(): Boolean =
-    extensions.findByType(ApplicationExtension::class.java)?.privacySandbox?.enable ?: false
+    extensions.findByType(ApplicationExtension::class.java)?.privacySandbox?.enable
+        ?: extensions.findByType(TestExtension::class.java)?.privacySandbox?.enable
+        ?: false
+
+private const val COPY_TEST_APKS_TASK = "CopyTestApks"
+private const val GENERATE_PRIVACY_SANDBOX_MAIN_TEST_CONFIGURATION_TASK =
+    "GeneratePrivacySandboxMainTestConfiguration"
+private const val GENERATE_PRIVACY_SANDBOX_COMPAT_TEST_CONFIGURATION_TASK =
+    "GeneratePrivacySandboxCompatTestConfiguration"
+private const val GENERATE_TEST_CONFIGURATION_TASK = "GenerateTestConfiguration"

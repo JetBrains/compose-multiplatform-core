@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.semantics
  * coerced into this range.
  *
  * @sample androidx.compose.foundation.samples.DeterminateProgressSemanticsSample
- *
  * @param value current value of the ProgressIndicator/Slider. If outside of [valueRange] provided,
  *   value will be coerced to this range. Must not be NaN.
  * @param valueRange range of values that value can take. Passed [value] will be coerced to this
@@ -42,7 +41,7 @@ import androidx.compose.ui.semantics.semantics
 fun Modifier.progressSemantics(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    @IntRange(from = 0) steps: Int = 0
+    @IntRange(from = 0) steps: Int = 0,
 ): Modifier {
     // Older versions of Talkback will ignore nodes with range info which aren't focusable or
     // screen reader focusable. Setting this semantics as merging descendants will mark it as

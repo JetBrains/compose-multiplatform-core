@@ -21,11 +21,10 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 
 internal class LruCacheTest {
 
@@ -339,7 +338,7 @@ internal class LruCacheTest {
                     evicted: Boolean,
                     key: String,
                     oldValue: String,
-                    newValue: String?
+                    newValue: String?,
                 ) {
                     log.add("$key=$oldValue>$newValue")
                 }
@@ -372,7 +371,7 @@ internal class LruCacheTest {
                     evicted: Boolean,
                     key: String,
                     oldValue: Int,
-                    newValue: Int?
+                    newValue: Int?,
                 ) {
                     log.add("$key=$oldValue>$newValue")
                 }
@@ -382,17 +381,17 @@ internal class LruCacheTest {
     }
 
     @Test
-    fun testAbleToUpdateFromAnotherThreadWithBlockedEntryRemoved() {
+    fun testAbleToUpdateFromAnotherThreadWithBlockedEntryRemoved() = runTest {
         val cache =
             object : LruCache<String, String>(3) {
                 override fun entryRemoved(
                     evicted: Boolean,
                     key: String,
                     oldValue: String,
-                    newValue: String?
+                    newValue: String?,
                 ) {
                     if (key in setOf("a", "b", "c", "d")) {
-                        runBlocking(Dispatchers.Default) { put("x", "X") }
+                        launch { put("x", "X") }
                     }
                 }
             }
@@ -407,9 +406,8 @@ internal class LruCacheTest {
     }
 
     /** Makes sure that LruCache operations are correctly synchronized to guarantee consistency. */
-    @OptIn(DelicateCoroutinesApi::class) // Using GlobalScope in tests
     @Test
-    fun consistentMultithreadedAccess() {
+    fun consistentMultithreadedAccess() = runTest {
         var nonNullValues = 0
         var nullValues = 0
         var valuesPut = 0
@@ -424,8 +422,10 @@ internal class LruCacheTest {
                 override fun create(key: String): Int = value
             }
 
+        val scope = CoroutineScope(Dispatchers.Default)
+
         val t0 =
-            GlobalScope.launch(Dispatchers.Default) {
+            scope.launch {
                 repeat(rounds) {
                     if (cache[key] != null) {
                         nonNullValues++
@@ -436,7 +436,7 @@ internal class LruCacheTest {
             }
 
         val t1 =
-            GlobalScope.launch(Dispatchers.Default) {
+            scope.launch {
                 repeat(rounds) { i ->
                     if (i % 2 == 0) {
                         if (cache.put(key, value) != null) {
@@ -451,10 +451,8 @@ internal class LruCacheTest {
                 }
             }
 
-        runBlocking {
-            t0.join()
-            t1.join()
-        }
+        t0.join()
+        t1.join()
 
         assertEquals(rounds, nonNullValues)
         assertEquals(0, nullValues)
@@ -468,17 +466,11 @@ internal class LruCacheTest {
         myCache.put("c", "d")
         myCache.put("a", "b")
         val snapshot1 = myCache.snapshot()
-        assertEquals(
-            listOf("c" to "d", "a" to "b"),
-            snapshot1.entries.map { it.key to it.value },
-        )
+        assertEquals(listOf("c" to "d", "a" to "b"), snapshot1.entries.map { it.key to it.value })
         // trigger access to move C to the end.
         assertEquals("d", myCache["c"])
         val snapshot2 = myCache.snapshot()
-        assertEquals(
-            listOf("a" to "b", "c" to "d"),
-            snapshot2.entries.map { it.key to it.value },
-        )
+        assertEquals(listOf("a" to "b", "c" to "d"), snapshot2.entries.map { it.key to it.value })
         // Make sure it is mutable. This assertion doesn't make sense right now since the API
         // returns MutableMap but we track APIs only w/ their Java signatures, which means a change
         // to Map wouldn't show up in API files. Hence we have a test that would break if it starts
@@ -498,7 +490,7 @@ internal class LruCacheTest {
                 evicted: Boolean,
                 key: String,
                 oldValue: String,
-                newValue: String?
+                newValue: String?,
             ) {
                 log += if (evicted) "$key=$oldValue" else "$key=$oldValue>$newValue"
             }

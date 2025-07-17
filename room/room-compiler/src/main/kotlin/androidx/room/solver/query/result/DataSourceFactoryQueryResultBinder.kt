@@ -30,28 +30,33 @@ class DataSourceFactoryQueryResultBinder(
 
     val typeName: XTypeName = positionalDataSourceQueryResultBinder.itemTypeName
 
+    override val usesCompatQueryWriter = true
+
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             val pagedListProvider =
-                XTypeSpec.anonymousClassBuilder(language)
+                XTypeSpec.anonymousClassBuilder()
                     .apply {
                         superclass(
                             PagingTypeNames.DATA_SOURCE_FACTORY.parametrizedBy(
                                 XTypeName.BOXED_INT,
-                                typeName
+                                typeName,
                             )
                         )
                         addCreateMethod(
-                            roomSQLiteQueryVar = roomSQLiteQueryVar,
+                            roomSQLiteQueryVar = sqlQueryVar,
                             dbProperty = dbProperty,
+                            bindStatement = bindStatement,
+                            returnTypeName = returnTypeName,
                             inTransaction = inTransaction,
-                            scope = scope
+                            scope = scope,
                         )
                     }
                     .build()
@@ -63,24 +68,26 @@ class DataSourceFactoryQueryResultBinder(
         roomSQLiteQueryVar: String,
         dbProperty: XPropertySpec,
         inTransaction: Boolean,
-        scope: CodeGenScope
+        scope: CodeGenScope,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
     ) {
         addFunction(
             XFunSpec.builder(
-                    language = language,
                     name = "create",
                     visibility = VisibilityModifier.PUBLIC,
-                    isOverride = true
+                    isOverride = true,
                 )
                 .apply {
                     returns(positionalDataSourceQueryResultBinder.typeName)
                     val countedBinderScope = scope.fork()
                     positionalDataSourceQueryResultBinder.convertAndReturn(
-                        roomSQLiteQueryVar = roomSQLiteQueryVar,
-                        canReleaseQuery = true,
+                        sqlQueryVar = roomSQLiteQueryVar,
                         dbProperty = dbProperty,
+                        bindStatement = bindStatement,
+                        returnTypeName = returnTypeName,
                         inTransaction = inTransaction,
-                        scope = countedBinderScope
+                        scope = countedBinderScope,
                     )
                     addCode(countedBinderScope.generate())
                 }

@@ -22,13 +22,12 @@ import androidx.compose.ui.input.pointer.PointerEventType.Companion.Enter
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Exit
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Move
 import androidx.compose.ui.input.pointer.PointerEventType.Companion.Press
-import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InputDispatcher
 import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.MouseInjectionScope
-import androidx.compose.ui.test.animateAlong
-import androidx.compose.ui.test.animateBy
-import androidx.compose.ui.test.animateTo
+import androidx.compose.ui.test.animateMoveAlong
+import androidx.compose.ui.test.animateMoveBy
+import androidx.compose.ui.test.animateMoveTo
 import androidx.compose.ui.test.injectionscope.mouse.Common.PrimaryButton
 import androidx.compose.ui.test.injectionscope.mouse.Common.runMouseInputInjectionTest
 import androidx.compose.ui.test.injectionscope.mouse.Common.verifyMouseEvent
@@ -40,7 +39,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalTestApi::class)
 @Suppress("KotlinConstantConditions") // for "0 * T"
 class MoveTest {
     companion object {
@@ -82,7 +80,7 @@ class MoveTest {
                     { verifyMouseEvent(3 * T, Move, false, positionMove2) },
                     { verifyMouseEvent(4 * T, Exit, false, positionOut) },
                     { verifyMouseEvent(5 * T, Enter, false, positionIn) },
-                )
+                ),
         )
 
     @Test
@@ -107,7 +105,7 @@ class MoveTest {
                     { verifyMouseEvent(3 * T, Move, false, positionMove2) },
                     { verifyMouseEvent(4 * T, Exit, false, positionOut) },
                     { verifyMouseEvent(5 * T, Enter, false, positionIn) },
-                )
+                ),
         )
 
     @Test
@@ -125,7 +123,7 @@ class MoveTest {
                 arrayOf(
                     { verifyMouseEvent(0, Enter, false, positionMove2) },
                     { verifyMouseEvent(0, Press, true, positionMove2, PrimaryButton) },
-                )
+                ),
         )
 
     @Test
@@ -143,7 +141,7 @@ class MoveTest {
                 arrayOf(
                     { verifyMouseEvent(0, Enter, false, positionMove2) },
                     { verifyMouseEvent(0, Press, true, positionMove2, PrimaryButton) },
-                )
+                ),
         )
 
     @Test
@@ -162,7 +160,7 @@ class MoveTest {
                     { verifyMouseEvent(1 * T, Enter, false, positionIn) },
                     { verifyMouseEvent(2 * T, Move, false, positionMove1) },
                     { verifyMouseEvent(3 * T, Exit, false, positionOut) },
-                )
+                ),
         )
 
     @Test
@@ -179,10 +177,7 @@ class MoveTest {
                     enter(positionMove1)
                 }
             },
-            eventVerifiers =
-                arrayOf(
-                    { verifyMouseEvent(1 * T, Enter, false, positionIn) },
-                )
+            eventVerifiers = arrayOf({ verifyMouseEvent(1 * T, Enter, false, positionIn) }),
         )
 
     @Test
@@ -201,14 +196,14 @@ class MoveTest {
     @Test
     fun animatePointerTo() =
         runMouseInputInjectionTest(
-            mouseInput = { animateTo(position1, durationMillis = steps * T) },
+            mouseInput = { animateMoveTo(position1, durationMillis = steps * T) },
             eventVerifiers =
                 arrayOf(
                     { verifyMouseEvent(1 * T, Enter, false, distancePerStep * 1f) },
                     { verifyMouseEvent(2 * T, Move, false, distancePerStep * 2f) },
                     { verifyMouseEvent(3 * T, Move, false, distancePerStep * 3f) },
                     { verifyMouseEvent(4 * T, Move, false, distancePerStep * 4f) },
-                )
+                ),
         )
 
     @Test
@@ -216,7 +211,7 @@ class MoveTest {
         runMouseInputInjectionTest(
             mouseInput = {
                 moveTo(position2)
-                animateBy(distance, durationMillis = steps * T)
+                animateMoveBy(distance, durationMillis = steps * T)
             },
             eventVerifiers =
                 arrayOf(
@@ -225,13 +220,13 @@ class MoveTest {
                     { verifyMouseEvent(3 * T, Move, false, position2 + (distancePerStep * 2f)) },
                     { verifyMouseEvent(4 * T, Move, false, position2 + (distancePerStep * 3f)) },
                     { verifyMouseEvent(5 * T, Move, false, position2 + (distancePerStep * 4f)) },
-                )
+                ),
         )
 
     @Test
     fun animateAlong_fromCurrentPosition() =
         runMouseInputInjectionTest(
-            mouseInput = { animateAlong(curveFromHere, durationMillis = steps * T) },
+            mouseInput = { animateMoveAlong(curveFromHere, durationMillis = steps * T) },
             eventVerifiers =
                 arrayOf(
                     // The curve starts at the current position (0, 0) so we expect no initial
@@ -240,13 +235,13 @@ class MoveTest {
                     { verifyMouseEvent(2 * T, Move, false, curveFromHere(2 * T)) },
                     { verifyMouseEvent(3 * T, Move, false, curveFromHere(3 * T)) },
                     { verifyMouseEvent(4 * T, Move, false, curveFromHere(4 * T)) },
-                )
+                ),
         )
 
     @Test
     fun animateAlong_fromOtherPosition() =
         runMouseInputInjectionTest(
-            mouseInput = { animateAlong(curveFromElsewhere, durationMillis = steps * T) },
+            mouseInput = { animateMoveAlong(curveFromElsewhere, durationMillis = steps * T) },
             eventVerifiers =
                 arrayOf(
                     // The curve doesn't start at the current position (0, 0) so we expect an
@@ -256,12 +251,12 @@ class MoveTest {
                     { verifyMouseEvent(2 * T, Move, false, curveFromElsewhere(2 * T)) },
                     { verifyMouseEvent(3 * T, Move, false, curveFromElsewhere(3 * T)) },
                     { verifyMouseEvent(4 * T, Move, false, curveFromElsewhere(4 * T)) },
-                )
+                ),
         )
 
     private fun MouseInjectionScope.moveToAndCheck(
         position: Offset,
-        delayMillis: Long = eventPeriodMillis
+        delayMillis: Long = eventPeriodMillis,
     ) {
         moveTo(position, delayMillis)
         assertThat(currentPosition).isEqualTo(position)
@@ -269,7 +264,7 @@ class MoveTest {
 
     private fun MouseInjectionScope.moveByAndCheck(
         delta: Offset,
-        delayMillis: Long = eventPeriodMillis
+        delayMillis: Long = eventPeriodMillis,
     ) {
         val expectedPosition = currentPosition + delta
         moveBy(delta, delayMillis)

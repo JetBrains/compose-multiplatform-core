@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
  * the internal icon is 24 x 24 dp.
  *
  * @sample androidx.compose.material.samples.IconButtonSample
- *
  * @param onClick the lambda to be invoked when this icon is pressed
  * @param modifier optional [Modifier] for this IconButton
  * @param enabled whether or not this IconButton will handle input events and appear enabled for
@@ -58,7 +57,7 @@ fun IconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier =
@@ -69,10 +68,9 @@ fun IconButton(
                     enabled = enabled,
                     role = Role.Button,
                     interactionSource = interactionSource,
-                    indication =
-                        rippleOrFallbackImplementation(bounded = false, radius = RippleRadius)
+                    indication = ripple(bounded = false, radius = RippleRadius),
                 ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
         CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)
@@ -84,7 +82,6 @@ fun IconButton(
  * icon, or a navigation icon that opens a drawer.
  *
  * @sample androidx.compose.material.samples.IconToggleButtonSample
- *
  * @param checked whether this IconToggleButton is currently checked
  * @param onCheckedChange callback to be invoked when this icon is selected
  * @param modifier optional [Modifier] for this IconToggleButton
@@ -104,7 +101,7 @@ fun IconToggleButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier =
@@ -116,10 +113,9 @@ fun IconToggleButton(
                     enabled = enabled,
                     role = Role.Checkbox,
                     interactionSource = interactionSource,
-                    indication =
-                        rippleOrFallbackImplementation(bounded = false, radius = RippleRadius)
+                    indication = ripple(bounded = false, radius = RippleRadius),
                 ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         val contentAlpha = if (enabled) LocalContentAlpha.current else ContentAlpha.disabled
         CompositionLocalProvider(LocalContentAlpha provides contentAlpha, content = content)

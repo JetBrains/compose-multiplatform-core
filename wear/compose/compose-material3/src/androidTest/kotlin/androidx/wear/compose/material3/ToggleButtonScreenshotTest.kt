@@ -16,20 +16,18 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -41,7 +39,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ToggleButtonScreenshotTest {
     @get:Rule val rule = createComposeRule()
 
@@ -51,226 +49,265 @@ class ToggleButtonScreenshotTest {
 
     @Test
     fun toggle_button_checked_checkbox() = verifyScreenshot {
-        sampleToggleButton(checked = true, toggleControl = { Checkbox() })
+        sampleCheckboxButton(enabled = true, checked = true)
     }
 
     @Test
     fun toggle_button_unchecked_checkbox() = verifyScreenshot {
-        sampleToggleButton(
-            checked = false,
-            toggleControl = { Checkbox() },
-        )
+        sampleCheckboxButton(enabled = true, checked = false)
     }
 
     @Test
-    fun toggle_button_checked_switch() = verifyScreenshot {
-        sampleToggleButton(checked = true, toggleControl = { Switch() })
-    }
+    fun toggle_button_checked_switch() = verifyScreenshot { sampleSwitchButton(checked = true) }
 
     @Test
-    fun toggle_button_unchecked_switch() = verifyScreenshot {
-        sampleToggleButton(checked = false, toggleControl = { Switch() })
-    }
+    fun toggle_button_unchecked_switch() = verifyScreenshot { sampleSwitchButton(checked = false) }
 
     @Test
     fun toggle_button_checked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = true, toggleControl = { Checkbox() })
+            sampleCheckboxButton(enabled = true, checked = true)
         }
 
     @Test
     fun toggle_button_unchecked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = false, toggleControl = { Checkbox() })
+            sampleCheckboxButton(enabled = true, checked = false)
         }
 
     @Test
     fun toggle_button_checked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = true, toggleControl = { Switch() })
+            sampleSwitchButton(checked = true)
         }
 
     @Test
     fun toggle_button_unchecked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = false, toggleControl = { Switch() })
+            sampleSwitchButton(checked = false)
         }
 
     @Test
     fun disabled_toggle_button_checked_checkbox() = verifyScreenshot {
-        sampleToggleButton(checked = true, enabled = false, toggleControl = { Checkbox() })
+        sampleCheckboxButton(checked = true, enabled = false)
     }
 
     @Test
     fun disabled_toggle_button_unchecked_checkbox() = verifyScreenshot {
-        sampleToggleButton(checked = false, enabled = false, toggleControl = { Checkbox() })
+        sampleCheckboxButton(checked = false, enabled = false)
     }
 
     @Test
     fun disabled_toggle_button_checked_switch() = verifyScreenshot {
-        sampleToggleButton(checked = true, enabled = false, toggleControl = { Switch() })
+        sampleSwitchButton(checked = true, enabled = false)
     }
 
     @Test
     fun disabled_toggle_button_unchecked_switch() = verifyScreenshot {
-        sampleToggleButton(checked = false, enabled = false, toggleControl = { Switch() })
+        sampleSwitchButton(checked = false, enabled = false)
     }
 
     @Test
     fun disabled_toggle_button_checked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = true, enabled = false, toggleControl = { Checkbox() })
+            sampleCheckboxButton(checked = true, enabled = false)
         }
 
     @Test
     fun disabled_toggle_button_unchecked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = false, enabled = false, toggleControl = { Checkbox() })
+            sampleCheckboxButton(checked = false, enabled = false)
         }
 
     @Test
     fun disabled_toggle_button_checked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = true, enabled = false, toggleControl = { Switch() })
+            sampleSwitchButton(checked = true, enabled = false)
         }
 
     @Test
     fun disabled_toggle_button_unchecked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleToggleButton(checked = false, enabled = false, toggleControl = { Switch() })
+            sampleSwitchButton(checked = false, enabled = false)
         }
 
     @Test
     fun split_toggle_button_checked_checkbox() = verifyScreenshot {
-        sampleSplitToggleButton(checked = true, toggleControl = { Checkbox() })
+        sampleSplitCheckboxButton(checked = true)
     }
 
     @Test
     fun split_toggle_button_unchecked_checkbox() = verifyScreenshot {
-        sampleSplitToggleButton(checked = false, toggleControl = { Checkbox() })
+        sampleSplitCheckboxButton(checked = false)
     }
 
     @Test
     fun split_toggle_button_checked_switch() = verifyScreenshot {
-        sampleSplitToggleButton(checked = true, toggleControl = { Switch() })
+        sampleSplitSwitchButton(checked = true)
     }
 
     @Test
     fun split_toggle_button_unchecked_switch() = verifyScreenshot {
-        sampleSplitToggleButton(checked = false, toggleControl = { Switch() })
+        sampleSplitSwitchButton(checked = false)
     }
 
     @Test
     fun split_toggle_button_checked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = true, toggleControl = { Checkbox() })
+            sampleSplitCheckboxButton(checked = true)
         }
 
     @Test
     fun split_toggle_button_unchecked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = false, toggleControl = { Checkbox() })
+            sampleSplitCheckboxButton(checked = false)
         }
 
     @Test
     fun split_toggle_button_checked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = true, toggleControl = { Switch() })
+            sampleSplitSwitchButton(checked = true)
         }
 
     @Test
     fun split_toggle_button_unchecked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = false, toggleControl = { Switch() })
+            sampleSplitSwitchButton(checked = false)
         }
 
     @Test
     fun disabled_split_toggle_button_checked_checkbox() = verifyScreenshot {
-        sampleSplitToggleButton(checked = true, enabled = false, toggleControl = { Checkbox() })
+        sampleSplitCheckboxButton(checked = true, enabled = false)
     }
 
     @Test
     fun disabled_split_toggle_button_unchecked_checkbox() = verifyScreenshot {
-        sampleSplitToggleButton(checked = false, enabled = false, toggleControl = { Checkbox() })
+        sampleSplitCheckboxButton(checked = false, enabled = false)
     }
 
     @Test
     fun disabled_split_toggle_button_checked_switch() = verifyScreenshot {
-        sampleSplitToggleButton(checked = true, enabled = false, toggleControl = { Switch() })
+        sampleSplitSwitchButton(checked = true, enabled = false)
     }
 
     @Test
     fun disabled_split_toggle_button_unchecked_switch() = verifyScreenshot {
-        sampleSplitToggleButton(checked = false, enabled = false, toggleControl = { Switch() })
+        sampleSplitSwitchButton(checked = false, enabled = false)
     }
 
     @Test
     fun disabled_split_toggle_button_checked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = true, enabled = false, toggleControl = { Checkbox() })
+            sampleSplitCheckboxButton(checked = true, enabled = false)
         }
 
     @Test
     fun disabled_split_toggle_button_unchecked_checkbox_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(
-                checked = false,
-                enabled = false,
-                toggleControl = { Checkbox() }
-            )
+            sampleSplitCheckboxButton(checked = false, enabled = false)
         }
 
     @Test
     fun disabled_split_toggle_button_checked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = true, enabled = false, toggleControl = { Switch() })
+            sampleSplitSwitchButton(checked = true, enabled = false)
         }
 
     @Test
     fun disabled_split_toggle_button_unchecked_switch_rtl() =
         verifyScreenshot(layoutDirection = LayoutDirection.Rtl) {
-            sampleSplitToggleButton(checked = false, enabled = false, toggleControl = { Switch() })
+            sampleSplitSwitchButton(checked = false, enabled = false)
         }
 
+    @Test
+    fun split_checkbox_button_customized_padding_6dp() = verifyScreenshot {
+        sampleSplitCheckboxButton(contentPadding = PaddingValues(6.dp))
+    }
+
+    @Test
+    fun split_checkbox_button_customized_horizontal_padding_24dp() = verifyScreenshot {
+        sampleSplitCheckboxButton(
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
+        )
+    }
+
+    @Test
+    fun split_switch_button_customized_padding_6dp() = verifyScreenshot {
+        sampleSplitSwitchButton(contentPadding = PaddingValues(6.dp))
+    }
+
+    @Test
+    fun split_switch_button_customized_horizontal_padding_24dp() = verifyScreenshot {
+        sampleSplitSwitchButton(contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp))
+    }
+
     @Composable
-    private fun sampleToggleButton(
-        enabled: Boolean = true,
-        checked: Boolean = true,
-        toggleControl: @Composable ToggleControlScope.() -> Unit = { Checkbox() },
-    ) {
-        ToggleButton(
+    private fun sampleCheckboxButton(enabled: Boolean = true, checked: Boolean = true) {
+        CheckboxButton(
             icon = { TestIcon() },
             label = { Text("ToggleButton") },
             secondaryLabel = { Text("Secondary label") },
             checked = checked,
             enabled = enabled,
-            toggleControl = toggleControl,
             onCheckedChange = {},
             modifier = Modifier.testTag(TEST_TAG),
         )
     }
 
     @Composable
-    private fun sampleSplitToggleButton(
+    private fun sampleSplitCheckboxButton(
         checked: Boolean = true,
         enabled: Boolean = true,
-        toggleControl: @Composable ToggleControlScope.() -> Unit = {}
+        contentPadding: PaddingValues = CheckboxButtonDefaults.ContentPadding,
     ) {
-        SplitToggleButton(
+        SplitCheckboxButton(
             label = { Text("SplitToggleButton") },
             secondaryLabel = { Text("Secondary label") },
             checked = checked,
             enabled = enabled,
-            toggleControl = toggleControl,
             onCheckedChange = {},
-            onClick = {},
+            onContainerClick = {},
+            toggleContentDescription = "",
             modifier = Modifier.testTag(TEST_TAG),
+            contentPadding = contentPadding,
+        )
+    }
+
+    @Composable
+    private fun sampleSwitchButton(enabled: Boolean = true, checked: Boolean = true) {
+        SwitchButton(
+            icon = { TestIcon() },
+            label = { Text("ToggleButton") },
+            secondaryLabel = { Text("Secondary label") },
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = {},
+            modifier = Modifier.testTag(TEST_TAG),
+        )
+    }
+
+    @Composable
+    private fun sampleSplitSwitchButton(
+        checked: Boolean = true,
+        enabled: Boolean = true,
+        contentPadding: PaddingValues = SwitchButtonDefaults.ContentPadding,
+    ) {
+        SplitSwitchButton(
+            label = { Text("SplitToggleButton") },
+            secondaryLabel = { Text("Secondary label") },
+            checked = checked,
+            enabled = enabled,
+            onCheckedChange = {},
+            onContainerClick = {},
+            toggleContentDescription = "",
+            modifier = Modifier.testTag(TEST_TAG),
+            contentPadding = contentPadding,
         )
     }
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -278,9 +315,6 @@ class ToggleButtonScreenshotTest {
             }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

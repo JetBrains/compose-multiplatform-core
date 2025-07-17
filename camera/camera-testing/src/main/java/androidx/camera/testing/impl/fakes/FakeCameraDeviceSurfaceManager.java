@@ -23,17 +23,25 @@ import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IM
 
 import static com.google.common.primitives.Ints.asList;
 
-import android.util.Pair;
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.camera.core.Logger;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
+import androidx.camera.core.impl.ImageAnalysisConfig;
+import androidx.camera.core.impl.ImageCaptureConfig;
+import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
+import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
+import androidx.camera.core.impl.UseCaseConfigFactory;
+import androidx.camera.core.streamsharing.StreamSharingConfig;
+import androidx.camera.video.impl.VideoCaptureConfig;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,13 +52,16 @@ import java.util.Set;
 
 /** A CameraDeviceSurfaceManager which has no supported SurfaceConfigs. */
 public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurfaceManager {
+    private static final String TAG = "FakeCameraDeviceSurfaceManager";
 
     public static final Size MAX_OUTPUT_SIZE = new Size(4032, 3024); // 12.2 MP
+    public static final int MAX_SUPPORTED_FRAME_RATE = 60;
 
     private final Map<String, Map<Class<? extends UseCaseConfig<?>>, StreamSpec>>
             mDefinedStreamSpecs = new HashMap<>();
 
     private Set<List<Integer>> mValidSurfaceCombos = createDefaultValidSurfaceCombos();
+    private int mCameraUpdateCount = 0;
 
     /**
      * Sets the given suggested stream specs for the specified camera Id and use case type.
@@ -69,46 +80,88 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     }
 
     @Override
-    @Nullable
-    public SurfaceConfig transformSurfaceConfig(
+    public @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
-            @NonNull Size size) {
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase) {
 
         //returns a placeholder SurfaceConfig
         return SurfaceConfig.create(SurfaceConfig.ConfigType.PRIV,
-                SurfaceConfig.ConfigSize.PREVIEW);
+                SurfaceConfig.ConfigSize.PREVIEW, streamUseCase);
     }
 
-    @NonNull
     @Override
-    public Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
-            getSuggestedStreamSpecs(
+    public @NonNull SurfaceStreamSpecQueryResult getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn) {
+            boolean isPreviewStabilizationOn,
+            boolean hasVideoCapture, boolean isFeatureComboInvocation,
+            boolean findMaxSupportedFrameRate) {
         List<UseCaseConfig<?>> newUseCaseConfigs =
                 new ArrayList<>(newUseCaseConfigsSupportedSizeMap.keySet());
         checkSurfaceCombo(existingSurfaces, newUseCaseConfigs);
+
+        // Populate the suggested stream specs for new use cases.
         Map<UseCaseConfig<?>, StreamSpec> suggestedStreamSpecs = new HashMap<>();
         for (UseCaseConfig<?> useCaseConfig : newUseCaseConfigs) {
-            StreamSpec streamSpec = StreamSpec.builder(MAX_OUTPUT_SIZE).build();
-            Map<Class<? extends UseCaseConfig<?>>, StreamSpec> definedStreamSpecs =
-                    mDefinedStreamSpecs.get(cameraId);
-            if (definedStreamSpecs != null) {
-                StreamSpec definedStreamSpec = definedStreamSpecs.get(useCaseConfig.getClass());
-                if (definedStreamSpec != null) {
-                    streamSpec = definedStreamSpec;
-                }
-            }
-
-            suggestedStreamSpecs.put(useCaseConfig, streamSpec);
+            suggestedStreamSpecs.put(useCaseConfig,
+                    getStreamSpec(cameraId, useCaseConfig.getClass(), hasVideoCapture));
         }
 
-        return new Pair<>(suggestedStreamSpecs, new HashMap<>());
+        // Populate the stream specs for existing use cases.
+        Map<AttachedSurfaceInfo, StreamSpec> existingStreamSpecs = new HashMap<>();
+        for (AttachedSurfaceInfo attachedSurfaceInfo : existingSurfaces) {
+            existingStreamSpecs.put(attachedSurfaceInfo, getStreamSpec(cameraId,
+                    captureTypeToUseCaseConfigType(attachedSurfaceInfo.getCaptureTypes().get(0)),
+                    hasVideoCapture));
+        }
+
+        return new SurfaceStreamSpecQueryResult(suggestedStreamSpecs, existingStreamSpecs,
+                MAX_SUPPORTED_FRAME_RATE);
+    }
+
+    private @NonNull StreamSpec getStreamSpec(@NonNull String cameraId, @NonNull Class<?> classType,
+            boolean hasVideoCapture) {
+        StreamSpec streamSpec = StreamSpec.builder(MAX_OUTPUT_SIZE)
+                .setZslDisabled(hasVideoCapture)
+                .build();
+        Map<Class<? extends UseCaseConfig<?>>, StreamSpec> definedStreamSpecs =
+                mDefinedStreamSpecs.get(cameraId);
+        if (definedStreamSpecs != null) {
+            StreamSpec definedStreamSpec = definedStreamSpecs.get(classType);
+            if (definedStreamSpec != null) {
+                streamSpec = definedStreamSpec;
+            }
+        }
+        return streamSpec;
+    }
+
+    /**
+     * Returns the {@link UseCaseConfig} type from a
+     * {@link androidx.camera.core.impl.UseCaseConfigFactory.CaptureType}.
+     */
+    private Class<?> captureTypeToUseCaseConfigType(
+            UseCaseConfigFactory.@NonNull CaptureType captureType) {
+        switch (captureType) {
+            case METERING_REPEATING:
+                // Fall-through
+            case PREVIEW:
+                return PreviewConfig.class;
+            case IMAGE_CAPTURE:
+                return ImageCaptureConfig.class;
+            case IMAGE_ANALYSIS:
+                return ImageAnalysisConfig.class;
+            case VIDEO_CAPTURE:
+                return VideoCaptureConfig.class;
+            case STREAM_SHARING:
+                return StreamSharingConfig.class;
+            default:
+                throw new IllegalArgumentException("Invalid capture type.");
+        }
     }
 
     /**
@@ -126,6 +179,11 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
         for (AttachedSurfaceInfo surfaceInfo : existingSurfaceInfos) {
             currentCombo.add(surfaceInfo.getImageFormat());
         }
+
+        Logger.d(TAG,
+                "checkSurfaceCombo: currentCombo = " + currentCombo + ", mValidSurfaceCombos = "
+                        + mValidSurfaceCombos);
+
         // Loop through valid combinations and return early if the combo is supported.
         for (List<Integer> validCombo : mValidSurfaceCombos) {
             if (isComboSupported(currentCombo, validCombo)) {
@@ -163,5 +221,19 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
 
     public void setValidSurfaceCombos(@NonNull Set<List<Integer>> validSurfaceCombos) {
         mValidSurfaceCombos = validSurfaceCombos;
+    }
+
+    /** Adds a valid surface combo. */
+    public void addValidSurfaceCombo(@NonNull List<Integer> validSurfaceCombo) {
+        mValidSurfaceCombos.add(validSurfaceCombo);
+    }
+
+    @Override
+    public void onCamerasUpdated(@NonNull List<String> cameraIds) {
+        mCameraUpdateCount++;
+    }
+
+    public int getCameraUpdateCount() {
+        return mCameraUpdateCount;
     }
 }

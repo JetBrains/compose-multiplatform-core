@@ -16,8 +16,9 @@
 
 package androidx.camera.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.Logger;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.EnumSet;

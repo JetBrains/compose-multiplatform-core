@@ -16,6 +16,7 @@
 
 package androidx.privacysandbox.tools.apigenerator.parser
 
+import androidx.privacysandbox.tools.core.PrivacySandboxParsingException
 import androidx.privacysandbox.tools.core.model.AnnotatedDataClass
 import androidx.privacysandbox.tools.core.model.AnnotatedEnumClass
 import androidx.privacysandbox.tools.core.model.AnnotatedInterface
@@ -28,18 +29,18 @@ import androidx.privacysandbox.tools.core.model.Types
 import androidx.privacysandbox.tools.core.model.ValueProperty
 import androidx.privacysandbox.tools.core.validator.ModelValidator
 import java.nio.file.Path
-import kotlinx.metadata.ClassKind
-import kotlinx.metadata.ClassName
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.KmClassifier
-import kotlinx.metadata.KmFunction
-import kotlinx.metadata.KmProperty
-import kotlinx.metadata.KmType
-import kotlinx.metadata.isData
-import kotlinx.metadata.isNullable
-import kotlinx.metadata.isSuspend
-import kotlinx.metadata.isVar
-import kotlinx.metadata.kind
+import kotlin.metadata.ClassKind
+import kotlin.metadata.ClassName
+import kotlin.metadata.KmClass
+import kotlin.metadata.KmClassifier
+import kotlin.metadata.KmFunction
+import kotlin.metadata.KmProperty
+import kotlin.metadata.KmType
+import kotlin.metadata.isData
+import kotlin.metadata.isNullable
+import kotlin.metadata.isSuspend
+import kotlin.metadata.isVar
+import kotlin.metadata.kind
 
 internal object ApiStubParser {
     /**
@@ -63,7 +64,11 @@ internal object ApiStubParser {
             .also(::validate)
     }
 
-    private fun parseInterface(service: KmClass, annotationName: String): AnnotatedInterface {
+    private fun parseInterface(
+        interfaceAndConstants: ClassAndConstants,
+        annotationName: String,
+    ): AnnotatedInterface {
+        val service = interfaceAndConstants.kClass
         val type = parseClassName(service.name)
         val superTypes = service.supertypes.map(this::parseType).filterNot { it == Types.any }
 
@@ -78,10 +83,12 @@ internal object ApiStubParser {
             type = type,
             superTypes = superTypes,
             methods = service.functions.map(this::parseMethod),
+            constants = interfaceAndConstants.constants,
         )
     }
 
-    private fun parseValue(value: KmClass): AnnotatedValue {
+    private fun parseValue(classAndConstants: ClassAndConstants): AnnotatedValue {
+        val value = classAndConstants.kClass
         val type = parseClassName(value.name)
         val isEnum = value.kind == ClassKind.ENUM_CLASS
 
@@ -110,9 +117,17 @@ internal object ApiStubParser {
         }
 
         return if (value.isData) {
-            AnnotatedDataClass(type, parseProperties(type, value))
+            AnnotatedDataClass(
+                type,
+                constants = classAndConstants.constants,
+                properties = parseProperties(type, value),
+            )
         } else {
-            AnnotatedEnumClass(type, value.enumEntries.toList())
+            AnnotatedEnumClass(
+                type,
+                constants = classAndConstants.constants,
+                variants = @Suppress("deprecation") value.enumEntries.toList(),
+            )
         }
     }
 
@@ -143,7 +158,7 @@ internal object ApiStubParser {
             function.name,
             function.valueParameters.map { Parameter(it.name, parseType(it.type)) },
             parseType(function.returnType),
-            function.isSuspend
+            function.isSuspend,
         )
     }
 
@@ -160,7 +175,7 @@ internal object ApiStubParser {
     private fun parseClassName(
         className: ClassName,
         typeArguments: List<Type> = emptyList(),
-        isNullable: Boolean = false
+        isNullable: Boolean = false,
     ): Type {
         // Package names are separated with slashes and nested classes are separated with dots.
         // (e.g com/example/OuterClass.InnerClass).
@@ -186,5 +201,3 @@ internal object ApiStubParser {
         }
     }
 }
-
-class PrivacySandboxParsingException(message: String) : Exception(message)

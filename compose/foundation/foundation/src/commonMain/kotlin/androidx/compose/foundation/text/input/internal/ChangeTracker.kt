@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package androidx.compose.foundation.text.input.internal
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.input.TextFieldBuffer.ChangeList
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.ui.text.TextRange
@@ -152,7 +149,7 @@ internal class ChangeTracker(initialChanges: ChangeTracker? = null) : ChangeList
         mergedOverlappingChange: Change?,
         preMin: Int,
         preMax: Int,
-        postDelta: Int
+        postDelta: Int,
     ) {
         var originalDelta =
             if (_changesTemp.isEmpty()) 0
@@ -169,7 +166,7 @@ internal class ChangeTracker(initialChanges: ChangeTracker? = null) : ChangeList
                     preStart = preMin,
                     preEnd = preMax + postDelta,
                     originalStart = originalStart,
-                    originalEnd = originalEnd
+                    originalEnd = originalEnd,
                 )
         } else {
             newChange = mergedOverlappingChange
@@ -195,6 +192,6 @@ internal class ChangeTracker(initialChanges: ChangeTracker? = null) : ChangeList
         var preStart: Int,
         var preEnd: Int,
         var originalStart: Int,
-        var originalEnd: Int
+        var originalEnd: Int,
     )
 }

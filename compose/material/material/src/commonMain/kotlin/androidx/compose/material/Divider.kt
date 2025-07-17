@@ -29,14 +29,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * <a href="https://material.io/components/dividers" class="external" target="_blank">Material
- * Design divider</a>.
+ * [Material Design divider](https://material.io/components/dividers)
  *
  * A divider is a thin line that groups content in lists and layouts.
  *
  * ![Dividers
  * image](https://developer.android.com/images/reference/androidx/compose/material/dividers.png)
  *
+ * @param modifier Modifier to be applied to the divider line
  * @param color color of the divider line
  * @param thickness thickness of the divider line, 1 dp is used by default. Using [Dp.Hairline] will
  *   produce a single pixel divider regardless of screen density.
@@ -47,7 +47,7 @@ fun Divider(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.onSurface.copy(alpha = DividerAlpha),
     thickness: Dp = 1.dp,
-    startIndent: Dp = 0.dp
+    startIndent: Dp = 0.dp,
 ) {
     val indentMod =
         if (startIndent.value != 0f) {

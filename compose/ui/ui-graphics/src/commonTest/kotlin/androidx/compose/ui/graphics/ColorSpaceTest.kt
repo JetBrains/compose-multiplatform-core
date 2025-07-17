@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.colorspace.ColorSpace
 import androidx.compose.ui.graphics.colorspace.ColorSpaces
 import androidx.compose.ui.graphics.colorspace.ColorSpaces.ColorSpacesArray
 import androidx.compose.ui.graphics.colorspace.ColorSpaces.SrgbTransferParameters
+import androidx.compose.ui.graphics.colorspace.ColorSpaces.getColorSpace
 import androidx.compose.ui.graphics.colorspace.Connector
 import androidx.compose.ui.graphics.colorspace.Illuminant
 import androidx.compose.ui.graphics.colorspace.RenderIntent
@@ -529,7 +530,7 @@ class ColorSpaceTest {
                 0.09710153f,
                 0.14308129f,
                 0.06061824f,
-                0.71415880f
+                0.71415880f,
             )
 
         assertArrayEquals(sRGBD50, (adapted as Rgb).getTransform(), 1e-7f)
@@ -550,7 +551,7 @@ class ColorSpaceTest {
         assertArrayEquals(
             connector1.transform(source[0], source[1], source[2]),
             connector2.transform(source[0], source[1], source[2]),
-            1e-7f
+            1e-7f,
         )
     }
 
@@ -741,8 +742,8 @@ class ColorSpaceTest {
             ColorSpaces.Srgb,
             ColorSpaces.match(
                 SRGB_TO_XYZ_D50,
-                TransferParameters(2.4, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045)
-            )
+                TransferParameters(2.4, 1 / 1.055, 0.055 / 1.055, 1 / 12.92, 0.04045),
+            ),
         )
     }
 
@@ -778,6 +779,30 @@ class ColorSpaceTest {
         assertEquals(RenderIntent.Perceptual, connector1.renderIntent)
     }
 
+    @Test
+    fun testGetColorSpace() {
+        assertEquals(ColorSpaces.Srgb, getColorSpace(0))
+        assertEquals(ColorSpaces.LinearSrgb, getColorSpace(1))
+        assertEquals(ColorSpaces.ExtendedSrgb, getColorSpace(2))
+        assertEquals(ColorSpaces.LinearExtendedSrgb, getColorSpace(3))
+        assertEquals(ColorSpaces.Bt709, getColorSpace(4))
+        assertEquals(ColorSpaces.Bt2020, getColorSpace(5))
+        assertEquals(ColorSpaces.DciP3, getColorSpace(6))
+        assertEquals(ColorSpaces.DisplayP3, getColorSpace(7))
+        assertEquals(ColorSpaces.Ntsc1953, getColorSpace(8))
+        assertEquals(ColorSpaces.SmpteC, getColorSpace(9))
+        assertEquals(ColorSpaces.AdobeRgb, getColorSpace(10))
+        assertEquals(ColorSpaces.ProPhotoRgb, getColorSpace(11))
+        assertEquals(ColorSpaces.Aces, getColorSpace(12))
+        assertEquals(ColorSpaces.Acescg, getColorSpace(13))
+        assertEquals(ColorSpaces.CieXyz, getColorSpace(14))
+        assertEquals(ColorSpaces.CieLab, getColorSpace(15))
+        assertEquals(ColorSpaces.Unspecified, getColorSpace(16))
+        assertEquals(ColorSpaces.Bt2020Hlg, getColorSpace(17))
+        assertEquals(ColorSpaces.Bt2020Pq, getColorSpace(18))
+        assertEquals(ColorSpaces.Oklab, getColorSpace(19))
+    }
+
     companion object {
         // Column-major RGB->XYZ transform matrix for the sRGB color space
         private val SRGB_TO_XYZ =
@@ -790,7 +815,7 @@ class ColorSpaceTest {
                 0.119195f,
                 0.180481f,
                 0.072192f,
-                0.950532f
+                0.950532f,
             )
         // Column-major XYZ->RGB transform matrix for the sRGB color space
         private val XYZ_TO_SRGB =
@@ -803,7 +828,7 @@ class ColorSpaceTest {
                 -0.203977f,
                 -0.498611f,
                 0.041555f,
-                1.056971f
+                1.056971f,
             )
 
         // Column-major RGB->XYZ transform matrix for the sRGB color space and a D50 white point
@@ -817,7 +842,7 @@ class ColorSpaceTest {
                 0.0971045f,
                 0.1430804f,
                 0.0606169f,
-                0.7141733f
+                0.7141733f,
             )
 
         private val SRGB_PRIMARIES_xyY =
@@ -834,7 +859,7 @@ class ColorSpaceTest {
                 0.166667f,
                 2.500000f,
                 1.000000f,
-                13.166667f
+                13.166667f,
             )
         private val SRGB_WHITE_POINT_XYZ = WhitePoint(0.950456f, 1.000f, 1.089058f)
 

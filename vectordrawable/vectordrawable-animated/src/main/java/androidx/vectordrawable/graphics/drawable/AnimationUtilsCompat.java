@@ -37,13 +37,13 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 
 import androidx.annotation.AnimRes;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.ObjectsCompat;
 import androidx.interpolator.view.animation.FastOutLinearInInterpolator;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator;
 
+import org.jspecify.annotations.NonNull;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -62,8 +62,7 @@ public class AnimationUtilsCompat {
      * @return The animation object reference by the specified id
      */
     @SuppressWarnings("UnnecessaryInitCause") // requires API 24+
-    @NonNull
-    public static Interpolator loadInterpolator(@NonNull Context context, @AnimRes int id)
+    public static @NonNull Interpolator loadInterpolator(@NonNull Context context, @AnimRes int id)
             throws NotFoundException {
         // From API 21, we added path Interpolator .
         if (Build.VERSION.SDK_INT >= 21) {
@@ -101,8 +100,7 @@ public class AnimationUtilsCompat {
 
     }
 
-    @NonNull
-    private static Interpolator createInterpolatorFromXml(@NonNull Context context,
+    private static @NonNull Interpolator createInterpolatorFromXml(@NonNull Context context,
             @NonNull XmlPullParser parser) throws XmlPullParserException, IOException {
 
         Interpolator interpolator = null;

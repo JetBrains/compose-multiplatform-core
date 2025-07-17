@@ -26,17 +26,15 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.activity.ComponentDialog;
-import androidx.activity.ViewTreeOnBackPressedDispatcherOwner;
 import androidx.annotation.IdRes;
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appcompat.R;
 import androidx.appcompat.view.ActionMode;
 import androidx.core.view.KeyEventDispatcher;
-import androidx.lifecycle.ViewTreeLifecycleOwner;
-import androidx.savedstate.ViewTreeSavedStateRegistryOwner;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Base class for AppCompat themed {@link android.app.Dialog}s.
@@ -95,34 +93,25 @@ public class AppCompatDialog extends ComponentDialog implements AppCompatCallbac
 
     @Override
     public void setContentView(@LayoutRes int layoutResID) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(layoutResID);
     }
 
     @Override
     public void setContentView(@NonNull View view) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(view);
     }
 
     @Override
     public void setContentView(@NonNull View view, ViewGroup.LayoutParams params) {
-        initViewTreeOwners();
+        initializeViewTreeOwners();
         getDelegate().setContentView(view, params);
     }
 
-    private void initViewTreeOwners() {
-        // Set the view tree owners before setting the content view so that the inflation process
-        // and attach listeners will see them already present
-        ViewTreeLifecycleOwner.set(getWindow().getDecorView(), this);
-        ViewTreeSavedStateRegistryOwner.set(getWindow().getDecorView(), this);
-        ViewTreeOnBackPressedDispatcherOwner.set(getWindow().getDecorView(), this);
-    }
-
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
     @Override
-    public <T extends View> T findViewById(@IdRes int id) {
+    public <T extends View> @Nullable T findViewById(@IdRes int id) {
         return getDelegate().findViewById(id);
     }
 
@@ -140,6 +129,7 @@ public class AppCompatDialog extends ComponentDialog implements AppCompatCallbac
 
     @Override
     public void addContentView(@NonNull View view, ViewGroup.LayoutParams params) {
+        initializeViewTreeOwners();
         getDelegate().addContentView(view, params);
     }
 
@@ -185,8 +175,7 @@ public class AppCompatDialog extends ComponentDialog implements AppCompatCallbac
     /**
      * @return The {@link AppCompatDelegate} being used by this Dialog.
      */
-    @NonNull
-    public AppCompatDelegate getDelegate() {
+    public @NonNull AppCompatDelegate getDelegate() {
         if (mDelegate == null) {
             mDelegate = AppCompatDelegate.create(this, this);
         }
@@ -211,9 +200,8 @@ public class AppCompatDialog extends ComponentDialog implements AppCompatCallbac
     public void onSupportActionModeFinished(ActionMode mode) {
     }
 
-    @Nullable
     @Override
-    public ActionMode onWindowStartingSupportActionMode(ActionMode.Callback callback) {
+    public @Nullable ActionMode onWindowStartingSupportActionMode(ActionMode.Callback callback) {
         return null;
     }
 

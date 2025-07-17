@@ -52,8 +52,9 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
     imeOptions: ImeOptions,
     receiveContentConfiguration: ReceiveContentConfiguration?,
     onImeAction: ((ImeAction) -> Unit)?,
+    updateSelectionState: (() -> Unit)?,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
 ): Nothing {
     platformSpecificTextInputSession(
         state = state,
@@ -61,9 +62,10 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
         imeOptions = imeOptions,
         receiveContentConfiguration = receiveContentConfiguration,
         onImeAction = onImeAction,
+        updateSelectionState = updateSelectionState,
         composeImm = ComposeInputMethodManager(view),
         stylusHandwritingTrigger = stylusHandwritingTrigger,
-        viewConfiguration = viewConfiguration
+        viewConfiguration = viewConfiguration,
     )
 }
 
@@ -74,33 +76,27 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
     imeOptions: ImeOptions,
     receiveContentConfiguration: ReceiveContentConfiguration?,
     onImeAction: ((ImeAction) -> Unit)?,
+    updateSelectionState: (() -> Unit)?,
     composeImm: ComposeInputMethodManager,
     stylusHandwritingTrigger: MutableSharedFlow<Unit>?,
-    viewConfiguration: ViewConfiguration?
+    viewConfiguration: ViewConfiguration?,
 ): Nothing {
     coroutineScope {
         launch(start = CoroutineStart.UNDISPATCHED) {
-            state.collectImeNotifications { oldValue, newValue, restartImeIfContentChanges ->
+            state.collectImeNotifications { oldValue, newValue, restartIme ->
                 val oldSelection = oldValue.selection
-                val newSelection = newValue.selection
                 val oldComposition = oldValue.composition
+                val newSelection = newValue.selection
                 val newComposition = newValue.composition
 
-                // No need to restart the IME if there wasn't a composing region. This is useful
-                // to not unnecessarily restart filtered digit only, or password fields.
-                if (
-                    restartImeIfContentChanges &&
-                        oldValue.composition != null &&
-                        !oldValue.contentEquals(newValue)
-                ) {
+                if (restartIme) {
                     composeImm.restartInput()
                 } else if (oldSelection != newSelection || oldComposition != newComposition) {
-                    // Don't call updateSelection if input is going to be restarted anyway
                     composeImm.updateSelection(
                         selectionStart = newSelection.min,
                         selectionEnd = newSelection.max,
                         compositionStart = newComposition?.min ?: -1,
-                        compositionEnd = newComposition?.max ?: -1
+                        compositionEnd = newComposition?.max ?: -1,
                     )
                 }
             }
@@ -128,17 +124,11 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
         startInputMethod { outAttrs ->
             logDebug { "createInputConnection(value=\"${state.visualText}\")" }
 
+            val imeEditCommandScope = DefaultImeEditCommandScope(state)
             val textInputSession =
-                object : TextInputSession {
+                object : TextInputSession, ImeEditCommandScope by imeEditCommandScope {
                     override val text: TextFieldCharSequence
                         get() = state.visualText
-
-                    override fun requestEdit(block: EditingBuffer.() -> Unit) {
-                        state.editUntransformedTextAsUser(
-                            restartImeIfContentChanges = false,
-                            block = block
-                        )
-                    }
 
                     override fun sendKeyEvent(keyEvent: KeyEvent) {
                         composeImm.sendKeyEvent(keyEvent)
@@ -164,7 +154,8 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                             return state.performHandwritingGesture(
                                 gesture,
                                 layoutState,
-                                viewConfiguration
+                                updateSelectionState,
+                                viewConfiguration,
                             )
                         }
                         return InputConnection.HANDWRITING_GESTURE_RESULT_UNSUPPORTED
@@ -172,13 +163,13 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
 
                     override fun previewHandwritingGesture(
                         gesture: PreviewableHandwritingGesture,
-                        cancellationSignal: CancellationSignal?
+                        cancellationSignal: CancellationSignal?,
                     ): Boolean {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                             return state.previewHandwritingGesture(
                                 gesture,
                                 layoutState,
-                                cancellationSignal
+                                cancellationSignal,
                             )
                         }
                         return false
@@ -190,14 +181,20 @@ internal suspend fun PlatformTextInputSession.platformSpecificTextInputSession(
                 selection = state.visualText.selection,
                 imeOptions = imeOptions,
                 // only pass AllMimeTypes if we have a ReceiveContentConfiguration.
-                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES }
+                contentMimeTypes = receiveContentConfiguration?.let { ALL_MIME_TYPES },
             )
             StatelessInputConnection(textInputSession, outAttrs)
         }
     }
 }
 
-private val ALL_MIME_TYPES = arrayOf("*/*")
+/**
+ * Even though [star/star] should be enough to cover all cases, some IMEs do not like when it's the
+ * only mime type that's declared as supported. IMEs claim that they do not have the necessary
+ * explicit information that the editor will support image or video content. Instead we also add
+ * those types specifically to make sure that IMEs can send everything.
+ */
+private val ALL_MIME_TYPES = arrayOf("*/*", "image/*", "video/*")
 
 private fun logDebug(tag: String = TIA_TAG, content: () -> String) {
     if (TIA_DEBUG) {

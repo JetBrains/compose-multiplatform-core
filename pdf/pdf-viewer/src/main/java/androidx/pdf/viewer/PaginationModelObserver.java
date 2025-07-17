@@ -34,14 +34,5 @@ public interface PaginationModelObserver {
      * <p>The {@link PaginationModel} does not enforce any implementation expectations.
      * Implementations are free to use this information as desired.
      */
-    void onPageAdded();
-
-    /**
-     * Notifies the implementation that the {@code viewArea} of the {@link PaginationModel} has
-     * changed.
-     *
-     * <p>The {@link PaginationModel} does not enforce any implementation expectations.
-     * Implementations are free to use this information as desired.
-     */
-    void onViewAreaChanged();
+    default void onPageAdded() {}
 }

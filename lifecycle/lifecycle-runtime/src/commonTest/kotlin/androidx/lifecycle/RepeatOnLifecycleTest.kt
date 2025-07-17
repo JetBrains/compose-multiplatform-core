@@ -17,6 +17,7 @@
 package androidx.lifecycle
 
 import androidx.kruth.assertThat
+import androidx.testutils.lifecycle.FakeLifecycleOwner
 import kotlin.test.Test
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -29,6 +30,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 
+@IgnoreWebTarget
 class RepeatOnLifecycleTest {
 
     private val expectations = Expectations()

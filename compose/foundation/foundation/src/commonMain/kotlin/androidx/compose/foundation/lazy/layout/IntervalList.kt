@@ -16,7 +16,8 @@
 
 package androidx.compose.foundation.lazy.layout
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.internal.requirePrecondition
+import androidx.compose.foundation.internal.throwIndexOutOfBoundsException
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 
@@ -33,7 +34,6 @@ import androidx.compose.runtime.collection.mutableVectorOf
  * Note: this class is a part of [LazyLayout] harness that allows for building custom lazy layouts.
  * LazyLayout and all corresponding APIs are still under development and are subject to change.
  */
-@ExperimentalFoundationApi
 sealed interface IntervalList<out T> {
 
     /**
@@ -58,6 +58,7 @@ sealed interface IntervalList<out T> {
      * @param fromIndex we will start iterating from the interval containing this index.
      * @param toIndex the last interval we iterate through will contain this index. This index
      *   should be not smaller than [fromIndex].
+     * @param block will be invoked on each interval within the defined indexes
      * @throws IndexOutOfBoundsException if the indexes are not within 0..[size] - 1 range.
      */
     fun forEach(fromIndex: Int = 0, toIndex: Int = size - 1, block: (Interval<T>) -> Unit)
@@ -74,11 +75,11 @@ sealed interface IntervalList<out T> {
         /** The amount of items in the interval. */
         val size: Int,
         /** The value representing this interval. */
-        val value: T
+        val value: T,
     ) {
         init {
-            require(startIndex >= 0) { "startIndex should be >= 0, but was $startIndex" }
-            require(size > 0) { "size should be >0, but was $size" }
+            requirePrecondition(startIndex >= 0) { "startIndex should be >= 0" }
+            requirePrecondition(size > 0) { "size should be > 0" }
         }
     }
 }
@@ -89,7 +90,6 @@ sealed interface IntervalList<out T> {
  * Note: this class is a part of [LazyLayout] harness that allows for building custom lazy layouts.
  * LazyLayout and all corresponding APIs are still under development and are subject to change.
  */
-@ExperimentalFoundationApi
 class MutableIntervalList<T> : IntervalList<T> {
     private val intervals = mutableVectorOf<IntervalList.Interval<T>>()
 
@@ -109,7 +109,7 @@ class MutableIntervalList<T> : IntervalList<T> {
      * @param value the value representing this interval.
      */
     fun addInterval(size: Int, value: T) {
-        require(size >= 0) { "size should be >=0, but was $size" }
+        requirePrecondition(size >= 0) { "size should be >=0" }
         if (size == 0) {
             return
         }
@@ -126,12 +126,13 @@ class MutableIntervalList<T> : IntervalList<T> {
      * @param fromIndex we will start iterating from the interval containing this index.
      * @param toIndex the last interval we iterate through will contain this index. This index
      *   should be not smaller than [fromIndex].
+     * @param block will be invoked on each interval within the defined indexes
      * @throws IndexOutOfBoundsException if the indexes are not within 0..[size] - 1 range.
      */
     override fun forEach(fromIndex: Int, toIndex: Int, block: (IntervalList.Interval<T>) -> Unit) {
         checkIndexBounds(fromIndex)
         checkIndexBounds(toIndex)
-        require(toIndex >= fromIndex) {
+        requirePrecondition(toIndex >= fromIndex) {
             "toIndex ($toIndex) should be not smaller than fromIndex ($fromIndex)"
         }
 
@@ -159,9 +160,10 @@ class MutableIntervalList<T> : IntervalList<T> {
         }
     }
 
-    private fun checkIndexBounds(index: Int) {
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun checkIndexBounds(index: Int) {
         if (index !in 0 until size) {
-            throw IndexOutOfBoundsException("Index $index, size $size")
+            throwIndexOutOfBoundsException("Index $index, size $size")
         }
     }
 
@@ -173,7 +175,6 @@ class MutableIntervalList<T> : IntervalList<T> {
  * Finds the index of the interval which contains the highest value of
  * [IntervalList.Interval.startIndex] that is less than or equal to the given [itemIndex].
  */
-@ExperimentalFoundationApi
 private fun <T> MutableVector<IntervalList.Interval<T>>.binarySearch(itemIndex: Int): Int {
     var left = 0
     var right = lastIndex

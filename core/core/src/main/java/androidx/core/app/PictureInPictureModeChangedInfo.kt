@@ -24,13 +24,13 @@ import androidx.annotation.RequiresApi
  * [Activity.onPictureInPictureModeChanged] is dispatched to a
  * [OnPictureInPictureModeChangedProvider].
  */
-class PictureInPictureModeChangedInfo(
+public class PictureInPictureModeChangedInfo(
     /**
      * Gets the new picture-in-picture mode.
      *
      * @return True if the activity is in picture-in-picture mode.
      */
-    val isInPictureInPictureMode: Boolean
+    public val isInPictureInPictureMode: Boolean
 ) {
     @RequiresApi(26) private var newConfiguration: Configuration? = null
 
@@ -43,15 +43,15 @@ class PictureInPictureModeChangedInfo(
      *   isInPictureInPictureMode}.
      */
     @RequiresApi(26)
-    constructor(
+    public constructor(
         isInPictureInPictureMode: Boolean,
-        newConfig: Configuration
+        newConfig: Configuration,
     ) : this(isInPictureInPictureMode) {
         this.newConfiguration = newConfig
     }
 
     @get:RequiresApi(26)
-    val newConfig: Configuration
+    public val newConfig: Configuration
         /**
          * Gets the new [Configuration] of the with activity with the state
          * [isInPictureInPictureMode] applied.

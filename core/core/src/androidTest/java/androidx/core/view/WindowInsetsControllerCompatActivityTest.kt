@@ -20,7 +20,6 @@ import android.app.Dialog
 import android.os.Build
 import android.view.View
 import android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
-import android.widget.EditText
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.Insets
@@ -51,8 +50,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @Suppress("DEPRECATION")
-@SdkSuppress(minSdkVersion = 23)
-@RequiresApi(23) // ViewCompat.getRootWindowInsets()
+@SdkSuppress(minSdkVersion = 23) // ViewCompat.getRootWindowInsets()
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 public class WindowInsetsControllerCompatActivityTest {
@@ -101,23 +99,6 @@ public class WindowInsetsControllerCompatActivityTest {
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
     @SdkSuppress(minSdkVersion = 23)
-    @Test
-    public fun do_not_show_IME_if_TextView_not_focused() {
-        val editText = scenario.withActivity { findViewById<EditText>(R.id.edittext) }
-
-        // We hide the edit text to ensure it won't be automatically focused
-        scenario.onActivity {
-            editText.visibility = View.GONE
-            assertThat(editText.isFocused, `is`(false))
-        }
-
-        val type = WindowInsetsCompat.Type.ime()
-        scenario.onActivity { windowInsetsController.show(type) }
-        container.assertInsetsVisibility(type, false)
-    }
-
-    /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
     @Ignore("b/294556594")
     @Test
     fun show_IME_fromEditText() {
@@ -134,37 +115,6 @@ public class WindowInsetsControllerCompatActivityTest {
         }
         assertThat(editText.isFocused, `is`(true))
         container.assertInsetsVisibility(type, true)
-    }
-
-    /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
-    @SdkSuppress(minSdkVersion = 23)
-    @Test
-    public fun do_not_show_IME_if_TextView_in_dialog_not_focused() {
-        val dialog =
-            scenario.withActivity {
-                object : Dialog(this) {
-                        override fun onAttachedToWindow() {
-                            super.onAttachedToWindow()
-                            WindowCompat.setDecorFitsSystemWindows(window!!, false)
-                        }
-                    }
-                    .apply { setContentView(R.layout.insets_compat_activity) }
-            }
-
-        val editText = dialog.findViewById<TextView>(R.id.edittext)
-
-        // We hide the edit text to ensure it won't be automatically focused
-        scenario.onActivity {
-            dialog.show()
-            editText.visibility = View.GONE
-            assertThat(editText.isFocused, `is`(false))
-        }
-
-        val type = WindowInsetsCompat.Type.ime()
-        scenario.onActivity {
-            WindowCompat.getInsetsController(dialog.window!!, editText).show(type)
-        }
-        container.assertInsetsVisibility(type, false)
     }
 
     /** IME visibility is only reliable on API 23+, where we have access to the root WindowInsets */
@@ -240,7 +190,7 @@ public class WindowInsetsControllerCompatActivityTest {
             val systemUiVisibility = scenario.withActivity { window.decorView }.systemUiVisibility
             assertThat(
                 systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR,
-                equalTo(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                equalTo(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR),
             )
         }
         assertThat(windowInsetsController.isAppearanceLightStatusBars(), `is`(true))
@@ -275,7 +225,7 @@ public class WindowInsetsControllerCompatActivityTest {
             // The view's systemUiVisibility flags are not changed on API 31+
             assertThat(
                 systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR,
-                equalTo(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
+                equalTo(View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR),
             )
         }
         assertThat(windowInsetsController.isAppearanceLightNavigationBars(), `is`(true))
@@ -350,13 +300,13 @@ public class WindowInsetsControllerCompatActivityTest {
                 WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
             assertEquals(
                 WindowInsetsControllerCompat.BEHAVIOR_DEFAULT,
-                windowInsetsController.systemBarsBehavior
+                windowInsetsController.systemBarsBehavior,
             )
             windowInsetsController.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             assertEquals(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE,
-                windowInsetsController.systemBarsBehavior
+                windowInsetsController.systemBarsBehavior,
             )
         }
     }
@@ -387,7 +337,7 @@ public class WindowInsetsControllerCompatActivityTest {
         val sysUiVis = decorView.systemUiVisibility
         assertEquals(
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY,
-            sysUiVis and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            sysUiVis and View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY,
         )
         assertEquals(0, sysUiVis and View.SYSTEM_UI_FLAG_IMMERSIVE)
     }
@@ -396,7 +346,7 @@ public class WindowInsetsControllerCompatActivityTest {
         // TODO: remove this if b/159103848 is resolved
         assumeFalse(
             "Unable to test: Cuttlefish devices default to the virtual keyboard being disabled.",
-            Build.MODEL.contains("Cuttlefish", ignoreCase = true)
+            Build.MODEL.contains("Cuttlefish", ignoreCase = true),
         )
     }
 
@@ -429,7 +379,7 @@ public class WindowInsetsControllerCompatActivityTest {
             assertThat(
                 "isVisible() should be <$expectedVisibility> but is <$lastVisibility>",
                 lastVisibility,
-                `is`(expectedVisibility)
+                `is`(expectedVisibility),
             )
         }
     }

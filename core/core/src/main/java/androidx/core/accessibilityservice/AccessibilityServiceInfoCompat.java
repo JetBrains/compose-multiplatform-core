@@ -22,8 +22,8 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link AccessibilityServiceInfo}.
@@ -195,8 +195,7 @@ public final class AccessibilityServiceInfoCompat {
     @Deprecated
     @androidx.annotation.ReplaceWith(expression = "info.loadDescription(packageManager)")
     @SuppressWarnings("deprecation")
-    @Nullable
-    public static String loadDescription(
+    public static @Nullable String loadDescription(
             @NonNull AccessibilityServiceInfo info, @NonNull PackageManager packageManager) {
         return info.loadDescription(packageManager);
     }
@@ -209,8 +208,7 @@ public final class AccessibilityServiceInfoCompat {
      * @param feedbackType The feedback type.
      * @return The string representation.
      */
-    @NonNull
-    public static String feedbackTypeToString(int feedbackType) {
+    public static @NonNull String feedbackTypeToString(int feedbackType) {
         StringBuilder builder = new StringBuilder();
         builder.append("[");
         while (feedbackType > 0) {
@@ -249,8 +247,7 @@ public final class AccessibilityServiceInfoCompat {
      * @param flag The flag.
      * @return The string representation.
      */
-    @Nullable
-    public static String flagToString(int flag) {
+    public static @Nullable String flagToString(int flag) {
         switch (flag) {
             case AccessibilityServiceInfo.DEFAULT:
                 return "DEFAULT";
@@ -297,8 +294,7 @@ public final class AccessibilityServiceInfoCompat {
      * @param capability The capability.
      * @return The string representation.
      */
-    @NonNull
-    public static String capabilityToString(int capability) {
+    public static @NonNull String capabilityToString(int capability) {
         switch (capability) {
             case CAPABILITY_CAN_RETRIEVE_WINDOW_CONTENT:
                 return "CAPABILITY_CAN_RETRIEVE_WINDOW_CONTENT";

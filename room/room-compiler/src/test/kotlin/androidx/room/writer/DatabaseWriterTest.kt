@@ -21,6 +21,7 @@ import androidx.room.RoomKspProcessor
 import androidx.room.RoomProcessor
 import androidx.room.compiler.processing.util.CompilationResultSubject
 import androidx.room.compiler.processing.util.Source
+import androidx.room.compiler.processing.util.compileFiles
 import androidx.room.compiler.processing.util.runProcessorTest
 import androidx.room.processor.Context
 import androidx.testutils.generateAllEnumerations
@@ -40,17 +41,17 @@ class DatabaseWriterTest {
             singleDb(
                 loadTestSource(
                     fileName = "databasewriter/input/ComplexDatabase.java",
-                    qName = "foo.bar.ComplexDatabase"
+                    qName = "foo.bar.ComplexDatabase",
                 ),
                 loadTestSource(
                     fileName = "daoWriter/input/ComplexDao.java",
-                    qName = "foo.bar.ComplexDao"
-                )
+                    qName = "foo.bar.ComplexDao",
+                ),
             ) {
                 it.generatedSource(
                     loadTestSource(
                         fileName = "databasewriter/output/ComplexDatabase.java",
-                        qName = "foo.bar.ComplexDatabase_Impl"
+                        qName = "foo.bar.ComplexDatabase_Impl",
                     )
                 )
             }
@@ -100,7 +101,7 @@ class DatabaseWriterTest {
 
                         $entityValues
                     }
-                    """
+                    """,
                     )
                 entitySources.add("Entity$entityCount" to entitySource)
                 statementCount += valuesPerEntity
@@ -118,7 +119,7 @@ class DatabaseWriterTest {
 
                     @Database(entities = {$entityClasses}, version = 1)
                     public abstract class TestDatabase extends RoomDatabase {}
-                    """
+                    """,
                 )
             singleDb(*(listOf(dbSource) + entitySources.map { it.second }).toTypedArray()) {
                 // no assertion, if compilation succeeded, it is good
@@ -138,26 +139,35 @@ class DatabaseWriterTest {
 
 private fun singleDb(
     vararg inputs: Source,
-    onCompilationResult: (CompilationResultSubject) -> Unit
+    onCompilationResult: (CompilationResultSubject) -> Unit,
 ) {
     val sources =
         listOf(
             COMMON.USER,
             COMMON.USER_SUMMARY,
-            COMMON.LIVE_DATA,
-            COMMON.COMPUTABLE_LIVE_DATA,
             COMMON.PARENT,
             COMMON.CHILD1,
             COMMON.CHILD2,
             COMMON.INFO,
-            COMMON.GUAVA_ROOM,
-            COMMON.LISTENABLE_FUTURE
         ) + inputs
+    val libs =
+        compileFiles(
+            listOf(
+                COMMON.LIVE_DATA,
+                COMMON.COMPUTABLE_LIVE_DATA,
+                COMMON.GUAVA_ROOM,
+                COMMON.LISTENABLE_FUTURE,
+                COMMON.PAGING_SOURCE,
+                COMMON.LIMIT_OFFSET_PAGING_SOURCE,
+            )
+        )
     runProcessorTest(
         sources = sources,
+        classpath = libs,
         options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
+        kotlincArguments = listOf("-jvm-target=11"),
         javacProcessors = listOf(RoomProcessor()),
         symbolProcessorProviders = listOf(RoomKspProcessor.Provider()),
-        onCompilationResult = onCompilationResult
+        onCompilationResult = onCompilationResult,
     )
 }

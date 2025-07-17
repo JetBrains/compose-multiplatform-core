@@ -28,12 +28,14 @@ import androidx.camera.core.CameraEffect
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.ImageReaderProxys
+import androidx.camera.core.SurfaceOutput
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.core.impl.ImageReaderProxy
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
+import androidx.camera.core.processing.util.GLUtils.InputFormat
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.HandlerUtil
@@ -78,13 +80,15 @@ class DefaultSurfaceProcessorTest {
         #extension GL_OES_EGL_image_external : require
         precision mediump float;
         uniform samplerExternalOES %s;
+        uniform float uAlphaScale;
         varying vec2 %s;
         void main() {
           vec4 sampleColor = texture2D(%s, %s);
-          gl_FragColor = vec4(sampleColor.r * 0.493 + sampleColor. g * 0.769 +
+          vec4 src = vec4(sampleColor.r * 0.493 + sampleColor. g * 0.769 +
              sampleColor.b * 0.289, sampleColor.r * 0.449 + sampleColor.g * 0.686 +
              sampleColor.b * 0.268, sampleColor.r * 0.272 + sampleColor.g * 0.534 +
              sampleColor.b * 0.131, 1.0);
+          gl_FragColor = vec4(src.rgb, src.a * uAlphaScale);
         }
         """
 
@@ -170,7 +174,7 @@ class DefaultSurfaceProcessorTest {
             createSurfaceOutput(
                 surface = jpegImageReader.surface!!,
                 target = CameraEffect.IMAGE_CAPTURE,
-                format = ImageFormat.JPEG
+                format = ImageFormat.JPEG,
             )
         surfaceProcessor.onOutputSurface(surfaceOutput)
         val rotationDegrees = 90
@@ -214,7 +218,7 @@ class DefaultSurfaceProcessorTest {
                         continuation.resumeWithException(e)
                     }
                 },
-                mainThreadExecutor()
+                mainThreadExecutor(),
             )
         }
     }
@@ -316,20 +320,30 @@ class DefaultSurfaceProcessorTest {
     @SdkSuppress(minSdkVersion = 23)
     @Test
     fun renderByCustomShader(): Unit = runBlocking {
-        testRender(OutputType.IMAGE_READER, createCustomShaderProvider())
+        val shaderProviderOverride = createCustomShaderProvider()
+        testRender(
+            OutputType.IMAGE_READER,
+            shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProviderOverride),
+        )
     }
 
     @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 22)
     @Test
     fun renderByCustomShaderBelowApi23(): Unit = runBlocking {
-        testRender(OutputType.SURFACE_TEXTURE, createCustomShaderProvider())
+        val shaderProviderOverride = createCustomShaderProvider()
+        testRender(
+            OutputType.SURFACE_TEXTURE,
+            shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProviderOverride),
+        )
     }
 
     @Test
     fun createByInvalidShaderString_throwException() {
         val shaderProvider = createCustomShaderProvider(shaderString = "Invalid shader")
         assertThrows(IllegalArgumentException::class.java) {
-            createSurfaceProcessor(shaderProvider = shaderProvider)
+            createSurfaceProcessor(
+                shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProvider)
+            )
         }
     }
 
@@ -338,7 +352,9 @@ class DefaultSurfaceProcessorTest {
         val shaderProvider =
             createCustomShaderProvider(exceptionToThrow = RuntimeException("Failed Shader"))
         assertThrows(IllegalArgumentException::class.java) {
-            createSurfaceProcessor(shaderProvider = shaderProvider)
+            createSurfaceProcessor(
+                shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProvider)
+            )
         }
     }
 
@@ -346,7 +362,9 @@ class DefaultSurfaceProcessorTest {
     fun createByIncorrectSamplerName_throwException() {
         val shaderProvider = createCustomShaderProvider(samplerVarName = "_mySampler_")
         assertThrows(IllegalArgumentException::class.java) {
-            createSurfaceProcessor(shaderProvider = shaderProvider)
+            createSurfaceProcessor(
+                shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProvider)
+            )
         }
     }
 
@@ -354,15 +372,17 @@ class DefaultSurfaceProcessorTest {
     fun createByIncorrectFragCoordsName_throwException() {
         val shaderProvider = createCustomShaderProvider(fragCoordsVarName = "_myFragCoords_")
         assertThrows(IllegalArgumentException::class.java) {
-            createSurfaceProcessor(shaderProvider = shaderProvider)
+            createSurfaceProcessor(
+                shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProvider)
+            )
         }
     }
 
     private suspend fun testRender(
         outputType: OutputType,
-        shaderProvider: ShaderProvider = ShaderProvider.DEFAULT
+        shaderProviderOverrides: Map<InputFormat, ShaderProvider> = emptyMap(),
     ) {
-        createSurfaceProcessor(shaderProvider = shaderProvider)
+        createSurfaceProcessor(shaderProviderOverrides = shaderProviderOverrides)
         // Prepare input
         val inputSurfaceRequest = createInputSurfaceRequest()
         surfaceProcessor.onInputSurface(inputSurfaceRequest)
@@ -371,7 +391,7 @@ class DefaultSurfaceProcessorTest {
         openCameraAndSetRepeating(inputSurface)
         cameraDeviceHolder.closedFuture.addListener(
             { inputDeferrableSurface.close() },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
 
         // Prepare output
@@ -391,9 +411,9 @@ class DefaultSurfaceProcessorTest {
 
     private fun createSurfaceProcessor(
         dynamicRange: DynamicRange = DynamicRange.SDR,
-        shaderProvider: ShaderProvider = ShaderProvider.DEFAULT
+        shaderProviderOverrides: Map<InputFormat, ShaderProvider> = emptyMap(),
     ) {
-        surfaceProcessor = DefaultSurfaceProcessor(dynamicRange, shaderProvider)
+        surfaceProcessor = DefaultSurfaceProcessor(dynamicRange, shaderProviderOverrides)
     }
 
     private fun createInputSurfaceRequest(): SurfaceRequest {
@@ -411,12 +431,15 @@ class DefaultSurfaceProcessorTest {
             target,
             format,
             Size(WIDTH, HEIGHT),
-            Size(WIDTH, HEIGHT),
-            Rect(0, 0, WIDTH, HEIGHT),
-            /*rotationDegrees=*/ 0,
-            /*mirroring=*/ false,
-            FakeCamera(),
-            Matrix()
+            SurfaceOutput.CameraInputInfo.of(
+                Size(WIDTH, HEIGHT),
+                Rect(0, 0, WIDTH, HEIGHT),
+                FakeCamera(),
+                /*rotationDegrees=*/ 0,
+                /*mirroring=*/ false,
+            ),
+            /*secondaryCameraInputInfo=*/ null,
+            Matrix(),
         )
 
     private fun createCustomShaderProvider(
@@ -428,7 +451,7 @@ class DefaultSurfaceProcessorTest {
         object : ShaderProvider {
             override fun createFragmentShader(
                 correctSamplerVarName: String,
-                correctFragCoordsVarName: String
+                correctFragCoordsVarName: String,
             ): String {
                 exceptionToThrow?.let { throw it }
                 return shaderString
@@ -438,7 +461,7 @@ class DefaultSurfaceProcessorTest {
                         samplerVarName ?: correctSamplerVarName,
                         fragCoordsVarName ?: correctFragCoordsVarName,
                         samplerVarName ?: correctSamplerVarName,
-                        fragCoordsVarName ?: correctFragCoordsVarName
+                        fragCoordsVarName ?: correctFragCoordsVarName,
                     )
             }
         }

@@ -17,6 +17,7 @@ package com.example.android.leanback;
 import androidx.leanback.widget.HeaderItem;
 import androidx.leanback.widget.ListRow;
 import androidx.leanback.widget.ObjectAdapter;
+
 /**
  * Customised list row used for showing sample usage of PagedListAdapter
  */

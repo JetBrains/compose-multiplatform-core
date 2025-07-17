@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,25 +33,28 @@ plugins {
 }
 
 android {
+    compileSdk = 35
+
     defaultConfig {
-        minSdkVersion 25
+        minSdk = 25
     }
     buildTypes.configureEach {
         consumerProguardFiles "benchmark-proguard-rules.pro"
     }
-    namespace "androidx.wear.compose.material3.benchmark"
+    namespace = "androidx.wear.compose.material3.benchmark"
 }
 
 dependencies {
 
-    androidTestImplementation project(":benchmark:benchmark-junit4")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:ui:ui-text:ui-text-benchmark")
-    androidTestImplementation project(":compose:foundation:foundation")
-    androidTestImplementation project(":compose:runtime:runtime")
-    androidTestImplementation project(":compose:benchmark-utils")
-    androidTestImplementation project(":wear:compose:compose-foundation")
-    androidTestImplementation project(":wear:compose:compose-material3")
+    androidTestImplementation(project(":benchmark:benchmark-junit4"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui-text:ui-text-benchmark"))
+    androidTestImplementation(project(":compose:foundation:foundation"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:benchmark-utils"))
+    androidTestImplementation(project(":wear:compose:compose-foundation"))
+    androidTestImplementation(project(":wear:compose:compose-material3"))
+    androidTestImplementation("androidx.compose.material:material-icons-core:1.6.7")
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinStdlib)
@@ -59,5 +63,5 @@ dependencies {
     androidTestImplementation(libs.truth)
 }
 androidx {
-    type = LibraryType.INTERNAL_TEST_LIBRARY
+    type = SoftwareType.BENCHMARK
 }

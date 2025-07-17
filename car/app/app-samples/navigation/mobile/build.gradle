@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -30,19 +30,19 @@ plugins {
 
 android {
     defaultConfig {
-        applicationId "androidx.car.app.sample.navigation"
-        minSdkVersion 23
+        applicationId = "androidx.car.app.sample.navigation"
+        minSdk = 23
     }
 
     buildTypes {
         release {
             // Enables code shrinking, obfuscation, and optimization.
-            minifyEnabled true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt')
         }
     }
-    namespace "androidx.car.app.sample.navigation"
+    namespace = "androidx.car.app.sample.navigation"
 }
 
 dependencies {

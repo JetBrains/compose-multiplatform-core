@@ -41,7 +41,7 @@ fun TailFollowingTextFieldDemo() {
         HorizontalTailFollowingTextField(
             value = hstate.value,
             onValueChange = { hstate.value = it },
-            modifier = Modifier.then(demoTextFieldModifiers).fillMaxWidth().clipToBounds()
+            modifier = Modifier.then(demoTextFieldModifiers).fillMaxWidth().clipToBounds(),
         )
 
         val vstate = rememberSaveable { mutableStateOf("a\nb\nc\nd\ne\nf\ng\nh") }
@@ -52,7 +52,7 @@ fun TailFollowingTextFieldDemo() {
                 Modifier.then(demoTextFieldModifiers)
                     .fillMaxWidth()
                     .requiredHeight(120.dp)
-                    .clipToBounds()
+                    .clipToBounds(),
         )
     }
 }
@@ -62,14 +62,13 @@ private fun HorizontalTailFollowingTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier,
-    textStyle: TextStyle = TextStyle(fontSize = fontSize8)
+    textStyle: TextStyle = TextStyle(fontSize = fontSize8),
 ) {
     Layout(
-        content =
-            @Composable {
-                BasicTextField(value = value, onValueChange = onValueChange, textStyle = textStyle)
-            },
-        modifier = modifier
+        content = {
+            BasicTextField(value = value, onValueChange = onValueChange, textStyle = textStyle)
+        },
+        modifier = modifier,
     ) { measurable, constraints ->
         val p =
             measurable[0].measure(
@@ -77,7 +76,7 @@ private fun HorizontalTailFollowingTextField(
                     minWidth = 0,
                     maxWidth = Constraints.Infinity,
                     minHeight = constraints.minHeight,
-                    maxHeight = constraints.maxHeight
+                    maxHeight = constraints.maxHeight,
                 )
             )
 
@@ -93,14 +92,13 @@ private fun VerticalTailFollowintTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier,
-    textStyle: TextStyle = TextStyle(fontSize = fontSize8)
+    textStyle: TextStyle = TextStyle(fontSize = fontSize8),
 ) {
     Layout(
-        content =
-            @Composable {
-                BasicTextField(value = value, onValueChange = onValueChange, textStyle = textStyle)
-            },
-        modifier = modifier
+        content = {
+            BasicTextField(value = value, onValueChange = onValueChange, textStyle = textStyle)
+        },
+        modifier = modifier,
     ) { measurable, constraints ->
         val p =
             measurable[0].measure(
@@ -108,7 +106,7 @@ private fun VerticalTailFollowintTextField(
                     minWidth = constraints.minWidth,
                     maxWidth = constraints.maxWidth,
                     minHeight = 0,
-                    maxHeight = Constraints.Infinity
+                    maxHeight = Constraints.Infinity,
                 )
             )
 

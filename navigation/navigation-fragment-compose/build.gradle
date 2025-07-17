@@ -21,7 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,28 +32,43 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
-    api(project(":navigation:navigation-fragment"))
     api("androidx.compose.runtime:runtime:1.5.4")
     api("androidx.compose.ui:ui:1.5.4")
+    api("androidx.fragment:fragment:1.6.2")
+    api(project(":navigation:navigation-common"))
+    api(project(":navigation:navigation-fragment"))
+    api(project(":navigation:navigation-runtime"))
 
-    androidTestImplementation project(":compose:ui:ui-test-junit4")
-    androidTestImplementation project(":compose:material:material")
-    androidTestImplementation project(":compose:test-utils")
-    androidTestImplementation(libs.testRules)
+    implementation(libs.kotlinStdlib)
+    implementation("androidx.annotation:annotation:1.5.0")
+    implementation("androidx.core:core-ktx:1.2.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.6.2")
+
+    androidTestRuntimeOnly(project(":compose:test-utils"))
+
+    androidTestImplementation("androidx.activity:activity:1.7.2")
+    androidTestImplementation("androidx.fragment:fragment-ktx:1.6.2")
+    androidTestImplementation("androidx.lifecycle:lifecycle-viewmodel:2.8.2")
+    androidTestImplementation(project(":compose:material:material"))
+    androidTestImplementation(project(":compose:runtime:runtime"))
+    androidTestImplementation(project(":compose:ui:ui"))
+    androidTestImplementation(project(":compose:ui:ui-test"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:ui:ui-text"))
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
 }
 
 android {
-    namespace "androidx.navigation.fragment.compose"
+    compileSdk = 35
+    namespace = "androidx.navigation.fragment.compose"
 }
 
 androidx {
     name = "Navigation with Fragments with Compose"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Add Compose destinations to Navigation with Fragments"
-    legacyDisableKotlinStrictApiMode = true
 }

@@ -38,7 +38,7 @@ interface TypeConverterStore {
      * Finds a [TypeConverter] (might be composite) that can convert the given [columnTypes] into
      * the [output] type. If [columnTypes] is not specified, uses all `knownColumnTypes`.
      */
-    fun findConverterFromCursor(columnTypes: List<XType>?, output: XType): TypeConverter?
+    fun findConverterFromStatement(columnTypes: List<XType>?, output: XType): TypeConverter?
 
     /** Finds a [TypeConverter] from [input] to [output]. */
     fun findTypeConverter(input: XType, output: XType): TypeConverter?
@@ -73,18 +73,18 @@ interface TypeConverterStore {
         fun create(
             context: Context,
             typeConverters: List<TypeConverter>,
-            knownColumnTypes: List<XType>
+            knownColumnTypes: List<XType>,
         ) =
             if (context.useNullAwareConverter) {
                 NullAwareTypeConverterStore(
                     context = context,
                     typeConverters = typeConverters,
-                    knownColumnTypes = knownColumnTypes
+                    knownColumnTypes = knownColumnTypes,
                 )
             } else {
                 TypeConverterStoreImpl(
                     typeConverters = typeConverters,
-                    knownColumnTypes = knownColumnTypes
+                    knownColumnTypes = knownColumnTypes,
                 )
             }
     }

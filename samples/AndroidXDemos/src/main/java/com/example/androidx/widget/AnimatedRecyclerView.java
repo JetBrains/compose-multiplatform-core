@@ -31,12 +31,13 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.collection.ArrayMap;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.androidx.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -152,10 +153,9 @@ public class AnimatedRecyclerView extends Activity {
                 mPendingSettleList.clear();
             }
 
-            @NonNull
             @Override
-            public ItemHolderInfo recordPreLayoutInformation(@NonNull RecyclerView.State state,
-                    @NonNull RecyclerView.ViewHolder viewHolder,
+            public @NonNull ItemHolderInfo recordPreLayoutInformation(
+                    RecyclerView.@NonNull State state, RecyclerView.@NonNull ViewHolder viewHolder,
                     @AdapterChanges int changeFlags, @NonNull List<Object> payloads) {
                 MyItemInfo info = (MyItemInfo) super
                         .recordPreLayoutInformation(state, viewHolder, changeFlags, payloads);
@@ -163,10 +163,10 @@ public class AnimatedRecyclerView extends Activity {
                 return info;
             }
 
-            @NonNull
             @Override
-            public ItemHolderInfo recordPostLayoutInformation(@NonNull RecyclerView.State state,
-                    @NonNull RecyclerView.ViewHolder viewHolder) {
+            public @NonNull ItemHolderInfo recordPostLayoutInformation(
+                    RecyclerView.@NonNull State state,
+                    RecyclerView.@NonNull ViewHolder viewHolder) {
                 MyItemInfo info = (MyItemInfo) super.recordPostLayoutInformation(state, viewHolder);
                 info.text = ((MyViewHolder) viewHolder).textView.getText();
                 return info;
@@ -174,12 +174,12 @@ public class AnimatedRecyclerView extends Activity {
 
 
             @Override
-            public boolean canReuseUpdatedViewHolder(@NonNull RecyclerView.ViewHolder viewHolder) {
+            public boolean canReuseUpdatedViewHolder(RecyclerView.@NonNull ViewHolder viewHolder) {
                 return mEnableInPlaceChange;
             }
 
             @Override
-            public void endAnimation(@NonNull RecyclerView.ViewHolder item) {
+            public void endAnimation(RecyclerView.@NonNull ViewHolder item) {
                 super.endAnimation(item);
                 for (int i = mPendingChangeAnimations.size() - 1; i >= 0; i--) {
                     ItemChangeAnimator anim = mPendingChangeAnimations.get(i);
@@ -206,8 +206,8 @@ public class AnimatedRecyclerView extends Activity {
             }
 
             @Override
-            public boolean animateChange(@NonNull RecyclerView.ViewHolder oldHolder,
-                    @NonNull RecyclerView.ViewHolder newHolder,
+            public boolean animateChange(RecyclerView.@NonNull ViewHolder oldHolder,
+                    RecyclerView.@NonNull ViewHolder newHolder,
                     @NonNull ItemHolderInfo preLayoutInfo, @NonNull ItemHolderInfo postLayoutInfo) {
                 if (oldHolder != newHolder) {
                     return super.animateChange(oldHolder, newHolder, preLayoutInfo, postLayoutInfo);
@@ -252,9 +252,8 @@ public class AnimatedRecyclerView extends Activity {
                 return true;
             }
 
-            @NonNull
             @Override
-            public ItemHolderInfo obtainHolderInfo() {
+            public @NonNull ItemHolderInfo obtainHolderInfo() {
                 return new MyItemInfo();
             }
         };

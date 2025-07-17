@@ -20,10 +20,11 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.Rect;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.pdf.models.Dimensions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +47,7 @@ public class TileBoard {
     private static final String TAG_PREFIX = String.format("%s #", TAG);
     private final String mTag;
 
-    static final Dimensions TILE_SIZE = new Dimensions(800, 800);
+    public static final Dimensions TILE_SIZE = new Dimensions(800, 800);
 
     public static final BitmapRecycler DEFAULT_RECYCLER = new BitmapRecycler();
 
@@ -115,8 +116,7 @@ public class TileBoard {
      * them all up-front. This is a lazy accessor for them.
      */
     @VisibleForTesting
-    @NonNull
-    public TileInfo getTileInfo(int k) {
+    public @NonNull TileInfo getTileInfo(int k) {
         TileInfo tileInfo = mTileInfos[k];
         if (tileInfo == null) {
             tileInfo = new TileInfo(k);
@@ -248,8 +248,7 @@ public class TileBoard {
         return true;
     }
 
-    @NonNull
-    protected Area getExpandedArea(@NonNull Rect viewArea) {
+    protected @NonNull Area getExpandedArea(@NonNull Rect viewArea) {
         return Area.expandFromArea(viewArea, mNumCols, numRows());
     }
 
@@ -270,8 +269,7 @@ public class TileBoard {
     }
 
     /** Lists the indexes of the tiles that are currently visible. */
-    @NonNull
-    public Iterable<Integer> getVisibleTileIndexes() {
+    public @NonNull Iterable<Integer> getVisibleTileIndexes() {
         return areaIndexes(mVisibleArea);
     }
 
@@ -290,9 +288,8 @@ public class TileBoard {
     private Iterable<Integer> areaIndexes(final Area area) {
         return new Iterable<Integer>() {
 
-            @NonNull
             @Override
-            public Iterator<Integer> iterator() {
+            public @NonNull Iterator<Integer> iterator() {
                 return new Iterator<Integer>() {
 
                     private int mCurrentRow = area.mTop;
@@ -327,9 +324,8 @@ public class TileBoard {
         };
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return String.format(mTag + " (%s x %s), vis: %s", numRows(), mNumCols, mVisibleArea);
     }
 
@@ -354,8 +350,7 @@ public class TileBoard {
      * covered by
      * {@code rects}.
      */
-    @NonNull
-    public List<TileInfo> findTileInfosForRects(@NonNull List<Rect> rects) {
+    public @NonNull List<TileInfo> findTileInfosForRects(@NonNull List<Rect> rects) {
         Set<Integer> tileNums = new HashSet<>();
         for (Rect rect : rects) {
             tileNums.addAll(findTilesForRect(rect));
@@ -417,14 +412,12 @@ public class TileBoard {
         }
 
         /** Returns the standard size of a tile. */
-        @NonNull
-        public Dimensions getSize() {
+        public @NonNull Dimensions getSize() {
             return TILE_SIZE;
         }
 
         /** Returns the exact size of this tile, cropped to the page's bounds. */
-        @NonNull
-        public Dimensions getExactSize() {
+        public @NonNull Dimensions getExactSize() {
             if (mRow < numRows() - 1 && mCol < mNumCols - 1) {
                 return TILE_SIZE;
             }
@@ -434,8 +427,7 @@ public class TileBoard {
                     Math.min(TILE_SIZE.getHeight(), mBounds.getHeight() - offset.y));
         }
 
-        @NonNull
-        public Point getOffset() {
+        public @NonNull Point getOffset() {
             return new Point(mCol * TILE_SIZE.getWidth(), mRow * TILE_SIZE.getHeight());
         }
 
@@ -444,8 +436,7 @@ public class TileBoard {
          * this
          * tile anymore.
          */
-        @NonNull
-        public Rect getBounds() {
+        public @NonNull Rect getBounds() {
             Point offset = getOffset();
             return new Rect(offset.x, offset.y, offset.x + TILE_SIZE.getWidth(),
                     offset.y + TILE_SIZE.getHeight());
@@ -469,9 +460,8 @@ public class TileBoard {
             return 31 + TileBoard.this.hashCode() + getIndex();
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Tile %d @(%d, %d)", getIndex(), mRow, mCol);
         }
     }
@@ -537,9 +527,8 @@ public class TileBoard {
             return result;
         }
 
-        @NonNull
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return String.format("Area [%d tiles] (%d %d - %d %d)", size(), mTop, mLeft, mBottom,
                     mRight);
         }

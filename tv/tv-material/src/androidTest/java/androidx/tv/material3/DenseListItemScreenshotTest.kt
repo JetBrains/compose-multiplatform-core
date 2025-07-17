@@ -16,7 +16,6 @@
 
 package androidx.tv.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,7 +46,7 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalTvMaterial3Api::class)
 class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
     @get:Rule val rule = createComposeRule()
@@ -71,10 +70,10 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
                     },
-                    colors = ListItemDefaults.colors(containerColor = Color.Red)
+                    colors = ListItemDefaults.colors(containerColor = Color.Red),
                 )
             }
         }
@@ -89,7 +88,7 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                 DenseListItem(
                     selected = false,
                     onClick = {},
-                    headlineContent = { Text("One line dense list item") }
+                    headlineContent = { Text("One line dense list item") },
                 )
             }
         }
@@ -109,9 +108,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -127,13 +126,13 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     selected = false,
                     onClick = {},
                     headlineContent = { Text("Two line dense list item") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
                 DenseListItem(
                     selected = false,
                     onClick = {},
                     headlineContent = { Text("Two line dense list item") },
-                    overlineContent = { Text("OVERLINE") }
+                    overlineContent = { Text("OVERLINE") },
                 )
             }
         }
@@ -154,9 +153,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
                 DenseListItem(
                     selected = false,
@@ -167,9 +166,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -186,7 +185,7 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     onClick = {},
                     headlineContent = { Text("Three line dense list item") },
                     overlineContent = { Text("OVERLINE") },
-                    supportingContent = { Text("Secondary text") }
+                    supportingContent = { Text("Secondary text") },
                 )
             }
         }
@@ -208,9 +207,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -230,9 +229,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -259,9 +258,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -282,9 +281,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -310,9 +309,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -332,9 +331,9 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }
@@ -362,16 +361,16 @@ class DenseListItemScreenshotTest(private val scheme: ColorSchemeWrapper) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
                     },
                     trailingContent = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                             contentDescription = null,
-                            modifier = Modifier.size(ListItemDefaults.IconSizeDense)
+                            modifier = Modifier.size(ListItemDefaults.IconSizeDense),
                         )
-                    }
+                    },
                 )
             }
         }

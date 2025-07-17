@@ -16,8 +16,9 @@
 
 package androidx.work.impl.utils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 

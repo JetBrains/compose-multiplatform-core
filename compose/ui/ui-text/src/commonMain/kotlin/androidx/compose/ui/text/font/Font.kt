@@ -142,7 +142,6 @@ internal interface PlatformFontLoader {
  * Defines a font to be used while rendering text with resource ID.
  *
  * @sample androidx.compose.ui.text.samples.CustomFontFamilySample
- *
  * @param resId The resource ID of the font file in font resources. i.e. "R.font.myfont".
  * @param weight The weight of the font. The system uses this to match a font to a font request that
  *   is given in a [androidx.compose.ui.text.TextStyle].
@@ -157,22 +156,18 @@ internal constructor(
     val resId: Int,
     override val weight: FontWeight = FontWeight.Normal,
     override val style: FontStyle = FontStyle.Normal,
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-    @ExperimentalTextApi
-    @get:ExperimentalTextApi
     val variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
-    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Async
+    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Async,
 ) : Font {
 
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET", "CanBePrimaryConstructorProperty")
-    @get:ExperimentalTextApi
+    @Suppress("CanBePrimaryConstructorProperty")
     @ExperimentalTextApi
     override val loadingStrategy: FontLoadingStrategy = loadingStrategy
 
     fun copy(
         resId: Int = this.resId,
         weight: FontWeight = this.weight,
-        style: FontStyle = this.style
+        style: FontStyle = this.style,
     ): ResourceFont = copy(resId, weight, style, loadingStrategy = loadingStrategy)
 
     @ExperimentalTextApi
@@ -181,14 +176,14 @@ internal constructor(
         weight: FontWeight = this.weight,
         style: FontStyle = this.style,
         loadingStrategy: FontLoadingStrategy = this.loadingStrategy,
-        variationSettings: FontVariation.Settings = this.variationSettings
+        variationSettings: FontVariation.Settings = this.variationSettings,
     ): ResourceFont {
         return ResourceFont(
             resId = resId,
             weight = weight,
             style = style,
             variationSettings = variationSettings,
-            loadingStrategy = loadingStrategy
+            loadingStrategy = loadingStrategy,
         )
     }
 
@@ -240,13 +235,13 @@ internal constructor(
 @Deprecated(
     "Maintained for binary compatibility until Compose 1.3.",
     replaceWith = ReplaceWith("Font(resId, weight, style)"),
-    DeprecationLevel.HIDDEN
+    DeprecationLevel.HIDDEN,
 )
 @Stable
 fun Font(
     resId: Int,
     weight: FontWeight = FontWeight.Normal,
-    style: FontStyle = FontStyle.Normal
+    style: FontStyle = FontStyle.Normal,
 ): Font = ResourceFont(resId, weight, style, loadingStrategy = FontLoadingStrategy.Blocking)
 
 /**
@@ -273,7 +268,7 @@ fun Font(
     resId: Int,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking
+    loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking,
 ): Font = ResourceFont(resId, weight, style, FontVariation.Settings(), loadingStrategy)
 
 @ExperimentalTextApi
@@ -282,7 +277,7 @@ fun Font(
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
     loadingStrategy: FontLoadingStrategy = FontLoadingStrategy.Blocking,
-    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style)
+    variationSettings: FontVariation.Settings = FontVariation.Settings(weight, style),
 ): Font = ResourceFont(resId, weight, style, variationSettings, loadingStrategy)
 
 /** Create a [FontFamily] from this single [Font]. */

@@ -17,10 +17,12 @@
 package androidx.camera.testing.impl.fakes
 
 import android.graphics.ImageFormat
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CaptureRequest
 import android.media.ImageWriter
 import android.os.SystemClock
+import android.util.Pair
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.OptIn
@@ -29,6 +31,7 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProcessingUtil
 import androidx.camera.core.ImageReaderProxys
+import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.CameraCaptureFailure
 import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.Config
@@ -37,7 +40,6 @@ import androidx.camera.core.impl.ImageReaderProxy
 import androidx.camera.core.impl.OptionsBundle
 import androidx.camera.core.impl.OutputSurfaceConfiguration
 import androidx.camera.core.impl.RequestProcessor
-import androidx.camera.core.impl.RestrictedCameraInfo
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SessionProcessorSurface
@@ -49,13 +51,15 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 
-const val FAKE_CAPTURE_SEQUENCE_ID = 1
+private const val FAKE_CAPTURE_SEQUENCE_ID = 1
 
 @RequiresApi(23) // ImageWriter requires API 23+
-class FakeSessionProcessor(
-    val inputFormatPreview: Int? = null,
-    val inputFormatCapture: Int? = null,
-    val postviewSupportedSizes: Map<Int, List<Size>>? = null,
+public class FakeSessionProcessor(
+    private val inputFormatPreview: Int? = null,
+    private val inputFormatCapture: Int? = null,
+    private val postviewSupportedSizes: Map<Int, List<Size>>? = null,
+    private val supportedCameraOperations: Set<Int> = emptySet(),
+    private val extensionSpecificChars: List<Pair<CameraCharacteristics.Key<*>, Any>>? = emptyList(),
 ) : SessionProcessor {
     private lateinit var previewProcessorSurface: DeferrableSurface
     private lateinit var captureProcessorSurface: DeferrableSurface
@@ -89,28 +93,28 @@ class FakeSessionProcessor(
     private var rotationDegrees = 0
     private var jpegQuality = 100
 
-    @RestrictedCameraInfo.CameraOperation var restrictedCameraOperations: Set<Int> = emptySet()
+    @AdapterCameraInfo.CameraOperation public var restrictedCameraOperations: Set<Int> = emptySet()
 
-    fun releaseSurfaces() {
+    public fun releaseSurfaces() {
         intermediaPreviewImageReader?.close()
         intermediaCaptureImageReader?.close()
     }
 
-    fun runAfterInitSession(block: () -> Unit) {
+    public fun runAfterInitSession(block: () -> Unit) {
         blockRunAfterInitSession = block
     }
 
-    fun setStillCaptureFailedImmediately(failedImmediately: Boolean) {
+    public fun setStillCaptureFailedImmediately(failedImmediately: Boolean) {
         failStillCaptureImmediately = failedImmediately
     }
 
     @OptIn(ExperimentalGetImage::class)
     override fun initSession(
         cameraInfo: CameraInfo,
-        outputSurfaceConfig: OutputSurfaceConfiguration
+        outputSurfaceConfig: OutputSurfaceConfiguration?,
     ): SessionConfig {
         initSessionCalled.complete(SystemClock.elapsedRealtimeNanos())
-        initSessionOutputSurfaceConfiguration.complete(outputSurfaceConfig)
+        initSessionOutputSurfaceConfiguration.complete(outputSurfaceConfig!!)
         val sessionBuilder = SessionConfig.Builder()
 
         val previewSurfaceConfig = outputSurfaceConfig.previewOutputSurface
@@ -127,7 +131,7 @@ class FakeSessionProcessor(
                     previewSurfaceConfig.size.width,
                     previewSurfaceConfig.size.height,
                     inputFormatPreview,
-                    2
+                    2,
                 )
             previewTransformedSurface = intermediaPreviewImageReader!!.surface!!
 
@@ -141,7 +145,7 @@ class FakeSessionProcessor(
                         intermediaPreviewImageWriter!!.queueInputImage(imageDequeued)
                     }
                 },
-                CameraXExecutors.ioExecutor()
+                CameraXExecutors.ioExecutor(),
             )
         }
         previewProcessorSurface =
@@ -151,7 +155,7 @@ class FakeSessionProcessor(
                 intermediaPreviewImageReader?.close()
                 intermediaPreviewImageWriter?.close()
             },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
         sessionBuilder.addSurface(previewProcessorSurface)
 
@@ -165,7 +169,7 @@ class FakeSessionProcessor(
                     imageCaptureSurfaceConfig.size.width,
                     imageCaptureSurfaceConfig.size.height,
                     inputFormatCapture,
-                    2
+                    2,
                 )
             captureTransformedSurface = intermediaCaptureImageReader!!.surface!!
 
@@ -177,7 +181,7 @@ class FakeSessionProcessor(
                                 imageProxy!!,
                                 jpegQuality,
                                 rotationDegrees,
-                                imageCaptureSurfaceConfig.surface
+                                imageCaptureSurfaceConfig.surface,
                             )
                         } else {
                             val imageWriter =
@@ -187,7 +191,7 @@ class FakeSessionProcessor(
                         }
                     }
                 },
-                CameraXExecutors.ioExecutor()
+                CameraXExecutors.ioExecutor(),
             )
         }
         captureProcessorSurface =
@@ -195,7 +199,7 @@ class FakeSessionProcessor(
 
         captureProcessorSurface.terminationFuture.addListener(
             { intermediaCaptureImageReader?.close() },
-            CameraXExecutors.directExecutor()
+            CameraXExecutors.directExecutor(),
         )
         sessionBuilder.addSurface(captureProcessorSurface)
 
@@ -212,8 +216,12 @@ class FakeSessionProcessor(
 
     override fun deInitSession() {
         deInitSessionCalled.complete(SystemClock.elapsedRealtimeNanos())
-        previewProcessorSurface.close()
-        captureProcessorSurface.close()
+        if (::previewProcessorSurface.isInitialized) {
+            previewProcessorSurface.close()
+        }
+        if (::captureProcessorSurface.isInitialized) {
+            captureProcessorSurface.close()
+        }
         imageAnalysisProcessorSurface?.close()
     }
 
@@ -244,13 +252,13 @@ class FakeSessionProcessor(
         onCaptureSessionEndCalled.complete(SystemClock.elapsedRealtimeNanos())
     }
 
-    fun getLatestParameters(): Config {
+    public fun getLatestParameters(): Config {
         return latestParameters
     }
 
-    @RestrictedCameraInfo.CameraOperation
+    @AdapterCameraInfo.CameraOperation
     override fun getSupportedCameraOperations(): Set<Int> {
-        return restrictedCameraOperations
+        return supportedCameraOperations
     }
 
     override fun getSupportedPostviewSize(captureSize: Size): Map<Int, List<Size>> {
@@ -259,7 +267,7 @@ class FakeSessionProcessor(
 
     override fun startRepeating(
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         startRepeatingCalled.complete(SystemClock.elapsedRealtimeNanos())
         val builder =
@@ -275,43 +283,43 @@ class FakeSessionProcessor(
                 override fun onCaptureStarted(
                     request: RequestProcessor.Request,
                     frameNumber: Long,
-                    timestamp: Long
+                    timestamp: Long,
                 ) {}
 
                 override fun onCaptureProgressed(
                     request: RequestProcessor.Request,
-                    captureResult: CameraCaptureResult
+                    captureResult: CameraCaptureResult,
                 ) {}
 
                 override fun onCaptureCompleted(
                     request: RequestProcessor.Request,
-                    captureResult: CameraCaptureResult
+                    captureResult: CameraCaptureResult,
                 ) {
                     callback.onCaptureCompleted(
                         captureResult.timestamp,
                         FAKE_CAPTURE_SEQUENCE_ID,
                         object : CameraCaptureResult by captureResult {
                             override fun getTagBundle() = tagBundle
-                        }
+                        },
                     )
                     callback.onCaptureSequenceCompleted(FAKE_CAPTURE_SEQUENCE_ID)
                 }
 
                 override fun onCaptureFailed(
                     request: RequestProcessor.Request,
-                    captureFailure: CameraCaptureFailure
+                    captureFailure: CameraCaptureFailure,
                 ) {}
 
                 override fun onCaptureBufferLost(
                     request: RequestProcessor.Request,
                     frameNumber: Long,
-                    outputConfigId: Int
+                    outputConfigId: Int,
                 ) {}
 
                 override fun onCaptureSequenceCompleted(sequenceId: Int, frameNumber: Long) {}
 
                 override fun onCaptureSequenceAborted(sequenceId: Int) {}
-            }
+            },
         )
         return FAKE_CAPTURE_SEQUENCE_ID
     }
@@ -324,7 +332,7 @@ class FakeSessionProcessor(
     override fun startCapture(
         postviewEnabled: Boolean,
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         startCaptureCalled.complete(SystemClock.elapsedRealtimeNanos())
         startCapturePostviewEnabled.complete(postviewEnabled)
@@ -348,14 +356,14 @@ class FakeSessionProcessor(
             object : RequestProcessor.Callback {
                 override fun onCaptureCompleted(
                     request: RequestProcessor.Request,
-                    captureResult: CameraCaptureResult
+                    captureResult: CameraCaptureResult,
                 ) {
                     callback.onCaptureCompleted(
                         captureResult.timestamp,
                         FAKE_CAPTURE_SEQUENCE_ID,
                         object : CameraCaptureResult by captureResult {
                             override fun getTagBundle() = tagBundle
-                        }
+                        },
                     )
                     callback.onCaptureSequenceCompleted(FAKE_CAPTURE_SEQUENCE_ID)
                 }
@@ -363,19 +371,19 @@ class FakeSessionProcessor(
                 override fun onCaptureStarted(
                     request: RequestProcessor.Request,
                     frameNumber: Long,
-                    timestamp: Long
+                    timestamp: Long,
                 ) {
                     callback.onCaptureStarted(FAKE_CAPTURE_SEQUENCE_ID, timestamp)
                 }
 
                 override fun onCaptureProgressed(
                     request: RequestProcessor.Request,
-                    captureResult: CameraCaptureResult
+                    captureResult: CameraCaptureResult,
                 ) {}
 
                 override fun onCaptureFailed(
                     request: RequestProcessor.Request,
-                    captureFailure: CameraCaptureFailure
+                    captureFailure: CameraCaptureFailure,
                 ) {
                     callback.onCaptureFailed(FAKE_CAPTURE_SEQUENCE_ID)
                 }
@@ -383,13 +391,13 @@ class FakeSessionProcessor(
                 override fun onCaptureBufferLost(
                     request: RequestProcessor.Request,
                     frameNumber: Long,
-                    outputConfigId: Int
+                    outputConfigId: Int,
                 ) {}
 
                 override fun onCaptureSequenceCompleted(sequenceId: Int, frameNumber: Long) {}
 
                 override fun onCaptureSequenceAborted(sequenceId: Int) {}
-            }
+            },
         )
         return FAKE_CAPTURE_SEQUENCE_ID
     }
@@ -397,7 +405,7 @@ class FakeSessionProcessor(
     override fun startTrigger(
         config: Config,
         tagBundle: TagBundle,
-        callback: SessionProcessor.CaptureCallback
+        callback: SessionProcessor.CaptureCallback,
     ): Int {
         startTriggerCalled.complete(config)
         callback.onCaptureCompleted(
@@ -405,7 +413,7 @@ class FakeSessionProcessor(
             FAKE_CAPTURE_SEQUENCE_ID,
             object : CameraCaptureResult by CameraCaptureResult.EmptyCameraCaptureResult() {
                 override fun getTagBundle() = tagBundle
-            }
+            },
         )
         callback.onCaptureSequenceCompleted(FAKE_CAPTURE_SEQUENCE_ID)
         return FAKE_CAPTURE_SEQUENCE_ID
@@ -413,52 +421,55 @@ class FakeSessionProcessor(
 
     override fun abortCapture(captureSequenceId: Int) {}
 
-    suspend fun assertInitSessionInvoked(): Long {
+    override fun getAvailableCharacteristicsKeyValues():
+        List<Pair<CameraCharacteristics.Key<*>, Any>> = extensionSpecificChars!!
+
+    public suspend fun assertInitSessionInvoked(): Long {
         return initSessionCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun awaitInitSessionOutputSurfaceConfiguration(): OutputSurfaceConfiguration {
+    public suspend fun awaitInitSessionOutputSurfaceConfiguration(): OutputSurfaceConfiguration {
         return initSessionOutputSurfaceConfiguration.awaitWithTimeout(3000)
     }
 
-    suspend fun assertDeInitSessionInvoked(): Long {
+    public suspend fun assertDeInitSessionInvoked(): Long {
         return deInitSessionCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertOnCaptureSessionStartInvoked(): Long {
+    public suspend fun assertOnCaptureSessionStartInvoked(): Long {
         return onCaptureSessionStartCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun wasOnCaptureSessionStartInvoked(): Boolean {
+    public suspend fun wasOnCaptureSessionStartInvoked(): Boolean {
         val result = withTimeoutOrNull(3000) { onCaptureSessionStartCalled.await() }
         return result != null
     }
 
-    suspend fun assertOnCaptureEndInvoked(): Long {
+    public suspend fun assertOnCaptureEndInvoked(): Long {
         return onCaptureSessionEndCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertStartRepeatingInvoked(): Long {
+    public suspend fun assertStartRepeatingInvoked(): Long {
         return startRepeatingCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertStartCaptureInvoked(): Long {
+    public suspend fun assertStartCaptureInvoked(): Long {
         return startCaptureCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertStartCapturePostviewEnabled() {
+    public suspend fun assertStartCapturePostviewEnabled() {
         assertThat(startCapturePostviewEnabled.awaitWithTimeout(3000)).isTrue()
     }
 
-    suspend fun assertSetParametersInvoked(): Config {
+    public suspend fun assertSetParametersInvoked(): Config {
         return setParametersCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertStartTriggerInvoked(): Config {
+    public suspend fun assertStartTriggerInvoked(): Config {
         return startTriggerCalled.awaitWithTimeout(3000)
     }
 
-    suspend fun assertStopRepeatingInvoked(): Long {
+    public suspend fun assertStopRepeatingInvoked(): Long {
         return stopRepeatingCalled.awaitWithTimeout(3000)
     }
 
@@ -470,7 +481,7 @@ class FakeSessionProcessor(
 internal class RequestProcessorRequest(
     private val targetOutputConfigIds: List<Int>,
     private val parameters: Config,
-    private val templateId: Int
+    private val templateId: Int,
 ) : RequestProcessor.Request {
     override fun getTargetOutputConfigIds(): List<Int> {
         return targetOutputConfigIds
@@ -508,7 +519,7 @@ internal class RequestProcessorRequest(
             return RequestProcessorRequest(
                 targetOutputConfigIds.toList(),
                 OptionsBundle.from(parameters),
-                templateId
+                templateId,
             )
         }
     }

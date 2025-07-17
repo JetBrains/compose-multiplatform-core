@@ -24,12 +24,7 @@ import org.gradle.api.provider.Provider
 /**
  * Whether to enable constraints for projects in same-version groups
  *
- * This is expected to be true during builds that publish artifacts externally This is expected to
- * be false during most other builds because: Developers may be interested in including only a
- * subset of projects in ANDROIDX_PROJECTS to make Studio run more quickly. If a build contains only
- * a subset of projects, we cannot necessarily add constraints between all pairs of projects in the
- * same group. We want most builds to have high remote cache usage, so we want constraints to be
- * similar across most builds See go/androidx-group-constraints for more information
+ * This is default true.
  */
 const val ADD_GROUP_CONSTRAINTS = "androidx.constraints"
 
@@ -44,11 +39,6 @@ const val DISPLAY_TEST_OUTPUT = "androidx.displayTestOutput"
 
 /** Setting this property changes "url" property in publishing maven artifact metadata */
 const val ALTERNATIVE_PROJECT_URL = "androidx.alternativeProjectUrl"
-
-/**
- * Check that version extra meets the specified rules (version is in format major.minor.patch-extra)
- */
-const val VERSION_EXTRA_CHECK_ENABLED = "androidx.versionExtraCheckEnabled"
 
 /** Validate the project structure against Jetpack guidelines */
 const val VALIDATE_PROJECT_STRUCTURE = "androidx.validateProjectStructure"
@@ -136,14 +126,16 @@ const val XCODEGEN_DOWNLOAD_URI = "androidx.benchmark.darwin.xcodeGenDownloadUri
 /** If true, don't restrict usage of compileSdk property. */
 const val ALLOW_CUSTOM_COMPILE_SDK = "androidx.allowCustomCompileSdk"
 
-/** If true, include Jetpack library projects that live outside of `frameworks/support`. */
-const val INCLUDE_OPTIONAL_PROJECTS = "androidx.includeOptionalProjects"
+/** If true, yarn dependencies are fetched from an offline mirror */
+const val YARN_OFFLINE_MODE = "androidx.yarnOfflineMode"
+
+/** Defined by AndroidX Benchmark Plugin, may be used for local experiments with compilation */
+const val FORCE_BENCHMARK_AOT_COMPILATION = "androidx.benchmark.forceaotcompilation"
 
 val ALL_ANDROIDX_PROPERTIES =
     setOf(
         ADD_GROUP_CONSTRAINTS,
         ALTERNATIVE_PROJECT_URL,
-        VERSION_EXTRA_CHECK_ENABLED,
         VALIDATE_PROJECT_STRUCTURE,
         ENABLE_COMPOSE_COMPILER_METRICS,
         ENABLE_COMPOSE_COMPILER_REPORTS,
@@ -171,14 +163,16 @@ val ALL_ANDROIDX_PROPERTIES =
         ALLOW_CUSTOM_COMPILE_SDK,
         FilteredAnchorTask.PROP_TASK_NAME,
         FilteredAnchorTask.PROP_PATH_PREFIX,
-        INCLUDE_OPTIONAL_PROJECTS,
+        YARN_OFFLINE_MODE,
+        FORCE_BENCHMARK_AOT_COMPILATION,
     ) + AndroidConfigImpl.GRADLE_PROPERTIES
 
 /**
  * Whether to enable constraints for projects in same-version groups See the property definition for
  * more details
  */
-fun Project.shouldAddGroupConstraints() = booleanPropertyProvider(ADD_GROUP_CONSTRAINTS)
+fun Project.shouldAddGroupConstraints(): Provider<Boolean> =
+    project.providers.gradleProperty(ADD_GROUP_CONSTRAINTS).map { s -> s.toBoolean() }.orElse(true)
 
 /**
  * Returns alternative project url that will be used as "url" property in publishing maven artifact
@@ -188,12 +182,6 @@ fun Project.shouldAddGroupConstraints() = booleanPropertyProvider(ADD_GROUP_CONS
  */
 fun Project.getAlternativeProjectUrl(): String? =
     project.providers.gradleProperty(ALTERNATIVE_PROJECT_URL).getOrNull()
-
-/**
- * Check that version extra meets the specified rules (version is in format major.minor.patch-extra)
- */
-fun Project.isVersionExtraCheckEnabled(): Boolean =
-    findBooleanProperty(VERSION_EXTRA_CHECK_ENABLED) ?: true
 
 /** Validate the project structure against Jetpack guidelines */
 fun Project.isValidateProjectStructureEnabled(): Boolean =
@@ -241,8 +229,8 @@ fun Project.isWriteVersionedApiFilesEnabled(): Boolean =
     findBooleanProperty(WRITE_VERSIONED_API_FILES) ?: true
 
 /** Returns whether the build is for checking forward compatibility across projects */
-fun Project.usingMaxDepVersions(): Boolean {
-    return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).isPresent()
+fun Project.usingMaxDepVersions(): Provider<Boolean> {
+    return project.providers.gradleProperty(USE_MAX_DEP_VERSIONS).map { true }.orElse(false)
 }
 
 /** Returns whether we export compose compiler metrics */
@@ -252,6 +240,9 @@ fun Project.enableComposeCompilerMetrics() =
 /** Returns whether we export compose compiler reports */
 fun Project.enableComposeCompilerReports() =
     findBooleanProperty(ENABLE_COMPOSE_COMPILER_REPORTS) ?: false
+
+/** Returns whether we should use the offline mirror for dependencies */
+fun Project.useYarnOffline() = findBooleanProperty(YARN_OFFLINE_MODE) ?: false
 
 /**
  * Returns whether this is an integration test that is allowing lint checks to be skipped to save
@@ -264,8 +255,5 @@ fun Project.allowMissingLintProject() =
 fun Project.isCustomCompileSdkAllowed(): Boolean =
     findBooleanProperty(ALLOW_CUSTOM_COMPILE_SDK) ?: true
 
-fun Project.findBooleanProperty(propName: String) = booleanPropertyProvider(propName).get()
-
-fun Project.booleanPropertyProvider(propName: String): Provider<Boolean> {
-    return project.providers.gradleProperty(propName).map { s -> s.toBoolean() }.orElse(false)
-}
+fun Project.findBooleanProperty(propName: String): Boolean? =
+    project.providers.gradleProperty(propName).map { it.toBoolean() }.getOrNull()

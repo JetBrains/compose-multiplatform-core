@@ -30,7 +30,6 @@ import static androidx.work.impl.utils.EnqueueUtilsKt.wrapWorkSpecIfNeeded;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.ExistingWorkPolicy;
@@ -46,6 +45,8 @@ import androidx.work.impl.model.DependencyDao;
 import androidx.work.impl.model.WorkName;
 import androidx.work.impl.model.WorkSpec;
 import androidx.work.impl.model.WorkSpecDao;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;

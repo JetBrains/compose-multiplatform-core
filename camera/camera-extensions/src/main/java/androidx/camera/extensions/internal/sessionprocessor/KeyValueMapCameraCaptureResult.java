@@ -20,13 +20,14 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureResult;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.BufferUnderflowException;
 import java.util.Map;
@@ -53,9 +54,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AfMode}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfMode getAfMode() {
+    public CameraCaptureMetaData.@NonNull AfMode getAfMode() {
         Integer mode = (Integer) mKeyValues.get(CaptureResult.CONTROL_AF_MODE);
         if (mode == null) {
             return CameraCaptureMetaData.AfMode.UNKNOWN;
@@ -82,9 +82,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AfState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AfState getAfState() {
+    public CameraCaptureMetaData.@NonNull AfState getAfState() {
         Integer state = (Integer) mKeyValues.get(CaptureResult.CONTROL_AF_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AfState.UNKNOWN;
@@ -116,9 +115,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AeState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeState getAeState() {
+    public CameraCaptureMetaData.@NonNull AeState getAeState() {
         Integer state = (Integer) mKeyValues.get(CaptureResult.CONTROL_AE_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AeState.UNKNOWN;
@@ -147,9 +145,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.AwbState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbState getAwbState() {
+    public CameraCaptureMetaData.@NonNull AwbState getAwbState() {
         Integer state = (Integer) mKeyValues.get(CaptureResult.CONTROL_AWB_STATE);
         if (state == null) {
             return CameraCaptureMetaData.AwbState.UNKNOWN;
@@ -175,9 +172,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link CameraCaptureMetaData.FlashState}.
      */
-    @NonNull
     @Override
-    public CameraCaptureMetaData.FlashState getFlashState() {
+    public CameraCaptureMetaData.@NonNull FlashState getFlashState() {
         Integer state = (Integer) mKeyValues.get(CaptureResult.FLASH_STATE);
         if (state == null) {
             return CameraCaptureMetaData.FlashState.UNKNOWN;
@@ -197,9 +193,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
         return CameraCaptureMetaData.FlashState.UNKNOWN;
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AeMode getAeMode() {
+    public CameraCaptureMetaData.@NonNull AeMode getAeMode() {
         Integer aeMode = (Integer) mKeyValues.get(CaptureResult.CONTROL_AE_MODE);
         if (aeMode == null) {
             return CameraCaptureMetaData.AeMode.UNKNOWN;
@@ -222,9 +217,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
         }
     }
 
-    @NonNull
     @Override
-    public CameraCaptureMetaData.AwbMode getAwbMode() {
+    public CameraCaptureMetaData.@NonNull AwbMode getAwbMode() {
         Integer awbMode = (Integer) mKeyValues.get(CaptureResult.CONTROL_AWB_MODE);
         if (awbMode == null) {
             return CameraCaptureMetaData.AwbMode.UNKNOWN;
@@ -259,14 +253,13 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
         return mTimestamp;
     }
 
-    @NonNull
     @Override
-    public TagBundle getTagBundle() {
+    public @NonNull TagBundle getTagBundle() {
         return mTagBundle;
     }
 
     @Override
-    public void populateExifData(@NonNull ExifData.Builder exifData) {
+    public void populateExifData(ExifData.@NonNull Builder exifData) {
         // Call interface default to set flash mode
         CameraCaptureResult.super.populateExifData(exifData);
 
@@ -326,9 +319,8 @@ class KeyValueMapCameraCaptureResult implements CameraCaptureResult {
         }
     }
 
-    @Nullable
     @Override
-    public CaptureResult getCaptureResult() {
+    public @Nullable CaptureResult getCaptureResult() {
         return null;
     }
 }

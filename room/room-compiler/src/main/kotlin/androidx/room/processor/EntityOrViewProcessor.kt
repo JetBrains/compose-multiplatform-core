@@ -21,7 +21,7 @@ import androidx.room.Entity
 import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.processing.XTypeElement
 import androidx.room.vo.EntityOrView
-import androidx.room.vo.Fields
+import androidx.room.vo.Properties
 
 interface EntityOrViewProcessor {
     fun process(): EntityOrView
@@ -34,22 +34,22 @@ interface EntityOrViewProcessor {
 private class NonEntityOrViewProcessor(
     val context: Context,
     val element: XTypeElement,
-    private val referenceStack: LinkedHashSet<String>
+    private val referenceStack: LinkedHashSet<String>,
 ) : EntityOrViewProcessor {
 
     override fun process(): EntityOrView {
         context.logger.e(element, ProcessorErrors.NOT_ENTITY_OR_VIEW)
         // Parse this as a Pojo in case there are more errors.
-        PojoProcessor.createFor(
+        DataClassProcessor.createFor(
                 context = context,
                 element = element,
-                bindingScope = FieldProcessor.BindingScope.READ_FROM_CURSOR,
+                bindingScope = PropertyProcessor.BindingScope.READ_FROM_STMT,
                 parent = null,
-                referenceStack = referenceStack
+                referenceStack = referenceStack,
             )
             .process()
         return object : EntityOrView {
-            override val fields: Fields = Fields()
+            override val properties: Properties = Properties()
             override val tableName: String
                 get() = typeName.toString()
 
@@ -63,7 +63,7 @@ private class NonEntityOrViewProcessor(
 fun EntityOrViewProcessor(
     context: Context,
     element: XTypeElement,
-    referenceStack: LinkedHashSet<String> = LinkedHashSet()
+    referenceStack: LinkedHashSet<String> = LinkedHashSet(),
 ): EntityOrViewProcessor {
     return when {
         element.hasAnnotation(Entity::class) -> EntityProcessor(context, element, referenceStack)

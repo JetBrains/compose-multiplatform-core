@@ -16,16 +16,17 @@
 
 package androidx.window.extensions.embedding;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.window.extensions.RequiresVendorApiLevel;
 import androidx.window.extensions.WindowExtensions;
 import androidx.window.extensions.core.util.function.Predicate;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -33,10 +34,8 @@ import java.util.Objects;
  * Split configuration rule for individual activities.
  */
 public class ActivityRule extends EmbeddingRule {
-    @NonNull
-    private final Predicate<Activity> mActivityPredicate;
-    @NonNull
-    private final Predicate<Intent> mIntentPredicate;
+    private final @NonNull Predicate<Activity> mActivityPredicate;
+    private final @NonNull Predicate<Intent> mIntentPredicate;
     private final boolean mShouldAlwaysExpand;
 
     ActivityRule(@NonNull Predicate<Activity> activityPredicate,
@@ -51,7 +50,6 @@ public class ActivityRule extends EmbeddingRule {
     /**
      * Checks if the rule is applicable to the provided activity.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesActivity(@NonNull Activity activity) {
         return mActivityPredicate.test(activity);
@@ -60,7 +58,6 @@ public class ActivityRule extends EmbeddingRule {
     /**
      * Checks if the rule is applicable to the provided activity intent.
      */
-    @SuppressLint("ClassVerificationFailure") // Only called by Extensions implementation on device.
     @RequiresApi(api = Build.VERSION_CODES.N)
     public boolean matchesIntent(@NonNull Intent intent) {
         return mIntentPredicate.test(intent);
@@ -78,13 +75,10 @@ public class ActivityRule extends EmbeddingRule {
      * Builder for {@link ActivityRule}.
      */
     public static final class Builder {
-        @NonNull
-        private final Predicate<Activity> mActivityPredicate;
-        @NonNull
-        private final Predicate<Intent> mIntentPredicate;
+        private final @NonNull Predicate<Activity> mActivityPredicate;
+        private final @NonNull Predicate<Intent> mIntentPredicate;
         private boolean mAlwaysExpand;
-        @Nullable
-        private String mTag;
+        private @Nullable String mTag;
 
         /**
          * @deprecated Use {@link #Builder(Predicate, Predicate)} starting with
@@ -94,8 +88,8 @@ public class ActivityRule extends EmbeddingRule {
          */
         @Deprecated
         @RequiresApi(Build.VERSION_CODES.N)
-        public Builder(@NonNull java.util.function.Predicate<Activity> activityPredicate,
-                @NonNull java.util.function.Predicate<Intent> intentPredicate) {
+        public Builder(java.util.function.@NonNull Predicate<Activity> activityPredicate,
+                java.util.function.@NonNull Predicate<Intent> intentPredicate) {
             mActivityPredicate = activityPredicate::test;
             mIntentPredicate = intentPredicate::test;
         }
@@ -107,8 +101,8 @@ public class ActivityRule extends EmbeddingRule {
          *                         matches the rule
          * @param intentPredicate the {@link Predicate} to verify if a given {@link Intent}
          *                         matches the rule
-         * Since {@link WindowExtensions#VENDOR_API_LEVEL_2}
          */
+        @RequiresVendorApiLevel(level = 2)
         public Builder(@NonNull Predicate<Activity> activityPredicate,
                 @NonNull Predicate<Intent> intentPredicate) {
             mActivityPredicate = activityPredicate;
@@ -116,25 +110,22 @@ public class ActivityRule extends EmbeddingRule {
         }
 
         /** @see ActivityRule#shouldAlwaysExpand() */
-        @NonNull
-        public Builder setShouldAlwaysExpand(boolean alwaysExpand) {
+        public @NonNull Builder setShouldAlwaysExpand(boolean alwaysExpand) {
             mAlwaysExpand = alwaysExpand;
             return this;
         }
 
         /**
          * @see ActivityRule#getTag()
-         * Since {@link androidx.window.extensions.WindowExtensions#VENDOR_API_LEVEL_2}
          */
-        @NonNull
-        public Builder setTag(@NonNull String tag) {
+        @RequiresVendorApiLevel(level = 2)
+        public @NonNull Builder setTag(@NonNull String tag) {
             mTag = Objects.requireNonNull(tag);
             return this;
         }
 
         /** Builds a new instance of {@link ActivityRule}. */
-        @NonNull
-        public ActivityRule build() {
+        public @NonNull ActivityRule build() {
             return new ActivityRule(mActivityPredicate, mIntentPredicate, mAlwaysExpand, mTag);
         }
     }
@@ -159,10 +150,9 @@ public class ActivityRule extends EmbeddingRule {
         return result;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return "ActivityRule{mTag=" + getTag()
-                + "mShouldAlwaysExpand=" + mShouldAlwaysExpand + '}';
+                + ", mShouldAlwaysExpand=" + mShouldAlwaysExpand + '}';
     }
 }

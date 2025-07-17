@@ -34,7 +34,7 @@ class XTypeParameterElementTest {
                 """
             class Foo<T1, T2>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -85,7 +85,7 @@ class XTypeParameterElementTest {
             open class Bar
             open class Baz
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -130,7 +130,7 @@ class XTypeParameterElementTest {
             open class Bar
             open class Baz
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -175,7 +175,7 @@ class XTypeParameterElementTest {
             class Bar {}
             interface Baz {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -218,7 +218,7 @@ class XTypeParameterElementTest {
               fun <T1, T2> someMethod(t1: T1, t2: T2) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -276,7 +276,7 @@ class XTypeParameterElementTest {
             open class Bar
             open class Baz
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -328,7 +328,7 @@ class XTypeParameterElementTest {
             class Bar {}
             interface Baz {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -379,7 +379,7 @@ class XTypeParameterElementTest {
             class Bar {}
             interface Baz {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val foo = invocation.processingEnv.requireTypeElement("Foo")
@@ -421,6 +421,28 @@ class XTypeParameterElementTest {
             if (invocation.isKsp) {
                 assertThat(parameter.type.asTypeName().kotlin.toString()).isEqualTo("T")
             }
+        }
+    }
+
+    @Test
+    fun classBoundsGoBeforeInterfaceBounds() {
+        val src =
+            Source.kotlin(
+                "Foo.kt",
+                """
+                class Foo<T> where T: InterfaceBound1, T: InterfaceBound2, T: ClassBound
+                open class ClassBound
+                interface InterfaceBound1
+                interface InterfaceBound2
+                """
+                    .trimIndent(),
+            )
+        runProcessorTest(sources = listOf(src)) { invocation ->
+            val foo = invocation.processingEnv.requireTypeElement("Foo")
+
+            val t = foo.typeParameters[0]
+            assertThat(t.bounds).hasSize(3)
+            assertThat(t.bounds[0].asTypeName().java.toString()).isEqualTo("ClassBound")
         }
     }
 }

@@ -32,7 +32,6 @@ import android.util.Xml;
 import android.view.InflateException;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
 import androidx.core.animation.AnimatorTestRule;
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.core.app.ApplicationProvider;
@@ -41,6 +40,7 @@ import androidx.test.filters.MediumTest;
 import androidx.vectordrawable.graphics.drawable.SeekableAnimatedVectorDrawable;
 import androidx.vectordrawable.seekable.test.R;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;

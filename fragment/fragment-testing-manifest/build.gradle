@@ -21,17 +21,20 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(project(":fragment:fragment-ktx"))
+    api("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
+    implementation("androidx.activity:activity-ktx:1.8.1")
+    implementation("androidx.activity:activity:1.8.1")
     api(libs.kotlinStdlib)
 
     lintPublish(project(":fragment:fragment-testing-manifest-lint"))
@@ -39,22 +42,12 @@ dependencies {
 
 androidx {
     name = "Fragment Testing Manifest dependency"
-    type = LibraryType.PUBLISHED_TEST_LIBRARY
+    type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2022"
     description = "Fragment testing library that should be added as a debugImplementation dependency to add properties to the debug manifest necessary for testing an application"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
     doNotDocumentReason = "No public API"
 }
 
 android {
-    namespace "androidx.fragment.testing.manifest"
-}
-
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += [
-                "-Xjvm-default=all",
-        ]
-    }
+    namespace = "androidx.fragment.testing.manifest"
 }

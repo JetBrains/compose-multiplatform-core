@@ -16,25 +16,32 @@
 package androidx.wear.compose.material.dialog
 
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertIsEqualTo
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -55,6 +62,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.assertContainsColor
 import androidx.wear.compose.material.setContentWithTheme
 import androidx.wear.compose.material.setContentWithThemeForSizeAssertions
+import kotlinx.coroutines.delay
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -85,12 +93,7 @@ class DialogBehaviourTest {
     @Test
     fun supports_testtag_on_alert_with_chips() {
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                message = {},
-                content = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Alert(title = {}, message = {}, content = {}, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -127,12 +130,7 @@ class DialogBehaviourTest {
     @Test
     fun displays_icon_on_alert_with_chips() {
         rule.setContentWithTheme {
-            Alert(
-                icon = { TestImage(TEST_TAG) },
-                title = {},
-                message = {},
-                content = {},
-            )
+            Alert(icon = { TestImage(TEST_TAG) }, title = {}, message = {}, content = {})
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -141,11 +139,7 @@ class DialogBehaviourTest {
     @Test
     fun displays_icon_on_confirmation() {
         rule.setContentWithTheme {
-            Confirmation(
-                onTimeout = {},
-                icon = { TestImage(TEST_TAG) },
-                content = {},
-            )
+            Confirmation(onTimeout = {}, icon = { TestImage(TEST_TAG) }, content = {})
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -243,54 +237,68 @@ class DialogBehaviourTest {
 
     @Test
     fun supports_swipetodismiss_on_wrapped_alertdialog_with_buttons() {
+        var dismissCounter = 0
         rule.setContentWithTheme {
             Box {
                 var showDialog by remember { mutableStateOf(true) }
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Start Screen")
                 }
                 Dialog(
                     showDialog = showDialog,
-                    onDismissRequest = { showDialog = false },
+                    onDismissRequest = {
+                        showDialog = false
+                        dismissCounter++
+                    },
                 ) {
                     Alert(
                         title = {},
                         negativeButton = { Button(onClick = {}, content = {}) },
                         positiveButton = { Button(onClick = {}, content = {}) },
-                        content = { Text("Dialog", modifier = Modifier.testTag(TEST_TAG)) },
+                        content = {
+                            Text("Dialog", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                     )
                 }
             }
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        rule.waitForIdle()
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
+        assertEquals(1, dismissCounter)
     }
 
     @Test
     fun supports_swipetodismiss_on_wrapped_alertdialog_with_chips() {
+        var dismissCounter = 0
         rule.setContentWithTheme {
             Box {
                 var showDialog by remember { mutableStateOf(true) }
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Label")
                 }
                 Dialog(
                     showDialog = showDialog,
-                    onDismissRequest = { showDialog = false },
+                    onDismissRequest = {
+                        showDialog = false
+                        dismissCounter++
+                    },
                 ) {
                     Alert(
                         icon = {},
                         title = {},
-                        message = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
+                        message = {
+                            Text("Text", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                         content = {},
                     )
                 }
@@ -298,36 +306,46 @@ class DialogBehaviourTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        rule.waitForIdle()
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
+        assertEquals(1, dismissCounter)
     }
 
     @Test
     fun supports_swipetodismiss_on_wrapped_confirmationdialog() {
+        var dismissCounter = 0
         rule.setContentWithTheme {
             Box {
                 var showDialog by remember { mutableStateOf(true) }
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Label")
                 }
                 Dialog(
                     showDialog = showDialog,
-                    onDismissRequest = { showDialog = false },
+                    onDismissRequest = {
+                        showDialog = false
+                        dismissCounter++
+                    },
                 ) {
                     Confirmation(
                         onTimeout = { showDialog = false },
                         icon = {},
-                        content = { Text("Dialog", modifier = Modifier.testTag(TEST_TAG)) },
+                        content = {
+                            Text("Dialog", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                     )
                 }
             }
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        rule.waitForIdle()
         rule.onNodeWithTag(TEST_TAG).assertDoesNotExist()
+        assertEquals(1, dismissCounter)
     }
 
     @Test
@@ -338,14 +356,11 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Chip(onClick = { showDialog = true }, label = { Text("Show") })
                 }
-                Dialog(
-                    showDialog = showDialog,
-                    onDismissRequest = { showDialog = false },
-                ) {
+                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
                     Text("Text", modifier = Modifier.testTag(TEST_TAG))
                 }
             }
@@ -364,18 +379,17 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(if (dismissed) dismissedText else "Label")
                 }
-                Dialog(
-                    showDialog = !dismissed,
-                    onDismissRequest = { dismissed = true },
-                ) {
+                Dialog(showDialog = !dismissed, onDismissRequest = { dismissed = true }) {
                     Alert(
                         icon = {},
                         title = {},
-                        message = { Text("Text", modifier = Modifier.testTag(TEST_TAG)) },
+                        message = {
+                            Text("Text", modifier = Modifier.fillMaxWidth().testTag(TEST_TAG))
+                        },
                         content = {},
                     )
                 }
@@ -383,7 +397,52 @@ class DialogBehaviourTest {
         }
 
         rule.onNodeWithTag(TEST_TAG).performTouchInput({ swipeRight() })
+        rule.waitForIdle()
         rule.onNodeWithText(dismissedText).assertExists()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun calls_onDismissRequest_on_timeout() {
+        val show = mutableStateOf(true)
+        var dismissCounter = 0
+        rule.setContentWithTheme {
+            Box {
+                DialogWithTimeout(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    showDialog = show.value,
+                    onTimeout = {
+                        dismissCounter++
+                        show.value = false
+                    },
+                    durationMillis = 100,
+                )
+            }
+        }
+        rule.waitUntilDoesNotExist(hasTestTag(TEST_TAG))
+        assertEquals(1, dismissCounter)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun onDismissRequest_not_called_when_hidden() {
+        val show = mutableStateOf(true)
+        var dismissCounter = 0
+        rule.setContentWithTheme {
+            Box {
+                Dialog(
+                    modifier = Modifier.testTag(TEST_TAG),
+                    showDialog = show.value,
+                    onDismissRequest = { dismissCounter++ },
+                ) {
+                    Alert(icon = {}, title = {}, message = { Text("Text") }, content = {})
+                }
+            }
+        }
+        rule.waitForIdle()
+        show.value = false
+        rule.waitUntilDoesNotExist(hasTestTag(TEST_TAG))
+        assertEquals(0, dismissCounter)
     }
 }
 
@@ -444,7 +503,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -472,7 +531,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -541,7 +600,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -594,7 +653,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -745,11 +804,7 @@ class DialogContentColorTest {
 
         rule.setContentWithTheme {
             expectedColor = MaterialTheme.colors.onBackground
-            Alert(
-                title = { actualColor = LocalContentColor.current },
-                message = {},
-                content = {},
-            )
+            Alert(title = { actualColor = LocalContentColor.current }, message = {}, content = {})
         }
 
         assertEquals(expectedColor, actualColor)
@@ -762,10 +817,7 @@ class DialogContentColorTest {
 
         rule.setContentWithTheme {
             expectedColor = MaterialTheme.colors.onBackground
-            Confirmation(
-                onTimeout = {},
-                content = { actualColor = LocalContentColor.current },
-            )
+            Confirmation(onTimeout = {}, content = { actualColor = LocalContentColor.current })
         }
 
         assertEquals(expectedColor, actualColor)
@@ -892,7 +944,7 @@ class DialogContentColorTest {
         assertEquals(overrideColor, actualColor)
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_correct_background_color_on_alert_for_buttons() {
         verifyBackgroundColor(expected = { MaterialTheme.colors.background }) {
@@ -901,12 +953,12 @@ class DialogContentColorTest {
                 negativeButton = {},
                 positiveButton = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_correct_background_color_on_alert_for_chips() {
         verifyBackgroundColor(expected = { MaterialTheme.colors.background }) {
@@ -914,15 +966,11 @@ class DialogContentColorTest {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
     fun gives_correct_background_color_on_confirmation() {
         verifyBackgroundColor(expected = { MaterialTheme.colors.background }) {
-            Confirmation(
-                onTimeout = {},
-                content = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Confirmation(onTimeout = {}, content = {}, modifier = Modifier.testTag(TEST_TAG))
         }
     }
 
@@ -932,14 +980,16 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                negativeButton = {},
-                positiveButton = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    negativeButton = {},
+                    positiveButton = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -951,13 +1001,15 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                message = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    message = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -969,12 +1021,14 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Confirmation(
-                onTimeout = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Confirmation(
+                    onTimeout = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -983,13 +1037,18 @@ class DialogContentColorTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     private fun verifyBackgroundColor(
         expected: @Composable () -> Color,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         val testBackground = Color.White
         var expectedBackground = Color.Transparent
 
         rule.setContentWithTheme {
-            Box(modifier = Modifier.fillMaxSize().background(testBackground)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.Companion.navigationBars)
+                        .background(testBackground)
+            ) {
                 expectedBackground = expected()
                 content()
             }
@@ -1029,11 +1088,7 @@ class DialogTextStyleTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.title3
-            Alert(
-                title = { actualTextStyle = LocalTextStyle.current },
-                message = {},
-                content = {},
-            )
+            Alert(title = { actualTextStyle = LocalTextStyle.current }, message = {}, content = {})
         }
 
         assertEquals(expectedTextStyle, actualTextStyle)
@@ -1050,7 +1105,7 @@ class DialogTextStyleTest {
                 title = { Text("Title") },
                 negativeButton = {},
                 positiveButton = {},
-                content = { actualTextStyle = LocalTextStyle.current }
+                content = { actualTextStyle = LocalTextStyle.current },
             )
         }
 
@@ -1081,12 +1136,30 @@ class DialogTextStyleTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.title3
-            Confirmation(
-                onTimeout = {},
-                content = { actualTextStyle = LocalTextStyle.current },
-            )
+            Confirmation(onTimeout = {}, content = { actualTextStyle = LocalTextStyle.current })
         }
 
         assertEquals(expectedTextStyle, actualTextStyle)
+    }
+}
+
+@Composable
+internal fun DialogWithTimeout(
+    showDialog: Boolean,
+    onTimeout: () -> Unit,
+    modifier: Modifier = Modifier,
+    durationMillis: Long,
+) {
+    val currentOnTimeout by rememberUpdatedState(onTimeout)
+
+    LaunchedEffect(showDialog, durationMillis) {
+        if (showDialog) {
+            delay(durationMillis)
+            currentOnTimeout()
+        }
+    }
+
+    Dialog(showDialog = showDialog, onDismissRequest = currentOnTimeout, modifier = modifier) {
+        Box(Modifier.fillMaxSize()) { Text("Text") }
     }
 }

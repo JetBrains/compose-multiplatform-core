@@ -26,7 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 
 internal class LegacyCursorAnchorInfoController(
     private val localToScreen: (Matrix) -> Unit,
-    private val inputMethodManager: InputMethodManager
+    private val inputMethodManager: InputMethodManager,
 ) {
     private val lock = Any()
 
@@ -71,7 +71,7 @@ internal class LegacyCursorAnchorInfoController(
         includeInsertionMarker: Boolean,
         includeCharacterBounds: Boolean,
         includeEditorBounds: Boolean,
-        includeLineBounds: Boolean
+        includeLineBounds: Boolean,
     ) =
         synchronized(lock) {
             this.includeInsertionMarker = includeInsertionMarker
@@ -104,7 +104,7 @@ internal class LegacyCursorAnchorInfoController(
         offsetMapping: OffsetMapping,
         textLayoutResult: TextLayoutResult,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) =
         synchronized(lock) {
             this.textFieldValue = textFieldValue
@@ -135,7 +135,15 @@ internal class LegacyCursorAnchorInfoController(
         }
 
     private fun updateCursorAnchorInfo() {
-        if (!inputMethodManager.isActive()) return
+        if (
+            !inputMethodManager.isActive() ||
+                textFieldValue == null ||
+                offsetMapping == null ||
+                textLayoutResult == null ||
+                innerTextFieldBounds == null ||
+                decorationBoxBounds == null
+        )
+            return
 
         matrix.reset()
         // Updates matrix to transform decoration box coordinates to screen coordinates.
@@ -155,7 +163,7 @@ internal class LegacyCursorAnchorInfoController(
                 includeInsertionMarker,
                 includeCharacterBounds,
                 includeEditorBounds,
-                includeLineBounds
+                includeLineBounds,
             )
         )
 

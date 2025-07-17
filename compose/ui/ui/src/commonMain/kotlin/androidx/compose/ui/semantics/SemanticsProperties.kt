@@ -17,10 +17,11 @@
 package androidx.compose.ui.semantics
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.autofill.FillableData
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
@@ -42,7 +43,7 @@ object SemanticsProperties {
             name = "ContentDescription",
             mergePolicy = { parentValue, childValue ->
                 parentValue?.toMutableList()?.also { it.addAll(childValue) } ?: childValue
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.stateDescription */
@@ -59,7 +60,7 @@ object SemanticsProperties {
                 throw IllegalStateException(
                     "merge function called on unmergeable property PaneTitle."
                 )
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.selectableGroup */
@@ -84,54 +85,74 @@ object SemanticsProperties {
     val Focused = AccessibilityKey<Boolean>("Focused")
 
     /** @see SemanticsPropertyReceiver.isContainer */
-    @Deprecated(
-        "Use `isTraversalGroup` instead.",
-        replaceWith = ReplaceWith("IsTraversalGroup"),
-    )
-    val IsContainer: SemanticsPropertyKey<Boolean>
-        get() = IsTraversalGroup
+    @Deprecated("Use `isTraversalGroup` instead.", replaceWith = ReplaceWith("IsTraversalGroup"))
+    // TODO(mnuzen): `isContainer` should not need to be an accessibility key after a new
+    //  pruning API is added. See b/347038246 for more details.
+    val IsContainer = AccessibilityKey<Boolean>("IsContainer")
 
     /** @see SemanticsPropertyReceiver.isTraversalGroup */
-    val IsTraversalGroup = AccessibilityKey<Boolean>("IsTraversalGroup")
+    val IsTraversalGroup = SemanticsPropertyKey<Boolean>("IsTraversalGroup")
+
+    /** @see SemanticsPropertyReceiver.IsSensitiveData */
+    val IsSensitiveData = SemanticsPropertyKey<Boolean>("IsSensitiveData")
 
     /** @see SemanticsPropertyReceiver.invisibleToUser */
-    @ExperimentalComposeUiApi
+    @Deprecated(
+        "Use `hideFromAccessibility` instead.",
+        replaceWith = ReplaceWith("HideFromAccessibility"),
+    )
+    // Retain for binary compatibility with aosp/3341487 in 1.7
     val InvisibleToUser =
         SemanticsPropertyKey<Unit>(
             name = "InvisibleToUser",
-            mergePolicy = { parentValue, _ -> parentValue }
+            mergePolicy = { parentValue, _ -> parentValue },
+        )
+
+    /** @see SemanticsPropertyReceiver.hideFromAccessibility */
+    val HideFromAccessibility =
+        SemanticsPropertyKey<Unit>(
+            name = "HideFromAccessibility",
+            mergePolicy = { parentValue, _ -> parentValue },
         )
 
     /** @see SemanticsPropertyReceiver.contentType */
-    // TODO(b/333102566): make these semantics properties public when Autofill is ready to go live
-    internal val ContentType =
+    val ContentType =
         SemanticsPropertyKey<ContentType>(
             name = "ContentType",
             mergePolicy = { parentValue, _ ->
                 // Never merge autofill types
                 parentValue
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.contentDataType */
-    // TODO(b/333102566): make these semantics properties public when Autofill is ready to go live
-    internal val ContentDataType =
+    val ContentDataType =
         SemanticsPropertyKey<ContentDataType>(
             name = "ContentDataType",
             mergePolicy = { parentValue, _ ->
                 // Never merge autofill data types
                 parentValue
-            }
+            },
+        )
+
+    /** @see SemanticsPropertyReceiver.fillableData */
+    internal val FillableData =
+        SemanticsPropertyKey<FillableData>(
+            name = "FillableData",
+            mergePolicy = { parentValue, _ ->
+                // Never merge autofill types
+                parentValue
+            },
         )
 
     /** @see SemanticsPropertyReceiver.traversalIndex */
     val TraversalIndex =
-        AccessibilityKey<Float>(
+        SemanticsPropertyKey<Float>(
             name = "TraversalIndex",
             mergePolicy = { parentValue, _ ->
                 // Never merge traversal indices
                 parentValue
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.horizontalScrollAxisRange */
@@ -149,7 +170,7 @@ object SemanticsProperties {
                     "merge function called on unmergeable property IsPopup. " +
                         "A popup should not be a child of a clickable/focusable node."
                 )
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.dialog */
@@ -161,7 +182,7 @@ object SemanticsProperties {
                     "merge function called on unmergeable property IsDialog. " +
                         "A dialog should not be a child of a clickable/focusable node."
                 )
-            }
+            },
         )
 
     /**
@@ -183,7 +204,19 @@ object SemanticsProperties {
             mergePolicy = { parentValue, _ ->
                 // Never merge TestTags, to avoid leaking internal test tags to parents.
                 parentValue
-            }
+            },
+        )
+
+    /**
+     * Marks a link within a text node (a link is represented by a
+     * [androidx.compose.ui.text.LinkAnnotation]) for identification during automated testing. This
+     * property is for internal use only and not intended for general use by developers.
+     */
+    val LinkTestMarker =
+        SemanticsPropertyKey<Unit>(
+            name = "LinkTestMarker",
+            isImportantForAccessibility = false,
+            mergePolicy = { parentValue, _ -> parentValue },
         )
 
     /** @see SemanticsPropertyReceiver.text */
@@ -192,7 +225,7 @@ object SemanticsProperties {
             name = "Text",
             mergePolicy = { parentValue, childValue ->
                 parentValue?.toMutableList()?.also { it.addAll(childValue) } ?: childValue
-            }
+            },
         )
 
     /** @see SemanticsPropertyReceiver.textSubstitution */
@@ -200,6 +233,9 @@ object SemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.isShowingTextSubstitution */
     val IsShowingTextSubstitution = SemanticsPropertyKey<Boolean>("IsShowingTextSubstitution")
+
+    /** @see SemanticsPropertyReceiver.inputText */
+    val InputText = AccessibilityKey<AnnotatedString>(name = "InputText")
 
     /** @see SemanticsPropertyReceiver.editableText */
     val EditableText = AccessibilityKey<AnnotatedString>(name = "EditableText")
@@ -230,6 +266,17 @@ object SemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.maxTextLength */
     val MaxTextLength = SemanticsPropertyKey<Int>("MaxTextLength")
+
+    /** @see SemanticsPropertyReceiver.shape */
+    val Shape =
+        SemanticsPropertyKey<Shape>(
+            name = "Shape",
+            isImportantForAccessibility = false,
+            mergePolicy = { parentValue, _ ->
+                // Never merge shapes
+                parentValue
+            },
+        )
 }
 
 /**
@@ -261,8 +308,10 @@ object SemanticsActions {
     val ScrollToIndex = ActionPropertyKey<(Int) -> Boolean>("ScrollToIndex")
 
     /** @see SemanticsPropertyReceiver.onAutofillText */
-    // TODO(b/333102566): make this action public when Autofill is ready to go live
-    internal val OnAutofillText = ActionPropertyKey<(AnnotatedString) -> Boolean>("OnAutofillText")
+    val OnAutofillText = ActionPropertyKey<(AnnotatedString) -> Boolean>("OnAutofillText")
+
+    /** @see SemanticsPropertyReceiver.onFillData */
+    internal val OnFillData = ActionPropertyKey<(FillableData) -> Boolean>("OnFillData")
 
     /** @see SemanticsPropertyReceiver.setProgress */
     val SetProgress = ActionPropertyKey<(progress: Float) -> Boolean>("SetProgress")
@@ -351,7 +400,7 @@ class SemanticsPropertyKey<T>(
     val name: String,
     internal val mergePolicy: (T?, T) -> T? = { parentValue, childValue ->
         parentValue ?: childValue
-    }
+    },
 ) {
     /**
      * Whether this type of property provides information relevant to accessibility services.
@@ -371,19 +420,24 @@ class SemanticsPropertyKey<T>(
     internal var isImportantForAccessibility = false
         private set
 
-    internal constructor(
-        name: String,
-        isImportantForAccessibility: Boolean,
-    ) : this(name) {
+    /**
+     * If this value is non-null, this semantics property will be exposed as an accessibility extra
+     * via AccessibilityNodeInfo.getExtras with this value used as the key for the extra.
+     */
+    internal var accessibilityExtraKey: String? = null
+
+    internal constructor(name: String, isImportantForAccessibility: Boolean) : this(name) {
         this.isImportantForAccessibility = isImportantForAccessibility
     }
 
     internal constructor(
         name: String,
         isImportantForAccessibility: Boolean,
-        mergePolicy: (T?, T) -> T?
+        mergePolicy: (T?, T) -> T?,
+        accessibilityExtraKey: String? = null,
     ) : this(name, mergePolicy) {
         this.isImportantForAccessibility = isImportantForAccessibility
+        this.accessibilityExtraKey = accessibilityExtraKey
     }
 
     /**
@@ -411,7 +465,7 @@ class SemanticsPropertyKey<T>(
     final operator fun setValue(
         thisRef: SemanticsPropertyReceiver,
         property: KProperty<*>,
-        value: T
+        value: T,
     ) {
         thisRef[this] = value
     }
@@ -428,15 +482,17 @@ private fun <T> throwSemanticsGetNotSupported(): T {
     )
 }
 
-internal fun <T> AccessibilityKey(name: String) =
+@Suppress("NOTHING_TO_INLINE")
+// inline to avoid different static initialization order on different targets.
+// See https://youtrack.jetbrains.com/issue/KT-65040 for more information.
+internal inline fun <T> AccessibilityKey(name: String) =
     SemanticsPropertyKey<T>(name = name, isImportantForAccessibility = true)
 
-internal fun <T> AccessibilityKey(name: String, mergePolicy: (T?, T) -> T?) =
-    SemanticsPropertyKey<T>(
-        name = name,
-        isImportantForAccessibility = true,
-        mergePolicy = mergePolicy
-    )
+@Suppress("NOTHING_TO_INLINE")
+// inline to avoid different static initialization order on different targets
+// See https://youtrack.jetbrains.com/issue/KT-65040 for more information.
+internal inline fun <T> AccessibilityKey(name: String, noinline mergePolicy: (T?, T) -> T?) =
+    SemanticsPropertyKey(name = name, isImportantForAccessibility = true, mergePolicy = mergePolicy)
 
 /**
  * Standard accessibility action.
@@ -479,9 +535,9 @@ private inline fun <T : Function<Boolean>> ActionPropertyKey(name: String) =
         mergePolicy = { parentValue, childValue ->
             AccessibilityAction(
                 parentValue?.label ?: childValue.label,
-                parentValue?.action ?: childValue.action
+                parentValue?.action ?: childValue.action,
             )
-        }
+        },
     )
 
 /**
@@ -527,7 +583,7 @@ class ProgressBarRangeInfo(
     val current: Float,
     val range: ClosedFloatingPointRange<Float>,
     /*@IntRange(from = 0)*/
-    val steps: Int = 0
+    val steps: Int = 0,
 ) {
     init {
         require(!current.isNaN()) { "current must not be NaN" }
@@ -589,7 +645,7 @@ class CollectionItemInfo(
     val rowIndex: Int,
     val rowSpan: Int,
     val columnIndex: Int,
-    val columnSpan: Int
+    val columnSpan: Int,
 )
 
 /**
@@ -604,7 +660,7 @@ class CollectionItemInfo(
 class ScrollAxisRange(
     val value: () -> Float,
     val maxValue: () -> Float,
-    val reverseScrolling: Boolean = false
+    val reverseScrolling: Boolean = false,
 ) {
     override fun toString(): String =
         "ScrollAxisRange(value=${value()}, maxValue=${maxValue()}, " +
@@ -671,6 +727,31 @@ value class Role private constructor(@Suppress("unused") private val value: Int)
          * accessibility: [SemanticsActions.OnClick]
          */
         val DropdownList = Role(6)
+
+        /**
+         * This element is a value picker. It should support the following accessibility actions to
+         * enable selection of the next and previous values:
+         *
+         * [android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_FORWARD]: Select the next
+         * value.
+         *
+         * [android.view.accessibility.AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD]: Select the
+         * previous value.
+         *
+         * These actions allow accessibility services to interact with this node programmatically on
+         * behalf of users, facilitating navigation within sets of selectable values.
+         */
+        val ValuePicker = Role(7)
+
+        /**
+         * This element is a Carousel. This means that even if Pager actions are added, this element
+         * will behave like a regular List collection.
+         *
+         * Associated semantics properties for Pager accessibility actions:
+         * [SemanticsActions.PageUp],[SemanticsActions.PageDown],[SemanticsActions.PageLeft],
+         * [SemanticsActions.PageRight]
+         */
+        val Carousel = Role(8)
     }
 
     override fun toString() =
@@ -682,6 +763,8 @@ value class Role private constructor(@Suppress("unused") private val value: Int)
             Tab -> "Tab"
             Image -> "Image"
             DropdownList -> "DropdownList"
+            ValuePicker -> "Picker"
+            Carousel -> "Carousel"
             else -> "Unknown"
         }
 }
@@ -813,20 +896,35 @@ var SemanticsPropertyReceiver.focused by SemanticsProperties.Focused
  *
  * @see SemanticsProperties.IsContainer
  */
-@Deprecated(
-    "Use `isTraversalGroup` instead.",
-    replaceWith = ReplaceWith("isTraversalGroup"),
-)
-var SemanticsPropertyReceiver.isContainer by SemanticsProperties.IsTraversalGroup
+@Deprecated("Use `isTraversalGroup` instead.", replaceWith = ReplaceWith("isTraversalGroup"))
+@Suppress("DEPRECATION")
+var SemanticsPropertyReceiver.isContainer by SemanticsProperties.IsContainer
 
 /**
  * Whether this semantics node is a traversal group.
  *
- * See https://developer.android.com/jetpack/compose/accessibility#modify-traversal-order
+ * See https://developer.android.com/develop/ui/compose/accessibility/traversal
  *
  * @see SemanticsProperties.IsTraversalGroup
  */
 var SemanticsPropertyReceiver.isTraversalGroup by SemanticsProperties.IsTraversalGroup
+
+/**
+ * Whether this semantics node should only allow interactions from
+ * [android.accessibilityservice.AccessibilityService]s with the
+ * [android.accessibilityservice.AccessibilityServiceInfo.isAccessibilityTool] property set to true.
+ *
+ * This property allows the node to remain visible and interactive to Accessibility Services
+ * declared as accessibility tools that assist users with disabilities, while simultaneously hiding
+ * this node and its generated AccessibilityEvents from other Accessibility Services that are not
+ * declared as accessibility tools.
+ *
+ * If looking for a way to hide the node from all Accessibility Services then consider
+ * [SemanticsProperties.HideFromAccessibility] instead.
+ *
+ * @see SemanticsProperties.IsSensitiveData
+ */
+var SemanticsPropertyReceiver.isSensitiveData by SemanticsProperties.IsSensitiveData
 
 /**
  * Whether this node is specially known to be invisible to the user.
@@ -840,9 +938,30 @@ var SemanticsPropertyReceiver.isTraversalGroup by SemanticsProperties.IsTraversa
  * redundant with semantics of their parent, consider [SemanticsModifier.clearAndSetSemantics]
  * instead.
  */
-@ExperimentalComposeUiApi
+@Deprecated(
+    "Use `hideFromAccessibility()` instead.",
+    replaceWith = ReplaceWith("hideFromAccessibility()"),
+)
+@Suppress("DEPRECATION")
+// Retain for binary compatibility with aosp/3341487 in 1.7
 fun SemanticsPropertyReceiver.invisibleToUser() {
     this[SemanticsProperties.InvisibleToUser] = Unit
+}
+
+/**
+ * If present, this node is considered hidden from accessibility services.
+ *
+ * For example, if the node is currently occluded by a dark semitransparent pane above it, then for
+ * all practical purposes the node should not be announced to the user. Since the system cannot
+ * automatically determine that, this property can be set to make the screen reader linear
+ * navigation skip over this type of node.
+ *
+ * If looking for a way to clear semantics of small items from the UI tree completely because they
+ * are redundant with semantics of their parent, consider [SemanticsModifier.clearAndSetSemantics]
+ * instead.
+ */
+fun SemanticsPropertyReceiver.hideFromAccessibility() {
+    this[SemanticsProperties.HideFromAccessibility] = Unit
 }
 
 /**
@@ -853,8 +972,7 @@ fun SemanticsPropertyReceiver.invisibleToUser() {
  *
  * @see SemanticsProperties.ContentType
  */
-// TODO(b/333102566): make these semantics properties public when Autofill is ready to go live
-internal var SemanticsPropertyReceiver.contentType by SemanticsProperties.ContentType
+var SemanticsPropertyReceiver.contentType by SemanticsProperties.ContentType
 
 /**
  * Content data type information.
@@ -864,8 +982,17 @@ internal var SemanticsPropertyReceiver.contentType by SemanticsProperties.Conten
  *
  * @see SemanticsProperties.ContentType
  */
-// TODO(b/333102566): make these semantics properties public when Autofill is ready to go live
-internal var SemanticsPropertyReceiver.contentDataType by SemanticsProperties.ContentDataType
+var SemanticsPropertyReceiver.contentDataType by SemanticsProperties.ContentDataType
+
+/**
+ * Fillable data information.
+ *
+ * This API can be used to set the actual data used to fill supported components. This may be
+ * invoked via [SemanticsActions.OnFillData].
+ *
+ * @see SemanticsProperties.ContentType
+ */
+internal var SemanticsPropertyReceiver.fillableData by SemanticsProperties.FillableData
 
 /**
  * A value to manually control screenreader traversal order.
@@ -954,9 +1081,19 @@ var SemanticsPropertyReceiver.isShowingTextSubstitution by
     SemanticsProperties.IsShowingTextSubstitution
 
 /**
- * Input text of the text field with visual transformation applied to it. It must be a real text
- * entered by the user with visual transformation applied on top of the input text instead of a
- * developer-set content description.
+ * The raw value of the text field after input transformations have been applied.
+ *
+ * This is an actual user input of the fields, e.g. a real password, after any input transformations
+ * that might change or reject that input have been applied. This value is not affected by visual
+ * transformations.
+ */
+var SemanticsPropertyReceiver.inputText by SemanticsProperties.InputText
+
+/**
+ * A visual value of the text field after output transformations that change the visual
+ * representation of the field's state have been applied.
+ *
+ * This is the value displayed to the user, for example "*******" in a password field.
  */
 var SemanticsPropertyReceiver.editableText by SemanticsProperties.EditableText
 
@@ -1036,6 +1173,9 @@ fun SemanticsPropertyReceiver.indexForKey(mapping: (Any) -> Int) {
  */
 var SemanticsPropertyReceiver.maxTextLength by SemanticsProperties.MaxTextLength
 
+/** The shape of the UI element. */
+var SemanticsPropertyReceiver.shape by SemanticsProperties.Shape
+
 /**
  * The node is marked as a collection of horizontally or vertically stacked selectable elements.
  *
@@ -1062,7 +1202,7 @@ var SemanticsPropertyReceiver.customActions by SemanticsActions.CustomActions
  */
 fun SemanticsPropertyReceiver.getTextLayoutResult(
     label: String? = null,
-    action: ((MutableList<TextLayoutResult>) -> Boolean)?
+    action: ((MutableList<TextLayoutResult>) -> Boolean)?,
 ) {
     this[SemanticsActions.GetTextLayoutResult] = AccessibilityAction(label, action)
 }
@@ -1100,7 +1240,7 @@ fun SemanticsPropertyReceiver.onLongClick(label: String? = null, action: (() -> 
  */
 fun SemanticsPropertyReceiver.scrollBy(
     label: String? = null,
-    action: ((x: Float, y: Float) -> Boolean)?
+    action: ((x: Float, y: Float) -> Boolean)?,
 ) {
     this[SemanticsActions.ScrollBy] = AccessibilityAction(label, action)
 }
@@ -1132,17 +1272,29 @@ fun SemanticsPropertyReceiver.scrollToIndex(label: String? = null, action: (Int)
 /**
  * Action to autofill a TextField.
  *
- * Expected to be used in conjunction with contentType and contentDataType properties.
+ * Expected to be used in conjunction with [contentType] and [contentDataType] properties.
  *
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.OnAutofillText] is called.
  */
-// TODO(b/333102566): make this action public when Autofill is ready to go live
-internal fun SemanticsPropertyReceiver.onAutofillText(
+fun SemanticsPropertyReceiver.onAutofillText(
     label: String? = null,
-    action: ((AnnotatedString) -> Boolean)?
+    action: ((AnnotatedString) -> Boolean)?,
 ) {
     this[SemanticsActions.OnAutofillText] = AccessibilityAction(label, action)
+}
+
+/**
+ * Action to autofill a component.
+ *
+ * @param label Optional label for this action.
+ * @param action Action to be performed when [SemanticsActions.OnFillData] is called.
+ */
+internal fun SemanticsPropertyReceiver.onFillData(
+    label: String? = null,
+    action: ((FillableData) -> Boolean)?,
+) {
+    this[SemanticsActions.OnFillData] = AccessibilityAction(label, action)
 }
 
 /**
@@ -1167,7 +1319,7 @@ fun SemanticsPropertyReceiver.setProgress(label: String? = null, action: ((Float
  */
 fun SemanticsPropertyReceiver.setText(
     label: String? = null,
-    action: ((AnnotatedString) -> Boolean)?
+    action: ((AnnotatedString) -> Boolean)?,
 ) {
     this[SemanticsActions.SetText] = AccessibilityAction(label, action)
 }
@@ -1185,7 +1337,7 @@ fun SemanticsPropertyReceiver.setText(
  */
 fun SemanticsPropertyReceiver.setTextSubstitution(
     label: String? = null,
-    action: ((AnnotatedString) -> Boolean)?
+    action: ((AnnotatedString) -> Boolean)?,
 ) {
     this[SemanticsActions.SetTextSubstitution] = AccessibilityAction(label, action)
 }
@@ -1202,7 +1354,7 @@ fun SemanticsPropertyReceiver.setTextSubstitution(
  */
 fun SemanticsPropertyReceiver.showTextSubstitution(
     label: String? = null,
-    action: ((Boolean) -> Boolean)?
+    action: ((Boolean) -> Boolean)?,
 ) {
     this[SemanticsActions.ShowTextSubstitution] = AccessibilityAction(label, action)
 }
@@ -1217,7 +1369,7 @@ fun SemanticsPropertyReceiver.showTextSubstitution(
  */
 fun SemanticsPropertyReceiver.clearTextSubstitution(
     label: String? = null,
-    action: (() -> Boolean)?
+    action: (() -> Boolean)?,
 ) {
     this[SemanticsActions.ClearTextSubstitution] = AccessibilityAction(label, action)
 }
@@ -1233,7 +1385,7 @@ fun SemanticsPropertyReceiver.clearTextSubstitution(
  */
 fun SemanticsPropertyReceiver.insertTextAtCursor(
     label: String? = null,
-    action: ((AnnotatedString) -> Boolean)?
+    action: ((AnnotatedString) -> Boolean)?,
 ) {
     this[SemanticsActions.InsertTextAtCursor] = AccessibilityAction(label, action)
 }
@@ -1253,7 +1405,7 @@ fun SemanticsPropertyReceiver.insertTextAtCursor(
 fun SemanticsPropertyReceiver.onImeAction(
     imeActionType: ImeAction,
     label: String? = null,
-    action: (() -> Boolean)?
+    action: (() -> Boolean)?,
 ) {
     this[SemanticsProperties.ImeAction] = imeActionType
     this[SemanticsActions.OnImeAction] = AccessibilityAction(label, action)
@@ -1287,7 +1439,7 @@ fun SemanticsPropertyReceiver.performImeAction(label: String? = null, action: ((
  */
 fun SemanticsPropertyReceiver.setSelection(
     label: String? = null,
-    action: ((startIndex: Int, endIndex: Int, relativeToOriginalText: Boolean) -> Boolean)?
+    action: ((startIndex: Int, endIndex: Int, relativeToOriginalText: Boolean) -> Boolean)?,
 ) {
     this[SemanticsActions.SetSelection] = AccessibilityAction(label, action)
 }
@@ -1369,8 +1521,11 @@ fun SemanticsPropertyReceiver.requestFocus(label: String? = null, action: (() ->
 /**
  * Action to page up.
  *
+ * Using [Role.Carousel] will prevent this action from being sent to accessibility services.
+ *
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.PageUp] is called.
+ * @see [Role.Carousel] for more information.
  */
 fun SemanticsPropertyReceiver.pageUp(label: String? = null, action: (() -> Boolean)?) {
     this[SemanticsActions.PageUp] = AccessibilityAction(label, action)
@@ -1379,8 +1534,11 @@ fun SemanticsPropertyReceiver.pageUp(label: String? = null, action: (() -> Boole
 /**
  * Action to page down.
  *
+ * Using [Role.Carousel] will prevent this action from being sent to accessibility services.
+ *
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.PageDown] is called.
+ * @see [Role.Carousel] for more information.
  */
 fun SemanticsPropertyReceiver.pageDown(label: String? = null, action: (() -> Boolean)?) {
     this[SemanticsActions.PageDown] = AccessibilityAction(label, action)
@@ -1389,8 +1547,11 @@ fun SemanticsPropertyReceiver.pageDown(label: String? = null, action: (() -> Boo
 /**
  * Action to page left.
  *
+ * Using [Role.Carousel] will prevent this action from being sent to accessibility services.
+ *
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.PageLeft] is called.
+ * @see [Role.Carousel] for more information.
  */
 fun SemanticsPropertyReceiver.pageLeft(label: String? = null, action: (() -> Boolean)?) {
     this[SemanticsActions.PageLeft] = AccessibilityAction(label, action)
@@ -1399,8 +1560,11 @@ fun SemanticsPropertyReceiver.pageLeft(label: String? = null, action: (() -> Boo
 /**
  * Action to page right.
  *
+ * Using [Role.Carousel] will prevent this action from being sent to accessibility services.
+ *
  * @param label Optional label for this action.
  * @param action Action to be performed when the [SemanticsActions.PageRight] is called.
+ * @see [Role.Carousel] for more information.
  */
 fun SemanticsPropertyReceiver.pageRight(label: String? = null, action: (() -> Boolean)?) {
     this[SemanticsActions.PageRight] = AccessibilityAction(label, action)
@@ -1415,7 +1579,7 @@ fun SemanticsPropertyReceiver.pageRight(label: String? = null, action: (() -> Bo
  */
 fun SemanticsPropertyReceiver.getScrollViewportLength(
     label: String? = null,
-    action: (() -> Float?)
+    action: (() -> Float?),
 ) {
     this[SemanticsActions.GetScrollViewportLength] =
         AccessibilityAction(label) {

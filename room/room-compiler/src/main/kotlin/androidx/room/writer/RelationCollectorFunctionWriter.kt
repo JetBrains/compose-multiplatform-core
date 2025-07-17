@@ -18,11 +18,11 @@ package androidx.room.writer
 
 import androidx.room.compiler.codegen.CodeLanguage
 import androidx.room.compiler.codegen.XCodeBlock
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
+import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room.compiler.codegen.XFunSpec
 import androidx.room.compiler.codegen.XMemberName.Companion.packageMember
+import androidx.room.compiler.codegen.XName
 import androidx.room.compiler.codegen.XTypeName
-import androidx.room.ext.AndroidTypeNames
 import androidx.room.ext.CollectionTypeNames
 import androidx.room.ext.CollectionsSizeExprCode
 import androidx.room.ext.CommonTypeNames
@@ -30,29 +30,19 @@ import androidx.room.ext.InvokeWithLambdaParameter
 import androidx.room.ext.KotlinTypeNames
 import androidx.room.ext.LambdaSpec
 import androidx.room.ext.MapKeySetExprCode
-import androidx.room.ext.RoomMemberNames
 import androidx.room.ext.RoomTypeNames
 import androidx.room.ext.RoomTypeNames.RELATION_UTIL
 import androidx.room.ext.SQLiteDriverTypeNames
 import androidx.room.ext.stripNonJava
 import androidx.room.solver.CodeGenScope
-import androidx.room.solver.query.result.PojoRowAdapter
 import androidx.room.vo.RelationCollector
 
 /** Writes the function that fetches the relations of a POJO and assigns them into the given map. */
-class RelationCollectorFunctionWriter(
-    private val collector: RelationCollector,
-    private val useDriverApi: Boolean
-) :
+class RelationCollectorFunctionWriter(private val collector: RelationCollector) :
     TypeWriter.SharedFunctionSpec(
         baseName =
-            if (useDriverApi) {
-                "fetchRelationship${collector.relation.entity.tableName.stripNonJava()}" +
-                    "As${collector.relation.pojoTypeName.toString(CodeLanguage.JAVA).stripNonJava()}"
-            } else {
-                "fetchCompatRelationship${collector.relation.entity.tableName.stripNonJava()}" +
-                    "As${collector.relation.pojoTypeName.toString(CodeLanguage.JAVA).stripNonJava()}"
-            },
+            "fetchRelationship${collector.relation.entity.tableName.stripNonJava()}" +
+                "As${collector.relation.dataClassTypeName.toString(CodeLanguage.JAVA).stripNonJava()}"
     ) {
     companion object {
         const val PARAM_MAP_VARIABLE = "_map"
@@ -66,17 +56,16 @@ class RelationCollectorFunctionWriter(
 
     override fun getUniqueKey(): String {
         val relation = collector.relation
-        return "RelationCollectorMethodWriter" +
+        return "RelationCollectorFunctionWriter" +
             "-${collector.mapTypeName}" +
             "-${relation.entity.typeName.toString(CodeLanguage.JAVA)}" +
-            "-${relation.entityField.columnName}" +
-            "-${relation.pojoTypeName}" +
-            "-${relation.createLoadAllSql()}" +
-            "-$useDriverApi"
+            "-${relation.entityProperty.columnName}" +
+            "-${relation.dataClassTypeName}" +
+            "-${relation.createLoadAllSql()}"
     }
 
-    override fun prepare(methodName: String, writer: TypeWriter, builder: XFunSpec.Builder) {
-        val scope = CodeGenScope(writer = writer, useDriverApi = useDriverApi)
+    override fun prepare(functionName: String, writer: TypeWriter, builder: XFunSpec.Builder) {
+        val scope = CodeGenScope(writer = writer)
         scope.builder.apply {
             // Check the input map key set for emptiness, returning early as no fetching is needed.
             addIsInputEmptyCheck()
@@ -86,18 +75,14 @@ class RelationCollectorFunctionWriter(
             beginControlFlow(
                     "if (%L > %L)",
                     if (usingLongSparseArray) {
-                        XCodeBlock.of(language, "%L.size()", PARAM_MAP_VARIABLE)
+                        XCodeBlock.of("%L.size()", PARAM_MAP_VARIABLE)
                     } else {
-                        CollectionsSizeExprCode(language, PARAM_MAP_VARIABLE)
+                        CollectionsSizeExprCode(PARAM_MAP_VARIABLE)
                     },
-                    if (useDriverApi) {
-                        "999"
-                    } else {
-                        XCodeBlock.of(language, "%T.MAX_BIND_PARAMETER_CNT", RoomTypeNames.ROOM_DB)
-                    }
+                    "999",
                 )
                 .apply {
-                    addRecursiveFetchCall(scope, methodName)
+                    addRecursiveFetchCall(scope, functionName)
                     addStatement("return")
                 }
                 .endControlFlow()
@@ -105,10 +90,8 @@ class RelationCollectorFunctionWriter(
             createStmtAndReturn(scope)
         }
         builder.apply {
-            if (useDriverApi) {
-                addParameter(SQLiteDriverTypeNames.CONNECTION, PARAM_CONNECTION_VARIABLE)
-            }
-            addParameter(collector.mapTypeName, PARAM_MAP_VARIABLE)
+            addParameter(PARAM_CONNECTION_VARIABLE, SQLiteDriverTypeNames.CONNECTION)
+            addParameter(PARAM_MAP_VARIABLE, collector.mapTypeName)
             addCode(scope.generate())
         }
     }
@@ -116,49 +99,22 @@ class RelationCollectorFunctionWriter(
     private fun XCodeBlock.Builder.createStmtAndReturn(scope: CodeGenScope) {
         // Create SQL query, acquire statement and bind parameters.
         val stmtVar = scope.getTmpVar("_stmt")
-        val cursorVar = "_cursor"
         val sqlQueryVar = scope.getTmpVar("_sql")
+        val connectionVar = scope.getTmpVar(PARAM_CONNECTION_VARIABLE)
+        val listSizeVars = collector.queryWriter.prepareQuery(sqlQueryVar, scope)
 
-        if (useDriverApi) {
-            val connectionVar = scope.getTmpVar(PARAM_CONNECTION_VARIABLE)
-            val listSizeVars = collector.queryWriter.prepareQuery(sqlQueryVar, scope)
-            addLocalVal(
-                stmtVar,
-                SQLiteDriverTypeNames.STATEMENT,
-                "%L.prepare(%L)",
-                connectionVar,
-                sqlQueryVar
-            )
-            collector.queryWriter.bindArgs(stmtVar, listSizeVars, scope)
-        } else {
-            collector.queryWriter.prepareReadAndBind(sqlQueryVar, stmtVar, scope)
-            // Perform query and get a Cursor
-            val shouldCopyCursor =
-                collector.rowAdapter.let {
-                    it is PojoRowAdapter && it.relationCollectors.isNotEmpty()
-                }
-            addLocalVariable(
-                name = cursorVar,
-                typeName = AndroidTypeNames.CURSOR,
-                assignExpr =
-                    XCodeBlock.of(
-                        language,
-                        "%M(%N, %L, %L, %L)",
-                        RoomMemberNames.DB_UTIL_QUERY,
-                        DaoWriter.DB_PROPERTY_NAME,
-                        stmtVar,
-                        if (shouldCopyCursor) "true" else "false",
-                        "null"
-                    )
-            )
-        }
-        addRelationCollectorCode(scope, if (useDriverApi) stmtVar else cursorVar)
+        addLocalVal(
+            stmtVar,
+            SQLiteDriverTypeNames.STATEMENT,
+            "%L.prepare(%L)",
+            connectionVar,
+            sqlQueryVar,
+        )
+        collector.queryWriter.bindArgs(stmtVar, listSizeVars, scope)
+        addRelationCollectorCode(scope, stmtVar)
     }
 
-    private fun XCodeBlock.Builder.addRelationCollectorCode(
-        scope: CodeGenScope,
-        cursorVar: String
-    ) {
+    private fun XCodeBlock.Builder.addRelationCollectorCode(scope: CodeGenScope, stmtVar: String) {
         val relation = collector.relation
         beginControlFlow("try").apply {
             // Gets index of the column to be used as key
@@ -169,25 +125,21 @@ class RelationCollectorFunctionWriter(
                 // clause, this column is the rightmost column in the generated SELECT
                 // clause.
                 val junctionParentColumnIndex = relation.projection.size
-                addStatement("// _junction.%L", relation.junction.parentField.columnName)
+                addStatement("// _junction.%L", relation.junction.parentProperty.columnName)
                 addLocalVal(
                     itemKeyIndexVar,
                     XTypeName.PRIMITIVE_INT,
                     "%L",
-                    junctionParentColumnIndex
+                    junctionParentColumnIndex,
                 )
             } else {
                 addLocalVal(
                     name = itemKeyIndexVar,
                     typeName = XTypeName.PRIMITIVE_INT,
                     assignExprFormat = "%M(%L, %S)",
-                    if (useDriverApi) {
-                        RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndex")
-                    } else {
-                        RoomMemberNames.CURSOR_UTIL_GET_COLUMN_INDEX
-                    },
-                    cursorVar,
-                    relation.entityField.columnName
+                    RoomTypeNames.STATEMENT_UTIL.packageMember("getColumnIndex"),
+                    stmtVar,
+                    relation.entityProperty.columnName,
                 )
             }
 
@@ -197,16 +149,16 @@ class RelationCollectorFunctionWriter(
             endControlFlow()
 
             // Prepare item column indices
-            collector.rowAdapter.onCursorReady(cursorVarName = cursorVar, scope = scope)
+            collector.rowAdapter.onStatementReady(stmtVarName = stmtVar, scope = scope)
             val tmpVarName = scope.getTmpVar("_item")
-            val stepName = if (scope.useDriverApi) "step" else "moveToNext"
-            beginControlFlow("while (%L.$stepName())", cursorVar).apply {
-                // Read key from the cursor, convert row to item and place it on map
+            val stepName = "step"
+            beginControlFlow("while (%L.$stepName())", stmtVar).apply {
+                // Read key from the statement, convert row to item and place it on map
                 collector.readKey(
-                    cursorVarName = cursorVar,
+                    stmtVarName = stmtVar,
                     indexVar = itemKeyIndexVar,
                     keyReader = collector.entityKeyColumnReader,
-                    scope = scope
+                    scope = scope,
                 ) { keyVar ->
                     if (collector.relationTypeIsCollection) {
                         val relationVar = scope.getTmpVar("_tmpRelation")
@@ -215,17 +167,17 @@ class RelationCollectorFunctionWriter(
                             collector.relationTypeName.copy(nullable = true),
                             "%L.get(%L)",
                             PARAM_MAP_VARIABLE,
-                            keyVar
+                            keyVar,
                         )
                         beginControlFlow("if (%L != null)", relationVar)
-                        addLocalVariable(tmpVarName, relation.pojoTypeName)
-                        collector.rowAdapter.convert(tmpVarName, cursorVar, scope)
+                        addLocalVariable(tmpVarName, relation.dataClassTypeName)
+                        collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
                         addStatement("%L.add(%L)", relationVar, tmpVarName)
                         endControlFlow()
                     } else {
                         beginControlFlow("if (%N.containsKey(%L))", PARAM_MAP_VARIABLE, keyVar)
-                        addLocalVariable(tmpVarName, relation.pojoTypeName)
-                        collector.rowAdapter.convert(tmpVarName, cursorVar, scope)
+                        addLocalVariable(tmpVarName, relation.dataClassTypeName)
+                        collector.rowAdapter.convert(tmpVarName, stmtVar, scope)
                         addStatement("%N.put(%L, %L)", PARAM_MAP_VARIABLE, keyVar, tmpVarName)
                         endControlFlow()
                     }
@@ -233,7 +185,7 @@ class RelationCollectorFunctionWriter(
             }
             endControlFlow()
         }
-        nextControlFlow("finally").apply { addStatement("%L.close()", cursorVar) }
+        nextControlFlow("finally").apply { addStatement("%L.close()", stmtVar) }
         endControlFlow()
     }
 
@@ -245,7 +197,7 @@ class RelationCollectorFunctionWriter(
                 addLocalVariable(
                     name = KEY_SET_VARIABLE,
                     typeName = keySetType,
-                    assignExpr = MapKeySetExprCode(language, PARAM_MAP_VARIABLE)
+                    assignExpr = MapKeySetExprCode(PARAM_MAP_VARIABLE),
                 )
                 beginControlFlow("if (%L.isEmpty())", KEY_SET_VARIABLE)
             }
@@ -255,7 +207,7 @@ class RelationCollectorFunctionWriter(
 
     private fun XCodeBlock.Builder.addRecursiveFetchCall(
         scope: CodeGenScope,
-        methodName: String,
+        functionName: String,
     ) {
         val utilFunction =
             RELATION_UTIL.let {
@@ -263,10 +215,9 @@ class RelationCollectorFunctionWriter(
                     usingLongSparseArray -> it.packageMember("recursiveFetchLongSparseArray")
                     usingArrayMap -> it.packageMember("recursiveFetchArrayMap")
                     else ->
-                        when (language) {
-                            CodeLanguage.JAVA -> it.packageMember("recursiveFetchHashMap")
-                            CodeLanguage.KOTLIN -> it.packageMember("recursiveFetchMap")
-                        }
+                        it.packageMember(
+                            XName.of(java = "recursiveFetchHashMap", kotlin = "recursiveFetchMap")
+                        )
                 }
             }
         val paramName = scope.getTmpVar("_tmpMap")
@@ -282,27 +233,22 @@ class RelationCollectorFunctionWriter(
                             parameterTypeName = collector.mapTypeName,
                             parameterName = paramName,
                             returnTypeName = KotlinTypeNames.UNIT,
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             val recursiveCall =
-                                if (useDriverApi) {
-                                    XCodeBlock.of(
-                                        language,
-                                        "%L(%L, %L)",
-                                        methodName,
-                                        PARAM_CONNECTION_VARIABLE,
-                                        paramName
-                                    )
-                                } else {
-                                    XCodeBlock.of(language, "%L(%L)", methodName, paramName)
-                                }
+                                XCodeBlock.of(
+                                    "%L(%L, %L)",
+                                    functionName,
+                                    PARAM_CONNECTION_VARIABLE,
+                                    paramName,
+                                )
                             addStatement("%L", recursiveCall)
-                            if (language == CodeLanguage.JAVA) {
+                            applyTo(CodeLanguage.JAVA) {
                                 addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
                             }
                         }
-                    }
+                    },
             )
         add("%L", recursiveFetchBlock)
     }

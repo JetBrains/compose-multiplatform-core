@@ -17,6 +17,7 @@
 package androidx.window
 
 import androidx.annotation.IntRange
+import androidx.annotation.RestrictTo
 import androidx.window.core.ExtensionsUtil
 
 /**
@@ -31,14 +32,17 @@ import androidx.window.core.ExtensionsUtil
  *
  * @sample androidx.window.samples.checkWindowSdkExtensionsVersion
  */
-abstract class WindowSdkExtensions internal constructor() {
+public abstract class WindowSdkExtensions
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor() {
 
     /**
      * Reports the device's extension version
      *
      * When Window SDK Extensions is not present on the device, the extension version will be 0.
      */
-    @get:IntRange(from = 0) open val extensionVersion: Int = ExtensionsUtil.safeVendorApiLevel
+    @get:IntRange(from = 0)
+    public open val extensionVersion: Int = ExtensionsUtil.safeVendorApiLevel
 
     /**
      * Checks the [extensionVersion] and throws [UnsupportedOperationException] if the minimum
@@ -56,28 +60,50 @@ abstract class WindowSdkExtensions internal constructor() {
         }
     }
 
-    companion object {
+    /**
+     * Checks the [extensionVersion] and throws [UnsupportedOperationException] if the version is
+     * not in the [range].
+     *
+     * This is useful to provide compatibility for APIs updated in 2+ but deprecated in latest
+     * version.
+     *
+     * @param range the required extension range of the targeting API.
+     * @throws UnsupportedOperationException if the required [range] is not satisfied.
+     */
+    internal fun requireExtensionVersion(range: kotlin.ranges.IntRange) {
+        if (extensionVersion !in range) {
+            throw UnsupportedOperationException(
+                "This API requires extension version " +
+                    "$range, but the device is on $extensionVersion"
+            )
+        }
+    }
+
+    public companion object {
         /** Returns a [WindowSdkExtensions] instance. */
         @JvmStatic
-        fun getInstance(): WindowSdkExtensions {
+        public fun getInstance(): WindowSdkExtensions {
             return decorator.decorate(object : WindowSdkExtensions() {})
         }
 
         private var decorator: WindowSdkExtensionsDecorator = EmptyDecoratorWindowSdk
 
-        internal fun overrideDecorator(overridingDecorator: WindowSdkExtensionsDecorator) {
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun overrideDecorator(overridingDecorator: WindowSdkExtensionsDecorator) {
             decorator = overridingDecorator
         }
 
-        internal fun reset() {
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public fun reset() {
             decorator = EmptyDecoratorWindowSdk
         }
     }
 }
 
-internal interface WindowSdkExtensionsDecorator {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface WindowSdkExtensionsDecorator {
     /** Returns a [WindowSdkExtensions] instance. */
-    fun decorate(windowSdkExtensions: WindowSdkExtensions): WindowSdkExtensions
+    public fun decorate(windowSdkExtensions: WindowSdkExtensions): WindowSdkExtensions
 }
 
 private object EmptyDecoratorWindowSdk : WindowSdkExtensionsDecorator {

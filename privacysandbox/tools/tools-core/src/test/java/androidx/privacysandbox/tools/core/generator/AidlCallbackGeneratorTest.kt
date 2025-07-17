@@ -48,13 +48,13 @@ class AidlCallbackGeneratorTest {
                                             listOf(
                                                 Parameter(
                                                     "callback",
-                                                    Type("com.mysdk", "MyCallback")
+                                                    Type("com.mysdk", "MyCallback"),
                                                 )
                                             ),
                                         returnType = Types.unit,
                                         isSuspend = false,
-                                    ),
-                                )
+                                    )
+                                ),
                         )
                     ),
                 callbacks =
@@ -65,16 +65,19 @@ class AidlCallbackGeneratorTest {
                                 listOf(
                                     Method(
                                         name = "onComplete",
-                                        parameters =
-                                            listOf(
-                                                Parameter("result", Types.boolean),
-                                            ),
+                                        parameters = listOf(Parameter("result", Types.boolean)),
                                         returnType = Types.unit,
                                         isSuspend = false,
-                                    )
-                                )
+                                    ),
+                                    Method(
+                                        name = "getName",
+                                        parameters = listOf(),
+                                        returnType = Types.string,
+                                        isSuspend = true,
+                                    ),
+                                ),
                         )
-                    )
+                    ),
             )
 
         val (aidlGeneratedSources, javaGeneratedSources) = AidlTestHelper.runGenerator(api)
@@ -82,6 +85,10 @@ class AidlCallbackGeneratorTest {
             .containsExactly(
                 "com.mysdk" to "IMySdk",
                 "com.mysdk" to "IMyCallback",
+                "com.mysdk" to "IStringTransactionCallback",
+                "com.mysdk" to "ICancellationSignal",
+                "com.mysdk" to "ParcelableStackFrame",
+                "com.mysdk" to "PrivacySandboxThrowableParcel",
             )
 
         val outputTestDataDir = File("src/test/test-data/aidlcallbackgeneratortest/output")

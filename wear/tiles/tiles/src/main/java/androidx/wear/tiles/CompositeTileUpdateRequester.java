@@ -16,7 +16,7 @@
 
 package androidx.wear.tiles;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -37,6 +37,13 @@ class CompositeTileUpdateRequester implements TileUpdateRequester {
     public void requestUpdate(@NonNull Class<? extends TileService> tileService) {
         for (TileUpdateRequester requester : mUpdateRequesters) {
             requester.requestUpdate(tileService);
+        }
+    }
+
+    @Override
+    public void requestUpdate(@NonNull Class<? extends TileService> tileService, int tileId) {
+        for (TileUpdateRequester requester : mUpdateRequesters) {
+            requester.requestUpdate(tileService, tileId);
         }
     }
 }

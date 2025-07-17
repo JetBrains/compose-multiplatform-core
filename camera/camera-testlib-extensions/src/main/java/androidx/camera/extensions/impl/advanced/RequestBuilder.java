@@ -19,7 +19,7 @@ package androidx.camera.extensions.impl.advanced;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,8 +52,7 @@ public class RequestBuilder {
     /**
      * Adds the target outputconfig ids.
      */
-    @NonNull
-    public RequestBuilder addTargetOutputConfigIds(int targetOutputConfigId) {
+    public @NonNull RequestBuilder addTargetOutputConfigIds(int targetOutputConfigId) {
         mTargetOutputConfigIds.add(targetOutputConfigId);
         return this;
     }
@@ -61,8 +60,7 @@ public class RequestBuilder {
     /**
      * Sets the parameters
      */
-    @NonNull
-    public RequestBuilder setParameters(@NonNull CaptureRequest.Key<?> key,
+    public @NonNull RequestBuilder setParameters(CaptureRequest.@NonNull Key<?> key,
             @NonNull Object value) {
         mParameters.put(key, value);
         return this;
@@ -71,8 +69,7 @@ public class RequestBuilder {
     /**
      * Sets the template id.
      */
-    @NonNull
-    public RequestBuilder setTemplateId(int templateId) {
+    public @NonNull RequestBuilder setTemplateId(int templateId) {
         mTemplateId = templateId;
         return this;
     }
@@ -80,8 +77,7 @@ public class RequestBuilder {
     /**
      * construct {@link RequestProcessorImpl.Request} instance.
      */
-    @NonNull
-    public RequestProcessorImpl.Request build() {
+    public RequestProcessorImpl.@NonNull Request build() {
         return new RequestProcessorRequest(
                 mTargetOutputConfigIds, mParameters, mTemplateId);
     }
@@ -100,20 +96,17 @@ public class RequestBuilder {
         }
 
         @Override
-        @NonNull
-        public List<Integer> getTargetOutputConfigIds() {
+        public @NonNull List<Integer> getTargetOutputConfigIds() {
             return mTargetOutputConfigIds;
         }
 
         @Override
-        @NonNull
-        public Map<CaptureRequest.Key<?>, Object> getParameters() {
+        public @NonNull Map<CaptureRequest.Key<?>, Object> getParameters() {
             return mParameters;
         }
 
         @Override
-        @NonNull
-        public Integer getTemplateId() {
+        public @NonNull Integer getTemplateId() {
             return mTemplateId;
         }
     }

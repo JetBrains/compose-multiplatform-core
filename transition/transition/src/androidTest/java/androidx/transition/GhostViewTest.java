@@ -315,7 +315,10 @@ public class GhostViewTest extends BaseTest {
     }
 
     private void assertColor(final int color, final Bitmap bitmap) {
-        assertEquals(color, bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2));
+        int actualColor = bitmap.getPixel(bitmap.getWidth() / 2, bitmap.getHeight() / 2);
+        assertEquals(String.format("Expected color 0x%08X, but got 0x%08X", color, actualColor),
+                color, actualColor);
+
     }
 
     private Bitmap drawBitmap(final ViewGroup view) throws Throwable {

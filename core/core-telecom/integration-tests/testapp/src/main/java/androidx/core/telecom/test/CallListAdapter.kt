@@ -16,29 +16,35 @@
 
 package androidx.core.telecom.test
 
+import android.content.Context
 import android.media.AudioManager.AudioRecordingCallback
 import android.media.AudioRecord
+import android.os.Build
 import android.telecom.CallEndpoint
 import android.telecom.DisconnectCause
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.core.telecom.CallControlResult
+import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@RequiresApi(34)
+@ExperimentalAppActions
+@RequiresApi(Build.VERSION_CODES.S)
 class CallListAdapter(
     private var mList: ArrayList<CallRow>?,
-    private var mAudioRecord: AudioRecord? = null
+    private var mAudioRecord: AudioRecord? = null,
+    private val mContext: Context,
 ) : RecyclerView.Adapter<CallListAdapter.ViewHolder>() {
     var mCallIdToViewHolder: MutableMap<String, ViewHolder> = mutableMapOf()
-    private val CONTROL_ACTION_FAILED_MSG = "CurrentState=[FAILED-T]"
+    private val CONTROL_ACTION_FAILED_MSG = "[FAILED-T]"
     internal var mAudioRecordingCallback: AudioRecordingCallback? = null
 
     class ViewHolder(ItemView: View) : RecyclerView.ViewHolder(ItemView) {
@@ -47,6 +53,10 @@ class CallListAdapter(
         val callIdTextView: TextView = itemView.findViewById(R.id.callIdTextView)
         val currentState: TextView = itemView.findViewById(R.id.callStateTextView)
         val currentEndpoint: TextView = itemView.findViewById(R.id.endpointStateTextView)
+        val participants: TextView = itemView.findViewById(R.id.participantsTextView)
+        val localCallSilenceIcon: ImageView = itemView.findViewById(R.id.LocalCallSilenceImage)
+        val fileProviderIconImage: ImageView = itemView.findViewById(R.id.FileProviderImage)
+        val fileProviderIconButton: Button = itemView.findViewById(R.id.ToggleFileProviderImage)
 
         // Call State Buttons
         val activeButton: Button = itemView.findViewById(R.id.activeButton)
@@ -54,9 +64,17 @@ class CallListAdapter(
         val disconnectButton: Button = itemView.findViewById(R.id.disconnectButton)
 
         // Call Audio Buttons
-        val earpieceButton: Button = itemView.findViewById(R.id.earpieceButton)
+        val earpieceButton: Button = itemView.findViewById(R.id.selectEndpointButton)
         val speakerButton: Button = itemView.findViewById(R.id.speakerButton)
         val bluetoothButton: Button = itemView.findViewById(R.id.bluetoothButton)
+
+        // Participant Buttons
+        val addParticipantButton: Button = itemView.findViewById(R.id.addParticipantButton)
+        val removeParticipantButton: Button = itemView.findViewById(R.id.removeParticipantButton)
+
+        // Toggle Local Call Silence button
+        val toggleLocalCallSilenceButton: Button =
+            itemView.findViewById(R.id.toggleLocalCallSilence)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -72,14 +90,18 @@ class CallListAdapter(
 
     // Set the data for the user
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        // Making the items recyclable causes weird caching issues with the holder's params. Move
+        // to false since there are never that many calls active at a time.
+        holder.setIsRecyclable(false)
         val ItemsViewModel = mList?.get(position)
 
         // sets the text to the textview from our itemHolder class
         if (ItemsViewModel != null) {
             mCallIdToViewHolder[ItemsViewModel.callObject.mTelecomCallId] = holder
 
-            holder.callCount.text = "Call # " + ItemsViewModel.callNumber.toString() + "; "
-            holder.callIdTextView.text = "ID=[" + ItemsViewModel.callObject.mTelecomCallId + "]"
+            holder.callCount.text = ItemsViewModel.callNumber.toString()
+            holder.callIdTextView.text = ItemsViewModel.callObject.mTelecomCallId
+            holder.currentState.text = ItemsViewModel.callObject.mCurrentState
 
             holder.activeButton.setOnClickListener {
                 CoroutineScope(Dispatchers.Main).launch {
@@ -90,10 +112,11 @@ class CallListAdapter(
                     }
                     when (ItemsViewModel.callObject.mCallControl!!.setActive()) {
                         is CallControlResult.Success -> {
-                            holder.currentState.text = "CurrentState=[active]"
+                            ItemsViewModel.callObject.updateNotificationToOngoing()
+                            ItemsViewModel.callObject.onCallStateChanged("Active")
                         }
                         is CallControlResult.Error -> {
-                            holder.currentState.text = CONTROL_ACTION_FAILED_MSG
+                            ItemsViewModel.callObject.onCallStateChanged(CONTROL_ACTION_FAILED_MSG)
                         }
                     }
                 }
@@ -105,10 +128,10 @@ class CallListAdapter(
                     mAudioRecord?.stop()
                     when (ItemsViewModel.callObject.mCallControl!!.setInactive()) {
                         is CallControlResult.Success -> {
-                            holder.currentState.text = "CurrentState=[onHold]"
+                            ItemsViewModel.callObject.onCallStateChanged("Inactive")
                         }
                         is CallControlResult.Error -> {
-                            holder.currentState.text = CONTROL_ACTION_FAILED_MSG
+                            ItemsViewModel.callObject.onCallStateChanged(CONTROL_ACTION_FAILED_MSG)
                         }
                     }
                 }
@@ -117,11 +140,10 @@ class CallListAdapter(
             holder.disconnectButton.setOnClickListener {
                 CoroutineScope(Dispatchers.IO).launch {
                     endAudioRecording()
-                    ItemsViewModel.callObject.mCallControl?.disconnect(
-                        DisconnectCause(DisconnectCause.LOCAL)
-                    )
+                    ItemsViewModel.callObject.clearNotification()
+                    ItemsViewModel.callObject.disconnect(DisconnectCause(DisconnectCause.LOCAL))
                 }
-                holder.currentState.text = "CurrentState=[null]"
+                ItemsViewModel.callObject.onCallStateChanged("Disconnected")
                 mList?.remove(ItemsViewModel)
                 this.notifyDataSetChanged()
             }
@@ -131,9 +153,18 @@ class CallListAdapter(
                     val earpieceEndpoint =
                         ItemsViewModel.callObject.getEndpointType(CallEndpoint.TYPE_EARPIECE)
                     if (earpieceEndpoint != null) {
-                        ItemsViewModel.callObject.mCallControl?.requestEndpointChange(
-                            earpieceEndpoint
-                        )
+                        when (
+                            ItemsViewModel.callObject.mCallControl!!.requestEndpointChange(
+                                earpieceEndpoint
+                            )
+                        ) {
+                            is CallControlResult.Success -> {
+                                holder.currentEndpoint.text = "[earpiece]"
+                            }
+                            is CallControlResult.Error -> {
+                                holder.currentEndpoint.text = CONTROL_ACTION_FAILED_MSG
+                            }
+                        }
                     }
                 }
             }
@@ -148,10 +179,10 @@ class CallListAdapter(
                             )
                         ) {
                             is CallControlResult.Success -> {
-                                holder.currentState.text = "CurrentState=[speaker]"
+                                holder.currentEndpoint.text = "[speaker]"
                             }
                             is CallControlResult.Error -> {
-                                holder.currentState.text = CONTROL_ACTION_FAILED_MSG
+                                holder.currentEndpoint.text = CONTROL_ACTION_FAILED_MSG
                             }
                         }
                     }
@@ -169,32 +200,125 @@ class CallListAdapter(
                             )
                         ) {
                             is CallControlResult.Success -> {
-                                holder.currentEndpoint.text =
-                                    "currentEndpoint=[BT:${bluetoothEndpoint.name}]"
+                                holder.currentEndpoint.text = "[BT:${bluetoothEndpoint.name}]"
                             }
                             is CallControlResult.Error -> {
                                 // e.g. tear down call and
-                                holder.currentState.text = CONTROL_ACTION_FAILED_MSG
+                                holder.currentEndpoint.text = CONTROL_ACTION_FAILED_MSG
                             }
                         }
                     }
                 }
             }
+
+            holder.addParticipantButton.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    ItemsViewModel.callObject.mParticipantControl?.onParticipantAdded?.invoke()
+                }
+            }
+
+            holder.removeParticipantButton.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    ItemsViewModel.callObject.mParticipantControl?.onParticipantRemoved?.invoke()
+                }
+            }
+
+            holder.localCallSilenceIcon.setImageResource(R.drawable.mic)
+            holder.toggleLocalCallSilenceButton.setOnClickListener {
+                CoroutineScope(Dispatchers.Main).launch {
+                    ItemsViewModel.callObject.toggleLocalCallSilence()
+                }
+            }
+
+            // set the initial call icon image if non-null
+            val call = ItemsViewModel.callObject
+            setFileProviderIconImage(holder.fileProviderIconImage, call)
+            // setup the button action
+            holder.fileProviderIconButton.setOnClickListener {
+                // generate the next icon
+                call.setIconBitmap(CallIconGenerator.generateNextBitmap())
+                // write to file
+                val uri =
+                    VoipAppFileProvider.writeCallIconBitMapToFile(context = mContext, call = call)
+                CoroutineScope(Dispatchers.Main).launch {
+                    call.mIconExtensionControl?.onUriChanged?.invoke(uri!!)
+                }
+                // read from the file and re-render ui
+                setFileProviderIconImage(holder.fileProviderIconImage, call)
+            }
+        }
+    }
+
+    fun setFileProviderIconImage(imageView: ImageView, callObject: VoipCall) {
+        val iconUri = callObject.getIconUri()
+        if (iconUri != null) {
+            val iconBitmap = VoipAppFileProvider.readCallIconUriFromFile(mContext, iconUri)
+            if (iconBitmap != null) {
+                CoroutineScope(Dispatchers.Main).launch { imageView.setImageBitmap(iconBitmap) }
+            }
+        }
+    }
+
+    override fun getItemId(position: Int): Long {
+        return mList?.get(position)?.callNumber?.toLong() ?: RecyclerView.NO_ID
+    }
+
+    fun updateParticipants(callId: String, participants: List<ParticipantState>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val holder = mCallIdToViewHolder[callId]
+            holder?.participants?.text = "[${printParticipants(participants)}]"
         }
     }
 
     fun updateCallState(callId: String, state: String) {
         CoroutineScope(Dispatchers.Main).launch {
             val holder = mCallIdToViewHolder[callId]
-            holder?.callIdTextView?.text = "currentState=[$state]"
+            holder?.currentState?.text = "[$state]"
+        }
+    }
+
+    fun updateLocalCallSilenceIcon(callId: String, isSilenced: Boolean) {
+        CoroutineScope(Dispatchers.Main).launch {
+            val holder = mCallIdToViewHolder[callId]
+            if (isSilenced) {
+                holder?.localCallSilenceIcon?.setImageResource(R.drawable.mic_off_24px)
+            } else {
+                holder?.localCallSilenceIcon?.setImageResource(R.drawable.mic)
+            }
         }
     }
 
     fun updateEndpoint(callId: String, endpoint: String) {
         CoroutineScope(Dispatchers.Main).launch {
             val holder = mCallIdToViewHolder[callId]
-            holder?.currentEndpoint?.text = "currentEndpoint=[$endpoint]"
+            holder?.currentEndpoint?.text = "[$endpoint]"
         }
+    }
+
+    private fun printParticipants(participants: List<ParticipantState>): String {
+        if (participants.isEmpty()) return "<NONE>"
+        val builder = StringBuilder()
+        val iterator = participants.iterator()
+        while (iterator.hasNext()) {
+            val participant = iterator.next()
+            builder.append("<")
+            if (participant.isActive) {
+                builder.append(" * ")
+            }
+            builder.append(participant.name)
+            if (participant.isSelf) {
+                builder.append("(me)")
+            }
+            if (participant.isHandRaised) {
+                builder.append(" ")
+                builder.append("(RH)")
+            }
+            builder.append(">")
+            if (iterator.hasNext()) {
+                builder.append(", ")
+            }
+        }
+        return builder.toString()
     }
 
     private fun endAudioRecording() {

@@ -27,6 +27,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
+import androidx.compose.ui.autofill.AutofillManager
 import androidx.compose.ui.autofill.AutofillTree
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.focus.FocusManager
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextInputService
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.LifecycleOwner
 
 /** The CompositionLocal to provide communication with platform accessibility service. */
 val LocalAccessibilityManager = staticCompositionLocalOf<AccessibilityManager?> { null }
@@ -50,9 +52,12 @@ val LocalAccessibilityManager = staticCompositionLocalOf<AccessibilityManager?> 
  * The CompositionLocal that can be used to trigger autofill actions. Eg.
  * [Autofill.requestAutofillForNode].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalComposeUiApi
-@ExperimentalComposeUiApi
+@Deprecated(
+    """
+        Use the new semantics-based Autofill APIs androidx.compose.ui.autofill.ContentType and
+        androidx.compose.ui.autofill.ContentDataType instead.
+        """
+)
 val LocalAutofill = staticCompositionLocalOf<Autofill?> { null }
 
 /**
@@ -60,15 +65,31 @@ val LocalAutofill = staticCompositionLocalOf<Autofill?> { null }
  * androidx.compose.ui.autofill.AutofillNode]s to the autofill tree. The [AutofillTree] is a
  * temporary data structure that will be replaced by Autofill Semantics (b/138604305).
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalComposeUiApi
-@ExperimentalComposeUiApi
+@Deprecated(
+    """
+        Use the new semantics-based Autofill APIs androidx.compose.ui.autofill.ContentType and
+        androidx.compose.ui.autofill.ContentDataType instead.
+        """
+)
 val LocalAutofillTree =
     staticCompositionLocalOf<AutofillTree> { noLocalProvidedFor("LocalAutofillTree") }
 
+/**
+ * The CompositionLocal that can be used to trigger autofill actions. Eg. [AutofillManager.commit].
+ */
+val LocalAutofillManager =
+    staticCompositionLocalOf<AutofillManager?> { noLocalProvidedFor("LocalAutofillManager") }
+
 /** The CompositionLocal to provide communication with platform clipboard service. */
+@Deprecated(
+    "Use LocalClipboard instead which supports suspend functions",
+    ReplaceWith("LocalClipboard", "androidx.compose.ui.platform.LocalClipboard"),
+)
 val LocalClipboardManager =
     staticCompositionLocalOf<ClipboardManager> { noLocalProvidedFor("LocalClipboardManager") }
+
+/** The CompositionLocal to provide communication with platform clipboard service. */
+val LocalClipboard = staticCompositionLocalOf<Clipboard> { noLocalProvidedFor("LocalClipboard") }
 
 /**
  * The CompositionLocal to provide access to a [GraphicsContext] instance for creation of
@@ -77,8 +98,9 @@ val LocalClipboardManager =
  * Consumers that access this Local directly and call [GraphicsContext.createGraphicsLayer] are
  * responsible for calling [GraphicsContext.releaseGraphicsLayer].
  *
- * It is recommended that consumers invoke [rememberGraphicsLayer] instead to ensure that a
- * [GraphicsLayer] is released when the corresponding composable is disposed.
+ * It is recommended that consumers invoke [rememberGraphicsLayer][import
+ * androidx.compose.ui.graphics.rememberGraphicsLayer] instead to ensure that a [GraphicsLayer] is
+ * released when the corresponding composable is disposed.
  */
 val LocalGraphicsContext =
     staticCompositionLocalOf<GraphicsContext> { noLocalProvidedFor("LocalGraphicsContext") }
@@ -100,7 +122,7 @@ val LocalFocusManager =
 @Suppress("DEPRECATION")
 @Deprecated(
     "LocalFontLoader is replaced with LocalFontFamilyResolver",
-    replaceWith = ReplaceWith("LocalFontFamilyResolver")
+    replaceWith = ReplaceWith("LocalFontFamilyResolver"),
 )
 @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 val LocalFontLoader =
@@ -153,6 +175,13 @@ val LocalViewConfiguration =
  */
 val LocalWindowInfo = staticCompositionLocalOf<WindowInfo> { noLocalProvidedFor("LocalWindowInfo") }
 
+/** The CompositionLocal containing the current [LifecycleOwner]. */
+@Deprecated(
+    "Moved to lifecycle-runtime-compose library in androidx.lifecycle.compose package.",
+    ReplaceWith("androidx.lifecycle.compose.LocalLifecycleOwner"),
+)
+expect val LocalLifecycleOwner: ProvidableCompositionLocal<LifecycleOwner>
+
 internal val LocalPointerIconService = staticCompositionLocalOf<PointerIconService?> { null }
 
 /** @see LocalScrollCaptureInProgress */
@@ -165,7 +194,16 @@ internal val LocalProvidableScrollCaptureInProgress = compositionLocalOf { false
 val LocalScrollCaptureInProgress: CompositionLocal<Boolean>
     get() = LocalProvidableScrollCaptureInProgress
 
-/** Configure the blink timeout, after interaction, for text cursors. */
+/**
+ * Text cursor blinking
+ * - _true_ normal cursor behavior (interactive blink)
+ * - _false_ never blink (always on)
+ *
+ * The default of _true_ is the user-expected system behavior for Text editing.
+ *
+ * Typically you should not set _false_ outside of screenshot tests without also providing a
+ * `cursorBrush` to `BasicTextField` to implement a custom design
+ */
 val LocalCursorBlinkEnabled: ProvidableCompositionLocal<Boolean> = staticCompositionLocalOf { true }
 
 @ExperimentalComposeUiApi
@@ -173,13 +211,15 @@ val LocalCursorBlinkEnabled: ProvidableCompositionLocal<Boolean> = staticComposi
 internal fun ProvideCommonCompositionLocals(
     owner: Owner,
     uriHandler: UriHandler,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         LocalAccessibilityManager provides owner.accessibilityManager,
         LocalAutofill provides owner.autofill,
+        LocalAutofillManager provides owner.autofillManager,
         LocalAutofillTree provides owner.autofillTree,
         LocalClipboardManager provides owner.clipboardManager,
+        LocalClipboard provides owner.clipboard,
         LocalDensity provides owner.density,
         LocalFocusManager provides owner.focusOwner,
         @Suppress("DEPRECATION") LocalFontLoader providesDefault
@@ -196,7 +236,7 @@ internal fun ProvideCommonCompositionLocals(
         LocalWindowInfo provides owner.windowInfo,
         LocalPointerIconService provides owner.pointerIconService,
         LocalGraphicsContext provides owner.graphicsContext,
-        content = content
+        content = content,
     )
 }
 

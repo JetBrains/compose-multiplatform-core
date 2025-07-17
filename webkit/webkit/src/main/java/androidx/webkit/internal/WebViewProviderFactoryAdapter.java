@@ -18,7 +18,8 @@ package androidx.webkit.internal;
 
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.DropDataContentProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.ProfileStoreBoundaryInterface;
@@ -26,10 +27,12 @@ import org.chromium.support_lib_boundary.ProxyControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.ServiceWorkerControllerBoundaryInterface;
 import org.chromium.support_lib_boundary.StaticsBoundaryInterface;
 import org.chromium.support_lib_boundary.TracingControllerBoundaryInterface;
+import org.chromium.support_lib_boundary.WebViewBuilderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewProviderFactoryBoundaryInterface;
 import org.chromium.support_lib_boundary.WebkitToCompatConverterBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Adapter for WebViewProviderFactoryBoundaryInterface providing static WebView functionality
@@ -44,97 +47,108 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
     }
 
     /**
-     * Adapter method for creating a new support library version of
-     * {@link android.webkit.WebViewProvider} - the class used to implement
-     * {@link androidx.webkit.WebViewCompat}.
+     * Adapter method for fetching the support library class representing the WebViewBuilder
+     * implementation details.
      */
-    @NonNull
     @Override
-    public WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview) {
+    public @NonNull WebViewBuilderBoundaryInterface getWebViewBuilder() {
+        return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
+                WebViewBuilderBoundaryInterface.class, mImpl.getWebViewBuilder());
+    }
+
+    /**
+     * Adapter method for creating a new support library version of {@link
+     * android.webkit.WebViewProvider} - the class used to implement {@link
+     * androidx.webkit.WebViewCompat}.
+     */
+    @Override
+    public @NonNull WebViewProviderBoundaryInterface createWebView(@NonNull WebView webview) {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebViewProviderBoundaryInterface.class, mImpl.createWebView(webview));
     }
 
     /**
-     * Adapter method for creating a new support library version of
-     * {@link androidx.webkit.internal.WebkitToCompatConverter}, which converts android.webkit
-     * classes into their corresponding support library classes.
+     * Adapter method for creating a new support library version of {@link
+     * androidx.webkit.internal.WebkitToCompatConverter}, which converts android.webkit classes into
+     * their corresponding support library classes.
      */
-    @NonNull
     @Override
-    public WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter() {
+    public @NonNull WebkitToCompatConverterBoundaryInterface getWebkitToCompatConverter() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 WebkitToCompatConverterBoundaryInterface.class, mImpl.getWebkitToCompatConverter());
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.WebViewFactoryProvider#Statics}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.WebViewFactoryProvider#Statics}.
      */
-    @NonNull
     @Override
-    public StaticsBoundaryInterface getStatics() {
+    public @NonNull StaticsBoundaryInterface getStatics() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 StaticsBoundaryInterface.class, mImpl.getStatics());
     }
 
-    /**
-     * Adapter method for fetching the features supported by the current WebView APK.
-     */
-    @NonNull
+    /** Adapter method for fetching the features supported by the current WebView APK. */
     @Override
-    public String[] getWebViewFeatures() {
+    public String @NonNull [] getWebViewFeatures() {
         return mImpl.getSupportedFeatures();
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.ServiceWorkerController}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.ServiceWorkerController}.
      */
     @Override
-    @NonNull
-    public ServiceWorkerControllerBoundaryInterface getServiceWorkerController() {
+    public @NonNull ServiceWorkerControllerBoundaryInterface getServiceWorkerController() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 ServiceWorkerControllerBoundaryInterface.class, mImpl.getServiceWorkerController());
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.TracingController}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.TracingController}.
      */
-    @NonNull
     @Override
-    public TracingControllerBoundaryInterface getTracingController() {
+    public @NonNull TracingControllerBoundaryInterface getTracingController() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 TracingControllerBoundaryInterface.class, mImpl.getTracingController());
     }
 
     /**
-     * Adapter method for fetching the support library class representing
-     * {@link android.webkit.ProxyController}.
+     * Adapter method for fetching the support library class representing {@link
+     * android.webkit.ProxyController}.
      */
-    @NonNull
     @Override
-    public ProxyControllerBoundaryInterface getProxyController() {
+    public @NonNull ProxyControllerBoundaryInterface getProxyController() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 ProxyControllerBoundaryInterface.class, mImpl.getProxyController());
     }
 
     /**
-     * Adapter method for fetching the support library class representing Drag drop
-     * Image implementation.
+     * Adapter method for fetching the support library class representing Drag drop Image
+     * implementation.
      */
-    @NonNull
     @Override
-    public DropDataContentProviderBoundaryInterface getDropDataProvider() {
+    public @NonNull DropDataContentProviderBoundaryInterface getDropDataProvider() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 DropDataContentProviderBoundaryInterface.class, mImpl.getDropDataProvider());
     }
 
-    @NonNull
     @Override
-    public ProfileStoreBoundaryInterface getProfileStore() {
+    public @NonNull ProfileStoreBoundaryInterface getProfileStore() {
         return BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                 ProfileStoreBoundaryInterface.class, mImpl.getProfileStore());
+    }
+
+    @WebViewCompat.ExperimentalAsyncStartUp
+    @Override
+    public void startUpWebView(
+            @NonNull WebViewStartUpConfig config,
+            WebViewCompat.@NonNull WebViewStartUpCallback callback) {
+        mImpl.startUpWebView(
+                BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
+                        new WebViewStartUpConfigAdapter(config)),
+                BoundaryInterfaceReflectionUtil.createInvocationHandlerFor(
+                        new WebViewStartUpCallbackAdapter(callback)));
     }
 }

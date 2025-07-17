@@ -19,8 +19,13 @@ package room.testapp
 import androidx.room.*
 
 @Database(entities = [CommonEntity::class], version = 1)
+@ConstructedBy(CommonDatabaseCtor::class)
 abstract class CommonDatabase : RoomDatabase() {
     abstract fun getCommonDao(): CommonDao
+}
+
+expect object CommonDatabaseCtor : RoomDatabaseConstructor<CommonDatabase> {
+    override fun initialize(): CommonDatabase
 }
 
 @Entity

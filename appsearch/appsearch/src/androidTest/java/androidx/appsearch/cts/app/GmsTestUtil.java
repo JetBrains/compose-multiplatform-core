@@ -17,11 +17,11 @@
 
 package androidx.appsearch.cts.app;
 
-import androidx.annotation.NonNull;
-
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.ExecutionException;
 

@@ -28,9 +28,9 @@ import java.time.ZoneOffset
 public class MenstruationFlowRecord(
     override val time: Instant,
     override val zoneOffset: ZoneOffset?,
+    override val metadata: Metadata,
     /** How heavy the user's menstrual flow was. Optional field. */
     @property:Flows public val flow: Int = FLOW_UNKNOWN,
-    override val metadata: Metadata = Metadata.EMPTY,
 ) : InstantaneousRecord {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,6 +50,10 @@ public class MenstruationFlowRecord(
         result = 31 * result + (zoneOffset?.hashCode() ?: 0)
         result = 31 * result + metadata.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "MenstruationFlowRecord(time=$time, zoneOffset=$zoneOffset, flow=$flow, metadata=$metadata)"
     }
 
     companion object {

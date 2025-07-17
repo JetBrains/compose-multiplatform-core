@@ -93,7 +93,7 @@ fun interface PlatformTextInputInterceptor {
      */
     suspend fun interceptStartInputMethod(
         request: PlatformTextInputMethodRequest,
-        nextHandler: PlatformTextInputSession
+        nextHandler: PlatformTextInputSession,
     ): Nothing
 }
 
@@ -112,15 +112,17 @@ fun interface PlatformTextInputInterceptor {
  * - The session function throws an exception.
  * - The requesting coroutine is cancelled.
  * - Another session is started via this method, either from the same modifier or a different one.
- * - The system closes the connection (currently only supported on Android, and there only depending
- *   on OS version).
+ *   The session may remain open when:
+ * - The system closes the connection. This behavior currently only exists on Android depending on
+ *   OS version. Android platform may intermittently close the active connection to immediately
+ *   start it back again. In these cases the session will not be prematurely closed, so that it can
+ *   serve the follow-up requests.
  *
  * This function should only be called from the modifier node's
  * [coroutineScope][Modifier.Node.coroutineScope]. If it is not, the session will _not_
  * automatically be closed if the modifier is detached.
  *
  * @sample androidx.compose.ui.samples.platformTextInputModifierNodeSample
- *
  * @param block A suspend function that will be called when the session is started and that must
  *   call [PlatformTextInputSession.startInputMethod] to actually show and initiate the connection
  *   with the input method.
@@ -144,14 +146,13 @@ suspend fun PlatformTextInputModifierNode.establishTextInputSession(
  * cancelled and the request will be re-used to pass to the new interceptor.
  *
  * @sample androidx.compose.ui.samples.InterceptPlatformTextInputSample
- *
  * @sample androidx.compose.ui.samples.disableSoftKeyboardSample
  */
 @ExperimentalComposeUiApi
 @Composable
 fun InterceptPlatformTextInput(
     interceptor: PlatformTextInputInterceptor,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val parent = LocalChainedPlatformTextInputInterceptor.current
     // We don't need to worry about explicitly cancelling the input session if the parent changes:
@@ -167,7 +168,7 @@ fun InterceptPlatformTextInput(
 
     CompositionLocalProvider(
         LocalChainedPlatformTextInputInterceptor provides chainedInterceptor,
-        content = content
+        content = content,
     )
 }
 
@@ -177,7 +178,7 @@ private val LocalChainedPlatformTextInputInterceptor =
 /** Establishes a new text input session, optionally intercepted by [chainedInterceptor]. */
 private suspend fun Owner.interceptedTextInputSession(
     chainedInterceptor: ChainedPlatformTextInputInterceptor?,
-    session: suspend PlatformTextInputSessionScope.() -> Nothing
+    session: suspend PlatformTextInputSessionScope.() -> Nothing,
 ): Nothing {
     if (chainedInterceptor == null) {
         textInputSession(session)
@@ -194,7 +195,7 @@ private suspend fun Owner.interceptedTextInputSession(
 @Stable
 private class ChainedPlatformTextInputInterceptor(
     initialInterceptor: PlatformTextInputInterceptor,
-    private val parent: ChainedPlatformTextInputInterceptor?
+    private val parent: ChainedPlatformTextInputInterceptor?,
 ) {
     private var interceptor by mutableStateOf(initialInterceptor)
 
@@ -213,7 +214,7 @@ private class ChainedPlatformTextInputInterceptor(
     @OptIn(InternalComposeUiApi::class)
     suspend fun textInputSession(
         owner: Owner,
-        session: suspend PlatformTextInputSessionScope.() -> Nothing
+        session: suspend PlatformTextInputSessionScope.() -> Nothing,
     ): Nothing {
         owner.interceptedTextInputSession(parent) {
             val parentSession = this
@@ -236,11 +237,11 @@ private class ChainedPlatformTextInputInterceptor(
                                     .collectLatest { interceptor ->
                                         interceptor.interceptStartInputMethod(
                                             request,
-                                            parentSession
+                                            parentSession,
                                         )
                                     }
                                 error("Interceptors flow should never terminate.")
-                            }
+                            },
                         )
                     }
                 }

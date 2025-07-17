@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe
 
 import android.view.Surface
 import androidx.annotation.RestrictTo
-import androidx.camera.camera2.pipe.CameraController.ControllerState.CLOSED
 import androidx.camera.camera2.pipe.graph.GraphListener
 
 /**
@@ -37,55 +36,68 @@ import androidx.camera.camera2.pipe.graph.GraphListener
  * Once [close] is invoked, this instance should not respond to any additional events.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface CameraController {
-    val cameraId: CameraId
+public interface CameraController {
+    /** Represents the primary CameraId this CameraController is associated with. */
+    public val cameraId: CameraId
+
+    /** Represents the primary CameraGraphId that this [CameraController] is associated with. */
+    public val cameraGraphId: CameraGraphId
 
     /**
      * Whether the camera is being used in a foreground setting, and thus should be kept open on a
      * best-effort basis, for example continuously retrying on a longer timeout.
      */
-    var isForeground: Boolean
+    public var isForeground: Boolean
 
     /**
      * Connect and start the underlying camera. This may be called on the main thread and should not
      * make long blocking calls. This may be called opportunistically (eg, whenever a lifecycle
      * indicates the camera should be in a running state)
      */
-    fun start()
+    public fun start()
 
     /**
      * Disconnect from the underlying camera and stop this session. This may be called on the main
      * thread and should not make long blocking calls.
      */
-    fun stop()
-
-    /**
-     * Restart the current session. This should basically perform stop() then start(). However, the
-     * implementation should handle its internal states correctly, and only restart under the right
-     * [CameraStatusMonitor.CameraStatus] and [ControllerState].
-     */
-    fun tryRestart(cameraStatus: CameraStatusMonitor.CameraStatus)
+    public fun stop()
 
     /**
      * Close this instance. [start] and [stop] should not be invoked, and any additional calls will
      * be ignored once this method returns. Depending on implementation the underlying camera
      * connection may not be terminated immediately, depending on the [CameraBackend]
      */
-    fun close()
+    public fun close()
+
+    /**
+     * Wait for the camera controller to be finalized, releasing all its resources. This method is
+     * internally used by [CameraBackend] and should only be called after the controller is closed.
+     * If not closed, this should return false to indicate failure. A default implementation is
+     * provided here to provide temporary backwards compatibility.
+     */
+    public suspend fun awaitClosed(): Boolean {
+        return true
+    }
 
     /**
      * Tell the [CameraController] the current mapping between [StreamId] and [Surface]s. This map
      * should always contain at least one entry, and should never contain [StreamId]s that were
      * missing from the [StreamGraph] that was used to create this [CameraController].
      */
-    fun updateSurfaceMap(surfaceMap: Map<StreamId, Surface>)
+    public fun updateSurfaceMap(surfaceMap: Map<StreamId, Surface>)
+
+    /**
+     * Get the estimated real time latency for an extension session. This method returns null if the
+     * [StreamGraph] is not configured correctly or the CaptureSession is not ready.
+     */
+    public fun getOutputLatency(streamId: StreamId?): StreamGraph.OutputLatency?
 
     /**
      * ControllerState indicates the internal state of a [CameraController]. These states are needed
      * to make sure we only invoke [CameraController] methods under the right conditions.
      *
      * The following diagram illustrates the state transitions (all states also have a permissible
-     * transition to [CLOSED]).
+     * transition to [CLOSING]).
      *
      *   ```
      *   [STOPPED] --> [STARTED] --> [STOPPING] ---------.--------.
@@ -96,23 +108,26 @@ interface CameraController {
      *      '-----------------------------------------------------'
      *   ```
      */
-    abstract class ControllerState internal constructor() {
+    public abstract class ControllerState internal constructor() {
         /** When the CameraController is started. This is set immediately as start() is called. */
-        object STARTED : ControllerState()
+        public object STARTED : ControllerState()
 
         /** When the CameraController is stopping. This is set immediately as stop() is called. */
-        object STOPPING : ControllerState()
+        public object STOPPING : ControllerState()
 
         /** When the camera is stopped normally. */
-        object STOPPED : ControllerState()
+        public object STOPPED : ControllerState()
 
         /** When the camera is disconnected and can be later "reconnected". */
-        object DISCONNECTED : ControllerState()
+        public object DISCONNECTED : ControllerState()
 
         /** When the camera shuts down with an unrecoverable error. */
-        object ERROR : ControllerState()
+        public object ERROR : ControllerState()
 
-        /** When the CameraController is closed, and no further operations can done on it. */
-        object CLOSED : ControllerState()
+        /** When the CameraController is being closed, and no further operations can done on it. */
+        public object CLOSING : ControllerState()
+
+        /** When the CameraController is closed, with all its tracked resources released. */
+        public object CLOSED : ControllerState()
     }
 }

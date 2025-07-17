@@ -16,8 +16,8 @@
 
 package androidx.test.uiautomator;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Generated in test runs when a {@link UiSelector} selector could not be matched

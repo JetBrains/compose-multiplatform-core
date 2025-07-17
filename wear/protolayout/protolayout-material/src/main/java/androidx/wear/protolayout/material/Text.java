@@ -28,8 +28,6 @@ import static androidx.wear.protolayout.materialcore.Helper.staticString;
 import android.content.Context;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.ColorBuilders.ColorProp;
@@ -45,6 +43,9 @@ import androidx.wear.protolayout.TypeBuilders.StringProp;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.material.Typography.TypographyName;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * ProtoLayout component {@link Text} that represents text object holding any information.
@@ -73,27 +74,26 @@ import androidx.wear.protolayout.proto.LayoutElementProto;
  */
 public class Text implements LayoutElement {
 
-    @NonNull private final LayoutElementBuilders.Text mText;
+    private final LayoutElementBuilders.@NonNull Text mText;
 
-    Text(@NonNull LayoutElementBuilders.Text mText) {
+    Text(LayoutElementBuilders.@NonNull Text mText) {
         this.mText = mText;
     }
 
     /** Builder class for {@link Text}. */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private final Context mContext;
-        @NonNull private ColorProp mColor = argb(Colors.DEFAULT.getOnPrimary());
+        private final @NonNull Context mContext;
+        private @NonNull ColorProp mColor = argb(Colors.DEFAULT.getOnPrimary());
         @TypographyName private int mTypographyName = TYPOGRAPHY_DISPLAY1;
         private boolean mItalic = false;
         private boolean mUnderline = false;
         private boolean mIsScalable = true;
-        @Nullable private Integer mCustomWeight = null;
+        private @Nullable Integer mCustomWeight = null;
 
-        @NonNull
         @SuppressWarnings(
                 "deprecation") // Default value from initial release is TEXT_OVERFLOW_ELLIPSIZE_END
         // so we can't change it as it would be a breaking change for developers.
-        private final LayoutElementBuilders.Text.Builder mElementBuilder =
+        private final LayoutElementBuilders.Text.@NonNull Builder mElementBuilder =
                 new LayoutElementBuilders.Text.Builder()
                         .setMaxLines(1)
                         .setMultilineAlignment(TEXT_ALIGN_CENTER)
@@ -134,12 +134,11 @@ public class Text implements LayoutElement {
          * Sets the typography for the {@link Text}. If not set, {@link
          * Typography#TYPOGRAPHY_DISPLAY1} will be used.
          */
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // There is getFontStyle matching getter for this setter as the serialized format of the
         // ProtoLayout do not allow for a direct reconstruction of the all arguments, but it has
         // FontStyle object of that text.
-        public Builder setTypography(@TypographyName int typography) {
+        public @NonNull Builder setTypography(@TypographyName int typography) {
             this.mTypographyName = typography;
             return this;
         }
@@ -151,9 +150,8 @@ public class Text implements LayoutElement {
         // Text size is always set in SP, however, by setting this field, we do calculation to
         // interpret it like DP. When getting the text font's size in getters, there is no way to
         // know whether that size was scaled or not.
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
-        public Builder setScalable(boolean isScalable) {
+        public @NonNull Builder setScalable(boolean isScalable) {
             this.mIsScalable = isScalable;
             return this;
         }
@@ -162,29 +160,25 @@ public class Text implements LayoutElement {
          * Sets the color for the {@link Text}. If not set, onPrimary color from the {@link
          * Colors#DEFAULT} will be used.
          */
-        @NonNull
-        public Builder setColor(@NonNull ColorProp color) {
+        public @NonNull Builder setColor(@NonNull ColorProp color) {
             this.mColor = color;
             return this;
         }
 
         /** Sets the text to be italic. If not set, false will be used. */
-        @NonNull
-        public Builder setItalic(boolean italic) {
+        public @NonNull Builder setItalic(boolean italic) {
             this.mItalic = italic;
             return this;
         }
 
         /** Sets the text to be underlined. If not set, false will be used. */
-        @NonNull
-        public Builder setUnderline(boolean underline) {
+        public @NonNull Builder setUnderline(boolean underline) {
             this.mUnderline = underline;
             return this;
         }
 
         /** Sets the maximum lines of text. If not set, 1 will be used. */
-        @NonNull
-        public Builder setMaxLines(@IntRange(from = 1) int maxLines) {
+        public @NonNull Builder setMaxLines(@IntRange(from = 1) int maxLines) {
             this.mElementBuilder.setMaxLines(maxLines);
             return this;
         }
@@ -195,15 +189,13 @@ public class Text implements LayoutElement {
          * container should be used. If not set, {@link TextAlignment#TEXT_ALIGN_CENTER} will be
          * used.
          */
-        @NonNull
-        public Builder setMultilineAlignment(@TextAlignment int multilineAlignment) {
+        public @NonNull Builder setMultilineAlignment(@TextAlignment int multilineAlignment) {
             this.mElementBuilder.setMultilineAlignment(multilineAlignment);
             return this;
         }
 
         /** Sets the modifiers of text. */
-        @NonNull
-        public Builder setModifiers(@NonNull Modifiers modifiers) {
+        public @NonNull Builder setModifiers(@NonNull Modifiers modifiers) {
             this.mElementBuilder.setModifiers(modifiers);
             return this;
         }
@@ -212,8 +204,7 @@ public class Text implements LayoutElement {
          * Sets the overflow for text. If not set, {@link TextAlignment#TEXT_OVERFLOW_ELLIPSIZE_END}
          * will be used.
          */
-        @NonNull
-        public Builder setOverflow(@TextOverflow int overflow) {
+        public @NonNull Builder setOverflow(@TextOverflow int overflow) {
             this.mElementBuilder.setOverflow(overflow);
             return this;
         }
@@ -222,16 +213,14 @@ public class Text implements LayoutElement {
          * Sets the weight of the font. If not set, default weight for the chosen Typography will be
          * used.
          */
-        @NonNull
-        public Builder setWeight(@FontWeight int weight) {
+        public @NonNull Builder setWeight(@FontWeight int weight) {
             this.mCustomWeight = weight;
             return this;
         }
 
         /** Constructs and returns {@link Text} with the provided content and look. */
-        @NonNull
         @Override
-        public Text build() {
+        public @NonNull Text build() {
             FontStyle.Builder fontStyleBuilder =
                     getFontStyleBuilder(mTypographyName, mContext, mIsScalable)
                             .setColor(mColor)
@@ -248,20 +237,17 @@ public class Text implements LayoutElement {
     }
 
     /** Returns the text of this Text element. */
-    @NonNull
-    public StringProp getText() {
+    public @NonNull StringProp getText() {
         return checkNotNull(mText.getText());
     }
 
     /** Returns the color of this Text element. */
-    @NonNull
-    public ColorProp getColor() {
+    public @NonNull ColorProp getColor() {
         return checkNotNull(checkNotNull(mText.getFontStyle()).getColor());
     }
 
     /** Returns the font style of this Text element. */
-    @NonNull
-    public FontStyle getFontStyle() {
+    public @NonNull FontStyle getFontStyle() {
         return checkNotNull(mText.getFontStyle());
     }
 
@@ -282,8 +268,7 @@ public class Text implements LayoutElement {
     }
 
     /** Returns the modifiers of this Text element. */
-    @NonNull
-    public Modifiers getModifiers() {
+    public @NonNull Modifiers getModifiers() {
         return checkNotNull(mText.getModifiers());
     }
 
@@ -314,8 +299,7 @@ public class Text implements LayoutElement {
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to Material Text. Otherwise, it will return null.
      */
-    @Nullable
-    public static Text fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable Text fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof Text) {
             return (Text) element;
         }
@@ -328,17 +312,15 @@ public class Text implements LayoutElement {
         return new Text(textElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mText.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mText.getFingerprint();
     }
 }

@@ -20,14 +20,14 @@ import android.graphics.Typeface;
 import android.text.TextPaint;
 import android.text.style.MetricAffectingSpan;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Stripped down version of TypefaceSpan, which can accept a Typeface argument on API levels under
  * 28.
  */
 public class CustomTypefaceSpan extends MetricAffectingSpan {
-    @NonNull private final Typeface mTypeface;
+    private final @NonNull Typeface mTypeface;
 
     public CustomTypefaceSpan(@NonNull Typeface typeface) {
         mTypeface = typeface;

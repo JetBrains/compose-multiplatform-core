@@ -24,7 +24,7 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,9 +57,8 @@ public class MainActivity extends android.app.ListActivity {
         startActivity(intent);
     }
 
-    @NonNull
     @SuppressWarnings("deprecation")
-    protected List<Map<String, Object>> getActivityList() {
+    protected @NonNull List<Map<String, Object>> getActivityList() {
         List<Map<String, Object>> activityList = new ArrayList<>();
 
         Intent mainIntent = new Intent(Intent.ACTION_MAIN);

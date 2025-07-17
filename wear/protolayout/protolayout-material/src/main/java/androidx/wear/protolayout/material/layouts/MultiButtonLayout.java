@@ -29,8 +29,6 @@ import static androidx.wear.protolayout.materialcore.Helper.getMetadataTagName;
 import static androidx.wear.protolayout.materialcore.Helper.getTagBytes;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DimensionBuilders.DpProp;
@@ -45,6 +43,9 @@ import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.material.Button;
 import androidx.wear.protolayout.proto.LayoutElementProto;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -55,7 +56,8 @@ import java.util.List;
  * LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS} number of buttons arranged inline with the
  * Material guidelines. Can be used as a content passed in to the {@link PrimaryLayout}, but if
  * there is {@link LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS} buttons it should be used
- * on its own.
+ * on its own. Visuals and design samples can be found
+ *  * <a href="https://developer.android.com/design/ui/wear/guides/surfaces/tiles-layouts#button-centric-buttons">here</a>.
  *
  * <p>When accessing the contents of a container for testing, note that this element can't be simply
  * casted back to the original type, i.e.:
@@ -76,7 +78,6 @@ import java.util.List;
  * MultiButtonLayout myMbl = MultiButtonLayout.fromLayoutElement(box.getContents().get(0));
  * }</pre>
  */
-// TODO(b/274916652): Link visuals once they are available.
 public class MultiButtonLayout implements LayoutElement {
     /** Tool tag for Metadata in Modifiers, so we know that Box is actually a MultiButtonLayout. */
     static final String METADATA_TAG = "MBL";
@@ -93,7 +94,7 @@ public class MultiButtonLayout implements LayoutElement {
     @IntDef({FIVE_BUTTON_DISTRIBUTION_TOP_HEAVY, FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY})
     public @interface ButtonDistribution {}
 
-    @NonNull private final Box mElement;
+    private final @NonNull Box mElement;
 
     MultiButtonLayout(@NonNull Box mElement) {
         this.mElement = mElement;
@@ -101,7 +102,7 @@ public class MultiButtonLayout implements LayoutElement {
 
     /** Builder class for {@link MultiButtonLayout}. */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private final List<LayoutElement> mButtonsContent = new ArrayList<>();
+        private final @NonNull List<LayoutElement> mButtonsContent = new ArrayList<>();
         @ButtonDistribution private int mFiveButtonDistribution =
                 FIVE_BUTTON_DISTRIBUTION_BOTTOM_HEAVY;
 
@@ -117,11 +118,10 @@ public class MultiButtonLayout implements LayoutElement {
          * optimized for it. Any button added after {@link
          * LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS} is reached will be discarded.
          */
-        @NonNull
         @SuppressWarnings("MissingGetterMatchingBuilder")
         // There is no direct matching getter for this setter, but there is a getter that gets all
         // added buttons.
-        public Builder addButtonContent(@NonNull LayoutElement buttonContent) {
+        public @NonNull Builder addButtonContent(@NonNull LayoutElement buttonContent) {
             mButtonsContent.add(buttonContent);
             return this;
         }
@@ -131,8 +131,8 @@ public class MultiButtonLayout implements LayoutElement {
          * there is 5 buttons in the layout to determine whether the 3 buttons row is at the top or
          * bottom.
          */
-        @NonNull
-        public Builder setFiveButtonDistribution(@ButtonDistribution int fiveButtonDistribution) {
+        public @NonNull Builder setFiveButtonDistribution(
+                @ButtonDistribution int fiveButtonDistribution) {
             this.mFiveButtonDistribution = fiveButtonDistribution;
             return this;
         }
@@ -143,9 +143,8 @@ public class MultiButtonLayout implements LayoutElement {
          * @throws IllegalArgumentException if no buttons are added or the number of buttons added
          *      is larger than {@link LayoutDefaults.MultiButtonLayoutDefaults#MAX_BUTTONS}.
          */
-        @NonNull
         @Override
-        public MultiButtonLayout build() {
+        public @NonNull MultiButtonLayout build() {
             int buttonNum = mButtonsContent.size();
             if (buttonNum > MAX_BUTTONS) {
                 throw new IllegalArgumentException(
@@ -170,8 +169,7 @@ public class MultiButtonLayout implements LayoutElement {
             return new MultiButtonLayout(elementBuilder.build());
         }
 
-        @NonNull
-        private LayoutElement buildButtons(int buttonNum) {
+        private @NonNull LayoutElement buildButtons(int buttonNum) {
             switch (buttonNum) {
                 case 1:
                     return wrapButton(mButtonsContent.get(0), BUTTON_SIZE_FOR_1_BUTTON);
@@ -262,8 +260,7 @@ public class MultiButtonLayout implements LayoutElement {
             }
         }
 
-        @NonNull
-        private Row build3ButtonRow(
+        private @NonNull Row build3ButtonRow(
                 @NonNull LayoutElement button1,
                 @NonNull LayoutElement button2,
                 @NonNull LayoutElement button3) {
@@ -278,8 +275,7 @@ public class MultiButtonLayout implements LayoutElement {
                     .build();
         }
 
-        @NonNull
-        private Row build2ButtonRow(
+        private @NonNull Row build2ButtonRow(
                 @NonNull LayoutElement button1,
                 @NonNull LayoutElement button2,
                 @NonNull DpProp size) {
@@ -292,25 +288,21 @@ public class MultiButtonLayout implements LayoutElement {
                     .build();
         }
 
-        @NonNull
-        private Spacer buildHorizontalSpacer() {
+        private @NonNull Spacer buildHorizontalSpacer() {
             return new Spacer.Builder().setWidth(SPACER_WIDTH).build();
         }
 
-        @NonNull
-        private Spacer buildVerticalSpacer() {
+        private @NonNull Spacer buildVerticalSpacer() {
             return new Spacer.Builder().setHeight(SPACER_HEIGHT).build();
         }
 
-        @NonNull
-        private Box wrapButton(@NonNull LayoutElement button, @NonNull DpProp size) {
+        private @NonNull Box wrapButton(@NonNull LayoutElement button, @NonNull DpProp size) {
             return new Box.Builder().setWidth(size).setHeight(size).addContent(button).build();
         }
     }
 
     /** Gets the content from this layout, containing all buttons that were added. */
-    @NonNull
-    public List<LayoutElement> getButtonContents() {
+    public @NonNull List<LayoutElement> getButtonContents() {
         List<LayoutElement> buttons = new ArrayList<>();
         List<LayoutElement> contents = mElement.getContents();
         if (contents.isEmpty()) {
@@ -333,8 +325,7 @@ public class MultiButtonLayout implements LayoutElement {
     }
 
     /** Returns metadata tag set to this MultiButtonLayouts. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return getMetadataTagName(
                 checkNotNull(checkNotNull(mElement.getModifiers()).getMetadata()));
     }
@@ -376,8 +367,7 @@ public class MultiButtonLayout implements LayoutElement {
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to MultiButtonLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static MultiButtonLayout fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable MultiButtonLayout fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof MultiButtonLayout) {
             return (MultiButtonLayout) element;
         }
@@ -392,17 +382,15 @@ public class MultiButtonLayout implements LayoutElement {
         return new MultiButtonLayout(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

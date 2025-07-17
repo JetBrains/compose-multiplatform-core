@@ -30,34 +30,34 @@ class ValueClassConverterWrapper(
     val valueTypeColumnAdapter: ColumnTypeAdapter,
     val affinity: SQLTypeAffinity,
     out: XType,
-    val valuePropertyName: String
+    val valuePropertyName: String,
 ) : ColumnTypeAdapter(out, affinity) {
-    override fun readFromCursor(
+    override fun readFromStatement(
         outVarName: String,
-        cursorVarName: String,
+        stmtVarName: String,
         indexVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             fun XCodeBlock.Builder.addTypeToValueClassStatement() {
                 val propertyValueVarName = scope.getTmpVar("_$valuePropertyName")
                 addLocalVariable(propertyValueVarName, valueTypeColumnAdapter.outTypeName)
-                valueTypeColumnAdapter.readFromCursor(
+                valueTypeColumnAdapter.readFromStatement(
                     propertyValueVarName,
-                    cursorVarName,
+                    stmtVarName,
                     indexVarName,
-                    scope
+                    scope,
                 )
                 addStatement(
                     format = "%L = %L",
                     outVarName,
-                    XCodeBlock.ofNewInstance(language, out.asTypeName(), "%N", propertyValueVarName)
+                    XCodeBlock.ofNewInstance(out.asTypeName(), "%N", propertyValueVarName),
                 )
             }
             if (out.nullability == XNullability.NONNULL) {
                 addTypeToValueClassStatement()
             } else {
-                beginControlFlow("if (%L.isNull(%L))", cursorVarName, indexVarName)
+                beginControlFlow("if (%L.isNull(%L))", stmtVarName, indexVarName)
                     .addStatement("%L = null", outVarName)
                 nextControlFlow("else").addTypeToValueClassStatement()
                 endControlFlow()
@@ -69,22 +69,21 @@ class ValueClassConverterWrapper(
         stmtName: String,
         indexVarName: String,
         valueVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         scope.builder.apply {
             val propertyName = scope.getTmpVar("_$valuePropertyName")
             val assignmentBlock =
                 if (out.nullability == XNullability.NONNULL) {
                     XCodeBlock.of(
-                        scope.language,
                         "checkNotNull(%L.%L) { %S }",
                         valueVarName,
                         valuePropertyName,
                         "Cannot bind NULLABLE value '$valuePropertyName' of inline " +
-                            "class '$out' to a NOT NULL column."
+                            "class '$out' to a NOT NULL column.",
                     )
                 } else {
-                    XCodeBlock.of(scope.language, "%L?.%L", valueVarName, valuePropertyName)
+                    XCodeBlock.of("%L?.%L", valueVarName, valuePropertyName)
                 }
             addLocalVariable(
                 name = propertyName,
@@ -92,7 +91,7 @@ class ValueClassConverterWrapper(
                     valueTypeColumnAdapter.outTypeName.copy(
                         nullable = out.nullability != XNullability.NONNULL
                     ),
-                assignExpr = assignmentBlock
+                assignExpr = assignmentBlock,
             )
 
             if (out.nullability == XNullability.NONNULL) {

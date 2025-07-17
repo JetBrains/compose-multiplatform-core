@@ -63,7 +63,7 @@ class KotlinPluginTest : BasePluginTest() {
                 }
                 dependencies {
                     implementation "${projectSetup.props.kotlinStblib}"
-                    implementation "${projectSetup.props.navigationRuntime}"
+                    implementation "$NAVIGATION_RUNTIME"
                 }
                 tasks.withType(
                     org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -73,7 +73,7 @@ class KotlinPluginTest : BasePluginTest() {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
         )
         runGradle("assembleDebug").assertSuccessfulTask("assembleDebug")
 

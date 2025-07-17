@@ -16,7 +16,7 @@
 
 package androidx.profileinstaller;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * A Writable Profile Section for ART profiles on Android 12.
@@ -30,7 +30,7 @@ class WritableFileSection {
     WritableFileSection(
             @NonNull FileSectionType type,
             int expectedInflateSize,
-            @NonNull byte[] contents,
+            byte @NonNull [] contents,
             boolean needsCompression) {
         this.mType = type;
         this.mExpectedInflateSize = expectedInflateSize;

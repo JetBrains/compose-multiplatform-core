@@ -38,7 +38,7 @@ class PrimitiveShortArraySubjectTest {
     }
 
     @Test
-    fun asListWithoutCastingFails() {
+    fun asListWithoutCastingFails() = assumeNotJs {
         assertFailsWith<AssertionError> {
             assertThat(shortArrayOf(1, 1, 0)).asList().containsAtLeast(1, 0)
         }

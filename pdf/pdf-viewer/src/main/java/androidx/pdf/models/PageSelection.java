@@ -17,12 +17,18 @@
 package androidx.pdf.models;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.pdf.content.PdfPageTextContent;
+import android.os.Build;
 import android.os.Parcel;
+import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.TextSelection;
 
+import org.jspecify.annotations.NonNull;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /** Represents text selection on a particular page of a PDF. Immutable. */
@@ -71,21 +77,12 @@ public class PageSelection extends TextSelection {
         return mPage;
     }
 
-    @NonNull
-    public List<Rect> getRects() {
+    public @NonNull List<Rect> getRects() {
         return mRects;
     }
 
-    @NonNull
-    public String getText() {
+    public @NonNull String getText() {
         return mText;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("PageSelection(page=%d, start=%s, stop=%s, %d rects)", mPage,
-                getStart(),
-                getStop(), mRects.size());
     }
 
     @Override
@@ -95,5 +92,35 @@ public class PageSelection extends TextSelection {
         parcel.writeParcelable(getStop(), 0);
         parcel.writeList(mRects);
         parcel.writeString(mText);
+    }
+
+    /**
+     * Converts android.graphics.pdf.models.selection.PageSelection object to its
+     * androidx.pdf.aidl.PageSelection representation.
+     */
+    public static @NonNull PageSelection convert(
+            android.graphics.pdf.models.selection.@NonNull PageSelection pageSelection) {
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+            List<PdfPageTextContent> textSelections = pageSelection.getSelectedTextContents();
+
+            // TODO: Add list handling instead of taking its first element
+            String selectedText = textSelections.get(0).getText();
+
+            List<Rect> rectBounds = new ArrayList<Rect>();
+            // TODO: Add list handling instead of taking its first element
+            List<RectF> rectFBounds = textSelections.get(0).getBounds();
+            for (RectF rectF : rectFBounds) {
+                rectBounds.add(new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right,
+                        (int) rectF.bottom));
+            }
+
+            return new PageSelection(pageSelection.getPage(),
+                    SelectionBoundary.convert(pageSelection.getStart(),
+                            pageSelection.getStart().getIsRtl()),
+                    SelectionBoundary.convert(pageSelection.getStop(),
+                            pageSelection.getStop().getIsRtl()),
+                    rectBounds, selectedText);
+        }
+        throw new UnsupportedOperationException("Operation support above S");
     }
 }

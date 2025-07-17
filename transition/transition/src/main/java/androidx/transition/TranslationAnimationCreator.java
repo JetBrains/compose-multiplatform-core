@@ -23,8 +23,8 @@ import android.animation.PropertyValuesHolder;
 import android.animation.TimeInterpolator;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class is used by Slide and Explode to create an animator that goes from the start
@@ -49,8 +49,7 @@ class TranslationAnimationCreator {
      * @return An animator that moves from (startX, startY) to (endX, endY) unless there was
      * a previous interruption, in which case it moves from the current position to (endX, endY).
      */
-    @Nullable
-    static Animator createAnimation(@NonNull View view, @NonNull TransitionValues values,
+    static @Nullable Animator createAnimation(@NonNull View view, @NonNull TransitionValues values,
             int viewPosX, int viewPosY, float startX, float startY, float endX, float endY,
             @Nullable TimeInterpolator interpolator, @NonNull Transition transition) {
         float terminalX = view.getTranslationX();

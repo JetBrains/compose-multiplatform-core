@@ -19,8 +19,13 @@ package room.testapp
 import androidx.room.*
 
 @Database(entities = [NativeEntity::class], version = 1)
+@ConstructedBy(MyDatabaseCtor::class)
 abstract class MyDatabase : RoomDatabase() {
     abstract fun getMyDao(): MyDao
+}
+
+expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase> {
+    override fun initialize(): MyDatabase
 }
 
 @Entity

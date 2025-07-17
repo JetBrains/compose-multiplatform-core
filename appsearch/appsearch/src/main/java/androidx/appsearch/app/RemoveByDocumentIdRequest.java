@@ -16,14 +16,27 @@
 
 package androidx.appsearch.app;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.safeparcel.AbstractSafeParcelable;
+import androidx.appsearch.safeparcel.SafeParcelable;
+import androidx.appsearch.safeparcel.stub.StubCreators.RemoveByDocumentIdRequestCreator;
 import androidx.collection.ArraySet;
 import androidx.core.util.Preconditions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -32,25 +45,54 @@ import java.util.Set;
  *
  * @see AppSearchSession#removeAsync
  */
-public final class RemoveByDocumentIdRequest {
-    private final String mNamespace;
-    private final Set<String> mIds;
+@SafeParcelable.Class(creator = "RemoveByDocumentIdRequestCreator")
+// TODO(b/384721898): Switch to JSpecify annotations
+@SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
+public final class RemoveByDocumentIdRequest extends AbstractSafeParcelable {
+    /** Creator class for {@link android.app.appsearch.RemoveByDocumentIdRequest}. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    public static final @NonNull Parcelable.Creator<RemoveByDocumentIdRequest> CREATOR =
+            new RemoveByDocumentIdRequestCreator();
 
-    RemoveByDocumentIdRequest(String namespace, Set<String> ids) {
-        mNamespace = namespace;
-        mIds = ids;
+    @Field(id = 1, getter = "getNamespace")
+    private final @NonNull String mNamespace;
+    @Field(id = 2)
+    final @NonNull List<String> mIds;
+    private @Nullable Set<String> mIdsCached;
+
+    /**
+     * Removes documents by ID.
+     *
+     * @param namespace    Namespace of the document to remove.
+     * @param ids The IDs of the documents to delete
+     */
+    @Constructor
+    RemoveByDocumentIdRequest(
+            @Param(id = 1) @NonNull String namespace,
+            @Param(id = 2) @NonNull List<String> ids) {
+        mNamespace = Objects.requireNonNull(namespace);
+        mIds = Objects.requireNonNull(ids);
     }
 
     /** Returns the namespace to remove documents from. */
-    @NonNull
-    public String getNamespace() {
+    public @NonNull String getNamespace() {
         return mNamespace;
     }
 
     /** Returns the set of document IDs attached to the request. */
-    @NonNull
-    public Set<String> getIds() {
-        return Collections.unmodifiableSet(mIds);
+    public @NonNull Set<String> getIds() {
+        if (mIdsCached == null) {
+            mIdsCached = Collections.unmodifiableSet(new ArraySet<>(mIds));
+        }
+        return mIdsCached;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
+    @Override
+    public void writeToParcel(@NonNull Parcel dest, int flags) {
+        RemoveByDocumentIdRequestCreator.writeToParcel(this, dest, flags);
     }
 
     /** Builder for {@link RemoveByDocumentIdRequest} objects. */
@@ -66,8 +108,7 @@ public final class RemoveByDocumentIdRequest {
 
         /** Adds one or more document IDs to the request. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addIds(@NonNull String... ids) {
+        public @NonNull Builder addIds(@NonNull String... ids) {
             Preconditions.checkNotNull(ids);
             resetIfBuilt();
             return addIds(Arrays.asList(ids));
@@ -75,8 +116,7 @@ public final class RemoveByDocumentIdRequest {
 
         /** Adds a collection of IDs to the request. */
         @CanIgnoreReturnValue
-        @NonNull
-        public Builder addIds(@NonNull Collection<String> ids) {
+        public @NonNull Builder addIds(@NonNull Collection<String> ids) {
             Preconditions.checkNotNull(ids);
             resetIfBuilt();
             mIds.addAll(ids);
@@ -84,10 +124,9 @@ public final class RemoveByDocumentIdRequest {
         }
 
         /** Builds a new {@link RemoveByDocumentIdRequest}. */
-        @NonNull
-        public RemoveByDocumentIdRequest build() {
+        public @NonNull RemoveByDocumentIdRequest build() {
             mBuilt = true;
-            return new RemoveByDocumentIdRequest(mNamespace, mIds);
+            return new RemoveByDocumentIdRequest(mNamespace, new ArrayList<>(mIds));
         }
 
         private void resetIfBuilt() {

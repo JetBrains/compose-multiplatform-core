@@ -40,16 +40,16 @@ import androidx.compose.ui.unit.IntSize
 // whole screen.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Composable
-fun BoundsLimiter(
+public fun BoundsLimiter(
     offset: Density.() -> IntOffset,
     size: Density.() -> IntSize,
     modifier: Modifier = Modifier,
     onSizeChanged: (IntSize) -> Unit = {},
-    content: @Composable BoxScope.() -> Unit
-) =
+    content: @Composable BoxScope.() -> Unit,
+): Unit =
     Box(
         modifier = Modifier.fillMaxSize().onSizeChanged(onSizeChanged).absoluteOffset(offset),
-        contentAlignment = AbsoluteAlignment.TopLeft
+        contentAlignment = AbsoluteAlignment.TopLeft,
     ) {
         // This Box has the position and size we need, so any modifiers passed in should be applied
         // here. We set the size using a custom modifier (that passes the constraints transparently
@@ -59,7 +59,7 @@ fun BoundsLimiter(
         Box(
             modifier.transparentSizeModifier(size).absoluteOffset { -offset() },
             content = content,
-            contentAlignment = AbsoluteAlignment.TopLeft
+            contentAlignment = AbsoluteAlignment.TopLeft,
         )
     }
 
@@ -70,7 +70,7 @@ private fun Modifier.transparentSizeModifier(size: Density.() -> IntSize): Modif
         object : LayoutModifier {
             override fun MeasureScope.measure(
                 measurable: Measurable,
-                constraints: Constraints
+                constraints: Constraints,
             ): MeasureResult {
                 val placeable = measurable.measure(constraints)
                 val actualSize = size()

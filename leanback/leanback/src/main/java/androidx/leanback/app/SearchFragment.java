@@ -19,6 +19,7 @@ package androidx.leanback.app;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import android.Manifest;
+import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -31,9 +32,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.CompletionInfo;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.app.Fragment;
 import androidx.leanback.R;
 import androidx.leanback.widget.BrowseFrameLayout;
 import androidx.leanback.widget.ObjectAdapter;
@@ -47,6 +45,8 @@ import androidx.leanback.widget.SearchBar;
 import androidx.leanback.widget.SearchOrbView;
 import androidx.leanback.widget.SpeechRecognitionCallback;
 import androidx.leanback.widget.VerticalGridView;
+
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -296,8 +296,8 @@ public class SearchFragment extends Fragment {
     }
 
     @Override
-    @Nullable
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public @Nullable View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
+            Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.lb_search_fragment, container, false);
 
         BrowseFrameLayout searchFrame = root.findViewById(R.id.lb_search_frame);

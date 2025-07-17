@@ -27,13 +27,8 @@ internal fun rememberLazyStaggeredGridBeyondBoundsState(
     return remember(state) { LazyStaggeredGridBeyondBoundsState(state) }
 }
 
-internal class LazyStaggeredGridBeyondBoundsState(
-    val state: LazyStaggeredGridState,
-) : LazyLayoutBeyondBoundsState {
-
-    override fun remeasure() {
-        state.remeasurement?.forceRemeasure()
-    }
+internal class LazyStaggeredGridBeyondBoundsState(val state: LazyStaggeredGridState) :
+    LazyLayoutBeyondBoundsState {
 
     override val itemCount: Int
         get() = state.layoutInfo.totalItemsCount
@@ -46,4 +41,12 @@ internal class LazyStaggeredGridBeyondBoundsState(
 
     override val lastPlacedIndex: Int
         get() = state.layoutInfo.visibleItemsInfo.last().index
+
+    override fun itemsPerViewport(): Int {
+        if (state.layoutInfo.visibleItemsInfo.isEmpty()) return 0
+        val viewportSize = state.layoutInfo.singleAxisViewportSize
+        val lineAverageSize = state.layoutInfo.visibleItemsAverageSize()
+        if (lineAverageSize == 0) return 1
+        return (viewportSize / lineAverageSize).coerceAtLeast(1)
+    }
 }

@@ -18,7 +18,7 @@ package androidx.appsearch.platformstorage.converter;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.GenericDocument;
@@ -28,6 +28,8 @@ import androidx.appsearch.app.RemoveByDocumentIdRequest;
 import androidx.appsearch.app.ReportSystemUsageRequest;
 import androidx.appsearch.app.ReportUsageRequest;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -45,15 +47,32 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link PutDocumentsRequest} into a platform
      * {@link android.app.appsearch.PutDocumentsRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.PutDocumentsRequest toPlatformPutDocumentsRequest(
+    public static android.app.appsearch.@NonNull PutDocumentsRequest toPlatformPutDocumentsRequest(
             @NonNull PutDocumentsRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.PutDocumentsRequest.Builder platformBuilder =
                 new android.app.appsearch.PutDocumentsRequest.Builder();
+        // Convert normal generic documents.
         for (GenericDocument jetpackDocument : jetpackRequest.getGenericDocuments()) {
             platformBuilder.addGenericDocuments(
                     GenericDocumentToPlatformConverter.toPlatformGenericDocument(jetpackDocument));
+        }
+        // Convert taken action generic documents.
+        for (GenericDocument jetpackTakenActionGenericDocument :
+                jetpackRequest.getTakenActionGenericDocuments()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                ApiHelperForV.addTakenActionGenericDocuments(
+                        platformBuilder,
+                        GenericDocumentToPlatformConverter.toPlatformGenericDocument(
+                                jetpackTakenActionGenericDocument));
+            } else {
+                // This version of platform-storage doesn't support the dedicated
+                // addTakenActionGenericDocuments API, but we can still add them to the index via
+                // the put API (just without logging).
+                platformBuilder.addGenericDocuments(
+                        GenericDocumentToPlatformConverter.toPlatformGenericDocument(
+                                jetpackTakenActionGenericDocument));
+            }
         }
         return platformBuilder.build();
     }
@@ -62,16 +81,15 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link GetByDocumentIdRequest} into a platform
      * {@link android.app.appsearch.GetByDocumentIdRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.GetByDocumentIdRequest toPlatformGetByDocumentIdRequest(
-            @NonNull GetByDocumentIdRequest jetpackRequest) {
+    public static android.app.appsearch.@NonNull GetByDocumentIdRequest
+            toPlatformGetByDocumentIdRequest(@NonNull GetByDocumentIdRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         android.app.appsearch.GetByDocumentIdRequest.Builder platformBuilder =
                 new android.app.appsearch.GetByDocumentIdRequest.Builder(
                         jetpackRequest.getNamespace())
                         .addIds(jetpackRequest.getIds());
         for (Map.Entry<String, List<String>> projection :
-                jetpackRequest.getProjectionsInternal().entrySet()) {
+                jetpackRequest.getProjections().entrySet()) {
             platformBuilder.addProjection(projection.getKey(), projection.getValue());
         }
         return platformBuilder.build();
@@ -81,8 +99,7 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link RemoveByDocumentIdRequest} into a platform
      * {@link android.app.appsearch.RemoveByDocumentIdRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.RemoveByDocumentIdRequest
+    public static android.app.appsearch.@NonNull RemoveByDocumentIdRequest
             toPlatformRemoveByDocumentIdRequest(
             @NonNull RemoveByDocumentIdRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
@@ -96,8 +113,7 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link androidx.appsearch.app.ReportUsageRequest} into a platform
      * {@link android.app.appsearch.ReportUsageRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.ReportUsageRequest toPlatformReportUsageRequest(
+    public static android.app.appsearch.@NonNull ReportUsageRequest toPlatformReportUsageRequest(
             @NonNull ReportUsageRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         return new android.app.appsearch.ReportUsageRequest.Builder(
@@ -110,9 +126,8 @@ public final class RequestToPlatformConverter {
      * Translates a jetpack {@link androidx.appsearch.app.ReportSystemUsageRequest} into a platform
      * {@link android.app.appsearch.ReportSystemUsageRequest}.
      */
-    @NonNull
-    public static android.app.appsearch.ReportSystemUsageRequest toPlatformReportSystemUsageRequest(
-            @NonNull ReportSystemUsageRequest jetpackRequest) {
+    public static android.app.appsearch.@NonNull ReportSystemUsageRequest
+            toPlatformReportSystemUsageRequest(@NonNull ReportSystemUsageRequest jetpackRequest) {
         Preconditions.checkNotNull(jetpackRequest);
         return new android.app.appsearch.ReportSystemUsageRequest.Builder(
                 jetpackRequest.getPackageName(),
@@ -121,5 +136,25 @@ public final class RequestToPlatformConverter {
                 jetpackRequest.getDocumentId())
                 .setUsageTimestampMillis(jetpackRequest.getUsageTimestampMillis())
                 .build();
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private static class ApiHelperForV {
+        private ApiHelperForV() {}
+
+        @DoNotInline
+        static void addTakenActionGenericDocuments(
+                android.app.appsearch.PutDocumentsRequest.Builder platformBuilder,
+                android.app.appsearch.GenericDocument platformTakenActionGenericDocument) {
+            try {
+                platformBuilder.addTakenActionGenericDocuments(platformTakenActionGenericDocument);
+            } catch (android.app.appsearch.exceptions.AppSearchException e) {
+                // This method incorrectly declares that it throws AppSearchException, whereas in
+                // fact there's nothing in its implementation that would do so. Suppress it here
+                // instead of piping all the way through the stack.
+                throw new RuntimeException(
+                        "Unexpected AppSearchException which should not be possible", e);
+            }
+        }
     }
 }

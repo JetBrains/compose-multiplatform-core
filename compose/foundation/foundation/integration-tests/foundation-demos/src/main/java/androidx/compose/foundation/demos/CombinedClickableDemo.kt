@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package androidx.compose.foundation.demos
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -59,7 +56,7 @@ fun CombinedClickableDemo() {
 
         Text(
             "Modifier.combinedClickable() doesn't work on a Button, because it consumes touch " +
-                "input before it arrives at combinedClickable:",
+                "input before it arrives at combinedClickable:"
         )
         Spacer(Modifier.height(4.dp))
         CombinedClickableButton({ clicks++ }, { doubleClicks++ }, { longClicks++ })
@@ -87,7 +84,7 @@ private fun CombinedClickableBox(
             .combinedClickable(
                 onClick = onClick,
                 onDoubleClick = onDoubleClick,
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
             )
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
@@ -106,8 +103,8 @@ private fun CombinedClickableButton(
         Modifier.combinedClickable(
             onClick = onClick,
             onDoubleClick = onDoubleClick,
-            onLongClick = onLongClick
-        )
+            onLongClick = onLongClick,
+        ),
     ) {
         Text("CombinedClickable Button")
     }

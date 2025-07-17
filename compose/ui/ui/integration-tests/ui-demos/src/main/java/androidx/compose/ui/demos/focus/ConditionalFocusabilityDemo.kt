@@ -30,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
@@ -76,7 +75,7 @@ fun ConditionalFocusabilityDemo() {
                 Modifier.focusAwareBackground()
                     .focusRequester(item1)
                     .pointerInput(item1) { detectTapGestures { item1.requestFocus() } }
-                    .focusable()
+                    .focusable(),
         )
         Row {
             var item2active by remember { mutableStateOf(false) }
@@ -87,7 +86,7 @@ fun ConditionalFocusabilityDemo() {
                         .focusRequester(item2)
                         .pointerInput(item2) { detectTapGestures { item2.requestFocus() } }
                         .focusProperties { canFocus = item2active }
-                        .focusable()
+                        .focusable(),
             )
             Button(onClick = { item2active = !item2active }) {
                 Text("${if (item2active) "deactivate" else "activate"} item 2")
@@ -100,7 +99,7 @@ fun ConditionalFocusabilityDemo() {
                     .focusRequester(item3)
                     .pointerInput(item3) { detectTapGestures { item3.requestFocus() } }
                     .focusProperties { canFocus = localInputModeManager.inputMode == Keyboard }
-                    .focusable()
+                    .focusable(),
         )
         Text(
             text = "Request focus by touch",
@@ -109,14 +108,13 @@ fun ConditionalFocusabilityDemo() {
                     .focusRequester(item4)
                     .pointerInput(item4) {
                         detectTapGestures {
-                            @OptIn(ExperimentalComposeUiApi::class)
                             if (localInputModeManager.requestInputMode(Keyboard)) {
                                 item4.requestFocus()
                             }
                         }
                     }
                     .focusProperties { canFocus = localInputModeManager.inputMode == Keyboard }
-                    .focusable()
+                    .focusable(),
         )
     }
 }

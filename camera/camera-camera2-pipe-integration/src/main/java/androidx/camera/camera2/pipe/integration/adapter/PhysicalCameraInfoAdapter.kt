@@ -18,12 +18,14 @@ package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraMetadata
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
+import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
@@ -43,7 +45,7 @@ import kotlin.reflect.KClass
 @SuppressLint(
     "UnsafeOptInUsageError" // Suppressed due to experimental API
 )
-class PhysicalCameraInfoAdapter(private val cameraProperties: CameraProperties) :
+public class PhysicalCameraInfoAdapter(private val cameraProperties: CameraProperties) :
     CameraInfo, UnsafeWrapper {
 
     @OptIn(ExperimentalCamera2Interop::class)
@@ -66,7 +68,7 @@ class PhysicalCameraInfoAdapter(private val cameraProperties: CameraProperties) 
         return CameraOrientationUtil.getRelativeImageRotation(
             relativeRotationDegrees,
             sensorOrientation,
-            isOppositeFacingScreen
+            isOppositeFacingScreen,
         )
     }
 
@@ -137,14 +139,19 @@ class PhysicalCameraInfoAdapter(private val cameraProperties: CameraProperties) 
         throw UnsupportedOperationException("Physical camera doesn't support this function")
     }
 
+    override fun getCameraIdentifier(): CameraIdentifier {
+        throw UnsupportedOperationException("Physical camera doesn't support this function")
+    }
+
     @OptIn(ExperimentalCamera2Interop::class)
     @Suppress("UNCHECKED_CAST")
-    override fun <T : Any> unwrapAs(type: KClass<T>): T? {
-        return when (type) {
+    override fun <T : Any> unwrapAs(type: KClass<T>): T? =
+        when (type) {
             Camera2CameraInfo::class -> camera2CameraInfo as T
+            CameraProperties::class -> cameraProperties as T
+            CameraMetadata::class -> cameraProperties.metadata as T
             else -> cameraProperties.metadata.unwrapAs(type)
         }
-    }
 
     private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {

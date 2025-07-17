@@ -21,12 +21,13 @@ import static androidx.annotation.Dimension.DP;
 import android.content.Context;
 
 import androidx.annotation.Dimension;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tiles component {@link TitleChip} that represents clickable object with the text.
@@ -71,7 +72,7 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
      */
     static final String METADATA_TAG = "TTLCHP";
 
-    @NonNull private final Chip mElement;
+    private final @NonNull Chip mElement;
 
     TitleChip(@NonNull Chip element) {
         this.mElement = element;
@@ -80,15 +81,14 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
     /** Builder class for {@link TitleChip}. */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull private final Context mContext;
-        @NonNull private final String mText;
-        @NonNull private final androidx.wear.tiles.ModifiersBuilders.Clickable mClickable;
+        private final @NonNull Context mContext;
+        private final @NonNull String mText;
+        private final androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable mClickable;
 
-        @NonNull
-        private final androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+        private final androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                 mDeviceParameters;
 
-        @NonNull private ChipColors mChipColors = ChipDefaults.TITLE_PRIMARY_COLORS;
+        private @NonNull ChipColors mChipColors = ChipDefaults.TITLE_PRIMARY_COLORS;
 
         @androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment
         private int mHorizontalAlign =
@@ -96,7 +96,7 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
 
         // Indicates that the width isn't set, so it will be automatically set by Chip.Builder
         // constructor.
-        @Nullable private androidx.wear.tiles.DimensionBuilders.ContainerDimension mWidth = null;
+        private androidx.wear.tiles.DimensionBuilders.@Nullable ContainerDimension mWidth = null;
 
         /**
          * Creates a builder for the {@link TitleChip} with associated action and the given text
@@ -111,9 +111,8 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
         public Builder(
                 @NonNull Context context,
                 @NonNull String text,
-                @NonNull androidx.wear.tiles.ModifiersBuilders.Clickable clickable,
-                @NonNull
-                        androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+                androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable clickable,
+                androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                                 deviceParameters) {
             this.mContext = context;
             this.mText = text;
@@ -127,15 +126,13 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
          * ChipColors#getContentColor()} for the text. If not set, {@link
          * ChipDefaults#TITLE_PRIMARY_COLORS} will be used.
          */
-        @NonNull
-        public Builder setChipColors(@NonNull ChipColors chipColors) {
+        public @NonNull Builder setChipColors(@NonNull ChipColors chipColors) {
             mChipColors = chipColors;
             return this;
         }
 
         /** Sets the horizontal alignment in the chip. If not set, content will be centered. */
-        @NonNull
-        public Builder setHorizontalAlignment(
+        public @NonNull Builder setHorizontalAlignment(
                 @androidx.wear.tiles.LayoutElementBuilders.HorizontalAlignment
                         int horizontalAlignment) {
             mHorizontalAlign = horizontalAlignment;
@@ -146,9 +143,8 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
          * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
          * screen.
          */
-        @NonNull
-        public Builder setWidth(
-                @NonNull androidx.wear.tiles.DimensionBuilders.ContainerDimension width) {
+        public @NonNull Builder setWidth(
+                androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension width) {
             mWidth = width;
             return this;
         }
@@ -157,16 +153,14 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
          * Sets the width of {@link TitleChip}. If not set, default value will be set to fill the
          * screen.
          */
-        @NonNull
-        public Builder setWidth(@Dimension(unit = DP) float width) {
+        public @NonNull Builder setWidth(@Dimension(unit = DP) float width) {
             mWidth = androidx.wear.tiles.DimensionBuilders.dp(width);
             return this;
         }
 
         /** Constructs and returns {@link TitleChip} with the provided content and look. */
-        @NonNull
         @Override
-        public TitleChip build() {
+        public @NonNull TitleChip build() {
             Chip.Builder chipBuilder =
                     new Chip.Builder(mContext, mClickable, mDeviceParameters)
                             .setMetadataTag(METADATA_TAG)
@@ -189,26 +183,22 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
     }
 
     /** Returns width of this Chip. */
-    @NonNull
-    public androidx.wear.tiles.DimensionBuilders.ContainerDimension getWidth() {
+    public androidx.wear.tiles.DimensionBuilders.@NonNull ContainerDimension getWidth() {
         return mElement.getWidth();
     }
 
     /** Returns click event action associated with this Chip. */
-    @NonNull
-    public androidx.wear.tiles.ModifiersBuilders.Clickable getClickable() {
+    public androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable getClickable() {
         return mElement.getClickable();
     }
 
     /** Returns chip color of this Chip. */
-    @NonNull
-    public ChipColors getChipColors() {
+    public @NonNull ChipColors getChipColors() {
         return mElement.getChipColors();
     }
 
     /** Returns text content of this Chip. */
-    @NonNull
-    public String getText() {
+    public @NonNull String getText() {
         return androidx.wear.tiles.material.Helper.checkNotNull(mElement.getPrimaryLabelContent());
     }
 
@@ -219,8 +209,7 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
     }
 
     /** Returns metadata tag set to this TitleChip, which should be {@link #METADATA_TAG}. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return mElement.getMetadataTag();
     }
 
@@ -230,9 +219,8 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to TitleChip. Otherwise, it will return null.
      */
-    @Nullable
-    public static TitleChip fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable TitleChip fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof TitleChip) {
             return (TitleChip) element;
         }
@@ -250,16 +238,14 @@ public class TitleChip implements androidx.wear.tiles.LayoutElementBuilders.Layo
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mElement.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mElement.getFingerprint();
     }
 }

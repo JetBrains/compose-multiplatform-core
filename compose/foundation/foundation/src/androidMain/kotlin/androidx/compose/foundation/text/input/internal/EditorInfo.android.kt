@@ -26,7 +26,6 @@ import android.view.inputmethod.JoinOrSplitGesture
 import android.view.inputmethod.RemoveSpaceGesture
 import android.view.inputmethod.SelectGesture
 import android.view.inputmethod.SelectRangeGesture
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.text.handwriting.isStylusHandwritingSupported
 import androidx.compose.ui.text.TextRange
@@ -42,7 +41,7 @@ internal fun EditorInfo.update(
     text: CharSequence,
     selection: TextRange,
     imeOptions: ImeOptions,
-    contentMimeTypes: Array<String>? = null
+    contentMimeTypes: Array<String>? = null,
 ) {
     this.imeOptions =
         when (imeOptions.imeAction) {
@@ -158,7 +157,6 @@ private fun hasFlag(bits: Int, flag: Int): Boolean = (bits and flag) == flag
 @RequiresApi(24)
 internal object LocaleListHelper {
     @RequiresApi(24)
-    @DoNotInline
     fun setHintLocales(editorInfo: EditorInfo, localeList: LocaleList) {
         when (localeList) {
             LocaleList.Empty -> {
@@ -174,7 +172,6 @@ internal object LocaleListHelper {
 
 @RequiresApi(34)
 private object EditorInfoApi34 {
-    @DoNotInline
     fun setHandwritingGestures(editorInfo: EditorInfo) {
         editorInfo.supportedHandwritingGestures =
             listOf(
@@ -184,14 +181,14 @@ private object EditorInfoApi34 {
                 DeleteRangeGesture::class.java,
                 JoinOrSplitGesture::class.java,
                 InsertGesture::class.java,
-                RemoveSpaceGesture::class.java
+                RemoveSpaceGesture::class.java,
             )
         editorInfo.supportedHandwritingGesturePreviews =
             setOf(
                 SelectGesture::class.java,
                 DeleteGesture::class.java,
                 SelectRangeGesture::class.java,
-                DeleteRangeGesture::class.java
+                DeleteRangeGesture::class.java,
             )
     }
 }

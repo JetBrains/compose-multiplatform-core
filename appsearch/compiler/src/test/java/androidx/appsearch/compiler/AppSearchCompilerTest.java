@@ -21,7 +21,13 @@ import static androidx.appsearch.compiler.AppSearchCompiler.RESTRICT_GENERATED_C
 
 import static com.google.testing.compile.CompilationSubject.assertThat;
 
+import androidx.room.compiler.processing.util.Source;
+import androidx.room.compiler.processing.util.compiler.TestCompilationArguments;
+import androidx.room.compiler.processing.util.compiler.TestKotlinCompilerKt;
+
 import com.google.auto.value.processor.AutoValueProcessor;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.google.common.truth.Truth;
@@ -606,9 +612,9 @@ public class AppSearchCompilerTest {
 
         assertThat(compilation).hadErrorContaining(
                 "Field 'wrapped' cannot be read: it is private and has no suitable getters "
-                        + "[public] boolean isWrapped() "
+                        + "[public] boolean wrapped() "
                         + "OR [public] boolean getWrapped() "
-                        + "OR [public] boolean wrapped()");
+                        + "OR [public] boolean isWrapped()");
     }
 
     @Test
@@ -816,8 +822,8 @@ public class AppSearchCompilerTest {
                         + "See the warnings for more details.");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
-                        + "[public] void setId(java.lang.String)|"
-                        + "[public] void id(java.lang.String)");
+                        + "[public] void id(java.lang.String)|"
+                        + "[public] void setId(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Cannot use this constructor to construct the class: "
                         + "\"com.example.appsearch.Gift\". "
@@ -1048,18 +1054,22 @@ public class AppSearchCompilerTest {
         // TODO(b/156296904): Uncomment Gift in this test when it's supported
         Compilation compilation = compile(
                 "import java.util.*;\n"
+                        + "import androidx.appsearch.app.AppSearchBlobHandle;\n"
+                        + "import androidx.appsearch.app.EmbeddingVector;\n"
                         + "@Document\n"
                         + "public class Gift {\n"
                         + "  @Document.Namespace String namespace;\n"
                         + "  @Document.Id String id;\n"
-                        + "  @Document.StringProperty String stringProp;\n"
-                        + "  @Document.LongProperty Integer integerProp;\n"
-                        + "  @Document.LongProperty Long longProp;\n"
-                        + "  @Document.DoubleProperty Float floatProp;\n"
-                        + "  @Document.DoubleProperty Double doubleProp;\n"
-                        + "  @Document.BooleanProperty Boolean booleanProp;\n"
-                        + "  @Document.BytesProperty byte[] bytesProp;\n"
-                        //+ "  @Document.Property Gift documentProp;\n"
+                        + "  @StringProperty String stringProp;\n"
+                        + "  @LongProperty Integer integerProp;\n"
+                        + "  @LongProperty Long longProp;\n"
+                        + "  @DoubleProperty Float floatProp;\n"
+                        + "  @DoubleProperty Double doubleProp;\n"
+                        + "  @BooleanProperty Boolean booleanProp;\n"
+                        + "  @BytesProperty byte[] bytesProp;\n"
+                        + "  @EmbeddingProperty EmbeddingVector vectorProp;\n"
+                        + "  @BlobHandleProperty AppSearchBlobHandle blobHandleProp;\n"
+                        //+ "  @DocumentProperty Gift documentProp;\n"
                         + "}\n");
 
         assertThat(compilation).succeededWithoutWarnings();
@@ -1259,7 +1269,9 @@ public class AppSearchCompilerTest {
         // TODO(b/156296904): Uncomment Gift and GenericDocument when it's supported
         Compilation compilation = compile(
                 "import java.util.*;\n"
+                        + "import androidx.appsearch.app.AppSearchBlobHandle;\n"
                         + "import androidx.appsearch.app.GenericDocument;\n"
+                        + "import androidx.appsearch.app.EmbeddingVector;\n"
                         + "@Document\n"
                         + "public class Gift {\n"
                         + "  @Namespace String namespace;\n"
@@ -1274,6 +1286,9 @@ public class AppSearchCompilerTest {
                         + "  @BytesProperty Collection<byte[]> collectByteArr;\n"    // 1a
                         + "  @StringProperty Collection<String> collectString;\n"     // 1b
                         + "  @DocumentProperty Collection<Gift> collectGift;\n"         // 1c
+                        + "  @EmbeddingProperty Collection<EmbeddingVector> collectVec;\n"   // 1b
+                        + "  @BlobHandleProperty Collection<AppSearchBlobHandle> collectBlob;\n"
+                             //1b
                         + "\n"
                         + "  // Arrays\n"
                         + "  @LongProperty Long[] arrBoxLong;\n"         // 2a
@@ -1289,6 +1304,8 @@ public class AppSearchCompilerTest {
                         + "  @BytesProperty byte[][] arrUnboxByteArr;\n"  // 2b
                         + "  @StringProperty String[] arrString;\n"        // 2b
                         + "  @DocumentProperty Gift[] arrGift;\n"            // 2c
+                        + "  @EmbeddingProperty EmbeddingVector[] arrVec;\n"         // 2b
+                        + "  @BlobHandleProperty AppSearchBlobHandle[] arrBlob;\n"  // 2b
                         + "\n"
                         + "  // Single values\n"
                         + "  @StringProperty String string;\n"        // 3a
@@ -1304,6 +1321,8 @@ public class AppSearchCompilerTest {
                         + "  @BooleanProperty boolean unboxBoolean;\n" // 3b
                         + "  @BytesProperty byte[] unboxByteArr;\n"  // 3a
                         + "  @DocumentProperty Gift gift;\n"            // 3c
+                        + "  @EmbeddingProperty EmbeddingVector vec;\n"        // 3a
+                        + "  @BlobHandleProperty AppSearchBlobHandle blob;\n" // 3a
                         + "}\n");
 
         assertThat(compilation).succeededWithoutWarnings();
@@ -2290,8 +2309,8 @@ public class AppSearchCompilerTest {
                         + "[public] void setNamespace(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
-                        + "[public] void setId(java.lang.String)|"
-                        + "[public] void id(java.lang.String)");
+                        + "[public] void id(java.lang.String)|"
+                        + "[public] void setId(java.lang.String)");
         assertThat(compilation).hadWarningContaining(
                 "Could not find any of the setter(s): "
                         + "[public] void price(int)|"
@@ -2329,7 +2348,7 @@ public class AppSearchCompilerTest {
         checkResultContains("Thing.java",
                 "Thing document = Thing.create(getIdConv, getNamespaceConv)");
         checkResultContains("Gift.java",
-                "thingConv = thingCopy.toDocumentClass(Thing.class, documentClassMap)");
+                "thingConv = thingCopy.toDocumentClass(Thing.class, documentClassMappingContext)");
         checkEqualsGolden("Gift.java");
     }
 
@@ -3478,6 +3497,188 @@ public class AppSearchCompilerTest {
         assertThat(compilation).succeededWithoutWarnings();
         checkResultContains("Gift.java", "@RestrictTo(RestrictTo.Scope.LIBRARY)");
         checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testEmbeddingFields() throws Exception {
+        Compilation compilation = compile(
+                "import java.util.*;\n"
+                        + "import androidx.appsearch.app.EmbeddingVector;\n"
+                        + "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        // Embedding properties
+                        + "  @EmbeddingProperty EmbeddingVector defaultIndexNone;\n"
+                        + "  @EmbeddingProperty(indexingType=0) EmbeddingVector indexNone;\n"
+                        + "  @EmbeddingProperty(indexingType=1) EmbeddingVector vec;\n"
+                        + "  @EmbeddingProperty(indexingType=1) List<EmbeddingVector> listVec;\n"
+                        + "  @EmbeddingProperty(indexingType=1)"
+                        + "  Collection<EmbeddingVector> collectVec;\n"
+                        + "  @EmbeddingProperty(indexingType=1) EmbeddingVector[] arrVec;\n"
+                        + "}\n");
+
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java",
+                "new AppSearchSchema.EmbeddingPropertyConfig.Builder");
+        checkResultContains("Gift.java",
+                "AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_SIMILARITY");
+        checkResultContains("Gift.java",
+                "AppSearchSchema.EmbeddingPropertyConfig.INDEXING_TYPE_NONE");
+        checkResultContains("Gift.java",
+                "EmbeddingVector");
+        checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testQuantizedEmbeddingFields() throws Exception {
+        Compilation compilation = compile(
+                "import java.util.*;\n"
+                        + "import androidx.appsearch.app.EmbeddingVector;\n"
+                        + "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        + "  @EmbeddingProperty(indexingType=1)"
+                        + "  EmbeddingVector defaultUnquantized;\n"
+                        + "  @EmbeddingProperty(indexingType=1, quantizationType=0)"
+                        + "  EmbeddingVector unquantized;\n"
+                        + "  @EmbeddingProperty(indexingType=1, quantizationType=1)"
+                        + "  EmbeddingVector quantized;\n"
+                        + "}\n");
+
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java",
+                "AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_NONE");
+        checkResultContains("Gift.java",
+                "AppSearchSchema.EmbeddingPropertyConfig.QUANTIZATION_TYPE_8_BIT");
+        checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testBlobHandleFields() throws Exception {
+        Compilation compilation = compile(
+                "import java.util.*;\n"
+                        + "import androidx.appsearch.app.AppSearchBlobHandle;\n"
+                        + "@Document\n"
+                        + "public class Gift {\n"
+                        + "  @Document.Namespace String namespace;\n"
+                        + "  @Document.Id String id;\n"
+                        + "  @Document.StringProperty String name;\n"
+                        // AppSearchBlobHandle properties
+                        + "  @BlobHandleProperty AppSearchBlobHandle blob;\n"
+                        + "  @BlobHandleProperty Collection<AppSearchBlobHandle> collectBlob;\n"
+                        + "  @BlobHandleProperty AppSearchBlobHandle[] arrBlob;\n"
+                        + "}\n");
+
+        assertThat(compilation).succeededWithoutWarnings();
+        checkResultContains("Gift.java",
+                "new AppSearchSchema.BlobHandlePropertyConfig.Builder");
+        checkResultContains("Gift.java", "AppSearchBlobHandle");
+        checkEqualsGolden("Gift.java");
+    }
+
+    @Test
+    public void testKotlinNullability() throws Exception {
+        compileKotlin("""
+                @Document
+                data class KotlinGift(
+                    @Document.Namespace val namespace: String,
+                    @Document.Id val id: String,
+                    @Document.StringProperty val nonNullList: List<String>,
+                    @Document.StringProperty val nullableList: List<String>?,
+                    @Document.BooleanProperty val nonNullBoolean: Boolean,
+                    @Document.BooleanProperty val nullableBoolean: Boolean?,
+                ) {}
+                """);
+
+        checkEqualsGolden("KotlinGift.java");
+        checkResultContains("KotlinGift.java",
+                "List<String> nonNullListConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<String> nullableListConv = null;");
+        checkResultContains("KotlinGift.java",
+                "boolean nonNullBooleanConv = genericDoc.getPropertyBoolean(\"nonNullBoolean\");");
+        checkResultContains("KotlinGift.java",
+                "Boolean nullableBooleanConv = null;");
+    }
+
+    @Test
+    public void testKotlinNullability_nullabilityLists() throws Exception {
+        compileKotlin("""
+                import androidx.appsearch.app.EmbeddingVector
+                @Document
+                data class Gift {
+                    @Document.Namespace String namespace
+                    @Document.Id String id
+                }
+                @Document
+                data class KotlinGift(
+                    @Document.Namespace val namespace: String,
+                    @Document.Id val id: String,
+                    @Document.StringProperty val nonNullStrings: List<String>,
+                    @Document.StringProperty val nullableStrings: List<String>?,
+                    @Document.LongProperty val nonNullLongs: List<Long>,
+                    @Document.LongProperty val nullableLongs: List<Long>?,
+                    @Document.BooleanProperty val nonNullBooleans: List<Boolean>,
+                    @Document.BooleanProperty val nullableBooleans: List<Boolean>?,
+                    @Document.DocumentProperty val nonNullCustomTypes: List<Gift>,
+                    @Document.DocumentProperty val nullableCustomTypes: List<Gift>?,
+                    @Document.EmbeddingProperty val nonNullEmbeddings: List<EmbeddingVector>,
+                    @Document.EmbeddingProperty val nullableEmbeddings: List<EmbeddingVector>?,
+                ) {}
+                """);
+
+        checkEqualsGolden("KotlinGift.java");
+
+        checkResultContains("KotlinGift.java",
+                "List<String> nonNullStringsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<String> nullableStringsConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Long> nonNullLongsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Long> nullableLongsConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Boolean> nonNullBooleansConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Boolean> nullableBooleansConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<Gift> nonNullCustomTypesConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<Gift> nullableCustomTypesConv = null;");
+        checkResultContains("KotlinGift.java",
+                "List<EmbeddingVector> nonNullEmbeddingsConv = Collections.emptyList();");
+        checkResultContains("KotlinGift.java",
+                "List<EmbeddingVector> nullableEmbeddingsConv = null;");
+    }
+
+    private void compileKotlin(String classBody) throws IOException {
+        String src = "package com.example.appsearch\n"
+                + "import androidx.appsearch.annotation.Document\n"
+                + "import androidx.appsearch.annotation.Document.*\n";
+
+        Source kotlinSource = Source.Companion.kotlin("KotlinGift.kt", src + classBody);
+        // We're compiling kotlin a bit differently, we need a fresh folder here
+        File kotlinCompilationDir = mTemporaryFolder.newFolder("kt");
+        TestKotlinCompilerKt.compile(
+                kotlinCompilationDir,
+                new TestCompilationArguments(
+                        ImmutableList.of(kotlinSource),
+                        /* classpath= */ ImmutableList.of(),
+                        /* inheritClasspath= */ true,
+                        /* javacArguments= */ ImmutableList.of(),
+                        /* kotlincArguments= */ ImmutableList.of("-language-version=1.9",
+                        "-api-version=1.9"),
+                        /* kaptProcessors= */ ImmutableList.of(new AppSearchCompiler()),
+                        /* symbolProcessorProviders= */ ImmutableList.of(),
+                        /* processorOptions= */
+                        ImmutableMap.of(
+                                "AppSearchCompiler.OutputDir", mGenFilesDir.getAbsolutePath(),
+                                "AppSearchCompiler.RestrictGeneratedCodeToLib", "false")
+                ));
     }
 
     private Compilation compile(String classBody) {

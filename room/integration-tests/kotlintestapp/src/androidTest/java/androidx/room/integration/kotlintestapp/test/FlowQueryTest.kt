@@ -16,35 +16,46 @@
 
 package androidx.room.integration.kotlintestapp.test
 
+import android.content.Context
 import androidx.kruth.assertThat
+import androidx.room.ExperimentalRoomApi
+import androidx.room.Room
+import androidx.room.integration.kotlintestapp.TestDatabase
 import androidx.room.integration.kotlintestapp.vo.Book
 import androidx.room.integration.kotlintestapp.vo.Playlist
 import androidx.room.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room.integration.kotlintestapp.vo.PlaylistWithSongs
 import androidx.room.integration.kotlintestapp.vo.Song
 import androidx.room.withTransaction
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.Ignore
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class FlowQueryTest : TestDatabaseTest() {
@@ -98,7 +109,7 @@ class FlowQueryTest : TestDatabaseTest() {
 
         val latch = CountDownLatch(1)
         val job =
-            async(Dispatchers.IO) {
+            launch(Dispatchers.IO) {
                 booksDao.getBooksFlow().collect {
                     assertThat(it).isEqualTo(listOf(TestUtil.BOOK_1, TestUtil.BOOK_2))
                     latch.countDown()
@@ -119,7 +130,7 @@ class FlowQueryTest : TestDatabaseTest() {
         val secondResultLatch = CountDownLatch(1)
         val results = mutableListOf<List<Book>>()
         val job =
-            async(Dispatchers.IO) {
+            launch(Dispatchers.IO) {
                 booksDao.getBooksFlow().collect {
                     when (results.size) {
                         0 -> {
@@ -254,6 +265,7 @@ class FlowQueryTest : TestDatabaseTest() {
         }
     }
 
+    @Ignore("Due to b/365506854.")
     @Test
     fun receiveBooks_latestUpdateOnly() = runBlocking {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
@@ -384,5 +396,47 @@ class FlowQueryTest : TestDatabaseTest() {
         }
 
         job.cancelAndJoin()
+    }
+
+    @Test
+    fun collectBooks_autoClose(): Unit = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        context.deleteDatabase("auto-close-test.db")
+
+        @OptIn(ExperimentalRoomApi::class)
+        val database =
+            Room.databaseBuilder<TestDatabase>(context, "auto-close-test.db")
+                .setAutoCloseTimeout(1, TimeUnit.SECONDS)
+                .build()
+
+        database.booksDao().insertPublisher(TestUtil.PUBLISHER.publisherId, TestUtil.PUBLISHER.name)
+
+        val collectJob = launch {
+            var collections = 0
+            database.booksDao().getBooksFlow().collect {
+                when (collections) {
+                    0 -> {
+                        assertThat(it).isEmpty()
+                    }
+                    1 -> {
+                        assertThat(it).containsExactly(TestUtil.BOOK_1)
+                        throw CancellationException()
+                    }
+                    else -> {
+                        fail("Received too many Flow.collect")
+                    }
+                }
+                collections++
+            }
+        }
+
+        val insertJob = launch {
+            delay(2.seconds)
+            database.booksDao().insertBookSuspend(TestUtil.BOOK_1)
+        }
+
+        withTimeout(TimeUnit.SECONDS.toMillis(3)) { listOf(collectJob, insertJob).joinAll() }
+
+        database.close()
     }
 }

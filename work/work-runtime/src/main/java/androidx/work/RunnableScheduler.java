@@ -17,7 +17,8 @@
 package androidx.work;
 
 import androidx.annotation.IntRange;
-import androidx.annotation.NonNull;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Can be used to schedule {@link Runnable}s after a delay in milliseconds.

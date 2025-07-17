@@ -20,7 +20,6 @@ import android.os.Bundle;
 
 import androidx.fragment.app.FragmentActivity;
 
-
 public class SettingsActivity extends FragmentActivity {
 
     @Override

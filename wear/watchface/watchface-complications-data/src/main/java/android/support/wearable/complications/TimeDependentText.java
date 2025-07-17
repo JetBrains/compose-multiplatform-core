@@ -20,8 +20,9 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Serializable;
 
@@ -37,8 +38,7 @@ public interface TimeDependentText extends Parcelable, Serializable {
      * @param resources {@link Resources} from the current {@link Context}
      * @param dateTimeMillis milliseconds since epoch, e.g. from {@link System#currentTimeMillis}
      */
-    @NonNull
-    CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis);
+    @NonNull CharSequence getTextAt(@NonNull Resources resources, long dateTimeMillis);
 
     /**
      * Returns true if the result of {@link #getTextAt} will be the same for both {@code

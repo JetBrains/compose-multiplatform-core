@@ -40,17 +40,11 @@ import androidx.compose.ui.unit.LayoutDirection
  * result.
  *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerTopLeftSample
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerScaleAndPivotSample
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerColorFilterSample
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerRenderEffectSample
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerAlphaSample
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerRotationX
- *
  * @sample androidx.compose.ui.graphics.samples.GraphicsLayerRotationYWithCameraDistance
  */
 fun DrawScope.drawLayer(graphicsLayer: GraphicsLayer) {
@@ -91,6 +85,10 @@ expect class GraphicsLayer {
      * layer are overlapping. Similarly leveraging [CompositingStrategy.Offscreen] is useful in
      * situations where creating an offscreen buffer is preferred usually in conjunction with
      * [BlendMode] usage.
+     *
+     * When [blendMode] is anything other than [BlendMode.SrcOver] or [colorFilter] is non-null,
+     * [compositingStrategy]'s value will be overridden and is forced to
+     * [CompositingStrategy.Offscreen].
      */
     var compositingStrategy: CompositingStrategy
 
@@ -238,7 +236,6 @@ expect class GraphicsLayer {
      * clipped to this geometry.
      *
      * @param path Path to be used as the Outline for the [GraphicsLayer]
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerOutlineSample
      */
     fun setPathOutline(path: Path)
@@ -253,7 +250,6 @@ expect class GraphicsLayer {
      * @param topLeft The top left of the rounded rect outline
      * @param size The size of the rounded rect outline
      * @param cornerRadius The corner radius of the rounded rect outline
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerRoundRectOutline
      */
     fun setRoundRectOutline(
@@ -271,7 +267,6 @@ expect class GraphicsLayer {
      *
      * @param topLeft The top left of the rounded rect outline
      * @param size The size of the rounded rect outline
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerRectOutline
      */
     fun setRectOutline(topLeft: Offset = Offset.Zero, size: Size = Size.Unspecified)
@@ -358,18 +353,15 @@ expect class GraphicsLayer {
      * @param layoutDirection [LayoutDirection] of the layout being drawn in.
      * @param size [Size] of the [GraphicsLayer]
      * @param block lambda that is called to issue drawing commands on this [DrawScope]
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerTopLeftSample
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerBlendModeSample
-     *
      * @sample androidx.compose.ui.graphics.samples.GraphicsLayerTranslateSample
      */
     fun record(
         density: Density,
         layoutDirection: LayoutDirection,
         size: IntSize,
-        block: DrawScope.() -> Unit
+        block: DrawScope.() -> Unit,
     )
 
     /**
@@ -399,7 +391,7 @@ fun GraphicsLayer.setOutline(outline: Outline) {
         is Outline.Rectangle ->
             setRectOutline(
                 Offset(outline.rect.left, outline.rect.top),
-                Size(outline.rect.width, outline.rect.height)
+                Size(outline.rect.width, outline.rect.height),
             )
         is Outline.Generic -> setPathOutline(outline.path)
         is Outline.Rounded -> {
@@ -414,7 +406,7 @@ fun GraphicsLayer.setOutline(outline: Outline) {
                 setRoundRectOutline(
                     Offset(rr.left, rr.top),
                     Size(rr.width, rr.height),
-                    rr.bottomLeftCornerRadius.x
+                    rr.bottomLeftCornerRadius.x,
                 )
             }
         }

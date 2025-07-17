@@ -20,6 +20,7 @@ package androidx.compose.ui.text.font
 
 import android.content.Context
 import android.graphics.Typeface
+import androidx.compose.ui.text.internal.requirePrecondition
 
 /**
  * Describes a system-installed font that may be present on some Android devices.
@@ -57,7 +58,7 @@ fun Font(
     familyName: DeviceFontFamilyName,
     weight: FontWeight = FontWeight.Normal,
     style: FontStyle = FontStyle.Normal,
-    variationSettings: FontVariation.Settings = FontVariation.Settings()
+    variationSettings: FontVariation.Settings = FontVariation.Settings(),
 ): Font {
     return DeviceFontFamilyNameFont(familyName, weight, style, variationSettings)
 }
@@ -74,7 +75,7 @@ fun Font(
 @JvmInline
 value class DeviceFontFamilyName(val name: String) {
     init {
-        require(name.isNotEmpty()) { "name may not be empty" }
+        requirePrecondition(name.isNotEmpty()) { "name may not be empty" }
     }
 }
 
@@ -83,7 +84,7 @@ constructor(
     private val familyName: DeviceFontFamilyName,
     override val weight: FontWeight,
     override val style: FontStyle,
-    variationSettings: FontVariation.Settings
+    variationSettings: FontVariation.Settings,
 ) : AndroidFont(FontLoadingStrategy.OptionalLocal, NamedFontLoader, variationSettings) {
     fun loadCached(context: Context): Typeface? {
         return PlatformTypefaces()
@@ -92,7 +93,7 @@ constructor(
                 weight,
                 style,
                 variationSettings,
-                context
+                context,
             )
     }
 

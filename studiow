@@ -64,10 +64,15 @@ cleanSettings=false
 reinstall=false
 projectSubset=""
 profile=false
+acceptTos=false
 while [ "$1" != "" ]; do
   arg="$1"
   shift
   # parse options
+  if [ "$arg" == "--acceptTos" ]; then
+    acceptTos=true
+    continue
+  fi
   if [ "$arg" == "--clear-caches" ]; then
     clearCaches=true
     continue
@@ -200,5 +205,9 @@ else
   fi
 
   # ask gradle to launch studio
-  ./gradlew :studio
+  if [ "$acceptTos" == "true" ]; then
+    ./gradlew :studio --acceptTos
+  else
+    ./gradlew :studio
+  fi
 fi

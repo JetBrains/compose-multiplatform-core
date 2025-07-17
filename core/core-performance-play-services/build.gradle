@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -47,17 +47,15 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
-    namespace "androidx.core.performance.play.services"
+    namespace = "androidx.core.performance.play.services"
 }
 
 androidx {
     name = "Core Performance Play Services extensions"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_PERFORMANCE
     inceptionYear = "2023"
     description = "Get media performance class data from Google."
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }

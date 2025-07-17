@@ -26,7 +26,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.testutils.LifecycleOwnerUtils.waitUntilState
+import androidx.testutils.lifecycle.LifecycleOwnerUtils.waitUntilState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,7 +44,7 @@ class LocalesLateOnCreateTestCase {
         waitUntilState(activityRule.activity, Lifecycle.State.RESUMED)
         assertConfigurationLocalesEquals(
             DEFAULT_LOCALE_LIST,
-            activityRule.activity.resources.configuration
+            activityRule.activity.resources.configuration,
         )
 
         // Simulate the user set locales, which should force an activity recreate().
@@ -56,7 +56,7 @@ class LocalesLateOnCreateTestCase {
         // The requested locales should have been set during attachBaseContext().
         assertConfigurationLocalesEquals(
             EXPECTED_LOCALE_LIST,
-            activityRule.activity.resources.configuration
+            activityRule.activity.resources.configuration,
         )
     }
 }

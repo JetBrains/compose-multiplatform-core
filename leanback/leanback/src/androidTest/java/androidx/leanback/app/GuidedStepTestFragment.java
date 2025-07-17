@@ -17,16 +17,17 @@
 
 package androidx.leanback.app;
 
+import android.app.Activity;
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.annotation.NonNull;
-import android.app.Activity;
-import android.app.FragmentManager;
 import androidx.leanback.widget.GuidanceStylist.Guidance;
 import androidx.leanback.widget.GuidedAction;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -152,9 +153,8 @@ public class GuidedStepTestFragment extends GuidedStepFragment {
         mProvider.onSaveInstanceState(outState);
     }
 
-    @NonNull
     @Override
-    public Guidance onCreateGuidance(@NonNull Bundle savedInstanceState) {
+    public @NonNull Guidance onCreateGuidance(@NonNull Bundle savedInstanceState) {
         Guidance g = mProvider.onCreateGuidance(savedInstanceState);
         if (g == null) {
             g = new Guidance("", "", "", null);

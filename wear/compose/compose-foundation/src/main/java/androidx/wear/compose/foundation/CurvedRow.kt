@@ -33,7 +33,6 @@ import androidx.compose.ui.util.fastMaxOfOrNull
  * Example usage:
  *
  * @sample androidx.wear.compose.foundation.samples.CurvedRowAndColumn
- *
  * @param modifier The [CurvedModifier] to apply to this curved row.
  * @param radialAlignment Radial alignment specifies where to lay down children that are thinner
  *   than the CurvedRow, either closer to the center [CurvedAlignment.Radial.Inner], apart from the
@@ -48,21 +47,21 @@ public fun CurvedScope.curvedRow(
     modifier: CurvedModifier = CurvedModifier,
     radialAlignment: CurvedAlignment.Radial? = null,
     angularDirection: CurvedDirection.Angular? = null,
-    contentBuilder: CurvedScope.() -> Unit
-) =
+    contentBuilder: CurvedScope.() -> Unit,
+): Unit =
     add(
         CurvedRowChild(
             curvedLayoutDirection.copy(overrideAngular = angularDirection),
             radialAlignment,
-            contentBuilder
+            contentBuilder,
         ),
-        modifier
+        modifier,
     )
 
 internal class CurvedRowChild(
     curvedLayoutDirection: CurvedLayoutDirection,
     val radialAlignment: CurvedAlignment.Radial? = null,
-    contentBuilder: CurvedScope.() -> Unit
+    contentBuilder: CurvedScope.() -> Unit,
 ) : ContainerChild(curvedLayoutDirection, !curvedLayoutDirection.clockwise(), contentBuilder) {
 
     override fun doEstimateThickness(maxRadius: Float) =
@@ -93,14 +92,14 @@ internal class CurvedRowChild(
             totalSweep,
             parentOuterRadius,
             parentThickness,
-            parentOuterRadius - parentThickness / 2
+            parentOuterRadius - parentThickness / 2,
         )
     }
 
     override fun doAngularPosition(
         parentStartAngleRadians: Float,
         parentSweepRadians: Float,
-        centerOffset: Offset
+        centerOffset: Offset,
     ): Float {
         val weights =
             childrenInLayoutOrder.fastMap { node ->

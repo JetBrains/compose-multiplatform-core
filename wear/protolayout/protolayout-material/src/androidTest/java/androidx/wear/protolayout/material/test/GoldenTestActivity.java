@@ -16,6 +16,8 @@
 
 package androidx.wear.protolayout.material.test;
 
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import static androidx.wear.protolayout.material.RunnerUtils.SCREEN_HEIGHT;
 import static androidx.wear.protolayout.material.RunnerUtils.SCREEN_WIDTH;
 import static androidx.wear.protolayout.materialcore.Helper.checkNotNull;
@@ -27,33 +29,37 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
+import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.ResourceBuilders.AndroidImageResourceByResId;
 import androidx.wear.protolayout.ResourceBuilders.ImageResource;
 import androidx.wear.protolayout.ResourceBuilders.Resources;
+import androidx.wear.protolayout.renderer.ProtoLayoutVisibilityState;
 import androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance;
 
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("deprecation")
 public class GoldenTestActivity extends Activity {
 
     /** Extra to be put in the intent if test should use RTL direction on parent View. */
     public static final String USE_RTL_DIRECTION = "using_rtl";
+
     private static final String ICON_ID = "icon";
     private static final String ICON_ID_SMALL = "icon_small";
     private static final String AVATAR = "avatar_image";
+    private static final int TOP_PADDING = 400;
+    public static String VIEW_TAG = "ProtoLayout";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -62,9 +68,13 @@ public class GoldenTestActivity extends Activity {
         Layout layout = Layout.fromByteArray(layoutPayload);
 
         Context appContext = getApplicationContext();
-        FrameLayout root = new FrameLayout(appContext);
-        root.setBackgroundColor(Color.BLACK);
-        root.setLayoutParams(new LayoutParams(SCREEN_WIDTH, SCREEN_HEIGHT));
+        LinearLayout root = new LinearLayout(appContext);
+        root.setLayoutParams(new LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
+        root.setPadding(0, TOP_PADDING, 0, 0);
+        FrameLayout plView = new FrameLayout(appContext);
+        plView.setBackgroundColor(Color.BLACK);
+        plView.setLayoutParams(new LayoutParams(SCREEN_WIDTH, SCREEN_HEIGHT));
+        root.addView(plView);
         boolean isRtlEnabled = extras.getBoolean(USE_RTL_DIRECTION);
         updateLanguage(this, isRtlEnabled);
 
@@ -78,25 +88,27 @@ public class GoldenTestActivity extends Activity {
                                         mainExecutor,
                                         mainExecutor,
                                         "androidx.wear.tiles.extra.CLICKABLE_ID")
-                                .setIsViewFullyVisible(true)
                                 .build());
+        instance.setLayoutVisibility(ProtoLayoutVisibilityState.VISIBILITY_STATE_FULLY_VISIBLE);
 
-        instance.renderAndAttach(checkNotNull(layout).toProto(), resources.toProto(), root);
+        try {
+            instance.renderAndAttach(checkNotNull(layout).toProto(), resources.toProto(), plView)
+                    .get();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
 
-        View firstChild = root.getChildAt(0);
+        View firstChild = plView.getChildAt(0);
 
         // Simulate what the thing outside the renderer should do. Center the contents.
         LayoutParams layoutParams = (LayoutParams) firstChild.getLayoutParams();
         layoutParams.gravity = Gravity.CENTER;
 
-        // Set the activity to be full screen so when we crop the Bitmap we don't get time bar etc.
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow()
-                .setFlags(
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-        setContentView(root, new ViewGroup.LayoutParams(SCREEN_WIDTH, SCREEN_HEIGHT));
+        setContentView(root);
+        plView.setContentDescription(VIEW_TAG);
         super.onCreate(savedInstanceState);
     }
 
@@ -136,7 +148,7 @@ public class GoldenTestActivity extends Activity {
         Locale.setDefault(locale);
         Configuration config = new Configuration();
         config.setLocale(locale);
-        context.getResources().updateConfiguration(
-                config, context.getResources().getDisplayMetrics());
+        context.getResources()
+                .updateConfiguration(config, context.getResources().getDisplayMetrics());
     }
 }

@@ -17,7 +17,7 @@
 package androidx.credentials;
 
 import static androidx.credentials.CreateCredentialRequest.BUNDLE_KEY_PREFER_IMMEDIATELY_AVAILABLE_CREDENTIALS;
-import static androidx.credentials.internal.FrameworkImplHelper.getFinalCreateCredentialData;
+import static androidx.credentials.internal.ConversionUtilsKt.getFinalCreateCredentialData;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -139,7 +139,7 @@ public class CreatePasswordRequestJavaTest {
         assertThat(request.getPassword()).isEqualTo(passwordExpected);
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @SuppressWarnings("deprecation") // bundle.get(key)
     @Test
     public void getter_frameworkProperties() {
@@ -188,10 +188,10 @@ public class CreatePasswordRequestJavaTest {
                 CreateCredentialRequest.DisplayInfo.BUNDLE_KEY_USER_ID)).isEqualTo(idExpected);
         assertThat(((Icon) (displayInfoBundle.getParcelable(
                 CreateCredentialRequest.DisplayInfo.BUNDLE_KEY_CREDENTIAL_TYPE_ICON))).getResId()
-        ).isEqualTo(R.drawable.ic_password);
+        ).isEqualTo(R.drawable.adx_ic_password);
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     public void frameworkConversion_success() {
         String idExpected = "id";
@@ -234,7 +234,7 @@ public class CreatePasswordRequestJavaTest {
         assertThat(displayInfo.getUserDisplayName()).isNull();
         assertThat(displayInfo.getUserId()).isEqualTo(idExpected);
         assertThat(displayInfo.getCredentialTypeIcon().getResId())
-                .isEqualTo(R.drawable.ic_password);
+                .isEqualTo(R.drawable.adx_ic_password);
         assertThat(displayInfo.getPreferDefaultProvider()).isEqualTo(defaultProviderExpected);
         assertThat(convertedRequest.getCredentialData().getString(customRequestDataKey))
                 .isEqualTo(customRequestDataValue);

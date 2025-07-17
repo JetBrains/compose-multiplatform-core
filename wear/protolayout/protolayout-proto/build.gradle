@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import androidx.build.LibraryType
-import androidx.build.RunApiTasks
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -33,7 +32,7 @@ repackage {
 }
 
 dependencies {
-    implementation("androidx.annotation:annotation:1.1.0")
+    implementation("androidx.annotation:annotation:1.8.1")
     api(project(":wear:protolayout:protolayout-external-protobuf"))
     // Must be compileOnly to not bring in protobufLite in runtime
     // Repackaged protobufLite brought in by
@@ -41,39 +40,9 @@ dependencies {
     compileOnly(libs.protobufLite)
 }
 
-protobuf {
-    protoc {
-        artifact = libs.protobufCompiler.get()
-    }
-
-    generateProtoTasks {
-        ofSourceSet("main").each { task ->
-            project.sourceSets.main.java.srcDir(task)
-        }
-        all().each { task ->
-            task.builtins {
-                java {
-                    option 'lite'
-                }
-            }
-        }
-    }
-}
-
-afterEvaluate {
-    lint {
-        lintOptions {
-            // protobuf generates unannotated methods
-            disable("UnknownNullness")
-        }
-    }
-}
-
 androidx {
     name = "Wear ProtoLayout Proto"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_PROTO_LIBRARY
     inceptionYear = "2022"
     description = "Jarjar the generated proto and proto-lite dependency for use by wear-protolayout"
-    runApiTasks = new RunApiTasks.No("Metalava doesn't properly parse the proto sources " +
-            "(b/180579063)")
 }

@@ -21,47 +21,42 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
-    id('AndroidXPlugin')
-    id('com.android.library')
+    id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 dependencies {
-    implementation project(":appsearch:appsearch")
+    api(libs.jspecify)
+    implementation(project(":appsearch:appsearch"))
     implementation("androidx.core:core:1.8.0")
 
-    annotationProcessor project(':appsearch:appsearch-compiler')
+    annotationProcessor(project(":appsearch:appsearch-compiler"))
 
-    androidTestImplementation project(':appsearch:appsearch')
-    androidTestImplementation project(':appsearch:appsearch-local-storage')
-    androidTestImplementation project(':appsearch:appsearch-test-util')
-    androidTestImplementation(libs.multidex)
+    androidTestImplementation(project(":appsearch:appsearch"))
+    androidTestImplementation(project(":appsearch:appsearch-local-storage"))
+    androidTestImplementation(project(":appsearch:appsearch-test-util"))
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.multidex)
     androidTestImplementation(libs.junit)
 }
 
 androidx {
     name = "AppSearch Builtin Types"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = '2021'
     description = 'Contains AppSearch Document classes and builders for a variety of common ' +
             'objects based on http://schema.org. Data interchange with the system, and other ' +
             'apps, as well as structured parameters for semantic intents should use these ' +
             'built-in types as appropriate.'
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.appsearch.builtintypes"
-
-    defaultConfig {
-        multiDexEnabled true
-    }
+    compileSdk = 36
+    namespace = "androidx.appsearch.builtintypes"
 }

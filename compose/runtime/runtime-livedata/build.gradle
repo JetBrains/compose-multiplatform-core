@@ -21,8 +21,8 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -37,9 +37,9 @@ dependencies {
     api(project(":compose:runtime:runtime"))
     api("androidx.lifecycle:lifecycle-livedata:2.6.1")
     api("androidx.lifecycle:lifecycle-runtime:2.6.1")
-    api("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
+    api("androidx.lifecycle:lifecycle-runtime-compose:2.8.3")
 
-    androidTestImplementation(projectOrArtifact(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1")
     androidTestImplementation(libs.testRunner)
@@ -49,14 +49,13 @@ dependencies {
 
 androidx {
     name = "Compose LiveData integration"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2020"
     description = "Compose integration with LiveData"
-    legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
-    samples(projectOrArtifact(":compose:runtime:runtime-livedata:runtime-livedata-samples"))
+    samples(project(":compose:runtime:runtime-livedata:runtime-livedata-samples"))
 }
 
 android {
-    namespace "androidx.compose.runtime.livedata"
+    compileSdk = 35
+    namespace = "androidx.compose.runtime.livedata"
 }

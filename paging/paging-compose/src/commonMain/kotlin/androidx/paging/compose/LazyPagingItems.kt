@@ -51,7 +51,6 @@ import kotlinx.coroutines.withContext
  * mock data.
  *
  * @sample androidx.paging.compose.samples.PagingPreview
- *
  * @param T the type of value used by [PagingData].
  */
 public class LazyPagingItems<T : Any>
@@ -72,11 +71,9 @@ internal constructor(
             PagingDataPresenter<T>(
                 mainContext = mainDispatcher,
                 cachedPagingData =
-                    if (flow is SharedFlow<PagingData<T>>) flow.replayCache.firstOrNull() else null
+                    if (flow is SharedFlow<PagingData<T>>) flow.replayCache.firstOrNull() else null,
             ) {
-            override suspend fun presentPagingDataEvent(
-                event: PagingDataEvent<T>,
-            ) {
+            override suspend fun presentPagingDataEvent(event: PagingDataEvent<T>) {
                 updateItemSnapshotList()
             }
         }
@@ -160,7 +157,7 @@ internal constructor(
                     refresh = InitialLoadStates.refresh,
                     prepend = InitialLoadStates.prepend,
                     append = InitialLoadStates.append,
-                    source = InitialLoadStates
+                    source = InitialLoadStates,
                 )
         )
         private set
@@ -184,7 +181,6 @@ private val InitialLoadStates =
  * [LazyListScope.items] in order to display the data obtained from a [Flow] of [PagingData].
  *
  * @sample androidx.paging.compose.samples.PagingBackendSample
- *
  * @param context the [CoroutineContext] to perform the collection of [PagingData] and
  *   [CombinedLoadStates].
  */

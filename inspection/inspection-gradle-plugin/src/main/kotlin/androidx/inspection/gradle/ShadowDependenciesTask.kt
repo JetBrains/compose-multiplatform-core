@@ -35,7 +35,7 @@ import org.gradle.api.tasks.TaskProvider
 fun Project.registerShadowDependenciesTask(
     variant: Variant,
     jarName: String?,
-    zipTask: TaskProvider<Copy>
+    zipTask: TaskProvider<Copy>,
 ): TaskProvider<ShadowJar> {
     val versionTask = project.registerGenerateInspectionPlatformVersionTask(variant)
     return tasks.register(variant.taskName("inspectionShadowDependencies"), ShadowJar::class.java) {
@@ -57,13 +57,12 @@ fun Project.registerShadowDependenciesTask(
         it.archiveVersion.set("")
         it.dependsOn(zipTask)
         val prefix = "deps.${project.name.replace('-', '.')}"
-        @Suppress("UnstableApiUsage")
         val runtimeDeps =
             variant.runtimeConfiguration.incoming
                 .artifactView {
                     it.attributes.attribute(
                         Attribute.of("artifactType", String::class.java),
-                        ArtifactTypeDefinition.JAR_TYPE
+                        ArtifactTypeDefinition.JAR_TYPE,
                     )
                 }
                 .files
@@ -74,7 +73,6 @@ fun Project.registerShadowDependenciesTask(
         it.from({ runtimeDeps.files })
         it.doFirst {
             val task = it as ShadowJar
-            @Suppress("UnstableApiUsage")
             runtimeDeps.files
                 .flatMap { it.extractPackageNames() }
                 .toSet()

@@ -18,9 +18,10 @@ package androidx.camera.camera2.internal.compat.quirk;
 
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.internal.compat.quirk.OnePixelShiftQuirk;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary

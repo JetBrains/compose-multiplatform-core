@@ -18,72 +18,67 @@ package com.example.androidx.mediarouting.activities.systemrouting;
 
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
+import com.example.androidx.mediarouting.activities.systemrouting.source.SystemRoutesSource;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
-/**
- * An abstract model that holds information about routes from different sources.
- *
- * Can represent media routers' routes, bluetooth routes, or audio routes.
- */
+/** Holds information about a system route. */
 public final class SystemRouteItem implements SystemRoutesAdapterItem {
 
-    @NonNull
-    private final String mId;
+    /**
+     * Describes the support of a route for selection.
+     *
+     * <p>We understand by selection the action that makes a specific route the active route. Note
+     * that this terminology may not match the terminology used by the underlying {@link
+     * SystemRoutesSource}.
+     */
+    public enum SelectionSupportState {
+        /** The underlying route source doesn't support selection. */
+        UNSUPPORTED,
+        /**
+         * The corresponding route is already selected, but can be reselected.
+         *
+         * <p>Selecting an already selected route (reselection) can change the metadata of the route
+         * source. For example, reselecting a MediaRouter2 route can alter the transfer reason.
+         */
+        RESELECTABLE,
+        /** The route is available for selection. */
+        SELECTABLE
+    }
 
-    @NonNull
-    private final String mName;
+    /** The {@link SystemRoutesSource#getSourceId()} of the source that created this item. */
+    public final @NonNull String mSourceId;
 
-    @Nullable
-    private final String mAddress;
+    /** An id that uniquely identifies this route item within the source. */
+    public final @NonNull String mId;
 
-    @Nullable
-    private final String mDescription;
+    public final @NonNull String mName;
+
+    public final @Nullable String mAddress;
+
+    public final @Nullable String mDescription;
+
+    public final @Nullable String mSuitabilityStatus;
+
+    public final @Nullable Boolean mTransferInitiatedBySelf;
+
+    public final @Nullable String mTransferReason;
+
+    public final @NonNull SelectionSupportState mSelectionSupportState;
 
     private SystemRouteItem(@NonNull Builder builder) {
-        Objects.requireNonNull(builder.mId);
-        Objects.requireNonNull(builder.mName);
-
-        mId = builder.mId;
-        mName = builder.mName;
-
+        mSourceId = Objects.requireNonNull(builder.mSourceId);
+        mId = Objects.requireNonNull(builder.mId);
+        mName = Objects.requireNonNull(builder.mName);
         mAddress = builder.mAddress;
         mDescription = builder.mDescription;
-    }
-
-    /**
-     * Returns a unique identifier of a route.
-     */
-    @NonNull
-    public String getId() {
-        return mId;
-    }
-
-    /**
-     * Returns a human-readable name of the route.
-     */
-    @NonNull
-    public String getName() {
-        return mName;
-    }
-
-    /**
-     * Returns address if the route is a Bluetooth route and {@code null} otherwise.
-     */
-    @Nullable
-    public String getAddress() {
-        return mAddress;
-    }
-
-    /**
-     * Returns a route description or {@code null} if empty.
-     */
-    @Nullable
-    public String getDescription() {
-        return mDescription;
+        mSuitabilityStatus = builder.mSuitabilityStatus;
+        mTransferInitiatedBySelf = builder.mTransferInitiatedBySelf;
+        mTransferReason = builder.mTransferReason;
+        mSelectionSupportState = builder.mSelectionSupportState;
     }
 
     @Override
@@ -91,14 +86,29 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SystemRouteItem that = (SystemRouteItem) o;
-        return mId.equals(that.mId) && mName.equals(that.mName)
-                && Objects.equals(mAddress, that.mAddress) && Objects.equals(
-                mDescription, that.mDescription);
+        return mSourceId.equals(that.mSourceId)
+                && mId.equals(that.mId)
+                && mName.equals(that.mName)
+                && Objects.equals(mAddress, that.mAddress)
+                && Objects.equals(mDescription, that.mDescription)
+                && Objects.equals(mSuitabilityStatus, that.mSuitabilityStatus)
+                && Objects.equals(mTransferInitiatedBySelf, that.mTransferInitiatedBySelf)
+                && Objects.equals(mTransferReason, that.mTransferReason)
+                && mSelectionSupportState.equals(that.mSelectionSupportState);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mId, mName, mAddress, mDescription);
+        return Objects.hash(
+                mSourceId,
+                mId,
+                mName,
+                mAddress,
+                mDescription,
+                mSuitabilityStatus,
+                mTransferInitiatedBySelf,
+                mTransferReason,
+                mSelectionSupportState);
     }
 
     /**
@@ -106,27 +116,32 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
      */
     public static final class Builder {
 
-        @NonNull
-        private final String mId;
+        private @NonNull String mSourceId;
+        private final @NonNull String mId;
+        private @NonNull String mName;
+        private @Nullable String mAddress;
+        private @Nullable String mDescription;
+        private @Nullable String mSuitabilityStatus;
+        private @Nullable Boolean mTransferInitiatedBySelf;
+        private @Nullable String mTransferReason;
+        public @NonNull SelectionSupportState mSelectionSupportState;
 
-        @NonNull
-        private String mName;
-
-        @Nullable
-        private String mAddress;
-
-        @Nullable
-        private String mDescription;
-
-        public Builder(@NonNull String id) {
+        /**
+         * Creates a builder with the mandatory properties.
+         *
+         * @param sourceId See {@link SystemRouteItem#mSourceId}.
+         * @param id See {@link SystemRouteItem#mId}.
+         */
+        public Builder(@NonNull String sourceId, @NonNull String id) {
+            mSourceId = sourceId;
             mId = id;
+            mSelectionSupportState = SelectionSupportState.UNSUPPORTED;
         }
 
         /**
          * Sets a route name.
          */
-        @NonNull
-        public Builder setName(@NonNull String name) {
+        public @NonNull Builder setName(@NonNull String name) {
             mName = name;
             return this;
         }
@@ -134,8 +149,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets an address for the route.
          */
-        @NonNull
-        public Builder setAddress(@NonNull String address) {
+        public @NonNull Builder setAddress(@NonNull String address) {
             if (!TextUtils.isEmpty(address)) {
                 mAddress = address;
             }
@@ -145,8 +159,7 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         /**
          * Sets a description for the route.
          */
-        @NonNull
-        public Builder setDescription(@NonNull String description) {
+        public @NonNull Builder setDescription(@NonNull String description) {
             if (!TextUtils.isEmpty(description)) {
                 mDescription = description;
             }
@@ -154,10 +167,43 @@ public final class SystemRouteItem implements SystemRoutesAdapterItem {
         }
 
         /**
+         * Sets a human-readable string describing the transfer suitability of the route, or null if
+         * not applicable.
+         */
+        public @NonNull Builder setSuitabilityStatus(@Nullable String suitabilityStatus) {
+            mSuitabilityStatus = suitabilityStatus;
+            return this;
+        }
+
+        /**
+         * Sets whether the corresponding route's selection is the result of an action of this app,
+         * or null if not applicable.
+         */
+        public @NonNull Builder setTransferInitiatedBySelf(
+                @Nullable Boolean transferInitiatedBySelf) {
+            mTransferInitiatedBySelf = transferInitiatedBySelf;
+            return this;
+        }
+
+        /**
+         * Sets a human-readable string describing the transfer reason, or null if not applicable.
+         */
+        public @NonNull Builder setTransferReason(@Nullable String transferReason) {
+            mTransferReason = transferReason;
+            return this;
+        }
+
+        /** Sets the {@link SelectionSupportState} for the corresponding route. */
+        public @NonNull Builder setSelectionSupportState(
+                @NonNull SelectionSupportState selectionSupportState) {
+            mSelectionSupportState = Objects.requireNonNull(selectionSupportState);
+            return this;
+        }
+
+        /**
          * Builds {@link SystemRouteItem}.
          */
-        @NonNull
-        public SystemRouteItem build() {
+        public @NonNull SystemRouteItem build() {
             return new SystemRouteItem(this);
         }
     }

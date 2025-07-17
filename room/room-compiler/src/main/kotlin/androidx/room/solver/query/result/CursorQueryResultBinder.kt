@@ -16,18 +16,22 @@
 
 package androidx.room.solver.query.result
 
-import androidx.room.compiler.codegen.XCodeBlock.Builder.Companion.addLocalVal
 import androidx.room.compiler.codegen.XPropertySpec
+import androidx.room.compiler.codegen.XTypeName
 import androidx.room.ext.AndroidTypeNames
 import androidx.room.solver.CodeGenScope
 
 class CursorQueryResultBinder : QueryResultBinder(NO_OP_RESULT_ADAPTER) {
+
+    override val usesCompatQueryWriter = true
+
     override fun convertAndReturn(
-        roomSQLiteQueryVar: String,
-        canReleaseQuery: Boolean,
+        sqlQueryVar: String,
         dbProperty: XPropertySpec,
+        bindStatement: (CodeGenScope.(String) -> Unit)?,
+        returnTypeName: XTypeName,
         inTransaction: Boolean,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         val transactionWrapper =
             if (inTransaction) {
@@ -43,7 +47,7 @@ class CursorQueryResultBinder : QueryResultBinder(NO_OP_RESULT_ADAPTER) {
                 AndroidTypeNames.CURSOR,
                 "%N.query(%L)",
                 dbProperty,
-                roomSQLiteQueryVar
+                sqlQueryVar,
             )
             transactionWrapper?.commitTransaction()
             addStatement("return %L", resultName)
@@ -56,8 +60,8 @@ class CursorQueryResultBinder : QueryResultBinder(NO_OP_RESULT_ADAPTER) {
             object : QueryResultAdapter(emptyList()) {
                 override fun convert(
                     outVarName: String,
-                    cursorVarName: String,
-                    scope: CodeGenScope
+                    stmtVarName: String,
+                    scope: CodeGenScope,
                 ) {}
             }
     }

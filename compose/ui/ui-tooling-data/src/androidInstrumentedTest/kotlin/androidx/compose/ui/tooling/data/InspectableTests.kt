@@ -125,7 +125,7 @@ class InspectableTests : ToolingTest() {
                 value: Any,
                 fromDefault: Boolean,
                 static: Boolean,
-                compared: Boolean
+                compared: Boolean,
             ) {
                 assertTrue(parameterCursor.hasNext())
                 val parameter = parameterCursor.next()
@@ -337,7 +337,7 @@ class InspectableTests : ToolingTest() {
             "text, modifier, color, fontSize, fontStyle, fontWeight, fontFamily, " +
                 "letterSpacing, textDecoration, textAlign, lineHeight, overflow, softWrap, " +
                 "maxLines, minLines, onTextLayout, style",
-            names.joinToString()
+            names.joinToString(),
         )
     }
 
@@ -353,7 +353,7 @@ class InspectableTests : ToolingTest() {
                         Text(text = "Hello World", color = Color.Green)
                         Button(onClick = {}) { Text(text = "OK") }
                     }
-                }
+                },
             )
         }
 

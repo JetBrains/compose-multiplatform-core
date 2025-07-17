@@ -22,7 +22,6 @@ import android.util.Log
 import android.view.View
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.ExtractedText
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.core.view.SoftwareKeyboardControllerCompat
 
@@ -41,7 +40,7 @@ internal interface InputMethodManager {
         selectionStart: Int,
         selectionEnd: Int,
         compositionStart: Int,
-        compositionEnd: Int
+        compositionEnd: Int,
     )
 
     fun updateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo)
@@ -89,7 +88,7 @@ internal class InputMethodManagerImpl(private val view: View) : InputMethodManag
         selectionStart: Int,
         selectionEnd: Int,
         compositionStart: Int,
-        compositionEnd: Int
+        compositionEnd: Int,
     ) {
         imm.updateSelection(view, selectionStart, selectionEnd, compositionStart, compositionEnd)
     }
@@ -107,7 +106,6 @@ internal class InputMethodManagerImpl(private val view: View) : InputMethodManag
 
 @RequiresApi(34)
 internal object Api34StartStylusHandwriting {
-    @DoNotInline
     fun startStylusHandwriting(imm: android.view.inputmethod.InputMethodManager, view: View) {
         imm.startStylusHandwriting(view)
     }

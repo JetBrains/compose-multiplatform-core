@@ -20,8 +20,11 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
+import androidx.compose.ui.util.fastAny
 import androidx.concurrent.futures.await
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ListenableWorker
 import androidx.work.OneTimeWorkRequest
@@ -37,8 +40,8 @@ import kotlinx.coroutines.sync.withLock
  * [SessionManager] is the entrypoint for Glance surfaces to start a session worker that will handle
  * their composition.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface SessionManager {
+@RestrictTo(LIBRARY_GROUP)
+public interface SessionManager {
     /**
      * [runWithLock] provides a scope in which to run operations on SessionManager.
      *
@@ -47,7 +50,7 @@ interface SessionManager {
      * long-running operations in [block]. The client should not maintain a reference to the
      * [SessionManagerScope] after [block] returns.
      */
-    suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T
+    public suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T
 
     /**
      * The name of the session key parameter, which is used to set the session key in the Worker's
@@ -55,30 +58,45 @@ interface SessionManager {
      *
      * TODO: consider using a typealias instead
      */
-    val keyParam: String
+    public val keyParam: String
         get() = "KEY"
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-interface SessionManagerScope {
+@RestrictTo(LIBRARY_GROUP)
+public interface SessionManagerScope {
     /** Start a session for the Glance in [session]. */
-    suspend fun startSession(context: Context, session: Session)
+    public suspend fun startSession(context: Context, session: Session)
 
     /** Closes the channel for the session corresponding to [key]. */
-    suspend fun closeSession(key: String)
+    public suspend fun closeSession(key: String)
 
     /** Returns true if a session is active with the given [key]. */
-    suspend fun isSessionRunning(context: Context, key: String): Boolean
+    public suspend fun isSessionRunning(context: Context, key: String): Boolean
 
     /** Gets the session corresponding to [key] if it exists */
-    fun getSession(key: String): Session?
+    public fun getSession(key: String): Session?
+
+    /**
+     * If the session still has pending events, and has not been closed (widget deleted) or failed
+     * due to error, recreate it to handle those events, without starting a new worker. Returns the
+     * new session if it was recreated.
+     */
+    public suspend fun recreateOrClose(session: Session): Session?
 }
 
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-val GlanceSessionManager: SessionManager = SessionManagerImpl(SessionWorker::class.java)
+@get:RestrictTo(LIBRARY_GROUP)
+public val GlanceSessionManager: SessionManager = SessionManagerImpl(SessionWorker::class.java)
 
-internal class SessionManagerImpl(private val workerClass: Class<out ListenableWorker>) :
-    SessionManager {
+public typealias InputDataFactory = SessionManagerImpl.(Session) -> Data
+
+@RestrictTo(LIBRARY_GROUP)
+public open class SessionManagerImpl(
+    private val workerClass: Class<out ListenableWorker>,
+    private val inputDataFactory: InputDataFactory = { session ->
+        workDataOf(keyParam to session.key)
+    },
+    private val workManagerProxy: WorkManagerProxy = WorkManagerProxy.Default,
+) : SessionManager {
     private companion object {
         const val TAG = "GlanceSessionManager"
         const val DEBUG = false
@@ -96,17 +114,17 @@ internal class SessionManagerImpl(private val workerClass: Class<out ListenableW
 
             override suspend fun startSession(context: Context, session: Session) {
                 if (DEBUG) Log.d(TAG, "startSession(${session.key})")
-                sessions.put(session.key, session)?.let { previousSession ->
-                    previousSession.close()
-                }
+                addSessionCloseExisting(session)
                 val workRequest =
                     OneTimeWorkRequest.Builder(workerClass)
-                        .setInputData(workDataOf(keyParam to session.key))
+                        .setInputData(inputDataFactory(session))
                         .build()
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork(session.key, ExistingWorkPolicy.REPLACE, workRequest)
-                    .result
-                    .await()
+                workManagerProxy.enqueueUniqueWork(
+                    context,
+                    session.key,
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest,
+                )
                 enqueueDelayedWorker(context)
             }
 
@@ -115,9 +133,7 @@ internal class SessionManagerImpl(private val workerClass: Class<out ListenableW
             @SuppressLint("ListIterator")
             override suspend fun isSessionRunning(context: Context, key: String): Boolean {
                 val workerIsRunningOrEnqueued =
-                    WorkManager.getInstance(context).getWorkInfosForUniqueWork(key).await().any {
-                        it.state in listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED)
-                    }
+                    workManagerProxy.workerIsRunningOrEnqueued(context, key)
                 val hasOpenSession = sessions[key]?.isOpen ?: false
                 val isRunning = hasOpenSession && workerIsRunningOrEnqueued
                 if (DEBUG) Log.d(TAG, "isSessionRunning($key) == $isRunning")
@@ -128,21 +144,83 @@ internal class SessionManagerImpl(private val workerClass: Class<out ListenableW
                 if (DEBUG) Log.d(TAG, "closeSession($key)")
                 sessions.remove(key)?.close()
             }
+
+            override suspend fun recreateOrClose(session: Session): Session? {
+                val events = session.receiveAllPendingEvents()
+                if (!session.isOpen || session.hasError || events.isEmpty()) {
+                    Log.d(
+                        TAG,
+                        "Closing session ${session.key} wasOpen=${!session.isOpen}" +
+                            " hasError=${session.hasError} events=$events",
+                    )
+                    closeSession(session.key)
+                    return null
+                }
+                return session.recreateWithEvents(events).also { addSessionCloseExisting(it) }
+            }
+
+            private fun addSessionCloseExisting(session: Session) {
+                sessions.put(session.key, session)?.let { previousSession ->
+                    previousSession.close()
+                }
+            }
         }
 
     override suspend fun <T> runWithLock(block: suspend SessionManagerScope.() -> T): T =
         mutex.withLock { scope.block() }
 
     /** Workaround worker to fix b/119920965 */
-    private fun enqueueDelayedWorker(context: Context) {
-        WorkManager.getInstance(context)
-            .enqueueUniqueWork(
-                "sessionWorkerKeepEnabled",
-                ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequest.Builder(workerClass)
-                    .setInitialDelay(10 * 365, TimeUnit.DAYS)
-                    .setConstraints(Constraints.Builder().setRequiresCharging(true).build())
-                    .build()
-            )
+    private suspend fun enqueueDelayedWorker(context: Context) {
+        workManagerProxy.enqueueUniqueWork(
+            context,
+            "sessionWorkerKeepEnabled",
+            ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequest.Builder(workerClass)
+                .setInitialDelay(10 * 365, TimeUnit.DAYS)
+                .setConstraints(Constraints.Builder().setRequiresCharging(true).build())
+                .build(),
+        )
     }
+}
+
+// This interface is used to allow us to use the same SessionManagerImpl with WorkManager or
+// RemoteWorkManager (which do not have a common supertype),
+@RestrictTo(LIBRARY_GROUP)
+public interface WorkManagerProxy {
+    public companion object {
+        public val Default: WorkManagerProxy =
+            object : WorkManagerProxy {
+                override suspend fun enqueueUniqueWork(
+                    context: Context,
+                    uniqueWorkName: String,
+                    existingWorkPolicy: ExistingWorkPolicy,
+                    workRequest: OneTimeWorkRequest,
+                ) {
+                    WorkManager.getInstance(context)
+                        .enqueueUniqueWork(uniqueWorkName, existingWorkPolicy, workRequest)
+                        .result
+                        .await()
+                }
+
+                override suspend fun workerIsRunningOrEnqueued(
+                    context: Context,
+                    uniqueWorkName: String,
+                ): Boolean =
+                    WorkManager.getInstance(context)
+                        .getWorkInfosForUniqueWork(uniqueWorkName)
+                        .await()
+                        .fastAny {
+                            it.state in listOf(WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED)
+                        }
+            }
+    }
+
+    public suspend fun enqueueUniqueWork(
+        context: Context,
+        uniqueWorkName: String,
+        existingWorkPolicy: ExistingWorkPolicy,
+        workRequest: OneTimeWorkRequest,
+    )
+
+    public suspend fun workerIsRunningOrEnqueued(context: Context, uniqueWorkName: String): Boolean
 }

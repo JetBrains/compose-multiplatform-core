@@ -24,9 +24,10 @@ import android.view.animation.AnimationUtils;
 
 import androidx.annotation.CallSuper;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -298,8 +299,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ValueAnimator ofInt(@NonNull int... values) {
+    public static @NonNull ValueAnimator ofInt(int @NonNull ... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setIntValues(values);
         return anim;
@@ -316,8 +316,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ValueAnimator ofArgb(@NonNull int... values) {
+    public static @NonNull ValueAnimator ofArgb(int @NonNull ... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setIntValues(values);
         anim.setEvaluator(ArgbEvaluator.getInstance());
@@ -335,8 +334,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ValueAnimator ofFloat(@NonNull float... values) {
+    public static @NonNull ValueAnimator ofFloat(float @NonNull ... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setFloatValues(values);
         return anim;
@@ -350,8 +348,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ValueAnimator ofPropertyValuesHolder(@NonNull PropertyValuesHolder... values) {
+    public static @NonNull ValueAnimator ofPropertyValuesHolder(
+            PropertyValuesHolder @NonNull ... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(values);
         return anim;
@@ -379,9 +377,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @param values A set of values that the animation will animate between over time.
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
-    @NonNull
-    public static ValueAnimator ofObject(@NonNull TypeEvaluator evaluator,
-            @NonNull Object... values) {
+    public static @NonNull ValueAnimator ofObject(@NonNull TypeEvaluator evaluator,
+            Object @NonNull ... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setObjectValues(values);
         anim.setEvaluator(evaluator);
@@ -402,7 +399,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      *
      * @param values A set of values that the animation will animate between over time.
      */
-    public void setIntValues(@NonNull int... values) {
+    public void setIntValues(int @NonNull ... values) {
         if (values == null || values.length == 0) {
             return;
         }
@@ -430,7 +427,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      *
      * @param values A set of values that the animation will animate between over time.
      */
-    public void setFloatValues(@NonNull float... values) {
+    public void setFloatValues(float @NonNull ... values) {
         if (values == null || values.length == 0) {
             return;
         }
@@ -467,7 +464,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      *
      * @param values The set of values to animate between.
      */
-    public void setObjectValues(@NonNull Object... values) {
+    public void setObjectValues(Object @NonNull ... values) {
         if (values == null || values.length == 0) {
             return;
         }
@@ -489,7 +486,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      *
      * @param values The set of values, per property, being animated between.
      */
-    public void setValues(@NonNull PropertyValuesHolder... values) {
+    public void setValues(PropertyValuesHolder @NonNull ... values) {
         int numValues = values.length;
         mValues = values;
         mValuesMap = new HashMap<String, PropertyValuesHolder>(numValues);
@@ -510,8 +507,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * values, per property, that define the animation.
      */
     @SuppressLint("ArrayReturn") /* Platform API */
-    @NonNull
-    public PropertyValuesHolder[] getValues() {
+    public PropertyValuesHolder @NonNull [] getValues() {
         return mValues;
     }
 
@@ -546,8 +542,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * duration, as in <code>ValueAnimator.ofInt(0, 10).setDuration(500).start()</code>.
      */
     @Override
-    @NonNull
-    public ValueAnimator setDuration(long duration) {
+    public @NonNull ValueAnimator setDuration(long duration) {
         if (duration < 0) {
             throw new IllegalArgumentException("Animators cannot have negative duration: "
                     + duration);
@@ -813,8 +808,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * (specified by several PropertyValuesHolder objects in the constructor), this function
      * returns the animated value for the first of those objects.
      */
-    @NonNull
-    public Object getAnimatedValue() {
+    public @NonNull Object getAnimatedValue() {
         if (mValues != null && mValues.length > 0) {
             return mValues[0].getAnimatedValue();
         }
@@ -832,8 +826,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @return animatedValue The value most recently calculated for the named property
      * by this <code>ValueAnimator</code>.
      */
-    @Nullable
-    public Object getAnimatedValue(@NonNull String propertyName) {
+    public @Nullable Object getAnimatedValue(@NonNull String propertyName) {
         PropertyValuesHolder valuesHolder = mValuesMap.get(propertyName);
         if (valuesHolder != null) {
             return valuesHolder.getAnimatedValue();
@@ -909,8 +902,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
      * @return The timing interpolator for this ValueAnimator.
      */
     @Override
-    @Nullable
-    public Interpolator getInterpolator() {
+    public @Nullable Interpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -1195,8 +1187,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
     /**
      * Returns the name of this animator for debugging purposes.
      */
-    @NonNull
-    public String getNameForTrace() {
+    public @NonNull String getNameForTrace() {
         return mAnimTraceName == null ? "animator" : mAnimTraceName;
     }
 
@@ -1458,8 +1449,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
 
     @SuppressLint("NoClone") /* Platform API */
     @Override
-    @NonNull
-    public ValueAnimator clone() {
+    public @NonNull ValueAnimator clone() {
         final ValueAnimator anim = (ValueAnimator) super.clone();
         if (mUpdateListeners != null) {
             anim.mUpdateListeners = new ArrayList<AnimatorUpdateListener>(mUpdateListeners);
@@ -1507,9 +1497,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.Animatio
         return AnimationHandler.getAnimationCount();
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         String returnVal = "ValueAnimator@" + Integer.toHexString(hashCode());
         if (mValues != null) {
             for (int i = 0; i < mValues.length; ++i) {

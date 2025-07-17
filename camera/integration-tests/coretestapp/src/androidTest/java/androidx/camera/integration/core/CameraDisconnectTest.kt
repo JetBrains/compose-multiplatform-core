@@ -26,7 +26,6 @@ import android.os.Handler
 import android.os.HandlerThread
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraX
 import androidx.camera.core.CameraXConfig
 import androidx.camera.integration.core.CameraXActivity.BIND_IMAGE_CAPTURE
@@ -58,7 +57,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.After
-import org.junit.Assume.assumeFalse
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
@@ -70,16 +68,15 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class CameraDisconnectTest(
+    private val testName: String,
     private val lensFacing: Int,
     private val implName: String,
-    private val cameraConfig: CameraXConfig
+    private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -89,37 +86,36 @@ class CameraDisconnectTest(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule val labTestRule = LabTestRule()
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "lensFacing={0} configName={1} config={2}")
+        @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    CameraSelector.LENS_FACING_BACK,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
-                ),
-                arrayOf(
-                    CameraSelector.LENS_FACING_FRONT,
-                    Camera2Config::class.simpleName,
-                    Camera2Config.defaultConfig()
-                ),
-                arrayOf(
-                    CameraSelector.LENS_FACING_BACK,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                ),
-                arrayOf(
-                    CameraSelector.LENS_FACING_FRONT,
-                    CameraPipeConfig::class.simpleName,
-                    CameraPipeConfig.defaultConfig()
-                )
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lensFacing = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lensFacing}",
+                            lensFacing,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lensFacing}",
+                            lensFacing,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -132,6 +128,7 @@ class CameraDisconnectTest(
     @Before
     fun setUp() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
+        device.setOrientationNatural()
         CoreAppTestUtil.assumeCompatibleDevice()
         CoreAppTestUtil.assumeCanTestCameraDisconnect()
         ProcessCameraProvider.configureInstance(cameraConfig)
@@ -182,9 +179,6 @@ class CameraDisconnectTest(
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterSecondCamera2ImplementationActivityIsClosed() {
-        // TODO(b/344752133) : current camera-pipe always restarts the camera to cause
-        //  Camera2TestActivity to lose its camera and may cause the test to be failed.
-        assumeTrue(implName != CameraPipeConfig::class.simpleName)
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)
         with(cameraXActivityScenario) {
@@ -202,7 +196,7 @@ class CameraDisconnectTest(
                 CoreAppTestUtil.launchActivity(
                         InstrumentationRegistry.getInstrumentation(),
                         Camera2TestActivity::class.java,
-                        intent
+                        intent,
                     )
                     ?.apply {
                         // Wait for preview to become active to make sure the 2nd activity can
@@ -247,11 +241,6 @@ class CameraDisconnectTest(
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M) // Known issue, checkout b/147393563.
     fun canRecovered_afterReceivingCameraOnDisconnectedEvent() {
-        // TODO(b/344749041) The tests can run failed on API 27 devices in camera-pipe config
-        assumeFalse(
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.O_MR1 &&
-                implName == CameraPipeConfig::class.simpleName
-        )
         // Launch CameraX activity
         cameraXActivityScenario = launchCameraXActivity(cameraId)
         with(cameraXActivityScenario) {
@@ -295,7 +284,7 @@ class CameraDisconnectTest(
                     synchronized(cameraLock) { cameraDevice = null }
                 }
             },
-            backgroundCameraHandler
+            backgroundCameraHandler,
         )
 
         assertThat(cameraOpenCountDownLatch.await(1000, TimeUnit.MILLISECONDS)).isTrue()

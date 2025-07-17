@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.gestures
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.ui.MotionDurationScale
 import com.google.common.truth.Truth.assertThat
@@ -32,7 +31,6 @@ class UpdatableAnimationStateTest {
 
     private val frameClock = TestFrameClock()
 
-    @OptIn(ExperimentalFoundationApi::class)
     private val state = UpdatableAnimationState(BringIntoViewSpec.DefaultScrollAnimationSpec)
 
     @Test
@@ -53,10 +51,7 @@ class UpdatableAnimationStateTest {
 
         runBlocking {
             launch(frameClock) {
-                state.animateToZero(
-                    beforeFrame = { deltas += it },
-                    afterFrame = {},
-                )
+                state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
             }
         }
 
@@ -70,10 +65,7 @@ class UpdatableAnimationStateTest {
         state.value = -10f
 
         runBlocking(frameClock) {
-            state.animateToZero(
-                beforeFrame = { deltas += it },
-                afterFrame = {},
-            )
+            state.animateToZero(beforeFrame = { deltas += it }, afterFrame = {})
         }
 
         assertThat(state.value).isEqualTo(0f)

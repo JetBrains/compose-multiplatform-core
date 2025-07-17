@@ -44,7 +44,6 @@ import androidx.wear.compose.materialcore.animateSelectionColor
  * Example of a [SplitToggleChip] with [Checkbox] toggle control:
  *
  * @sample androidx.wear.compose.material.samples.SplitToggleChipWithCheckbox
- *
  * @param checked Boolean flag indicating whether this checkbox is currently checked.
  * @param modifier Modifier to be applied to the checkbox. This can be used to provide a content
  *   description for accessibility.
@@ -66,7 +65,7 @@ public fun Checkbox(
     enabled: Boolean = true,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.Checkbox(
         checked = checked,
         modifier = modifier,
@@ -83,7 +82,7 @@ public fun Checkbox(
         progressAnimationSpec = PROGRESS_ANIMATION_SPEC,
         width = WIDTH,
         height = HEIGHT,
-        ripple = rippleOrFallbackImplementation()
+        ripple = ripple(),
     )
 
 /**
@@ -93,7 +92,6 @@ public fun Checkbox(
  * Example of a [ToggleChip] with [Switch] toggle control:
  *
  * @sample androidx.wear.compose.material.samples.ToggleChipWithSwitch
- *
  * @param checked Boolean flag indicating whether this switch is currently toggled on.
  * @param modifier Modifier to be applied to the switch. This can be used to provide a content
  *   description for accessibility.
@@ -115,7 +113,7 @@ public fun Switch(
     enabled: Boolean = true,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.Switch(
         modifier = modifier,
         checked = checked,
@@ -142,7 +140,7 @@ public fun Switch(
         progressAnimationSpec = PROGRESS_ANIMATION_SPEC,
         width = WIDTH,
         height = HEIGHT,
-        ripple = rippleOrFallbackImplementation()
+        ripple = ripple(),
     )
 
 /**
@@ -152,7 +150,6 @@ public fun Switch(
  * Example of a [ToggleChip] with [RadioButton] toggle control:
  *
  * @sample androidx.wear.compose.material.samples.SelectableChipWithRadioButton
- *
  * @param selected Boolean flag indicating whether this radio button is currently toggled on.
  * @param modifier Modifier to be applied to the radio button. This can be used to provide a content
  *   description for accessibility.
@@ -175,7 +172,7 @@ public fun RadioButton(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-) =
+): Unit =
     androidx.wear.compose.materialcore.RadioButton(
         modifier = modifier,
         selected = selected,
@@ -194,7 +191,7 @@ public fun RadioButton(
         easing = STANDARD_IN,
         width = WIDTH,
         height = HEIGHT,
-        ripple = rippleOrFallbackImplementation()
+        ripple = ripple(),
     )
 
 /** Represents the content colors used in [Checkbox] in different states. */
@@ -394,7 +391,7 @@ private fun DrawScope.drawBox(color: Color) {
         topLeft = Offset(topCornerPx + halfStrokeWidthPx, topCornerPx + halfStrokeWidthPx),
         size = Size(checkboxSizePx - strokeWidthPx, checkboxSizePx - strokeWidthPx),
         cornerRadius = CornerRadius(radiusPx - halfStrokeWidthPx),
-        style = Stroke(strokeWidthPx)
+        style = Stroke(strokeWidthPx),
     )
 }
 
@@ -407,14 +404,14 @@ private fun DrawScope.drawThumb(color: Color, progress: Float, isRtl: Boolean) {
         lerp(
             start = if (isRtl) switchTrackLengthPx - switchThumbRadiusPx else switchThumbRadiusPx,
             stop = if (isRtl) switchThumbRadiusPx else switchTrackLengthPx - switchThumbRadiusPx,
-            fraction = progress
+            fraction = progress,
         )
 
     drawCircle(
         color = color,
         radius = switchThumbRadiusPx,
         center = Offset(thumbProgressPx, center.y),
-        blendMode = BlendMode.Src
+        blendMode = BlendMode.Src,
     )
 }
 
@@ -439,7 +436,7 @@ private class DefaultCheckboxColors(
             uncheckedColor = uncheckedBoxColor,
             disabledCheckedColor = disabledCheckedBoxColor,
             disabledUncheckedColor = disabledUncheckedBoxColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     @Composable
@@ -451,7 +448,7 @@ private class DefaultCheckboxColors(
             uncheckedColor = uncheckedCheckmarkColor,
             disabledCheckedColor = disabledCheckedCheckmarkColor,
             disabledUncheckedColor = disabledUncheckedCheckmarkColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -507,7 +504,7 @@ private class DefaultSwitchColors(
             uncheckedColor = uncheckedThumbColor,
             disabledCheckedColor = disabledCheckedThumbColor,
             disabledUncheckedColor = disabledUncheckedThumbColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     @Composable
@@ -519,7 +516,7 @@ private class DefaultSwitchColors(
             uncheckedColor = uncheckedTrackColor,
             disabledCheckedColor = disabledCheckedTrackColor,
             disabledUncheckedColor = disabledUncheckedTrackColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -575,7 +572,7 @@ private class DefaultRadioButtonColors(
             uncheckedColor = unselectedRingColor,
             disabledCheckedColor = disabledSelectedRingColor,
             disabledUncheckedColor = disabledUnselectedRingColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     @Composable
@@ -587,7 +584,7 @@ private class DefaultRadioButtonColors(
             uncheckedColor = unselectedDotColor,
             disabledCheckedColor = disabledSelectedDotColor,
             disabledUncheckedColor = disabledUnselectedDotColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {

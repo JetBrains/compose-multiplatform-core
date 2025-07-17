@@ -33,8 +33,6 @@ import androidx.camera.core.impl.SessionProcessor
 import com.google.common.util.concurrent.ListenableFuture
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -42,7 +40,7 @@ internal val cameraAdapterIds = atomic(0)
 
 /** Adapt the [CameraInternal] class to one or more [CameraPipe] based Camera instances. */
 @CameraScope
-class CameraInternalAdapter
+public class CameraInternalAdapter
 @Inject
 constructor(
     config: CameraConfig,
@@ -50,7 +48,7 @@ constructor(
     private val cameraInfo: CameraInfoInternal,
     private val cameraController: CameraControlInternal,
     private val threads: UseCaseThreads,
-    private val cameraStateAdapter: CameraStateAdapter
+    private val cameraStateAdapter: CameraStateAdapter,
 ) : CameraInternal {
     private val cameraId = config.cameraId
     private var coreCameraConfig: androidx.camera.core.impl.CameraConfig =
@@ -83,15 +81,21 @@ constructor(
         debug { "$this#close" }
     }
 
+    override fun setPrimary(isPrimary: Boolean) {
+        useCaseManager.setPrimary(isPrimary)
+    }
+
     override fun setActiveResumingMode(enabled: Boolean) {
         useCaseManager.setActiveResumeMode(enabled)
     }
 
     override fun release(): ListenableFuture<Void> {
         return threads.scope
-            .launch { useCaseManager.close() }
+            .launch {
+                useCaseManager.close()
+                threads.scope.cancel()
+            }
             .asListenableFuture()
-            .apply { addListener({ threads.scope.cancel() }, Dispatchers.Default.asExecutor()) }
     }
 
     override fun getCameraInfoInternal(): CameraInfoInternal = cameraInfo
@@ -137,5 +141,24 @@ constructor(
         useCaseManager.sessionProcessor = sessionProcessor
     }
 
-    override fun toString(): String = "CameraInternalAdapter<$cameraId>"
+    /**
+     * Handles the camera being physically removed.
+     *
+     * This method immediately updates the public camera state to CLOSED with a ERROR_CAMERA_REMOVED
+     * error, and then asynchronously triggers the cleanup of all internal resources, such as the
+     * CameraGraph.
+     */
+    override fun onRemoved() {
+        debug { "$this received removed signal. Cleaning up." }
+        threads.scope.launch {
+            // 1. Immediately update the public state via the state adapter.
+            cameraStateAdapter.onRemoved()
+
+            // 2. Asynchronously clean up all resources by closing the UseCaseManager,
+            // which in turn closes the CameraGraph.
+            useCaseManager.close()
+        }
+    }
+
+    override fun toString(): String = "CameraInternalAdapter<$cameraId($debugId)>"
 }

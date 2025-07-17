@@ -18,15 +18,21 @@ package androidx.pdf.models;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.pdf.models.PageMatchBounds;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.ListOfList;
 import androidx.pdf.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -98,8 +104,7 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
     }
 
     /** Returns the first rect for a given match. */
-    @NonNull
-    public Rect getFirstRect(int match) {
+    public @NonNull Rect getFirstRect(int match) {
         return mRects.get(mMatchToRect.get(match));
     }
 
@@ -107,8 +112,7 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
      * Returns the flattened, one-dimensional list of all rectangles that surround
      * all matches <strong>except</strong> for the given match.
      */
-    @NonNull
-    public List<Rect> flattenExcludingMatch(int match) {
+    public @NonNull List<Rect> flattenExcludingMatch(int match) {
         if (match < 0 || match >= mMatchToRect.size()) {
             throw new ArrayIndexOutOfBoundsException(match);
         }
@@ -144,9 +148,8 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
         return Math.min(size() - 1, -searchResult - 1);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return size() + " matches";
     }
 
@@ -160,5 +163,64 @@ public class MatchRects extends ListOfList<Rect> implements Parcelable {
         parcel.writeList(mRects);
         parcel.writeList(mMatchToRect);
         parcel.writeList(mCharIndexes);
+    }
+
+    /**
+     * Flattens the list of PageMatchBounds objects and converts it to a MatchRects objects.
+     * <p>As an example, in case there are 2 matches on the page of the document with the 1st match
+     * overflowing to the next line, {@code List<PageMatchBounds>} would have the following values -
+     * <pre>
+     * List(
+     *      PageMatchBounds(
+     *          bounds = [RectF(l1, t1, r1, b1), RectF(l2, t2, r2, b2)],
+     *          mTextStartIndex = 1
+     *      ),
+     *      PageMatchBounds(
+     *          bounds = [RectF(l3, t3, r3, b3)],
+     *          mTextStartIndex = 3
+     *      ),
+     * )
+     *
+     * Using the method below, we can flatten the {@code List<PageMatchBounds>} to the following
+     * representation -
+     * MatchRects(
+     *      mRects=[Rect(l1, t1, r1, b1), Rect(l2, t2, r2, b2), Rect(l3, t3, r3, b3)],
+     *      mMatchToRect=[0,2],
+     *      mCharIndexes=[1, 3]
+     * )
+     * </pre>
+     */
+    public static @NonNull MatchRects flattenList(
+            @NonNull List<PageMatchBounds> pageMatchBoundsList) {
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+            List<Rect> rects = new ArrayList<>();
+            List<Integer> matchToRect = new ArrayList<>();
+            List<Integer> charIndexes = new ArrayList<>();
+            int numRects = 0;
+            for (PageMatchBounds pageMatchBound : pageMatchBoundsList) {
+                List<RectF> rectFBounds = pageMatchBound.getBounds();
+                for (RectF rectF : rectFBounds) {
+                    rects.add(new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right,
+                            (int) rectF.bottom));
+                }
+                matchToRect.add(numRects);
+                numRects += pageMatchBound.getBounds().size();
+                charIndexes.add(pageMatchBound.getTextStartIndex());
+            }
+            return new MatchRects(rects, matchToRect, charIndexes);
+        }
+        throw new UnsupportedOperationException("Operation support above S");
+    }
+
+    public @NonNull List<Rect> getRects() {
+        return mRects;
+    }
+
+    public @NonNull List<Integer> getMatchToRect() {
+        return mMatchToRect;
+    }
+
+    public @NonNull List<Integer> getCharIndexes() {
+        return mCharIndexes;
     }
 }

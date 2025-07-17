@@ -18,7 +18,7 @@ package androidx.camera.video.internal.encoder;
 
 import android.media.MediaFormat;
 
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The output config of an encoder.
@@ -29,6 +29,5 @@ import androidx.annotation.Nullable;
 public interface OutputConfig {
 
     /** Gets the media format. */
-    @Nullable
-    MediaFormat getMediaFormat();
+    @Nullable MediaFormat getMediaFormat();
 }

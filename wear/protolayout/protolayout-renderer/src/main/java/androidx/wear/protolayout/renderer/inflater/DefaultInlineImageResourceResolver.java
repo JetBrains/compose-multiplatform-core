@@ -24,12 +24,13 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.wear.protolayout.proto.ResourceProto.ImageFormat;
 import androidx.wear.protolayout.proto.ResourceProto.InlineImageResource;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.InlineImageResourceResolver;
 import androidx.wear.protolayout.renderer.inflater.ResourceResolvers.ResourceAccessException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
@@ -37,18 +38,17 @@ import java.nio.ByteBuffer;
 public class DefaultInlineImageResourceResolver implements InlineImageResourceResolver {
     private static final String TAG = "InlineImageResolver";
 
-    @NonNull private final Context mAppContext;
+    private final @NonNull Context mAppContext;
 
     /** Constructor. */
     public DefaultInlineImageResourceResolver(@NonNull Context appContext) {
         this.mAppContext = appContext;
     }
 
-    @NonNull
     @Override
-    public Drawable getDrawableOrThrow(@NonNull InlineImageResource inlineImage)
+    public @NonNull Drawable getDrawableOrThrow(@NonNull InlineImageResource inlineImage)
             throws ResourceAccessException {
-        @Nullable Bitmap bitmap = null;
+        Bitmap bitmap = null;
 
         if (inlineImage.getFormat() == ImageFormat.IMAGE_FORMAT_RGB_565
                 || inlineImage.getFormat() == ImageFormat.IMAGE_FORMAT_ARGB_8888) {
@@ -66,8 +66,7 @@ public class DefaultInlineImageResourceResolver implements InlineImageResourceRe
         return new BitmapDrawable(mAppContext.getResources(), bitmap);
     }
 
-    @Nullable
-    private static Config imageFormatToBitmapConfig(ImageFormat imageFormat) {
+    private static @Nullable Config imageFormatToBitmapConfig(ImageFormat imageFormat) {
         switch (imageFormat) {
             case IMAGE_FORMAT_RGB_565:
                 return Config.RGB_565;
@@ -89,8 +88,7 @@ public class DefaultInlineImageResourceResolver implements InlineImageResourceRe
         return -1;
     }
 
-    @NonNull
-    private Bitmap loadRawBitmap(@NonNull InlineImageResource inlineImage)
+    private @NonNull Bitmap loadRawBitmap(@NonNull InlineImageResource inlineImage)
             throws ResourceAccessException {
         Config config = imageFormatToBitmapConfig(inlineImage.getFormat());
 
@@ -114,8 +112,7 @@ public class DefaultInlineImageResourceResolver implements InlineImageResourceRe
         return bitmap;
     }
 
-    @Nullable
-    private Bitmap loadStructuredBitmap(@NonNull InlineImageResource inlineImage) {
+    private @Nullable Bitmap loadStructuredBitmap(@NonNull InlineImageResource inlineImage) {
         Bitmap bitmap =
                 BitmapFactory.decodeByteArray(
                         inlineImage.getData().toByteArray(), 0, inlineImage.getData().size());

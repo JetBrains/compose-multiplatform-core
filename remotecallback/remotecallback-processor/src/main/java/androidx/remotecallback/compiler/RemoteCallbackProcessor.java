@@ -18,7 +18,7 @@ package androidx.remotecallback.compiler;
 import static androidx.remotecallback.compiler.RemoteCallbackProcessor.EXTERNAL_INPUT;
 import static androidx.remotecallback.compiler.RemoteCallbackProcessor.REMOTE_CALLABLE;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -41,11 +41,9 @@ import javax.lang.model.element.TypeElement;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class RemoteCallbackProcessor extends AbstractProcessor {
 
-    @NonNull
-    static final String REMOTE_CALLABLE = "androidx.remotecallback.RemoteCallable";
+    static final @NonNull String REMOTE_CALLABLE = "androidx.remotecallback.RemoteCallable";
 
-    @NonNull
-    static final String EXTERNAL_INPUT = "androidx.remotecallback.ExternalInput";
+    static final @NonNull String EXTERNAL_INPUT = "androidx.remotecallback.ExternalInput";
 
     private HashMap<Element, CallbackReceiver> mMap = new HashMap<>();
     private ProcessingEnvironment mEnv;

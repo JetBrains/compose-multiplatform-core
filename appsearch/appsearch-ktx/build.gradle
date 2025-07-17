@@ -21,23 +21,23 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
-    id('AndroidXPlugin')
-    id('com.android.library')
-    id('org.jetbrains.kotlin.android')
-    id('org.jetbrains.kotlin.kapt')
+    id("AndroidXPlugin")
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.kapt")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
 
-    kaptAndroidTest project(':appsearch:appsearch-compiler')
-    androidTestImplementation project(':appsearch:appsearch')
-    androidTestImplementation project(':appsearch:appsearch-local-storage')
-    androidTestImplementation project(':appsearch:appsearch-test-util')
-    androidTestImplementation(libs.multidex)
+    kaptAndroidTest(project(":appsearch:appsearch-compiler"))
+    androidTestImplementation(project(":appsearch:appsearch"))
+    androidTestImplementation(project(":appsearch:appsearch-local-storage"))
+    androidTestImplementation(project(":appsearch:appsearch-test-util"))
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
@@ -45,16 +45,12 @@ dependencies {
 
 androidx {
     name = "AppSearch - Kotlin Extensions"
-    type = LibraryType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = '2021'
     description = 'AndroidX AppSearch - Kotlin Extensions'
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.appsearch.ktx"
-
-    defaultConfig {
-        multiDexEnabled true
-    }
+    compileSdk = 36
+    namespace = "androidx.appsearch.ktx"
 }

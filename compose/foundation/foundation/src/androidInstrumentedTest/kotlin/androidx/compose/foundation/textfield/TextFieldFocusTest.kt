@@ -104,7 +104,7 @@ class TextFieldFocusTest {
                     Modifier.focusRequester(data.focusRequester)
                         .onFocusChanged { data.focused = it.isFocused }
                         .requiredWidth(10.dp),
-                onValueChange = { editor.value = it }
+                onValueChange = { editor.value = it },
             )
         }
     }
@@ -120,7 +120,7 @@ class TextFieldFocusTest {
                 listOf(
                     FocusTestData(FocusRequester()),
                     FocusTestData(FocusRequester()),
-                    FocusTestData(FocusRequester())
+                    FocusTestData(FocusRequester()),
                 )
 
             TextFieldApp(testDataList)
@@ -159,7 +159,7 @@ class TextFieldFocusTest {
                 value = TextFieldValue(),
                 onValueChange = {},
                 enabled = enabled.value,
-                modifier = Modifier.testTag(tag).onFocusChanged { focused = it.isFocused }
+                modifier = Modifier.testTag(tag).onFocusChanged { focused = it.isFocused },
             )
         }
         // bring enabled text field into focus
@@ -195,7 +195,7 @@ class TextFieldFocusTest {
                         Modifier.focusRequester(focusRequester).onPlaced { innerCoordinates = it },
                     decorationBox = { innerTextField ->
                         Box(Modifier.padding(20.dp)) { innerTextField() }
-                    }
+                    },
                 )
             }
         }
@@ -223,7 +223,6 @@ class TextFieldFocusTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun textInputStarted_forFieldInActivity_whenFocusRequestedImmediately_fromLaunchedEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
@@ -231,7 +230,6 @@ class TextFieldFocusTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun textInputStarted_forFieldInActivity_whenFocusRequestedImmediately_fromDisposableEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
@@ -251,7 +249,7 @@ class TextFieldFocusTest {
     fun textInputStarted_forFieldInDialog_whenFocusRequestedImmediately_fromLaunchedEffect() {
         textInputStarted_whenFocusRequestedImmediately_fromEffect(
             runEffect = { LaunchedEffect(Unit) { it() } },
-            wrapContent = { Dialog(onDismissRequest = {}, content = it) }
+            wrapContent = { Dialog(onDismissRequest = {}, content = it) },
         )
     }
 
@@ -267,13 +265,13 @@ class TextFieldFocusTest {
                     onDispose {}
                 }
             },
-            wrapContent = { Dialog(onDismissRequest = {}, content = it) }
+            wrapContent = { Dialog(onDismissRequest = {}, content = it) },
         )
     }
 
     private fun textInputStarted_whenFocusRequestedImmediately_fromEffect(
         runEffect: @Composable (body: () -> Unit) -> Unit,
-        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() }
+        wrapContent: @Composable (@Composable () -> Unit) -> Unit = { it() },
     ) {
         val focusRequester = FocusRequester()
 
@@ -287,7 +285,7 @@ class TextFieldFocusTest {
                 BasicTextField(
                     value = "",
                     onValueChange = {},
-                    modifier = Modifier.focusRequester(focusRequester)
+                    modifier = Modifier.focusRequester(focusRequester),
                 )
             }
         }
@@ -295,7 +293,6 @@ class TextFieldFocusTest {
         inputMethodInterceptor.assertSessionActive()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -311,7 +308,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-left").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -327,7 +323,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -343,7 +338,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-top").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_DPadDevice() {
         setupAndEnableBasicTextField()
@@ -375,7 +369,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadLeft_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -396,7 +389,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadRight_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -419,7 +411,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadUp_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -440,7 +431,6 @@ class TextFieldFocusTest {
     }
 
     @Ignore("339495780")
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onDPadDown_hardwareKeyboard() {
         setupAndEnableBasicTextField()
@@ -462,7 +452,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-text-field-1").assertSelection(TextRange(2))
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onTab() {
         setupAndEnableBasicTextField(singleLine = true)
@@ -475,7 +464,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_withImeActionNext_checkFocusNavigation_onEnter() {
         setupAndEnableBasicTextField(singleLine = true)
@@ -488,7 +476,6 @@ class TextFieldFocusTest {
         rule.onNodeWithTag("test-button-right").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 22) // b/266742195
     @Test
     fun basicTextField_checkFocusNavigation_onShiftTab() {
         setupAndEnableBasicTextField(singleLine = true)
@@ -499,7 +486,7 @@ class TextFieldFocusTest {
                 keyPressOnKeyboardInputDevice(
                     rule,
                     NativeKeyEvent.KEYCODE_TAB,
-                    metaState = KeyEvent.META_SHIFT_ON
+                    metaState = KeyEvent.META_SHIFT_ON,
                 )
             )
             .isTrue()
@@ -526,7 +513,7 @@ class TextFieldFocusTest {
                 0,
                 0,
                 invalidDeviceId,
-                0
+                0,
             )
         assertThat(keyEventDown.device).isNull()
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventDown))
@@ -540,15 +527,13 @@ class TextFieldFocusTest {
                 0,
                 0,
                 invalidDeviceId,
-                0
+                0,
             )
         rule.onRoot().performKeyPress(androidx.compose.ui.input.key.KeyEvent(keyEventUp))
         rule.waitForIdle()
     }
 
-    private fun setupAndEnableBasicTextField(
-        singleLine: Boolean = false,
-    ) {
+    private fun setupAndEnableBasicTextField(singleLine: Boolean = false) {
         setupContent(singleLine)
 
         rule.onNodeWithTag("test-text-field-1").assertIsFocused()
@@ -570,9 +555,7 @@ class TextFieldFocusTest {
         keyPressOnVirtualKeyboard(NativeKeyEvent.KEYCODE_C)
     }
 
-    private fun setupContent(
-        singleLine: Boolean = false,
-    ) {
+    private fun setupContent(singleLine: Boolean = false) {
         rule.setContent {
             CompositionLocalProvider(
                 LocalSoftwareKeyboardController provides testKeyboardController
@@ -605,16 +588,12 @@ class TextFieldFocusTest {
                     .padding(10.dp)
                     .onFocusChanged { isFocused = it.hasFocus }
                     .focusable()
-                    .border(2.dp, if (isFocused) Color.Green else Color.Cyan)
+                    .border(2.dp, if (isFocused) Color.Green else Color.Cyan),
         )
     }
 
     @Composable
-    private fun TestBasicTextField(
-        id: String,
-        singleLine: Boolean,
-        requestFocus: Boolean = false,
-    ) {
+    private fun TestBasicTextField(id: String, singleLine: Boolean, requestFocus: Boolean = false) {
         var textInput by remember { mutableStateOf("") }
         var isFocused by remember { mutableStateOf(false) }
         val focusRequester = remember { FocusRequester() }
@@ -630,7 +609,7 @@ class TextFieldFocusTest {
                     .testTag("test-text-field-$id")
                     .padding(10.dp)
                     .onFocusChanged { isFocused = it.isFocused || it.hasFocus }
-                    .border(2.dp, if (isFocused) Color.Red else Color.Transparent)
+                    .border(2.dp, if (isFocused) Color.Red else Color.Transparent),
         )
 
         LaunchedEffect(requestFocus, focusRequester) {
@@ -642,7 +621,7 @@ class TextFieldFocusTest {
     private fun keyPressOnDpadInputDevice(
         rule: ComposeContentTestRule,
         keyCode: Int,
-        count: Int = 1
+        count: Int = 1,
     ): Boolean = keyPressOnPhysicalDevice(rule, keyCode, SOURCE_DPAD, count)
 
     private fun keyPressOnKeyboardInputDevice(
@@ -675,7 +654,7 @@ class TextFieldFocusTest {
                 deviceId,
                 0,
                 0,
-                source
+                source,
             )
         val keyEventUp =
             KeyEvent(
@@ -688,7 +667,7 @@ class TextFieldFocusTest {
                 deviceId,
                 0,
                 0,
-                source
+                source,
             )
 
         repeat(count) {

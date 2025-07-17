@@ -19,11 +19,12 @@ package androidx.appsearch.platformstorage.converter;
 import android.app.appsearch.AppSearchManager;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.platformstorage.PlatformStorage;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Translates a Jetpack {@link androidx.appsearch.platformstorage.PlatformStorage.SearchContext}
@@ -39,9 +40,8 @@ public final class SearchContextToPlatformConverter {
      * Translates a Jetpack {@link androidx.appsearch.platformstorage.PlatformStorage.SearchContext}
      * into a platform {@link android.app.appsearch.AppSearchManager.SearchContext}.
      */
-    @NonNull
-    public static AppSearchManager.SearchContext toPlatformSearchContext(
-            @NonNull PlatformStorage.SearchContext jetpackSearchContext) {
+    public static AppSearchManager.@NonNull SearchContext toPlatformSearchContext(
+            PlatformStorage.@NonNull SearchContext jetpackSearchContext) {
         Preconditions.checkNotNull(jetpackSearchContext);
         return new AppSearchManager.SearchContext.Builder(jetpackSearchContext.getDatabaseName())
                 .build();

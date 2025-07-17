@@ -44,7 +44,7 @@ private const val DefaultFrameDelay = 16_000_000L
 @ExperimentalCoroutinesApi
 fun TestMonotonicFrameClock(
     coroutineScope: CoroutineScope,
-    frameDelayNanos: Long = DefaultFrameDelay
+    frameDelayNanos: Long = DefaultFrameDelay,
 ): TestMonotonicFrameClock =
     TestMonotonicFrameClock(
         coroutineScope = coroutineScope,
@@ -52,7 +52,7 @@ fun TestMonotonicFrameClock(
             requireNotNull(coroutineScope.coroutineContext[TestCoroutineScheduler]) {
                 "coroutuineScope should have TestCoroutineScheduler"
             },
-        frameDelayNanos = frameDelayNanos
+        frameDelayNanos = frameDelayNanos,
     )
 
 /**
@@ -70,15 +70,15 @@ class TestMonotonicFrameClock(
     private val coroutineScope: CoroutineScope,
     private val testCoroutineScheduler: TestCoroutineScheduler,
     @get:Suppress("MethodNameUnits") // Nanos for high-precision animation clocks
-    val frameDelayNanos: Long = DefaultFrameDelay
+    val frameDelayNanos: Long = DefaultFrameDelay,
 ) : MonotonicFrameClock {
-    private val lock = Any()
+    private val lock = SynchronizedObject()
     private val awaiters = mutableListOf<Awaiter<*>>()
     private var posted = false
 
     private class Awaiter<R>(
         private val onFrame: (Long) -> R,
-        private val continuation: CancellableContinuation<R>
+        private val continuation: CancellableContinuation<R>,
     ) {
         fun runFrame(frameTimeNanos: Long): () -> Unit {
             val result = runCatching { onFrame(frameTimeNanos) }

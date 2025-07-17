@@ -73,14 +73,11 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import java.util.UUID
 import kotlin.math.roundToInt
 
-/**
- * Popup specific for exposed dropdown menus. b/202810604. Should not be used in other components.
- */
 @Composable
-internal fun ExposedDropdownMenuPopup(
-    onDismissRequest: (() -> Unit)? = null,
+internal actual fun ExposedDropdownMenuPopup(
+    onDismissRequest: (() -> Unit)?,
     popupPositionProvider: PopupPositionProvider,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val density = LocalDensity.current
@@ -96,7 +93,7 @@ internal fun ExposedDropdownMenuPopup(
                 composeView = view,
                 density = density,
                 initialPositionProvider = popupPositionProvider,
-                popupId = popupId
+                popupId = popupId,
             )
             .apply {
                 setContent(parentComposition) {
@@ -108,10 +105,9 @@ internal fun ExposedDropdownMenuPopup(
                                 updatePosition()
                             }
                             // Hide the popup while we can't position it correctly
-                            .alpha(if (canCalculatePosition) 1f else 0f)
-                    ) {
-                        currentContent()
-                    }
+                            .alpha(if (canCalculatePosition) 1f else 0f),
+                        currentContent,
+                    )
                 }
             }
     }
@@ -121,7 +117,7 @@ internal fun ExposedDropdownMenuPopup(
         popupLayout.updateParameters(
             onDismissRequest = onDismissRequest,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
         onDispose {
             popupLayout.disposeComposition()
@@ -134,7 +130,7 @@ internal fun ExposedDropdownMenuPopup(
         popupLayout.updateParameters(
             onDismissRequest = onDismissRequest,
             testTag = testTag,
-            layoutDirection = layoutDirection
+            layoutDirection = layoutDirection,
         )
     }
 
@@ -160,7 +156,7 @@ internal fun ExposedDropdownMenuPopup(
                 popupLayout.parentBounds = IntRect(layoutPosition, layoutSize)
                 // Update the popup's position
                 popupLayout.updatePosition()
-            }
+            },
     ) { _, _ ->
         popupLayout.parentLayoutDirection = layoutDirection
         layout(0, 0) {}
@@ -216,7 +212,7 @@ private class PopupLayout(
     private val composeView: View,
     density: Density,
     initialPositionProvider: PopupPositionProvider,
-    popupId: UUID
+    popupId: UUID,
 ) :
     AbstractComposeView(composeView.context),
     ViewRootForInspector,
@@ -311,17 +307,13 @@ private class PopupLayout(
 
     /** Taken from PopupWindow */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
-            if (keyDispatcherState == null) {
-                return super.dispatchKeyEvent(event)
-            }
+        if (event.keyCode == KeyEvent.KEYCODE_BACK || event.keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            val state = keyDispatcherState ?: return super.dispatchKeyEvent(event)
             if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                val state = keyDispatcherState
-                state?.startTracking(event, this)
+                state.startTracking(event, this)
                 return true
             } else if (event.action == KeyEvent.ACTION_UP) {
-                val state = keyDispatcherState
-                if (state != null && state.isTracking(event) && !event.isCanceled) {
+                if (state.isTracking(event) && !event.isCanceled) {
                     onDismissRequest?.invoke()
                     return true
                 }
@@ -333,7 +325,7 @@ private class PopupLayout(
     fun updateParameters(
         onDismissRequest: (() -> Unit)?,
         testTag: String,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.testTag = testTag
@@ -357,7 +349,7 @@ private class PopupLayout(
                 parentBounds,
                 windowSize,
                 parentLayoutDirection,
-                popupContentSize
+                popupContentSize,
             )
 
         params.x = popupPosition.x
@@ -399,7 +391,7 @@ private class PopupLayout(
                         // window.
                         if (event.rawX != 0f && event.rawY != 0f) Offset(event.rawX, event.rawY)
                         else null,
-                        parentBounds
+                        parentBounds,
                     )
             if (shouldDismiss) {
                 onDismissRequest?.invoke()

@@ -25,16 +25,18 @@ import java.io.File
 import javax.tools.JavaFileObject
 
 /**
- * Compiles java sources. Note that this does not run java annotation processors. They are run in
- * the KAPT step for consistency. When a test is run with purely java sources, it uses the google
- * compile testing library directly instead of the kotlin compilation pipeline.
+ * Compiles Java sources.
+ *
+ * Note that this does not run Java annotation processors. They are run in the KAPT step for
+ * consistency. When a test is run with purely Java sources, it uses google-compile-testing library
+ * directly instead of the Kotlin compilation pipeline.
  */
 internal object JavaSourceCompilationStep : KotlinCompilationStep {
     override val name = "javaSourceCompilation"
 
     override fun execute(
         workingDir: File,
-        arguments: CompilationStepArguments
+        arguments: CompilationStepArguments,
     ): CompilationStepResult {
         val javaSources: Map<JavaFileObject, Source> =
             arguments.sourceSets.asSequence().flatMap { it.javaSources }.associateBy { it.toJFO() }
@@ -86,7 +88,8 @@ internal object JavaSourceCompilationStep : KotlinCompilationStep {
                     // steps so we skip unnecessary work
                     sourceSets = arguments.sourceSets
                 ),
-            outputClasspath = generatedClasses
+            outputClasspath = generatedClasses,
+            generatedResources = emptyList(),
         )
     }
 

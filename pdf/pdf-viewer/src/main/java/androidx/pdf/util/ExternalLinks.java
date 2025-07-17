@@ -16,16 +16,16 @@
 
 package androidx.pdf.util;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.R;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,20 +50,20 @@ public final class ExternalLinks {
     private static final int SHORTEN_LENGTH = 40;
 
     /** Open the given link in a browser or similar, if it is safe to do so. */
-    public static void open(@NonNull String url, @NonNull Activity activity) {
-        open(Uri.parse(url), activity);
+    public static void open(@NonNull String url, @NonNull Context context) {
+        open(Uri.parse(url), context);
     }
 
     /** Open the given URI. */
-    public static void open(@NonNull Uri uri, @NonNull Activity activity) {
+    public static void open(@NonNull Uri uri, @NonNull Context context) {
         if (TextUtils.isEmpty(uri.getScheme())) {
             uri = uri.buildUpon().scheme("http").build();
         }
         if (ALLOWED_SCHEMES.contains(uri.getScheme())) {
-            PackageManager pm = activity.getPackageManager();
+            PackageManager pm = context.getPackageManager();
             Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             if (!pm.queryIntentActivities(intent, 0).isEmpty()) {
-                Intents.startActivity(activity, TAG, intent);
+                Intents.startActivity(context, TAG, intent);
             }
             // TODO: Track hyperlink click.
         }
@@ -74,8 +74,7 @@ public final class ExternalLinks {
      * {@code Link: www.example.com/page1.html} or
      * {@code Link: webpage at www.example.com}
      */
-    @NonNull
-    public static String getDescription(@NonNull String url, @NonNull Context context) {
+    public static @NonNull String getDescription(@NonNull String url, @NonNull Context context) {
         return getDescription(Uri.parse(url), context);
     }
 

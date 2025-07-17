@@ -16,12 +16,13 @@
 
 package androidx.pdf.select;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.models.SelectionBoundary;
 import androidx.pdf.util.ObservableValue;
 import androidx.pdf.util.Observables;
 import androidx.pdf.util.Observables.ExposedValue;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Stores data relevant to the current selection.
@@ -37,16 +38,14 @@ public abstract class SelectionModel<S> {
     /**
      *
      */
-    @NonNull
-    public ObservableValue<S> selection() {
+    public @NonNull ObservableValue<S> selection() {
         return mSelection;
     }
 
     /**
      *
      */
-    @NonNull
-    public abstract String getText();
+    public abstract @NonNull String getText();
 
     /** Synchronous update - the exact selection is already known. */
     public void setSelection(S newSelection) {

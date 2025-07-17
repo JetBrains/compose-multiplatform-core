@@ -21,7 +21,7 @@ import android.graphics.Point;
 import android.view.MotionEvent;
 import android.view.View;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * DragStartHelper is a utility class for implementing drag and drop support.

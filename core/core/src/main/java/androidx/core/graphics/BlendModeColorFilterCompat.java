@@ -23,10 +23,10 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.os.Build;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing ColorFilter APIs on various API levels of the platform
@@ -65,7 +65,6 @@ public class BlendModeColorFilterCompat {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ColorFilter createBlendModeColorFilter(int color, Object mode) {
             return new BlendModeColorFilter(color, (BlendMode) mode);
         }

@@ -20,28 +20,80 @@ import android.os.Handler
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * This collection pre-configured executors, dispatchers, and scopes that are used throughout this
  * library.
  */
-class Threads(
-    val globalScope: CoroutineScope,
-    val blockingExecutor: Executor,
-    val blockingDispatcher: CoroutineDispatcher,
-    val backgroundExecutor: Executor,
-    val backgroundDispatcher: CoroutineDispatcher,
-    val lightweightExecutor: Executor,
-    val lightweightDispatcher: CoroutineDispatcher,
+public class Threads(
+    public val cameraPipeScope: CoroutineScope,
+    private val cameraPipeDispatchScope: CoroutineScope,
+    public val blockingExecutor: Executor,
+    public val blockingDispatcher: CoroutineDispatcher,
+    public val backgroundExecutor: Executor,
+    public val backgroundDispatcher: CoroutineDispatcher,
+    public val lightweightExecutor: Executor,
+    public val lightweightDispatcher: CoroutineDispatcher,
     camera2Handler: () -> Handler,
-    camera2Executor: () -> Executor
+    camera2Executor: () -> Executor,
 ) {
     private val _camera2Handler = lazy { camera2Handler() }
     private val _camera2Executor = lazy { camera2Executor() }
 
-    val camera2Handler: Handler
+    public val camera2Handler: Handler
         get() = _camera2Handler.value
 
-    val camera2Executor: Executor
+    public val camera2Executor: Executor
         get() = _camera2Executor.value
+
+    /**
+     * runBlockingChecked runs the specified [block] on a timeout of [timeoutMs]. The function runs
+     * the given block asynchronously on a supervised scope, allowing it to return after the timeout
+     * completes, even if the calling thread is blocked. Throws [IllegalStateException] when the
+     * execution of the [block] times out.
+     */
+    public fun <T> runBlockingChecked(timeoutMs: Long, block: suspend () -> T): T {
+        return runBlocking(blockingDispatcher) {
+            val result = runAsyncSupervised(backgroundDispatcher, block)
+            try {
+                withTimeout(timeoutMs) { result.await() }
+            } catch (e: TimeoutCancellationException) {
+                Log.error(e) { "Timed out after ${timeoutMs}ms!" }
+                // For some reason, if TimeoutCancellationException is thrown, runBlocking can
+                // suspend indefinitely. Catch it and rethrow IllegalStateException.
+                throw IllegalStateException("Timed out after ${timeoutMs}ms!")
+            }
+        }
+    }
+
+    /**
+     * runBlockingWithTimeOrNull runs the specified [block] on a timeout of [timeoutMs]. The
+     * function runs the given block asynchronously on a supervised scope, allowing it to return
+     * after the timeout completes, even if the calling thread is blocked. Returns null when the
+     * execution of the [block] times out.
+     */
+    public fun <T> runBlockingCheckedOrNull(timeoutMs: Long, block: suspend () -> T): T? {
+        return try {
+            runBlocking(blockingDispatcher) {
+                val result = runAsyncSupervised(backgroundDispatcher, block)
+                withTimeoutOrNull(timeoutMs) { result.await() }
+            }
+        } catch (e: InterruptedException) {
+            Log.info(e) { "runBlockingCheckedOrNull cancelled by thread interruption" }
+            null
+        }
+    }
+
+    private fun <T> runAsyncSupervised(
+        dispatcher: CoroutineDispatcher,
+        block: suspend () -> T,
+    ): Deferred<T> {
+        return cameraPipeDispatchScope.async(dispatcher) { block() }
+    }
 }

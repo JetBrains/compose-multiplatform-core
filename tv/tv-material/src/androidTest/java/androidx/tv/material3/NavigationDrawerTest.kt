@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -73,7 +72,7 @@ class NavigationDrawerTest {
                 drawerState = remember { DrawerState(DrawerValue.Closed) },
                 drawerContent = {
                     BasicText(text = if (it == DrawerValue.Open) "Opened" else "Closed")
-                }
+                },
             ) {
                 Box(Modifier.size(200.dp))
             }
@@ -89,7 +88,7 @@ class NavigationDrawerTest {
                 drawerState = remember { DrawerState(DrawerValue.Open) },
                 drawerContent = {
                     BasicText(text = if (it == DrawerValue.Open) "Opened" else "Closed")
-                }
+                },
             ) {
                 BasicText("other content")
             }
@@ -110,9 +109,9 @@ class NavigationDrawerTest {
                 drawerContent = {
                     BasicText(
                         modifier = Modifier.focusable(),
-                        text = if (it == DrawerValue.Open) "Opened" else "Closed"
+                        text = if (it == DrawerValue.Open) "Opened" else "Closed",
                     )
-                }
+                },
             ) {
                 BasicText("other content")
             }
@@ -125,7 +124,7 @@ class NavigationDrawerTest {
         rule.onAllNodesWithText("Opened").assertAnyAreDisplayed()
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun navigationDrawer_focusMovesOutOfDrawer_closedStateComposableDisplayed() {
         InstrumentationRegistry.getInstrumentation().setInTouchMode(false)
@@ -139,9 +138,9 @@ class NavigationDrawerTest {
                     drawerContent = {
                         BasicText(
                             text = if (it == DrawerValue.Open) "Opened" else "Closed",
-                            modifier = Modifier.focusable()
+                            modifier = Modifier.focusable(),
                         )
-                    }
+                    },
                 ) {
                     Box(modifier = Modifier.focusable()) { BasicText("Button") }
                 }
@@ -153,7 +152,7 @@ class NavigationDrawerTest {
         rule.onAllNodesWithText("Closed").assertAnyAreDisplayed()
     }
 
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun navigationDrawer_focusMovesIntoDrawer_openStateComposableDisplayed() {
         InstrumentationRegistry.getInstrumentation().setInTouchMode(false)
@@ -166,9 +165,9 @@ class NavigationDrawerTest {
                     drawerContent = {
                         BasicText(
                             text = if (it == DrawerValue.Open) "Opened" else "Closed",
-                            modifier = Modifier.focusable().testTag("drawerItem")
+                            modifier = Modifier.focusable().testTag("drawerItem"),
                         )
-                    }
+                    },
                 ) {
                     Box(modifier = Modifier.focusRequester(buttonFocusRequester).focusable()) {
                         BasicText("Button")
@@ -198,7 +197,7 @@ class NavigationDrawerTest {
                             // extra long content wrapped in a drawer-width restricting box
                             Box(Modifier.width(closedDrawerContentWidth * 10))
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.fillMaxWidth().testTag(contentWidthBoxTag))
                 }
@@ -222,7 +221,7 @@ class NavigationDrawerTest {
                         Box(Modifier.width(openDrawerContentWidth)) {
                             Box(Modifier.width(openDrawerContentWidth * 10))
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.fillMaxWidth().testTag(contentWidthBoxTag))
                 }
@@ -244,7 +243,7 @@ class NavigationDrawerTest {
                         Box(Modifier.testTag(drawerContentBoxTag).border(2.dp, Color.Red)) {
                             BasicText(text = if (it == DrawerValue.Open) "Opened" else "Closed")
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.fillMaxWidth().testTag(contentWidthBoxTag))
                 }
@@ -269,7 +268,7 @@ class NavigationDrawerTest {
                         Box(Modifier.testTag(drawerContentBoxTag).border(2.dp, Color.Red)) {
                             BasicText(text = if (it == DrawerValue.Open) "Opened" else "Closed")
                         }
-                    }
+                    },
                 ) {
                     Box(Modifier.fillMaxWidth().testTag(contentWidthBoxTag))
                 }
@@ -286,7 +285,7 @@ class NavigationDrawerTest {
         assert(endPositionInClosedState.value > endPositionInOpenState.value)
     }
 
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun navigationDrawer_parentContainerGainsFocus_onBackPress() {
         val drawerFocusRequester = FocusRequester()
@@ -298,9 +297,9 @@ class NavigationDrawerTest {
                     drawerContent = {
                         BasicText(
                             text = if (it == DrawerValue.Open) "Opened" else "Closed",
-                            modifier = Modifier.focusable()
+                            modifier = Modifier.focusable(),
                         )
-                    }
+                    },
                 ) {
                     BasicText("other content")
                 }
@@ -336,9 +335,9 @@ class NavigationDrawerTest {
                 drawerContent = {
                     BasicText(
                         modifier = Modifier.focusable(),
-                        text = if (it == DrawerValue.Open) "Opened" else "Closed"
+                        text = if (it == DrawerValue.Open) "Opened" else "Closed",
                     )
-                }
+                },
             ) {
                 BasicText("other content")
             }

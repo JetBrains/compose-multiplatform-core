@@ -18,11 +18,16 @@ package androidx.binarycompatibilityvalidator
 
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import org.jetbrains.kotlin.library.abi.AbiClass
 import org.jetbrains.kotlin.library.abi.AbiClassKind
 import org.jetbrains.kotlin.library.abi.AbiCompoundName
+import org.jetbrains.kotlin.library.abi.AbiFunction
 import org.jetbrains.kotlin.library.abi.AbiModality
+import org.jetbrains.kotlin.library.abi.AbiProperty
 import org.jetbrains.kotlin.library.abi.AbiQualifiedName
+import org.jetbrains.kotlin.library.abi.AbiSignatureVersion
 import org.jetbrains.kotlin.library.abi.ExperimentalLibraryAbiReader
+import org.jetbrains.kotlin.library.abi.LibraryAbi
 import org.junit.Test
 
 @OptIn(ExperimentalLibraryAbiReader::class)
@@ -31,6 +36,7 @@ class KlibDumpParserTest {
     private val collectionDump = getJavaResource("collection.txt").readText()
     private val datastoreCoreDump = getJavaResource("datastore.txt").readText()
     private val annotationDump = getJavaResource("annotation.txt").readText()
+    private val datastorePreferencesDump = getJavaResource("datastore-preferences.txt").readText()
     private val uniqueTargetDump = getJavaResource("unique_targets.txt").readText()
 
     @Test
@@ -85,6 +91,24 @@ class KlibDumpParserTest {
     }
 
     @Test
+    fun parseAClassBug() {
+        val input =
+            """
+            abstract interface androidx.graphics.shapes/MutablePoint { // androidx.graphics.shapes/MutablePoint|null[0]
+                abstract var x // androidx.graphics.shapes/MutablePoint.x|{}x[0]
+                    abstract fun <get-x>(): kotlin/Float // androidx.graphics.shapes/MutablePoint.x.<get-x>|<get-x>(){}[0]
+                    abstract fun <set-x>(kotlin/Float) // androidx.graphics.shapes/MutablePoint.x.<set-x>|<set-x>(kotlin.Float){}[0]
+                abstract var y // androidx.graphics.shapes/MutablePoint.y|{}y[0]
+                    abstract fun <get-y>(): kotlin/Float // androidx.graphics.shapes/MutablePoint.y.<get-y>|<get-y>(){}[0]
+                    abstract fun <set-y>(kotlin/Float) // androidx.graphics.shapes/MutablePoint.y.<set-y>|<set-y>(kotlin.Float){}[0]
+            }
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input).parseClass()
+        assertThat(parsed.declarations.filterIsInstance<AbiProperty>()).hasSize(2)
+    }
+
+    @Test
     fun parseAnAnnotationClass() {
         val input = "open annotation class my.lib/MyClass : kotlin/Annotation"
         val parsed = KlibDumpParser(input).parseClass()
@@ -92,6 +116,33 @@ class KlibDumpParserTest {
 
         assertThat(parsed.qualifiedName.toString()).isEqualTo("my.lib/MyClass")
         assertThat(parsed.kind).isEqualTo(AbiClassKind.ANNOTATION_CLASS)
+    }
+
+    @Test
+    fun parseASerializerClass() {
+        val input =
+            """
+                final object ${'$'}serializer : kotlinx.serialization.internal/GeneratedSerializer<androidx.room.migration.bundle/DatabaseBundle> { // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer|null[0]
+                    final val descriptor // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer.descriptor|{}descriptor[0]
+                        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+                    final fun childSerializers(): kotlin/Array<kotlinx.serialization/KSerializer<*>> // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer.childSerializers|childSerializers(){}[0]
+                    final fun deserialize(kotlinx.serialization.encoding/Decoder): androidx.room.migration.bundle/DatabaseBundle // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+                    final fun serialize(kotlinx.serialization.encoding/Encoder, androidx.room.migration.bundle/DatabaseBundle) // androidx.room.migration.bundle/DatabaseBundle.${'$'}serializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;androidx.room.migration.bundle.DatabaseBundle){}[0]
+                }
+        """
+                .trimIndent()
+        val parsed =
+            KlibDumpParser(input)
+                .parseClass(
+                    AbiQualifiedName(
+                        AbiCompoundName("androidx.room.migration.bundle"),
+                        AbiCompoundName("DatabaseBundle"),
+                    )
+                )
+        assertThat(parsed).isNotNull()
+        assertThat(parsed.qualifiedName.toString())
+            .isEqualTo("androidx.room.migration.bundle/DatabaseBundle.\$serializer")
     }
 
     @Test
@@ -119,6 +170,45 @@ class KlibDumpParserTest {
         assertThat(parsed.qualifiedName.toString()).isEqualTo("androidx.collection/arraySetOf")
         val param = parsed.valueParameters.single()
         assertThat(param.type.arguments).isNotEmpty()
+    }
+
+    @Test
+    fun parseAFunctionWithQualifiedReceiver() {
+        val input =
+            "final fun <#A: kotlin/Any> " +
+                "(androidx.compose.ui.text/AnnotatedString.Builder.BulletScope)" +
+                ".androidx.compose.ui.text/withBulletListItem" +
+                "(androidx.compose.ui.text/Bullet? = "
+        "..., kotlin/Function1<androidx.compose.ui.text/AnnotatedString.Builder, #A>): #A"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed).isNotNull()
+
+        assertThat(parsed.qualifiedName.toString())
+            .isEqualTo("androidx.compose.ui.text/withBulletListItem")
+        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+    }
+
+    @Test
+    fun parseAFunctionWithSingleContextValue() {
+        val input = "final fun context(kotlin/Int) my.lib/bar()"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed).isNotNull()
+
+        assertThat(parsed.contextReceiverParametersCount).isEqualTo(1)
+        assertThat(parsed.valueParameters.first().type.className.toString()).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseAFunctionWithMultipleContextValuesAndAReceiver() {
+        val input =
+            "final fun context(kotlin/Int, kotlin/String) (kotlin/Int).my.lib/bar(kotlin/Double)"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed).isNotNull()
+
+        assertThat(parsed.contextReceiverParametersCount).isEqualTo(2)
+        assertThat(parsed.hasExtensionReceiverParameter).isTrue()
+        assertThat(parsed.valueParameters.map { it.type.className.toString() })
+            .isEqualTo(listOf("kotlin/Int", "kotlin/String", "kotlin/Int", "kotlin/Double"))
     }
 
     @Test
@@ -168,6 +258,36 @@ class KlibDumpParserTest {
     }
 
     @Test
+    fun parseAComplexFunctionWithK2Formatting() {
+        val input =
+            "final inline fun <#A: kotlin/Any, #B: kotlin/Any> androidx.collection/" +
+                "lruCache(kotlin/Int, crossinline kotlin/Function2<#A, #B, kotlin/Int> = ..., " +
+                "crossinline kotlin/Function1<#A, #B?> = ..., " +
+                "crossinline kotlin/Function4<kotlin/Boolean, #A, #B, #B?, kotlin/Unit> = ...): " +
+                "androidx.collection/LruCache<#A, #B>"
+        val parsed = KlibDumpParser(input).parseFunction()
+        assertThat(parsed.modality).isEqualTo(AbiModality.FINAL)
+        assertThat(parsed.typeParameters).hasSize(2)
+        assertThat(parsed.qualifiedName.toString()).isEqualTo("androidx.collection/lruCache")
+        assertThat(parsed.valueParameters).hasSize(4)
+    }
+
+    @Test
+    fun parseAPropertyWithTheWordContextInIt() {
+        val input =
+            """
+            final val androidx.compose.foundation.text.contextmenu.provider/LocalTextContextMenuDropdownProvider // androidx.compose.foundation.text.contextmenu.provider/LocalTextContextMenuDropdownProvider|{}LocalTextContextMenuDropdownProvider[0]
+                final fun <get-LocalTextContextMenuDropdownProvider>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.foundation.text.contextmenu.provider/TextContextMenuProvider?> // androidx.compose.foundation.text.contextmenu.provider/LocalTextContextMenuDropdownProvider.<get-LocalTextContextMenuDropdownProvider>|<get-LocalTextContextMenuDropdownProvider>(){}[0]
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input).parseProperty()
+        assertThat(parsed.qualifiedName.toString())
+            .isEqualTo(
+                "androidx.compose.foundation.text.contextmenu.provider/LocalTextContextMenuDropdownProvider"
+            )
+    }
+
+    @Test
     fun parseANestedValProperty() {
         val input = "final val size\n        final fun <get-size>(): kotlin/Int"
         val parsed =
@@ -175,7 +295,7 @@ class KlibDumpParserTest {
                 .parseProperty(
                     AbiQualifiedName(
                         AbiCompoundName("androidx.collection"),
-                        AbiCompoundName("ScatterMap")
+                        AbiCompoundName("ScatterMap"),
                     )
                 )
         assertThat(parsed.getter).isNotNull()
@@ -193,11 +313,24 @@ class KlibDumpParserTest {
                 .parseProperty(
                     AbiQualifiedName(
                         AbiCompoundName("androidx.collection"),
-                        AbiCompoundName("ScatterMap")
+                        AbiCompoundName("ScatterMap"),
                     )
                 )
         assertThat(parsed.getter).isNotNull()
         assertThat(parsed.setter).isNotNull()
+    }
+
+    @Test
+    fun parseAPropertyWithStarParamsInReceiver() {
+        val input =
+            """
+            final val androidx.compose.animation.core/isFinished
+                final fun (androidx.compose.animation.core/AnimationState<*, *>).<get-isFinished>(): kotlin/Boolean
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input).parseProperty()
+        assertThat(parsed.getter).isNotNull()
+        assertThat(parsed.getter?.hasExtensionReceiverParameter).isTrue()
     }
 
     @Test
@@ -208,7 +341,7 @@ class KlibDumpParserTest {
                 .parseEnumEntry(
                     AbiQualifiedName(
                         AbiCompoundName("androidx.annotation"),
-                        AbiCompoundName("RestrictTo.Scope")
+                        AbiCompoundName("RestrictTo.Scope"),
                     )
                 )
         assertThat(parsed.qualifiedName.toString())
@@ -230,6 +363,107 @@ class KlibDumpParserTest {
     }
 
     @Test
+    fun parseSingleTopLevelDeclaration() {
+        val input = "$exampleMetadata\nfinal fun my.lib/foo(kotlin/Int, kotlin/Int): kotlin/Int"
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        assertThat(parsed.values.first().topLevelDeclarations.declarations).hasSize(1)
+    }
+
+    @Test
+    fun parseAConstructorWithDefaultValue() {
+        val input = "constructor <init>(kotlin/Int =..., kotlin/Int =...)"
+        val parsed =
+            KlibDumpParser(input, "current.txt")
+                .parseFunction(
+                    parentQualifiedName =
+                        AbiQualifiedName(
+                            AbiCompoundName("androidx.collection"),
+                            AbiCompoundName("ObjectList"),
+                        )
+                )
+        assertThat(parsed.valueParameters.map { it.type.classNameOrTag })
+            .containsExactly("kotlin/Int", "kotlin/Int")
+    }
+
+    @Test
+    fun parseAConstructorWithDefaultValue2() {
+        val input =
+            "constructor <init>(kotlin/Int = ...) // androidx.collection/MutableScatterMap.<init>|<init>(kotlin.Int){}[0]"
+        val parsed =
+            KlibDumpParser(input, "current.txt")
+                .parseFunction(
+                    parentQualifiedName =
+                        AbiQualifiedName(
+                            AbiCompoundName("androidx.collection"),
+                            AbiCompoundName("ObjectList"),
+                        )
+                )
+        assertThat(parsed.valueParameters.single().type.classNameOrTag).isEqualTo("kotlin/Int")
+    }
+
+    @Test
+    fun parseClassNameThatEndsWithASpace() {
+        val input =
+            """$exampleMetadata
+            open class my.lib/MyClass  { // my.lib/MyClass |null[0]
+                constructor <init>() // my.lib/MyClass .<init>|<init>(){}[0]
+            }
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        val parsedClass =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiClass>()
+                .single()
+        assertThat(parsedClass.qualifiedName.toString()).isEqualTo("my.lib/MyClass ")
+    }
+
+    @Test
+    fun parseAVeryAnnoyingClassName() {
+        val input =
+            """$exampleMetadata
+            final class my.lib/MyMaybeClass = =  { // my.lib/MyMaybeClass = = |null[0]
+                constructor <init>() // my.lib/MyMaybeClass = = .<init>|<init>(){}[0]
+            }
+            final fun my.lib/foo(my.lib/MyMaybeClass = =  =...): kotlin/Int // my.lib/foo|foo(my.lib.MyMaybeClass = = ){}[0]
+        """
+                .trimIndent()
+        val parsed = KlibDumpParser(input, "current.txt").parse()
+        val parsedFunc =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiFunction>()
+                .single()
+        val parsedClass =
+            parsed.values
+                .single()
+                .topLevelDeclarations
+                .declarations
+                .filterIsInstance<AbiClass>()
+                .single()
+        assertThat(parsedClass.qualifiedName.toString()).isEqualTo("my.lib/MyMaybeClass = = ")
+        assertThat(parsedFunc.valueParameters).hasSize(1)
+        assertThat(parsedFunc.valueParameters.single().type.classNameOrTag)
+            .isEqualTo("my.lib/MyMaybeClass = = ")
+        assertThat(parsedFunc.valueParameters.single().hasDefaultArg).isTrue()
+    }
+
+    @Test
+    fun parsesSignatureVersion() {
+        val parsed = KlibDumpParser(exampleMetadata).parse()
+        assertThat(parsed).isNotNull()
+        assertThat(parsed.keys).hasSize(1)
+        val abi: LibraryAbi = parsed.values.single()
+        assertThat(abi.signatureVersions)
+            .containsExactly(AbiSignatureVersion.resolveByVersionNumber(2))
+    }
+
+    @Test
     fun parseFullCollectionKlibDumpSucceeds() {
         val parsed = KlibDumpParser(collectionDump).parse()
         assertThat(parsed).isNotNull()
@@ -244,6 +478,12 @@ class KlibDumpParserTest {
     @Test
     fun parseFullAnnotationKlibDumpSucceeds() {
         val parsed = KlibDumpParser(annotationDump).parse()
+        assertThat(parsed).isNotNull()
+    }
+
+    @Test
+    fun parseFullDatastorePreferencesKlibDumpSucceeds() {
+        val parsed = KlibDumpParser(datastorePreferencesDump).parse()
         assertThat(parsed).isNotNull()
     }
 
@@ -263,5 +503,19 @@ class KlibDumpParserTest {
             }
         assertThat(iosQNames).containsExactly("my.lib/myIosFun", "my.lib/commonFun")
         assertThat(linuxQNames).containsExactly("my.lib/myLinuxFun", "my.lib/commonFun")
+    }
+
+    companion object {
+        private val exampleMetadata =
+            """
+            // KLib ABI Dump
+            // Targets: [linuxX64]
+            // Rendering settings:
+            // - Signature version: 2
+            // - Show manifest properties: true
+            // - Show declarations: true
+            // Library unique name: <androidx:library>
+        """
+                .trimIndent()
     }
 }

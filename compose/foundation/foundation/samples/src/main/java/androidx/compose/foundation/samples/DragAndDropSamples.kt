@@ -29,12 +29,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,18 +81,16 @@ fun DragAndDropMultiAppSample() {
 
     Column(
         modifier = Modifier.padding(16.dp).fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         TextDragAndDropSourceSample(modifier = Modifier.fillMaxWidth())
 
-        Spacer(
-            modifier = Modifier.height(24.dp),
-        )
+        Spacer(modifier = Modifier.height(24.dp))
 
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             TextDragAndDropTargetSample(
                 eventSummary = dragAndDropEventSummary,
-                onDragAndDropEventDropped = { event -> dragAndDropEventSummary = event.summary() }
+                onDragAndDropEventDropped = { event -> dragAndDropEventSummary = event.summary() },
             )
             if (dragAndDropEventSummary != null) {
                 Box(modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)) {
@@ -102,7 +98,7 @@ fun DragAndDropMultiAppSample() {
                         onClick = { dragAndDropEventSummary = null },
                         content = {
                             Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
-                        }
+                        },
                     )
                 }
             }
@@ -110,7 +106,6 @@ fun DragAndDropMultiAppSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun TextDragAndDropSourceSample(modifier: Modifier) {
@@ -118,33 +113,26 @@ fun TextDragAndDropSourceSample(modifier: Modifier) {
     Box(
         modifier =
             modifier
-                .dragAndDropSource {
-                    detectTapGestures(
-                        onLongPress = {
-                            startTransfer(
-                                DragAndDropTransferData(
-                                    clipData = ClipData.newPlainText(label, label),
-                                    flags = View.DRAG_FLAG_GLOBAL,
-                                )
-                            )
-                        }
+                .dragAndDropSource { _ ->
+                    DragAndDropTransferData(
+                        clipData = ClipData.newPlainText(label, label),
+                        flags = View.DRAG_FLAG_GLOBAL,
                     )
                 }
                 .border(
                     border =
                         BorderStroke(
                             width = 4.dp,
-                            brush = Brush.linearGradient(listOf(Color.Magenta, Color.Magenta))
+                            brush = Brush.linearGradient(listOf(Color.Magenta, Color.Magenta)),
                         ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
                 )
-                .padding(24.dp),
+                .padding(24.dp)
     ) {
         Text(modifier = Modifier.align(Alignment.Center), text = label)
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun TextDragAndDropTargetSample(
@@ -152,15 +140,25 @@ fun TextDragAndDropTargetSample(
     onDragAndDropEventDropped: (DragAndDropEvent) -> Unit,
 ) {
     val validMimeTypePrefixes = remember {
-        setOf(
-            ClipDescription.MIMETYPE_TEXT_INTENT,
-            "image/",
-            "text/",
-            "video/",
-            "audio/",
-        )
+        setOf(ClipDescription.MIMETYPE_TEXT_INTENT, "image/", "text/", "video/", "audio/")
     }
     var backgroundColor by remember { mutableStateOf(Color.Transparent) }
+    val dragAndDropTarget = remember {
+        object : DragAndDropTarget {
+            override fun onStarted(event: DragAndDropEvent) {
+                backgroundColor = Color.DarkGray.copy(alpha = 0.2f)
+            }
+
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                onDragAndDropEventDropped(event)
+                return true
+            }
+
+            override fun onEnded(event: DragAndDropEvent) {
+                backgroundColor = Color.Transparent
+            }
+        }
+    }
     Box(
         modifier =
             Modifier.fillMaxSize()
@@ -172,24 +170,10 @@ fun TextDragAndDropTargetSample(
                                 }
                             hasValidMimeType
                         },
-                    target =
-                        object : DragAndDropTarget {
-                            override fun onStarted(event: DragAndDropEvent) {
-                                backgroundColor = Color.DarkGray.copy(alpha = 0.2f)
-                            }
-
-                            override fun onDrop(event: DragAndDropEvent): Boolean {
-                                onDragAndDropEventDropped(event)
-                                return true
-                            }
-
-                            override fun onEnded(event: DragAndDropEvent) {
-                                backgroundColor = Color.Transparent
-                            }
-                        },
+                    target = dragAndDropTarget,
                 )
                 .background(backgroundColor)
-                .border(width = 4.dp, color = Color.Magenta, shape = RoundedCornerShape(16.dp)),
+                .border(width = 4.dp, color = Color.Magenta, shape = RoundedCornerShape(16.dp))
     ) {
         when (eventSummary) {
             null -> Text(modifier = Modifier.align(Alignment.Center), text = "Drop anything here")
@@ -198,7 +182,7 @@ fun TextDragAndDropTargetSample(
                     modifier =
                         Modifier.padding(horizontal = 16.dp, vertical = 24.dp)
                             .verticalScroll(rememberScrollState()),
-                    text = eventSummary
+                    text = eventSummary,
                 )
         }
     }
@@ -212,7 +196,7 @@ private fun DragAndDropEvent.summary() =
             val mimeTypes =
                 (0 until toAndroidDragEvent().clipData.description.mimeTypeCount).joinToString(
                     separator = ", ",
-                    transform = toAndroidDragEvent().clipData.description::getMimeType
+                    transform = toAndroidDragEvent().clipData.description::getMimeType,
                 )
             listOfNotNull(
                     "index: $index",
@@ -238,8 +222,8 @@ fun DragAndDropNestedSample() {
                     .animatedDragAndDrop(
                         prefix = "Main",
                         level = 0,
-                        rowAndColumn = RowAndColumn(row = 0, column = 0)
-                    ),
+                        rowAndColumn = RowAndColumn(row = 0, column = 0),
+                    )
         ) { outerRowAndColumn ->
             TwoByTwoGrid(
                 modifier =
@@ -250,7 +234,7 @@ fun DragAndDropNestedSample() {
                             prefix = "Outer",
                             level = 1,
                             rowAndColumn = outerRowAndColumn,
-                        ),
+                        )
             ) { innerRowAndColumn ->
                 Box(
                     modifier =
@@ -261,7 +245,7 @@ fun DragAndDropNestedSample() {
                                 prefix = "Inner ",
                                 level = 2,
                                 rowAndColumn = innerRowAndColumn,
-                            ),
+                            )
                 )
             }
         }
@@ -283,16 +267,15 @@ private fun ColorSwatch() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun DragAndDropSourceWithColoredDragShadowSample(color: Color) {
     Box(
         modifier =
             Modifier.size(56.dp).background(color = color).dragAndDropSource(
-                drawDragDecoration = { drawRect(color) },
-            ) {
-                detectTapGestures(onLongPress = { startTransfer(color.toDragAndDropTransfer()) })
+                drawDragDecoration = { drawRect(color) }
+            ) { _ ->
+                color.toDragAndDropTransfer()
             }
     )
 }
@@ -300,7 +283,7 @@ fun DragAndDropSourceWithColoredDragShadowSample(color: Color) {
 @Composable
 private fun TwoByTwoGrid(
     modifier: Modifier = Modifier,
-    child: @Composable (RowScope.(rowAndColumn: RowAndColumn) -> Unit)
+    child: @Composable (RowScope.(rowAndColumn: RowAndColumn) -> Unit),
 ) {
     Column(modifier = modifier) {
         repeat(2) { column ->
@@ -315,7 +298,7 @@ private fun TwoByTwoGrid(
 private fun Modifier.animatedDragAndDrop(
     prefix: String,
     level: Int,
-    rowAndColumn: RowAndColumn
+    rowAndColumn: RowAndColumn,
 ): Modifier {
     val state = remember { State(prefix = prefix, level = level, rowAndColumn = rowAndColumn) }
     return this.stateDragSource(state)
@@ -325,21 +308,15 @@ private fun Modifier.animatedDragAndDrop(
         .offset(state.animatedTranslation, state.animatedTranslation)
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.stateDragSource(state: State) =
-    dragAndDropSource(
-        drawDragDecoration = { drawRoundRect(state.color) },
-    ) {
-        detectTapGestures(onLongPress = { startTransfer(state.color.toDragAndDropTransfer()) })
+    dragAndDropSource(drawDragDecoration = { drawRoundRect(state.color) }) { _ ->
+        state.color.toDragAndDropTransfer()
     }
 
-@OptIn(ExperimentalFoundationApi::class)
-private fun Modifier.stateDropTarget(state: State) =
-    dragAndDropTarget(
-        shouldStartDragAndDrop = { startEvent ->
-            startEvent.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_INTENT)
-        },
-        target =
+@Composable
+private fun Modifier.stateDropTarget(state: State): Modifier {
+    val dragAndDropTarget =
+        remember(state) {
             object : DragAndDropTarget {
                 override fun onStarted(event: DragAndDropEvent) {
                     state.onStarted()
@@ -377,14 +354,17 @@ private fun Modifier.stateDropTarget(state: State) =
                     }
                 }
             }
+        }
+    return dragAndDropTarget(
+        shouldStartDragAndDrop = { startEvent ->
+            startEvent.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_INTENT)
+        },
+        target = dragAndDropTarget,
     )
+}
 
 @Stable
-private class State(
-    val prefix: String,
-    val level: Int,
-    val rowAndColumn: RowAndColumn,
-) {
+private class State(val prefix: String, val level: Int, val rowAndColumn: RowAndColumn) {
     var color by mutableStateOf(startColor)
         private set
 
@@ -438,7 +418,7 @@ private val State.animatedColor: Color
                 targetValue = if (isInside) Color.DarkGray else color,
                 animationSpec =
                     infiniteRepeatable(animation = tween(400), repeatMode = RepeatMode.Reverse),
-                label = "background color"
+                label = "background color",
             )
             .value
 
@@ -451,7 +431,7 @@ private val State.animatedRotation: Float
                 targetValue = if (isInDnD) 0.2f else 0f,
                 animationSpec =
                     infiniteRepeatable(animation = jiggleSpec(), repeatMode = RepeatMode.Reverse),
-                label = "rotation"
+                label = "rotation",
             )
             .value
 
@@ -464,7 +444,7 @@ private val State.animatedTranslation: Dp
                 targetValue = if (isInDnD) 0.02f else 0f,
                 animationSpec =
                     infiniteRepeatable(animation = jiggleSpec(), repeatMode = RepeatMode.Reverse),
-                label = "translation"
+                label = "translation",
             )
             .value
             .dp

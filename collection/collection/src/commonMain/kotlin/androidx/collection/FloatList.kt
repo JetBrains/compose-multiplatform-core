@@ -18,7 +18,12 @@
 
 package androidx.collection
 
+import androidx.annotation.IntRange
+import androidx.collection.internal.throwIllegalArgumentException
+import androidx.collection.internal.throwIndexOutOfBoundsException
+import androidx.collection.internal.throwNoSuchElementException
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmOverloads
@@ -55,26 +60,26 @@ public sealed class FloatList(initialCapacity: Int) {
     @Suppress("PropertyName") @JvmField @PublishedApi internal var _size: Int = 0
 
     /** The number of elements in the [FloatList]. */
-    @get:androidx.annotation.IntRange(from = 0)
-    public val size: Int
+    @get:IntRange(from = 0)
+    public inline val size: Int
         get() = _size
 
     /** Returns the last valid index in the [FloatList]. This can be `-1` when the list is empty. */
-    @get:androidx.annotation.IntRange(from = -1)
+    @get:IntRange(from = -1)
     public inline val lastIndex: Int
         get() = _size - 1
 
     /** Returns an [IntRange] of the valid indices for this [FloatList]. */
-    public inline val indices: IntRange
+    public inline val indices: kotlin.ranges.IntRange
         get() = 0 until _size
 
     /** Returns `true` if the collection has no elements in it. */
-    public fun none(): Boolean {
+    public inline fun none(): Boolean {
         return isEmpty()
     }
 
     /** Returns `true` if there's at least one element in the collection. */
-    public fun any(): Boolean {
+    public inline fun any(): Boolean {
         return isNotEmpty()
     }
 
@@ -125,7 +130,7 @@ public sealed class FloatList(initialCapacity: Int) {
     }
 
     /** Returns the number of elements in this list. */
-    public fun count(): Int = _size
+    public inline fun count(): Int = _size
 
     /**
      * Counts the number of elements matching [predicate].
@@ -145,7 +150,7 @@ public sealed class FloatList(initialCapacity: Int) {
      */
     public fun first(): Float {
         if (isEmpty()) {
-            throw NoSuchElementException("FloatList is empty.")
+            throwNoSuchElementException("FloatList is empty.")
         }
         return content[0]
     }
@@ -184,7 +189,7 @@ public sealed class FloatList(initialCapacity: Int) {
      */
     public inline fun <R> foldIndexed(
         initial: R,
-        operation: (index: Int, acc: R, element: Float) -> R
+        operation: (index: Int, acc: R, element: Float) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -214,7 +219,7 @@ public sealed class FloatList(initialCapacity: Int) {
      */
     public inline fun <R> foldRightIndexed(
         initial: R,
-        operation: (index: Int, element: Float, acc: R) -> R
+        operation: (index: Int, element: Float, acc: R) -> R,
     ): R {
         contract { callsInPlace(operation) }
         var acc = initial
@@ -282,9 +287,9 @@ public sealed class FloatList(initialCapacity: Int) {
      * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if the [index]
      * is out of bounds of this collection.
      */
-    public operator fun get(@androidx.annotation.IntRange(from = 0) index: Int): Float {
+    public operator fun get(@IntRange(from = 0) index: Int): Float {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         return content[index]
     }
@@ -293,9 +298,9 @@ public sealed class FloatList(initialCapacity: Int) {
      * Returns the element at the given [index] or throws [IndexOutOfBoundsException] if the [index]
      * is out of bounds of this collection.
      */
-    public fun elementAt(@androidx.annotation.IntRange(from = 0) index: Int): Float {
+    public fun elementAt(@IntRange(from = 0) index: Int): Float {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         return content[index]
     }
@@ -309,8 +314,8 @@ public sealed class FloatList(initialCapacity: Int) {
      *   index not in the list.
      */
     public inline fun elementAtOrElse(
-        @androidx.annotation.IntRange(from = 0) index: Int,
-        defaultValue: (index: Int) -> Float
+        @IntRange(from = 0) index: Int,
+        defaultValue: (index: Int) -> Float,
     ): Float {
         if (index !in 0 until _size) {
             return defaultValue(index)
@@ -357,10 +362,10 @@ public sealed class FloatList(initialCapacity: Int) {
     }
 
     /** Returns `true` if the [FloatList] has no elements in it or `false` otherwise. */
-    public fun isEmpty(): Boolean = _size == 0
+    public inline fun isEmpty(): Boolean = _size == 0
 
     /** Returns `true` if there are elements in the [FloatList] or `false` if it is empty. */
-    public fun isNotEmpty(): Boolean = _size != 0
+    public inline fun isNotEmpty(): Boolean = _size != 0
 
     /**
      * Returns the last element in the [FloatList] or throws a [NoSuchElementException] if it
@@ -368,7 +373,7 @@ public sealed class FloatList(initialCapacity: Int) {
      */
     public fun last(): Float {
         if (isEmpty()) {
-            throw NoSuchElementException("FloatList is empty.")
+            throwNoSuchElementException("FloatList is empty.")
         }
         return content[lastIndex]
     }
@@ -403,6 +408,43 @@ public sealed class FloatList(initialCapacity: Int) {
     }
 
     /**
+     * Searches this list the specified element in the range defined by [fromIndex] and [toIndex].
+     * The list is expected to be sorted into ascending order according to the natural ordering of
+     * its elements, otherwise the result is undefined.
+     *
+     * [fromIndex] must be >= 0 and < [toIndex], and [toIndex] must be <= [size], otherwise an an
+     * [IndexOutOfBoundsException] will be thrown.
+     *
+     * @return the index of the element if it is contained in the list within the specified range.
+     *   otherwise, the inverted insertion point `(-insertionPoint - 1)`. The insertion point is
+     *   defined as the index at which the element should be inserted, so that the list remains
+     *   sorted.
+     */
+    @JvmOverloads
+    public fun binarySearch(element: Int, fromIndex: Int = 0, toIndex: Int = size): Int {
+        if (fromIndex < 0 || fromIndex >= toIndex || toIndex > _size) {
+            throwIndexOutOfBoundsException("")
+        }
+
+        var low = fromIndex
+        var high = toIndex - 1
+
+        while (low <= high) {
+            val mid = low + high ushr 1
+            val midVal = content[mid]
+            if (midVal < element) {
+                low = mid + 1
+            } else if (midVal > element) {
+                high = mid - 1
+            } else {
+                return mid // key found
+            }
+        }
+
+        return -(low + 1) // key not found.
+    }
+
+    /**
      * Creates a String from the elements separated by [separator] and using [prefix] before and
      * [postfix] after, if supplied.
      *
@@ -419,15 +461,17 @@ public sealed class FloatList(initialCapacity: Int) {
         truncated: CharSequence = "...",
     ): String = buildString {
         append(prefix)
-        this@FloatList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@FloatList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(element)
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(element)
         }
         append(postfix)
     }
@@ -447,18 +491,20 @@ public sealed class FloatList(initialCapacity: Int) {
         postfix: CharSequence = "", // I know this should be suffix, but this is kotlin's name
         limit: Int = -1,
         truncated: CharSequence = "...",
-        crossinline transform: (Float) -> CharSequence
+        crossinline transform: (Float) -> CharSequence,
     ): String = buildString {
         append(prefix)
-        this@FloatList.forEachIndexed { index, element ->
-            if (index == limit) {
-                append(truncated)
-                return@buildString
+        run {
+            this@FloatList.forEachIndexed { index, element ->
+                if (index != 0) {
+                    append(separator)
+                }
+                if (index == limit) {
+                    append(truncated)
+                    return@run
+                }
+                append(transform(element))
             }
-            if (index != 0) {
-                append(separator)
-            }
-            append(transform(element))
         }
         append(postfix)
     }
@@ -530,9 +576,9 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      *
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive
      */
-    public fun add(@androidx.annotation.IntRange(from = 0) index: Int, element: Float) {
+    public fun add(@IntRange(from = 0) index: Int, element: Float) {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         ensureCapacity(_size + 1)
         val content = content
@@ -541,7 +587,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
                 destination = content,
                 destinationOffset = index + 1,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         content[index] = element
@@ -555,12 +601,9 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * @return `true` if the [MutableFloatList] was changed or `false` if [elements] was empty
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive.
      */
-    public fun addAll(
-        @androidx.annotation.IntRange(from = 0) index: Int,
-        elements: FloatArray
-    ): Boolean {
+    public fun addAll(@IntRange(from = 0) index: Int, elements: FloatArray): Boolean {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsException("")
         }
         if (elements.isEmpty()) return false
         ensureCapacity(_size + elements.size)
@@ -570,7 +613,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
                 destination = content,
                 destinationOffset = index + elements.size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.copyInto(content, index)
@@ -585,12 +628,9 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * @return `true` if the [MutableFloatList] was changed or `false` if [elements] was empty
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [size], inclusive
      */
-    public fun addAll(
-        @androidx.annotation.IntRange(from = 0) index: Int,
-        elements: FloatList
-    ): Boolean {
+    public fun addAll(@IntRange(from = 0) index: Int, elements: FloatList): Boolean {
         if (index !in 0.._size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$_size")
+            throwIndexOutOfBoundsException("")
         }
         if (elements.isEmpty()) return false
         ensureCapacity(_size + elements._size)
@@ -600,14 +640,14 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
                 destination = content,
                 destinationOffset = index + elements._size,
                 startIndex = index,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         elements.content.copyInto(
             destination = content,
             destinationOffset = index,
             startIndex = 0,
-            endIndex = elements._size
+            endIndex = elements._size,
         )
         _size += elements._size
         return true
@@ -617,7 +657,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * Adds all [elements] to the end of the [MutableFloatList] and returns `true` if the
      * [MutableFloatList] was changed or `false` if [elements] was empty.
      */
-    public fun addAll(elements: FloatList): Boolean {
+    public inline fun addAll(elements: FloatList): Boolean {
         return addAll(_size, elements)
     }
 
@@ -625,17 +665,17 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * Adds all [elements] to the end of the [MutableFloatList] and returns `true` if the
      * [MutableFloatList] was changed or `false` if [elements] was empty.
      */
-    public fun addAll(elements: FloatArray): Boolean {
+    public inline fun addAll(elements: FloatArray): Boolean {
         return addAll(_size, elements)
     }
 
     /** Adds all [elements] to the end of the [MutableFloatList]. */
-    public operator fun plusAssign(elements: FloatList) {
+    public inline operator fun plusAssign(elements: FloatList) {
         addAll(_size, elements)
     }
 
     /** Adds all [elements] to the end of the [MutableFloatList]. */
-    public operator fun plusAssign(elements: FloatArray) {
+    public inline operator fun plusAssign(elements: FloatArray) {
         addAll(_size, elements)
     }
 
@@ -737,9 +777,9 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      *
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [lastIndex], inclusive
      */
-    public fun removeAt(@androidx.annotation.IntRange(from = 0) index: Int): Float {
+    public fun removeAt(@IntRange(from = 0) index: Int): Float {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("Index $index must be in 0..$lastIndex")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         val content = content
         val item = content[index]
@@ -748,7 +788,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
                 destination = content,
                 destinationOffset = index,
                 startIndex = index + 1,
-                endIndex = _size
+                endIndex = _size,
             )
         }
         _size--
@@ -761,15 +801,12 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * @throws IndexOutOfBoundsException if [start] or [end] isn't between 0 and [size], inclusive
      * @throws IllegalArgumentException if [start] is greater than [end]
      */
-    public fun removeRange(
-        @androidx.annotation.IntRange(from = 0) start: Int,
-        @androidx.annotation.IntRange(from = 0) end: Int
-    ) {
+    public fun removeRange(@IntRange(from = 0) start: Int, @IntRange(from = 0) end: Int) {
         if (start !in 0.._size || end !in 0.._size) {
-            throw IndexOutOfBoundsException("Start ($start) and end ($end) must be in 0..$_size")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         if (end < start) {
-            throw IllegalArgumentException("Start ($start) is more than end ($end)")
+            throwIllegalArgumentException("The end index must be < start index")
         }
         if (end != start) {
             if (end < _size) {
@@ -777,7 +814,7 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
                     destination = content,
                     destinationOffset = start,
                     startIndex = end,
-                    endIndex = _size
+                    endIndex = _size,
                 )
             }
             _size -= (end - start)
@@ -824,12 +861,9 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
      * @return the previous value set at [index]
      * @throws IndexOutOfBoundsException if [index] isn't between 0 and [lastIndex], inclusive
      */
-    public operator fun set(
-        @androidx.annotation.IntRange(from = 0) index: Int,
-        element: Float
-    ): Float {
+    public operator fun set(@IntRange(from = 0) index: Int, element: Float): Float {
         if (index !in 0 until _size) {
-            throw IndexOutOfBoundsException("set index $index must be between 0 .. $lastIndex")
+            throwIndexOutOfBoundsException("Index must be between 0 and size")
         }
         val content = content
         val old = content[index]
@@ -839,11 +873,15 @@ public class MutableFloatList(initialCapacity: Int = 16) : FloatList(initialCapa
 
     /** Sorts the [MutableFloatList] elements in ascending order. */
     public fun sort() {
+        // TODO: remove a return after https://youtrack.jetbrains.com/issue/KT-70005 is fixed
+        if (_size == 0) return
         content.sort(fromIndex = 0, toIndex = _size)
     }
 
     /** Sorts the [MutableFloatList] elements in descending order. */
     public fun sortDescending() {
+        // TODO: remove a return after https://youtrack.jetbrains.com/issue/KT-70005 is fixed
+        if (_size == 0) return
         content.sortDescending(fromIndex = 0, toIndex = _size)
     }
 }
@@ -907,3 +945,33 @@ public fun mutableFloatListOf(element1: Float, element2: Float, element3: Float)
 /** @return a new [MutableFloatList] with the given elements, in order. */
 public inline fun mutableFloatListOf(vararg elements: Float): MutableFloatList =
     MutableFloatList(elements.size).apply { plusAssign(elements) }
+
+/**
+ * Builds a new [FloatList] by populating a [MutableFloatList] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param builderAction Lambda in which the [MutableFloatList] can be populated.
+ */
+public inline fun buildFloatList(builderAction: MutableFloatList.() -> Unit): FloatList {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatList().apply(builderAction)
+}
+
+/**
+ * Builds a new [FloatList] by populating a [MutableFloatList] using the given [builderAction].
+ *
+ * The instance passed as a receiver to the [builderAction] is valid only inside that function.
+ * Using it outside of the function produces an unspecified behavior.
+ *
+ * @param initialCapacity Hint for the expected number of elements added in the [builderAction].
+ * @param builderAction Lambda in which the [MutableFloatList] can be populated.
+ */
+public inline fun buildFloatList(
+    initialCapacity: Int,
+    builderAction: MutableFloatList.() -> Unit,
+): FloatList {
+    contract { callsInPlace(builderAction, InvocationKind.EXACTLY_ONCE) }
+    return MutableFloatList(initialCapacity).apply(builderAction)
+}

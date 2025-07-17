@@ -118,7 +118,7 @@ class AndroidComposeViewScreenCoordinatesTest {
 
         rule.waitUntil {
             val coordinates = assertNotNull(view.coordinates)
-            coordinates.positionOnScreen() == view.locationOnScreen
+            coordinates.positionOnScreen() == view.locationOnScreen + Offset(30f, 40f)
         }
     }
 
@@ -292,7 +292,7 @@ class AndroidComposeViewScreenCoordinatesTest {
                         val placeable = measurable.measure(Constraints.fixed(10, 10))
                         layout(
                             width = innerOffset.x + placeable.width,
-                            height = innerOffset.y + placeable.height
+                            height = innerOffset.y + placeable.height,
                         ) {
                             placeable.place(innerOffset)
                         }

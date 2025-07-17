@@ -35,11 +35,10 @@ import android.view.MotionEvent.TOOL_TYPE_FINGER
 import android.view.MotionEvent.TOOL_TYPE_MOUSE
 import android.view.MotionEvent.TOOL_TYPE_STYLUS
 import android.view.MotionEvent.TOOL_TYPE_UNKNOWN
-import androidx.annotation.DoNotInline
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.util.fastIsFinite
 
 /** Converts Android framework [MotionEvent]s into Compose [PointerInputEvent]s. */
 internal class MotionEventAdapter {
@@ -80,7 +79,7 @@ internal class MotionEventAdapter {
      */
     internal fun convertToPointerInputEvent(
         motionEvent: MotionEvent,
-        positionCalculator: PositionCalculator
+        positionCalculator: PositionCalculator,
     ): PointerInputEvent? {
         val action = motionEvent.actionMasked
         if (action == ACTION_CANCEL || action == ACTION_OUTSIDE) {
@@ -125,7 +124,7 @@ internal class MotionEventAdapter {
                     // 1. we're not hovered
                     // 2. we didn't get UP event for a pointer
                     // 3. button on the mouse is pressed BUT it's not a "scroll" simulated button
-                    !isHover && i != upIndex && (!isScroll || motionEvent.buttonState != 0)
+                    !isHover && i != upIndex && (!isScroll || motionEvent.buttonState != 0),
                 )
             )
         }
@@ -241,12 +240,11 @@ internal class MotionEventAdapter {
     }
 
     /** Creates a new PointerInputEventData. */
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun createPointerInputEventData(
         positionCalculator: PositionCalculator,
         motionEvent: MotionEvent,
         index: Int,
-        pressed: Boolean
+        pressed: Boolean,
     ): PointerInputEventData {
 
         val motionEventPointerId = motionEvent.getPointerId(index)
@@ -282,13 +280,13 @@ internal class MotionEventAdapter {
             repeat(historySize) { pos ->
                 val x = getHistoricalX(index, pos)
                 val y = getHistoricalY(index, pos)
-                if (x.isFinite() && y.isFinite()) {
+                if (x.fastIsFinite() && y.fastIsFinite()) {
                     val originalEventPosition = Offset(x, y) // hit path will convert to local
                     val historicalChange =
                         HistoricalChange(
                             getHistoricalEventTime(pos),
                             originalEventPosition,
-                            originalEventPosition
+                            originalEventPosition,
                         )
                     historical.add(historicalChange)
                 }
@@ -344,7 +342,6 @@ internal class MotionEventAdapter {
  */
 @RequiresApi(Build.VERSION_CODES.Q)
 private object MotionEventHelper {
-    @DoNotInline
     fun toRawOffset(motionEvent: MotionEvent, index: Int): Offset {
         return Offset(motionEvent.getRawX(index), motionEvent.getRawY(index))
     }

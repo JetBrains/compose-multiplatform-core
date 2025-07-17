@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.text.modifiers
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.text.DefaultMinLines
 import androidx.compose.foundation.text.ceilToIntPx
 import androidx.compose.ui.text.AnnotatedString
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.constrain
+import kotlin.jvm.JvmInline
 import kotlin.math.min
 
 /**
@@ -76,6 +78,7 @@ internal class ParagraphLayoutCache(
             if (value == null || lastDensity != newDensity) {
                 field = value
                 lastDensity = newDensity
+                recordHistory(LayoutCacheOperation.MarkDirtyDensity)
                 markDirty()
             }
         }
@@ -114,26 +117,52 @@ internal class ParagraphLayoutCache(
     private var cachedIntrinsicHeight: Int = -1
 
     /**
+     * A 64-bit flag that records the history of `markDirty`, `markStyleDirty`, and
+     * `layoutWithConstraints` operations. Each 2-bit segment represents a distinct operation.
+     * Consequently, this flag maintains a record of the last 32 operations performed on this cache.
+     *
+     * Bit representation:
+     * ```
+     *   | Operation                | Bits |
+     *   | :----------------------- | :--- |
+     *   | markStyleDirty           | 00   |
+     *   | markDirtyDensity         | 01   |
+     *   | markDirtyNodeUpdate      | 10   |
+     *   | layoutWithConstraints    | 11   |
+     * ```
+     *
+     * With the operations encoded in 2 bit segments and read from right to left. For example:
+     * ```
+     *   01111000 would represent that the last 4 operations performed were
+     *   1. markStyleDirty (00)
+     *   2. markDirtyNodeUpdate (10)
+     *   3. layoutWithConstraints (11)
+     *   4. markDirtyDensity (01)
+     * ```
+     *
+     * This history can be used to debug or print as a log of what operations have been performed on
+     * this [MultiParagraphLayoutCache].
+     */
+    @VisibleForTesting internal var historyFlag: Long = 0L
+
+    private fun recordHistory(op: LayoutCacheOperation) {
+        historyFlag = (historyFlag shl 2) or op.flag
+    }
+
+    /**
      * Update layout constraints for this text
      *
      * @return true if constraints caused a text layout invalidation
      */
     fun layoutWithConstraints(constraints: Constraints, layoutDirection: LayoutDirection): Boolean {
+        recordHistory(LayoutCacheOperation.LayoutWithConstraints)
         val finalConstraints =
             if (minLines > 1) {
-                val localMin =
-                    MinLinesConstrainer.from(
-                            mMinLinesConstrainer,
-                            layoutDirection,
-                            style,
-                            density!!,
-                            fontFamilyResolver
-                        )
-                        .also { mMinLinesConstrainer = it }
-                localMin.coerceMinLines(inConstraints = constraints, minLines = minLines)
+                useMinLinesConstrainer(constraints, layoutDirection)
             } else {
                 constraints
             }
+
         if (!newLayoutWillBeDifferent(finalConstraints, layoutDirection)) {
             if (finalConstraints != prevConstraints) {
                 // ensure size and overflow is still accurate
@@ -152,6 +181,7 @@ internal class ParagraphLayoutCache(
             }
             return false
         }
+
         paragraph =
             layoutText(finalConstraints, layoutDirection).also {
                 prevConstraints = finalConstraints
@@ -167,15 +197,40 @@ internal class ParagraphLayoutCache(
         return true
     }
 
+    private fun useMinLinesConstrainer(
+        constraints: Constraints,
+        layoutDirection: LayoutDirection,
+        style: TextStyle = this.style,
+    ): Constraints {
+        val localMin =
+            MinLinesConstrainer.from(
+                    mMinLinesConstrainer,
+                    layoutDirection,
+                    style,
+                    density!!,
+                    fontFamilyResolver,
+                )
+                .also { mMinLinesConstrainer = it }
+        return localMin.coerceMinLines(inConstraints = constraints, minLines = minLines)
+    }
+
     /** The natural height of text at [width] in [layoutDirection] */
     fun intrinsicHeight(width: Int, layoutDirection: LayoutDirection): Int {
         val localWidth = cachedIntrinsicHeightInputWidth
         val localHeght = cachedIntrinsicHeight
         if (width == localWidth && localWidth != -1) return localHeght
+        val constraints = Constraints(0, width, 0, Constraints.Infinity)
+        val finalConstraints =
+            if (minLines > 1) {
+                useMinLinesConstrainer(constraints, layoutDirection)
+            } else {
+                constraints
+            }
         val result =
-            layoutText(Constraints(0, width, 0, Constraints.Infinity), layoutDirection)
+            layoutText(finalConstraints, layoutDirection)
                 .height
                 .ceilToIntPx()
+                .coerceAtLeast(finalConstraints.minHeight)
 
         cachedIntrinsicHeightInputWidth = width
         cachedIntrinsicHeight = result
@@ -190,7 +245,7 @@ internal class ParagraphLayoutCache(
         overflow: TextOverflow,
         softWrap: Boolean,
         maxLines: Int,
-        minLines: Int
+        minLines: Int,
     ) {
         this.text = text
         this.style = style
@@ -199,6 +254,7 @@ internal class ParagraphLayoutCache(
         this.softWrap = softWrap
         this.maxLines = maxLines
         this.minLines = minLines
+        recordHistory(LayoutCacheOperation.MarkDirtyNode)
         markDirty()
     }
 
@@ -219,8 +275,10 @@ internal class ParagraphLayoutCache(
                 ParagraphIntrinsics(
                     text = text,
                     style = resolveDefaults(style, layoutDirection),
+                    annotations = listOf(),
                     density = density!!,
-                    fontFamilyResolver = fontFamilyResolver
+                    fontFamilyResolver = fontFamilyResolver,
+                    placeholders = listOf(),
                 )
             } else {
                 localIntrinsics
@@ -235,7 +293,7 @@ internal class ParagraphLayoutCache(
      * The text will layout with a width that's as close to its max intrinsic width as possible
      * while still being greater than or equal to `minWidth` and less than or equal to `maxWidth`.
      */
-    private fun layoutText(constraints: Constraints, layoutDirection: LayoutDirection): Paragraph {
+    internal fun layoutText(constraints: Constraints, layoutDirection: LayoutDirection): Paragraph {
         val localParagraphIntrinsics = setLayoutDirection(layoutDirection)
 
         return Paragraph(
@@ -245,11 +303,10 @@ internal class ParagraphLayoutCache(
                     constraints,
                     softWrap,
                     overflow,
-                    localParagraphIntrinsics.maxIntrinsicWidth
+                    localParagraphIntrinsics.maxIntrinsicWidth,
                 ),
-            // This is a fallback behavior for ellipsis. Native
             maxLines = finalMaxLines(softWrap, overflow, maxLines),
-            ellipsis = overflow == TextOverflow.Ellipsis
+            overflow = overflow,
         )
     }
 
@@ -259,9 +316,9 @@ internal class ParagraphLayoutCache(
      */
     private fun newLayoutWillBeDifferent(
         constraints: Constraints,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ): Boolean {
-        // paragarph and paragraphIntrinsics are from previous run
+        // paragraph and paragraphIntrinsics are from previous run
         val localParagraph = paragraph ?: return true
         val localParagraphIntrinsics = paragraphIntrinsics ?: return true
         // no layout yet
@@ -276,6 +333,7 @@ internal class ParagraphLayoutCache(
         if (constraints == prevConstraints) return false
 
         if (constraints.maxWidth != prevConstraints.maxWidth) return true
+        if (constraints.minWidth != prevConstraints.minWidth) return true
 
         // if we get here width won't change, height may be clipped
         if (constraints.maxHeight < localParagraph.height || localParagraph.didExceedMaxLines) {
@@ -312,7 +370,7 @@ internal class ParagraphLayoutCache(
         val annotatedString = AnnotatedString(text)
         paragraph ?: return null
         paragraphIntrinsics ?: return null
-        val finalConstraints = prevConstraints.copy(minWidth = 0, minHeight = 0)
+        val finalConstraints = prevConstraints.copyMaxDimensions()
 
         // and redo layout with MultiParagraph
         return TextLayoutResult(
@@ -326,7 +384,7 @@ internal class ParagraphLayoutCache(
                 localDensity,
                 localLayoutDirection,
                 fontFamilyResolver,
-                finalConstraints
+                finalConstraints,
             ),
             MultiParagraph(
                 MultiParagraphIntrinsics(
@@ -334,13 +392,13 @@ internal class ParagraphLayoutCache(
                     style = style,
                     placeholders = emptyList(),
                     density = localDensity,
-                    fontFamilyResolver = fontFamilyResolver
+                    fontFamilyResolver = fontFamilyResolver,
                 ),
                 finalConstraints,
                 maxLines,
-                overflow == TextOverflow.Ellipsis
+                overflow,
             ),
-            layoutSize
+            layoutSize,
         )
     }
 
@@ -356,5 +414,15 @@ internal class ParagraphLayoutCache(
 
     override fun toString(): String =
         "ParagraphLayoutCache(paragraph=${if (paragraph != null) "<paragraph>" else "null"}, " +
-            "lastDensity=$lastDensity)"
+            "lastDensity=$lastDensity, history=$historyFlag, constraints=$)"
+}
+
+@JvmInline
+internal value class LayoutCacheOperation private constructor(val flag: Long) {
+    companion object {
+        val MarkDirtyStyle = LayoutCacheOperation(0b00)
+        val MarkDirtyDensity = LayoutCacheOperation(0b01)
+        val MarkDirtyNode = LayoutCacheOperation(0b10)
+        val LayoutWithConstraints = LayoutCacheOperation(0b11)
+    }
 }

@@ -20,8 +20,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 import android.support.customtabs.IEngagementSignalsCallback;
 
-import androidx.annotation.Nullable;
-
+import org.jspecify.annotations.Nullable;
 import org.mockito.Mockito;
 
 /**

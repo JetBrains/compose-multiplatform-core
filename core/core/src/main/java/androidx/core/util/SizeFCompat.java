@@ -18,9 +18,9 @@ package androidx.core.util;
 
 import android.util.SizeF;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Immutable class for describing width and height dimensions in some arbitrary unit. Width and
@@ -67,38 +67,31 @@ public final class SizeFCompat {
         return Float.floatToIntBits(mWidth) ^ Float.floatToIntBits(mHeight);
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return mWidth + "x" + mHeight;
     }
 
     /** Converts this {@link SizeFCompat} into a {@link SizeF}. */
     @RequiresApi(21)
-    @NonNull
-    public SizeF toSizeF() {
+    public @NonNull SizeF toSizeF() {
         return Api21Impl.toSizeF(this);
     }
 
     /** Converts this {@link SizeF} into a {@link SizeFCompat}. */
     @RequiresApi(21)
-    @NonNull
-    public static SizeFCompat toSizeFCompat(@NonNull SizeF size) {
+    public static @NonNull SizeFCompat toSizeFCompat(@NonNull SizeF size) {
         return Api21Impl.toSizeFCompat(size);
     }
 
     @RequiresApi(21)
     private static final class Api21Impl {
-        @DoNotInline
-        @NonNull
-        static SizeFCompat toSizeFCompat(@NonNull SizeF size) {
+        static @NonNull SizeFCompat toSizeFCompat(@NonNull SizeF size) {
             Preconditions.checkNotNull(size);
             return new SizeFCompat(size.getWidth(), size.getHeight());
         }
 
-        @DoNotInline
-        @NonNull
-        static SizeF toSizeF(@NonNull SizeFCompat size) {
+        static @NonNull SizeF toSizeF(@NonNull SizeFCompat size) {
             Preconditions.checkNotNull(size);
             return new SizeF(size.getWidth(), size.getHeight());
         }

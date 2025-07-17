@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.anchoredDraggable
 
+import androidx.annotation.FloatRange
 import androidx.compose.animation.SplineBasedFloatDecayAnimationSpec
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector
@@ -30,7 +31,6 @@ import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.generateDecayAnimationSpec
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.AutoTestFrameClock
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.anchoredDraggable.AnchoredDraggableTestValue.A
 import androidx.compose.foundation.anchoredDraggable.AnchoredDraggableTestValue.B
 import androidx.compose.foundation.anchoredDraggable.AnchoredDraggableTestValue.C
@@ -91,7 +91,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @LargeTest
-@OptIn(ExperimentalFoundationApi::class)
 class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
     AnchoredDraggableBackwardsCompatibleTest(testNewBehavior) {
 
@@ -199,7 +198,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                 initialValue = A,
                 orientation = Orientation.Vertical,
                 snapAnimationSpec = snapAnimationSpec,
-                positionalThreshold = { distance -> distance * 0.5f }
+                positionalThreshold = { distance -> distance * 0.5f },
             )
 
         lateinit var scope: CoroutineScope
@@ -248,7 +247,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         A at 0f
                         B at 200f
                         C at 400f
-                    }
+                    },
             )
         val flingBehavior = createAnchoredDraggableFlingBehavior(state, rule.density)
 
@@ -264,7 +263,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
         // Swipe towards B, close after threshold
         state.dispatchRawDelta(aToBThreshold * 0.2f)
 
-        assertThat(state.currentValue).isEqualTo(A)
+        assertThat(state.currentValue).isEqualTo(B)
         assertThat(state.targetValue).isEqualTo(B)
 
         runBlocking(AutoTestFrameClock()) { performFling(flingBehavior, state, 0f) }
@@ -281,7 +280,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
         // Swipe towards A, close after threshold
         state.dispatchRawDelta(-(aToBThreshold * 0.2f))
 
-        assertThat(state.currentValue).isEqualTo(B)
+        assertThat(state.currentValue).isEqualTo(A)
         assertThat(state.targetValue).isEqualTo(A)
 
         runBlocking(AutoTestFrameClock()) { performFling(flingBehavior, state, 0f) }
@@ -301,7 +300,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                             A at 0f
                             B at 20f
                             C at 40f
-                        }
+                        },
                 )
 
             state.testProgression(from = A, to = B, valueUnderTest = { currentValue })
@@ -321,7 +320,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
             createStateAndModifier(
                 initialValue = A,
                 snapAnimationSpec = snapAnimationSpec,
-                orientation = Orientation.Vertical
+                orientation = Orientation.Vertical,
             )
         lateinit var scope: CoroutineScope
         rule.setContent {
@@ -558,7 +557,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
             val state = remember {
                 createAnchoredDraggableState(
                     initialValue = B,
-                    anchors = DraggableAnchors { B at 100f }
+                    anchors = DraggableAnchors { B at 100f },
                 )
             }
             LaunchedEffect(Unit) {
@@ -585,7 +584,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                 .getDurationNanos(
                     initialValue = minBound,
                     targetValue = maxBound,
-                    initialVelocity = 0f
+                    initialVelocity = 0f,
                 )
                 .let { TimeUnit.NANOSECONDS.toMillis(it) }
 
@@ -649,7 +648,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                     A at 0f
                     B at offsetAtB
                 },
-            newTarget = B
+            newTarget = B,
         )
         assertThat(anchoredDraggableState.currentValue).isEqualTo(B)
         assertThat(anchoredDraggableState.targetValue).isEqualTo(B)
@@ -786,7 +785,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         A at 0f
                         B at 200f
                         C at 300f
-                    }
+                    },
             )
 
         state.anchoredDrag { dragTo(150f) }
@@ -908,7 +907,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 200f
-                        }
+                        },
                 )
 
             assertThat(state.currentValue).isEqualTo(A)
@@ -917,7 +916,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                 targetValue = B,
                 velocity = 0f,
                 snapAnimationSpec = tweenAnimationSpec,
-                decayAnimationSpec = decayAnimationSpec
+                decayAnimationSpec = decayAnimationSpec,
             )
 
             assertThat(state.currentValue).isEqualTo(B)
@@ -943,7 +942,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 200f
-                        }
+                        },
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -987,7 +986,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 200f
-                        }
+                        },
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1030,7 +1029,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 200f
-                        }
+                        },
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1073,7 +1072,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 200f
-                        }
+                        },
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1115,7 +1114,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                             B at 200f
                         },
                     positionalThreshold = { it * positionalThreshold },
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val flingBehavior =
@@ -1123,7 +1122,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                     state,
                     rule.density,
                     positionalThreshold = { it * positionalThreshold },
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1167,14 +1166,14 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         },
                     positionalThreshold = { it * positionalThreshold },
                     decayAnimationSpec = decayAnimationSpec,
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
             val flingBehavior =
                 createAnchoredDraggableFlingBehavior(
                     state,
                     density = rule.density,
                     positionalThreshold = { it * positionalThreshold },
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1220,14 +1219,14 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         },
                     positionalThreshold = { it * positionalThreshold },
                     decayAnimationSpec = decayAnimationSpec,
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
             val flingBehavior =
                 createAnchoredDraggableFlingBehavior(
                     state,
                     rule.density,
                     positionalThreshold = { it * positionalThreshold },
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1273,14 +1272,14 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         },
                     positionalThreshold = { it * positionalThreshold },
                     decayAnimationSpec = decayAnimationSpec,
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
             val flingBehavior =
                 createAnchoredDraggableFlingBehavior(
                     state,
                     rule.density,
                     positionalThreshold = { it * positionalThreshold },
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val positionOfA = state.anchors.positionOf(A)
@@ -1318,13 +1317,13 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         DraggableAnchors {
                             A at 0f
                             B at 250f
-                        }
+                        },
                 )
             val flingBehavior =
                 createAnchoredDraggableFlingBehavior(
                     state,
                     rule.density,
-                    snapAnimationSpec = tweenAnimationSpec
+                    snapAnimationSpec = tweenAnimationSpec,
                 )
 
             val positionA = state.anchors.positionOf(A)
@@ -1357,7 +1356,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         A at 0f
                         B at 200f
                         C at 300f
-                    }
+                    },
             )
         val clock = HandPumpTestFrameClock()
         val scope = CoroutineScope(clock)
@@ -1378,7 +1377,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                         A at 0f
                         B at 200f
                         C at 300f
-                    }
+                    },
             )
         val clock = HandPumpTestFrameClock()
         val scope = CoroutineScope(clock)
@@ -1389,18 +1388,121 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
                 targetValue = B,
                 velocity = 100f,
                 snapAnimationSpec = DefaultSnapAnimationSpec,
-                decayAnimationSpec = DefaultDecayAnimationSpec
+                decayAnimationSpec = DefaultDecayAnimationSpec,
             )
         }
         runBlocking { clock.advanceByFrame() } // Advance only one frame, we should be done
         assertThat(state.offset).isEqualTo(200f)
     }
 
+    /**
+     * Test that the state only moves on to the next anchor if the offset has crossed the positional
+     * threshold at the time of the fling.
+     */
+    private fun anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+        @FloatRange(0.0, 1.0) flingOffsetFraction: Float,
+        positionalThreshold: (Float) -> Float,
+    ) {
+        val velocityThreshold = with(rule.density) { 125.dp.toPx() }
+        val anchors = DraggableAnchors {
+            A at 0f
+            B at 100f
+        }
+        val state =
+            createAnchoredDraggableState(
+                initialValue = A,
+                anchors = anchors,
+                positionalThreshold = positionalThreshold,
+            )
+        val flingBehavior =
+            createAnchoredDraggableFlingBehavior(
+                state = state,
+                density = rule.density,
+                positionalThreshold = positionalThreshold,
+                snapAnimationSpec = tween(),
+            )
+
+        val aToBDistance = anchors.positionOf(B) - anchors.positionOf(A)
+        val resolvedPositionalThreshold = abs(positionalThreshold(aToBDistance))
+        val flingOffset = aToBDistance * flingOffsetFraction
+        state.dispatchRawDelta(flingOffset)
+
+        assertThat(state.offset).isEqualTo(flingOffset)
+        assertThat(state.settledValue).isEqualTo(A)
+
+        runBlocking(AutoTestFrameClock()) {
+            performFling(flingBehavior, state, velocityThreshold - 1f)
+        }
+
+        if (flingOffset < resolvedPositionalThreshold) {
+            assertThat(state.offset).isEqualTo(0f)
+            assertThat(state.settledValue).isEqualTo(A)
+            assertThat(state.currentValue).isEqualTo(A)
+        } else {
+            assertThat(state.offset).isEqualTo(100f)
+            assertThat(state.settledValue).isEqualTo(B)
+            assertThat(state.currentValue).isEqualTo(B)
+        }
+
+        runBlocking(AutoTestFrameClock()) { state.animateTo(B) }
+        assertThat(state.offset).isEqualTo(100f)
+        assertThat(state.settledValue).isEqualTo(B)
+        assertThat(state.currentValue).isEqualTo(B)
+
+        state.dispatchRawDelta(-flingOffset)
+
+        assertThat(state.offset).isEqualTo(anchors.positionOf(B) - flingOffset)
+        assertThat(state.settledValue).isEqualTo(B)
+
+        runBlocking(AutoTestFrameClock()) {
+            performFling(flingBehavior, state, -(velocityThreshold - 1f))
+        }
+        if (flingOffset < resolvedPositionalThreshold) {
+            assertThat(state.offset).isEqualTo(100f)
+            assertThat(state.settledValue).isEqualTo(B)
+            assertThat(state.currentValue).isEqualTo(B)
+        } else {
+            assertThat(state.offset).isEqualTo(0f)
+            assertThat(state.settledValue).isEqualTo(A)
+            assertThat(state.currentValue).isEqualTo(A)
+        }
+    }
+
+    @Test
+    fun anchoredDraggable_fling_offsetPastHalfwayBetweenAnchors_beyondPosThreshold_advances() {
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.9f,
+            positionalThreshold = { it * 0.8f },
+        )
+    }
+
+    @Test
+    fun anchoredDraggable_fling_offsetLessThanHalfwayBetweenAnchors_beyondPosThreshold_advances() {
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.4f,
+            positionalThreshold = { it * 0.3f },
+        )
+    }
+
+    @Test
+    fun anchoredDraggable_fling_offsetLessHalfwayBetweenAnchors_beforePosThreshold_doesntAdvance() =
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.4f,
+            positionalThreshold = { it * 0.5f },
+        )
+
+    @Test
+    fun anchoredDraggable_fling_offsetPastHalfwayBetweenAnchors_beforePosThreshold_doesntAdvance() =
+        anchoredDraggable_fling_fromOffset_onlyAdvancesIfThresholdCrossed(
+            flingOffsetFraction = 0.8f,
+            positionalThreshold = { it * 0.9f },
+        )
+
     /** Test the [valueUnderTest] progressively for each delta from [from] to [to]. */
     private suspend fun <T> AnchoredDraggableState<T>.testProgression(
         valueUnderTest: AnchoredDraggableState<T>.() -> Any,
         from: T,
-        to: T
+        to: T,
     ) {
         anchoredDrag { anchors ->
             val origin = anchors.positionOf(from).roundToInt()
@@ -1458,7 +1560,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
         override fun getValueFromNanos(
             playTimeNanos: Long,
             initialValue: Float,
-            initialVelocity: Float
+            initialVelocity: Float,
         ): Float {
 
             if (playTimeNanos == 0L) {
@@ -1468,7 +1570,7 @@ class AnchoredDraggableStateTest(testNewBehavior: Boolean) :
             return splineBasedFloatDecayAnimationSpec.getValueFromNanos(
                 playTimeNanos,
                 initialValue,
-                initialVelocity
+                initialVelocity,
             )
         }
     }

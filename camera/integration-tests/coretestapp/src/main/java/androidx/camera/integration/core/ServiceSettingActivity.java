@@ -31,10 +31,11 @@ import android.widget.ToggleButton;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,8 +109,7 @@ public class ServiceSettingActivity extends AppCompatActivity {
         ContextCompat.startForegroundService(this, intent);
     }
 
-    @NonNull
-    private Intent createServiceIntent(@Nullable String action) {
+    private @NonNull Intent createServiceIntent(@Nullable String action) {
         Intent intent = new Intent(this, CameraXService.class);
         intent.setAction(action);
         return intent;

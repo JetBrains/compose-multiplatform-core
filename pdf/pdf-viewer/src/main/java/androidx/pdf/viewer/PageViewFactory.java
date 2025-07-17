@@ -17,19 +17,25 @@
 package androidx.pdf.viewer;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
+import androidx.pdf.find.FindInFileView;
+import androidx.pdf.metrics.EventCallback;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.models.GotoLink;
 import androidx.pdf.models.LinkRects;
 import androidx.pdf.util.Accessibility;
-import androidx.pdf.util.BitmapRecycler;
-import androidx.pdf.util.ObservableValue;
+import androidx.pdf.util.GestureTracker;
+import androidx.pdf.util.TileBoard;
+import androidx.pdf.viewer.loader.PdfLoader;
 import androidx.pdf.widget.MosaicView;
 import androidx.pdf.widget.ZoomView;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -46,7 +52,28 @@ import java.util.List;
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class PageViewFactory {
-    private PageViewFactory() {
+    private final Context mContext;
+    private final PdfLoader mPdfLoader;
+    private final PaginatedView mPaginatedView;
+    private final ZoomView mZoomView;
+    private final SingleTapHandler mSingleTapHandler;
+    private final FindInFileView mFindInFileView;
+    private final EventCallback mEventCallback;
+
+    public PageViewFactory(@NonNull Context context,
+            @NonNull PdfLoader pdfLoader,
+            @NonNull PaginatedView paginatedView,
+            @NonNull ZoomView zoomView,
+            @NonNull SingleTapHandler singleTapHandler,
+            @NonNull FindInFileView findInFileView,
+            @Nullable EventCallback eventCallback) {
+        this.mContext = context;
+        this.mPdfLoader = pdfLoader;
+        this.mPaginatedView = paginatedView;
+        this.mZoomView = zoomView;
+        this.mSingleTapHandler = singleTapHandler;
+        this.mFindInFileView = findInFileView;
+        this.mEventCallback = eventCallback;
     }
 
     /**
@@ -57,8 +84,7 @@ public class PageViewFactory {
     public interface PageView {
 
         /** Returns the {@link PageMosaicView} associated with this PageView. */
-        @NonNull
-        PageMosaicView getPageView();
+        @NonNull PageMosaicView getPageView();
 
         /** Return page number. */
         int getPageNum();
@@ -75,35 +101,108 @@ public class PageViewFactory {
          * <p>NOTE: This is the view that should be added to the view hierarchy. May return the same
          * object as {@link #getPageView()}, e.g. for the {@link PageMosaicView} implementation.
          */
-        @NonNull
-        View asView();
+        @NonNull View asView();
 
         /** Clear all bitmaps and reset the view overlay. */
         void clearAll();
     }
 
     /**
-     * Returns a {@link PageMosaicView}, bundled together with a {@link PageLinksView} and
-     * optionally a {@link FormAccessibilityView} in a {@link AccessibilityPageWrapper} if TalkBack
-     * is on, otherwise returns a {@link PageMosaicView}.
+     * Returns an instance of {@link PageView}. If the view is already created and added to the
+     * {@link PaginatedView} then it will be returned from that list else a new instance will be
+     * created.
      */
-    @NonNull
-    public static PageView createPageView(
-            @NonNull Context context,
+    public @NonNull PageMosaicView getOrCreatePageView(int pageNum,
+            int pageElevationInPixels,
+            @NonNull Dimensions pageDimensions) {
+        PageView pageView = mPaginatedView.getViewAt(pageNum);
+        if (pageView == null) {
+            pageView = createAndSetupPageView(pageNum, pageElevationInPixels, pageDimensions);
+        }
+
+        return pageView.getPageView();
+    }
+
+    /**
+     * Returns a {@link PageMosaicView}, bundled together with a {@link PageLinksView} and
+     * optionally a {@link AccessibilityPageWrapper} if TalkBack is on, otherwise returns
+     * a {@link PageMosaicView}.
+     */
+    protected @NonNull PageView createPageView(
             int pageNum,
-            @NonNull Dimensions pageSize,
-            @NonNull MosaicView.BitmapSource bitmapSource,
-            @Nullable BitmapRecycler bitmapRecycler,
-            @NonNull ObservableValue<ZoomView.ZoomScroll> zoomScroll) {
+            @NonNull Dimensions pageSize) {
+        final MosaicView.BitmapSource bitmapSource = createBitmapSource(pageNum);
         final PageMosaicView pageMosaicView =
-                new PageMosaicView(context, pageNum, pageSize, bitmapSource, bitmapRecycler);
-        if (Accessibility.get().isTouchExplorationEnabled(context)) {
-            final PageLinksView pageLinksView = new PageLinksView(context, zoomScroll);
+                new PageMosaicView(mContext, pageNum, pageSize, bitmapSource,
+                        TileBoard.DEFAULT_RECYCLER, mPdfLoader, mPaginatedView.getSelectionModel(),
+                        mPaginatedView.getSearchModel(), mPaginatedView.getSelectionHandles());
+        if (isTouchExplorationEnabled(mContext)) {
+            final PageLinksView pageLinksView = new PageLinksView(mContext, mZoomView.zoomScroll());
 
             return new AccessibilityPageWrapper(
-                    context, pageNum, pageMosaicView, pageLinksView);
+                    mContext, pageNum, pageMosaicView, pageLinksView);
         } else {
             return pageMosaicView;
         }
+    }
+
+    @VisibleForTesting
+    protected boolean isTouchExplorationEnabled(@NonNull Context context) {
+        return Accessibility.get().isTouchExplorationEnabled(context);
+    }
+
+    protected MosaicView.@NonNull BitmapSource createBitmapSource(int pageNum) {
+        return new MosaicView.BitmapSource() {
+
+            @Override
+            public void requestPageBitmap(@NonNull Dimensions pageSize,
+                    boolean alsoRequestingTiles) {
+                if (!alsoRequestingTiles) {
+                    if (mEventCallback != null) {
+                        mEventCallback.onPageBitmapOnlyRequested(pageNum);
+                    }
+                }
+                mPdfLoader.loadPageBitmap(pageNum, pageSize);
+            }
+
+            @Override
+            public void requestNewTiles(@NonNull Dimensions pageSize,
+                    @NonNull Iterable<TileBoard.TileInfo> tiles) {
+                if (mEventCallback != null) {
+                    mEventCallback.onPageTilesRequested(pageNum, tiles);
+                }
+                mPdfLoader.loadTileBitmaps(pageNum, pageSize, tiles);
+            }
+
+            @Override
+            public void cancelTiles(@NonNull Iterable<Integer> tileIds) {
+                if (mEventCallback != null) {
+                    mEventCallback.onPageTilesCleared(pageNum);
+                }
+                mPdfLoader.cancelTileBitmaps(pageNum, tileIds);
+            }
+        };
+    }
+
+    protected @NonNull PageView createAndSetupPageView(int pageNum,
+            int pageElevationInPixels,
+            @NonNull Dimensions pageDimensions) {
+        PageView pageView =
+                createPageView(
+                        pageNum,
+                        pageDimensions
+                );
+        mPaginatedView.addView(pageView);
+
+        GestureTracker gestureTracker = new GestureTracker(mContext);
+        gestureTracker.setDelegateHandler(new PageTouchListener(pageView, mPdfLoader,
+                mSingleTapHandler, mFindInFileView));
+        pageView.asView().setOnTouchListener(gestureTracker);
+
+        PageMosaicView pageMosaicView = pageView.getPageView();
+        // Setting Elevation only works if there is a background color.
+        pageMosaicView.setBackgroundColor(Color.WHITE);
+        pageMosaicView.setElevation(pageElevationInPixels);
+        return pageView;
     }
 }

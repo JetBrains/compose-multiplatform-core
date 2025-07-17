@@ -19,9 +19,9 @@ package androidx.camera.effects.internal;
 import android.graphics.Canvas;
 import android.view.Surface;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Utility methods for overlay processing.
@@ -36,8 +36,7 @@ public class Utils {
      *
      * <p>This method calls {@link Surface#lockCanvas}.
      */
-    @NonNull
-    public static Canvas lockCanvas(@NonNull Surface surface) {
+    public static @NonNull Canvas lockCanvas(@NonNull Surface surface) {
         // TODO(b/186120366): Investigate how widespread the lockHardwareCanvas is and re-enable
         //  it when possible.
         return surface.lockCanvas(null);
@@ -49,7 +48,6 @@ public class Utils {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static Canvas lockHardwareCanvas(Surface surface) {
             return surface.lockHardwareCanvas();
         }

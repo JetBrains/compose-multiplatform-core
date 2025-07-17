@@ -21,18 +21,18 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation('androidx.core:core:1.5.0')
-    implementation('androidx.collection:collection:1.1.0')
+    implementation("androidx.core:core:1.5.0")
+    implementation("androidx.collection:collection:1.4.2")
 
     annotationProcessor(libs.nullaway)
 
@@ -42,32 +42,28 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinStdlib)
-    androidTestImplementation(libs.espressoCore, excludes.espresso)
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.bundles.espressoContrib)
-    androidTestImplementation(project(':navigation:navigation-fragment-ktx'))
-    androidTestImplementation(project(':navigation:navigation-ui-ktx'))
-    androidTestImplementation(project(':appcompat:appcompat'))
-    androidTestImplementation(project(':internal-testutils-espresso'))
-    androidTestImplementation(project(':internal-testutils-runtime'))
-    androidTestImplementation(project(':internal-testutils-common'))
-    androidTestImplementation('androidx.core:core-ktx:1.3.2')
-    androidTestImplementation('androidx.constraintlayout:constraintlayout:2.0.1')
-    androidTestImplementation('com.google.android.material:material:1.2.1')
-    androidTestImplementation('androidx.multidex:multidex:2.0.1')
+    androidTestImplementation(project(":navigation:navigation-fragment-ktx"))
+    androidTestImplementation(project(":navigation:navigation-ui-ktx"))
+    androidTestImplementation(project(":appcompat:appcompat"))
+    androidTestImplementation(project(":internal-testutils-espresso"))
+    androidTestImplementation(project(":internal-testutils-runtime"))
+    androidTestImplementation(project(":internal-testutils-common"))
+    androidTestImplementation("androidx.core:core-ktx:1.3.2")
+    androidTestImplementation("androidx.constraintlayout:constraintlayout:2.0.1")
+    androidTestImplementation("com.google.android.material:material:1.2.1")
 }
 
 android {
-    defaultConfig {
-        multiDexEnabled true
-    }
-    namespace "androidx.metrics.performance"
+    compileSdk = 35
+    namespace = "androidx.metrics.performance"
 }
 
 androidx {
     name = "Metrics"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2021"
     description = "Library for tracking and reporting various runtime metrics for applications"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
 }

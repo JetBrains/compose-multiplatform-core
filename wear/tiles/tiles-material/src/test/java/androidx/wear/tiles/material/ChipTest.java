@@ -23,11 +23,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import android.content.Context;
 import android.graphics.Color;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.internal.DoNotInstrument;
@@ -176,8 +176,8 @@ public class ChipTest {
             @Nullable String expectedPrimaryText,
             @Nullable String expectedLabel,
             @Nullable String expectedIcon,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         assertChipIsEqual(
                 actualChip,
                 hAlign,
@@ -245,8 +245,8 @@ public class ChipTest {
             @Nullable String expectedPrimaryText,
             @Nullable String expectedLabel,
             @Nullable String expectedIcon,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         androidx.wear.tiles.LayoutElementBuilders.Box box =
                 new androidx.wear.tiles.LayoutElementBuilders.Box.Builder()
                         .addContent(chip)
@@ -276,8 +276,8 @@ public class ChipTest {
             @Nullable String expectedPrimaryText,
             @Nullable String expectedLabel,
             @Nullable String expectedIcon,
-            @Nullable
-                    androidx.wear.tiles.LayoutElementBuilders.LayoutElement expectedCustomContent) {
+            androidx.wear.tiles.LayoutElementBuilders.@Nullable LayoutElement
+                    expectedCustomContent) {
         assertThat(actualChip.getMetadataTag()).isEqualTo(expectedMetadata);
         assertThat(actualChip.getClickable().toProto()).isEqualTo(CLICKABLE.toProto());
         assertThat(actualChip.getWidth().toContainerDimensionProto())

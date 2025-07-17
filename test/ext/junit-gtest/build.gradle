@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +31,7 @@ plugins {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(libs.junit)
+    api(libs.junit)
     implementation(libs.googletest)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.truth)
@@ -42,10 +42,9 @@ dependencies {
 
 androidx {
     name = "JUnit GTest"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Run GTest tests on Android devices"
-    metalavaK2UastEnabled = true
     legacyDisableKotlinStrictApiMode = true
     // Bypassed to better match existing androidx.test libraries
     bypassCoordinateValidation = true
@@ -53,16 +52,19 @@ androidx {
 
 android {
     defaultConfig {
-        minSdkVersion 21
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"
             }
         }
+        ndk {
+            // This library does not support riscv64
+            getAbiFilters().remove("riscv64")
+        }
     }
     externalNativeBuild {
         cmake {
-            version libs.versions.cmake.get()
+            version = libs.versions.cmake.get()
             path "src/main/cpp/CMakeLists.txt"
         }
         experimentalProperties["prefab.junit-gtest.exportLibraries"] = [
@@ -74,15 +76,15 @@ android {
 
     buildFeatures {
         prefab = true
-        prefabPublishing true
+        prefabPublishing = true
     }
 
     prefab {
         junitgtest {
-            name "junit-gtest"
+            name = "junit-gtest"
         }
     }
-    namespace "androidx.test.ext.junitgtest"
+    namespace = "androidx.test.ext.junitgtest"
 
     packagingOptions {
         jniLibs {

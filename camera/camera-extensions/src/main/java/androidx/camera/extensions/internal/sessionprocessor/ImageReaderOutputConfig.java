@@ -18,10 +18,10 @@ package androidx.camera.extensions.internal.sessionprocessor;
 
 import android.util.Size;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.auto.value.AutoValue;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,8 +50,7 @@ public abstract class ImageReaderOutputConfig implements Camera2OutputConfig {
     /**
      * Returns the size of the surface.
      */
-    @NonNull
-    abstract Size getSize();
+    abstract @NonNull Size getSize();
 
     /**
      * Gets the image format of the surface.

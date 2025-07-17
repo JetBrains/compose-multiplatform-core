@@ -18,8 +18,9 @@ package androidx.core.os;
 
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
 import androidx.core.util.Preconditions;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;

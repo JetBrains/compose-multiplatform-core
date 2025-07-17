@@ -27,10 +27,11 @@ import android.os.RemoteException;
 import android.support.customtabs.trusted.ITrustedWebActivityCallback;
 import android.support.customtabs.trusted.ITrustedWebActivityService;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * TrustedWebActivityServiceConnection is used by a Trusted Web Activity provider to wrap calls to
@@ -122,8 +123,7 @@ public final class TrustedWebActivityServiceConnection {
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @RequiresApi(Build.VERSION_CODES.M)
-    @NonNull
-    public Parcelable[] getActiveNotifications() throws RemoteException {
+    public Parcelable @NonNull [] getActiveNotifications() throws RemoteException {
         Bundle notifications = mService.getActiveNotifications();
         return ActiveNotificationsArgs.fromBundle(notifications).notifications;
     }
@@ -146,9 +146,8 @@ public final class TrustedWebActivityServiceConnection {
      * @throws RemoteException If the Service dies while responding to the request.
      * @throws SecurityException If verification with the TrustedWebActivityService fails.
      */
-    @Nullable
     @SuppressWarnings("deprecation")
-    public Bitmap getSmallIconBitmap() throws RemoteException {
+    public @Nullable Bitmap getSmallIconBitmap() throws RemoteException {
         return mService.getSmallIconBitmap()
                 .getParcelable(TrustedWebActivityService.KEY_SMALL_ICON_BITMAP);
     }
@@ -157,8 +156,7 @@ public final class TrustedWebActivityServiceConnection {
      * Gets the {@link ComponentName} of the connected Trusted Web Activity client app.
      * @return The Trusted Web Activity client app component name.
      */
-    @NonNull
-    public ComponentName getComponentName() {
+    public @NonNull ComponentName getComponentName() {
         return mComponentName;
     }
 
@@ -176,8 +174,7 @@ public final class TrustedWebActivityServiceConnection {
      * @throws SecurityException If verification with the TrustedWebActivityService fails.
      */
     @SuppressWarnings("NullAway")  // TODO: b/142938599
-    @Nullable
-    public Bundle sendExtraCommand(@NonNull String commandName, @NonNull Bundle args,
+    public @Nullable Bundle sendExtraCommand(@NonNull String commandName, @NonNull Bundle args,
             @Nullable TrustedWebActivityCallback callback) throws RemoteException {
         ITrustedWebActivityCallback callbackBinder = wrapCallback(callback);
         IBinder binder = callbackBinder == null ? null : callbackBinder.asBinder();
@@ -310,8 +307,7 @@ public final class TrustedWebActivityServiceConnection {
         throw new IllegalArgumentException("Bundle must contain " + key);
     }
 
-    @Nullable
-    private static ITrustedWebActivityCallback wrapCallback(
+    private static @Nullable ITrustedWebActivityCallback wrapCallback(
             @Nullable TrustedWebActivityCallback callback) {
         if (callback == null) return null;
         return new ITrustedWebActivityCallback.Stub() {

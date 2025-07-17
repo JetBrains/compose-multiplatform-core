@@ -22,15 +22,19 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.catalog.library.model.ColorMode
+import androidx.compose.material3.catalog.library.model.ExpressiveThemeMode
 import androidx.compose.material3.catalog.library.model.FontScaleMode
 import androidx.compose.material3.catalog.library.model.TextDirection
 import androidx.compose.material3.catalog.library.model.Theme
-import androidx.compose.material3.catalog.library.model.ThemeMode
+import androidx.compose.material3.catalog.library.model.ThemeColorMode
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.expressiveLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -45,6 +49,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.view.WindowCompat
 
 @SuppressLint("NewApi")
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
     val context = LocalContext.current
@@ -52,7 +57,11 @@ fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
         when (theme.colorMode) {
             ColorMode.Dynamic -> dynamicLightColorScheme(context)
             ColorMode.Custom -> LightCustomColorScheme
-            ColorMode.Baseline -> lightColorScheme()
+            ColorMode.Baseline -> {
+                if (theme.expressiveThemeMode == ExpressiveThemeMode.Expressive) {
+                    expressiveLightColorScheme()
+                } else lightColorScheme()
+            }
         }
     val darkColorScheme =
         when (theme.colorMode) {
@@ -62,9 +71,9 @@ fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
         }
     val colorScheme =
         colorSchemeFromThemeMode(
-            themeMode = theme.themeMode,
+            themeColorMode = theme.themeColorMode,
             lightColorScheme = lightColorScheme,
-            darkColorScheme = darkColorScheme
+            darkColorScheme = darkColorScheme,
         )
 
     val layoutDirection =
@@ -91,26 +100,27 @@ fun CatalogTheme(theme: Theme, content: @Composable () -> Unit) {
                         LocalDensity.current.fontScale
                     } else {
                         theme.fontScale
-                    }
-            )
+                    },
+            ),
     ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            content = content,
-        )
+        if (theme.expressiveThemeMode == ExpressiveThemeMode.Expressive) {
+            MaterialExpressiveTheme(colorScheme = colorScheme, content = content)
+        } else {
+            MaterialTheme(colorScheme = colorScheme, content = content)
+        }
     }
 }
 
 @Composable
 fun colorSchemeFromThemeMode(
-    themeMode: ThemeMode,
+    themeColorMode: ThemeColorMode,
     lightColorScheme: ColorScheme,
-    darkColorScheme: ColorScheme
+    darkColorScheme: ColorScheme,
 ): ColorScheme {
-    return when (themeMode) {
-        ThemeMode.Light -> lightColorScheme
-        ThemeMode.Dark -> darkColorScheme
-        ThemeMode.System ->
+    return when (themeColorMode) {
+        ThemeColorMode.Light -> lightColorScheme
+        ThemeColorMode.Dark -> darkColorScheme
+        ThemeColorMode.System ->
             if (!isSystemInDarkTheme()) {
                 lightColorScheme
             } else {
@@ -156,7 +166,7 @@ private val LightCustomColorScheme =
         surfaceContainerLow = Color(0xFFEFF6EB),
         surfaceContainerLowest = Color(0xFFFFFFFF),
         surfaceBright = Color(0xFFF5FBF0),
-        surfaceDim = Color(0xFFD5DCD1)
+        surfaceDim = Color(0xFFD5DCD1),
     )
 
 private val DarkCustomColorScheme =
@@ -196,7 +206,7 @@ private val DarkCustomColorScheme =
         surfaceContainerLow = Color(0xFF171D17),
         surfaceContainerLowest = Color(0xFF0A100A),
         surfaceBright = Color(0xFF343B34),
-        surfaceDim = Color(0xFF0F150F)
+        surfaceDim = Color(0xFF0F150F),
     )
 
 private tailrec fun Context.findActivity(): Activity =

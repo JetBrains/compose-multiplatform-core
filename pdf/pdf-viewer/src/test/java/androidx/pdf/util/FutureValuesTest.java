@@ -23,7 +23,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import androidx.annotation.NonNull;
 import androidx.pdf.data.FutureValue;
 import androidx.pdf.data.FutureValue.Callback;
 import androidx.pdf.data.FutureValues;
@@ -33,8 +32,8 @@ import androidx.pdf.data.FutureValues.DeferredFutureValue;
 import androidx.pdf.data.FutureValues.SettableFutureValue;
 import androidx.pdf.data.FutureValues.SimpleCallback;
 import androidx.pdf.data.Supplier;
-import androidx.test.filters.SmallTest;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,8 +42,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
-
-@SmallTest
 @RunWith(RobolectricTestRunner.class)
 public class FutureValuesTest {
 

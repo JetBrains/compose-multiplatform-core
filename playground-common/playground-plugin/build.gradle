@@ -21,11 +21,12 @@ plugins {
 
 dependencies {
     implementation(project(":shared"))
-    implementation("com.gradle:develocity-gradle-plugin:3.17.2")
-    implementation("com.gradle:common-custom-user-data-gradle-plugin:2.0.1")
+    implementation("com.gradle:develocity-gradle-plugin:4.1")
+    implementation("com.gradle:common-custom-user-data-gradle-plugin:2.3")
     implementation("supportBuildSrc:private")
     implementation("supportBuildSrc:public")
     implementation("supportBuildSrc:plugins")
+    implementation(libs.androidGradleSettingsPlugin)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

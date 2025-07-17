@@ -19,12 +19,17 @@ package androidx.camera.integration.view
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.OrientationEventListener
 import android.widget.Button
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.camera2.Camera2Config
+import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
@@ -32,6 +37,7 @@ import androidx.camera.core.MirrorMode.MIRROR_MODE_ON_FRONT_ONLY
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
+import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.FileUtil.canDeviceWriteToMediaStore
 import androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions
@@ -52,6 +58,7 @@ private const val PREFIX_INFORMATION = "test_information"
 private const val PREFIX_VIDEO = "video"
 private const val KEY_ORIENTATION = "device_orientation"
 private const val KEY_STREAM_SHARING_STATE = "is_stream_sharing_enabled"
+private const val KEY_VIEW_FINDER_RECT = "view_finder_rect"
 
 // Possible values for this intent key (case-insensitive): "portrait", "landscape".
 private const val INTENT_SCREEN_ORIENTATION = "orientation"
@@ -68,6 +75,11 @@ private const val INTENT_PREVIEW_VIEW_MODE = "preview_view_mode"
 private const val PREVIEW_VIEW_COMPATIBLE_MODE = "compatible"
 private const val PREVIEW_VIEW_PERFORMANCE_MODE = "performance"
 
+// Possible values for this intent key (case-insensitive): "camera2", "camera_pipe".
+private const val INTENT_EXTRA_CAMERA_IMPLEMENTATION = "camera_implementation"
+private const val CAMERA_IMPLEMENTATION_CAMERA2 = "camera2"
+private const val CAMERA_IMPLEMENTATION_CAMERA_PIPE = "camera_pipe"
+
 class StreamSharingActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
@@ -75,6 +87,7 @@ class StreamSharingActivity : AppCompatActivity() {
     private lateinit var recordButton: Button
     private lateinit var useCases: Array<UseCase>
     private var cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    private var cameraXConfig: CameraXConfig = Camera2Config.defaultConfig()
     private var camera: Camera? = null
     private var previewViewMode: ImplementationMode = ImplementationMode.PERFORMANCE
     private var previewViewScaleType = PreviewView.ScaleType.FILL_CENTER
@@ -99,6 +112,7 @@ class StreamSharingActivity : AppCompatActivity() {
         if (bundle != null) {
             parseScreenOrientationAndSetValueIfNeed(bundle)
             parseCameraSelector(bundle)
+            parseCameraImplementation(bundle)
             parsePreviewViewMode(bundle)
         }
 
@@ -113,6 +127,10 @@ class StreamSharingActivity : AppCompatActivity() {
             if (activeRecording == null) startRecording() else stopRecording()
         }
 
+        if (!isCameraXConfigured) {
+            isCameraXConfigured = true
+            configureCameraProvider()
+        }
         startCamera()
     }
 
@@ -144,6 +162,15 @@ class StreamSharingActivity : AppCompatActivity() {
         }
     }
 
+    private fun parseCameraImplementation(bundle: Bundle) {
+        val implementation = bundle.getString(INTENT_EXTRA_CAMERA_IMPLEMENTATION)
+        if (CAMERA_IMPLEMENTATION_CAMERA2.equals(implementation, true)) {
+            cameraXConfig = Camera2Config.defaultConfig()
+        } else if (CAMERA_IMPLEMENTATION_CAMERA_PIPE.equals(implementation, true)) {
+            cameraXConfig = CameraPipeConfig.defaultConfig()
+        }
+    }
+
     private fun parsePreviewViewMode(bundle: Bundle) {
         val mode = bundle.getString(INTENT_PREVIEW_VIEW_MODE)
         if (PREVIEW_VIEW_COMPATIBLE_MODE.equals(mode, true)) {
@@ -153,11 +180,17 @@ class StreamSharingActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(ExperimentalCameraProviderConfiguration::class)
+    private fun configureCameraProvider() {
+        ProcessCameraProvider.configureInstance(cameraXConfig)
+    }
+
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(applicationContext)
         cameraProviderFuture.addListener(
             { bindUseCases(cameraProviderFuture.get()) },
-            ContextCompat.getMainExecutor(applicationContext)
+            ContextCompat.getMainExecutor(applicationContext),
         )
     }
 
@@ -170,7 +203,7 @@ class StreamSharingActivity : AppCompatActivity() {
                 createPreview(),
                 createImageCapture(),
                 createImageAnalysis(),
-                createVideoCapture()
+                createVideoCapture(),
             )
         isUseCasesBound =
             try {
@@ -247,7 +280,7 @@ class StreamSharingActivity : AppCompatActivity() {
         return if (canDeviceWriteToMediaStore()) {
             recorder.prepareRecording(
                 context,
-                generateVideoMediaStoreOptions(context.contentResolver, fileName)
+                generateVideoMediaStoreOptions(context.contentResolver, fileName),
             )
         } else {
             recorder.prepareRecording(context, generateVideoFileOutputOptions(fileName))
@@ -259,9 +292,23 @@ class StreamSharingActivity : AppCompatActivity() {
         val information =
             "$KEY_ORIENTATION:$deviceOrientation" +
                 "\n" +
-                "$KEY_STREAM_SHARING_STATE:${isStreamSharingEnabled()}"
+                "$KEY_STREAM_SHARING_STATE:${isStreamSharingEnabled()}" +
+                "\n" +
+                "$KEY_VIEW_FINDER_RECT:${getViewFinderCoordinates()}"
 
         writeTextToExternalFile(information, fileName)
+    }
+
+    /**
+     * Gets the global coordinates of the preview view's visible area.
+     *
+     * @return A string representing the rectangle coordinates in format "left,top,right,bottom".
+     */
+    private fun getViewFinderCoordinates(): String {
+        val rect = Rect()
+        previewView.getGlobalVisibleRect(rect)
+
+        return "${rect.left},${rect.top},${rect.right},${rect.bottom}"
     }
 
     private fun generateFileName(prefix: String? = null): String {
@@ -285,5 +332,9 @@ class StreamSharingActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private var isCameraXConfigured: Boolean = false
     }
 }

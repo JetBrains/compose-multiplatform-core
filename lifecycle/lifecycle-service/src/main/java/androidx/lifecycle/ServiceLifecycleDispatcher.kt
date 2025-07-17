@@ -17,6 +17,7 @@ package androidx.lifecycle
 
 import android.app.Service
 import android.os.Handler
+import android.os.Looper
 
 /**
  * Helper class to dispatch lifecycle events for a Service. Use it only if it is impossible to use
@@ -24,31 +25,27 @@ import android.os.Handler
  *
  * @param provider [LifecycleOwner] for a service, usually it is a service itself
  */
-open class ServiceLifecycleDispatcher(provider: LifecycleOwner) {
+public open class ServiceLifecycleDispatcher(provider: LifecycleOwner) {
 
-    private val registry: LifecycleRegistry
-    private val handler: Handler
+    private val registry: LifecycleRegistry = LifecycleRegistry(provider)
+    private val handler: Handler = Handler(Looper.getMainLooper())
     private var lastDispatchRunnable: DispatchRunnable? = null
-
-    init {
-        registry = LifecycleRegistry(provider)
-        @Suppress("DEPRECATION")
-        handler = Handler()
-    }
 
     private fun postDispatchRunnable(event: Lifecycle.Event) {
         lastDispatchRunnable?.run()
-        lastDispatchRunnable = DispatchRunnable(registry, event)
-        handler.postAtFrontOfQueue(lastDispatchRunnable!!)
+        DispatchRunnable(registry, event).also {
+            lastDispatchRunnable = it
+            handler.postAtFrontOfQueue(it)
+        }
     }
 
     /** Must be a first call in [Service.onCreate] method, even before super.onCreate call. */
-    open fun onServicePreSuperOnCreate() {
+    public open fun onServicePreSuperOnCreate() {
         postDispatchRunnable(Lifecycle.Event.ON_CREATE)
     }
 
     /** Must be a first call in [Service.onBind] method, even before super.onBind call. */
-    open fun onServicePreSuperOnBind() {
+    public open fun onServicePreSuperOnBind() {
         postDispatchRunnable(Lifecycle.Event.ON_START)
     }
 
@@ -56,23 +53,23 @@ open class ServiceLifecycleDispatcher(provider: LifecycleOwner) {
      * Must be a first call in [Service.onStart] or [Service.onStartCommand] methods, even before a
      * corresponding super call.
      */
-    open fun onServicePreSuperOnStart() {
+    public open fun onServicePreSuperOnStart() {
         postDispatchRunnable(Lifecycle.Event.ON_START)
     }
 
     /** Must be a first call in [Service.onDestroy] method, even before super.OnDestroy call. */
-    open fun onServicePreSuperOnDestroy() {
+    public open fun onServicePreSuperOnDestroy() {
         postDispatchRunnable(Lifecycle.Event.ON_STOP)
         postDispatchRunnable(Lifecycle.Event.ON_DESTROY)
     }
 
     /** [Lifecycle] for the given [LifecycleOwner] */
-    open val lifecycle: Lifecycle
+    public open val lifecycle: Lifecycle
         get() = registry
 
     internal class DispatchRunnable(
         private val registry: LifecycleRegistry,
-        val event: Lifecycle.Event
+        val event: Lifecycle.Event,
     ) : Runnable {
         private var wasExecuted = false
 

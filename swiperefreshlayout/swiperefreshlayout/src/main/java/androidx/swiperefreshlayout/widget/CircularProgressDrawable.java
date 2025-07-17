@@ -38,10 +38,11 @@ import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.core.util.Preconditions;
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
+
+import org.jspecify.annotations.NonNull;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -217,7 +218,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
      *
      * @param strokeCap stroke cap
      */
-    public void setStrokeCap(@NonNull Paint.Cap strokeCap) {
+    public void setStrokeCap(Paint.@NonNull Cap strokeCap) {
         mRing.setStrokeCap(strokeCap);
         invalidateSelf();
     }
@@ -227,8 +228,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
      *
      * @return stroke cap
      */
-    @NonNull
-    public Paint.Cap getStrokeCap() {
+    public Paint.@NonNull Cap getStrokeCap() {
         return mRing.getStrokeCap();
     }
 
@@ -376,8 +376,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
      *
      * @return list of ARGB colors
      */
-    @NonNull
-    public int[] getColorSchemeColors() {
+    public int @NonNull [] getColorSchemeColors() {
         return mRing.getColors();
     }
 
@@ -387,7 +386,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
      *
      * @param colors list of ARGB colors to be used in the spinner
      */
-    public void setColorSchemeColors(@NonNull int... colors) {
+    public void setColorSchemeColors(int @NonNull ... colors) {
         mRing.setColors(colors);
         mRing.setColorIndex(0);
         invalidateSelf();
@@ -759,7 +758,7 @@ public class CircularProgressDrawable extends Drawable implements Animatable {
          *
          * @param colors array of ARGB colors. Must be non-{@code null}.
          */
-        void setColors(@NonNull int[] colors) {
+        void setColors(int @NonNull [] colors) {
             mColors = colors;
             // if colors are reset, make sure to reset the color index as well
             setColorIndex(0);

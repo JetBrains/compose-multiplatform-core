@@ -21,12 +21,13 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -38,12 +39,12 @@ dependencies {
 }
 
 android {
-    namespace "androidx.window.samples"
+    namespace = "androidx.window.samples"
 }
 
 androidx {
     name = "WindowManager Samples"
-    type = LibraryType.SAMPLES
+    type = SoftwareType.SAMPLES
     inceptionYear = "2022"
     description = "Code samples for WindowManager Jetpack library."
 }

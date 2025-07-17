@@ -21,13 +21,14 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
 }
 
 dependencies {
@@ -53,13 +54,12 @@ dependencies {
 
 androidx {
     name = "Paging-RxJava3"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android Paging-RxJava3"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.paging.rxjava3"
+    namespace = "androidx.paging.rxjava3"
 }

@@ -17,7 +17,6 @@
 package androidx.compose.foundation.samples
 
 import androidx.annotation.Sampled
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.SnapLayoutInfoProvider
 import androidx.compose.foundation.gestures.snapping.SnapPosition
@@ -39,7 +38,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun SnapFlingBehaviorSimpleSample() {
@@ -49,13 +47,13 @@ fun SnapFlingBehaviorSimpleSample() {
         modifier = Modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
         state = state,
-        flingBehavior = rememberSnapFlingBehavior(lazyListState = state)
+        flingBehavior = rememberSnapFlingBehavior(lazyListState = state),
     ) {
         items(200) {
             Box(
                 modifier =
                     Modifier.height(400.dp).width(200.dp).padding(8.dp).background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(it.toString(), fontSize = 32.sp)
             }
@@ -63,7 +61,6 @@ fun SnapFlingBehaviorSimpleSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun SnapFlingBehaviorCustomizedSample() {
@@ -77,13 +74,13 @@ fun SnapFlingBehaviorCustomizedSample() {
         modifier = Modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
         state = state,
-        flingBehavior = flingBehavior
+        flingBehavior = flingBehavior,
     ) {
         items(200) {
             Box(
                 modifier =
                     Modifier.height(400.dp).width(200.dp).padding(8.dp).background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(it.toString(), fontSize = 32.sp)
             }
@@ -91,7 +88,6 @@ fun SnapFlingBehaviorCustomizedSample() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Sampled
 @Composable
 fun SnapFlingBehaviorSnapPosition() {
@@ -110,7 +106,7 @@ fun SnapFlingBehaviorSnapPosition() {
                         beforeContentPadding: Int,
                         afterContentPadding: Int,
                         itemIndex: Int,
-                        itemCount: Int
+                        itemCount: Int,
                     ): Int {
                         return with(density) { beforeContentPadding + 200.dp.roundToPx() }
                     }
@@ -123,13 +119,13 @@ fun SnapFlingBehaviorSnapPosition() {
         modifier = Modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically,
         state = state,
-        flingBehavior = flingBehavior
+        flingBehavior = flingBehavior,
     ) {
         items(200) {
             Box(
                 modifier =
                     Modifier.height(400.dp).width(200.dp).padding(8.dp).background(Color.Gray),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text(it.toString(), fontSize = 32.sp)
             }

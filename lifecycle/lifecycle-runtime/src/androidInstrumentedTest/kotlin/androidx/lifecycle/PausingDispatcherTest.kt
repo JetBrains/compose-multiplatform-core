@@ -19,6 +19,7 @@ package androidx.lifecycle
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.testutils.lifecycle.FakeLifecycleOwner
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -135,15 +136,16 @@ class PausingDispatcherTest {
             do {
                 val children = testJob.children.toList()
                 assertThat(
-                    children.all {
-                        withTimeoutOrNull(10_000) {
-                            it.join()
-                            true
-                        } ?: false
-                    }
-                )
+                        children.all {
+                            withTimeoutOrNull(10_000) {
+                                it.join()
+                                true
+                            } ?: false
+                        }
+                    )
+                    .isTrue()
             } while (children.isNotEmpty())
-            assertThat(testJob.isActive)
+            assertThat(testJob.isActive).isTrue()
             assertThat(testError).isNull()
         }
     }

@@ -16,9 +16,9 @@
 
 package androidx.compose.ui.test.injectionscope.touch
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isFinite
+import androidx.compose.ui.input.pointer.util.ExperimentalVelocityTrackerApi
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.input.pointer.util.VelocityTrackerStrategyUseImpulse
 import androidx.compose.ui.test.InputDispatcher.Companion.eventPeriodMillis
@@ -38,17 +38,17 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /** Tests of [VelocityPathFinder] creates paths that will lead to the desired velocity. */
+@OptIn(ExperimentalVelocityTrackerApi::class)
 @RunWith(Parameterized::class)
 class VelocityPathFinderTest(private val config: TestConfig) {
     data class TestConfig(
         val end: Offset,
         val requestedVelocity: Float,
         val durationMillis: Long,
-        val expectedError: Boolean
+        val expectedError: Boolean,
     )
 
     companion object {
-        @OptIn(ExperimentalComposeUiApi::class)
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun params() =
@@ -118,14 +118,13 @@ class VelocityPathFinderTest(private val config: TestConfig) {
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     private fun testWithoutExpectedError(config: TestConfig) {
         val pathFinder =
             VelocityPathFinder(
                 startPosition = Offset.Zero,
                 endPosition = config.end,
                 endVelocity = config.requestedVelocity,
-                durationMillis = config.durationMillis
+                durationMillis = config.durationMillis,
             )
 
         val f: (Long) -> Offset = { pathFinder.calculateOffsetForTime(it) }
@@ -162,7 +161,7 @@ class VelocityPathFinderTest(private val config: TestConfig) {
                     startPosition = Offset.Zero,
                     endPosition = config.end,
                     endVelocity = config.requestedVelocity,
-                    durationMillis = config.durationMillis
+                    durationMillis = config.durationMillis,
                 )
                 .calculateOffsetForTime(0L)
             fail("Expected an IllegalArgumentException")
@@ -243,6 +242,6 @@ class VelocityPathFinderTest(private val config: TestConfig) {
         S(Offset(0f, 200f)),
         SE(Offset(100f, 173.2f)),
         E(Offset(200f, 0f)),
-        NE(Offset(173.2f, -100f))
+        NE(Offset(173.2f, -100f)),
     }
 }

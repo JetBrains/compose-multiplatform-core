@@ -17,6 +17,7 @@
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
@@ -29,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalGraphicsContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -52,12 +52,14 @@ internal fun LazyStaggeredGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     /** Whether scrolling via the user gestures is allowed. */
     userScrollEnabled: Boolean = true,
+    /** The overscroll effect to render and dispatch events to */
+    overscrollEffect: OverscrollEffect?,
     /** The vertical spacing for items/lines. */
     mainAxisSpacing: Dp = 0.dp,
     /** The horizontal spacing for items/lines. */
     crossAxisSpacing: Dp = 0.dp,
     /** The content of the grid */
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
     val itemProviderLambda = rememberStaggeredGridItemProviderLambda(state, content)
     val coroutineScope = rememberCoroutineScope()
@@ -73,16 +75,21 @@ internal fun LazyStaggeredGrid(
             crossAxisSpacing,
             coroutineScope,
             slots,
-            graphicsContext
+            graphicsContext,
         )
     val semanticState = rememberLazyStaggeredGridSemanticState(state, reverseLayout)
 
-    val reverseDirection =
-        ScrollableDefaults.reverseDirection(
-            LocalLayoutDirection.current,
-            orientation,
-            reverseLayout
-        )
+    val beyondBoundsModifier =
+        if (userScrollEnabled) {
+            Modifier.lazyLayoutBeyondBoundsModifier(
+                state = rememberLazyStaggeredGridBeyondBoundsState(state = state),
+                beyondBoundsInfo = state.beyondBoundsInfo,
+                reverseLayout = reverseLayout,
+                orientation = orientation,
+            )
+        } else {
+            Modifier
+        }
 
     LazyLayout(
         modifier =
@@ -96,27 +103,21 @@ internal fun LazyStaggeredGrid(
                     userScrollEnabled = userScrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
-                .lazyLayoutBeyondBoundsModifier(
-                    state = rememberLazyStaggeredGridBeyondBoundsState(state = state),
-                    beyondBoundsInfo = state.beyondBoundsInfo,
-                    reverseLayout = reverseLayout,
-                    layoutDirection = LocalLayoutDirection.current,
-                    orientation = orientation,
-                    enabled = userScrollEnabled
-                )
+                .then(beyondBoundsModifier)
                 .then(state.itemAnimator.modifier)
                 .scrollingContainer(
                     state = state,
                     orientation = orientation,
                     enabled = userScrollEnabled,
-                    reverseDirection = reverseDirection,
+                    reverseScrolling = reverseLayout,
                     flingBehavior = flingBehavior,
                     interactionSource = state.mutableInteractionSource,
-                    overscrollEffect = ScrollableDefaults.overscrollEffect()
+                    useLocalOverscrollFactory = false,
+                    overscrollEffect = overscrollEffect,
                 ),
         prefetchState = state.prefetchState,
         itemProvider = itemProviderLambda,
-        measurePolicy = measurePolicy
+        measurePolicy = measurePolicy,
     )
 }
 

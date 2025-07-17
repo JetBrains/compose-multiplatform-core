@@ -42,8 +42,6 @@ import static java.lang.Math.min;
 
 import androidx.annotation.Dimension;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
@@ -61,6 +59,9 @@ import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.material.CircularProgressIndicator;
 import androidx.wear.protolayout.proto.LayoutElementProto;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -70,7 +71,8 @@ import java.util.List;
  * ProtoLayout layout that represents the suggested layout style for Material ProtoLayout, which has
  * content around the edge of the screen (e.g. a ProgressIndicator) and the given content inside of
  * it with the recommended margin and padding applied. Optional primary or secondary label can be
- * added above and below the additional content, respectively.
+ * added above and below the additional content, respectively. Visuals and design samples can be
+ * found <a href="https://developer.android.com/design/ui/wear/guides/surfaces/tiles-layouts#layout-templates">here</a>.
  *
  * <p>When accessing the contents of a container for testing, note that this element can't be simply
  * casted back to the original type, i.e.:
@@ -92,7 +94,6 @@ import java.util.List;
  *   EdgeContentLayout.fromLayoutElement(box.getContents().get(0));
  * }</pre>
  */
-// TODO(b/274916652): Link visuals once they are available.
 public class EdgeContentLayout implements LayoutElement {
     /**
      * Prefix tool tag for Metadata in Modifiers, so we know that Box is actually a
@@ -160,7 +161,7 @@ public class EdgeContentLayout implements LayoutElement {
             })
     @interface ContentBits {}
 
-    @NonNull private final Box mImpl;
+    private final @NonNull Box mImpl;
 
     EdgeContentLayout(@NonNull Box layoutElement) {
         this.mImpl = layoutElement;
@@ -168,19 +169,18 @@ public class EdgeContentLayout implements LayoutElement {
 
     /** Builder class for {@link EdgeContentLayout}. */
     public static final class Builder implements LayoutElement.Builder {
-        @NonNull private final DeviceParameters mDeviceParameters;
-        @Nullable private LayoutElement mEdgeContent = null;
-        @Nullable private LayoutElement mPrimaryLabelText = null;
-        @Nullable private LayoutElement mSecondaryLabelText = null;
-        @Nullable private LayoutElement mContent = null;
+        private final @NonNull DeviceParameters mDeviceParameters;
+        private @Nullable LayoutElement mEdgeContent = null;
+        private @Nullable LayoutElement mPrimaryLabelText = null;
+        private @Nullable LayoutElement mSecondaryLabelText = null;
+        private @Nullable LayoutElement mContent = null;
         private byte mMetadataContentByte = 0;
         // Default for non responsive behaviour is false (for backwards compatibility) and for
         // responsive behaviour, only true is used.
-        @Nullable private Boolean mIsEdgeContentBehind = null;
+        private @Nullable Boolean mIsEdgeContentBehind = null;
         private boolean mIsResponsiveInsetEnabled = false;
-        @Nullable private Float mEdgeContentThickness = null;
-        @NonNull
-        private DpProp mVerticalSpacerHeight =
+        private @Nullable Float mEdgeContentThickness = null;
+        private @NonNull DpProp mVerticalSpacerHeight =
                 DEFAULT_VERTICAL_SPACER_HEIGHT;
 
         /**
@@ -212,8 +212,7 @@ public class EdgeContentLayout implements LayoutElement {
          * @throws IllegalStateException if this and
          * {@link #setEdgeContentBehindAllOtherContent(boolean)} are used together.
          */
-        @NonNull
-        public Builder setResponsiveContentInsetEnabled(boolean enabled) {
+        public @NonNull Builder setResponsiveContentInsetEnabled(boolean enabled) {
             if (mIsEdgeContentBehind != null && !mIsEdgeContentBehind) {
                 // We don't allow mixing above content with responsiveness, as content should always
                 // be behind.
@@ -245,8 +244,7 @@ public class EdgeContentLayout implements LayoutElement {
          * <p>Note that, calling this method when responsiveness is not set with
          * {@link #setResponsiveContentInsetEnabled}, will be ignored.
          */
-        @NonNull
-        public Builder setEdgeContentThickness(@Dimension(unit = DP) float thickness) {
+        public @NonNull Builder setEdgeContentThickness(@Dimension(unit = DP) float thickness) {
             this.mEdgeContentThickness = thickness;
             return this;
         }
@@ -257,8 +255,7 @@ public class EdgeContentLayout implements LayoutElement {
          * <p>If this content is something other that {@link CircularProgressIndicator}, please add
          * its thickness with {@link #setEdgeContentThickness} for best results.
          */
-        @NonNull
-        public Builder setEdgeContent(@NonNull LayoutElement edgeContent) {
+        public @NonNull Builder setEdgeContent(@NonNull LayoutElement edgeContent) {
             this.mEdgeContent = edgeContent;
             mMetadataContentByte = (byte) (mMetadataContentByte | EDGE_CONTENT_PRESENT);
             return this;
@@ -275,8 +272,8 @@ public class EdgeContentLayout implements LayoutElement {
          * - If responsive behaviour is not set or called, label will be above the additional
          * content, centered in the remaining space.
          */
-        @NonNull
-        public Builder setPrimaryLabelTextContent(@NonNull LayoutElement primaryLabelText) {
+        public @NonNull Builder setPrimaryLabelTextContent(
+                @NonNull LayoutElement primaryLabelText) {
             this.mPrimaryLabelText = primaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | PRIMARY_LABEL_PRESENT);
             return this;
@@ -289,16 +286,15 @@ public class EdgeContentLayout implements LayoutElement {
          * <p>Note that when {@link #setResponsiveContentInsetEnabled} is set to {@code true}, the
          * label will also have an inset to prevent it from going off the screen.
          */
-        @NonNull
-        public Builder setSecondaryLabelTextContent(@NonNull LayoutElement secondaryLabelText) {
+        public @NonNull Builder setSecondaryLabelTextContent(
+                @NonNull LayoutElement secondaryLabelText) {
             this.mSecondaryLabelText = secondaryLabelText;
             mMetadataContentByte = (byte) (mMetadataContentByte | SECONDARY_LABEL_PRESENT);
             return this;
         }
 
         /** Sets the additional content to this layout, inside of the screen. */
-        @NonNull
-        public Builder setContent(@NonNull LayoutElement content) {
+        public @NonNull Builder setContent(@NonNull LayoutElement content) {
             this.mContent = content;
             mMetadataContentByte = (byte) (mMetadataContentByte | CONTENT_PRESENT);
             return this;
@@ -313,8 +309,7 @@ public class EdgeContentLayout implements LayoutElement {
          * <p>Note that, this method should be used together with
          * {@link #setResponsiveContentInsetEnabled}, otherwise it will be ignored.
          */
-        @NonNull
-        public Builder setContentAndSecondaryLabelSpacing(@NonNull DpProp height) {
+        public @NonNull Builder setContentAndSecondaryLabelSpacing(@NonNull DpProp height) {
             this.mVerticalSpacerHeight = height;
             return this;
         }
@@ -331,8 +326,7 @@ public class EdgeContentLayout implements LayoutElement {
          * @throws IllegalStateException if this and {@link #setResponsiveContentInsetEnabled} are
          *     used together.
          */
-        @NonNull
-        public Builder setEdgeContentBehindAllOtherContent(boolean isBehind) {
+        public @NonNull Builder setEdgeContentBehindAllOtherContent(boolean isBehind) {
             if (mIsResponsiveInsetEnabled && !isBehind) {
                 // We don't allow mixing this method with responsiveness.
                 throw new IllegalStateException(
@@ -347,9 +341,8 @@ public class EdgeContentLayout implements LayoutElement {
         }
 
         /** Constructs and returns {@link EdgeContentLayout} with the provided content and look. */
-        @NonNull
         @Override
-        public EdgeContentLayout build() {
+        public @NonNull EdgeContentLayout build() {
             if (mIsResponsiveInsetEnabled
                     && mIsEdgeContentBehind != null
                     && !mIsEdgeContentBehind) {
@@ -365,8 +358,7 @@ public class EdgeContentLayout implements LayoutElement {
             return mIsResponsiveInsetEnabled ? responsiveLayoutBuild() : legacyLayoutBuild();
         }
 
-        @NonNull
-        private EdgeContentLayout responsiveLayoutBuild() {
+        private @NonNull EdgeContentLayout responsiveLayoutBuild() {
             // Calculate what is the inset box max size, i.e., the size that all content can occupy
             // without the edge content.
             // Use provided thickness if set. Otherwise, see if we can get it from
@@ -493,8 +485,7 @@ public class EdgeContentLayout implements LayoutElement {
             return 2 * (EDGE_CONTENT_LAYOUT_RESPONSIVE_OUTER_MARGIN_DP + edgeContentThickness);
         }
 
-        @NonNull
-        private EdgeContentLayout legacyLayoutBuild() {
+        private @NonNull EdgeContentLayout legacyLayoutBuild() {
             if (mIsEdgeContentBehind == null) {
                 mIsEdgeContentBehind = false;
             }
@@ -604,14 +595,12 @@ public class EdgeContentLayout implements LayoutElement {
     }
 
     /** Returns metadata tag set to this EdgeContentLayout. */
-    @NonNull
-    byte[] getMetadataTag() {
+    byte @NonNull [] getMetadataTag() {
         return getMetadataTagBytes(checkNotNull(checkNotNull(mImpl.getModifiers()).getMetadata()));
     }
 
     /** Returns the inner content from this layout. */
-    @Nullable
-    public LayoutElement getContent() {
+    public @Nullable LayoutElement getContent() {
         if (!areElementsPresent(CONTENT_PRESENT)) {
             return null;
         }
@@ -635,8 +624,7 @@ public class EdgeContentLayout implements LayoutElement {
     }
 
     /** Get the primary label content from this layout. */
-    @Nullable
-    public LayoutElement getPrimaryLabelTextContent() {
+    public @Nullable LayoutElement getPrimaryLabelTextContent() {
         if (!areElementsPresent(PRIMARY_LABEL_PRESENT)) {
             return null;
         }
@@ -648,8 +636,7 @@ public class EdgeContentLayout implements LayoutElement {
     }
 
     /** Get the secondary label content from this layout. */
-    @Nullable
-    public LayoutElement getSecondaryLabelTextContent() {
+    public @Nullable LayoutElement getSecondaryLabelTextContent() {
         if (!areElementsPresent(SECONDARY_LABEL_PRESENT)) {
             return null;
         }
@@ -687,8 +674,7 @@ public class EdgeContentLayout implements LayoutElement {
     }
 
     /** Returns the edge content from this layout. */
-    @Nullable
-    public LayoutElement getEdgeContent() {
+    public @Nullable LayoutElement getEdgeContent() {
         return areElementsPresent(EDGE_CONTENT_PRESENT)
                 ? mImpl.getContents().get(getEdgeContentPosition()) : null;
     }
@@ -744,8 +730,7 @@ public class EdgeContentLayout implements LayoutElement {
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to EdgeContentLayout. Otherwise, it will return null.
      */
-    @Nullable
-    public static EdgeContentLayout fromLayoutElement(@NonNull LayoutElement element) {
+    public static @Nullable EdgeContentLayout fromLayoutElement(@NonNull LayoutElement element) {
         if (element instanceof EdgeContentLayout) {
             return (EdgeContentLayout) element;
         }
@@ -760,17 +745,15 @@ public class EdgeContentLayout implements LayoutElement {
         return new EdgeContentLayout(boxElement);
     }
 
-    @NonNull
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mImpl.toLayoutElementProto();
     }
 
-    @Nullable
     @Override
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mImpl.getFingerprint();
     }
 }

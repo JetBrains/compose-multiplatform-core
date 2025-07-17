@@ -11,6 +11,7 @@ plugins {
 }
 
 dependencies {
+    api(libs.jspecify)
     implementation(project(":transition:transition"))
     implementation(project(":appcompat:appcompat"))
     implementation(project(":recyclerview:recyclerview"))
@@ -21,6 +22,7 @@ android {
     aaptOptions {
         additionalParameters "--no-version-transitions"
     }
-    namespace "com.example.android.support.transition"
+    compileSdk = 36
+    namespace = "com.example.android.support.transition"
 }
 

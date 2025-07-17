@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.times
 import androidx.test.filters.LargeTest
 import kotlin.math.roundToInt
 import kotlin.test.assertEquals
@@ -38,11 +39,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
-class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
-    BaseLazyListTestWithOrientation(orientation) {
+class LazyListSnapLayoutInfoProviderTest(val config: Config) :
+    BaseLazyListTestWithOrientation(config.orientation) {
 
     lateinit var layoutInfoProvider: SnapLayoutInfoProvider
     lateinit var scope: CoroutineScope
@@ -61,7 +61,7 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
             state = rememberLazyListState(initialFirstVisibleItemIndex = 100)
             layoutInfoProvider =
                 remember(state) { SnapLayoutInfoProvider(state, SnapPosition.Start) }
-            MainLayout()
+            MainLayout(config.useHeader)
         }
 
         rule.runOnIdle {
@@ -75,7 +75,7 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
         rule.runOnIdle {
             assertEquals(
                 layoutInfoProvider.calculateSnapOffset(0f).roundToInt(),
-                state.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 100 }?.offset ?: 0
+                state.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 100 }?.offset ?: 0,
             )
         }
     }
@@ -88,7 +88,7 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
             state = rememberLazyListState(initialFirstVisibleItemIndex = 100)
             layoutInfoProvider =
                 remember(state) { SnapLayoutInfoProvider(state, SnapPosition.Start) }
-            MainLayout()
+            MainLayout(config.useHeader)
         }
 
         rule.runOnIdle {
@@ -108,7 +108,7 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
                 layoutInfoProvider
                     .calculateSnapOffset(2 * minVelocityThreshold.toFloat())
                     .roundToInt(),
-                offset ?: 0
+                offset ?: 0,
             )
         }
     }
@@ -121,7 +121,7 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
             state = rememberLazyListState(initialFirstVisibleItemIndex = 100)
             layoutInfoProvider =
                 remember(state) { SnapLayoutInfoProvider(state, SnapPosition.Start) }
-            MainLayout()
+            MainLayout(config.useHeader)
         }
 
         rule.runOnIdle {
@@ -141,24 +141,40 @@ class LazyListSnapLayoutInfoProviderTest(orientation: Orientation) :
                 layoutInfoProvider
                     .calculateSnapOffset(-2 * minVelocityThreshold.toFloat())
                     .roundToInt(),
-                offset ?: 0
+                offset ?: 0,
             )
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
-    private fun MainLayout() {
+    private fun MainLayout(includeHeader: Boolean = false) {
         LazyColumnOrRow(
             state = state,
-            flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider)
+            flingBehavior = rememberSnapFlingBehavior(layoutInfoProvider),
         ) {
+            if (includeHeader) {
+                stickyHeader { Box(modifier = Modifier.size(2 * itemSizeDp)) }
+            }
             items(200) { Box(modifier = Modifier.size(itemSizeDp)) }
         }
     }
 
     companion object {
+        class Config(val orientation: Orientation, val useHeader: Boolean) {
+            override fun toString(): String {
+                return "orientation=$orientation,useHeader=$useHeader"
+            }
+        }
+
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun params() = arrayOf(Orientation.Vertical, Orientation.Horizontal)
+        fun params() =
+            arrayOf(
+                Config(Orientation.Vertical, true),
+                Config(Orientation.Vertical, false),
+                Config(Orientation.Horizontal, true),
+                Config(Orientation.Horizontal, false),
+            )
     }
 }

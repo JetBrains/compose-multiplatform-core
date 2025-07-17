@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -29,21 +29,19 @@ plugins {
 }
 
 dependencies {
-    api("androidx.annotation:annotation:1.1.0")
-    implementation("androidx.core:core:1.3.1")
+    api(libs.jspecify)
     implementation(project(":core:core-animation"))
     implementation(libs.junit)
 }
 
 androidx {
     name = "Animation Testing"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     mavenVersion = LibraryVersions.CORE_ANIMATION_TESTING
     inceptionYear = "2018"
     description = "This library provides functionalities for testing animations for API 14 and above."
-    metalavaK2UastEnabled = true
 }
 
 android {
-    namespace "androidx.core.animation.testing"
+    namespace = "androidx.core.animation.testing"
 }

@@ -25,6 +25,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.InternalTestConvenience.useInCameraTest
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
@@ -57,7 +58,7 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
     @get:Rule
     val cameraPipeConfigTestRule =
         CameraPipeConfigTestRule(
-            active = cameraXConfig == CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION,
+            active = cameraXConfig == CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
         )
 
     @get:Rule
@@ -70,23 +71,23 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
                 } else {
                     CameraPipeConfig.defaultConfig()
                 }
-            )
+            ),
         )
 
     @get:Rule
-    val mCameraActivityRules: GrantPermissionRule =
+    val cameraActivityRules: GrantPermissionRule =
         GrantPermissionRule.grant(*CameraActivity.PERMISSIONS)
 
-    protected val mDevice: UiDevice =
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    protected lateinit var device: UiDevice
 
     protected fun setUp(lensFacing: Int) {
         CoreAppTestUtil.assumeCompatibleDevice()
         Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
 
+        device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         // Ensure it's in a natural orientation. This change could delay around 1 sec, please
         // call this earlier before launching the test activity.
-        mDevice.setOrientationNatural()
+        device.setOrientationNatural()
 
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
@@ -99,7 +100,9 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
             val cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
             cameraProvider.shutdownAsync()[10, TimeUnit.SECONDS]
         }
-        mDevice.unfreezeRotation()
+        if (::device.isInitialized) {
+            device.unfreezeRotation()
+        }
     }
 
     protected inline fun <reified A : CameraActivity> verifyRotation(
@@ -108,7 +111,7 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
         rotate: ActivityScenario<A>.() -> Unit,
     ) {
         val activityScenario: ActivityScenario<A> = launchActivity(lensFacing, cameraXConfig)
-        activityScenario.use { scenario ->
+        activityScenario.useInCameraTest { scenario ->
 
             // Wait until the camera is set up and analysis starts receiving frames
             scenario.waitOnCameraFrames()
@@ -127,7 +130,7 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
                 scenario.withActivity {
                     Pair(
                         getSensorRotationRelativeToAnalysisTargetRotation(),
-                        mAnalysisImageRotation
+                        mAnalysisImageRotation,
                     )
                 }
             assertWithMessage(
@@ -169,13 +172,17 @@ abstract class ImageAnalysisBaseTest<A : CameraActivity>(
 
         @JvmStatic
         protected val lensFacingList =
-            arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)
+            arrayOf(
+                CameraSelector.LENS_FACING_BACK,
+                CameraSelector.LENS_FACING_FRONT,
+                CameraSelector.LENS_FACING_EXTERNAL,
+            )
 
         @JvmStatic
         protected val cameraXConfigList =
             arrayOf(
                 CameraActivity.CAMERA2_IMPLEMENTATION_OPTION,
-                CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
+                CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION,
             )
 
         @JvmStatic lateinit var testCameraRule: CameraUtil.PreTestCamera

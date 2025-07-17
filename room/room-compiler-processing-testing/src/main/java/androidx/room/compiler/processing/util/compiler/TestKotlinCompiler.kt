@@ -17,6 +17,7 @@
 package androidx.room.compiler.processing.util.compiler
 
 import androidx.room.compiler.processing.util.DiagnosticMessage
+import androidx.room.compiler.processing.util.Resource
 import androidx.room.compiler.processing.util.Source
 import androidx.room.compiler.processing.util.compiler.steps.CompilationStepArguments
 import androidx.room.compiler.processing.util.compiler.steps.CompilationStepResult
@@ -28,6 +29,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import java.io.File
 import javax.annotation.processing.Processor
 import javax.tools.Diagnostic
+import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
+import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 
 /** Compilation runner for kotlin using kotlin CLI tool */
 data class TestCompilationArguments(
@@ -52,7 +55,7 @@ data class TestCompilationArguments(
     /** List of symbol processor providers to be run by KSP. */
     val symbolProcessorProviders: List<SymbolProcessorProvider> = emptyList(),
     /** Map of annotation/symbol processor options. Used for both KAPT and KSP. */
-    val processorOptions: Map<String, String> = emptyMap()
+    val processorOptions: Map<String, String> = emptyMap(),
 )
 
 /** Result of a test compilation. */
@@ -64,7 +67,16 @@ data class TestCompilationResult(
     /** Diagnostic messages that were reported during compilation. */
     val diagnostics: Map<Diagnostic.Kind, List<DiagnosticMessage>>,
     /** List of classpath folders that contain the produced .class files. */
-    val outputClasspath: List<File>
+    val outputClasspath: List<File>,
+    /** List of generated resource files by the compilation. */
+    val generatedResources: List<Resource>,
+)
+
+@OptIn(ExperimentalCompilerApi::class)
+internal class PluginRegistrarArguments(
+    @Suppress("DEPRECATION")
+    val k1Registrars: List<org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar>,
+    val k2Registrars: List<CompilerPluginRegistrar>,
 )
 
 /** Ensures the list of sources has at least 1 kotlin file, if not, adds one. */
@@ -81,7 +93,7 @@ internal fun TestCompilationArguments.withAtLeastOneKotlinSource(): TestCompilat
                 package xprocessing.generated
                 class SyntheticKotlinSource
             """
-                            .trimIndent()
+                            .trimIndent(),
                 )
     )
 }
@@ -115,7 +127,7 @@ private fun TestCompilationArguments.toInternal(workingDir: File): CompilationSt
         additionalClasspaths = classpath,
         inheritClasspaths = inheritClasspath,
         javacArguments = javacArguments,
-        kotlincArguments = kotlincArguments
+        kotlincArguments = kotlincArguments,
     )
 }
 
@@ -131,7 +143,7 @@ fun compile(
             KaptCompilationStep(arguments.kaptProcessors, arguments.processorOptions),
             KspCompilationStep(arguments.symbolProcessorProviders, arguments.processorOptions),
             KotlinSourceCompilationStep,
-            JavaSourceCompilationStep
+            JavaSourceCompilationStep,
         )
     workingDir.ensureEmptyDirectory()
 
@@ -143,7 +155,8 @@ fun compile(
                 generatedSourceRoots = emptyList(),
                 diagnostics = emptyList(),
                 nextCompilerArguments = initialArgs,
-                outputClasspath = emptyList()
+                outputClasspath = emptyList(),
+                generatedResources = emptyList(),
             )
         )
     val resultFromEachStep =
@@ -153,7 +166,7 @@ fun compile(
                 prevResults +
                     step.execute(
                         workingDir = workingDir.resolve(step.name),
-                        arguments = prev.nextCompilerArguments
+                        arguments = prev.nextCompilerArguments,
                     )
             } else {
                 prevResults
@@ -169,7 +182,8 @@ fun compile(
         success = resultFromEachStep.all { it.success },
         generatedSources = resultFromEachStep.flatMap { it.generatedSources },
         diagnostics = combinedDiagnostics,
-        outputClasspath = resultFromEachStep.flatMap { it.outputClasspath }
+        outputClasspath = resultFromEachStep.flatMap { it.outputClasspath },
+        generatedResources = resultFromEachStep.flatMap { it.generatedResources },
     )
 }
 

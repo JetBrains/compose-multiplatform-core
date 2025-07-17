@@ -35,9 +35,9 @@ import androidx.camera.camera2.pipe.CameraMetadata
  * TODO(b/270421716): enable CameraXQuirksClassDetector lint check when kotlin is supported.
  */
 @SuppressLint("CameraXQuirksClassDetector")
-class FlashTooSlowQuirk : UseTorchAsFlashQuirk {
+public class FlashTooSlowQuirk : UseTorchAsFlashQuirk {
 
-    companion object {
+    public companion object {
         private val AFFECTED_MODEL_PREFIXES =
             listOf(
                 "PIXEL 3A",
@@ -47,10 +47,10 @@ class FlashTooSlowQuirk : UseTorchAsFlashQuirk {
                 "SM-A320",
                 "MOTO G(20)",
                 "ITEL L6006", // Itel A48
-                "RMX3231" // Realme C11 2021
+                "RMX3231", // Realme C11 2021
             )
 
-        fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
+        public fun isEnabled(cameraMetadata: CameraMetadata): Boolean {
             return isAffectedModel() && cameraMetadata[LENS_FACING] == LENS_FACING_BACK
         }
 

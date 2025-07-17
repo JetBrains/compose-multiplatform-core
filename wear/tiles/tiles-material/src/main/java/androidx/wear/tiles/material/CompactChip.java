@@ -18,12 +18,13 @@ package androidx.wear.tiles.material;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.expression.Fingerprint;
 import androidx.wear.protolayout.proto.LayoutElementProto;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Tiles component {@link CompactChip} that represents clickable object with the text.
@@ -67,10 +68,10 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
      */
     static final String METADATA_TAG = "CMPCHP";
 
-    @NonNull private final androidx.wear.tiles.LayoutElementBuilders.Box mImpl;
-    @NonNull private final Chip mElement;
+    private final androidx.wear.tiles.LayoutElementBuilders.@NonNull Box mImpl;
+    private final @NonNull Chip mElement;
 
-    CompactChip(@NonNull androidx.wear.tiles.LayoutElementBuilders.Box element) {
+    CompactChip(androidx.wear.tiles.LayoutElementBuilders.@NonNull Box element) {
         this.mImpl = element;
         // We know for sure that content of the androidx.wear.tiles.LayoutElementBuilders.Box is
         // Chip.
@@ -83,15 +84,14 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
     /** Builder class for {@link androidx.wear.tiles.material.CompactChip}. */
     public static final class Builder
             implements androidx.wear.tiles.LayoutElementBuilders.LayoutElement.Builder {
-        @NonNull private final Context mContext;
-        @NonNull private final String mText;
-        @NonNull private final androidx.wear.tiles.ModifiersBuilders.Clickable mClickable;
+        private final @NonNull Context mContext;
+        private final @NonNull String mText;
+        private final androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable mClickable;
 
-        @NonNull
-        private final androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+        private final androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                 mDeviceParameters;
 
-        @NonNull private ChipColors mChipColors = ChipDefaults.COMPACT_PRIMARY_COLORS;
+        private @NonNull ChipColors mChipColors = ChipDefaults.COMPACT_PRIMARY_COLORS;
 
         /**
          * Creates a builder for the {@link CompactChip} with associated action and the given text
@@ -105,9 +105,8 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
         public Builder(
                 @NonNull Context context,
                 @NonNull String text,
-                @NonNull androidx.wear.tiles.ModifiersBuilders.Clickable clickable,
-                @NonNull
-                        androidx.wear.tiles.DeviceParametersBuilders.DeviceParameters
+                androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable clickable,
+                androidx.wear.tiles.DeviceParametersBuilders.@NonNull DeviceParameters
                                 deviceParameters) {
             this.mContext = context;
             this.mText = text;
@@ -121,16 +120,14 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
          * ChipColors#getContentColor()} for the text. If not set, {@link
          * ChipDefaults#COMPACT_PRIMARY_COLORS} will be used.
          */
-        @NonNull
-        public Builder setChipColors(@NonNull ChipColors chipColors) {
+        public @NonNull Builder setChipColors(@NonNull ChipColors chipColors) {
             mChipColors = chipColors;
             return this;
         }
 
         /** Constructs and returns {@link CompactChip} with the provided content and look. */
-        @NonNull
         @Override
-        public CompactChip build() {
+        public @NonNull CompactChip build() {
             Chip.Builder chipBuilder =
                     new Chip.Builder(mContext, mClickable, mDeviceParameters)
                             .setMetadataTag(METADATA_TAG)
@@ -173,26 +170,22 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
     }
 
     /** Returns click event action associated with this Chip. */
-    @NonNull
-    public androidx.wear.tiles.ModifiersBuilders.Clickable getClickable() {
+    public androidx.wear.tiles.ModifiersBuilders.@NonNull Clickable getClickable() {
         return mElement.getClickable();
     }
 
     /** Returns chip color of this Chip. */
-    @NonNull
-    public ChipColors getChipColors() {
+    public @NonNull ChipColors getChipColors() {
         return mElement.getChipColors();
     }
 
     /** Returns text content of this Chip. */
-    @NonNull
-    public String getText() {
+    public @NonNull String getText() {
         return androidx.wear.tiles.material.Helper.checkNotNull(mElement.getPrimaryLabelContent());
     }
 
     /** Returns metadata tag set to this CompactChip, which should be {@link #METADATA_TAG}. */
-    @NonNull
-    String getMetadataTag() {
+    @NonNull String getMetadataTag() {
         return mElement.getMetadataTag();
     }
 
@@ -202,9 +195,8 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
      * container's content with {@code container.getContents().get(index)}) if that element can be
      * converted to CompactChip. Otherwise, it will return null.
      */
-    @Nullable
-    public static CompactChip fromLayoutElement(
-            @NonNull androidx.wear.tiles.LayoutElementBuilders.LayoutElement element) {
+    public static @Nullable CompactChip fromLayoutElement(
+            androidx.wear.tiles.LayoutElementBuilders.@NonNull LayoutElement element) {
         if (element instanceof CompactChip) {
             return (CompactChip) element;
         }
@@ -236,16 +228,14 @@ public class CompactChip implements androidx.wear.tiles.LayoutElementBuilders.La
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @NonNull
     @Override
-    public LayoutElementProto.LayoutElement toLayoutElementProto() {
+    public LayoutElementProto.@NonNull LayoutElement toLayoutElementProto() {
         return mImpl.toLayoutElementProto();
     }
 
     @RestrictTo(Scope.LIBRARY_GROUP)
-    @Nullable
     @Override
-    public Fingerprint getFingerprint() {
+    public @Nullable Fingerprint getFingerprint() {
         return mImpl.getFingerprint();
     }
 }

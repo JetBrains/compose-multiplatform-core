@@ -157,6 +157,7 @@ class SelectionHandlesTest {
                 offsetProvider = { offsetState },
                 isStartHandle = false,
                 direction = ResolvedTextDirection.Ltr,
+                lineHeight = 0f,
                 handlesCrossed = false,
             )
         }
@@ -199,7 +200,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Ltr,
-                    areHandlesCrossed = false
+                    areHandlesCrossed = false,
                 )
             )
             .isTrue()
@@ -211,7 +212,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Ltr,
-                    areHandlesCrossed = true
+                    areHandlesCrossed = true,
                 )
             )
             .isFalse()
@@ -223,7 +224,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Rtl,
-                    areHandlesCrossed = false
+                    areHandlesCrossed = false,
                 )
             )
             .isFalse()
@@ -235,7 +236,7 @@ class SelectionHandlesTest {
         assertThat(
                 isHandleLtrDirection(
                     direction = ResolvedTextDirection.Rtl,
-                    areHandlesCrossed = true
+                    areHandlesCrossed = true,
                 )
             )
             .isTrue()

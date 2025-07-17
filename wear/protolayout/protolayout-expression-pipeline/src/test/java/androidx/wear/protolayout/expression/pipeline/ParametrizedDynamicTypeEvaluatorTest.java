@@ -29,7 +29,6 @@ import android.icu.util.ULocale;
 import android.os.Build;
 import android.os.Looper;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool;
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicColor;
@@ -50,6 +49,7 @@ import androidx.wear.protolayout.expression.proto.FixedProto.FixedString;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -596,8 +596,7 @@ public class ParametrizedDynamicTypeEvaluatorTest {
         }
 
         @Override
-        @NonNull
-        public String toString() {
+        public @NonNull String toString() {
             return mName + " = " + mExpectedValue;
         }
     }

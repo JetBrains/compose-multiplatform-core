@@ -32,11 +32,11 @@ import kotlin.math.abs
  * cropWidth = 1000 As observed, zoomRatio = 5.5f does not yield cropWidth = 5500 which would be the
  * actual zooming amount middle point.
  */
-object ZoomMath {
-    fun getLinearZoomFromZoomRatio(
+public object ZoomMath {
+    public fun getLinearZoomFromZoomRatio(
         zoomRatio: Float,
         minZoomRatio: Float,
-        maxZoomRatio: Float
+        maxZoomRatio: Float,
     ): Float {
         // if zoom is not supported i.e. minZoomRatio = maxZoomRatio, return 0
         if (areFloatsEqual(minZoomRatio, maxZoomRatio)) {
@@ -71,10 +71,10 @@ object ZoomMath {
         return MathUtils.clamp(linearZoom, 0f, 1.0f)
     }
 
-    fun getZoomRatioFromLinearZoom(
+    public fun getZoomRatioFromLinearZoom(
         linearZoom: Float,
         minZoomRatio: Float,
-        maxZoomRatio: Float
+        maxZoomRatio: Float,
     ): Float {
         if (areFloatsEqual(linearZoom, 1.0f)) {
             return maxZoomRatio

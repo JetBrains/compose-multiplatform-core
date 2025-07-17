@@ -17,6 +17,7 @@
 package androidx.compose.foundation.selection
 
 import android.os.Build.VERSION.SDK_INT
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.TapIndicationDelay
 import androidx.compose.foundation.TestIndication
 import androidx.compose.foundation.TestIndicationNodeFactory
@@ -35,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.setFocusableContent
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +44,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.testutils.first
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
@@ -95,6 +96,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalTestApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ToggleableTest {
@@ -125,17 +127,17 @@ class ToggleableTest {
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.On, onClick = {})
                         .testTag("checkedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.Off, onClick = {})
                         .testTag("unCheckedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.triStateToggleable(state = ToggleableState.Indeterminate, onClick = {})
                         .testTag("indeterminateToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -143,7 +145,7 @@ class ToggleableTest {
         fun hasIndeterminateState(): SemanticsMatcher =
             SemanticsMatcher.expectValue(
                 SemanticsProperties.ToggleableState,
-                ToggleableState.Indeterminate
+                ToggleableState.Indeterminate,
             )
 
         fun roleNotSet(): SemanticsMatcher =
@@ -176,12 +178,12 @@ class ToggleableTest {
                 Box(
                     Modifier.toggleable(value = true, onValueChange = {})
                         .testTag("checkedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
                 Box(
                     Modifier.toggleable(value = false, onValueChange = {})
                         .testTag("unCheckedToggleable"),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -206,9 +208,9 @@ class ToggleableTest {
                     Modifier.triStateToggleable(
                         state = ToggleableState.On,
                         onClick = {},
-                        enabled = false
+                        enabled = false,
                     ),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -225,7 +227,7 @@ class ToggleableTest {
             Box {
                 Box(
                     Modifier.toggleable(value = checked, onValueChange = onCheckedChange),
-                    content = { BasicText("ToggleableText") }
+                    content = { BasicText("ToggleableText") },
                 )
             }
         }
@@ -252,8 +254,8 @@ class ToggleableTest {
                             .toggleable(
                                 value = checked,
                                 onValueChange = onCheckedChange,
-                                enabled = enabled.value
-                            )
+                                enabled = enabled.value,
+                            ),
                 )
             }
         }
@@ -290,7 +292,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -340,7 +342,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                     ) {
                         BasicText("ToggleableText")
@@ -392,7 +394,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -445,7 +447,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                     ) {
                         BasicText("ToggleableText")
@@ -484,7 +486,6 @@ class ToggleableTest {
         }
     }
 
-    @OptIn(ExperimentalTestApi::class)
     @Test
     fun toggleableTest_interactionSource_hover() {
         val interactionSource = MutableInteractionSource()
@@ -499,7 +500,7 @@ class ToggleableTest {
                         value = true,
                         interactionSource = interactionSource,
                         indication = null,
-                        onValueChange = {}
+                        onValueChange = {},
                     )
                 ) {
                     BasicText("ToggleableText")
@@ -547,7 +548,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                 ) {
                     BasicText("ToggleableText")
@@ -562,7 +563,7 @@ class ToggleableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Touch)
+            inputModeManager.requestInputMode(Touch)
             focusRequester.requestFocus()
         }
 
@@ -589,7 +590,7 @@ class ToggleableTest {
                             value = true,
                             interactionSource = interactionSource,
                             indication = null,
-                            onValueChange = {}
+                            onValueChange = {},
                         )
                 ) {
                     BasicText("ToggleableText")
@@ -604,7 +605,7 @@ class ToggleableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -637,6 +638,8 @@ class ToggleableTest {
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
                 .containsExactly(
                     "value",
+                    "interactionSource",
+                    "indicationNodeFactory",
                     "enabled",
                     "role",
                     "onValueChange",
@@ -652,7 +655,7 @@ class ToggleableTest {
                         value = true,
                         onValueChange = {},
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("toggleable")
@@ -664,7 +667,7 @@ class ToggleableTest {
                     "interactionSource",
                     "enabled",
                     "role",
-                    "onValueChange"
+                    "onValueChange",
                 )
         }
     }
@@ -680,6 +683,8 @@ class ToggleableTest {
             assertThat(modifier.inspectableElements.map { it.name }.asIterable())
                 .containsExactly(
                     "state",
+                    "interactionSource",
+                    "indicationNodeFactory",
                     "enabled",
                     "role",
                     "onClick",
@@ -695,7 +700,7 @@ class ToggleableTest {
                         state = ToggleableState.On,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = {}
+                        onClick = {},
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("triStateToggleable")
@@ -707,7 +712,7 @@ class ToggleableTest {
                     "interactionSource",
                     "enabled",
                     "role",
-                    "onClick"
+                    "onClick",
                 )
         }
     }
@@ -721,7 +726,7 @@ class ToggleableTest {
                 value = toggled,
                 interactionSource = interactionSource,
                 indication = null,
-                onValueChange = { toggled = true }
+                onValueChange = { toggled = true },
             )
         }
     }
@@ -735,7 +740,7 @@ class ToggleableTest {
                 state = toggleableState,
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = { toggleableState = ToggleableState.On }
+                onClick = { toggleableState = ToggleableState.On },
             )
         }
     }
@@ -746,7 +751,7 @@ class ToggleableTest {
         testToggleableMinTouchTarget {
             Modifier.triStateToggleable(
                 state = toggleableState,
-                onClick = { toggleableState = ToggleableState.On }
+                onClick = { toggleableState = ToggleableState.On },
             )
         }
     }
@@ -772,7 +777,7 @@ class ToggleableTest {
         }
 
     @Test
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_clickWithEnterKey() {
         val focusRequester = FocusRequester()
         lateinit var inputModeManager: InputModeManager
@@ -786,12 +791,12 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -806,7 +811,41 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
+    fun toggleableTest_clickWithSpaceKey() {
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        var toggled by mutableStateOf(false)
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            BasicText(
+                "ToggleableText",
+                modifier =
+                    Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
+                        value = toggled
+                    ) {
+                        toggled = it
+                    },
+            )
+        }
+
+        rule.runOnIdle {
+            inputModeManager.requestInputMode(Keyboard)
+            focusRequester.requestFocus()
+        }
+
+        val toggleableNode = rule.onNodeWithTag("toggleable")
+        rule.runOnIdle { assertThat(toggled).isFalse() }
+
+        toggleableNode.performKeyInput { keyDown(Key.Spacebar) }
+        rule.runOnIdle { assertThat(toggled).isFalse() }
+
+        toggleableNode.performKeyInput { keyUp(Key.Spacebar) }
+        rule.runOnIdle { assertThat(toggled).isTrue() }
+    }
+
+    @Test
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_clickWithNumPadEnterKey() {
         val focusRequester = FocusRequester()
         var toggled by mutableStateOf(false)
@@ -820,12 +859,12 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -840,7 +879,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_clickWithDpadCenter() {
         val focusRequester = FocusRequester()
         var toggled by mutableStateOf(false)
@@ -854,12 +893,12 @@ class ToggleableTest {
                         value = toggled
                     ) {
                         toggled = it
-                    }
+                    },
             )
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -874,7 +913,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalTestApi::class, ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_clickWithEnterKey_triStateToggleable() {
         val focusRequester = FocusRequester()
         var toggled by mutableStateOf(false)
@@ -886,12 +925,12 @@ class ToggleableTest {
                 modifier =
                     Modifier.testTag("toggleable")
                         .focusRequester(focusRequester)
-                        .triStateToggleable(ToggleableState(toggled)) { toggled = !toggled }
+                        .triStateToggleable(ToggleableState(toggled)) { toggled = !toggled },
             )
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -906,7 +945,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_enterKey_emitsIndication() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -922,14 +961,14 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -953,7 +992,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_numPadEnterKey_emitsIndication() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -970,14 +1009,14 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -1001,7 +1040,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_dpadCenter_emitsIndication() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -1017,14 +1056,14 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
         rule.waitForIdle()
@@ -1049,7 +1088,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_otherKey_doesNotEmitIndication() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -1065,26 +1104,26 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
         val interactions = mutableListOf<Interaction>()
         scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
 
-        rule.onNodeWithTag("toggleable").performKeyInput { pressKey(Key.Spacebar) }
+        rule.onNodeWithTag("toggleable").performKeyInput { pressKey(Key.Backspace) }
         rule.runOnIdle { assertThat(interactions).isEmpty() }
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_doubleEnterKey_emitsFurtherInteractions() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -1100,14 +1139,14 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").focusRequester(focusRequester).toggleable(
                             value = false,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -1145,7 +1184,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_repeatKeyEvents_doNotEmitFurtherInteractions() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -1169,13 +1208,13 @@ class ToggleableTest {
                                 value = false,
                                 interactionSource = interactionSource,
                                 indication = null,
-                            ) {}
+                            ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -1206,7 +1245,7 @@ class ToggleableTest {
     }
 
     @Test
-    @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
+    @OptIn(ExperimentalTestApi::class)
     fun toggleableTest_interruptedClick_emitsCancelIndication() {
         val interactionSource = MutableInteractionSource()
         val focusRequester = FocusRequester()
@@ -1225,14 +1264,14 @@ class ToggleableTest {
                             value = false,
                             interactionSource = interactionSource,
                             indication = null,
-                            enabled = enabled.value
-                        ) {}
+                            enabled = enabled.value,
+                        ) {},
                 )
             }
         }
 
         rule.runOnIdle {
-            @OptIn(ExperimentalComposeUiApi::class) inputModeManager.requestInputMode(Keyboard)
+            inputModeManager.requestInputMode(Keyboard)
             focusRequester.requestFocus()
         }
 
@@ -1273,6 +1312,28 @@ class ToggleableTest {
     }
 
     @Test
+    fun toggleableTest_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "Toggleable",
+                        modifier =
+                            Modifier.testTag("toggleable").toggleable(
+                                value = false,
+                                interactionSource = interactionSource,
+                            ) {},
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
+    }
+
+    @Test
     fun toggleableTest_noInteractionSource_lazilyCreated_pointerInput() {
         var created = false
         lateinit var interactionSource: InteractionSource
@@ -1295,8 +1356,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").toggleable(
                             value = false,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1311,6 +1372,29 @@ class ToggleableTest {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
+    }
+
+    @Test
+    fun triStateToggleable_localIndication_interactionSource_eagerlyCreated() {
+        val interactionSource = MutableInteractionSource()
+        var created = false
+        val state = ToggleableState(value = false)
+        val indication = TestIndicationNodeFactory { _, _ -> created = true }
+        rule.setContent {
+            CompositionLocalProvider(LocalIndication provides indication) {
+                Box(Modifier.padding(10.dp)) {
+                    BasicText(
+                        "Toggleable",
+                        modifier =
+                            Modifier.testTag("toggleable").triStateToggleable(
+                                state = state,
+                                interactionSource = interactionSource,
+                            ) {},
+                    )
+                }
+            }
+        }
+        rule.runOnIdle { assertThat(created).isTrue() }
     }
 
     @Test
@@ -1337,8 +1421,8 @@ class ToggleableTest {
                         Modifier.testTag("toggleable").triStateToggleable(
                             state = state,
                             interactionSource = null,
-                            indication = indication
-                        ) {}
+                            indication = indication,
+                        ) {},
                 )
             }
         }
@@ -1356,13 +1440,28 @@ class ToggleableTest {
     }
 
     @Test
-    fun toggleable_composedOverload_nonEquality() {
+    fun toggleable_nullInteractionSource_equality() {
         val onValueChange: (Boolean) -> Unit = {}
-        val modifier1 = Modifier.toggleable(value = true, onValueChange = onValueChange)
-        val modifier2 = Modifier.toggleable(value = true, onValueChange = onValueChange)
+        assertModifierIsPure { toggleInput ->
+            Modifier.toggleable(
+                value = toggleInput,
+                interactionSource = null,
+                onValueChange = onValueChange,
+            )
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun toggleable_nonNullInteractionSource_equality() {
+        val onValueChange: (Boolean) -> Unit = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.toggleable(
+                value = toggleInput,
+                interactionSource = interactionSource,
+                onValueChange = onValueChange,
+            )
+        }
     }
 
     @Test
@@ -1373,7 +1472,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = null,
                 indication = null,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1387,7 +1486,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = interactionSource,
                 indication = null,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1401,7 +1500,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1415,14 +1514,14 @@ class ToggleableTest {
                 value = true,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         val modifier2 =
             Modifier.toggleable(
                 value = true,
                 interactionSource = null,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1439,7 +1538,7 @@ class ToggleableTest {
                 value = toggleInput,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         }
     }
@@ -1454,14 +1553,14 @@ class ToggleableTest {
                 value = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
         val modifier2 =
             Modifier.toggleable(
                 value = true,
                 interactionSource = interactionSource,
                 indication = indication,
-                onValueChange = onValueChange
+                onValueChange = onValueChange,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1469,13 +1568,28 @@ class ToggleableTest {
     }
 
     @Test
-    fun triStateToggleable_composedOverload_nonEquality() {
+    fun triStateToggleable_nullInteractionSource_equality() {
         val onClick = {}
-        val modifier1 = Modifier.triStateToggleable(state = ToggleableState.On, onClick = onClick)
-        val modifier2 = Modifier.triStateToggleable(state = ToggleableState.On, onClick = onClick)
+        assertModifierIsPure { toggleInput ->
+            Modifier.triStateToggleable(
+                state = ToggleableState(toggleInput),
+                interactionSource = null,
+                onClick = onClick,
+            )
+        }
+    }
 
-        // The composed overload can never compare equal
-        assertThat(modifier1).isNotEqualTo(modifier2)
+    @Test
+    fun triStateToggleable_nonNullInteractionSource_equality() {
+        val onClick = {}
+        val interactionSource = MutableInteractionSource()
+        assertModifierIsPure { toggleInput ->
+            Modifier.triStateToggleable(
+                state = ToggleableState(toggleInput),
+                interactionSource = interactionSource,
+                onClick = onClick,
+            )
+        }
     }
 
     @Test
@@ -1486,7 +1600,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = null,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1500,7 +1614,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1514,7 +1628,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1528,14 +1642,14 @@ class ToggleableTest {
                 state = ToggleableState.On,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.triStateToggleable(
                 state = ToggleableState.On,
                 interactionSource = null,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal
@@ -1552,7 +1666,7 @@ class ToggleableTest {
                 state = ToggleableState(toggleInput),
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         }
     }
@@ -1567,14 +1681,14 @@ class ToggleableTest {
                 state = ToggleableState.On,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
         val modifier2 =
             Modifier.triStateToggleable(
                 state = ToggleableState.On,
                 interactionSource = interactionSource,
                 indication = indication,
-                onClick = onClick
+                onClick = onClick,
             )
 
         // Indication requires composed, so cannot compare equal

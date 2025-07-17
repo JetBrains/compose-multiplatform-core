@@ -22,41 +22,79 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * A Material opinionated implementation of [ThreePaneScaffold] that will display the provided three
- * panes in a canonical list-detail layout.
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [list-detail layout](https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
  *
- * See usage samples at:
+ * This overload takes a [ThreePaneScaffoldValue] describing the adapted value of each pane within
+ * the scaffold.
+ *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
  *
  * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSample
  *
+ * For a more sophisticated sample that supports an extra pane and pane expansion functionality that
+ * allows users to drag to change layout split, see:
+ *
  * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPane
  *
- * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldWithNavigationSample
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
  *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
+ *
+ * The following code gives a sample of how to integrate with the Compose Navigation library:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.NavigableListDetailPaneScaffoldSample
  * @param directive The top-level directives about how the scaffold should arrange its panes.
  * @param value The current adapted value of the scaffold, which indicates how each pane of the
  *   scaffold is adapted.
  * @param listPane the list pane of the scaffold, which is supposed to hold a list of item summaries
  *   that can be selected from, for example, the inbox mail list of a mail app. See
- *   [ListDetailPaneScaffoldRole.List].
+ *   [ListDetailPaneScaffoldRole.List]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param detailPane the detail pane of the scaffold, which is supposed to hold the detailed info of
  *   a selected item, for example, the mail content currently being viewed. See
- *   [ListDetailPaneScaffoldRole.Detail].
+ *   [ListDetailPaneScaffoldRole.Detail]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
  * @param modifier [Modifier] of the scaffold layout.
  * @param extraPane the extra pane of the scaffold, which is supposed to hold any supplementary info
  *   besides the list and the detail panes, for example, a task list or a mini-calendar view of a
- *   mail app. See [ListDetailPaneScaffoldRole.Extra].
+ *   mail app. See [ListDetailPaneScaffoldRole.Extra]. Note that we suggest you to use
+ *   [AnimatedPane] as the root layout of panes, which supports default pane behaviors like
+ *   enter/exit transitions.
+ * @param paneExpansionDragHandle the pane expansion drag handle to allow users to drag to change
+ *   pane expansion state, `null` by default.
+ * @param paneExpansionState the state object of pane expansion; when no value is provided but
+ *   [paneExpansionDragHandle] is not `null`, a default implementation will be created for the drag
+ *   handle to use.
  */
 @ExperimentalMaterial3AdaptiveApi
 @Composable
 fun ListDetailPaneScaffold(
     directive: PaneScaffoldDirective,
     value: ThreePaneScaffoldValue,
-    listPane: @Composable ThreePaneScaffoldScope.() -> Unit,
-    detailPane: @Composable ThreePaneScaffoldScope.() -> Unit,
+    listPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    detailPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
     modifier: Modifier = Modifier,
-    extraPane: (@Composable ThreePaneScaffoldScope.() -> Unit)? = null,
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState? = null,
 ) {
+    val expansionState =
+        paneExpansionState
+            ?: rememberDefaultPaneExpansionState(
+                keyProvider = { value },
+                mutable = paneExpansionDragHandle != null,
+            )
     ThreePaneScaffold(
         modifier = modifier.fillMaxSize(),
         scaffoldDirective = directive,
@@ -64,7 +102,96 @@ fun ListDetailPaneScaffold(
         paneOrder = ListDetailPaneScaffoldDefaults.PaneOrder,
         secondaryPane = listPane,
         tertiaryPane = extraPane,
-        primaryPane = detailPane
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = expansionState,
+        primaryPane = detailPane,
+    )
+}
+
+/**
+ * A three pane layout that follows the Material guidelines, displaying the provided panes in a
+ * canonical
+ * [list-detail layout](https://m3.material.io/foundations/layout/canonical-layouts/list-detail).
+ *
+ * This overload takes a [ThreePaneScaffoldState] describing the current [ThreePaneScaffoldValue]
+ * and any pane transitions or animations in progress.
+ *
+ * Here's a basic usage sample, which demonstrates how a layout can change from single pane to dual
+ * pane under different window configurations:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSample
+ *
+ * For a more sophisticated sample that supports an extra pane and pane expansion functionality that
+ * allows users to drag to change layout split, see:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPane
+ *
+ * By default there isn't a drag handle rendered so users aren't able to drag to change the pane
+ * split. Providing a drag handle like the above sample shows will enable the functionality. We
+ * suggest developers to use the vertical drag handle implementation provided by the Material3
+ * component library here to have default theming/styling support. You can integrate the component
+ * as the following sample shows:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.PaneExpansionDragHandleSample
+ *
+ * Note that if there's no drag handle, you can still modify [paneExpansionState] directly to apply
+ * pane expansion.
+ *
+ * The following code gives a sample of how to integrate with the Compose Navigation library:
+ *
+ * @sample androidx.compose.material3.adaptive.samples.NavigableListDetailPaneScaffoldSample
+ * @param directive The top-level directives about how the scaffold should arrange its panes.
+ * @param scaffoldState The current state of the scaffold, containing information about the adapted
+ *   value of each pane of the scaffold and the transitions/animations in progress.
+ * @param listPane the list pane of the scaffold, which is supposed to hold a list of item summaries
+ *   that can be selected from, for example, the inbox mail list of a mail app. See
+ *   [ListDetailPaneScaffoldRole.List]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
+ * @param detailPane the detail pane of the scaffold, which is supposed to hold the detailed info of
+ *   a selected item, for example, the mail content currently being viewed. See
+ *   [ListDetailPaneScaffoldRole.Detail]. Note that we suggest you to use [AnimatedPane] as the root
+ *   layout of panes, which supports default pane behaviors like enter/exit transitions.
+ * @param modifier [Modifier] of the scaffold layout.
+ * @param extraPane the extra pane of the scaffold, which is supposed to hold any supplementary info
+ *   besides the list and the detail panes, for example, a task list or a mini-calendar view of a
+ *   mail app. See [ListDetailPaneScaffoldRole.Extra]. Note that we suggest you to use
+ *   [AnimatedPane] as the root layout of panes, which supports default pane behaviors like
+ *   enter/exit transitions.
+ * @param paneExpansionDragHandle the pane expansion drag handle to allow users to drag to change
+ *   pane expansion state, `null` by default.
+ * @param paneExpansionState the state object of pane expansion; when no value is provided but
+ *   [paneExpansionDragHandle] is not `null`, a default implementation will be created for the drag
+ *   handle to use.
+ */
+@ExperimentalMaterial3AdaptiveApi
+@Composable
+fun ListDetailPaneScaffold(
+    directive: PaneScaffoldDirective,
+    scaffoldState: ThreePaneScaffoldState,
+    listPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    detailPane: @Composable ThreePaneScaffoldPaneScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    extraPane: (@Composable ThreePaneScaffoldPaneScope.() -> Unit)? = null,
+    paneExpansionDragHandle: (@Composable ThreePaneScaffoldScope.(PaneExpansionState) -> Unit)? =
+        null,
+    paneExpansionState: PaneExpansionState? = null,
+) {
+    val expansionState =
+        paneExpansionState
+            ?: rememberDefaultPaneExpansionState(
+                keyProvider = { scaffoldState.targetState },
+                mutable = paneExpansionDragHandle != null,
+            )
+    ThreePaneScaffold(
+        modifier = modifier.fillMaxSize(),
+        scaffoldDirective = directive,
+        scaffoldState = scaffoldState,
+        paneOrder = ListDetailPaneScaffoldDefaults.PaneOrder,
+        secondaryPane = listPane,
+        tertiaryPane = extraPane,
+        paneExpansionDragHandle = paneExpansionDragHandle,
+        paneExpansionState = expansionState,
+        primaryPane = detailPane,
     )
 }
 
@@ -86,7 +213,7 @@ object ListDetailPaneScaffoldDefaults {
         ThreePaneScaffoldAdaptStrategies(
             detailPaneAdaptStrategy,
             listPaneAdaptStrategy,
-            extraPaneAdaptStrategy
+            extraPaneAdaptStrategy,
         )
 
     /**
@@ -98,7 +225,7 @@ object ListDetailPaneScaffoldDefaults {
         ThreePaneScaffoldHorizontalOrder(
             ThreePaneScaffoldRole.Secondary,
             ThreePaneScaffoldRole.Primary,
-            ThreePaneScaffoldRole.Tertiary
+            ThreePaneScaffoldRole.Tertiary,
         )
 }
 

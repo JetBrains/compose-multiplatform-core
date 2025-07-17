@@ -17,7 +17,6 @@
 package androidx.compose.foundation.benchmark.pager
 
 import android.os.Build
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.benchmark.lazy.LazyBenchmarkTestCase
 import androidx.compose.foundation.benchmark.lazy.LazyItem
 import androidx.compose.foundation.benchmark.lazy.toggleStateBenchmark
@@ -51,7 +50,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalFoundationApi::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
@@ -65,7 +63,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 addNewItemOnToggle = false,
                 content = testCase.content,
                 isVertical = testCase.isVertical,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -77,7 +75,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 addNewItemOnToggle = true,
                 content = testCase.content,
                 isVertical = testCase.isVertical,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -90,7 +88,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 content = testCase.content,
                 isVertical = testCase.isVertical,
                 useKeys = false,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -103,7 +101,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 content = testCase.content,
                 isVertical = testCase.isVertical,
                 useKeys = false,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -116,7 +114,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 content = testCase.content,
                 isVertical = testCase.isVertical,
                 usePointerInput = true,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -129,7 +127,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 content = testCase.content,
                 isVertical = testCase.isVertical,
                 usePointerInput = true,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -144,7 +142,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 addNewItemOnToggle = false,
                 content = testCase.content,
                 isVertical = testCase.isVertical,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -159,7 +157,7 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                 addNewItemOnToggle = true,
                 content = testCase.content,
                 isVertical = testCase.isVertical,
-                beyondBoundsPageCount = testCase.beyondBoundsPageCount
+                beyondBoundsPageCount = testCase.beyondBoundsPageCount,
             )
         }
     }
@@ -173,26 +171,26 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
                     "HorizontalPager_WithoutExtraPages",
                     isVertical = false,
                     beyondBoundsPageCount = 0,
-                    HorizontalPagerContent
+                    HorizontalPagerContent,
                 ),
                 PagerScrollingTestCase(
                     "HorizontalPager_WithExtraPages",
                     isVertical = false,
                     beyondBoundsPageCount = 1,
-                    HorizontalPagerContent
+                    HorizontalPagerContent,
                 ),
                 PagerScrollingTestCase(
                     "VerticalPager_WithoutExtraPages",
                     isVertical = true,
                     beyondBoundsPageCount = 0,
-                    VerticalPagerContent
+                    VerticalPagerContent,
                 ),
                 PagerScrollingTestCase(
                     "VerticalPager_WithExtraPages",
                     isVertical = true,
                     beyondBoundsPageCount = 1,
-                    VerticalPagerContent
-                )
+                    VerticalPagerContent,
+                ),
             )
 
         // Copied from AndroidComposeTestCaseRunner
@@ -203,21 +201,19 @@ class PagerScrollingBenchmark(private val testCase: PagerScrollingTestCase) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 data class PagerScrollingTestCase(
     private val name: String,
     val isVertical: Boolean,
     val beyondBoundsPageCount: Int,
     val content:
         @Composable
-        PagerRemeasureTestCase.(PagerState, useKeys: Boolean, beyondBoundsPageCount: Int) -> Unit
+        PagerRemeasureTestCase.(PagerState, useKeys: Boolean, beyondBoundsPageCount: Int) -> Unit,
 ) {
     override fun toString(): String {
         return name
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 class PagerRemeasureTestCase(
     val addNewItemOnToggle: Boolean,
     val content:
@@ -227,7 +223,7 @@ class PagerRemeasureTestCase(
     val usePointerInput: Boolean = false,
     val useKeys: Boolean = true,
     val beyondBoundsPageCount: Int,
-    val pageCount: Int = 100
+    val pageCount: Int = 100,
 ) : LazyBenchmarkTestCase(isVertical, usePointerInput) {
 
     val pages = List(pageCount) { LazyItem(it) }
@@ -291,7 +287,7 @@ val NoOpInfoProvider =
 val VerticalPagerContent:
     @Composable
     PagerRemeasureTestCase.(
-        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int
+        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int,
     ) -> Unit =
     { state, useKeys, beyondBoundsPageCount ->
         val flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider = NoOpInfoProvider)
@@ -306,7 +302,7 @@ val VerticalPagerContent:
                 },
             pageSize = PageSize.Fixed(30.dp),
             beyondViewportPageCount = beyondBoundsPageCount,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         ) {
             Box(Modifier.fillMaxSize())
         }
@@ -315,7 +311,7 @@ val VerticalPagerContent:
 val HorizontalPagerContent:
     @Composable
     PagerRemeasureTestCase.(
-        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int
+        state: PagerState, useKeys: Boolean, beyondBoundsPageCount: Int,
     ) -> Unit =
     { state, useKeys, beyondBoundsPageCount ->
         val flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider = NoOpInfoProvider)
@@ -330,7 +326,7 @@ val HorizontalPagerContent:
                 },
             pageSize = PageSize.Fixed(30.dp),
             beyondViewportPageCount = beyondBoundsPageCount,
-            flingBehavior = flingBehavior
+            flingBehavior = flingBehavior,
         ) {
             Box(Modifier.fillMaxSize())
         }

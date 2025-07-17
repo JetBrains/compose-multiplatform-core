@@ -22,13 +22,15 @@ import androidx.room.integration.kotlintestapp.TestDatabase
 import androidx.room.integration.kotlintestapp.dao.BooksDao
 import androidx.room.integration.kotlintestapp.dao.UsersDao
 import androidx.room.integration.kotlintestapp.testutil.TestObserver
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import java.util.concurrent.TimeUnit
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 
-abstract class TestDatabaseTest {
+abstract class TestDatabaseTest(protected val useDriver: UseDriver = UseDriver.NONE) {
     @Rule @JvmField val countingTaskExecutorRule = CountingTaskExecutorRule()
     protected lateinit var database: TestDatabase
     protected lateinit var booksDao: BooksDao
@@ -40,8 +42,15 @@ abstract class TestDatabaseTest {
         database =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java
+                    TestDatabase::class.java,
                 )
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
+                    }
+                }
                 .build()
 
         booksDao = database.booksDao()
@@ -62,5 +71,11 @@ abstract class TestDatabaseTest {
         override fun drain() {
             countingTaskExecutorRule.drainTasks(1, TimeUnit.MINUTES)
         }
+    }
+
+    enum class UseDriver {
+        ANDROID,
+        BUNDLED,
+        NONE,
     }
 }

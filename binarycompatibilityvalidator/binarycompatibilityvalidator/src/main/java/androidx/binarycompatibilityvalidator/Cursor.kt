@@ -29,8 +29,6 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     val currentLine: String
         get() = lines[rowIndex].slice(columnIndex until lines[rowIndex].length)
 
-    fun hasNextRow() = rowIndex < (lines.size - 1)
-
     /** Check if we have passed the last line in [lines] and there is nothing left to parse */
     fun isFinished() = rowIndex >= lines.size
 
@@ -43,11 +41,11 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     }
 
     fun parseSymbol(
-        pattern: String,
+        pattern: Regex,
         peek: Boolean = false,
-        skipInlineWhitespace: Boolean = true
+        skipInlineWhitespace: Boolean = true,
     ): String? {
-        val match = Regex(pattern).find(currentLine)
+        val match = pattern.find(currentLine)
         return match?.value?.also {
             if (!peek) {
                 val offset = it.length + currentLine.indexOf(it)
@@ -60,15 +58,11 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     }
 
     fun parseValidIdentifier(peek: Boolean = false): String? =
-        parseSymbol("^[a-zA-Z_][a-zA-Z0-9_]+", peek)
+        parseSymbol(validIdentifierRegex, peek)
 
-    fun parseWord(peek: Boolean = false): String? = parseSymbol("[a-zA-Z]+", peek)
+    fun parseWord(peek: Boolean = false): String? = parseSymbol(wordRegex, peek)
 
     fun copy() = Cursor(lines, rowIndex, columnIndex)
-
-    private fun hasNextColumn(): Boolean {
-        return columnIndex < lines[rowIndex].length - 1
-    }
 
     private fun setColumn(index: Int) {
         columnIndex = index
@@ -80,3 +74,15 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
         }
     }
 }
+
+// Match any '=' not followed by '...' because they're valid characters, but we don't want to
+// parse part of the parameter default symbol (=...) by accident. Otherwise match all non-illegal
+// characters
+private val validIdentifierRegex =
+    Regex(
+        """
+    ^((=(?!\s?\.\.\.)|[^.;\[\]/<>:\\(){}?=,&])+)
+    """
+            .trimIndent()
+    )
+private val wordRegex = Regex("[a-zA-Z]+")

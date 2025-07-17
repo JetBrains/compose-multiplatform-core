@@ -67,7 +67,7 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
     @get:Rule
     val cameraPipeConfigTestRule =
         CameraPipeConfigTestRule(
-            active = cameraXConfig == CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION,
+            active = cameraXConfig == CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
         )
 
     @get:Rule
@@ -80,34 +80,34 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
                 } else {
                     CameraPipeConfig.defaultConfig()
                 }
-            )
+            ),
         )
 
     @get:Rule
-    val mCameraActivityRules: GrantPermissionRule =
+    val cameraActivityRules: GrantPermissionRule =
         GrantPermissionRule.grant(*CameraActivity.PERMISSIONS)
 
-    protected val mDevice: UiDevice =
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    protected lateinit var device: UiDevice
 
     protected fun setUp(lensFacing: Int) {
         // TODO(b/147448711) Cuttlefish seems to have an issue handling rotation. Might be
         //  related to the attached bug.
         assumeFalse(
             "Cuttlefish does not correctly handle rotating. Unable to test.",
-            Build.MODEL.contains("Cuttlefish")
+            Build.MODEL.contains("Cuttlefish"),
         )
         assumeFalse(
             "Known issue on this device. Please see b/199115443",
-            Build.MODEL.contains("k61v1_basic_ref")
+            Build.MODEL.contains("k61v1_basic_ref"),
         )
 
         CoreAppTestUtil.assumeCompatibleDevice()
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
 
+        device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
         // Ensure it's in a natural orientation. This change could delay around 1 sec, please
         // call this earlier before launching the test activity.
-        mDevice.setOrientationNatural()
+        device.setOrientationNatural()
 
         // Clear the device UI and check if there is no dialog or lock screen on the top of the
         // window before start the test.
@@ -123,7 +123,9 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
             val cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
             cameraProvider.shutdownAsync()[10, TimeUnit.SECONDS]
         }
-        mDevice.unfreezeRotation()
+        if (::device.isInitialized) {
+            device.unfreezeRotation()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -173,7 +175,7 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
                 scenario.withActivity {
                     Pair(
                         getSensorRotationRelativeToCaptureTargetRotation(),
-                        mCaptureResult?.getRotation()
+                        mCaptureResult?.getRotation(),
                     )
                 }
             val areRotationsEqual = sensorToTargetRotation == imageRotationDegrees
@@ -223,9 +225,17 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
 
     protected inline fun <reified A : CameraActivity> ActivityScenario<A>.waitOnCameraFrames() {
         val analysisRunning = withActivity { mAnalysisRunning }
+        Logger.w(
+            LOG_TAG,
+            "Starting to wait for image analysis frames on thread [${Thread.currentThread().name}]",
+        )
         assertWithMessage("Timed out waiting on image analysis frames on $analysisRunning")
             .that(analysisRunning.tryAcquire(IMAGES_COUNT, TIMEOUT, TimeUnit.SECONDS))
             .isTrue()
+        Logger.w(
+            LOG_TAG,
+            "No longer waiting for image analysis frames on thread [${Thread.currentThread().name}]",
+        )
     }
 
     protected inline fun <reified A : CameraActivity> ActivityScenario<A>.resetFramesCount() {
@@ -251,13 +261,14 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
                     try {
                         close()
                     } catch (e: Throwable) {
-                        Logger.w("ImageCaptureBaseTest", "Exception in close()", e)
+                        Logger.w(LOG_TAG, "Exception in close()", e)
                     }
             }
         }
     }
 
     companion object {
+        const val LOG_TAG = "ImageCaptureBaseTest"
         protected const val IMAGES_COUNT = 30
         protected const val TIMEOUT = 20L
         @JvmStatic
@@ -266,17 +277,22 @@ abstract class ImageCaptureBaseTest<A : CameraActivity>(
                 CameraActivity.IMAGE_CAPTURE_MODE_IN_MEMORY,
                 CameraActivity.IMAGE_CAPTURE_MODE_FILE,
                 CameraActivity.IMAGE_CAPTURE_MODE_OUTPUT_STREAM,
-                CameraActivity.IMAGE_CAPTURE_MODE_MEDIA_STORE
+                CameraActivity.IMAGE_CAPTURE_MODE_MEDIA_STORE,
             )
+
         @JvmStatic
         protected val lensFacingList =
-            arrayOf(CameraSelector.LENS_FACING_BACK, CameraSelector.LENS_FACING_FRONT)
+            arrayOf(
+                CameraSelector.LENS_FACING_BACK,
+                CameraSelector.LENS_FACING_FRONT,
+                CameraSelector.LENS_FACING_EXTERNAL,
+            )
 
         @JvmStatic
         protected val cameraXConfigList =
             arrayOf(
                 CameraActivity.CAMERA2_IMPLEMENTATION_OPTION,
-                CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION
+                CameraActivity.CAMERA_PIPE_IMPLEMENTATION_OPTION,
             )
 
         @JvmStatic lateinit var testCameraRule: CameraUtil.PreTestCamera

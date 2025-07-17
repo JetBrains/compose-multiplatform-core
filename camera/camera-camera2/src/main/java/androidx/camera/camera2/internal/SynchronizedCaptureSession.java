@@ -18,6 +18,7 @@ package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraConstrainedHighSpeedCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.SessionConfiguration;
@@ -25,8 +26,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
 import androidx.camera.camera2.internal.compat.CameraCaptureSessionCompat;
@@ -36,6 +35,9 @@ import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.Quirks;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -62,11 +64,9 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public interface SynchronizedCaptureSession {
 
-    @NonNull
-    CameraDevice getDevice();
+    @NonNull CameraDevice getDevice();
 
-    @NonNull
-    StateCallback getStateCallback();
+    @NonNull StateCallback getStateCallback();
 
     /**
      * Get the input Surface associated with a reprocessable capture session.
@@ -83,22 +83,19 @@ public interface SynchronizedCaptureSession {
      *
      * @see CameraCaptureSession#getInputSurface()
      */
-    @Nullable
-    Surface getInputSurface();
+    @Nullable Surface getInputSurface();
 
     /**
      * Get a {@link ListenableFuture} which indicates the task should be finished before another
      * {@link SynchronizedCaptureSession} to be opened.
      */
-    @NonNull
-    ListenableFuture<Void> getOpeningBlocker();
+    @NonNull ListenableFuture<Void> getOpeningBlocker();
 
     /**
      * Return the {@link CameraCaptureSessionCompat} object which is used in this
      * SynchronizedCaptureSession.
      */
-    @NonNull
-    CameraCaptureSessionCompat toCameraCaptureSessionCompat();
+    @NonNull CameraCaptureSessionCompat toCameraCaptureSessionCompat();
 
     /**
      * Submit a request for an image to be captured by the camera device.
@@ -117,7 +114,7 @@ public interface SynchronizedCaptureSession {
      *                               encountered a fatal error
      */
     int captureSingleRequest(@NonNull CaptureRequest request,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException;
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException;
 
     /**
      * Submit a list of requests to be captured in sequence as a burst. The
@@ -140,7 +137,7 @@ public interface SynchronizedCaptureSession {
      */
     int captureBurstRequests(
             @NonNull List<CaptureRequest> requests,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            CameraCaptureSession.@NonNull CaptureCallback listener)
             throws CameraAccessException;
 
     /**
@@ -161,7 +158,7 @@ public interface SynchronizedCaptureSession {
      */
     int setSingleRepeatingRequest(
             @NonNull CaptureRequest request,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            CameraCaptureSession.@NonNull CaptureCallback listener)
             throws CameraAccessException;
 
     /**
@@ -182,7 +179,17 @@ public interface SynchronizedCaptureSession {
      */
     int setRepeatingBurstRequests(
             @NonNull List<CaptureRequest> requests,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            CameraCaptureSession.@NonNull CaptureCallback listener)
+            throws CameraAccessException;
+
+    /**
+     * Create a unmodifiable list of requests that is suitable for constrained high speed capture
+     * session streaming.
+     *
+     * @see CameraConstrainedHighSpeedCaptureSession#createHighSpeedRequestList(CaptureRequest)
+     */
+    @NonNull
+    List<CaptureRequest> createHighSpeedRequestList(@NonNull CaptureRequest request)
             throws CameraAccessException;
 
     /**
@@ -201,8 +208,8 @@ public interface SynchronizedCaptureSession {
      *                               encountered a fatal error
      */
     int captureSingleRequest(@NonNull CaptureRequest request,
-            @NonNull /* @CallbackExecutor */ Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException;
+            /* @CallbackExecutor */ @NonNull Executor executor,
+            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException;
 
     /**
      * Submit a list of requests to be captured in sequence as a burst. The burst will be
@@ -224,8 +231,8 @@ public interface SynchronizedCaptureSession {
      */
     int captureBurstRequests(
             @NonNull List<CaptureRequest> requests,
-            @NonNull /* @CallbackExecutor */ Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            /* @CallbackExecutor */ @NonNull Executor executor,
+            CameraCaptureSession.@NonNull CaptureCallback listener)
             throws CameraAccessException;
 
     /**
@@ -246,8 +253,8 @@ public interface SynchronizedCaptureSession {
      */
     int setSingleRepeatingRequest(
             @NonNull CaptureRequest request,
-            @NonNull /* @CallbackExecutor */ Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            /* @CallbackExecutor */ @NonNull Executor executor,
+            CameraCaptureSession.@NonNull CaptureCallback listener)
             throws CameraAccessException;
 
     /**
@@ -268,8 +275,8 @@ public interface SynchronizedCaptureSession {
      */
     int setRepeatingBurstRequests(
             @NonNull List<CaptureRequest> requests,
-            @NonNull /* @CallbackExecutor */ Executor executor,
-            @NonNull CameraCaptureSession.CaptureCallback listener)
+            /* @CallbackExecutor */ @NonNull Executor executor,
+            CameraCaptureSession.@NonNull CaptureCallback listener)
             throws CameraAccessException;
 
     void stopRepeating() throws CameraAccessException;
@@ -440,8 +447,7 @@ public interface SynchronizedCaptureSession {
          * @see #createSessionConfigurationCompat
          * @see #stop()
          */
-        @NonNull
-        ListenableFuture<Void> openCaptureSession(@NonNull CameraDevice cameraDevice,
+        @NonNull ListenableFuture<Void> openCaptureSession(@NonNull CameraDevice cameraDevice,
                 @NonNull SessionConfigurationCompat sessionConfigurationCompat,
                 @NonNull List<DeferrableSurface> deferrableSurfaces);
 
@@ -455,10 +461,9 @@ public interface SynchronizedCaptureSession {
          * @param outputsCompat A list of output configurations for the SynchronizedCaptureSession.
          * @param stateCallback A state callback interface implementation.
          */
-        @NonNull
-        SessionConfigurationCompat createSessionConfigurationCompat(int sessionType,
+        @NonNull SessionConfigurationCompat createSessionConfigurationCompat(int sessionType,
                 @NonNull List<OutputConfigurationCompat> outputsCompat,
-                @NonNull SynchronizedCaptureSession.StateCallback stateCallback);
+                SynchronizedCaptureSession.@NonNull StateCallback stateCallback);
 
         /**
          * Get the surface from the DeferrableSurfaces.
@@ -477,13 +482,11 @@ public interface SynchronizedCaptureSession {
          * @see #openCaptureSession
          * @see #stop
          */
-        @NonNull
-        ListenableFuture<List<Surface>> startWithDeferrableSurface(
+        @NonNull ListenableFuture<List<Surface>> startWithDeferrableSurface(
                 @NonNull List<DeferrableSurface> deferrableSurfaces, long timeout);
 
-        @NonNull
         @CameraExecutor
-        Executor getExecutor();
+        @NonNull Executor getExecutor();
 
         /**
          * Disable the startWithDeferrableSurface() and openCaptureSession() ability, and stop the
@@ -510,7 +513,7 @@ public interface SynchronizedCaptureSession {
         private final Quirks mCameraQuirks;
         private final Quirks mDeviceQuirks;
 
-        OpenerBuilder(@NonNull @CameraExecutor Executor executor,
+        OpenerBuilder(@CameraExecutor @NonNull Executor executor,
                 @NonNull ScheduledExecutorService scheduledExecutorService,
                 @NonNull Handler compatHandler,
                 @NonNull CaptureSessionRepository captureSessionRepository,
@@ -524,8 +527,7 @@ public interface SynchronizedCaptureSession {
             mDeviceQuirks = deviceQuirks;
         }
 
-        @NonNull
-        Opener build() {
+        @NonNull Opener build() {
             return new SynchronizedCaptureSessionImpl(mCameraQuirks, mDeviceQuirks,
                     mCaptureSessionRepository, mExecutor, mScheduledExecutorService,
                     mCompatHandler);

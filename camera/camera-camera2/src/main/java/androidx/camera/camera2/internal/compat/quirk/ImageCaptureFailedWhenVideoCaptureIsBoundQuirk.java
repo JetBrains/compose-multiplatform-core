@@ -16,6 +16,8 @@
 
 package androidx.camera.camera2.internal.compat.quirk;
 
+import static androidx.camera.camera2.internal.compat.quirk.Device.isUniSocChipsetDevice;
+
 import android.os.Build;
 
 import androidx.camera.core.internal.compat.quirk.SurfaceProcessingQuirk;
@@ -40,7 +42,7 @@ public class ImageCaptureFailedWhenVideoCaptureIsBoundQuirk implements CaptureIn
 
     static boolean load() {
         return isBluStudioX10() || isItelW6004() || isVivo1805() || isPositivoTwist2Pro()
-                || isPixel4XLApi29() || isMotoE13() || isSamsungTabA8();
+                || isPixel4XLApi29() || isMotoE13() || isSamsungTabA8() || isUniSocChipsetDevice();
     }
 
     public static boolean isBluStudioX10() {
@@ -82,6 +84,6 @@ public class ImageCaptureFailedWhenVideoCaptureIsBoundQuirk implements CaptureIn
     @Override
     public boolean workaroundBySurfaceProcessing() {
         return isBluStudioX10() || isItelW6004() || isVivo1805() || isPositivoTwist2Pro()
-                || isPixel4XLApi29() || isMotoE13() || isSamsungTabA8();
+                || isPixel4XLApi29() || isMotoE13() || isSamsungTabA8() || isUniSocChipsetDevice();
     }
 }

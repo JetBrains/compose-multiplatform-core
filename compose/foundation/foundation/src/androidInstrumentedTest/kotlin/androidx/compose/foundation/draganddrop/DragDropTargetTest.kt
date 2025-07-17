@@ -17,7 +17,6 @@
 package androidx.compose.foundation.draganddrop
 
 import android.view.View
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.content.testDragAndDrop
 import androidx.compose.foundation.layout.Box
@@ -42,7 +41,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalFoundationApi::class)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class DragDropTargetTest {
@@ -68,7 +66,7 @@ class DragDropTargetTest {
                                     dropEvents.add(targetKey)
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -128,7 +126,7 @@ class DragDropTargetTest {
                                     dropEvents.add(targetKey)
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -171,7 +169,7 @@ class DragDropTargetTest {
                                 DragAndDropTarget {
                                     return@DragAndDropTarget true
                                 }
-                            }
+                            },
                     )
             )
         }
@@ -201,7 +199,7 @@ class DragDropTargetTest {
 
     private fun DragAndDropTarget(
         onEvent: (Boolean) -> Unit = {},
-        onDrop: (DragAndDropEvent) -> Boolean
+        onDrop: (DragAndDropEvent) -> Boolean,
     ) =
         object : DragAndDropTarget {
             override fun onEntered(event: DragAndDropEvent) = onEvent(true)

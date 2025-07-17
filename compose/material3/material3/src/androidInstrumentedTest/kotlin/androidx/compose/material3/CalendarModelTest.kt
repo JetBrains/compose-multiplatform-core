@@ -35,7 +35,6 @@ import org.junit.runners.Parameterized
 
 @MediumTest
 @RunWith(Parameterized::class)
-@OptIn(ExperimentalMaterial3Api::class)
 internal class CalendarModelTest(private val model: CalendarModel) {
 
     private lateinit var defaultLocale: Locale
@@ -116,7 +115,17 @@ internal class CalendarModelTest(private val model: CalendarModel) {
     fun parseDate() {
         val expectedDate =
             CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
-        val parsedDate = model.parse("1/1/2022", "M/d/yyyy")
+        val parsedDate = model.parse("1/1/2022", "M/d/yyyy", Locale.ENGLISH)
+        assertThat(parsedDate).isEqualTo(expectedDate)
+    }
+
+    @Test
+    fun parseDate_Arabic() {
+        val expectedDate =
+            CalendarDate(year = 2022, month = 1, dayOfMonth = 1, utcTimeMillis = January2022Millis)
+        // Arabic locale with Arabic-Indic digits and symbols
+        val parsedDate =
+            model.parse("٠١/٠١/٢٠٢٢", "d/MM/yyyy", Locale.forLanguageTag("ar-u-nu-arab"))
         assertThat(parsedDate).isEqualTo(expectedDate)
     }
 
@@ -150,7 +159,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
                 January2022Millis,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
         assertThat(formatted).isEqualTo("Saturday, January 1, 2022")
 
@@ -159,7 +168,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
                 January2022Millis - 1000000000,
                 DatePickerDefaults.YearMonthWeekdayDaySkeleton,
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
         assertThat(formatted).isEqualTo("Monday, December 20, 2021")
     }
@@ -174,7 +183,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
                 January2022Millis,
                 skeleton = "YY",
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
         assertThat(formatted).isEqualTo("22")
 
@@ -183,9 +192,43 @@ internal class CalendarModelTest(private val model: CalendarModel) {
                 January2022Millis - 1000000000,
                 "YY",
                 Locale.US,
-                cache = mutableMapOf()
+                cache = mutableMapOf(),
             )
         assertThat(formatted).isEqualTo("21")
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+    @Test
+    fun formatWithSkeletonCapitalizationForLocale() {
+        // English
+        val usFormatted =
+            formatWithSkeleton(
+                January2022Millis,
+                skeleton = "yMMMM",
+                Locale.US,
+                cache = mutableMapOf(),
+            )
+        // Spanish
+        val esFormatted =
+            formatWithSkeleton(
+                January2022Millis,
+                skeleton = "yMMMM",
+                Locale("ES"),
+                cache = mutableMapOf(),
+            )
+        // Danish
+        val daFormatted =
+            formatWithSkeleton(
+                January2022Millis,
+                skeleton = "yMMMM",
+                Locale("DA"),
+                cache = mutableMapOf(),
+            )
+        // Note: Expecting the month names to be capitalized in English and Spanish, but lowercase
+        // in Danish.
+        assertThat(usFormatted).isEqualTo("January 2022")
+        assertThat(esFormatted).isEqualTo("Enero de 2022")
+        assertThat(daFormatted).isEqualTo("januar 2022")
     }
 
     @Test
@@ -288,7 +331,7 @@ internal class CalendarModelTest(private val model: CalendarModel) {
                 // Using the JVM Locale.getDefault() for testing purposes only.
                 arrayOf(
                     CalendarModelImpl(Locale.getDefault()),
-                    LegacyCalendarModelImpl(Locale.getDefault())
+                    LegacyCalendarModelImpl(Locale.getDefault()),
                 )
             } else {
                 arrayOf(LegacyCalendarModelImpl(Locale.getDefault()))

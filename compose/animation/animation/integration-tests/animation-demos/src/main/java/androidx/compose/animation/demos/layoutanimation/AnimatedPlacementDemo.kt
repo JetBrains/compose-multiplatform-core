@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
@@ -90,14 +89,13 @@ fun Modifier.animatePlacement(): Modifier = composed {
     this.then(modifier)
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 class AnimatedPlacementModifier(val scope: CoroutineScope) : OnPlacedModifier, LayoutModifier {
     var targetOffset by mutableStateOf(Offset.Zero)
     var animatable by mutableStateOf<Animatable<Offset, AnimationVector2D>?>(null)
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val placeable = measurable.measure(constraints)
         return layout(placeable.width, placeable.height) {

@@ -29,9 +29,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import androidx.annotation.DoNotInline;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import androidx.camera.core.Logger;
@@ -41,6 +38,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -105,9 +105,8 @@ final class SurfaceViewImplementation extends PreviewViewImplementation {
         mSurfaceView.getHolder().addCallback(mSurfaceRequestCallback);
     }
 
-    @Nullable
     @Override
-    View getPreview() {
+    @Nullable View getPreview() {
         return mSurfaceView;
     }
 
@@ -127,9 +126,8 @@ final class SurfaceViewImplementation extends PreviewViewImplementation {
      * levels below 24.
      */
     @RequiresApi(24)
-    @Nullable
     @Override
-    Bitmap getPreviewBitmap() {
+    @Nullable Bitmap getPreviewBitmap() {
         // If the preview surface isn't ready yet or isn't valid, return null
         if (mSurfaceView == null || mSurfaceView.getHolder().getSurface() == null
                 || !mSurfaceView.getHolder().getSurface().isValid()) {
@@ -184,24 +182,19 @@ final class SurfaceViewImplementation extends PreviewViewImplementation {
         // Target Surface size. Only complete the SurfaceRequest when the size of the Surface
         // matches this value.
         // Guarded by the UI thread.
-        @Nullable
-        private Size mTargetSize;
+        private @Nullable Size mTargetSize;
 
         // SurfaceRequest to set when the target size is met.
         // Guarded by the UI thread.
-        @Nullable
-        private SurfaceRequest mSurfaceRequest;
+        private @Nullable SurfaceRequest mSurfaceRequest;
 
-        @Nullable
-        private SurfaceRequest mSurfaceRequestToBeInvalidated;
+        private @Nullable SurfaceRequest mSurfaceRequestToBeInvalidated;
 
-        @Nullable
-        private OnSurfaceNotInUseListener mOnSurfaceNotInUseListener;
+        private @Nullable OnSurfaceNotInUseListener mOnSurfaceNotInUseListener;
 
         // The cached size of the current Surface.
         // Guarded by the UI thread.
-        @Nullable
-        private Size mCurrentSurfaceSize;
+        private @Nullable Size mCurrentSurfaceSize;
 
         // Guarded by the UI thread.
         private boolean mWasSurfaceProvided = false;
@@ -345,14 +338,13 @@ final class SurfaceViewImplementation extends PreviewViewImplementation {
     }
 
     @Override
-    @NonNull
-    ListenableFuture<Void> waitForNextFrame() {
+    @NonNull ListenableFuture<Void> waitForNextFrame() {
         return Futures.immediateFuture(null);
     }
 
     @Override
     void setFrameUpdateListener(@NonNull Executor executor,
-            @NonNull PreviewView.OnFrameUpdateListener listener) {
+            PreviewView.@NonNull OnFrameUpdateListener listener) {
         throw new IllegalArgumentException("SurfaceView doesn't support frame update listener");
     }
 
@@ -365,9 +357,8 @@ final class SurfaceViewImplementation extends PreviewViewImplementation {
         private Api24Impl() {
         }
 
-        @DoNotInline
         static void pixelCopyRequest(@NonNull SurfaceView source, @NonNull Bitmap dest,
-                @NonNull PixelCopy.OnPixelCopyFinishedListener listener, @NonNull Handler handler) {
+                PixelCopy.@NonNull OnPixelCopyFinishedListener listener, @NonNull Handler handler) {
             PixelCopy.request(source, dest, listener, handler);
         }
     }

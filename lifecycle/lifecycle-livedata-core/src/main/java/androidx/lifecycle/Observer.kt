@@ -20,8 +20,8 @@ package androidx.lifecycle
  *
  * @see LiveData LiveData - for a usage description.
  */
-fun interface Observer<T> {
+public fun interface Observer<T> {
 
     /** Called when the data is changed to [value]. */
-    fun onChanged(value: T)
+    public fun onChanged(value: T)
 }

@@ -21,7 +21,6 @@ import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Delete
 import androidx.room.Entity
-import androidx.room.Ignore
 import androidx.room.Insert
 import androidx.room.InvalidationTracker
 import androidx.room.OnConflictStrategy
@@ -38,6 +37,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.Ignore
 import kotlin.test.assertTrue
 import org.junit.After
 import org.junit.Before
@@ -158,10 +158,7 @@ class SyncTriggersConcurrencyTest {
         @Delete fun delete(count: SampleEntity)
     }
 
-    @Entity
-    class SampleEntity(
-        @PrimaryKey val id: String,
-    )
+    @Entity class SampleEntity(@PrimaryKey val id: String)
 
     companion object {
 

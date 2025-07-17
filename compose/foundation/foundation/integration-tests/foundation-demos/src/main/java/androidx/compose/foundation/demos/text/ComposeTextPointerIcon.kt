@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos.text
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +46,7 @@ import androidx.compose.ui.unit.dp
 private enum class ParentOverride {
     None,
     Override,
-    NoOverride
+    NoOverride,
 }
 
 @Preview
@@ -81,7 +80,7 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
             else ->
                 Modifier.pointerHoverIcon(
                     icon = PointerIcon.Hand,
-                    overrideDescendants = parentOverride == ParentOverride.Override
+                    overrideDescendants = parentOverride == ParentOverride.Override,
                 )
         }
 
@@ -90,7 +89,7 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
             Modifier.then(rectanglePointerIconModifier)
                 .border(1.dp, Color.LightGray)
                 .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         val annotatedString = buildAnnotatedString {
             when (parentOverride) {
@@ -114,7 +113,6 @@ private fun IconDemoRectangle(parentOverride: ParentOverride, textOverride: Bool
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun IconDemoColumn(overrideDescendants: Boolean) {
     val borderMod = Modifier.border(1.dp, Color.LightGray)

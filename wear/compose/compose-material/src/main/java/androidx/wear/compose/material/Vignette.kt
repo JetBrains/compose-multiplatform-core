@@ -47,15 +47,15 @@ public value class VignettePosition constructor(private val key: Int) {
         }
     }
 
-    companion object {
+    public companion object {
         /** Only the top part of the vignette is displayed. */
-        val Top = VignettePosition(0)
+        public val Top: VignettePosition = VignettePosition(0)
 
         /** Only the bottom part of the vignette is displayed. */
-        val Bottom = VignettePosition(1)
+        public val Bottom: VignettePosition = VignettePosition(1)
 
         /** Both the top and bottom of the vignette is displayed. */
-        val TopAndBottom = VignettePosition(2)
+        public val TopAndBottom: VignettePosition = VignettePosition(2)
     }
 
     override fun toString(): String {
@@ -78,15 +78,11 @@ public value class VignettePosition constructor(private val key: Int) {
  * top/bottom vignette images can be turned on/off can be found at
  *
  * @sample androidx.wear.compose.material.samples.SimpleScaffoldWithScrollIndicator
- *
  * @param vignettePosition whether to draw top and/or bottom images for this [Vignette]
  * @param modifier optional Modifier for the root of the [Vignette]
  */
 @Composable
-public fun Vignette(
-    vignettePosition: VignettePosition,
-    modifier: Modifier = Modifier,
-) {
+public fun Vignette(vignettePosition: VignettePosition, modifier: Modifier = Modifier) {
 
     Box(modifier = modifier.fillMaxSize()) {
         if (vignettePosition.drawTop()) {

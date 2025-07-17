@@ -16,7 +16,6 @@
 
 package androidx.room.solver.types
 
-import androidx.annotation.VisibleForTesting
 import androidx.room.compiler.processing.XType
 import androidx.room.solver.CodeGenScope
 
@@ -24,24 +23,24 @@ import androidx.room.solver.CodeGenScope
 abstract class TypeConverter(val from: XType, val to: XType, val cost: Cost = Cost.CONVERTER) {
     /**
      * Should generate the code that will covert [inputVarName] of type [from] to [outputVarName] of
-     * type [to]. This method *should not* declare the [outputVarName] as it is already declared by
-     * the caller.
+     * type [to]. This function *should not* declare the [outputVarName] as it is already declared
+     * by the caller.
      */
     protected abstract fun doConvert(
         inputVarName: String,
         outputVarName: String,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     )
 
     /**
-     * A type converter can optionally override this method if they can handle the case where they
+     * A type converter can optionally override this function if they can handle the case where they
      * don't need a temporary output variable (e.g. no op conversion or null checks).
      *
      * @return The variable name where the result is saved.
      */
     protected open fun doConvert(inputVarName: String, scope: CodeGenScope): String {
         val outVarName = scope.getTmpVar()
-        scope.builder.apply { addLocalVariable(outVarName, to.asTypeName()) }
+        scope.builder.addLocalVariable(outVarName, to.asTypeName())
         doConvert(inputVarName = inputVarName, outputVarName = outVarName, scope = scope)
         return outVarName
     }
@@ -67,7 +66,7 @@ abstract class TypeConverter(val from: XType, val to: XType, val cost: Cost = Co
      * The comparison happens in buckets such that having 10 upcasts is still cheaper than having 1
      * nullSafeWrapper.
      *
-     * Internally, this class uses an IntArray to keep its fields to optimize for readability in
+     * Internally, this class uses an IntArray to keep its properties to optimize for readability in
      * operators.
      */
     class Cost
@@ -83,26 +82,22 @@ abstract class TypeConverter(val from: XType, val to: XType, val cost: Cost = Co
             converters: Int,
             nullSafeWrapper: Int = 0,
             upCasts: Int = 0,
-            requireNotNull: Int = 0
+            requireNotNull: Int = 0,
         ) : this(
             // NOTE: construction order here MUST match the [Buckets]
             intArrayOf(requireNotNull, converters, nullSafeWrapper, upCasts)
         )
 
-        @VisibleForTesting
-        val upCasts: Int
+        private val upCasts: Int
             get() = values[Buckets.UP_CAST]
 
-        @VisibleForTesting
-        val nullSafeWrapper: Int
+        private val nullSafeWrapper: Int
             get() = values[Buckets.NULL_SAFE]
 
-        @VisibleForTesting
-        val requireNotNull: Int
+        private val requireNotNull: Int
             get() = values[Buckets.REQUIRE_NOT_NULL]
 
-        @VisibleForTesting
-        val converters: Int
+        private val converters: Int
             get() = values[Buckets.CONVERTER]
 
         operator fun plus(other: Cost) =

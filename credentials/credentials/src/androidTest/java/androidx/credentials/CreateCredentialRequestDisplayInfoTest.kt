@@ -19,7 +19,7 @@ package androidx.credentials
 import android.graphics.drawable.Icon
 import androidx.credentials.CreateCredentialRequest.DisplayInfo
 import androidx.credentials.CreateCredentialRequest.DisplayInfo.Companion.createFrom
-import androidx.credentials.internal.FrameworkImplHelper.Companion.getFinalCreateCredentialData
+import androidx.credentials.internal.getFinalCreateCredentialData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -75,7 +75,7 @@ class CreateCredentialRequestDisplayInfoTest {
             DisplayInfo(
                 userId = expectedUserId,
                 userDisplayName = expectedDisplayName,
-                preferDefaultProvider = expectedDefaultProvider
+                preferDefaultProvider = expectedDefaultProvider,
             )
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)
@@ -89,7 +89,7 @@ class CreateCredentialRequestDisplayInfoTest {
     fun constructWithOptionalParameters_success() {
         val expectedUserId: CharSequence = "userId"
         val expectedDisplayName: CharSequence = "displayName"
-        val expectedIcon = Icon.createWithResource(mContext, R.drawable.ic_passkey)
+        val expectedIcon = Icon.createWithResource(mContext, R.drawable.adx_ic_passkey)
         val expectedDefaultProvider = "defaultProvider"
 
         val displayInfo =
@@ -101,7 +101,7 @@ class CreateCredentialRequestDisplayInfoTest {
         assertThat(displayInfo.preferDefaultProvider).isEqualTo(expectedDefaultProvider)
     }
 
-    @SdkSuppress(minSdkVersion = 28)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun constructFromBundle_success() {
         val expectedUserId = "userId"
@@ -111,7 +111,7 @@ class CreateCredentialRequestDisplayInfoTest {
 
         assertThat(displayInfo.userId).isEqualTo(expectedUserId)
         assertThat(displayInfo.userDisplayName).isNull()
-        assertThat(displayInfo.credentialTypeIcon?.resId).isEqualTo(R.drawable.ic_password)
+        assertThat(displayInfo.credentialTypeIcon?.resId).isEqualTo(R.drawable.adx_ic_password)
         assertThat(displayInfo.preferDefaultProvider).isNull()
     }
 }

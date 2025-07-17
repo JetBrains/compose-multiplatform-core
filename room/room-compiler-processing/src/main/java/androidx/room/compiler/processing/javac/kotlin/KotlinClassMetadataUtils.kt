@@ -29,36 +29,36 @@ import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.VariableElement
 import javax.tools.Diagnostic
-import kotlinx.metadata.ClassKind
-import kotlinx.metadata.KmAnnotation
-import kotlinx.metadata.KmAnnotationArgument
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.KmClassifier
-import kotlinx.metadata.KmConstructor
-import kotlinx.metadata.KmFunction
-import kotlinx.metadata.KmProperty
-import kotlinx.metadata.KmType
-import kotlinx.metadata.KmTypeParameter
-import kotlinx.metadata.KmValueParameter
-import kotlinx.metadata.Visibility
-import kotlinx.metadata.declaresDefaultValue
-import kotlinx.metadata.isData
-import kotlinx.metadata.isDelegated
-import kotlinx.metadata.isExpect
-import kotlinx.metadata.isFunInterface
-import kotlinx.metadata.isNullable
-import kotlinx.metadata.isSecondary
-import kotlinx.metadata.isSuspend
-import kotlinx.metadata.isValue
-import kotlinx.metadata.jvm.KotlinClassMetadata
-import kotlinx.metadata.jvm.annotations
-import kotlinx.metadata.jvm.fieldSignature
-import kotlinx.metadata.jvm.getterSignature
-import kotlinx.metadata.jvm.setterSignature
-import kotlinx.metadata.jvm.signature
-import kotlinx.metadata.jvm.syntheticMethodForAnnotations
-import kotlinx.metadata.kind
-import kotlinx.metadata.visibility
+import kotlin.metadata.ClassKind
+import kotlin.metadata.KmAnnotation
+import kotlin.metadata.KmAnnotationArgument
+import kotlin.metadata.KmClass
+import kotlin.metadata.KmClassifier
+import kotlin.metadata.KmConstructor
+import kotlin.metadata.KmFunction
+import kotlin.metadata.KmProperty
+import kotlin.metadata.KmType
+import kotlin.metadata.KmTypeParameter
+import kotlin.metadata.KmValueParameter
+import kotlin.metadata.Visibility
+import kotlin.metadata.declaresDefaultValue
+import kotlin.metadata.isData
+import kotlin.metadata.isDelegated
+import kotlin.metadata.isExpect
+import kotlin.metadata.isFunInterface
+import kotlin.metadata.isNullable
+import kotlin.metadata.isSecondary
+import kotlin.metadata.isSuspend
+import kotlin.metadata.isValue
+import kotlin.metadata.jvm.KotlinClassMetadata
+import kotlin.metadata.jvm.annotations
+import kotlin.metadata.jvm.fieldSignature
+import kotlin.metadata.jvm.getterSignature
+import kotlin.metadata.jvm.setterSignature
+import kotlin.metadata.jvm.signature
+import kotlin.metadata.jvm.syntheticMethodForAnnotations
+import kotlin.metadata.kind
+import kotlin.metadata.visibility
 
 internal interface KmData
 
@@ -91,9 +91,9 @@ internal class KmClassContainer(private val env: JavacProcessingEnv, private val
                                 classifier = KmClassifier.Class(kmTypeParameter.name)
                             },
                         typeArguments = emptyList(),
-                        upperBounds = kmTypeParameter.upperBounds.map { it.asContainer() }
+                        upperBounds = kmTypeParameter.upperBounds.map { it.asContainer() },
                     )
-                }
+                },
         )
     }
 
@@ -146,7 +146,7 @@ internal class KmClassContainer(private val env: JavacProcessingEnv, private val
 
     private val functionByDescriptor: Map<String, KmFunctionContainer> by lazy {
         buildMap {
-            functionList.forEach { put(it.descriptor, it) }
+            functionList.forEach { function -> function.descriptor?.let { put(it, function) } }
             propertyList.forEach { property ->
                 property.getter?.descriptor?.let { put(it, property.getter) }
                 property.setter?.descriptor?.let { put(it, property.setter) }
@@ -198,7 +198,7 @@ internal class KmClassContainer(private val env: JavacProcessingEnv, private val
                         Diagnostic.Kind.ERROR,
                         "Unable to read Kotlin metadata due to unsupported metadata " +
                             "kind: $classMetadata.",
-                        element
+                        element,
                     )
                     null
                 }
@@ -221,7 +221,7 @@ internal interface KmFunctionContainer : KmVisibility {
     val name: String
     /** Name of the function in byte code */
     val jvmName: String
-    val descriptor: String
+    val descriptor: String?
     val typeParameters: List<KmTypeParameterContainer>
     val parameters: List<KmValueParameterContainer>
     val returnType: KmTypeContainer
@@ -255,8 +255,11 @@ private class KmFunctionContainerImpl(
     override val jvmName: String
         get() = kmFunction.signature!!.name
 
-    override val descriptor: String
-        get() = kmFunction.signature!!.toString()
+    override val descriptor: String?
+        get() {
+            // This could be null due to https://youtrack.jetbrains.com/issue/KT-70600
+            return kmFunction.signature?.toString()
+        }
 
     override val typeParameters: List<KmTypeParameterContainer>
         get() = kmFunction.typeParameters.map { it.asContainer() }
@@ -278,7 +281,7 @@ private open class KmPropertyFunctionContainerImpl(
     override val propertyName: String?,
     val isSetterMethod: Boolean,
     val isGetterMethod: Boolean,
-    val syntheticMethodForAnnotations: Boolean = false
+    val syntheticMethodForAnnotations: Boolean = false,
 ) : KmFunctionContainer {
     override val typeParameters: List<KmTypeParameterContainer> = emptyList()
     override val isSuspend: Boolean = false
@@ -339,7 +342,7 @@ internal class KmTypeContainer(
     /** The extends bounds are only non-null for wildcard (i.e. in/out variant) types. */
     val extendsBound: KmTypeContainer? = null,
     /** The upper bounds are only non-empty for type variable types with upper bounds. */
-    override val upperBounds: List<KmTypeContainer> = emptyList()
+    override val upperBounds: List<KmTypeContainer> = emptyList(),
 ) : KmBaseTypeContainer {
     fun isNullable() = kmType.isNullable
 
@@ -379,7 +382,7 @@ internal class KmAnnotationContainer(private val kmAnnotation: KmAnnotation) {
 
 internal class KmAnnotationArgumentContainer(
     private val env: JavacProcessingEnv,
-    private val kmAnnotationArgument: KmAnnotationArgument
+    private val kmAnnotationArgument: KmAnnotationArgument,
 ) {
     fun getValue(method: XMethodElement): Any? {
         return kmAnnotationArgument.let {
@@ -417,7 +420,7 @@ internal class KmAnnotationArgumentContainer(
 
 internal class KmTypeParameterContainer(
     private val kmTypeParameter: KmTypeParameter,
-    override val upperBounds: List<KmTypeContainer>
+    override val upperBounds: List<KmTypeContainer>,
 ) : KmBaseTypeContainer {
     val name: String
         get() = kmTypeParameter.name
@@ -428,7 +431,7 @@ internal class KmTypeParameterContainer(
 
 internal class KmValueParameterContainer(
     private val kmValueParameter: KmValueParameter,
-    val type: KmTypeContainer
+    val type: KmTypeContainer,
 ) : KmData {
     val name: String
         get() = kmValueParameter.name
@@ -443,7 +446,7 @@ internal class KmValueParameterContainer(
 private fun computeTypeNullability(
     isNullable: Boolean,
     upperBounds: List<KmTypeContainer>,
-    extendsBound: KmTypeContainer?
+    extendsBound: KmTypeContainer?,
 ): XNullability {
     if (isNullable) {
         return XNullability.NULLABLE
@@ -525,13 +528,13 @@ private fun KmProperty.asContainer(): KmPropertyContainer =
 private fun KmType.asContainer(): KmTypeContainer =
     KmTypeContainer(
         kmType = this,
-        typeArguments = this.arguments.mapNotNull { it.type?.asContainer() }
+        typeArguments = this.arguments.mapNotNull { it.type?.asContainer() },
     )
 
 private fun KmTypeParameter.asContainer(): KmTypeParameterContainer =
     KmTypeParameterContainer(
         kmTypeParameter = this,
-        upperBounds = this.upperBounds.map { it.asContainer() }
+        upperBounds = this.upperBounds.map { it.asContainer() },
     )
 
 private fun KmValueParameter.asContainer(): KmValueParameterContainer =

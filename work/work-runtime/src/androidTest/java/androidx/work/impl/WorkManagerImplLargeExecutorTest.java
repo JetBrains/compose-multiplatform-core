@@ -28,8 +28,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.testing.TestLifecycleOwner;
@@ -48,6 +46,8 @@ import androidx.work.impl.utils.taskexecutor.InstantWorkTaskExecutor;
 import androidx.work.impl.utils.taskexecutor.TaskExecutor;
 import androidx.work.worker.RandomSleepTestWorker;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -199,7 +199,7 @@ public class WorkManagerImplLargeExecutorTest {
         }
 
         @Override
-        public void schedule(@NonNull WorkSpec... workSpecs) {
+        public void schedule(WorkSpec @NonNull ... workSpecs) {
             synchronized (sLock) {
                 for (WorkSpec workSpec : workSpecs) {
                     assertThat(mScheduledWorkSpecIds.contains(workSpec.id), is(false));

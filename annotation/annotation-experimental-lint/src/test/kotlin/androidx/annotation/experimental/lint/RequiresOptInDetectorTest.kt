@@ -23,7 +23,6 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.base64gzip
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintResult
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -44,7 +43,7 @@ class RequiresOptInDetectorTest {
             arrayOf(
                 javaSample("sample.optin.AnnotatedJavaMembers"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.UseJavaExperimentalMembersFromJava")
+                javaSample("sample.optin.UseJavaExperimentalMembersFromJava"),
             )
 
         val expected =
@@ -83,7 +82,7 @@ src/sample/optin/UseJavaExperimentalMembersFromJava.java:61: Error: This declara
             arrayOf(
                 javaSample("sample.optin.AnnotatedJavaClass"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.UseJavaExperimentalClassFromJava")
+                javaSample("sample.optin.UseJavaExperimentalClassFromJava"),
             )
 
         val expected =
@@ -127,7 +126,7 @@ src/sample/optin/UseJavaExperimentalClassFromJava.java:54: Error: This declarati
                 javaSample("sample.optin.AnnotatedJavaClass2"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation2"),
-                javaSample("sample.optin.UseJavaExperimentalMultipleMarkersFromJava")
+                javaSample("sample.optin.UseJavaExperimentalMultipleMarkersFromJava"),
             )
 
         val expected =
@@ -157,7 +156,7 @@ src/sample/optin/UseJavaExperimentalMultipleMarkersFromJava.java:34: Error: This
                 javaSample("sample.optin.AnnotatedJavaMembers"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation2"),
-                ktSample("sample.optin.UseJavaExperimentalFromKt")
+                ktSample("sample.optin.UseJavaExperimentalFromKt"),
             )
 
         val expected =
@@ -227,10 +226,8 @@ src/sample/optin/UseJavaExperimentalFromKt.kt:116: Error: This declaration is op
                 ktSample("sample.optin.ExperimentalKotlinAnnotation"),
                 ktSample("sample.optin.ExperimentalKotlinAnnotation2"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.UseKtExperimentalFromJava")
+                javaSample("sample.optin.UseKtExperimentalFromJava"),
             )
-
-        // TODO(b/210881073): Access to annotated property `field` is still not detected.
 
         val expected =
             """
@@ -281,7 +278,7 @@ src/sample/optin/UseKtExperimentalFromJava.java:117: Error: This declaration is 
                 SAMPLE_FOO_PACKAGE_INFO,
                 javaSample("sample.optin.foo.AnnotatedJavaPackage"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.UseJavaPackageFromJava")
+                javaSample("sample.optin.UseJavaPackageFromJava"),
             )
 
         val expected =
@@ -316,7 +313,7 @@ src/sample/optin/UseJavaPackageFromJava.java:67: Error: This declaration is opt-
                 SAMPLE_FOO_PACKAGE_INFO,
                 javaSample("sample.optin.foo.AnnotatedJavaPackage"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.foo.RegressionTestJava218798815")
+                javaSample("sample.optin.foo.RegressionTestJava218798815"),
             )
 
         val expected =
@@ -335,7 +332,7 @@ No warnings.
                 SAMPLE_FOO_PACKAGE_INFO,
                 javaSample("sample.optin.foo.AnnotatedJavaPackage"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                ktSample("sample.optin.UseJavaPackageFromKt")
+                ktSample("sample.optin.UseJavaPackageFromKt"),
             )
 
         val expected =
@@ -468,7 +465,7 @@ src/sample/optin/RegressionTestJava192562926.java:52: Error: This declaration is
                 javaSample("sample.optin.AnnotatedJavaClass"),
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
                 javaSample("sample.optin.bar.RegressionTestJava219525415"),
-                javaSample("sample.optin.foo.AnnotatedJavaPackage")
+                javaSample("sample.optin.foo.AnnotatedJavaPackage"),
             )
 
         val expected =
@@ -486,7 +483,7 @@ No warnings.
             arrayOf(
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
                 javaSample("sample.optin.AnnotatedJavaMembers"),
-                ktSample("sample.optin.RegressionTestKotlin298322402")
+                ktSample("sample.optin.RegressionTestKotlin298322402"),
             )
 
         val expected =
@@ -520,7 +517,7 @@ Fix for src/sample/optin/RegressionTestKotlin298322402.kt line 22: Add '@sample.
             arrayOf(
                 javaSample("sample.optin.AnnotatedJavaClassWithMessage"),
                 javaSample("sample.optin.ExperimentalJavaAnnotationWithMessage"),
-                javaSample("sample.optin.UseJavaExperimentalWithMessageFromJava")
+                javaSample("sample.optin.UseJavaExperimentalWithMessageFromJava"),
             )
 
         val expected =
@@ -561,23 +558,19 @@ src/sample/optin/UseJavaExperimentalWithMessageFromJava.java:51: Error: Don't us
      * experimentally-annotated annotations.
      */
     @Test
-    @Ignore("b/313686921")
     fun regressionTestJava313686921() {
         val input =
             arrayOf(
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.RegressionTestJava313686921")
+                javaSample("sample.optin.RegressionTestJava313686921"),
             )
 
         val expected =
             """
-src/sample/optin/RegressionTestJava313686921.java:31: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalJavaAnnotation or @OptIn(markerClass = sample.optin.ExperimentalJavaAnnotation.class) [UnsafeOptInUsageError]
-        return param;
-               ~~~~~
-src/sample/optin/RegressionTestJava313686921.java:43: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalJavaAnnotation or @OptIn(markerClass = sample.optin.ExperimentalJavaAnnotation.class) [UnsafeOptInUsageError]
-        unsafeAnnotatedAnnotationUsageOnMethod("param");
-        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-2 errors, 0 warnings
+src/sample/optin/RegressionTestJava313686921.java:30: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalJavaAnnotation or @OptIn(markerClass = sample.optin.ExperimentalJavaAnnotation.class) [UnsafeOptInUsageError]
+    public void unsafeAnnotatedAnnotationUsageOnParam(@AnnotatedJavaAnnotation Object param) {
+                                                                                      ~~~~~
+1 errors, 0 warnings
         """
                 .trimIndent()
 
@@ -589,19 +582,18 @@ src/sample/optin/RegressionTestJava313686921.java:43: Error: This declaration is
      * experimentally-annotated annotations.
      */
     @Test
-    @Ignore("b/313686921")
     fun regressionTestKotlin313686921() {
         val input =
             arrayOf(
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                ktSample("sample.optin.RegressionTestKotlin313686921")
+                ktSample("sample.optin.RegressionTestKotlin313686921"),
             )
 
         val expected =
             """
-src/sample/optin/AnnotatedKotlinAnnotation.kt:22: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalJavaAnnotation or @OptIn(markerClass = sample.optin.ExperimentalJavaAnnotation.class) [UnsafeOptInUsageError]
-    return param
-           ~~~~~
+src/sample/optin/AnnotatedKotlinAnnotation.kt:21: Error: This declaration is opt-in and its usage should be marked with @sample.optin.ExperimentalJavaAnnotation or @OptIn(markerClass = sample.optin.ExperimentalJavaAnnotation.class) [UnsafeOptInUsageError]
+fun unsafeAnnotatedAnnotationUsage(@AnnotatedKotlinAnnotation param: Any): Any {
+                                                              ~~~~~
 1 errors, 0 warnings
         """
                 .trimIndent()
@@ -611,12 +603,11 @@ src/sample/optin/AnnotatedKotlinAnnotation.kt:22: Error: This declaration is opt
 
     /** Regression test for b/344616929 that shows where to put @OptIn: use-site! */
     @Test
-    @Ignore("b/313686921")
     fun regressionTestJava344616929() {
         val input =
             arrayOf(
                 javaSample("sample.optin.ExperimentalJavaAnnotation"),
-                javaSample("sample.optin.RegressionTestJava344616929")
+                javaSample("sample.optin.RegressionTestJava344616929"),
             )
         check(*input).expectClean()
     }
@@ -716,7 +707,7 @@ src/sample/optin/AnnotatedKotlinAnnotation.kt:22: Error: This declaration is opt
                     "fO9L/GD1JCrgGH+hnrA5kwRTjciCr9/MrOyc77ccEAaF+b1A20tLgF66AA5z" +
                     "RiYRBtR4h6UIUKJBBShJCF0rclSKoGizxZGAQCZwMeCOcgTYj5wAcGviRdH0" +
                     "BDNBILRiSxIIwM+INYEgPAzSjhyOyija7bBpx0wwAd6sbCDlbEBYC9RiDA55" +
-                    "AGF9KXfGAwAA"
+                    "AGF9KXfGAwAA",
             )
 
         /**
@@ -738,7 +729,7 @@ src/sample/optin/AnnotatedKotlinAnnotation.kt:22: Error: This declaration is opt
                     "9qS+rTFZpB59XlHSW+X3vLi5tZM/PZQ3Xb7gv1uwhMyhTO+gl5VxxYLtDU7s" +
                     "y189eGShXzj1W67TuuB0+QDWvG+gmHlzKTkYmEYYWBhBMcPIJMKAmjBgSQaU" +
                     "qlABShpD14oc4SIo2mxxpDCQCVwMuBMGAuxCTia4NfGiaLqPmWxwaxVE0crF" +
-                    "iDUZITwMSkjI4aiMot0Sm3bMZBXgzcoGUs4GhLVALSHgkAcAwvFVfOcDAAA="
+                    "iDUZITwMSkjI4aiMot0Sm3bMZBXgzcoGUs4GhLVALSHgkAcAwvFVfOcDAAA=",
             )
     }
 }

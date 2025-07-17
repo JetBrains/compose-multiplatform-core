@@ -21,9 +21,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.CancellationSignal;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.os.OperationCanceledException;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Helper for accessing features in {@link ContentResolver} in a backwards
@@ -72,11 +73,10 @@ public final class ContentResolverCompat {
      * {@link #query(ContentResolver, Uri, String[], String, String[], String, CancellationSignal)}
      */
     @Deprecated
-    @Nullable
-    public static Cursor query(@NonNull ContentResolver resolver,
-            @NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
-            @Nullable String[] selectionArgs, @Nullable String sortOrder,
-            @Nullable androidx.core.os.CancellationSignal cancellationSignal) {
+    public static @Nullable Cursor query(@NonNull ContentResolver resolver,
+            @NonNull Uri uri, String @Nullable [] projection, @Nullable String selection,
+            String @Nullable [] selectionArgs, @Nullable String sortOrder,
+            androidx.core.os.@Nullable CancellationSignal cancellationSignal) {
         return query(resolver, uri, projection, selection, selectionArgs, sortOrder,
                 cancellationSignal != null
                         ? (CancellationSignal) cancellationSignal.getCancellationSignalObject() :
@@ -118,10 +118,9 @@ public final class ContentResolverCompat {
      * @return A Cursor object, which is positioned before the first entry, or null
      * @see Cursor
      */
-    @Nullable
-    public static Cursor query(@NonNull ContentResolver resolver,
-            @NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
-            @Nullable String[] selectionArgs, @Nullable String sortOrder,
+    public static @Nullable Cursor query(@NonNull ContentResolver resolver,
+            @NonNull Uri uri, String @Nullable [] projection, @Nullable String selection,
+            String @Nullable [] selectionArgs, @Nullable String sortOrder,
             @Nullable CancellationSignal cancellationSignal) {
         try {
             return resolver.query(uri, projection, selection, selectionArgs, sortOrder,

@@ -41,13 +41,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.util.fastFilter
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -78,6 +81,22 @@ class AnnotatedStringFromHtmlTest {
                     add { pushStyle(style) }
                 }
 
+                fun addBullet(level: Int) {
+                    pushStyle(
+                        ParagraphStyle(
+                            textIndent =
+                                TextIndent(
+                                    Bullet.DefaultIndentation * level,
+                                    Bullet.DefaultIndentation * level,
+                                )
+                        )
+                    )
+                    pushBullet(Bullet.Default)
+                    append("a")
+                    pop()
+                    pop()
+                }
+
                 add { pushLink(LinkAnnotation.Url("https://example.com")) }
                 add { pushStringAnnotation("foo", "Bar") }
                 addStyle(SpanStyle(fontWeight = FontWeight.Bold))
@@ -94,6 +113,10 @@ class AnnotatedStringFromHtmlTest {
                 addStyle(SpanStyle(baselineShift = BaselineShift.Superscript))
                 addStyle(SpanStyle(fontFamily = FontFamily.Monospace))
                 addStyle(SpanStyle(textDecoration = TextDecoration.Underline))
+                addBullet(level = 1)
+                addBullet(level = 2)
+                addBullet(level = 1)
+                append(" ")
             }
 
             val actual =
@@ -111,6 +134,9 @@ class AnnotatedStringFromHtmlTest {
                 .inOrder()
             assertThat(actual.getLinkAnnotations(0, actual.length))
                 .containsExactlyElementsIn(expected.getLinkAnnotations(0, expected.length))
+                .inOrder()
+            assertThat(actual.annotations!!.fastFilter { it.item is Bullet })
+                .containsExactlyElementsIn(expected.annotations!!.fastFilter { it.item is Bullet })
                 .inOrder()
         }
     }
@@ -177,7 +203,7 @@ class AnnotatedStringFromHtmlTest {
                 .containsExactly(
                     AnnotatedString.Range("value1", 0, 1, "key1"),
                     AnnotatedString.Range("value2", 0, 1, "key2"),
-                    AnnotatedString.Range("valueThree", 0, 1, "keythree")
+                    AnnotatedString.Range("valueThree", 0, 1, "keythree"),
                 )
         }
     }
@@ -197,7 +223,7 @@ class AnnotatedStringFromHtmlTest {
             assertThat(actual.getStringAnnotations(0, actual.length))
                 .containsExactly(
                     AnnotatedString.Range("val1", 0, 1, "key1"),
-                    AnnotatedString.Range("val2", 2, 3, "key2")
+                    AnnotatedString.Range("val2", 2, 3, "key2"),
                 )
         }
     }
@@ -211,7 +237,7 @@ class AnnotatedStringFromHtmlTest {
             assertThat(actual.text).isEqualTo("aa")
             assertThat(actual.spanStyles)
                 .containsExactly(
-                    AnnotatedString.Range(SpanStyle(fontWeight = FontWeight.Bold), 1, 2),
+                    AnnotatedString.Range(SpanStyle(fontWeight = FontWeight.Bold), 1, 2)
                 )
             assertThat(actual.getStringAnnotations(0, actual.length))
                 .containsExactly(AnnotatedString.Range("value1", 0, 1, "key1"))
@@ -361,6 +387,30 @@ class AnnotatedStringFromHtmlTest {
     }
 
     @Test
+    fun verify_bulletSpanInternal() {
+        val spannable = SpannableStringBuilder()
+        spannable.append(
+            "a",
+            BulletSpanWithLevel(Bullet.Default, 1, 0),
+            Spanned.SPAN_INCLUSIVE_INCLUSIVE,
+        )
+
+        val expected = buildAnnotatedString {
+            withStyle(
+                ParagraphStyle(
+                    textIndent = TextIndent(Bullet.DefaultIndentation, Bullet.DefaultIndentation)
+                )
+            ) {
+                append("a")
+                addBullet(Bullet.Default, 0, 1)
+            }
+        }
+        assertThat(spannable.toAnnotatedString().text).isEqualTo(expected.text)
+        assertThat(spannable.toAnnotatedString().annotations)
+            .containsExactlyElementsIn(expected.annotations)
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     fun link_appliesColorFromHtmlTag() {
         val stringWithColoredLink = "<span style=\"color:blue\"><a href=\"url\">link</a></span>"
@@ -376,21 +426,40 @@ class AnnotatedStringFromHtmlTest {
 
     @Test
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
-    fun link_appliesColorFromMethod() {
-        val stringWithColoredLink = "<span style=\"color:blue\"><a href=\"url\">link</a></span>"
+    fun link_appliesColorFromHtmlTag_rightMostAlwaysWinsInNestedStyling() {
+        val stringWithColoredLink = "<span style=\"color:blue\">text<a href=\"url\">link</a></span>"
         val annotatedString =
             AnnotatedString.fromHtml(
                 stringWithColoredLink,
-                TextLinkStyles(SpanStyle(color = Color.Green))
+                TextLinkStyles(SpanStyle(color = Color.Green)),
             )
 
         rule.setContent { BasicText(text = annotatedString) }
 
+        // b/347661747 closing tags always win in fromHtml method therefore nested styling is not
+        // fully supported.
         rule
-            .onNode(hasClickAction(), useUnmergedTree = true)
+            .onNodeWithText("text", substring = true)
             .captureToImage()
-            .assertContainsColor(Color.Green)
-            .assertDoesNotContainColor(Color.Blue)
+            .assertContainsColor(Color.Blue)
+            .assertDoesNotContainColor(Color.Green)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    fun link_appliesColorFromMethod_whenNoNestedStyling() {
+        val stringWithColoredLink = "<a href=\"url\">link</a>"
+        val annotatedString =
+            AnnotatedString.fromHtml(
+                stringWithColoredLink,
+                TextLinkStyles(SpanStyle(color = Color.Green)),
+            )
+
+        rule.setContent { BasicText(text = annotatedString) }
+
+        // b/347661747 closing tags always win in fromHtml method therefore nested styling is not
+        // fully supported.
+        rule.onNodeWithText("link").captureToImage().assertContainsColor(Color.Green)
     }
 
     @Test
@@ -400,7 +469,7 @@ class AnnotatedStringFromHtmlTest {
         val annotatedString =
             AnnotatedString.fromHtml(
                 stringWithColoredLink,
-                TextLinkStyles(SpanStyle(background = Color.Red))
+                TextLinkStyles(SpanStyle(background = Color.Red)),
             )
 
         rule.setContent { BasicText(text = annotatedString) }
@@ -425,7 +494,7 @@ class AnnotatedStringFromHtmlTest {
                     hoveredStyle = SpanStyle(color = Color.Blue),
                     pressedStyle = SpanStyle(color = Color.Gray),
                 ),
-                linkInteractionListener = {}
+                linkInteractionListener = {},
             )
 
         val link = annotatedString.getLinkAnnotations(0, 4).first().item as LinkAnnotation.Url

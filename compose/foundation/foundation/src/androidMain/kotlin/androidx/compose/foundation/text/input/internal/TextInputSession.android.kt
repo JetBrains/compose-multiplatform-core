@@ -33,20 +33,13 @@ import androidx.compose.ui.text.input.TextFieldValue
  * [StatelessInputConnection] from [TextFieldState] for testability.
  */
 @OptIn(ExperimentalFoundationApi::class)
-internal interface TextInputSession {
+internal interface TextInputSession : ImeEditCommandScope {
 
     /**
      * The current [TextFieldValue] in this input session. This value is typically supplied by a
      * backing [TextFieldState] that is used to initialize the session.
      */
     val text: TextFieldCharSequence
-
-    /**
-     * Callback to execute for InputConnection to communicate the changes requested by the IME.
-     *
-     * @param block Lambda scoped to an EditingBuffer to apply changes direct onto a buffer.
-     */
-    fun requestEdit(block: EditingBuffer.() -> Unit)
 
     /** Delegates IME requested KeyEvents. */
     fun sendKeyEvent(keyEvent: KeyEvent)
@@ -66,6 +59,6 @@ internal interface TextInputSession {
     /** Called from [InputConnection.previewHandwritingGesture]. */
     fun previewHandwritingGesture(
         gesture: PreviewableHandwritingGesture,
-        cancellationSignal: CancellationSignal?
+        cancellationSignal: CancellationSignal?,
     ): Boolean
 }

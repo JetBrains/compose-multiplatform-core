@@ -20,9 +20,13 @@ import android.app.appsearch.AppSearchManager;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
+import androidx.appsearch.app.AppSearchEnvironmentFactory;
 import androidx.appsearch.app.AppSearchSession;
+import androidx.appsearch.app.EnterpriseGlobalSearchSession;
+import androidx.appsearch.app.ExperimentalAppSearchApi;
+import androidx.appsearch.app.Features;
 import androidx.appsearch.app.GlobalSearchSession;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.platformstorage.converter.SearchContextToPlatformConverter;
@@ -31,9 +35,11 @@ import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * An AppSearch storage system which stores data in the central AppSearch service, available on
@@ -59,10 +65,16 @@ public final class PlatformStorage {
         }
 
         /**
+         * Returns the {@link Context} associated with the {@link AppSearchSession}
+         */
+        public @NonNull Context getContext() {
+            return mContext;
+        }
+
+        /**
          * Returns the name of the database to create or open.
          */
-        @NonNull
-        public String getDatabaseName() {
+        public @NonNull String getDatabaseName() {
             return mDatabaseName;
         }
 
@@ -76,8 +88,7 @@ public final class PlatformStorage {
          * since {@link Executor#execute} won't return anything, we will hang forever waiting for
          * the execution.
          */
-        @NonNull
-        public Executor getWorkerExecutor() {
+        public @NonNull Executor getWorkerExecutor() {
             return mExecutor;
         }
 
@@ -102,6 +113,7 @@ public final class PlatformStorage {
              * using {@link
              * androidx.appsearch.app.SetSchemaRequest.Builder#setSchemaTypeVisibilityForPackage}).
              *
+             * @param context The context used as the parent of the created SearchContext
              * @param databaseName The name of the database.
              * @throws IllegalArgumentException if the databaseName contains {@code '/'}.
              */
@@ -121,15 +133,13 @@ public final class PlatformStorage {
              *
              * @param executor the worker executor used to run heavy background tasks.
              */
-            @NonNull
-            public Builder setWorkerExecutor(@NonNull Executor executor) {
+            public @NonNull Builder setWorkerExecutor(@NonNull Executor executor) {
                 mExecutor = Preconditions.checkNotNull(executor);
                 return this;
             }
 
             /** Builds a {@link SearchContext} instance. */
-            @NonNull
-            public SearchContext build() {
+            public @NonNull SearchContext build() {
                 if (mExecutor == null) {
                     mExecutor = EXECUTOR;
                 }
@@ -149,6 +159,13 @@ public final class PlatformStorage {
         }
 
         /**
+         * Returns the {@link Context} associated with the {@link GlobalSearchSession}
+         */
+        public @NonNull Context getContext() {
+            return mContext;
+        }
+
+        /**
          * Returns the worker executor associated with {@link GlobalSearchSession}.
          *
          * <p>If an executor is not provided to {@link Builder}, the AppSearch default executor will
@@ -158,8 +175,7 @@ public final class PlatformStorage {
          * since {@link Executor#execute} won't return anything, we will hang forever waiting for
          * the execution.
          */
-        @NonNull
-        public Executor getWorkerExecutor() {
+        public @NonNull Executor getWorkerExecutor() {
             return mExecutor;
         }
 
@@ -179,16 +195,14 @@ public final class PlatformStorage {
              *
              * @param executor the worker executor used to run heavy background tasks.
              */
-            @NonNull
-            public Builder setWorkerExecutor(@NonNull Executor executor) {
+            public @NonNull Builder setWorkerExecutor(@NonNull Executor executor) {
                 Preconditions.checkNotNull(executor);
                 mExecutor = executor;
                 return this;
             }
 
             /** Builds a {@link GlobalSearchContext} instance. */
-            @NonNull
-            public GlobalSearchContext build() {
+            public @NonNull GlobalSearchContext build() {
                 if (mExecutor == null) {
                     mExecutor = EXECUTOR;
                 }
@@ -201,7 +215,8 @@ public final class PlatformStorage {
     // execute() won't return anything, we will hang forever waiting for the execution.
     // AppSearch multi-thread execution is guarded by Read & Write Lock in AppSearchImpl, all
     // mutate requests will need to gain write lock and query requests need to gain read lock.
-    static final Executor EXECUTOR = Executors.newCachedThreadPool();
+    static final Executor EXECUTOR = AppSearchEnvironmentFactory.getEnvironmentInstance()
+            .createCachedThreadPoolExecutor();
 
     /**
      * Opens a new {@link AppSearchSession} on this storage.
@@ -210,8 +225,7 @@ public final class PlatformStorage {
      *                {@link AppSearchSession}
      */
     @SuppressLint("WrongConstant")
-    @NonNull
-    public static ListenableFuture<AppSearchSession> createSearchSessionAsync(
+    public static @NonNull ListenableFuture<AppSearchSession> createSearchSessionAsync(
             @NonNull SearchContext context) {
         Preconditions.checkNotNull(context);
         AppSearchManager appSearchManager =
@@ -224,7 +238,7 @@ public final class PlatformStorage {
                     if (result.isSuccess()) {
                         future.set(
                                 new SearchSessionImpl(result.getResultValue(), context.mExecutor,
-                                        new FeaturesImpl(context.mContext)));
+                                        context.mContext));
                     } else {
                         // Without the SuppressLint annotation on the method, this line causes a
                         // lint error because getResultCode isn't defined as returning a value from
@@ -241,8 +255,7 @@ public final class PlatformStorage {
      * Opens a new {@link GlobalSearchSession} on this storage.
      */
     @SuppressLint("WrongConstant")
-    @NonNull
-    public static ListenableFuture<GlobalSearchSession> createGlobalSearchSessionAsync(
+    public static @NonNull ListenableFuture<GlobalSearchSession> createGlobalSearchSessionAsync(
             @NonNull GlobalSearchContext context) {
         Preconditions.checkNotNull(context);
         AppSearchManager appSearchManager =
@@ -253,8 +266,9 @@ public final class PlatformStorage {
                 result -> {
                     if (result.isSuccess()) {
                         future.set(new GlobalSearchSessionImpl(
-                                result.getResultValue(), context.mExecutor,
-                                new FeaturesImpl(context.mContext)));
+                                result.getResultValue(),
+                                context.mExecutor,
+                                context.mContext));
                     } else {
                         // Without the SuppressLint annotation on the method, this line causes a
                         // lint error because getResultCode isn't defined as returning a value from
@@ -265,5 +279,66 @@ public final class PlatformStorage {
                     }
                 });
         return future;
+    }
+
+    /**
+     * Opens a new {@link EnterpriseGlobalSearchSession} on this storage.
+     */
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @SuppressLint("WrongConstant")
+    public static @NonNull ListenableFuture<EnterpriseGlobalSearchSession>
+            createEnterpriseGlobalSearchSessionAsync(@NonNull GlobalSearchContext context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            throw new UnsupportedOperationException(
+                    Features.ENTERPRISE_GLOBAL_SEARCH_SESSION
+                            + " is not supported on this AppSearch implementation");
+        }
+        Preconditions.checkNotNull(context);
+        AppSearchManager appSearchManager =
+                context.mContext.getSystemService(AppSearchManager.class);
+        ResolvableFuture<EnterpriseGlobalSearchSession> future = ResolvableFuture.create();
+        ApiHelperForV.createEnterpriseGlobalSearchSession(
+                appSearchManager,
+                context.mExecutor,
+                result -> {
+                    if (result.isSuccess()) {
+                        future.set(new EnterpriseGlobalSearchSessionImpl(
+                                result.getResultValue(),
+                                context.mExecutor,
+                                context.mContext));
+                    } else {
+                        // Without the SuppressLint annotation on the method, this line causes a
+                        // lint error because getResultCode isn't defined as returning a value from
+                        // AppSearchResult.ResultCode
+                        future.setException(
+                                new AppSearchException(
+                                        result.getResultCode(), result.getErrorMessage()));
+                    }
+                });
+        return future;
+    }
+
+    /**
+     * Returns the {@link Features} to check for the availability of certain features for this
+     * AppSearch storage.
+     */
+    @ExperimentalAppSearchApi
+    public static @NonNull Features getFeatures(@NonNull Context context) {
+        return new FeaturesImpl(context);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private static class ApiHelperForV {
+        private ApiHelperForV() {
+            // This class is not instantiable.
+        }
+
+        @DoNotInline
+        static void createEnterpriseGlobalSearchSession(@NonNull AppSearchManager appSearchManager,
+                @NonNull Executor executor,
+                @NonNull Consumer<android.app.appsearch.AppSearchResult<
+                        android.app.appsearch.EnterpriseGlobalSearchSession>> callback) {
+            appSearchManager.createEnterpriseGlobalSearchSession(executor, callback);
+        }
     }
 }

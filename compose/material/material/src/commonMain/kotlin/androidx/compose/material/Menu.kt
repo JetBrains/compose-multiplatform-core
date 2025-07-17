@@ -60,8 +60,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * <a href="https://material.io/components/menus#dropdown-menu" class="external"
- * target="_blank">Material Design dropdown menu</a>.
+ * [Material Design dropdown menu](https://material.io/components/menus#dropdown-menu)
  *
  * A dropdown menu is a compact way of displaying multiple choices. It appears upon interaction with
  * an element (such as an icon or button) or when users perform a specific action.
@@ -98,7 +97,6 @@ import kotlin.math.min
  * Example usage with a [ScrollState] to control the menu items scroll position:
  *
  * @sample androidx.compose.material.samples.MenuWithScrollStateSample
- *
  * @param expanded whether the menu is expanded or not
  * @param onDismissRequest called when the user requests to dismiss the menu, such as by tapping
  *   outside the menu's bounds
@@ -117,17 +115,15 @@ expect fun DropdownMenu(
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     scrollState: ScrollState = rememberScrollState(),
     properties: PopupProperties = DefaultMenuProperties,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 )
 
 /**
- * <a href="https://material.io/components/menus#dropdown-menu" class="external"
- * target="_blank">Material Design dropdown menu</a> item.
+ * [Material Design dropdown menu](https://material.io/components/menus#dropdown-menu)
  *
  * Example usage:
  *
  * @sample androidx.compose.material.samples.MenuSample
- *
  * @param onClick Called when the menu item was clicked
  * @param modifier The modifier to be applied to the menu item
  * @param enabled Controls the enabled state of the menu item - when `false`, the menu item will not
@@ -146,7 +142,7 @@ expect fun DropdownMenuItem(
     enabled: Boolean = true,
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 )
 
 @Composable
@@ -155,7 +151,7 @@ internal fun DropdownMenuContent(
     transformOriginState: MutableState<TransformOrigin>,
     scrollState: ScrollState,
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     // Menu open/close animation.
     val transition = rememberTransition(expandedStates, "DropDownMenu")
@@ -209,7 +205,7 @@ internal fun DropdownMenuContent(
                 this.alpha = alpha
                 transformOrigin = transformOriginState.value
             },
-        elevation = MenuElevation
+        elevation = MenuElevation,
     ) {
         Column(
             modifier =
@@ -217,7 +213,7 @@ internal fun DropdownMenuContent(
                     .padding(vertical = DropdownMenuVerticalPadding)
                     .width(IntrinsicSize.Max)
                     .verticalScroll(scrollState),
-            content = content
+            content = content,
         )
     }
 }
@@ -229,7 +225,7 @@ internal fun DropdownMenuItemContent(
     enabled: Boolean = true,
     contentPadding: PaddingValues = MenuDefaults.DropdownMenuItemContentPadding,
     interactionSource: MutableInteractionSource? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     // TODO(popam, b/156911853): investigate replacing this Row with ListItem
     Row(
@@ -239,17 +235,17 @@ internal fun DropdownMenuItemContent(
                     enabled = enabled,
                     onClick = onClick,
                     interactionSource = interactionSource,
-                    indication = rippleOrFallbackImplementation(true)
+                    indication = ripple(true),
                 )
                 .fillMaxWidth()
                 // Preferred min and max width used during the intrinsic measurement.
                 .sizeIn(
                     minWidth = DropdownMenuItemDefaultMinWidth,
                     maxWidth = DropdownMenuItemDefaultMaxWidth,
-                    minHeight = DropdownMenuItemDefaultMinHeight
+                    minHeight = DropdownMenuItemDefaultMinHeight,
                 )
                 .padding(contentPadding),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         val typography = MaterialTheme.typography
         ProvideTextStyle(typography.subtitle1) {
@@ -317,13 +313,13 @@ internal fun calculateTransformOrigin(parentBounds: IntRect, menuBounds: IntRect
 internal data class DropdownMenuPositionProvider(
     val contentOffset: DpOffset,
     val density: Density,
-    val onPositionCalculated: (IntRect, IntRect) -> Unit = { _, _ -> }
+    val onPositionCalculated: (IntRect, IntRect) -> Unit = { _, _ -> },
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         // The min margin above and below the menu, relative to the screen.
         val verticalMargin = with(density) { MenuVerticalMargin.roundToPx() }
@@ -347,7 +343,7 @@ internal data class DropdownMenuPositionProvider(
                         rightToAnchorRight,
                         // If the anchor gets outside of the window on the left, we want to position
                         // toDisplayLeft for proximity to the anchor. Otherwise, toDisplayRight.
-                        if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft
+                        if (anchorBounds.left >= 0) rightToWindowRight else leftToWindowLeft,
                     )
                 } else {
                     sequenceOf(
@@ -357,7 +353,7 @@ internal data class DropdownMenuPositionProvider(
                         // position
                         // toDisplayRight for proximity to the anchor. Otherwise, toDisplayLeft.
                         if (anchorBounds.right <= windowSize.width) leftToWindowLeft
-                        else rightToWindowRight
+                        else rightToWindowRight,
                     )
                 }
                 .firstOrNull { it >= 0 && it + popupContentSize.width <= windowSize.width }
@@ -373,7 +369,7 @@ internal data class DropdownMenuPositionProvider(
                     topToAnchorBottom,
                     bottomToAnchorTop,
                     centerToAnchorTop,
-                    bottomToWindowBottom
+                    bottomToWindowBottom,
                 )
                 .firstOrNull {
                     it >= verticalMargin &&
@@ -382,7 +378,7 @@ internal data class DropdownMenuPositionProvider(
 
         onPositionCalculated(
             anchorBounds,
-            IntRect(x, y, x + popupContentSize.width, y + popupContentSize.height)
+            IntRect(x, y, x + popupContentSize.width, y + popupContentSize.height),
         )
         return IntOffset(x, y)
     }

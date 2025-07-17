@@ -16,6 +16,7 @@
 
 package androidx.collection
 
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -79,50 +80,22 @@ class FloatFloatMapTest {
 
     @Test
     fun floatFloatMapInitFunction() {
-        val map1 =
-            floatFloatMapOf(
-                1f,
-                1f,
-            )
+        val map1 = floatFloatMapOf(1f, 1f)
         assertEquals(1, map1.size)
         assertEquals(1f, map1[1f])
 
-        val map2 =
-            floatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-            )
+        val map2 = floatFloatMapOf(1f, 1f, 2f, 2f)
         assertEquals(2, map2.size)
         assertEquals(1f, map2[1f])
         assertEquals(2f, map2[2f])
 
-        val map3 =
-            floatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-            )
+        val map3 = floatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f)
         assertEquals(3, map3.size)
         assertEquals(1f, map3[1f])
         assertEquals(2f, map3[2f])
         assertEquals(3f, map3[3f])
 
-        val map4 =
-            floatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-                4f,
-                4f,
-            )
+        val map4 = floatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f, 4f, 4f)
 
         assertEquals(4, map4.size)
         assertEquals(1f, map4[1f])
@@ -130,19 +103,7 @@ class FloatFloatMapTest {
         assertEquals(3f, map4[3f])
         assertEquals(4f, map4[4f])
 
-        val map5 =
-            floatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-                4f,
-                4f,
-                5f,
-                5f,
-            )
+        val map5 = floatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f, 4f, 4f, 5f, 5f)
 
         assertEquals(5, map5.size)
         assertEquals(1f, map5[1f])
@@ -154,50 +115,22 @@ class FloatFloatMapTest {
 
     @Test
     fun mutableFloatFloatMapInitFunction() {
-        val map1 =
-            mutableFloatFloatMapOf(
-                1f,
-                1f,
-            )
+        val map1 = mutableFloatFloatMapOf(1f, 1f)
         assertEquals(1, map1.size)
         assertEquals(1f, map1[1f])
 
-        val map2 =
-            mutableFloatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-            )
+        val map2 = mutableFloatFloatMapOf(1f, 1f, 2f, 2f)
         assertEquals(2, map2.size)
         assertEquals(1f, map2[1f])
         assertEquals(2f, map2[2f])
 
-        val map3 =
-            mutableFloatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-            )
+        val map3 = mutableFloatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f)
         assertEquals(3, map3.size)
         assertEquals(1f, map3[1f])
         assertEquals(2f, map3[2f])
         assertEquals(3f, map3[3f])
 
-        val map4 =
-            mutableFloatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-                4f,
-                4f,
-            )
+        val map4 = mutableFloatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f, 4f, 4f)
 
         assertEquals(4, map4.size)
         assertEquals(1f, map4[1f])
@@ -205,19 +138,7 @@ class FloatFloatMapTest {
         assertEquals(3f, map4[3f])
         assertEquals(4f, map4[4f])
 
-        val map5 =
-            mutableFloatFloatMapOf(
-                1f,
-                1f,
-                2f,
-                2f,
-                3f,
-                3f,
-                4f,
-                4f,
-                5f,
-                5f,
-            )
+        val map5 = mutableFloatFloatMapOf(1f, 1f, 2f, 2f, 3f, 3f, 4f, 4f, 5f, 5f)
 
         assertEquals(5, map5.size)
         assertEquals(1f, map5[1f])
@@ -225,6 +146,36 @@ class FloatFloatMapTest {
         assertEquals(3f, map5[3f])
         assertEquals(4f, map5[4f])
         assertEquals(5f, map5[5f])
+    }
+
+    @Test
+    fun buildFloatFloatMapFunction() {
+        val contract: Boolean
+        val map = buildFloatFloatMap {
+            contract = true
+            put(1f, 1f)
+            put(2f, 2f)
+        }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertEquals(1f, map[1f])
+        assertEquals(2f, map[2f])
+    }
+
+    @Test
+    fun buildFloatObjectMapWithCapacityFunction() {
+        val contract: Boolean
+        val map =
+            buildFloatFloatMap(20) {
+                contract = true
+                put(1f, 1f)
+                put(2f, 2f)
+            }
+        assertTrue(contract)
+        assertEquals(2, map.size)
+        assertTrue(map.capacity >= 18)
+        assertEquals(1f, map[1f])
+        assertEquals(2f, map[2f])
     }
 
     @Test
@@ -597,28 +548,29 @@ class FloatFloatMapTest {
                 "${order[1].toFloat()}, ${order[2].toFloat()}=${order[2].toFloat()}," +
                 " ${order[3].toFloat()}=${order[3].toFloat()}, ${order[4].toFloat()}=" +
                 "${order[4].toFloat()}",
-            map.joinToString()
+            map.joinToString(),
         )
         assertEquals(
             "x${order[0].toFloat()}=${order[0].toFloat()}, ${order[1].toFloat()}=" +
-                "${order[1].toFloat()}, ${order[2].toFloat()}=${order[2].toFloat()}...",
-            map.joinToString(prefix = "x", postfix = "y", limit = 3)
+                "${order[1].toFloat()}, ${order[2].toFloat()}=${order[2].toFloat()}, ...y",
+            map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
             ">${order[0].toFloat()}=${order[0].toFloat()}-${order[1].toFloat()}=" +
                 "${order[1].toFloat()}-${order[2].toFloat()}=${order[2].toFloat()}-" +
                 "${order[3].toFloat()}=${order[3].toFloat()}-${order[4].toFloat()}=" +
                 "${order[4].toFloat()}<",
-            map.joinToString(separator = "-", prefix = ">", postfix = "<")
+            map.joinToString(separator = "-", prefix = ">", postfix = "<"),
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
-            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] }
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
+            map.joinToString(limit = 3) { key, _ -> names[key.toInt()] },
         )
     }
 
     @Test
+    @JsName("jsEquals")
     fun equals() {
         val map = MutableFloatFloatMap()
         map[1f] = 1f
@@ -631,6 +583,13 @@ class FloatFloatMapTest {
 
         map2[1f] = 1f
         assertEquals(map, map2)
+
+        // Same number of items but different keys to test that looking up
+        // a non-existing entry doesn't throw during equals()
+        assertNotEquals(
+            mutableFloatFloatMapOf(1f, 1f, 2f, 2f),
+            mutableFloatFloatMapOf(1f, 1f, 3f, 2f),
+        )
     }
 
     @Test
@@ -749,5 +708,16 @@ class FloatFloatMapTest {
 
         assertEquals(1024, map.trim())
         assertEquals(0, map.trim())
+    }
+
+    @Test
+    fun insertManyRemoveMany() {
+        val map = MutableFloatFloatMap()
+
+        for (i in 0..1000000) {
+            map[i.toFloat()] = i.toFloat()
+            map.remove(i.toFloat())
+            assertTrue(map.capacity < 16, "Map grew larger than 16 after step $i")
+        }
     }
 }

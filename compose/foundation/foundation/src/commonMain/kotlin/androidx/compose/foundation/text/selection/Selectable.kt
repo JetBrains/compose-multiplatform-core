@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.MultiParagraph
 import androidx.compose.ui.text.TextLayoutInput
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.Constraints
 
@@ -70,6 +71,14 @@ internal interface Selectable {
      *   composing.
      */
     fun getLayoutCoordinates(): LayoutCoordinates?
+
+    /**
+     * Return the [TextLayoutResult] of the selectable.
+     *
+     * @return [TextLayoutResult] of the [Selectable]. This could be null if called before
+     *   composing.
+     */
+    fun textLayoutResult(): TextLayoutResult?
 
     /**
      * Return the [AnnotatedString] of the [Selectable].
@@ -134,4 +143,12 @@ internal interface Selectable {
      * counts as the last visible line.
      */
     fun getLastVisibleOffset(): Int
+
+    /**
+     * Returns the text line height for the given offset.
+     *
+     * @param offset a character offset
+     * @return the line height for the given offset
+     */
+    fun getLineHeight(offset: Int): Float
 }

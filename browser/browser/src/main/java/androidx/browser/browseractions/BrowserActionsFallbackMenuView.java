@@ -22,9 +22,10 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.LinearLayout;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.browser.R;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * The class responsible for deciding the size of Browser Actions context menu.

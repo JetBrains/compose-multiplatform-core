@@ -21,11 +21,12 @@ import android.os.Bundle;
 import android.text.InputType;
 
 import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
 import androidx.leanback.R;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -154,8 +155,7 @@ public class GuidedAction extends Action {
          * Returns Context of this Builder.
          * @return Context of this Builder.
          */
-        @NonNull
-        public Context getContext() {
+        public @NonNull Context getContext() {
             return mContext;
         }
 
@@ -556,7 +556,7 @@ public class GuidedAction extends Action {
          * @param hints List of hints for autofill.
          * @return The same BuilderBase object.
          */
-        public B autofillHints(@Nullable String... hints) {
+        public B autofillHints(String @Nullable ... hints) {
             mAutofillHints = hints;
             return (B) this;
         }
@@ -587,8 +587,7 @@ public class GuidedAction extends Action {
          * Builds the GuidedAction corresponding to this Builder.
          * @return The GuidedAction as configured through this Builder.
          */
-        @NonNull
-        public GuidedAction build() {
+        public @NonNull GuidedAction build() {
             GuidedAction action = new GuidedAction();
             applyValues(action);
             return action;
@@ -632,8 +631,7 @@ public class GuidedAction extends Action {
      * Returns the title of this action.
      * @return The title set when this action was built.
      */
-    @Nullable
-    public CharSequence getTitle() {
+    public @Nullable CharSequence getTitle() {
         return getLabel1();
     }
 
@@ -650,8 +648,7 @@ public class GuidedAction extends Action {
      * {@link #getTitle()}.
      * @return Optional title text to edit instead of {@link #getTitle()}.
      */
-    @Nullable
-    public CharSequence getEditTitle() {
+    public @Nullable CharSequence getEditTitle() {
         return mEditTitle;
     }
 
@@ -668,8 +665,7 @@ public class GuidedAction extends Action {
      * {@link #getDescription()}.
      * @return Optional description text to edit instead of {@link #getDescription()}.
      */
-    @Nullable
-    public CharSequence getEditDescription() {
+    public @Nullable CharSequence getEditDescription() {
         return mEditDescription;
     }
 
@@ -695,8 +691,7 @@ public class GuidedAction extends Action {
      * Returns the description of this action.
      * @return The description of this action.
      */
-    @Nullable
-    public CharSequence getDescription() {
+    public @Nullable CharSequence getDescription() {
         return getLabel2();
     }
 
@@ -712,8 +707,7 @@ public class GuidedAction extends Action {
      * Returns the intent associated with this action.
      * @return The intent set when this action was built.
      */
-    @Nullable
-    public Intent getIntent() {
+    public @Nullable Intent getIntent() {
         return mIntent;
     }
 
@@ -899,8 +893,7 @@ public class GuidedAction extends Action {
      * @return List of sub actions or null if sub actions list is not enabled.
      */
     @SuppressLint("NullableCollection")
-    @Nullable
-    public List<GuidedAction> getSubActions() {
+    public @Nullable List<GuidedAction> getSubActions() {
         return mSubActions;
     }
 

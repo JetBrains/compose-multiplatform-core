@@ -18,9 +18,10 @@ package androidx.pdf.util;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +39,7 @@ public class BundleUtils {
      * Reads [String, String] key value pairs from a {@link Bundle}. Returns null values if the
      * value associated with a given key is not a String.
      */
-    @Nullable
-    public static Map<String, String> getMapFrom(@NonNull Bundle bundle) {
+    public static @Nullable Map<String, String> getMapFrom(@NonNull Bundle bundle) {
         if (bundle == null) {
             return null;
         }

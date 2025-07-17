@@ -21,9 +21,10 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
 import android.os.Bundle;
 import android.os.Parcelable;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,8 +36,7 @@ import java.util.List;
  */
 public class ParcelUtils {
 
-    @NonNull
-    private static final String INNER_BUNDLE_KEY = "a";
+    private static final @NonNull String INNER_BUNDLE_KEY = "a";
 
     private ParcelUtils() { }
 
@@ -44,8 +44,7 @@ public class ParcelUtils {
      * Turn a VersionedParcelable into a Parcelable
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @NonNull
-    public static Parcelable toParcelable(@Nullable VersionedParcelable obj) {
+    public static @NonNull Parcelable toParcelable(@Nullable VersionedParcelable obj) {
         return new ParcelImpl(obj);
     }
 
@@ -54,8 +53,7 @@ public class ParcelUtils {
      */
     @RestrictTo(LIBRARY_GROUP_PREFIX)
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    @Nullable
-    public static <T extends VersionedParcelable> T fromParcelable(
+    public static <T extends VersionedParcelable> @Nullable T fromParcelable(
             @NonNull Parcelable p
     ) {
         if (!(p instanceof ParcelImpl)) {
@@ -82,8 +80,8 @@ public class ParcelUtils {
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @Nullable
-    public static <T extends VersionedParcelable> T fromInputStream(@NonNull InputStream input) {
+    public static <T extends VersionedParcelable> @Nullable T fromInputStream(
+            @NonNull InputStream input) {
         VersionedParcelStream stream = new VersionedParcelStream(input, null);
         return stream.readVersionedParcelable();
     }
@@ -107,9 +105,8 @@ public class ParcelUtils {
      *
      * Returns null if the bundle isn't present or ClassLoader issues occur.
      */
-    @Nullable
     @SuppressWarnings({"TypeParameterUnusedInFormals", "deprecation"})
-    public static <T extends VersionedParcelable> T getVersionedParcelable(
+    public static <T extends VersionedParcelable> @Nullable T getVersionedParcelable(
             @NonNull Bundle bundle, @NonNull String key) {
         try {
             Bundle innerBundle = bundle.getParcelable(key);
@@ -144,8 +141,7 @@ public class ParcelUtils {
      * Returns an empty list if the bundle isn't present or ClassLoader issues occur.
      */
     @SuppressWarnings({"TypeParameterUnusedInFormals", "unchecked", "deprecation"})
-    @NonNull
-    public static <T extends VersionedParcelable> List<T> getVersionedParcelableList(
+    public static <T extends VersionedParcelable> @NonNull List<T> getVersionedParcelableList(
             @NonNull Bundle bundle,
             @Nullable String key
     ) {

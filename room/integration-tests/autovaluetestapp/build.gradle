@@ -20,11 +20,12 @@ plugins {
 }
 
 dependencies {
+    implementation(libs.jspecify)
     implementation(project(":room:room-common"))
     implementation(project(":room:room-runtime"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
 
-    androidTestAnnotationProcessor project(":room:room-compiler")
+    androidTestAnnotationProcessor(project(":room:room-compiler"))
     androidTestAnnotationProcessor(libs.autoValue)
     androidTestAnnotationProcessor(libs.autoValueParcel)
 
@@ -35,14 +36,14 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it's own MockMaker
-    androidTestImplementation(libs.dexmakerMockito, excludes.bytebuddy) // DexMaker has it's own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
 
     testImplementation(libs.junit)
 }
 
 android {
-    namespace "androidx.room.integration.autovaluetestapp"
+    namespace = "androidx.room.integration.autovaluetestapp"
 }
 
 // Enable parameter names to support Room incremental when its a project() dep.

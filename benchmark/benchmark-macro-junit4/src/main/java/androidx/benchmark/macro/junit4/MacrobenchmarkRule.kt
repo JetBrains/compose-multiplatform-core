@@ -16,19 +16,17 @@
 
 package androidx.benchmark.macro.junit4
 
-import android.Manifest
 import androidx.annotation.IntRange
 import androidx.benchmark.Arguments
+import androidx.benchmark.ExperimentalBenchmarkConfigApi
+import androidx.benchmark.ExperimentalConfig
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.benchmark.macro.Metric
 import androidx.benchmark.macro.StartupMode
 import androidx.benchmark.macro.macrobenchmarkWithStartupMode
-import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.benchmark.perfetto.PerfettoConfig
-import androidx.test.rule.GrantPermissionRule
 import org.junit.Assume.assumeTrue
-import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
@@ -36,31 +34,12 @@ import org.junit.runners.model.Statement
 /**
  * JUnit rule for benchmarking large app operations like startup, scrolling, or animations.
  *
- * ```
- *     @get:Rule
- *     val benchmarkRule = MacrobenchmarkRule()
- *
- *     @Test
- *     fun startup() = benchmarkRule.measureRepeated(
- *         packageName = "com.example.my.application.id"
- *         metrics = listOf(StartupTimingMetric()),
- *         iterations = 5,
- *         startupMode = StartupMode.COLD,
- *         setupBlock = {
- *           pressHome()
- *         }
- *     ) { // this = MacrobenchmarkScope
- *         val intent = Intent()
- *         intent.setPackage("mypackage.myapp")
- *         intent.setAction("mypackage.myapp.myaction")
- *         startActivityAndWait(intent)
- *     }
- * ```
- *
  * See the [Macrobenchmark Guide](https://developer.android.com/studio/profile/macrobenchmark) for
  * more information on macrobenchmarks.
+ *
+ * @sample androidx.benchmark.samples.macrobenchmarkRuleSample
  */
-public class MacrobenchmarkRule : TestRule {
+class MacrobenchmarkRule : TestRule {
     private lateinit var currentDescription: Description
 
     /**
@@ -103,7 +82,7 @@ public class MacrobenchmarkRule : TestRule {
         startupMode: StartupMode? = null,
         @IntRange(from = 1) iterations: Int,
         setupBlock: MacrobenchmarkScope.() -> Unit = {},
-        measureBlock: MacrobenchmarkScope.() -> Unit
+        measureBlock: MacrobenchmarkScope.() -> Unit,
     ) {
         macrobenchmarkWithStartupMode(
             uniqueName = currentDescription.toUniqueName(),
@@ -114,9 +93,9 @@ public class MacrobenchmarkRule : TestRule {
             compilationMode = compilationMode,
             iterations = iterations,
             startupMode = startupMode,
-            perfettoConfig = null,
+            experimentalConfig = null,
             setupBlock = setupBlock,
-            measureBlock = measureBlock
+            measureBlock = measureBlock,
         )
     }
 
@@ -157,19 +136,18 @@ public class MacrobenchmarkRule : TestRule {
      * @param iterations Number of times the [measureBlock] will be run during measurement. Note
      *   that total iteration count may not match, due to warmup iterations needed for the
      *   [compilationMode].
-     * @param perfettoConfig Configuration for Perfetto trace capture during each iteration. Note
-     *   that insufficient or invalid configs may result in built-in [Metric]s not working.
+     * @param experimentalConfig Configuration for experimental features.
      * @param setupBlock The block performing app actions each iteration, prior to the
      *   [measureBlock]. For example, navigating to a UI where scrolling will be measured.
      * @param measureBlock The block performing app actions to benchmark each iteration.
      */
-    @ExperimentalPerfettoCaptureApi
+    @ExperimentalBenchmarkConfigApi
     @JvmOverloads
     fun measureRepeated(
         packageName: String,
         metrics: List<Metric>,
         @IntRange(from = 1) iterations: Int,
-        perfettoConfig: PerfettoConfig,
+        experimentalConfig: ExperimentalConfig,
         compilationMode: CompilationMode = CompilationMode.DEFAULT,
         startupMode: StartupMode? = null,
         setupBlock: MacrobenchmarkScope.() -> Unit = {},
@@ -183,23 +161,50 @@ public class MacrobenchmarkRule : TestRule {
             metrics = metrics,
             compilationMode = compilationMode,
             iterations = iterations,
-            perfettoConfig = perfettoConfig,
+            experimentalConfig = experimentalConfig,
             startupMode = startupMode,
             setupBlock = setupBlock,
-            measureBlock = measureBlock
+            measureBlock = measureBlock,
         )
     }
 
-    override fun apply(base: Statement, description: Description): Statement {
-        // Grant external storage, as it may be needed for test output directory.
-        return RuleChain.outerRule(
-                GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            )
-            .around(::applyInternal)
-            .apply(base, description)
-    }
+    @ExperimentalBenchmarkConfigApi
+    @JvmOverloads
+    @Deprecated(
+        "Deprecated in favour of a variant that accepts experimental config",
+        replaceWith =
+            ReplaceWith(
+                "measureRepeated(packageName, metrics, iterations,experimentalConfig, " +
+                    "compilationMode, startupMode, setupBlock, measureBlock)"
+            ),
+        level = DeprecationLevel.WARNING,
+    )
+    /**
+     * @param perfettoConfig Configuration for Perfetto trace capture during each iteration. Note
+     *   that insufficient or invalid configs may result in built-in [Metric]s not working.
+     */
+    fun measureRepeated(
+        packageName: String,
+        metrics: List<Metric>,
+        @IntRange(from = 1) iterations: Int,
+        perfettoConfig: PerfettoConfig,
+        compilationMode: CompilationMode = CompilationMode.DEFAULT,
+        startupMode: StartupMode? = null,
+        setupBlock: MacrobenchmarkScope.() -> Unit = {},
+        measureBlock: MacrobenchmarkScope.() -> Unit,
+    ) =
+        measureRepeated(
+            packageName,
+            metrics,
+            iterations,
+            ExperimentalConfig(perfettoConfig = perfettoConfig),
+            compilationMode,
+            startupMode,
+            setupBlock,
+            measureBlock,
+        )
 
-    private fun applyInternal(base: Statement, description: Description) =
+    override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {
             override fun evaluate() {
                 assumeTrue(Arguments.RuleType.Macrobenchmark in Arguments.enabledRules)

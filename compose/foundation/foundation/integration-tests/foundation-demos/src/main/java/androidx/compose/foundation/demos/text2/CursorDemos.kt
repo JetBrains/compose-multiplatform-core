@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package androidx.compose.foundation.demos.text2
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -56,7 +53,7 @@ fun TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
         var showDialog by remember { mutableStateOf(false) }
         Button(
             onClick = { showDialog = true },
-            modifier = Modifier.focusProperties { canFocus = false }
+            modifier = Modifier.focusProperties { canFocus = false },
         ) {
             Text("Open Dialog")
         }
@@ -68,7 +65,7 @@ fun TextFieldCursorNotBlinkingInUnfocusedWindowDemo() {
                         "Hello! This is a dialog.",
                         Modifier.padding(20.dp)
                             .focusRequester(dialogFocusRequester)
-                            .background(Color.DarkGray)
+                            .background(Color.DarkGray),
                     )
                     LaunchedEffect(Unit) { dialogFocusRequester.requestFocus() }
                 }

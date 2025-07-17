@@ -25,6 +25,7 @@ import androidx.work.impl.WorkDatabase
 import androidx.work.impl.WorkManagerImpl
 import androidx.work.launchOperation
 import java.util.UUID
+import kotlin.collections.removeLast as removeLastKt
 
 private fun cancel(workManagerImpl: WorkManagerImpl, workSpecId: String) {
     iterativelyCancelWorkAndDependents(workManagerImpl.workDatabase, workSpecId)
@@ -39,7 +40,7 @@ private fun reschedulePendingWorkers(workManagerImpl: WorkManagerImpl) {
     Schedulers.schedule(
         workManagerImpl.configuration,
         workManagerImpl.workDatabase,
-        workManagerImpl.schedulers
+        workManagerImpl.schedulers,
     )
 }
 
@@ -48,7 +49,7 @@ private fun iterativelyCancelWorkAndDependents(workDatabase: WorkDatabase, workS
     val dependencyDao = workDatabase.dependencyDao()
     val idsToProcess = mutableListOf(workSpecId)
     while (idsToProcess.isNotEmpty()) {
-        val id = idsToProcess.removeLast()
+        val id = idsToProcess.removeLastKt()
         // Don't fail already cancelled work.
         val state = workSpecDao.getState(id)
         if (state !== WorkInfo.State.SUCCEEDED && state !== WorkInfo.State.FAILED) {
@@ -65,8 +66,12 @@ private fun iterativelyCancelWorkAndDependents(workDatabase: WorkDatabase, workS
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
-    launchOperation(workManagerImpl.workTaskExecutor.serialTaskExecutor) {
+public fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
+    launchOperation(
+        tracer = workManagerImpl.configuration.tracer,
+        label = "CancelWorkById",
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
+    ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction { cancel(workManagerImpl, id.toString()) }
         reschedulePendingWorkers(workManagerImpl)
@@ -79,8 +84,12 @@ fun forId(id: UUID, workManagerImpl: WorkManagerImpl): Operation =
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
-    launchOperation(workManagerImpl.workTaskExecutor.serialTaskExecutor) {
+public fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
+    launchOperation(
+        tracer = workManagerImpl.configuration.tracer,
+        label = "CancelWorkByTag_$tag",
+        executor = workManagerImpl.workTaskExecutor.serialTaskExecutor,
+    ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction {
             val workSpecDao = workDatabase.workSpecDao()
@@ -99,13 +108,17 @@ fun forTag(tag: String, workManagerImpl: WorkManagerImpl): Operation =
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation]
  */
-fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
-    launchOperation(workManagerImpl.workTaskExecutor.serialTaskExecutor) {
+public fun forName(name: String, workManagerImpl: WorkManagerImpl): Operation =
+    launchOperation(
+        tracer = workManagerImpl.configuration.tracer,
+        label = "CancelWorkByName_$name",
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
+    ) {
         forNameInline(name, workManagerImpl)
         reschedulePendingWorkers(workManagerImpl)
     }
 
-fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
+public fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
     val workDatabase = workManagerImpl.workDatabase
     workDatabase.runInTransaction {
         val workSpecDao = workDatabase.workSpecDao()
@@ -122,8 +135,12 @@ fun forNameInline(name: String, workManagerImpl: WorkManagerImpl) {
  * @param workManagerImpl The [WorkManagerImpl] to use
  * @return A [Operation] that cancels all work
  */
-fun forAll(workManagerImpl: WorkManagerImpl): Operation =
-    launchOperation(workManagerImpl.workTaskExecutor.serialTaskExecutor) {
+public fun forAll(workManagerImpl: WorkManagerImpl): Operation =
+    launchOperation(
+        tracer = workManagerImpl.configuration.tracer,
+        label = "CancelAllWork",
+        workManagerImpl.workTaskExecutor.serialTaskExecutor,
+    ) {
         val workDatabase = workManagerImpl.workDatabase
         workDatabase.runInTransaction {
             val workSpecDao = workDatabase.workSpecDao()

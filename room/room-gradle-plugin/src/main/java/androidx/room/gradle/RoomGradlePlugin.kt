@@ -19,25 +19,17 @@ package androidx.room.gradle
 import androidx.room.gradle.integration.AndroidPluginIntegration
 import androidx.room.gradle.integration.CommonIntegration
 import androidx.room.gradle.integration.KotlinMultiplatformPluginIntegration
-import java.util.Locale
 import javax.inject.Inject
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ProviderFactory
 
 class RoomGradlePlugin
 @Inject
-constructor(
-    projectLayout: ProjectLayout,
-    objectFactory: ObjectFactory,
-) : Plugin<Project> {
+constructor(projectLayout: ProjectLayout, providerFactory: ProviderFactory) : Plugin<Project> {
 
-    private val commonIntegration = CommonIntegration(projectLayout, objectFactory)
+    private val commonIntegration = CommonIntegration(projectLayout, providerFactory)
     private val androidIntegration by lazy { AndroidPluginIntegration(commonIntegration) }
     private val kmpIntegration by lazy { KotlinMultiplatformPluginIntegration(commonIntegration) }
 
@@ -45,49 +37,5 @@ constructor(
         val roomExtension = project.extensions.create("room", RoomExtension::class.java)
         androidIntegration.withAndroid(project, roomExtension)
         kmpIntegration.withKotlin(project, roomExtension)
-    }
-
-    companion object {
-        internal fun String.capitalize(): String =
-            this.replaceFirstChar {
-                if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString()
-            }
-
-        internal fun Task.isKspTask(): Boolean =
-            try {
-                val kspTaskClass = Class.forName("com.google.devtools.ksp.gradle.KspTask")
-                kspTaskClass.isAssignableFrom(this::class.java)
-            } catch (ex: ClassNotFoundException) {
-                false
-            }
-
-        @OptIn(ExperimentalContracts::class)
-        internal fun Project.check(
-            value: Boolean,
-            isFatal: Boolean = false,
-            lazyMessage: () -> String
-        ) {
-            contract { returns() implies value }
-            if (isGradleSyncRunning() && !isFatal) return
-            if (!value) {
-                throw GradleException(lazyMessage())
-            }
-        }
-
-        internal fun <V> Map<RoomExtension.MatchName, V>.findPair(key: String) =
-            RoomExtension.MatchName(key).let { if (containsKey(it)) it to getValue(it) else null }
-
-        private fun Project.isGradleSyncRunning() =
-            gradleSyncProps.any {
-                it in this.properties && this.properties[it].toString().toBoolean()
-            }
-
-        private val gradleSyncProps by lazy {
-            listOf(
-                "android.injected.build.model.v2",
-                "android.injected.build.model.only",
-                "android.injected.build.model.only.advanced",
-            )
-        }
     }
 }

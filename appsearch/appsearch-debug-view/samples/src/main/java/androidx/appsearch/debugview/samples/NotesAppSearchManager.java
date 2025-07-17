@@ -18,7 +18,6 @@ package androidx.appsearch.debugview.samples;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchSession;
 import androidx.appsearch.app.PutDocumentsRequest;
@@ -31,6 +30,8 @@ import androidx.appsearch.localstorage.LocalStorage;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+
+import org.jspecify.annotations.NonNull;
 
 import java.io.Closeable;
 import java.util.List;
@@ -62,8 +63,7 @@ public class NotesAppSearchManager implements Closeable {
      *
      * @param executor to run AppSearch operations on.
      */
-    @NonNull
-    public static ListenableFuture<NotesAppSearchManager> createNotesAppSearchManager(
+    public static @NonNull ListenableFuture<NotesAppSearchManager> createNotesAppSearchManager(
             @NonNull Context context, @NonNull Executor executor) {
         NotesAppSearchManager notesAppSearchManager = new NotesAppSearchManager(context, executor);
         return Futures.transform(notesAppSearchManager.initialize(),
@@ -86,8 +86,7 @@ public class NotesAppSearchManager implements Closeable {
      *
      * @param notes list of notes to index in AppSearch.
      */
-    @NonNull
-    public ListenableFuture<AppSearchBatchResult<String, Void>> insertNotes(
+    public @NonNull ListenableFuture<AppSearchBatchResult<String, Void>> insertNotes(
             @NonNull List<Note> notes) {
         try {
             PutDocumentsRequest request = new PutDocumentsRequest.Builder().addDocuments(notes)
@@ -99,8 +98,7 @@ public class NotesAppSearchManager implements Closeable {
         }
     }
 
-    @NonNull
-    private ListenableFuture<Void> initialize() {
+    private @NonNull ListenableFuture<Void> initialize() {
         return Futures.transformAsync(createLocalSession(), session -> {
             mAppSearchSessionFuture.set(session);
             return Futures.transformAsync(resetDocuments(),

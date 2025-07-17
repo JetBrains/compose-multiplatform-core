@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/420551535
+
 package androidx.compose.foundation.pager
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -21,7 +23,7 @@ import androidx.compose.foundation.lazy.layout.PrefetchRequest
 import androidx.compose.foundation.lazy.layout.PrefetchRequestScope
 import androidx.compose.foundation.lazy.layout.PrefetchScheduler
 
-@OptIn(ExperimentalFoundationApi::class)
+@ExperimentalFoundationApi
 internal class TestPrefetchScheduler : PrefetchScheduler {
 
     private var activeRequests = mutableListOf<PrefetchRequest>()

@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.test
 
+import androidx.annotation.CheckResult
 import androidx.compose.ui.test.internal.JvmDefaultWithCompatibility
 
 /**
@@ -29,18 +30,21 @@ interface SemanticsNodeInteractionsProvider {
      * Finds a semantics node that matches the given condition.
      *
      * Any subsequent operation on its result will expect exactly one element found (unless
-     * [SemanticsNodeInteraction.assertDoesNotExist] is used) and will throw [AssertionError] if
+     * [SemanticsNodeInteraction.assertDoesNotExist] is used) and will throw an [AssertionError] if
      * none or more than one element is found.
      *
      * For usage patterns and semantics concepts see [SemanticsNodeInteraction]
      *
      * @param matcher Matcher used for filtering
-     * @param useUnmergedTree Find within merged composables like Buttons.
+     * @param useUnmergedTree If `true`, searches the unmerged semantics tree instead of the merged
+     *   semantics tree. This allows you to search for individual nodes that would otherwise be part
+     *   of a larger semantic unit, for example a text and an image forming a Button together.
      * @see onAllNodes to work with multiple elements
      */
+    @CheckResult
     fun onNode(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean = false
+        useUnmergedTree: Boolean = false,
     ): SemanticsNodeInteraction
 
     /**
@@ -52,11 +56,14 @@ interface SemanticsNodeInteractionsProvider {
      * For usage patterns and semantics concepts see [SemanticsNodeInteraction]
      *
      * @param matcher Matcher used for filtering.
-     * @param useUnmergedTree Find within merged composables like Buttons.
+     * @param useUnmergedTree If `true`, searches the unmerged semantics tree instead of the merged
+     *   semantics tree. This allows you to search for individual nodes that would otherwise be part
+     *   of a larger semantic unit, for example a text and an image forming a Button together.
      * @see onNode
      */
+    @CheckResult
     fun onAllNodes(
         matcher: SemanticsMatcher,
-        useUnmergedTree: Boolean = false
+        useUnmergedTree: Boolean = false,
     ): SemanticsNodeInteractionCollection
 }

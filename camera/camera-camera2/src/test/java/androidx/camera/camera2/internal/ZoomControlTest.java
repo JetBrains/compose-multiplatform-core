@@ -35,7 +35,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -44,6 +43,7 @@ import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -156,8 +156,7 @@ public class ZoomControlTest {
         listenableFuture.get();
     }
 
-    @NonNull
-    private TotalCaptureResult mockCaptureResult(Rect cropRectByRatio) {
+    private @NonNull TotalCaptureResult mockCaptureResult(Rect cropRectByRatio) {
         TotalCaptureResult result = mock(TotalCaptureResult.class);
         CaptureRequest captureRequest = mock(CaptureRequest.class);
         when(result.getRequest()).thenReturn(captureRequest);

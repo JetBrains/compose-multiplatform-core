@@ -16,4 +16,4 @@
 
 package androidx.tv.material3
 
-internal const val TV_GOLDEN_MATERIAL3 = "tv/compose/material3"
+internal const val TV_GOLDEN_MATERIAL3 = "tv/tv-material"

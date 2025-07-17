@@ -42,11 +42,8 @@ import android.view.animation.AnimationUtils;
 import android.widget.ListView;
 import android.widget.Spinner;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IdRes;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.collection.ArrayMap;
@@ -59,10 +56,14 @@ import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
@@ -179,9 +180,8 @@ public abstract class Transition implements Cloneable {
     };
 
     private static final PathMotion STRAIGHT_PATH_MOTION = new PathMotion() {
-        @NonNull
         @Override
-        public Path getPath(float startX, float startY, float endX, float endY) {
+        public @NonNull Path getPath(float startX, float startY, float endX, float endY) {
             Path path = new Path();
             path.moveTo(startX, startY);
             path.lineTo(endX, endY);
@@ -359,8 +359,7 @@ public abstract class Transition implements Cloneable {
      * of a TransitionSet, the parent TransitionSets are walked until a TransitionSet is found
      * that isn't contained in another TransitionSet.
      */
-    @NonNull
-    public final Transition getRootTransition() {
+    public final @NonNull Transition getRootTransition() {
         if (mParent != null) {
             return mParent.getRootTransition();
         }
@@ -376,8 +375,7 @@ public abstract class Transition implements Cloneable {
      * @param duration The length of the animation, in milliseconds.
      * @return This transition object.
      */
-    @NonNull
-    public Transition setDuration(long duration) {
+    public @NonNull Transition setDuration(long duration) {
         mDuration = duration;
         return this;
     }
@@ -403,8 +401,7 @@ public abstract class Transition implements Cloneable {
      * @param startDelay The length of the delay, in milliseconds.
      * @return This transition object.
      */
-    @NonNull
-    public Transition setStartDelay(long startDelay) {
+    public @NonNull Transition setStartDelay(long startDelay) {
         mStartDelay = startDelay;
         return this;
     }
@@ -430,8 +427,7 @@ public abstract class Transition implements Cloneable {
      * @param interpolator The time interpolator used by the transition
      * @return This transition object.
      */
-    @NonNull
-    public Transition setInterpolator(@Nullable TimeInterpolator interpolator) {
+    public @NonNull Transition setInterpolator(@Nullable TimeInterpolator interpolator) {
         mInterpolator = interpolator;
         return this;
     }
@@ -444,8 +440,7 @@ public abstract class Transition implements Cloneable {
      * @return The interpolator set on this transition, if one has been set, otherwise
      * returns null.
      */
-    @Nullable
-    public TimeInterpolator getInterpolator() {
+    public @Nullable TimeInterpolator getInterpolator() {
         return mInterpolator;
     }
 
@@ -470,8 +465,7 @@ public abstract class Transition implements Cloneable {
      * @return An array of property names as described in the class documentation for
      * {@link TransitionValues}. The default implementation returns <code>null</code>.
      */
-    @Nullable
-    public String[] getTransitionProperties() {
+    public String @Nullable [] getTransitionProperties() {
         return null;
     }
 
@@ -520,8 +514,7 @@ public abstract class Transition implements Cloneable {
      * overall transition for this scene change. A null value means no animation
      * should be run.
      */
-    @Nullable
-    public Animator createAnimator(@NonNull ViewGroup sceneRoot,
+    public @Nullable Animator createAnimator(@NonNull ViewGroup sceneRoot,
             @Nullable TransitionValues startValues, @Nullable TransitionValues endValues) {
         return null;
     }
@@ -533,8 +526,7 @@ public abstract class Transition implements Cloneable {
      * animations.
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    @NonNull
-    TransitionSeekController createSeekController() {
+    @NonNull TransitionSeekController createSeekController() {
         mSeekController = new SeekController();
         addListener(mSeekController);
         return mSeekController;
@@ -557,7 +549,7 @@ public abstract class Transition implements Cloneable {
      *                {@link #MATCH_NAME}, {@link #MATCH_ITEM_ID}, and {@link #MATCH_ID}.
      *                If none are provided, then the default match order will be set.
      */
-    public void setMatchOrder(@MatchOrder @Nullable int... matches) {
+    public void setMatchOrder(@MatchOrder int @Nullable ... matches) {
         if (matches == null || matches.length == 0) {
             mMatchOrder = DEFAULT_MATCH_ORDER;
         } else {
@@ -1088,8 +1080,7 @@ public abstract class Transition implements Cloneable {
      * <code>transitionSet.addTransitions(new Fade()).addTarget(someView);</code>
      * @see #addTarget(int)
      */
-    @NonNull
-    public Transition addTarget(@NonNull View target) {
+    public @NonNull Transition addTarget(@NonNull View target) {
         mTargets.add(target);
         return this;
     }
@@ -1112,8 +1103,7 @@ public abstract class Transition implements Cloneable {
      * <code>transitionSet.addTransitions(new Fade()).addTarget(someId);</code>
      * @see View#getId()
      */
-    @NonNull
-    public Transition addTarget(@IdRes int targetId) {
+    public @NonNull Transition addTarget(@IdRes int targetId) {
         if (targetId != 0) {
             mTargetIds.add(targetId);
         }
@@ -1137,8 +1127,7 @@ public abstract class Transition implements Cloneable {
      * <code>transitionSet.addTransitions(new Fade()).addTarget(someName);</code>
      * @see ViewCompat#getTransitionName(View)
      */
-    @NonNull
-    public Transition addTarget(@NonNull String targetName) {
+    public @NonNull Transition addTarget(@NonNull String targetName) {
         if (mTargetNames == null) {
             mTargetNames = new ArrayList<>();
         }
@@ -1167,8 +1156,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeTarget(Class, boolean)
      * @see #excludeChildren(Class, boolean)
      */
-    @NonNull
-    public Transition addTarget(@NonNull Class<?> targetType) {
+    public @NonNull Transition addTarget(@NonNull Class<?> targetType) {
         if (mTargetTypes == null) {
             mTargetTypes = new ArrayList<>();
         }
@@ -1186,8 +1174,7 @@ public abstract class Transition implements Cloneable {
      * construction, such as
      * <code>transitionSet.addTransitions(new Fade()).removeTarget(someView);</code>
      */
-    @NonNull
-    public Transition removeTarget(@NonNull View target) {
+    public @NonNull Transition removeTarget(@NonNull View target) {
         mTargets.remove(target);
         return this;
     }
@@ -1202,8 +1189,7 @@ public abstract class Transition implements Cloneable {
      * construction, such as
      * <code>transitionSet.addTransitions(new Fade()).removeTargetId(someId);</code>
      */
-    @NonNull
-    public Transition removeTarget(@IdRes int targetId) {
+    public @NonNull Transition removeTarget(@IdRes int targetId) {
         if (targetId != 0) {
             mTargetIds.remove((Integer) targetId);
         }
@@ -1220,8 +1206,7 @@ public abstract class Transition implements Cloneable {
      * construction, such as
      * <code>transitionSet.addTransitions(new Fade()).removeTargetName(someName);</code>
      */
-    @NonNull
-    public Transition removeTarget(@NonNull String targetName) {
+    public @NonNull Transition removeTarget(@NonNull String targetName) {
         if (mTargetNames != null) {
             mTargetNames.remove(targetName);
         }
@@ -1238,8 +1223,7 @@ public abstract class Transition implements Cloneable {
      * construction, such as
      * <code>transitionSet.addTransitions(new Fade()).removeTarget(someType);</code>
      */
-    @NonNull
-    public Transition removeTarget(@NonNull Class<?> target) {
+    public @NonNull Transition removeTarget(@NonNull Class<?> target) {
         if (mTargetTypes != null) {
             mTargetTypes.remove(target);
         }
@@ -1281,8 +1265,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeTarget(int, boolean)
      * @see #excludeTarget(Class, boolean)
      */
-    @NonNull
-    public Transition excludeTarget(@NonNull View target, boolean exclude) {
+    public @NonNull Transition excludeTarget(@NonNull View target, boolean exclude) {
         mTargetExcludes = excludeView(mTargetExcludes, target, exclude);
         return this;
     }
@@ -1307,8 +1290,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeTarget(View, boolean)
      * @see #excludeTarget(Class, boolean)
      */
-    @NonNull
-    public Transition excludeTarget(@IdRes int targetId, boolean exclude) {
+    public @NonNull Transition excludeTarget(@IdRes int targetId, boolean exclude) {
         mTargetIdExcludes = excludeId(mTargetIdExcludes, targetId, exclude);
         return this;
     }
@@ -1333,8 +1315,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeTarget(int, boolean)
      * @see #excludeTarget(Class, boolean)
      */
-    @NonNull
-    public Transition excludeTarget(@NonNull String targetName, boolean exclude) {
+    public @NonNull Transition excludeTarget(@NonNull String targetName, boolean exclude) {
         mTargetNameExcludes = excludeObject(mTargetNameExcludes, targetName, exclude);
         return this;
     }
@@ -1359,8 +1340,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeChildren(int, boolean)
      * @see #excludeChildren(Class, boolean)
      */
-    @NonNull
-    public Transition excludeChildren(@NonNull View target, boolean exclude) {
+    public @NonNull Transition excludeChildren(@NonNull View target, boolean exclude) {
         mTargetChildExcludes = excludeView(mTargetChildExcludes, target, exclude);
         return this;
     }
@@ -1389,8 +1369,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeChildren(View, boolean)
      * @see #excludeChildren(Class, boolean)
      */
-    @NonNull
-    public Transition excludeChildren(@IdRes int targetId, boolean exclude) {
+    public @NonNull Transition excludeChildren(@IdRes int targetId, boolean exclude) {
         mTargetIdChildExcludes = excludeId(mTargetIdChildExcludes, targetId, exclude);
         return this;
     }
@@ -1445,8 +1424,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeTarget(int, boolean)
      * @see #excludeTarget(View, boolean)
      */
-    @NonNull
-    public Transition excludeTarget(@NonNull Class<?> type, boolean exclude) {
+    public @NonNull Transition excludeTarget(@NonNull Class<?> type, boolean exclude) {
         mTargetTypeExcludes = excludeType(mTargetTypeExcludes, type, exclude);
         return this;
     }
@@ -1472,8 +1450,7 @@ public abstract class Transition implements Cloneable {
      * @see #excludeChildren(int, boolean)
      * @see #excludeChildren(View, boolean)
      */
-    @NonNull
-    public Transition excludeChildren(@NonNull Class<?> type, boolean exclude) {
+    public @NonNull Transition excludeChildren(@NonNull Class<?> type, boolean exclude) {
         mTargetTypeChildExcludes = excludeType(mTargetTypeChildExcludes, type, exclude);
         return this;
     }
@@ -1503,8 +1480,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return the list of target IDs
      */
-    @NonNull
-    public List<Integer> getTargetIds() {
+    public @NonNull List<Integer> getTargetIds() {
         return mTargetIds;
     }
 
@@ -1517,8 +1493,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return the list of target views
      */
-    @NonNull
-    public List<View> getTargets() {
+    public @NonNull List<View> getTargets() {
         return mTargets;
     }
 
@@ -1532,8 +1507,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return the list of target transitionNames
      */
-    @Nullable
-    public List<String> getTargetNames() {
+    public @Nullable List<String> getTargetNames() {
         return mTargetNames;
     }
 
@@ -1547,8 +1521,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return the list of target Types
      */
-    @Nullable
-    public List<Class<?>> getTargetTypes() {
+    public @Nullable List<Class<?>> getTargetTypes() {
         return mTargetTypes;
     }
 
@@ -1765,8 +1738,7 @@ public abstract class Transition implements Cloneable {
      * necessary, for example, to query the before/after state of related views
      * for a given transition.
      */
-    @Nullable
-    public TransitionValues getTransitionValues(@NonNull View view, boolean start) {
+    public @Nullable TransitionValues getTransitionValues(@NonNull View view, boolean start) {
         if (mParent != null) {
             return mParent.getTransitionValues(view, start);
         }
@@ -1884,12 +1856,13 @@ public abstract class Transition implements Cloneable {
         ArrayMap<Animator, AnimationInfo> runningAnimators = getRunningAnimators();
         int numOldAnims = runningAnimators.size();
         WindowId windowId = sceneRoot.getWindowId();
+        ArrayList<Transition> endedTransitions = new ArrayList<>();
         for (int i = numOldAnims - 1; i >= 0; i--) {
             Animator anim = runningAnimators.keyAt(i);
             if (anim != null) {
                 AnimationInfo oldInfo = runningAnimators.get(anim);
                 if (oldInfo != null && oldInfo.mView != null
-                        && windowId.equals(oldInfo.mWindowId)) {
+                        && Objects.equals(windowId, oldInfo.mWindowId)) {
                     TransitionValues oldValues = oldInfo.mValues;
                     View oldView = oldInfo.mView;
                     TransitionValues startValues = getTransitionValues(oldView, true);
@@ -1906,14 +1879,9 @@ public abstract class Transition implements Cloneable {
                             // a listener
                             anim.cancel();
                             transition.mCurrentAnimators.remove(anim);
-                            runningAnimators.remove(anim);
+                            runningAnimators.removeAt(i);
                             if (transition.mCurrentAnimators.size() == 0) {
-                                transition.notifyListeners(TransitionNotification.ON_CANCEL, false);
-                                if (!transition.mEnded) {
-                                    transition.mEnded = true;
-                                    transition.notifyListeners(TransitionNotification.ON_END,
-                                            false);
-                                }
+                                endedTransitions.add(transition);
                             }
                         } else if (anim.isRunning() || anim.isStarted()) {
                             if (DBG) {
@@ -1924,10 +1892,21 @@ public abstract class Transition implements Cloneable {
                             if (DBG) {
                                 Log.d(LOG_TAG, "removing anim from info list: " + anim);
                             }
-                            runningAnimators.remove(anim);
+                            runningAnimators.removeAt(i);
                         }
                     }
                 }
+            }
+        }
+
+        // Don't change the collection we're iterating over while iterating over it.
+        for (int i = 0; i < endedTransitions.size(); i++) {
+            Transition transition = endedTransitions.get(i);
+            transition.notifyListeners(TransitionNotification.ON_CANCEL, false);
+            if (!transition.mEnded) {
+                transition.mEnded = true;
+                transition.notifyListeners(TransitionNotification.ON_END,
+                        false);
             }
         }
 
@@ -2134,8 +2113,7 @@ public abstract class Transition implements Cloneable {
      *                 for this animation.
      * @return This transition object.
      */
-    @NonNull
-    public Transition addListener(@NonNull TransitionListener listener) {
+    public @NonNull Transition addListener(@NonNull TransitionListener listener) {
         if (mListeners == null) {
             mListeners = new ArrayList<>();
         }
@@ -2150,8 +2128,7 @@ public abstract class Transition implements Cloneable {
      *                 listeners for this transition.
      * @return This transition object.
      */
-    @NonNull
-    public Transition removeListener(@NonNull TransitionListener listener) {
+    public @NonNull Transition removeListener(@NonNull TransitionListener listener) {
         if (mListeners == null) {
             return this;
         }
@@ -2197,8 +2174,7 @@ public abstract class Transition implements Cloneable {
      * @see PatternPathMotion
      * @see android.transition.PathMotion
      */
-    @NonNull
-    public PathMotion getPathMotion() {
+    public @NonNull PathMotion getPathMotion() {
         return mPathMotion;
     }
 
@@ -2227,8 +2203,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return the callback used to find the epicenter of the Transition.
      */
-    @Nullable
-    public EpicenterCallback getEpicenterCallback() {
+    public @Nullable EpicenterCallback getEpicenterCallback() {
         return mEpicenterCallback;
     }
 
@@ -2240,8 +2215,7 @@ public abstract class Transition implements Cloneable {
      * {@link android.transition.Transition.EpicenterCallback} or null if no callback exists.
      * @see #setEpicenterCallback(EpicenterCallback)
      */
-    @Nullable
-    public Rect getEpicenter() {
+    public @Nullable Rect getEpicenter() {
         if (mEpicenterCallback == null) {
             return null;
         }
@@ -2275,8 +2249,7 @@ public abstract class Transition implements Cloneable {
      * @return the {@link android.transition.TransitionPropagation} used to calculate Animator start
      * delays. This is null by default.
      */
-    @Nullable
-    public TransitionPropagation getPropagation() {
+    public @Nullable TransitionPropagation getPropagation() {
         return mPropagation;
     }
 
@@ -2308,15 +2281,13 @@ public abstract class Transition implements Cloneable {
         mCanRemoveViews = canRemoveViews;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return toString("");
     }
 
-    @NonNull
     @Override
-    public Transition clone() {
+    public @NonNull Transition clone() {
         try {
             Transition clone = (Transition) super.clone();
             clone.mAnimators = new ArrayList<>();
@@ -2345,8 +2316,7 @@ public abstract class Transition implements Cloneable {
      *
      * @return The name of this transition.
      */
-    @NonNull
-    public String getName() {
+    public @NonNull String getName() {
         return mName;
     }
 
@@ -2661,8 +2631,7 @@ public abstract class Transition implements Cloneable {
          * @return The Rect region of the epicenter of <code>transition</code> or null if
          * there is no epicenter.
          */
-        @Nullable
-        public abstract Rect onGetEpicenter(@NonNull Transition transition);
+        public abstract @Nullable Rect onGetEpicenter(@NonNull Transition transition);
     }
 
     /**
@@ -2711,12 +2680,10 @@ public abstract class Transition implements Cloneable {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private static class Impl26 {
-        @DoNotInline
         static long getTotalDuration(Animator animator) {
             return animator.getTotalDuration();
         }
 
-        @DoNotInline
         static void setCurrentPlayTime(Animator animator, long playTimeMillis) {
             ((AnimatorSet) animator).setCurrentPlayTime(playTimeMillis);
         }
@@ -2728,12 +2695,16 @@ public abstract class Transition implements Cloneable {
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     class SeekController extends TransitionListenerAdapter implements TransitionSeekController,
             DynamicAnimation.OnAnimationUpdateListener {
+        private static final int ON_READY_NOTHING = 0;
+        private static final int ON_READY_ANIMATE_TO_END = 1;
+        private static final int ON_READY_ANIMATE_TO_START = 2;
         // Animation calculations appear to work better with numbers that range greater than 1
         private long mCurrentPlayTime = -1;
         private ArrayList<Consumer<TransitionSeekController>> mOnReadyListeners = null;
         private ArrayList<Consumer<TransitionSeekController>> mOnProgressListeners = null;
         private boolean mIsReady;
         private boolean mIsCanceled;
+        private int mOnReady = ON_READY_NOTHING;
 
         private SpringAnimation mSpringAnimation;
         private Consumer<TransitionSeekController>[] mListenerCache = null;
@@ -2770,6 +2741,13 @@ public abstract class Transition implements Cloneable {
                 }
             }
             callProgressListeners();
+            if (mOnReady == ON_READY_ANIMATE_TO_END) {
+                mOnReady = ON_READY_NOTHING;
+                animateToEnd();
+            } else if (mOnReady == ON_READY_ANIMATE_TO_START) {
+                mOnReady = ON_READY_NOTHING;
+                animateToStart(mResetToStartState);
+            }
         }
 
         @Override
@@ -2904,6 +2882,11 @@ public abstract class Transition implements Cloneable {
 
         @Override
         public void animateToEnd() {
+            if (!mIsReady) {
+                mOnReady = ON_READY_ANIMATE_TO_END;
+                mResetToStartState = null;
+                return; // can't animate to the end yet
+            }
             ensureAnimation();
             mSpringAnimation.animateToFinalPosition((float) (getDurationMillis() + 1));
         }
@@ -2911,6 +2894,10 @@ public abstract class Transition implements Cloneable {
         @Override
         public void animateToStart(@NonNull Runnable resetToStartState) {
             mResetToStartState = resetToStartState;
+            if (!mIsReady) {
+                mOnReady = ON_READY_ANIMATE_TO_START;
+                return; // can't animate to the start yet
+            }
             ensureAnimation();
             mSpringAnimation.animateToFinalPosition(0);
         }

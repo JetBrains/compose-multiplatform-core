@@ -33,21 +33,19 @@ buildscript {
         google()
         mavenCentral()
         maven {
-            url metalavaRepo
+            url = metalavaRepo
             metadataSources {
                 mavenPom()
                 artifact()
             }
         }
         gradlePluginPortal().content {
-            it.includeModule("gradle.plugin.com.github.johnrengelman", "shadow")
+            it.includeModule("com.gradleup.shadow", "shadow-gradle-plugin")
             it.includeModule("me.champeau.gradle", "japicmp-gradle-plugin")
         }
     }
     ext.repos = [:]
 }
-
-apply from: "$supportRootFolder/buildSrc/dependencies.gradle"
 
 apply plugin: AndroidXRootPlugin
 apply plugin: AndroidXPlaygroundRootPlugin

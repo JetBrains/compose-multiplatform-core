@@ -17,6 +17,7 @@
 package androidx.compose.ui.geometry
 
 import androidx.compose.runtime.Immutable
+import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.lerp
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -24,6 +25,7 @@ import kotlin.math.min
 
 /** An immutable rounded rectangle with custom radii for all four corners. */
 @Immutable
+@Suppress("DataClassDefinition")
 data class RoundRect(
     /** The offset of the left edge of this rectangle from the x axis */
     val left: Float,
@@ -43,7 +45,7 @@ data class RoundRect(
     val bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
 
     /** The bottom-left radius */
-    val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero
+    val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
 ) {
     /** The distance between the left and right edges of this rectangle. */
     val width: Float
@@ -83,23 +85,23 @@ data class RoundRect(
                         topLeftCornerRadius =
                             CornerRadius(
                                 topLeftCornerRadius.x * scale,
-                                topLeftCornerRadius.y * scale
+                                topLeftCornerRadius.y * scale,
                             ),
                         topRightCornerRadius =
                             CornerRadius(
                                 topRightCornerRadius.x * scale,
-                                topRightCornerRadius.y * scale
+                                topRightCornerRadius.y * scale,
                             ),
                         bottomRightCornerRadius =
                             CornerRadius(
                                 bottomRightCornerRadius.x * scale,
-                                bottomRightCornerRadius.y * scale
+                                bottomRightCornerRadius.y * scale,
                             ),
                         bottomLeftCornerRadius =
                             CornerRadius(
                                 bottomLeftCornerRadius.x * scale,
-                                bottomLeftCornerRadius.y * scale
-                            )
+                                bottomLeftCornerRadius.y * scale,
+                            ),
                     )
                 }
                 .also {
@@ -228,7 +230,7 @@ fun RoundRect(
     right: Float,
     bottom: Float,
     radiusX: Float,
-    radiusY: Float
+    radiusY: Float,
 ): RoundRect {
     val radius = CornerRadius(radiusX, radiusY)
     return RoundRect(
@@ -239,7 +241,7 @@ fun RoundRect(
         topLeftCornerRadius = radius,
         topRightCornerRadius = radius,
         bottomRightCornerRadius = radius,
-        bottomLeftCornerRadius = radius
+        bottomLeftCornerRadius = radius,
     )
 }
 
@@ -261,7 +263,7 @@ fun RoundRect(rect: Rect, radiusX: Float, radiusY: Float): RoundRect =
         right = rect.right,
         bottom = rect.bottom,
         radiusX = radiusX,
-        radiusY = radiusY
+        radiusY = radiusY,
     )
 
 /**
@@ -281,7 +283,7 @@ fun RoundRect(
     topLeft: CornerRadius = CornerRadius.Zero,
     topRight: CornerRadius = CornerRadius.Zero,
     bottomRight: CornerRadius = CornerRadius.Zero,
-    bottomLeft: CornerRadius = CornerRadius.Zero
+    bottomLeft: CornerRadius = CornerRadius.Zero,
 ): RoundRect =
     RoundRect(
         left = rect.left,
@@ -291,7 +293,7 @@ fun RoundRect(
         topLeftCornerRadius = topLeft,
         topRightCornerRadius = topRight,
         bottomRightCornerRadius = bottomRight,
-        bottomLeftCornerRadius = bottomLeft
+        bottomLeftCornerRadius = bottomLeft,
     )
 
 /** Returns a new [RoundRect] translated by the given offset. */
@@ -304,7 +306,7 @@ fun RoundRect.translate(offset: Offset): RoundRect =
         topLeftCornerRadius = topLeftCornerRadius,
         topRightCornerRadius = topRightCornerRadius,
         bottomRightCornerRadius = bottomRightCornerRadius,
-        bottomLeftCornerRadius = bottomLeftCornerRadius
+        bottomLeftCornerRadius = bottomLeftCornerRadius,
     )
 
 /** The bounding box of this rounded rectangle (the rectangle with no rounded corners). */
@@ -329,7 +331,7 @@ val RoundRect.safeInnerRect: Rect
             left + leftRadius * insetFactor,
             top + topRadius * insetFactor,
             right - rightRadius * insetFactor,
-            bottom - bottomRadius * insetFactor
+            bottom - bottomRadius * insetFactor,
         )
     }
 
@@ -339,25 +341,23 @@ val RoundRect.isEmpty
 
 /** Whether all coordinates of this rounded rectangle are finite. */
 val RoundRect.isFinite
-    get() = left.isFinite() && top.isFinite() && right.isFinite() && bottom.isFinite()
+    get() =
+        left.fastIsFinite() && top.fastIsFinite() && right.fastIsFinite() && bottom.fastIsFinite()
 
 /** Whether this rounded rectangle is a simple rectangle with zero corner radii. */
 val RoundRect.isRect
     get(): Boolean =
-        (topLeftCornerRadius.x == 0.0f || topLeftCornerRadius.y == 0.0f) &&
-            (topRightCornerRadius.x == 0.0f || topRightCornerRadius.y == 0.0f) &&
-            (bottomLeftCornerRadius.x == 0.0f || bottomLeftCornerRadius.y == 0.0f) &&
-            (bottomRightCornerRadius.x == 0.0f || bottomRightCornerRadius.y == 0.0f)
+        topLeftCornerRadius.isZero() &&
+            topRightCornerRadius.isZero() &&
+            bottomLeftCornerRadius.isZero() &&
+            bottomRightCornerRadius.isZero()
 
 /** Whether this rounded rectangle has no side with a straight section. */
 val RoundRect.isEllipse
     get(): Boolean =
-        topLeftCornerRadius.x == topRightCornerRadius.x &&
-            topLeftCornerRadius.y == topRightCornerRadius.y &&
-            topRightCornerRadius.x == bottomRightCornerRadius.x &&
-            topRightCornerRadius.y == bottomRightCornerRadius.y &&
-            bottomRightCornerRadius.x == bottomLeftCornerRadius.x &&
-            bottomRightCornerRadius.y == bottomLeftCornerRadius.y &&
+        topLeftCornerRadius.packedValue == topRightCornerRadius.packedValue &&
+            topRightCornerRadius.packedValue == bottomRightCornerRadius.packedValue &&
+            bottomRightCornerRadius.packedValue == bottomLeftCornerRadius.packedValue &&
             width <= 2.0 * topLeftCornerRadius.x &&
             height <= 2.0 * topLeftCornerRadius.y
 
@@ -388,13 +388,10 @@ val RoundRect.center: Offset
  */
 val RoundRect.isSimple: Boolean
     get() =
-        topLeftCornerRadius.x == topLeftCornerRadius.y &&
-            topLeftCornerRadius.x == topRightCornerRadius.x &&
-            topLeftCornerRadius.x == topRightCornerRadius.y &&
-            topLeftCornerRadius.x == bottomRightCornerRadius.x &&
-            topLeftCornerRadius.x == bottomRightCornerRadius.y &&
-            topLeftCornerRadius.x == bottomLeftCornerRadius.x &&
-            topLeftCornerRadius.x == bottomLeftCornerRadius.y
+        topLeftCornerRadius.isCircular() &&
+            topLeftCornerRadius.packedValue == topRightCornerRadius.packedValue &&
+            topLeftCornerRadius.packedValue == bottomRightCornerRadius.packedValue &&
+            topLeftCornerRadius.packedValue == bottomLeftCornerRadius.packedValue
 
 /**
  * Linearly interpolate between two rounded rectangles.
@@ -421,5 +418,5 @@ fun lerp(start: RoundRect, stop: RoundRect, fraction: Float): RoundRect =
         bottomRightCornerRadius =
             lerp(start.bottomRightCornerRadius, stop.bottomRightCornerRadius, fraction),
         bottomLeftCornerRadius =
-            lerp(start.bottomLeftCornerRadius, stop.bottomLeftCornerRadius, fraction)
+            lerp(start.bottomLeftCornerRadius, stop.bottomLeftCornerRadius, fraction),
     )

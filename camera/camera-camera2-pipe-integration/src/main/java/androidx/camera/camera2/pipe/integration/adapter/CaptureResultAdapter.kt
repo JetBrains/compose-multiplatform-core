@@ -41,7 +41,7 @@ import androidx.camera.core.impl.utils.ExifData
 import java.nio.BufferUnderflowException
 import kotlin.reflect.KClass
 
-class PartialCaptureResultAdapter(
+public class PartialCaptureResultAdapter(
     private val requestMetadata: RequestMetadata,
     private val frameNumber: FrameNumber,
     private val result: FrameMetadata,
@@ -78,10 +78,10 @@ class PartialCaptureResultAdapter(
 }
 
 /** Adapts the [CameraCaptureResult] interface to [CameraPipe]. */
-class CaptureResultAdapter(
+public class CaptureResultAdapter(
     private val requestMetadata: RequestMetadata,
     private val frameNumber: FrameNumber,
-    internal val result: FrameInfo
+    internal val result: FrameInfo,
 ) : CameraCaptureResult, UnsafeWrapper {
     override fun getAfMode(): AfMode = result.metadata.getAfMode()
 

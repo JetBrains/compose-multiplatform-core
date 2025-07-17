@@ -16,20 +16,28 @@
 
 package androidx.wear.protolayout.material;
 
+import static androidx.wear.protolayout.material.test.GoldenTestActivity.VIEW_TAG;
+
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
-import android.util.DisplayMetrics;
+import android.graphics.Rect;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.screenshot.AndroidXScreenshotTestRule;
 import androidx.test.screenshot.matchers.MSSIMMatcher;
+import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 import androidx.wear.protolayout.LayoutElementBuilders.Layout;
 import androidx.wear.protolayout.material.test.GoldenTestActivity;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +48,9 @@ public class RunnerUtils {
     // watch dimensions here.
     public static final int SCREEN_WIDTH = 390;
     public static final int SCREEN_HEIGHT = 390;
+    private static final int FIND_OBJECT_TIMEOUT_MILLIS = 1000;
+    private static final UiDevice uiDevice =
+            UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
 
     private RunnerUtils() {}
 
@@ -70,53 +81,28 @@ public class RunnerUtils {
         startIntent.putExtra("layout", layoutPayload);
         startIntent.putExtra(GoldenTestActivity.USE_RTL_DIRECTION, isRtlDirection);
 
-        ActivityScenario<GoldenTestActivity> scenario = ActivityScenario.launch(startIntent);
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-
-        try {
-            // Wait 1s after launching the activity. This allows for the old white layout in the
-            // bootstrap activity to fully go away before proceeding.
-            Thread.sleep(1000);
-        } catch (Exception ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+        try (ActivityScenario<GoldenTestActivity> scenario = ActivityScenario.launch(startIntent)) {
+            List<UiObject2> objects =
+                    uiDevice.wait(Until.findObjects(By.desc(VIEW_TAG)), FIND_OBJECT_TIMEOUT_MILLIS);
+            if (objects == null) {
+                throw new IllegalStateException("Timed out waiting for the PL host view.");
             }
-            Log.e("MaterialGoldenTest", "Error sleeping", ex);
-        }
-
-        DisplayMetrics displayMetrics =
-                InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
-                        .getResources()
-                        .getDisplayMetrics();
-
-        // RTL will put the View on the right side.
-        int screenWidthStart = isRtlDirection ? displayMetrics.widthPixels - SCREEN_WIDTH : 0;
-
-        Bitmap bitmap =
-                Bitmap.createBitmap(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getUiAutomation()
-                                .takeScreenshot(),
-                        screenWidthStart,
-                        0,
-                        SCREEN_WIDTH,
-                        SCREEN_HEIGHT);
-        rule.assertBitmapAgainstGolden(bitmap, expected, new MSSIMMatcher());
-
-        // There's a weird bug (related to b/159805732) where, when calling .close() on
-        // ActivityScenario or calling finish() and immediately exiting the test, the test can hang
-        // on a white screen for 45s. Closing the activity here and waiting for 1s seems to fix
-        // this.
-        scenario.onActivity(Activity::finish);
-
-        try {
-            Thread.sleep(1000);
-        } catch (Exception ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+            if (objects.size() != 1) {
+                throw new IllegalStateException(
+                        "Expected 1 PL host view, but found " + objects.size());
             }
-            Log.e("MaterialGoldenTest", "Error sleeping", ex);
+            Rect plViewRect = objects.get(0).getVisibleBounds();
+
+            Bitmap bitmap =
+                    Bitmap.createBitmap(
+                            InstrumentationRegistry.getInstrumentation()
+                                    .getUiAutomation()
+                                    .takeScreenshot(),
+                            plViewRect.left,
+                            plViewRect.top,
+                            plViewRect.width(),
+                            plViewRect.height());
+            rule.assertBitmapAgainstGolden(bitmap, expected, new MSSIMMatcher());
         }
     }
 
@@ -152,5 +138,18 @@ public class RunnerUtils {
             this.isForRtl = isForRtl;
             this.isForLtr = isForLtr;
         }
+    }
+
+    public static float getFontScale(Context context) {
+        return context.getResources().getConfiguration().fontScale;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void setFontScale(Context context, float fontScale) {
+        Configuration newConfiguration =
+                new Configuration(context.getResources().getConfiguration());
+        newConfiguration.fontScale = fontScale;
+        context.getResources()
+                .updateConfiguration(newConfiguration, context.getResources().getDisplayMetrics());
     }
 }

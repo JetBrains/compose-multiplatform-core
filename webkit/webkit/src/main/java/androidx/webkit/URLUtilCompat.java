@@ -19,8 +19,8 @@ package androidx.webkit;
 import android.net.Uri;
 import android.webkit.MimeTypeMap;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -34,7 +34,6 @@ import java.util.regex.Pattern;
  *
  * @see android.webkit.URLUtil
  */
-@SuppressWarnings("AcronymName") // Compat class for similarly named URLUtil in Android SDK
 public final class URLUtilCompat {
 
     private URLUtilCompat() {} // Class should not be instantiated
@@ -48,26 +47,15 @@ public final class URLUtilCompat {
      * <ul>
      *  <li>This method uses an updated parsing of {@code contentDisposition}, making this
      *  available on older Android versions. See {@link #getFilenameFromContentDisposition(String)}.
-     *  <li>If the filename guessed from {@code url} or {@code contentDisposition} already
-     *  contains an extension, but this extension differs from the one expected from the
-     *  {@code mimeType}, then this method will append the expected extension instead of
-     *  replacing the one already present. This is done to preserve filenames that contain a
-     *  {@code "."} as part of a filename but where the last part is not meant as an  extension.
-     *  <li>If the filename guessed from {@code contentDisposition} contains a {@code "/"}
-     *  character, it will be replaced with {@code "_"}, unlike
-     *  {@link android.webkit.URLUtil#guessFileName(String, String, String)} which will only
-     *  return the part after the last {@code "/" character}.
-     * </ul>
-     * <p>
-     * This method will use {@link #getFilenameFromContentDisposition(String)} to parse the
-     * passed {@code contentDisposition}.
-     * <ul>
-     * <li>If not file extension is present in the guessed file name, one will be added based on
-     * the
-     * {@code mimetype} (this will be {@code ".bin"} if {@code mimeType} is {@code null}).
-     * <li>If the guessed file name already contains an extension, but this extension doesn't
-     * match a provided {@code mimeType}, then a new file extension will be added that matches
-     * the {@code mimeType}.
+     *  <li>If the {@code contentDisposition} parameter is valid and contains a filename, that
+     *  filename will be returned. The {@code url} and {@code mimeType} parameters will not be
+     *  used in this case.
+     *  <li>Otherwise the filename will be deduced from the path of the {@code url} and the
+     *  {@code mimeType}. If a {@code mimeType} is provided and the canonical extension for that
+     *  filetype does not match the filename derived from the {@code url}, then the canonical
+     *  extension will be appended.
+     *  <li>If the {@code mimeType} is {@code null}, {@code "application/octet-stream"}, or not
+     *  known by the system, no extension will be appended to the filename.
      * </ul>
      *
      * @param url                Url to the content. Must not be {@code null}
@@ -77,37 +65,10 @@ public final class URLUtilCompat {
      * @see android.webkit.URLUtil#guessFileName(String, String, String)
      * @see #getFilenameFromContentDisposition(String)
      */
-    @NonNull
-    public static String guessFileName(@NonNull String url, @Nullable String contentDisposition,
-            @Nullable String mimeType) {
-        String filename = getFilenameSuggestion(url, contentDisposition);
-        // Split filename between base and extension
-        // Add an extension if filename does not have one
-        String extensionFromMimeType = suggestExtensionFromMimeType(mimeType);
+    public static @NonNull String guessFileName(@NonNull String url,
+            @Nullable String contentDisposition, @Nullable String mimeType) {
 
-        if (filename.indexOf('.') < 0) {
-            // Filename does not have an extension, use the suggested one.
-            return filename + extensionFromMimeType;
-        }
-
-        // Filename already contains at least one dot.
-        // Compare the last segment of the extension against the mime type.
-        // If there's a mismatch, add the suggested extension instead.
-        if (mimeType != null && extensionDifferentFromMimeType(filename, mimeType)) {
-            return filename + extensionFromMimeType;
-        }
-        return filename;
-    }
-
-    /**
-     * Get the suggested file name from the {@code contentDisposition} or {@code url}. Will
-     * ensure that the filename contains no path separators by replacing them with the {@code "_"}
-     * character.
-     */
-    @NonNull
-    private static String getFilenameSuggestion(@NonNull String url,
-            @Nullable String contentDisposition) {
-        // First attempt to parse the Content-Disposition header if available
+        // First attempt to parse the Content-Disposition header if available.
         if (contentDisposition != null) {
             String filename = getFilenameFromContentDisposition(contentDisposition);
             if (filename != null) {
@@ -115,65 +76,74 @@ public final class URLUtilCompat {
             }
         }
 
-        // Try to generate a filename based on the URL.
+        // Fallback filename.
+        String filename = "downloadfile";
+
         Uri parsedUri = Uri.parse(url);
         if (parsedUri != null) {
             String lastPathSegment = parsedUri.getLastPathSegment();
             if (lastPathSegment != null) {
-                return replacePathSeparators(lastPathSegment);
+                filename = replacePathSeparators(lastPathSegment);
             }
         }
 
-        // Finally, if couldn't get filename from URI, get a generic filename.
-        return "downloadfile";
+        // Ensure that filenames guessed from the URL path has an extension matching the mimeType.
+        if (filename.indexOf('.') < 0 || extensionDifferentFromMimeType(filename, mimeType)) {
+            String extensionFromMimeType = suggestExtensionFromMimeType(mimeType);
+            return filename + extensionFromMimeType;
+        }
+        return filename;
     }
 
     /**
      * Replace all instances of {@code "/"} with {@code "_"} to avoid filenames that navigate the
      * path.
      */
-    @NonNull
-    private static String replacePathSeparators(@NonNull String raw) {
+    private static @NonNull String replacePathSeparators(@NonNull String raw) {
         return raw.replaceAll("/", "_");
     }
 
 
     /**
-     * Check if the {@code filename} has an extension that is different from the expected one based
-     * on the {@code mimeType}.
-     */
-    private static boolean extensionDifferentFromMimeType(@NonNull String filename,
-            @NonNull String mimeType) {
-        int lastDotIndex = filename.lastIndexOf('.');
-        String typeFromExt = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
-                filename.substring(lastDotIndex + 1));
-        return typeFromExt != null && !typeFromExt.equalsIgnoreCase(mimeType);
-    }
-
-    /**
      * Get a candidate file extension (including the @{code .}) for the given mimeType.
-     * will return {@code ".bin"} if {@code mimeType} is {@code null}
+     * Will return empty string for {@code null}, {@code "application/octet-stream"}, and any
+     * unknown mime types.
      *
      * @param mimeType Reported mimetype
-     * @return A file extension, including the {@code .}
+     * @return A file extension, including the {@code .}, or empty string
      */
-    @NonNull
-    private static String suggestExtensionFromMimeType(@Nullable String mimeType) {
+    private static @NonNull String suggestExtensionFromMimeType(@Nullable String mimeType) {
         if (mimeType == null) {
-            return ".bin";
+            return "";
+        }
+        mimeType = mimeType.trim().toLowerCase(Locale.ROOT);
+        if (mimeType.equals("application/octet-stream")) {
+            // Octet-stream is a generic extension that really doesn't map to anything, despite the
+            // MimeTypeMap insisting that it maps to ".bin".
+            // Handle this as a special case and return an empty guess.
+            return "";
         }
         String extensionFromMimeType = MimeTypeMap.getSingleton().getExtensionFromMimeType(
                 mimeType);
         if (extensionFromMimeType != null) {
             return "." + extensionFromMimeType;
         }
-        if (mimeType.equalsIgnoreCase("text/html")) {
-            return ".html";
-        } else if (mimeType.toLowerCase(Locale.ROOT).startsWith("text/")) {
-            return ".txt";
-        } else {
-            return ".bin";
+        return "";
+    }
+
+    /**
+     * Check if the {@code filename} has an extension that is different from the expected one based
+     * on the {@code mimeType}.
+     */
+    private static boolean extensionDifferentFromMimeType(@NonNull String filename,
+            @Nullable String mimeType) {
+        if (mimeType == null) {
+            return false;
         }
+        int lastDotIndex = filename.lastIndexOf('.');
+        String typeFromExt = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                filename.substring(lastDotIndex + 1));
+        return typeFromExt != null && !typeFromExt.equalsIgnoreCase(mimeType);
     }
 
     /**
@@ -183,6 +153,7 @@ public final class URLUtilCompat {
      * For the single- and double-quoted options, the pattern allows escaped quotes as part of
      * the value, as per
      * <a href="https://datatracker.ietf.org/doc/html/rfc2616#section-2.2">RFC 2616 section 2.2</a>
+     *
      * @noinspection RegExpRepeatedSpace Spaces are ignored by parser, there for readability.
      */
     private static final Pattern DISPOSITION_PATTERN = Pattern.compile(
@@ -212,8 +183,8 @@ public final class URLUtilCompat {
      * @return The filename suggested by the header or {@code null} if no filename could be
      * parsed from the header value.
      */
-    @Nullable
-    public static String getFilenameFromContentDisposition(@NonNull String contentDisposition) {
+    public static @Nullable String getFilenameFromContentDisposition(
+            @NonNull String contentDisposition) {
         String[] parts = contentDisposition.trim().split(";", 2);
         if (parts.length < 2) {
             // Need at least 2 parts, the `disposition-type` and at least one `disposition-parm`.
@@ -300,8 +271,7 @@ public final class URLUtilCompat {
      * Replace all instances of {@code "+"} with the percent-encoded equivalent for the given
      * {@code encoding}.
      */
-    @NonNull
-    private static String encodePlusCharacters(@NonNull String valueChars,
+    private static @NonNull String encodePlusCharacters(@NonNull String valueChars,
             @NonNull String encoding) {
         Charset charset = Charset.forName(encoding);
         StringBuilder sb = new StringBuilder();

@@ -21,13 +21,16 @@ package androidx.health.connect.client.samples
 import androidx.activity.result.ActivityResultCaller
 import androidx.annotation.Sampled
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.contracts.ExerciseRouteRequestContract
+import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.permission.HealthPermission.Companion.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
 import androidx.health.connect.client.readRecord
 import androidx.health.connect.client.records.ExerciseRoute
 import androidx.health.connect.client.records.ExerciseRouteResult
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
@@ -35,10 +38,43 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
 
 @Sampled
+suspend fun ReadSkinTemperatureRecord(
+    healthConnectClient: HealthConnectClient,
+    startTime: Instant,
+    endTime: Instant,
+) {
+    if (
+        healthConnectClient.features.getFeatureStatus(
+            HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE
+        ) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+    ) {
+        if (
+            healthConnectClient.permissionController
+                .getGrantedPermissions()
+                .contains(HealthPermission.getReadPermission(SkinTemperatureRecord::class))
+        ) {
+            val response =
+                healthConnectClient.readRecords(
+                    ReadRecordsRequest<SkinTemperatureRecord>(
+                        timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+                    )
+                )
+            for (skinTemperatureRecord in response.records) {
+                // Process each skin temperature record
+            }
+        } else {
+            // Permission hasn't been granted. Request permission to read skin temperature.
+        }
+    } else {
+        // Feature is not available. It is not possible to read skin temperature.
+    }
+}
+
+@Sampled
 suspend fun ReadStepsRange(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -55,7 +91,7 @@ suspend fun ReadStepsRange(
 suspend fun ReadExerciseSessions(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -73,7 +109,7 @@ suspend fun ReadExerciseSessions(
                         timeRangeFilter =
                             TimeRangeFilter.between(
                                 exerciseRecord.startTime,
-                                exerciseRecord.endTime
+                                exerciseRecord.endTime,
                             )
                     )
                 )
@@ -86,7 +122,7 @@ suspend fun ReadExerciseRoute(
     activityResultCaller: ActivityResultCaller,
     healthConnectClient: HealthConnectClient,
     displayExerciseRoute: (ExerciseRoute) -> Unit,
-    recordId: String
+    recordId: String,
 ) {
     // See https://developer.android.com/training/basics/intents/result#launch for appropriately
     // handling ActivityResultContract.
@@ -116,7 +152,7 @@ suspend fun ReadExerciseRoute(
 suspend fun ReadSleepSessions(
     healthConnectClient: HealthConnectClient,
     startTime: Instant,
-    endTime: Instant
+    endTime: Instant,
 ) {
     val response =
         healthConnectClient.readRecords(
@@ -145,7 +181,7 @@ suspend fun ReadRecordsInBackground(
     val response =
         healthConnectClient.readRecords(
             ReadRecordsRequest<StepsRecord>(
-                timeRangeFilter = TimeRangeFilter.between(startTime, endTime),
+                timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
             )
         )
 

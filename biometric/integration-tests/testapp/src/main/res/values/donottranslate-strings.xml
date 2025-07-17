@@ -18,8 +18,8 @@
 <resources>
     <string name="biometric_test_app_name">Biometric Test App</string>
     <string name="select_activity_label">Select a test activity:</string>
-    <string name="biometric_prompt_test_title">BiometricPrompt Test</string>
-    <string name="auth_prompt_test_title">AuthPrompt Test</string>
+    <string name="biometric_prompt_test_title">BiometricPrompt API Test</string>
+    <string name="auth_result_test_title">Authentication Result API Test</string>
 
     <string name="biometric_prompt_title">Title</string>
     <string name="biometric_prompt_subtitle">Subtitle</string>
@@ -30,13 +30,21 @@
     <string name="biometric_strong_label">BIOMETRIC_STRONG</string>
     <string name="biometric_weak_label">BIOMETRIC_WEAK</string>
     <string name="device_credential_label">DEVICE_CREDENTIAL</string>
+    <string name="identity_check_label" > IDENTITY_CHECK</string>
 
     <string name="auth_type_label">Authentication type:</string>
-    <string name="class2_biometric_label">Class 2 biometric only</string>
-    <string name="class3_biometric_label">Class 3 biometric only</string>
-    <string name="class2_biometric_or_credential_label">Class 2 biometric or credential</string>
-    <string name="class3_biometric_or_credential_label">Class 3 biometric or credential</string>
+    <string name="class2_biometric_label">Class 2 biometric</string>
+    <string name="class3_biometric_label">Class 3 biometric</string>
     <string name="credential_label">Credential only</string>
+
+    <string name="biometric_fallback_type_label">Biometric Fallback type</string>
+    <string name="device_credential_fallback">Device credential fallback</string>
+    <string name="negative_button_fallback">Negative button fallback</string>
+
+    <string name="body_content_type_label">Body content type</string>
+    <string name="plain_text">Plain text</string>
+    <string name="vertical_list">Vertical list</string>
+    <string name="more_options_button">Text with more options button(needs permission)</string>
 
     <string name="other_options_label">Other options:</string>
     <string name="cancel_config_change_label">Cancel on configuration changes</string>

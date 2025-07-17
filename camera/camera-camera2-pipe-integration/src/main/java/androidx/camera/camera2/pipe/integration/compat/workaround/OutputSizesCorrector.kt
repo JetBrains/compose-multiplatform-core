@@ -32,11 +32,11 @@ import javax.inject.Inject
  * 2. ExcludedSupportedSizesContainer
  */
 @CameraScope
-class OutputSizesCorrector
+public class OutputSizesCorrector
 @Inject
 constructor(
     private val cameraMetadata: CameraMetadata?,
-    private val streamConfigurationMap: StreamConfigurationMap?
+    private val streamConfigurationMap: StreamConfigurationMap?,
 ) {
     private val tag = "OutputSizesCorrector"
     private val excludedSupportedSizesQuirk: ExcludedSupportedSizesQuirk? =
@@ -45,7 +45,7 @@ constructor(
         DeviceQuirks[ExtraSupportedOutputSizeQuirk::class.java]
 
     /** Applies the output sizes related quirks onto the input sizes array. */
-    fun applyQuirks(sizes: Array<Size>, format: Int): Array<Size> {
+    public fun applyQuirks(sizes: Array<Size>, format: Int): Array<Size> {
         val sizeList = sizes.toMutableList()
         addExtraSupportedOutputSizesByFormat(sizeList, format)
         excludeProblematicOutputSizesByFormat(sizeList, format)
@@ -56,7 +56,7 @@ constructor(
     }
 
     /** Applies the output sizes related quirks onto the input sizes array. */
-    fun <T> applyQuirks(sizes: Array<Size>, klass: Class<T>): Array<Size> {
+    public fun <T> applyQuirks(sizes: Array<Size>, klass: Class<T>): Array<Size> {
         val sizeList = sizes.toMutableList()
         addExtraSupportedOutputSizesByClass(sizeList, klass)
         excludeProblematicOutputSizesByClass(sizeList, klass)
@@ -91,7 +91,7 @@ constructor(
      */
     private fun <T> addExtraSupportedOutputSizesByClass(
         sizeList: MutableList<Size>,
-        klass: Class<T>
+        klass: Class<T>,
     ) {
         if (extraSupportedOutputSizeQuirk == null) {
             return
@@ -130,7 +130,7 @@ constructor(
      */
     private fun <T> excludeProblematicOutputSizesByClass(
         sizeList: MutableList<Size>,
-        klass: Class<T>
+        klass: Class<T>,
     ) {
         if (cameraMetadata == null || excludedSupportedSizesQuirk == null) {
             return

@@ -41,11 +41,11 @@ import android.print.PrintManager;
 import android.print.pdf.PrintedPdfDocument;
 import android.util.Log;
 
-import androidx.annotation.DoNotInline;
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -255,8 +255,8 @@ public final class PrintHelper {
      * @param bitmap  The bitmap to print.
      * @param callback Optional callback to observe when printing is finished.
      */
-    public void printBitmap(@NonNull final String jobName, @NonNull final Bitmap bitmap,
-            @Nullable final OnPrintFinishCallback callback) {
+    public void printBitmap(final @NonNull String jobName, final @NonNull Bitmap bitmap,
+            final @Nullable OnPrintFinishCallback callback) {
         if (bitmap == null) {
             return;
         }
@@ -351,8 +351,8 @@ public final class PrintHelper {
      * @throws FileNotFoundException if <code>Uri</code> is not pointing to a valid image.
      * @param callback Optional callback to observe when printing is finished.
      */
-    public void printBitmap(@NonNull final String jobName, @NonNull final Uri imageFile,
-            @Nullable final OnPrintFinishCallback callback)
+    public void printBitmap(final @NonNull String jobName, final @NonNull Uri imageFile,
+            final @Nullable OnPrintFinishCallback callback)
             throws FileNotFoundException {
         PrintDocumentAdapter printDocumentAdapter = new PrintUriAdapter(jobName, imageFile,
                 callback, mScaleMode);
@@ -839,12 +839,10 @@ public final class PrintHelper {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static int getDuplexMode(PrintAttributes printAttributes) {
             return printAttributes.getDuplexMode();
         }
 
-        @DoNotInline
         static void setDuplexMode(PrintAttributes.Builder builder, int duplexMode) {
             builder.setDuplexMode(duplexMode);
         }
@@ -856,7 +854,6 @@ public final class PrintHelper {
             // This class is not instantiable.
         }
 
-        @DoNotInline
         static ColorSpace get(ColorSpace.Named name) {
             return ColorSpace.get(name);
         }

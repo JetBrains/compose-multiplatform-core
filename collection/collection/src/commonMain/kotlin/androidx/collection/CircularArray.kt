@@ -17,6 +17,7 @@
 package androidx.collection
 
 import androidx.collection.CollectionPlatformUtils.createIndexOutOfBoundsException
+import androidx.collection.internal.requirePrecondition
 import kotlin.jvm.JvmOverloads
 
 /**
@@ -34,8 +35,8 @@ public class CircularArray<E> @JvmOverloads public constructor(minCapacity: Int 
     private var capacityBitmask: Int
 
     init {
-        require(minCapacity >= 1) { "capacity must be >= 1" }
-        require(minCapacity <= 2 shl 29) { "capacity must be <= 2^30" }
+        requirePrecondition(minCapacity >= 1) { "capacity must be >= 1" }
+        requirePrecondition(minCapacity <= 2 shl 29) { "capacity must be <= 2^30" }
 
         // If minCapacity isn't a power of 2, round up to the next highest
         // power of 2.
@@ -106,7 +107,8 @@ public class CircularArray<E> @JvmOverloads public constructor(minCapacity: Int 
         elements[head] = null
         head = (head + 1) and capacityBitmask
 
-        @Suppress("UNCHECKED_CAST") return result as E
+        @Suppress("UNCHECKED_CAST")
+        return result as E
     }
 
     /**
@@ -124,7 +126,8 @@ public class CircularArray<E> @JvmOverloads public constructor(minCapacity: Int 
         elements[t] = null
         tail = t
 
-        @Suppress("UNCHECKED_CAST") return result as E
+        @Suppress("UNCHECKED_CAST")
+        return result as E
     }
 
     /** Remove all elements from the [CircularArray]. */

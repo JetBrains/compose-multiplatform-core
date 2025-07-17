@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // b/420551535
+
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.annotation.IntRange as AndroidXIntRange
@@ -25,20 +27,23 @@ import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.stopScroll
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.internal.checkPrecondition
+import androidx.compose.foundation.internal.requirePrecondition
 import androidx.compose.foundation.lazy.layout.AwaitFirstLayoutModifier
-import androidx.compose.foundation.lazy.layout.LazyLayoutAnimateScrollScope
 import androidx.compose.foundation.lazy.layout.LazyLayoutBeyondBoundsInfo
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.foundation.lazy.layout.LazyLayoutPinnedItemList
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
+import androidx.compose.foundation.lazy.layout.LazyLayoutScrollDeltaBetweenPasses
 import androidx.compose.foundation.lazy.layout.ObservableScopeInvalidator
 import androidx.compose.foundation.lazy.layout.PrefetchScheduler
 import androidx.compose.foundation.lazy.layout.animateScrollToItem
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.FullSpan
-import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.Unset
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.LaneFullSpan
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridLaneInfo.Companion.LaneUnset
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.neverEqualPolicy
@@ -50,6 +55,7 @@ import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.ranges.IntRange
 import kotlinx.coroutines.launch
 
 /**
@@ -68,7 +74,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun rememberLazyStaggeredGridState(
     initialFirstVisibleItemIndex: Int = 0,
-    initialFirstVisibleItemScrollOffset: Int = 0
+    initialFirstVisibleItemScrollOffset: Int = 0,
 ): LazyStaggeredGridState =
     rememberSaveable(saver = LazyStaggeredGridState.Saver) {
         LazyStaggeredGridState(initialFirstVisibleItemIndex, initialFirstVisibleItemScrollOffset)
@@ -79,11 +85,12 @@ fun rememberLazyStaggeredGridState(
  * most cases, it should be created via [rememberLazyStaggeredGridState].
  */
 @OptIn(ExperimentalFoundationApi::class)
+@Stable
 class LazyStaggeredGridState
 internal constructor(
     initialFirstVisibleItems: IntArray,
     initialFirstVisibleOffsets: IntArray,
-    prefetchScheduler: PrefetchScheduler?
+    prefetchScheduler: PrefetchScheduler?,
 ) : ScrollableState {
     /**
      * @param initialFirstVisibleItemIndex initial value for [firstVisibleItemIndex]
@@ -91,15 +98,23 @@ internal constructor(
      */
     constructor(
         initialFirstVisibleItemIndex: Int = 0,
-        initialFirstVisibleItemOffset: Int = 0
+        initialFirstVisibleItemOffset: Int = 0,
     ) : this(
         intArrayOf(initialFirstVisibleItemIndex),
         intArrayOf(initialFirstVisibleItemOffset),
-        null
+        null,
     )
 
+    internal var hasLookaheadOccurred: Boolean = false
+        private set
+
+    internal var approachLayoutInfo: LazyStaggeredGridMeasureResult? = null
+        private set
+
     /**
-     * Index of the first visible item across all staggered grid lanes.
+     * Index of the first visible item across all staggered grid lanes. This does not include items
+     * in the content padding region. For the first visible item that includes items in the content
+     * padding please use [LazyStaggeredGridLayoutInfo.visibleItemsInfo].
      *
      * This property is observable and when use it in composable function it will be recomposed on
      * each scroll, potentially causing performance issues.
@@ -121,7 +136,7 @@ internal constructor(
         LazyStaggeredGridScrollPosition(
             initialFirstVisibleItems,
             initialFirstVisibleOffsets,
-            ::fillNearestIndices
+            ::fillNearestIndices,
         )
 
     /**
@@ -155,9 +170,6 @@ internal constructor(
     override val lastScrolledBackward: Boolean
         get() = scrollableState.lastScrolledBackward
 
-    /** implementation of [LazyLayoutAnimateScrollScope] scope required for [animateScrollToItem] */
-    private val animateScrollScope = LazyStaggeredGridAnimateScrollScope(this)
-
     internal var remeasurement: Remeasurement? = null
         private set
 
@@ -187,8 +199,14 @@ internal constructor(
     private val scrollableState = ScrollableState { -onScroll(-it) }
 
     /** scroll to be consumed during next/current layout pass */
-    internal var scrollToBeConsumed = 0f
-        private set
+    private var scrollToBeConsumed = 0f
+
+    internal fun scrollToBeConsumed(isLookingAhead: Boolean): Float =
+        if (isLookingAhead || !hasLookaheadOccurred) {
+            scrollToBeConsumed
+        } else {
+            scrollDeltaBetweenPasses
+        }
 
     /* @VisibleForTesting */
     internal var measurePassCount = 0
@@ -230,7 +248,7 @@ internal constructor(
      */
     override suspend fun scroll(
         scrollPriority: MutatePriority,
-        block: suspend ScrollScope.() -> Unit
+        block: suspend ScrollScope.() -> Unit,
     ) {
         awaitLayoutModifier.waitForFirstLayout()
         scrollableState.scroll(scrollPriority, block)
@@ -248,8 +266,8 @@ internal constructor(
         if (distance < 0 && !canScrollForward || distance > 0 && !canScrollBackward) {
             return 0f
         }
-        check(abs(scrollToBeConsumed) <= 0.5f) {
-            "entered drag with non-zero pending scroll: $scrollToBeConsumed"
+        checkPrecondition(abs(scrollToBeConsumed) <= 0.5f) {
+            "entered drag with non-zero pending scroll"
         }
         scrollToBeConsumed += distance
 
@@ -257,15 +275,39 @@ internal constructor(
         // inside measuring we do scrollToBeConsumed.roundToInt() so there will be no scroll if
         // we have less than 0.5 pixels
         if (abs(scrollToBeConsumed) > 0.5f) {
-            val layoutInfo = layoutInfoState.value
             val preScrollToBeConsumed = scrollToBeConsumed
             val intDelta = scrollToBeConsumed.roundToInt()
-            if (layoutInfo.tryToApplyScrollWithoutRemeasure(intDelta)) {
-                applyMeasureResult(result = layoutInfo, visibleItemsStayedTheSame = true)
+            var scrolledLayoutInfo =
+                layoutInfoState.value.copyWithScrollDeltaWithoutRemeasure(
+                    delta = intDelta,
+                    updateAnimations = !hasLookaheadOccurred,
+                )
+            if (scrolledLayoutInfo != null && this.approachLayoutInfo != null) {
+                // if we were able to scroll the lookahead layout info without remeasure, lets
+                // try to do the same for post lookahead layout info (sometimes they diverge).
+                val scrolledApproachLayoutInfo =
+                    approachLayoutInfo?.copyWithScrollDeltaWithoutRemeasure(
+                        delta = intDelta,
+                        updateAnimations = true,
+                    )
+                if (scrolledApproachLayoutInfo != null) {
+                    // we can apply scroll delta for both phases without remeasure
+                    approachLayoutInfo = scrolledApproachLayoutInfo
+                } else {
+                    // we can't apply scroll delta for post lookahead, so we have to remeasure
+                    scrolledLayoutInfo = null
+                }
+            }
+            if (scrolledLayoutInfo != null) {
+                applyMeasureResult(
+                    result = scrolledLayoutInfo,
+                    isLookingAhead = hasLookaheadOccurred,
+                    visibleItemsStayedTheSame = true,
+                )
                 // we don't need to remeasure, so we only trigger re-placement:
                 placementScopeInvalidator.invalidateScope()
 
-                notifyPrefetch(preScrollToBeConsumed - scrollToBeConsumed, layoutInfo)
+                notifyPrefetch(preScrollToBeConsumed - scrollToBeConsumed, scrolledLayoutInfo)
             } else {
                 remeasurement?.forceRemeasure()
 
@@ -299,7 +341,7 @@ internal constructor(
     suspend fun scrollToItem(
         /* @IntRange(from = 0) */
         index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         scroll { snapToItemInternal(index, scrollOffset, forceRemeasure = true) }
     }
@@ -315,16 +357,14 @@ internal constructor(
     suspend fun animateScrollToItem(
         /* @IntRange(from = 0) */
         index: Int,
-        scrollOffset: Int = 0
+        scrollOffset: Int = 0,
     ) {
         val layoutInfo = layoutInfoState.value
         val numOfItemsToTeleport = 100 * layoutInfo.slots.sizes.size
-        animateScrollScope.animateScrollToItem(
-            index,
-            scrollOffset,
-            numOfItemsToTeleport,
-            layoutInfo.density
-        )
+        scroll {
+            LazyLayoutScrollScope(this@LazyStaggeredGridState, this)
+                .animateScrollToItem(index, scrollOffset, numOfItemsToTeleport, layoutInfo.density)
+        }
     }
 
     internal val measurementScopeInvalidator = ObservableScopeInvalidator()
@@ -395,7 +435,7 @@ internal constructor(
     /** Maintain scroll position for item based on custom key if its index has changed. */
     internal fun updateScrollPositionIfTheFirstItemWasMoved(
         itemProvider: LazyLayoutItemProvider,
-        firstItemIndex: IntArray
+        firstItemIndex: IntArray,
     ): IntArray =
         scrollPosition.updateScrollPositionIfTheFirstItemWasMoved(itemProvider, firstItemIndex)
 
@@ -404,7 +444,7 @@ internal constructor(
     /** Start prefetch of the items based on provided delta */
     private fun notifyPrefetch(
         delta: Float,
-        info: LazyStaggeredGridMeasureResult = layoutInfoState.value
+        info: LazyStaggeredGridMeasureResult = layoutInfoState.value,
     ) {
         if (prefetchingEnabled && info.visibleItemsInfo.isNotEmpty()) {
             val scrollingForward = delta < 0
@@ -471,7 +511,10 @@ internal constructor(
                     }
 
                 currentItemPrefetchHandles[targetIndex] =
-                    prefetchState.schedulePrefetch(index = targetIndex, constraints = constraints)
+                    prefetchState.schedulePrecompositionAndPremeasure(
+                        index = targetIndex,
+                        constraints = constraints,
+                    )
             }
 
             clearLeftoverPrefetchHandles(prefetchHandlesUsed)
@@ -503,22 +546,43 @@ internal constructor(
     /** updates state after measure pass */
     internal fun applyMeasureResult(
         result: LazyStaggeredGridMeasureResult,
-        visibleItemsStayedTheSame: Boolean = false
+        isLookingAhead: Boolean,
+        visibleItemsStayedTheSame: Boolean = false,
     ) {
-        scrollToBeConsumed -= result.consumedScroll
-        layoutInfoState.value = result
-
-        if (visibleItemsStayedTheSame) {
-            scrollPosition.updateScrollOffset(result.firstVisibleItemScrollOffsets)
+        if (!isLookingAhead && hasLookaheadOccurred) {
+            // If there was already a lookahead pass, record this result as Approach result
+            approachLayoutInfo = result
         } else {
-            scrollPosition.updateFromMeasureResult(result)
-            cancelPrefetchIfVisibleItemsChanged(result)
-        }
-        canScrollBackward = result.canScrollBackward
-        canScrollForward = result.canScrollForward
+            if (isLookingAhead) {
+                hasLookaheadOccurred = true
+            }
+            scrollToBeConsumed -= result.consumedScroll
+            layoutInfoState.value = result
 
-        measurePassCount++
+            if (visibleItemsStayedTheSame) {
+                scrollPosition.updateScrollOffset(result.firstVisibleItemScrollOffsets)
+            } else {
+                scrollPosition.updateFromMeasureResult(result)
+                cancelPrefetchIfVisibleItemsChanged(result)
+            }
+            canScrollBackward = result.canScrollBackward
+            canScrollForward = result.canScrollForward
+
+            if (isLookingAhead) {
+                _lazyLayoutScrollDeltaBetweenPasses.updateScrollDeltaForApproach(
+                    result.scrollBackAmount,
+                    result.density,
+                    result.coroutineScope,
+                )
+            }
+            measurePassCount++
+        }
     }
+
+    internal val scrollDeltaBetweenPasses: Float
+        get() = _lazyLayoutScrollDeltaBetweenPasses.scrollDeltaBetweenPasses
+
+    private val _lazyLayoutScrollDeltaBetweenPasses = LazyLayoutScrollDeltaBetweenPasses()
 
     private fun fillNearestIndices(itemIndex: Int, laneCount: Int): IntArray {
         val indices = IntArray(laneCount)
@@ -532,11 +596,11 @@ internal constructor(
         val targetLaneIndex =
             when (val previousLane = laneInfo.getLane(itemIndex)) {
                 // lane was never set or contains obsolete full span (the check for full span above)
-                Unset,
-                FullSpan -> 0
+                LaneUnset,
+                LaneFullSpan -> 0
                 // lane was previously set, keep item to the same lane
                 else -> {
-                    require(previousLane >= 0) {
+                    requirePrecondition(previousLane >= 0) {
                         "Expected positive lane number, got $previousLane instead."
                     }
                     minOf(previousLane, laneCount)
@@ -547,7 +611,7 @@ internal constructor(
         var currentItemIndex = itemIndex
         for (lane in (targetLaneIndex - 1) downTo 0) {
             indices[lane] = laneInfo.findPreviousItemIndex(currentItemIndex, lane)
-            if (indices[lane] == Unset) {
+            if (indices[lane] == LaneUnset) {
                 indices.fill(-1, toIndex = lane)
                 break
             }
@@ -573,7 +637,7 @@ internal constructor(
                 save = { state ->
                     listOf(state.scrollPosition.indices, state.scrollPosition.scrollOffsets)
                 },
-                restore = { LazyStaggeredGridState(it[0], it[1], null) }
+                restore = { LazyStaggeredGridState(it[0], it[1], null) },
             )
     }
 }

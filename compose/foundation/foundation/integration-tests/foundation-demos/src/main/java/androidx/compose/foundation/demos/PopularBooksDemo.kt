@@ -16,7 +16,6 @@
 
 package androidx.compose.foundation.demos
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +46,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Preview
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PopularBooksDemo() {
     MaterialTheme {
@@ -55,7 +53,7 @@ fun PopularBooksDemo() {
         Column {
             Row(
                 modifier = Modifier.height(IntrinsicSize.Max),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     "Title",
@@ -64,7 +62,7 @@ fun PopularBooksDemo() {
                         .fillMaxHeight()
                         .padding(4.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     "Author",
@@ -73,7 +71,7 @@ fun PopularBooksDemo() {
                         .fillMaxHeight()
                         .padding(4.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     "Year",
@@ -82,7 +80,7 @@ fun PopularBooksDemo() {
                         .fillMaxHeight()
                         .padding(4.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     "Sales (M)",
@@ -91,7 +89,7 @@ fun PopularBooksDemo() {
                         .fillMaxHeight()
                         .padding(4.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
             Divider(color = Color.LightGray, thickness = Dp.Hairline)
@@ -100,7 +98,7 @@ fun PopularBooksDemo() {
                 items(sortedList, key = { it.title }) {
                     Row(
                         Modifier.animateItem().height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             it.title,
@@ -108,7 +106,7 @@ fun PopularBooksDemo() {
                                 .fillMaxHeight()
                                 .padding(4.dp)
                                 .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                         Text(
                             it.author,
@@ -116,7 +114,7 @@ fun PopularBooksDemo() {
                                 .fillMaxHeight()
                                 .padding(4.dp)
                                 .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                         Text(
                             "${it.published}",
@@ -124,7 +122,7 @@ fun PopularBooksDemo() {
                                 .fillMaxHeight()
                                 .padding(4.dp)
                                 .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                         Text(
                             "${it.salesInMillions}",
@@ -132,7 +130,7 @@ fun PopularBooksDemo() {
                                 .fillMaxHeight()
                                 .padding(4.dp)
                                 .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -166,12 +164,12 @@ private val PopularBooksList =
         Book("The Alchemist", "Paulo Coelho", 1988, 65),
         Book("Harry Potter and the Prisoner of Azkaban", "J. K. Rowling", 1999, 65),
         Book("Harry Potter and the Goblet of Fire", "J. K. Rowling", 2000, 65),
-        Book("Harry Potter and the Order of the Phoenix", "J. K. Rowling", 2003, 65)
+        Book("Harry Potter and the Order of the Phoenix", "J. K. Rowling", 2003, 65),
     )
 
 private class Book(
     val title: String,
     val author: String,
     val published: Int,
-    val salesInMillions: Int
+    val salesInMillions: Int,
 )

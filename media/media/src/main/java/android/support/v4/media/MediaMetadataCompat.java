@@ -20,6 +20,7 @@ import static androidx.annotation.RestrictTo.Scope.LIBRARY;
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.media.MediaMetadata;
+import android.media.Rating;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -40,7 +41,11 @@ import java.util.Set;
 
 /**
  * Contains metadata about an item, such as the title, artist, etc.
+ *
+ * @deprecated androidx.media is deprecated. Please migrate to <a
+ *     href="https://developer.android.com/media/media3">androidx.media3</a>.
  */
+@Deprecated
 @SuppressLint("BanParcelableUsage")
 public final class MediaMetadataCompat implements Parcelable {
     private static final String TAG = "MediaMetadata";
@@ -616,13 +621,46 @@ public final class MediaMetadataCompat implements Parcelable {
      * @return An equivalent {@link android.media.MediaMetadata} object, or null
      *         if none.
      */
+    @SuppressWarnings("nullness") // MediaMetadata.Builder accepts null values but is not annotated.
     public Object getMediaMetadata() {
         if (mMetadataFwk == null && Build.VERSION.SDK_INT >= 21) {
-            Parcel p = Parcel.obtain();
-            writeToParcel(p, 0);
-            p.setDataPosition(0);
-            mMetadataFwk = MediaMetadata.CREATOR.createFromParcel(p);
-            p.recycle();
+            MediaMetadata.Builder builder = new MediaMetadata.Builder();
+            for (String key : mBundle.keySet()) {
+                Integer type = METADATA_KEYS_TYPE.get(key);
+                if (type == null) {
+                    type = -1;
+                }
+                switch (type) {
+                    case METADATA_TYPE_TEXT:
+                        builder.putText(key, mBundle.getCharSequence(key));
+                        break;
+                    case METADATA_TYPE_LONG:
+                        builder.putLong(key, mBundle.getLong(key, 0));
+                        break;
+                    case METADATA_TYPE_BITMAP:
+                        builder.putBitmap(key, mBundle.getParcelable(key));
+                        break;
+                    case METADATA_TYPE_RATING:
+                        builder.putRating(key, mBundle.getParcelable(key));
+                        break;
+                    default:
+                        // keys not in METADATA_KEYS_TYPE will be handled here
+                        Object value = mBundle.get(key);
+                        if (value == null || value instanceof CharSequence) {
+                            builder.putText(key, (CharSequence) value);
+                        } else if (value instanceof Long) {
+                            builder.putLong(key, (Long) value);
+                        } else if (value instanceof Bitmap) {
+                            builder.putBitmap(key, (Bitmap) value);
+                        } else if (value instanceof Rating) {
+                            builder.putRating(key, (Rating) value);
+                        } else {
+                            // values of unknown types are not preserved
+                        }
+                        break;
+                }
+            }
+            mMetadataFwk = builder.build();
         }
         return mMetadataFwk;
     }
@@ -641,9 +679,13 @@ public final class MediaMetadataCompat implements Parcelable {
             };
 
     /**
-     * Use to build MediaMetadata objects. The system defined metadata keys must
-     * use the appropriate data type.
+     * Use to build MediaMetadata objects. The system defined metadata keys must use the appropriate
+     * data type.
+     *
+     * @deprecated androidx.media is deprecated. Please migrate to <a
+     *     href="https://developer.android.com/media/media3">androidx.media3</a>.
      */
+    @Deprecated
     public static final class Builder {
         private final Bundle mBundle;
 

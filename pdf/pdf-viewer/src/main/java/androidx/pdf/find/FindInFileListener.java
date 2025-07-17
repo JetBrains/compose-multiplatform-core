@@ -16,9 +16,10 @@
 
 package androidx.pdf.find;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.util.ObservableValue;
+
+import org.jspecify.annotations.Nullable;
 
 /**
  * Callback interface for listening to user actions to find text in a file.
@@ -46,6 +47,5 @@ public interface FindInFileListener {
      * when more matches are found or the selected match is changed.
      * Can be null if not supported, or if the document is not ready or is destroyed.
      */
-    @Nullable
-    ObservableValue<MatchCount> matchCount();
+    @Nullable ObservableValue<MatchCount> matchCount();
 }

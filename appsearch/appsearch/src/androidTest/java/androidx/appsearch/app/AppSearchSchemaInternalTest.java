@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,252 +18,171 @@ package androidx.appsearch.app;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.appsearch.testutil.AppSearchEmail;
+import static org.junit.Assert.assertThrows;
+
+import androidx.appsearch.app.AppSearchSchema.PropertyConfig;
+import androidx.appsearch.app.AppSearchSchema.StringPropertyConfig;
+import androidx.appsearch.flags.Flags;
+import androidx.appsearch.testutil.flags.RequiresFlagsEnabled;
 
 import org.junit.Test;
 
 import java.util.List;
 
-/** Tests for private APIs of {@link AppSearchSchema}. */
 public class AppSearchSchemaInternalTest {
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
+    // TODO(b/384947619): move delete propagation tests back to AppSearchSchemaCtsTest once the API
+    //   is ready.
     @Test
-    public void testParentTypes() {
-        AppSearchSchema schema =
-                new AppSearchSchema.Builder("EmailMessage")
-                        .addParentType("Email")
-                        .addParentType("Message")
-                        .build();
-        assertThat(schema.getParentTypes()).containsExactly("Email", "Message");
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testStringPropertyConfigDefaultValues_withDeletePropagationType() {
+        StringPropertyConfig builder = new StringPropertyConfig.Builder("test").build();
+        assertThat(builder.getIndexingType()).isEqualTo(StringPropertyConfig.INDEXING_TYPE_NONE);
+        assertThat(builder.getTokenizerType()).isEqualTo(StringPropertyConfig.TOKENIZER_TYPE_NONE);
+        assertThat(builder.getCardinality()).isEqualTo(PropertyConfig.CARDINALITY_OPTIONAL);
+        assertThat(builder.getJoinableValueType())
+                .isEqualTo(StringPropertyConfig.JOINABLE_VALUE_TYPE_NONE);
+        assertThat(builder.getDeletePropagationType())
+                .isEqualTo(StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE);
     }
 
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
     @Test
-    public void testDuplicateParentTypes() {
-        AppSearchSchema schema =
-                new AppSearchSchema.Builder("EmailMessage")
-                        .addParentType("Email")
-                        .addParentType("Message")
-                        .addParentType("Email")
-                        .build();
-        assertThat(schema.getParentTypes()).containsExactly("Email", "Message");
-    }
-
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
-    @Test
-    public void testDocumentPropertyConfig_indexableNestedPropertyStrings() {
-        AppSearchSchema.DocumentPropertyConfig documentPropertyConfig =
-                new AppSearchSchema.DocumentPropertyConfig.Builder("property", "Schema")
-                        .addIndexableNestedProperties("prop1", "prop2", "prop1.prop2")
-                        .build();
-        assertThat(documentPropertyConfig.getIndexableNestedProperties())
-                .containsExactly("prop1", "prop2", "prop1.prop2");
-    }
-
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
-    @Test
-    public void testDocumentPropertyConfig_indexableNestedPropertyPropertyPaths() {
-        AppSearchSchema.DocumentPropertyConfig documentPropertyConfig =
-                new AppSearchSchema.DocumentPropertyConfig.Builder("property", "Schema")
-                        .addIndexableNestedPropertyPaths(
-                                new PropertyPath("prop1"), new PropertyPath("prop1.prop2"))
-                        .build();
-        assertThat(documentPropertyConfig.getIndexableNestedProperties())
-                .containsExactly("prop1", "prop1.prop2");
-    }
-
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
-    @Test
-    public void testDocumentPropertyConfig_indexableNestedPropertyProperty_duplicatePaths() {
-        AppSearchSchema.DocumentPropertyConfig documentPropertyConfig =
-                new AppSearchSchema.DocumentPropertyConfig.Builder("property", "Schema")
-                        .addIndexableNestedPropertyPaths(
-                                new PropertyPath("prop1"), new PropertyPath("prop1.prop2"))
-                        .addIndexableNestedProperties("prop1")
-                        .build();
-        assertThat(documentPropertyConfig.getIndexableNestedProperties())
-                .containsExactly("prop1", "prop1.prop2");
-    }
-
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
-    @Test
-    public void testDocumentPropertyConfig_reusingBuilderDoesNotAffectPreviouslyBuiltConfigs() {
-        AppSearchSchema.DocumentPropertyConfig.Builder builder =
-                new AppSearchSchema.DocumentPropertyConfig.Builder("property", "Schema")
-                        .addIndexableNestedProperties("prop1");
-        AppSearchSchema.DocumentPropertyConfig config1 = builder.build();
-        assertThat(config1.getIndexableNestedProperties()).containsExactly("prop1");
-
-        builder.addIndexableNestedProperties("prop2");
-        AppSearchSchema.DocumentPropertyConfig config2 = builder.build();
-        assertThat(config2.getIndexableNestedProperties()).containsExactly("prop1", "prop2");
-        assertThat(config1.getIndexableNestedProperties()).containsExactly("prop1");
-
-        builder.addIndexableNestedPropertyPaths(new PropertyPath("prop3"));
-        AppSearchSchema.DocumentPropertyConfig config3 = builder.build();
-        assertThat(config3.getIndexableNestedProperties())
-                .containsExactly("prop1", "prop2", "prop3");
-        assertThat(config2.getIndexableNestedProperties()).containsExactly("prop1", "prop2");
-        assertThat(config1.getIndexableNestedProperties()).containsExactly("prop1");
-    }
-
-    // TODO(b/291122592): move to CTS once the APIs it uses are public
-    @Test
-    public void testPropertyConfig() {
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testPropertyConfig_withDeletePropagationType() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("Test")
                         .addProperty(
-                                new AppSearchSchema.StringPropertyConfig.Builder("string")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED)
-                                        .setIndexingType(
-                                                AppSearchSchema.StringPropertyConfig
-                                                        .INDEXING_TYPE_EXACT_TERMS)
-                                        .setTokenizerType(
-                                                AppSearchSchema.StringPropertyConfig
-                                                        .TOKENIZER_TYPE_PLAIN)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.LongPropertyConfig.Builder("long")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
-                                        .setIndexingType(
-                                                AppSearchSchema.LongPropertyConfig
-                                                        .INDEXING_TYPE_NONE)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.LongPropertyConfig.Builder("indexableLong")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
-                                        .setIndexingType(
-                                                AppSearchSchema.LongPropertyConfig
-                                                        .INDEXING_TYPE_RANGE)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.DoublePropertyConfig.Builder("double")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.BooleanPropertyConfig.Builder("boolean")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.BytesPropertyConfig.Builder("bytes")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.DocumentPropertyConfig.Builder(
-                                                "document1", AppSearchEmail.SCHEMA_TYPE)
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
-                                        .setShouldIndexNestedProperties(true)
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.DocumentPropertyConfig.Builder(
-                                                "document2", AppSearchEmail.SCHEMA_TYPE)
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED)
-                                        .setShouldIndexNestedProperties(false)
-                                        .addIndexableNestedProperties("path1", "path2", "path3")
-                                        .build())
-                        .addProperty(
-                                new AppSearchSchema.StringPropertyConfig.Builder("qualifiedId1")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                                new StringPropertyConfig.Builder("qualifiedId1")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
                                         .setJoinableValueType(
-                                                AppSearchSchema.StringPropertyConfig
+                                                StringPropertyConfig
                                                         .JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                                        .setDeletePropagationType(
+                                                StringPropertyConfig
+                                                        .DELETE_PROPAGATION_TYPE_PROPAGATE_FROM)
                                         .build())
                         .addProperty(
-                                new AppSearchSchema.StringPropertyConfig.Builder("qualifiedId2")
+                                new StringPropertyConfig.Builder("qualifiedId2")
                                         .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED)
+                                                PropertyConfig.CARDINALITY_REQUIRED)
                                         .setJoinableValueType(
-                                                AppSearchSchema.StringPropertyConfig
+                                                StringPropertyConfig
                                                         .JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                                        .setDeletePropagationType(
+                                                StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE)
                                         .build())
                         .build();
 
         assertThat(schema.getSchemaType()).isEqualTo("Test");
-        List<AppSearchSchema.PropertyConfig> properties = schema.getProperties();
-        assertThat(properties).hasSize(10);
+        List<PropertyConfig> properties = schema.getProperties();
+        assertThat(properties).hasSize(2);
 
-        assertThat(properties.get(0).getName()).isEqualTo("string");
+        assertThat(properties.get(0).getName()).isEqualTo("qualifiedId1");
         assertThat(properties.get(0).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED);
-        assertThat(((AppSearchSchema.StringPropertyConfig) properties.get(0)).getIndexingType())
-                .isEqualTo(AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_EXACT_TERMS);
-        assertThat(((AppSearchSchema.StringPropertyConfig) properties.get(0)).getTokenizerType())
-                .isEqualTo(AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN);
+                .isEqualTo(PropertyConfig.CARDINALITY_OPTIONAL);
+        assertThat(((StringPropertyConfig) properties.get(0)).getJoinableValueType())
+                .isEqualTo(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID);
+        assertThat(((StringPropertyConfig) properties.get(0)).getDeletePropagationType())
+                .isEqualTo(StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM);
 
-        assertThat(properties.get(1).getName()).isEqualTo("long");
+        assertThat(properties.get(1).getName()).isEqualTo("qualifiedId2");
         assertThat(properties.get(1).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.LongPropertyConfig) properties.get(1)).getIndexingType())
-                .isEqualTo(AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_NONE);
+                .isEqualTo(PropertyConfig.CARDINALITY_REQUIRED);
+        assertThat(((StringPropertyConfig) properties.get(1)).getJoinableValueType())
+                .isEqualTo(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID);
+        assertThat(((StringPropertyConfig) properties.get(1)).getDeletePropagationType())
+                .isEqualTo(StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE);
+    }
 
-        assertThat(properties.get(2).getName()).isEqualTo("indexableLong");
-        assertThat(properties.get(2).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(((AppSearchSchema.LongPropertyConfig) properties.get(2)).getIndexingType())
-                .isEqualTo(AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_RANGE);
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testSetDeletePropagationTypeWithoutJoinableValueTypeQualifiedId_throwsException() {
+        // Setting delete propagation type PROPAGATE_FROM with joinable value type other than
+        // QUALIFIED_ID should fail.
+        final StringPropertyConfig.Builder builder =
+                new StringPropertyConfig.Builder("qualifiedId")
+                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setDeletePropagationType(
+                                StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM);
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> builder.build());
+        assertThat(e).hasMessageThat().contains(
+                "Cannot set delete propagation without setting JOINABLE_VALUE_TYPE_QUALIFIED_ID.");
+    }
 
-        assertThat(properties.get(3).getName()).isEqualTo("double");
-        assertThat(properties.get(3).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED);
-        assertThat(properties.get(3)).isInstanceOf(AppSearchSchema.DoublePropertyConfig.class);
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testAppSearchSchema_toString_withDeletePropagationType() {
+        AppSearchSchema schema =
+                new AppSearchSchema.Builder("testSchema")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("qualifiedId1")
+                                        .setDescription("first qualifiedId")
+                                        .setCardinality(PropertyConfig.CARDINALITY_REQUIRED)
+                                        .setJoinableValueType(
+                                                StringPropertyConfig
+                                                        .JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                                        .setDeletePropagationType(
+                                                StringPropertyConfig
+                                                        .DELETE_PROPAGATION_TYPE_PROPAGATE_FROM)
+                                        .build())
+                        .addProperty(
+                                new StringPropertyConfig.Builder("qualifiedId2")
+                                        .setDescription("second qualifiedId")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setJoinableValueType(
+                                                StringPropertyConfig
+                                                        .JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                                        .setDeletePropagationType(
+                                                StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE)
+                                        .build())
+                        .build();
 
-        assertThat(properties.get(4).getName()).isEqualTo("boolean");
-        assertThat(properties.get(4).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED);
-        assertThat(properties.get(4)).isInstanceOf(AppSearchSchema.BooleanPropertyConfig.class);
+        String schemaString = schema.toString();
 
-        assertThat(properties.get(5).getName()).isEqualTo("bytes");
-        assertThat(properties.get(5).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(properties.get(5)).isInstanceOf(AppSearchSchema.BytesPropertyConfig.class);
+        String expectedString =
+                "{\n"
+                        + "  schemaType: \"testSchema\",\n"
+                        + "  properties: [\n"
+                        + "    {\n"
+                        + "      name: \"qualifiedId1\",\n"
+                        + "      description: \"first qualifiedId\",\n"
+                        + "      indexingType: INDEXING_TYPE_NONE,\n"
+                        + "      tokenizerType: TOKENIZER_TYPE_NONE,\n"
+                        + "      joinableValueType: JOINABLE_VALUE_TYPE_QUALIFIED_ID,\n"
+                        + "      deletePropagationType: DELETE_PROPAGATION_TYPE_PROPAGATE_FROM,\n"
+                        + "      cardinality: CARDINALITY_REQUIRED,\n"
+                        + "      dataType: DATA_TYPE_STRING,\n"
+                        + "    },\n"
+                        + "    {\n"
+                        + "      name: \"qualifiedId2\",\n"
+                        + "      description: \"second qualifiedId\",\n"
+                        + "      indexingType: INDEXING_TYPE_NONE,\n"
+                        + "      tokenizerType: TOKENIZER_TYPE_NONE,\n"
+                        + "      joinableValueType: JOINABLE_VALUE_TYPE_QUALIFIED_ID,\n"
+                        + "      deletePropagationType: DELETE_PROPAGATION_TYPE_NONE,\n"
+                        + "      cardinality: CARDINALITY_OPTIONAL,\n"
+                        + "      dataType: DATA_TYPE_STRING,\n"
+                        + "    }\n"
+                        + "  ]\n"
+                        + "}";
 
-        assertThat(properties.get(6).getName()).isEqualTo("document1");
-        assertThat(properties.get(6).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED);
-        assertThat(((AppSearchSchema.DocumentPropertyConfig) properties.get(6)).getSchemaType())
-                .isEqualTo(AppSearchEmail.SCHEMA_TYPE);
-        assertThat(
-                        ((AppSearchSchema.DocumentPropertyConfig) properties.get(6))
-                                .shouldIndexNestedProperties())
-                .isEqualTo(true);
+        String[] lines = expectedString.split("\n");
+        for (String line : lines) {
+            assertThat(schemaString).contains(line);
+        }
+    }
 
-        assertThat(properties.get(7).getName()).isEqualTo("document2");
-        assertThat(properties.get(7).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REPEATED);
-        assertThat(((AppSearchSchema.DocumentPropertyConfig) properties.get(7)).getSchemaType())
-                .isEqualTo(AppSearchEmail.SCHEMA_TYPE);
-        assertThat(
-                        ((AppSearchSchema.DocumentPropertyConfig) properties.get(7))
-                                .shouldIndexNestedProperties())
-                .isEqualTo(false);
-        assertThat(
-                        ((AppSearchSchema.DocumentPropertyConfig) properties.get(7))
-                                .getIndexableNestedProperties())
-                .containsExactly("path1", "path2", "path3");
-
-        assertThat(properties.get(8).getName()).isEqualTo("qualifiedId1");
-        assertThat(properties.get(8).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL);
-        assertThat(
-                        ((AppSearchSchema.StringPropertyConfig) properties.get(8))
-                                .getJoinableValueType())
-                .isEqualTo(AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID);
-
-        assertThat(properties.get(9).getName()).isEqualTo("qualifiedId2");
-        assertThat(properties.get(9).getCardinality())
-                .isEqualTo(AppSearchSchema.PropertyConfig.CARDINALITY_REQUIRED);
-        assertThat(
-                        ((AppSearchSchema.StringPropertyConfig) properties.get(9))
-                                .getJoinableValueType())
-                .isEqualTo(AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID);
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    public void testStringPropertyConfig_setDeletePropagationType() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new StringPropertyConfig.Builder("qualifiedId").setDeletePropagationType(5)
+                        .build());
+        assertThrows(IllegalArgumentException.class, () ->
+                new StringPropertyConfig.Builder("qualifiedId").setDeletePropagationType(2)
+                        .build());
+        assertThrows(IllegalArgumentException.class, () ->
+                new StringPropertyConfig.Builder("qualifiedId").setDeletePropagationType(-1)
+                        .build());
     }
 }

@@ -44,7 +44,7 @@ import kotlinx.coroutines.sync.Mutex
  * entire duration. In addition, kotlin [Mutex] objects are non-reentrant, unlike standard java
  * `synchronized` locks.
  */
-class CoroutineMutex {
+public class CoroutineMutex {
     internal val mutex = Mutex()
 }
 
@@ -52,9 +52,9 @@ class CoroutineMutex {
  * Execute the provided [block] within the current [CoroutineMutex] while ensuring that only one
  * operation is executed at a time.
  */
-fun <T> CoroutineMutex.withLockAsync(
+public fun <T> CoroutineMutex.withLockAsync(
     scope: CoroutineScope,
-    block: suspend CoroutineScope.() -> T
+    block: suspend CoroutineScope.() -> T,
 ): Deferred<T> {
     // Using CoroutineStart.UNDISPATCHED ensures that the mutex.lock call is invoked synchronously
     // on the current thread. This prevents two operations from being mis-ordered since the lock
@@ -74,9 +74,9 @@ fun <T> CoroutineMutex.withLockAsync(
  * Execute the provided [block] after acquiring a lock to the [CoroutineMutex] in the provided
  * [CoroutineScope].
  */
-fun CoroutineMutex.withLockLaunch(
+public fun CoroutineMutex.withLockLaunch(
     scope: CoroutineScope,
-    block: suspend CoroutineScope.() -> Unit
+    block: suspend CoroutineScope.() -> Unit,
 ): Job {
     // Using CoroutineStart.UNDISPATCHED ensures that the mutex.lock call is invoked synchronously
     // on the current thread. This prevents two operations from being mis-ordered since the lock

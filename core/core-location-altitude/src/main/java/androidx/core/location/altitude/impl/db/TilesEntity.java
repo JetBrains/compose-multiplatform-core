@@ -18,8 +18,6 @@ package androidx.core.location.altitude.impl.db;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.location.altitude.impl.proto.InvalidProtocolBufferException;
 import androidx.core.location.altitude.impl.proto.S2TileProto;
 import androidx.room.ColumnInfo;
@@ -29,6 +27,9 @@ import androidx.room.TypeConverter;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.AutoValue.CopyAnnotations;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /** Defines the entity type and its converters within the Tiles table. */
 @AutoValue
@@ -42,16 +43,14 @@ public abstract class TilesEntity {
     }
 
     /** Encodes a {@link S2TileProto}. */
-    @NonNull
     @TypeConverter
-    public static byte[] fromTile(@NonNull S2TileProto tile) {
+    public static byte @NonNull [] fromTile(@NonNull S2TileProto tile) {
         return tile.toByteArray();
     }
 
     /** Decodes a {@link S2TileProto}. */
-    @Nullable
     @TypeConverter
-    public static S2TileProto toTile(@NonNull byte[] byteArray) {
+    public static @Nullable S2TileProto toTile(byte @NonNull [] byteArray) {
         try {
             return S2TileProto.parseFrom(byteArray);
         } catch (InvalidProtocolBufferException e) {
@@ -64,12 +63,10 @@ public abstract class TilesEntity {
     @CopyAnnotations
     @PrimaryKey
     @ColumnInfo(name = "token")
-    @NonNull
-    public abstract String token();
+    public abstract @NonNull String token();
 
     /** Returns a tile within an S2 cell ID to unit interval map. */
     @CopyAnnotations
     @ColumnInfo(name = "tile")
-    @NonNull
-    public abstract S2TileProto tile();
+    public abstract @NonNull S2TileProto tile();
 }

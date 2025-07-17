@@ -18,7 +18,7 @@ package androidx.core.animation;
 
 import android.annotation.SuppressLint;
 
-import androidx.annotation.NonNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * This evaluator can be used to perform type interpolation between <code>int</code> values.
@@ -33,8 +33,7 @@ public class IntEvaluator implements TypeEvaluator<Integer> {
      * be used in multiple <code>Animator</code>s because it holds no state.
      * @return An instance of <code>IntEvaluator</code>.
      */
-    @NonNull
-    public static IntEvaluator getInstance() {
+    public static @NonNull IntEvaluator getInstance() {
         return sInstance;
     }
 
@@ -57,8 +56,7 @@ public class IntEvaluator implements TypeEvaluator<Integer> {
      */
     @SuppressLint("AutoBoxing") /* Generics */
     @Override
-    @NonNull
-    public Integer evaluate(
+    public @NonNull Integer evaluate(
             float fraction,
             @SuppressLint("AutoBoxing") @NonNull Integer startValue,
             @SuppressLint("AutoBoxing") @NonNull Integer endValue

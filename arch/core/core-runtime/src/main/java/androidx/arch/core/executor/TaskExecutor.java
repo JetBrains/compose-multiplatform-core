@@ -16,8 +16,9 @@
 
 package androidx.arch.core.executor;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * A task executor that can divide tasks into logical groups.

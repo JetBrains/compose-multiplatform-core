@@ -29,6 +29,7 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.newHandlerExecutor
 import androidx.camera.core.processing.OpenGlRenderer
 import androidx.camera.core.processing.ShaderProvider
+import androidx.camera.core.processing.util.GLUtils.InputFormat
 import androidx.core.util.Preconditions.checkState
 import java.util.concurrent.Executor
 
@@ -48,15 +49,17 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
                     #extension GL_OES_EGL_image_external : require
                     precision mediump float;
                     uniform samplerExternalOES $sampler;
+                    uniform float uAlphaScale;
                     varying vec2 $fragCoords;
                     void main() {
                       vec4 sampleColor = texture2D($sampler, $fragCoords);
-                      gl_FragColor = vec4(
+                      vec4 src = vec4(
                            sampleColor.r * 0.5 + sampleColor.g * 0.8 + sampleColor.b * 0.3,
                            sampleColor.r * 0.4 + sampleColor.g * 0.7 + sampleColor.b * 0.2,
                            sampleColor.r * 0.3 + sampleColor.g * 0.5 + sampleColor.b * 0.1,
                            1.0);
-                     }
+                      gl_FragColor = vec4(src.rgb, src.a * uAlphaScale);
+                    }
                     """
                 }
             }
@@ -83,7 +86,12 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
         glThread.start()
         glHandler = Handler(glThread.looper)
         glExecutor = newHandlerExecutor(glHandler)
-        glExecutor.execute { glRenderer.init(DynamicRange.SDR, TONE_MAPPING_SHADER_PROVIDER) }
+        glExecutor.execute {
+            glRenderer.init(
+                DynamicRange.SDR,
+                mapOf(InputFormat.DEFAULT to TONE_MAPPING_SHADER_PROVIDER),
+            )
+        }
     }
 
     override fun onInputSurface(surfaceRequest: SurfaceRequest) {
@@ -96,7 +104,7 @@ class ToneMappingSurfaceProcessor : SurfaceProcessor, OnFrameAvailableListener {
         val surfaceTexture = SurfaceTexture(glRenderer.textureName)
         surfaceTexture.setDefaultBufferSize(
             surfaceRequest.resolution.width,
-            surfaceRequest.resolution.height
+            surfaceRequest.resolution.height,
         )
         val surface = Surface(surfaceTexture)
         surfaceRequest.provideSurface(surface, glExecutor) {

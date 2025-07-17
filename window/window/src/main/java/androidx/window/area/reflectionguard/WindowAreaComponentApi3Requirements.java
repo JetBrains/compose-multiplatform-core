@@ -19,14 +19,14 @@ package androidx.window.area.reflectionguard;
 import android.app.Activity;
 import android.util.DisplayMetrics;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.window.extensions.area.ExtensionWindowAreaPresentation;
 import androidx.window.extensions.area.ExtensionWindowAreaStatus;
 import androidx.window.extensions.area.WindowAreaComponent;
 import androidx.window.extensions.core.util.function.Consumer;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This file defines the Vendor API Level 3 Requirements for WindowAreaComponent. This is used
@@ -36,7 +36,20 @@ import androidx.window.extensions.core.util.function.Consumer;
  * @see WindowAreaComponent
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public interface WindowAreaComponentApi3Requirements extends WindowAreaComponentApi2Requirements {
+public interface WindowAreaComponentApi3Requirements {
+
+    /** @see WindowAreaComponent#addRearDisplayStatusListener */
+    void addRearDisplayStatusListener(@NonNull Consumer<Integer> consumer);
+
+    /** @see WindowAreaComponent#removeRearDisplayStatusListener */
+    void removeRearDisplayStatusListener(@NonNull Consumer<Integer> consumer);
+
+    /** @see WindowAreaComponent#startRearDisplaySession */
+    void startRearDisplaySession(@NonNull Activity activity,
+            @NonNull Consumer<Integer> consumer);
+
+    /** @see WindowAreaComponent#endRearDisplaySession */
+    void endRearDisplaySession();
 
     /** @see WindowAreaComponent#addRearDisplayPresentationStatusListener */
     void addRearDisplayPresentationStatusListener(
@@ -54,10 +67,8 @@ public interface WindowAreaComponentApi3Requirements extends WindowAreaComponent
     void endRearDisplayPresentationSession();
 
     /** @see WindowAreaComponent#getRearDisplayPresentation */
-    @Nullable
-    ExtensionWindowAreaPresentation getRearDisplayPresentation();
+    @Nullable ExtensionWindowAreaPresentation getRearDisplayPresentation();
 
     /** @see WindowAreaComponent#getRearDisplayMetrics() */
-    @NonNull
-    DisplayMetrics getRearDisplayMetrics();
+    @NonNull DisplayMetrics getRearDisplayMetrics();
 }

@@ -20,14 +20,15 @@ import android.hardware.camera2.CameraDevice
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
+import androidx.camera.testing.impl.FakeCameraCapturePipeline
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
-class FakeCapturePipeline(
-    override var template: Int = CameraDevice.TEMPLATE_PREVIEW,
-) : CapturePipeline {
+class FakeCapturePipeline(override var template: Int = CameraDevice.TEMPLATE_PREVIEW) :
+    CapturePipeline {
 
     override suspend fun submitStillCaptures(
         configs: List<CaptureConfig>,
@@ -35,8 +36,14 @@ class FakeCapturePipeline(
         sessionConfigOptions: Config,
         @ImageCapture.CaptureMode captureMode: Int,
         @ImageCapture.FlashType flashType: Int,
-        @ImageCapture.FlashMode flashMode: Int
+        @ImageCapture.FlashMode flashMode: Int,
     ): List<Deferred<Void?>> {
         return configs.map { CompletableDeferred<Void?>(null).apply { complete(null) } }
     }
+
+    override suspend fun getCameraCapturePipeline(
+        captureMode: Int,
+        flashMode: Int,
+        flashType: Int,
+    ): CameraCapturePipeline = FakeCameraCapturePipeline()
 }

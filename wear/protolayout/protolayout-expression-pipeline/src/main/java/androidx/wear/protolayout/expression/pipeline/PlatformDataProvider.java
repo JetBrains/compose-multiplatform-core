@@ -16,8 +16,9 @@
 
 package androidx.wear.protolayout.expression.pipeline;
 
-import androidx.annotation.NonNull;
 import androidx.wear.protolayout.expression.PlatformDataKey;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Set;
 import java.util.concurrent.Executor;

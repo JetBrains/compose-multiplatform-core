@@ -21,7 +21,7 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.Publish
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -40,7 +40,7 @@ dependencies {
     implementation(project(":compose:foundation:foundation-layout"))
     implementation(project(":compose:material:material"))
     implementation(project(":compose:material3:material3"))
-    implementation("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-livedata"))
     implementation(project(":compose:ui:ui-graphics"))
@@ -65,13 +65,13 @@ dependencies {
 
 androidx {
     name = "Compose Documentation Snippets"
-    publish = Publish.NONE
+    type = SoftwareType.TEST_APPLICATION
     description = "Compose Documentation Snippets on developer.android.com"
 }
 
 android {
-    namespace "androidx.compose.integration.docs"
+    compileSdk = 35
+    namespace = "androidx.compose.integration.docs"
 }
 
-android.defaultConfig.minSdkVersion 21
-android.buildFeatures.viewBinding true
+android.buildFeatures.viewBinding = true

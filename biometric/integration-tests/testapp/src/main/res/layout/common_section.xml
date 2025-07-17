@@ -20,9 +20,32 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+    <TextView
+        style="@style/GroupLabelText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/body_content_type_label" />
+    <RadioGroup
+        android:id="@+id/body_content_type_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <RadioButton
+            style="@style/LabelText"
+            android:id="@+id/plain_text_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/plain_text"/>
+        <RadioButton
+            style="@style/LabelText"
+            android:id="@+id/vertical_list_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/vertical_list"/>
+    </RadioGroup>
 
     <TextView
-        style="@style/LabelText"
+        style="@style/GroupLabelText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/other_options_label" />
@@ -57,7 +80,6 @@
             android:layout_height="wrap_content"
             android:text="@string/require_confirmation_label" />
     </LinearLayout>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

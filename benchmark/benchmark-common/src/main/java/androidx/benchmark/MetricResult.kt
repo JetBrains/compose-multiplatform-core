@@ -29,7 +29,7 @@ import kotlin.math.sqrt
 public class MetricResult(
     val name: String,
     val data: List<Double>,
-    val iterationData: List<List<Double>>? = null
+    val iterationData: List<List<Double>>? = null,
 ) {
     val median: Double
     val medianIndex: Int
@@ -38,6 +38,7 @@ public class MetricResult(
     val max: Double
     val maxIndex: Int
     val standardDeviation: Double
+    val coefficientOfVariation: Double
 
     val p50: Double
     val p90: Double
@@ -69,6 +70,12 @@ public class MetricResult(
             } else {
                 val sum = values.map { (it - mean).pow(2) }.sum()
                 sqrt(sum / (size - 1).toDouble())
+            }
+        coefficientOfVariation =
+            if (mean == 0.0) {
+                0.0
+            } else {
+                standardDeviation / mean
             }
     }
 

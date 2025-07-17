@@ -41,10 +41,10 @@ private val ColorToVector: (colorSpace: ColorSpace) -> TwoWayConverter<Color, An
                         vector.v3.fastCoerceIn(-0.5f, 0.5f), // a (blue)
                         vector.v4.fastCoerceIn(-0.5f, 0.5f), // b (green)
                         vector.v1.fastCoerceIn(0f, 1f), // alpha
-                        ColorSpaces.Oklab
+                        ColorSpaces.Oklab,
                     )
                     .convert(colorSpace)
-            }
+            },
         )
     }
 
@@ -53,6 +53,6 @@ private val ColorToVector: (colorSpace: ColorSpace) -> TwoWayConverter<Color, An
  * [AnimationVector4D], and convert a [AnimationVector4D]) back to a [Color] in the given
  * [ColorSpace].
  */
-val Color.Companion.VectorConverter:
+public val Color.Companion.VectorConverter:
     (colorSpace: ColorSpace) -> TwoWayConverter<Color, AnimationVector4D>
     get() = ColorToVector

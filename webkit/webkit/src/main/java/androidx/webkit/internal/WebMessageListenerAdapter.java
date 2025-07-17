@@ -19,7 +19,6 @@ package androidx.webkit.internal;
 import android.net.Uri;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.JavaScriptReplyProxy;
 import androidx.webkit.WebMessageCompat;
 import androidx.webkit.WebViewCompat;
@@ -28,6 +27,7 @@ import org.chromium.support_lib_boundary.WebMessageBoundaryInterface;
 import org.chromium.support_lib_boundary.WebMessageListenerBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.chromium.support_lib_boundary.util.Features;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.InvocationHandler;
 
@@ -38,14 +38,14 @@ import java.lang.reflect.InvocationHandler;
 public class WebMessageListenerAdapter implements WebMessageListenerBoundaryInterface {
     private final WebViewCompat.WebMessageListener mWebMessageListener;
 
-    public WebMessageListenerAdapter(@NonNull WebViewCompat.WebMessageListener webMessageListener) {
+    public WebMessageListenerAdapter(WebViewCompat.@NonNull WebMessageListener webMessageListener) {
         mWebMessageListener = webMessageListener;
     }
 
     @Override
     public void onPostMessage(@NonNull WebView view,
-            @NonNull /* WebMessage */ InvocationHandler message, @NonNull Uri sourceOrigin,
-            boolean isMainFrame, @NonNull /* JavaScriptReplyProxy */ InvocationHandler replyProxy) {
+            /* WebMessage */ @NonNull InvocationHandler message, @NonNull Uri sourceOrigin,
+            boolean isMainFrame, /* JavaScriptReplyProxy */ @NonNull InvocationHandler replyProxy) {
         final WebMessageCompat webMessage = WebMessageAdapter.webMessageCompatFromBoundaryInterface(
                 BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                         WebMessageBoundaryInterface.class, message));
@@ -62,7 +62,7 @@ public class WebMessageListenerAdapter implements WebMessageListenerBoundaryInte
      * doesn't crash if we remove APIs from the support library side.
      */
     @Override
-    public @NonNull String[] getSupportedFeatures() {
+    public String @NonNull [] getSupportedFeatures() {
         return new String[] {Features.WEB_MESSAGE_LISTENER, Features.WEB_MESSAGE_ARRAY_BUFFER};
     }
 }

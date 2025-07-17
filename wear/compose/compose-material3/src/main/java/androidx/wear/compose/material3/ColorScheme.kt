@@ -73,46 +73,51 @@ import androidx.wear.compose.material3.tokens.ColorTokens
  * @property background The background color that appears behind other content.
  * @property onBackground Color used for text and icons displayed on top of the background color.
  * @property error Color that indicates remove, delete, close or dismiss actions, such as Swipe to
- *   Reveal. Added as an errorContainer alternative that is slightly less alarming and urgent color.
+ *   Reveal. Added as a slightly less alarming and urgent alternative to errorContainer than the
+ *   error dim color.
+ * @property errorDim Indicates high priority errors or emergency actions, such as safety alerts,
+ *   failed dialog overlays or stop buttons.
+ * @property errorContainer A less prominent container color than [error], for components using the
+ *   error state. Can also indicate an active error state which feels less interactive than a filled
+ *   state, such as an active emergency sharing button, or on a failed overlay dialog..
  * @property onError Color used for text and icons displayed on top of the error color.
- * @property errorContainer Color that indicates errors or emergency actions, such as safety alerts.
- *   This color is for use-cases that are more alarming and urgent than the error color.
  * @property onErrorContainer Color used for text and icons on the errorContainer color.
  */
 @Immutable
 @Stable
-class ColorScheme(
-    val primary: Color = ColorTokens.Primary,
-    val primaryDim: Color = ColorTokens.PrimaryDim,
-    val primaryContainer: Color = ColorTokens.PrimaryContainer,
-    val onPrimary: Color = ColorTokens.OnPrimary,
-    val onPrimaryContainer: Color = ColorTokens.OnPrimaryContainer,
-    val secondary: Color = ColorTokens.Secondary,
-    val secondaryDim: Color = ColorTokens.SecondaryDim,
-    val secondaryContainer: Color = ColorTokens.SecondaryContainer,
-    val onSecondary: Color = ColorTokens.OnSecondary,
-    val onSecondaryContainer: Color = ColorTokens.OnSecondaryContainer,
-    val tertiary: Color = ColorTokens.Tertiary,
-    val tertiaryDim: Color = ColorTokens.TertiaryDim,
-    val tertiaryContainer: Color = ColorTokens.TertiaryContainer,
-    val onTertiary: Color = ColorTokens.OnTertiary,
-    val onTertiaryContainer: Color = ColorTokens.OnTertiaryContainer,
-    val surfaceContainerLow: Color = ColorTokens.SurfaceContainerLow,
-    val surfaceContainer: Color = ColorTokens.SurfaceContainer,
-    val surfaceContainerHigh: Color = ColorTokens.SurfaceContainerHigh,
-    val onSurface: Color = ColorTokens.OnSurface,
-    val onSurfaceVariant: Color = ColorTokens.OnSurfaceVariant,
-    val outline: Color = ColorTokens.Outline,
-    val outlineVariant: Color = ColorTokens.OutlineVariant,
-    val background: Color = ColorTokens.Background,
-    val onBackground: Color = ColorTokens.OnBackground,
-    val error: Color = ColorTokens.Error,
-    val onError: Color = ColorTokens.OnError,
-    val errorContainer: Color = ColorTokens.ErrorContainer,
-    val onErrorContainer: Color = ColorTokens.OnErrorContainer,
+public class ColorScheme(
+    public val primary: Color = ColorTokens.Primary,
+    public val primaryDim: Color = ColorTokens.PrimaryDim,
+    public val primaryContainer: Color = ColorTokens.PrimaryContainer,
+    public val onPrimary: Color = ColorTokens.OnPrimary,
+    public val onPrimaryContainer: Color = ColorTokens.OnPrimaryContainer,
+    public val secondary: Color = ColorTokens.Secondary,
+    public val secondaryDim: Color = ColorTokens.SecondaryDim,
+    public val secondaryContainer: Color = ColorTokens.SecondaryContainer,
+    public val onSecondary: Color = ColorTokens.OnSecondary,
+    public val onSecondaryContainer: Color = ColorTokens.OnSecondaryContainer,
+    public val tertiary: Color = ColorTokens.Tertiary,
+    public val tertiaryDim: Color = ColorTokens.TertiaryDim,
+    public val tertiaryContainer: Color = ColorTokens.TertiaryContainer,
+    public val onTertiary: Color = ColorTokens.OnTertiary,
+    public val onTertiaryContainer: Color = ColorTokens.OnTertiaryContainer,
+    public val surfaceContainerLow: Color = ColorTokens.SurfaceContainerLow,
+    public val surfaceContainer: Color = ColorTokens.SurfaceContainer,
+    public val surfaceContainerHigh: Color = ColorTokens.SurfaceContainerHigh,
+    public val onSurface: Color = ColorTokens.OnSurface,
+    public val onSurfaceVariant: Color = ColorTokens.OnSurfaceVariant,
+    public val outline: Color = ColorTokens.Outline,
+    public val outlineVariant: Color = ColorTokens.OutlineVariant,
+    public val background: Color = ColorTokens.Background,
+    public val onBackground: Color = ColorTokens.OnBackground,
+    public val error: Color = ColorTokens.Error,
+    public val errorDim: Color = ColorTokens.ErrorDim,
+    public val errorContainer: Color = ColorTokens.ErrorContainer,
+    public val onError: Color = ColorTokens.OnError,
+    public val onErrorContainer: Color = ColorTokens.OnErrorContainer,
 ) {
     /** Returns a copy of this Colors, optionally overriding some of the values. */
-    fun copy(
+    public fun copy(
         primary: Color = this.primary,
         primaryDim: Color = this.primaryDim,
         primaryContainer: Color = this.primaryContainer,
@@ -138,8 +143,9 @@ class ColorScheme(
         background: Color = this.background,
         onBackground: Color = this.onBackground,
         error: Color = this.error,
-        onError: Color = this.onError,
+        errorDim: Color = this.errorDim,
         errorContainer: Color = this.errorContainer,
+        onError: Color = this.onError,
         onErrorContainer: Color = this.onErrorContainer,
     ): ColorScheme =
         ColorScheme(
@@ -168,8 +174,9 @@ class ColorScheme(
             background = background,
             onBackground = onBackground,
             error = error,
-            onError = onError,
+            errorDim = errorDim,
             errorContainer = errorContainer,
+            onError = onError,
             onErrorContainer = onErrorContainer,
         )
 
@@ -199,51 +206,86 @@ class ColorScheme(
             "outlineVariant=$outlineVariant, " +
             "background=$background, " +
             "onBackground=$onBackground, " +
-            "onError=$onError," +
+            "error=$error, " +
+            "errorDim=$errorDim, " +
             "errorContainer=$errorContainer, " +
+            "onError=$onError," +
             "onErrorContainer=$onErrorContainer" +
             ")"
     }
 
     // Button Colors
     internal var defaultButtonColorsCached: ButtonColors? = null
-    internal var defaultFilledButtonColorsCached: ButtonColors? = null
+    internal var defaultFilledVariantButtonColorsCached: ButtonColors? = null
     internal var defaultFilledTonalButtonColorsCached: ButtonColors? = null
     internal var defaultOutlinedButtonColorsCached: ButtonColors? = null
     internal var defaultChildButtonColorsCached: ButtonColors? = null
+    internal var defaultButtonWithContainerPainterColorsCached: ButtonColors? = null
 
     // Icon Button
     internal var defaultIconButtonColorsCached: IconButtonColors? = null
     internal var defaultFilledIconButtonColorsCached: IconButtonColors? = null
+    internal var defaultFilledVariantIconButtonColorsCached: IconButtonColors? = null
     internal var defaultFilledTonalIconButtonColorsCached: IconButtonColors? = null
     internal var defaultOutlinedIconButtonColorsCached: IconButtonColors? = null
 
     // Icon Toggle Button
-    internal var defaultIconToggleButtonColorsCached: ToggleButtonColors? = null
+    internal var defaultIconToggleButtonColorsCached: IconToggleButtonColors? = null
 
     // Text Button
     internal var defaultTextButtonColorsCached: TextButtonColors? = null
     internal var defaultFilledTextButtonColorsCached: TextButtonColors? = null
+    internal var defaultFilledVariantTextButtonColorsCached: TextButtonColors? = null
     internal var defaultFilledTonalTextButtonColorsCached: TextButtonColors? = null
     internal var defaultOutlinedTextButtonColorsCached: TextButtonColors? = null
 
     // Text Toggle Button
-    internal var defaultTextToggleButtonColorsCached: ToggleButtonColors? = null
+    internal var defaultTextToggleButtonColorsCached: TextToggleButtonColors? = null
 
     // Card
     internal var defaultCardColorsCached: CardColors? = null
     internal var defaultOutlinedCardColorsCached: CardColors? = null
+    internal var defaultCardWithContainerPainterColorsCached: CardColors? = null
 
     // Toggle Button
-    internal var defaultToggleButtonColorsCached: ToggleButtonColors? = null
-    internal var defaultSplitToggleButtonColorsCached: SplitToggleButtonColors? = null
+    internal var defaultSwitchButtonColorsCached: SwitchButtonColors? = null
+    internal var defaultSplitSwitchButtonColorsCached: SplitSwitchButtonColors? = null
+
+    // Checkbox Button
+    internal var defaultCheckboxButtonColorsCached: CheckboxButtonColors? = null
+    internal var defaultSplitCheckboxButtonColorsCached: SplitCheckboxButtonColors? = null
 
     // Radio Button
-    internal var defaultSelectableButtonColorsCached: SelectableButtonColors? = null
-    internal var defaultSplitSelectableButtonColorsCached: SplitSelectableButtonColors? = null
+    internal var defaultRadioButtonColorsCached: RadioButtonColors? = null
+    internal var defaultSplitRadioButtonColorsCached: SplitRadioButtonColors? = null
 
     // Progress Indicator
     internal var defaultProgressIndicatorColorsCached: ProgressIndicatorColors? = null
+
+    // Slider
+    internal var defaultSliderColorsCached: SliderColors? = null
+    internal var defaultVariantSliderColorsCached: SliderColors? = null
+
+    // Stepper
+    internal var defaultStepperColorsCached: StepperColors? = null
+
+    // Level Indicator
+    internal var defaultLevelIndicatorColorsCached: LevelIndicatorColors? = null
+
+    // Scroll Indicator
+    internal var defaultScrollIndicatorColorsCached: ScrollIndicatorColors? = null
+
+    // Confirmation
+    internal var defaultConfirmationColorsCached: ConfirmationDialogColors? = null
+    internal var defaultSuccessConfirmationColorsCached: ConfirmationDialogColors? = null
+    internal var defaultFailureConfirmationColorsCached: ConfirmationDialogColors? = null
+
+    // Open on Phone dialog
+    internal var mDefaultOpenOnPhoneDialogColorsCached: OpenOnPhoneDialogColors? = null
+
+    // Picker
+    internal var defaultTimePickerColorsCached: TimePickerColors? = null
+    internal var defaultDatePickerColorsCached: DatePickerColors? = null
 }
 
 /**
@@ -262,7 +304,7 @@ class ColorScheme(
  *   the theme's [ColorScheme], then returns [Color.Unspecified].
  * @see contentColorFor
  */
-fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
+public fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
     return when (backgroundColor) {
         primary,
         primaryDim -> onPrimary
@@ -278,6 +320,7 @@ fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
         surfaceContainerHigh -> onSurface
         background -> onBackground
         error -> onError
+        errorDim -> onError
         errorContainer -> onErrorContainer
         else -> Color.Unspecified
     }
@@ -301,7 +344,7 @@ fun ColorScheme.contentColorFor(backgroundColor: Color): Color {
  */
 @Composable
 @ReadOnlyComposable
-fun contentColorFor(backgroundColor: Color): Color =
+public fun contentColorFor(backgroundColor: Color): Color =
     MaterialTheme.colorScheme.contentColorFor(backgroundColor).takeOrElse {
         LocalContentColor.current
     }
@@ -337,8 +380,9 @@ internal fun ColorScheme.fromToken(value: ColorSchemeKeyTokens): Color {
         ColorSchemeKeyTokens.Background -> background
         ColorSchemeKeyTokens.OnBackground -> onBackground
         ColorSchemeKeyTokens.Error -> error
-        ColorSchemeKeyTokens.OnError -> onError
         ColorSchemeKeyTokens.ErrorContainer -> errorContainer
+        ColorSchemeKeyTokens.ErrorDim -> errorDim
+        ColorSchemeKeyTokens.OnError -> onError
         ColorSchemeKeyTokens.OnErrorContainer -> onErrorContainer
     }
 }

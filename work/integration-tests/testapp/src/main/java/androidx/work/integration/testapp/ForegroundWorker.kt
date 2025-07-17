@@ -16,11 +16,11 @@
 
 package androidx.work.integration.testapp
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -51,7 +51,7 @@ class ForegroundWorker(context: Context, parameters: WorkerParameters) :
                 // No need for notifications starting S.
                 notificationManager.notify(
                     notificationId,
-                    getForegroundInfo(notificationId).notification
+                    getForegroundInfo(notificationId).notification,
                 )
             }
         }
@@ -81,11 +81,10 @@ class ForegroundWorker(context: Context, parameters: WorkerParameters) :
                 .setOngoing(true)
                 .build()
 
-        return ForegroundInfo(notificationId, notification)
+        return ForegroundInfo(notificationId, notification, FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    @SuppressLint("ClassVerificationFailure")
     private fun createChannel() {
         val id = applicationContext.getString(R.string.channel_id)
         val name = applicationContext.getString(R.string.channel_name)

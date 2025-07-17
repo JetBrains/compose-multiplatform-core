@@ -23,9 +23,10 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -86,8 +87,7 @@ public final class ActivityAnimationUtil{
      *               the global settings are applied on the returned animation.
      * @return the specified type of activity animation
      */
-    @Nullable
-    public static Animation getStandardActivityAnimation(
+    public static @Nullable Animation getStandardActivityAnimation(
             @NonNull Context context, @ActivityAnimationType int animationType, boolean scaled) {
         TypedArray animations = context.obtainStyledAttributes(
                 android.R.style.Animation_Activity,

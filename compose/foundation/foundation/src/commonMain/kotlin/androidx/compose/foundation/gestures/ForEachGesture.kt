@@ -39,7 +39,7 @@ class GestureCancellationException(message: String? = null) : CancellationExcept
  */
 @Deprecated(
     message = "Use awaitEachGesture instead. forEachGesture() can drop events between gestures.",
-    replaceWith = ReplaceWith("awaitEachGesture(block)")
+    replaceWith = ReplaceWith("awaitEachGesture(block)"),
 )
 suspend fun PointerInputScope.forEachGesture(block: suspend PointerInputScope.() -> Unit) {
     val currentContext = currentCoroutineContext()
@@ -76,10 +76,12 @@ internal suspend fun PointerInputScope.awaitAllPointersUp() {
 }
 
 /** Waits for all pointers to be up before returning. */
-internal suspend fun AwaitPointerEventScope.awaitAllPointersUp() {
+internal suspend fun AwaitPointerEventScope.awaitAllPointersUp(
+    pass: PointerEventPass = PointerEventPass.Final
+) {
     if (!allPointersUp()) {
         do {
-            val events = awaitPointerEvent(PointerEventPass.Final)
+            val events = awaitPointerEvent(pass)
         } while (events.changes.fastAny { it.pressed })
     }
 }

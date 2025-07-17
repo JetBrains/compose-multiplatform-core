@@ -16,8 +16,10 @@
 
 package androidx.camera.core.internal.compat.quirk;
 
-import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
+import androidx.camera.core.impl.QuirkSettings;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,27 +36,40 @@ public class DeviceQuirksLoader {
      * Goes through all defined device-specific quirks, and returns those that should be loaded
      * on the current device.
      */
-    @NonNull
-    static List<Quirk> loadQuirks() {
+    static @NonNull List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
         final List<Quirk> quirks = new ArrayList<>();
 
-        if (ImageCaptureRotationOptionQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(ImageCaptureRotationOptionQuirk.class,
+                ImageCaptureRotationOptionQuirk.load())) {
             quirks.add(new ImageCaptureRotationOptionQuirk());
         }
-        if (SurfaceOrderQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(SurfaceOrderQuirk.class,
+                SurfaceOrderQuirk.load())) {
             quirks.add(new SurfaceOrderQuirk());
         }
-        if (CaptureFailedRetryQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(CaptureFailedRetryQuirk.class,
+                CaptureFailedRetryQuirk.load())) {
             quirks.add(new CaptureFailedRetryQuirk());
         }
-        if (LowMemoryQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(LowMemoryQuirk.class,
+                LowMemoryQuirk.load())) {
             quirks.add(new LowMemoryQuirk());
         }
-        if (LargeJpegImageQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(LargeJpegImageQuirk.class,
+                LargeJpegImageQuirk.load())) {
             quirks.add(new LargeJpegImageQuirk());
         }
-        if (IncorrectJpegMetadataQuirk.load()) {
+        if (quirkSettings.shouldEnableQuirk(IncorrectJpegMetadataQuirk.class,
+                IncorrectJpegMetadataQuirk.load())) {
             quirks.add(new IncorrectJpegMetadataQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(ImageCaptureFailedForSpecificCombinationQuirk.class,
+                ImageCaptureFailedForSpecificCombinationQuirk.load())) {
+            quirks.add(new ImageCaptureFailedForSpecificCombinationQuirk());
+        }
+        if (quirkSettings.shouldEnableQuirk(PreviewGreenTintQuirk.class,
+                PreviewGreenTintQuirk.load())) {
+            quirks.add(PreviewGreenTintQuirk.INSTANCE);
         }
 
         return quirks;

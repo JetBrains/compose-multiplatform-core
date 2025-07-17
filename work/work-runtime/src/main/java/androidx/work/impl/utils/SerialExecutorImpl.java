@@ -17,9 +17,10 @@
 package androidx.work.impl.utils;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.work.impl.utils.taskexecutor.SerialExecutor;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.Executor;
@@ -71,9 +72,8 @@ public class SerialExecutorImpl implements SerialExecutor {
         }
     }
 
-    @NonNull
     @VisibleForTesting
-    public Executor getDelegatedExecutor() {
+    public @NonNull Executor getDelegatedExecutor() {
         return mExecutor;
     }
 

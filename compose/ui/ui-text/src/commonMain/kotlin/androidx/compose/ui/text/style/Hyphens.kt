@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.text.style
 
+import kotlin.jvm.JvmInline
+
 /**
  * Automatic hyphenation configuration.
  *
@@ -37,7 +39,7 @@ package androidx.compose.ui.text.style
  * The default configuration for [Hyphens] = [Hyphens.None]
  */
 @JvmInline
-value class Hyphens private constructor(internal val value: Int) {
+value class Hyphens internal constructor(val value: Int) {
     companion object {
         /**
          * Lines will break with no hyphenation.
@@ -72,8 +74,27 @@ value class Hyphens private constructor(internal val value: Int) {
          * This represents an unset value, a usual replacement for "null" when a primitive value is
          * desired.
          */
-        val Unspecified = Hyphens(Int.MIN_VALUE)
+        val Unspecified = Hyphens(0)
+
+        /**
+         * Creates a Hyphens from the given integer value. This can be useful if you need to
+         * serialize/deserialize Hyphens values.
+         *
+         * @param value The integer representation of the Hyphens.
+         * @see [Hyphens.value]
+         */
+        fun valueOf(value: Int): Hyphens {
+            return Hyphens(value)
+        }
     }
+
+    /**
+     * Returns `true` if it is not [Hyphens.Unspecified].
+     *
+     * @see Hyphens.Unspecified
+     */
+    val isSpecified: Boolean
+        get() = value != 0
 
     override fun toString() =
         when (this) {

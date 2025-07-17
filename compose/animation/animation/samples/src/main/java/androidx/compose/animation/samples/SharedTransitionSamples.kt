@@ -23,10 +23,12 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,6 +41,7 @@ import androidx.compose.foundation.layout.requiredHeightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Button
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Surface
@@ -57,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -76,7 +80,7 @@ fun NestedSharedBoundsSample() {
         AnimatedVisibility(
             visible = expanded,
             enter = EnterTransition.None,
-            exit = ExitTransition.None
+            exit = ExitTransition.None,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Surface(
@@ -84,7 +88,7 @@ fun NestedSharedBoundsSample() {
                         .padding(20.dp)
                         .sharedBounds(
                             rememberSharedContentState(key = "container"),
-                            this@AnimatedVisibility
+                            this@AnimatedVisibility,
                         )
                         .requiredHeightIn(max = 60.dp),
                     shape = RoundedCornerShape(50),
@@ -106,8 +110,8 @@ fun NestedSharedBoundsSample() {
                                     top = 10.dp,
                                     bottom = 10.dp,
                                     start = 10.dp,
-                                    end = 20.dp
-                                )
+                                    end = 20.dp,
+                                ),
                         )
                         Icon(
                             Icons.Outlined.Favorite,
@@ -117,8 +121,8 @@ fun NestedSharedBoundsSample() {
                                     top = 10.dp,
                                     bottom = 10.dp,
                                     start = 10.dp,
-                                    end = 20.dp
-                                )
+                                    end = 20.dp,
+                                ),
                         )
                         Icon(
                             Icons.Outlined.Create,
@@ -127,19 +131,19 @@ fun NestedSharedBoundsSample() {
                             modifier =
                                 Modifier.sharedBounds(
                                         rememberSharedContentState(key = "icon_background"),
-                                        this@AnimatedVisibility
+                                        this@AnimatedVisibility,
                                     )
                                     .background(selectionColor, RoundedCornerShape(50))
                                     .padding(
                                         top = 10.dp,
                                         bottom = 10.dp,
                                         start = 20.dp,
-                                        end = 20.dp
+                                        end = 20.dp,
                                     )
                                     .sharedElement(
                                         rememberSharedContentState(key = "icon"),
-                                        this@AnimatedVisibility
-                                    )
+                                        this@AnimatedVisibility,
+                                    ),
                         )
                     }
                 }
@@ -148,7 +152,7 @@ fun NestedSharedBoundsSample() {
         AnimatedVisibility(
             visible = !expanded,
             enter = EnterTransition.None,
-            exit = ExitTransition.None
+            exit = ExitTransition.None,
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Surface(
@@ -162,11 +166,12 @@ fun NestedSharedBoundsSample() {
                         .sharedBounds(
                             rememberSharedContentState(key = "icon_background"),
                             this@AnimatedVisibility,
+                            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
                             enter = EnterTransition.None,
-                            exit = ExitTransition.None
+                            exit = ExitTransition.None,
                         ),
                     shape = RoundedCornerShape(30.dp),
-                    color = selectionColor
+                    color = selectionColor,
                 ) {
                     Icon(
                         Icons.Outlined.Create,
@@ -177,8 +182,8 @@ fun NestedSharedBoundsSample() {
                                 .size(40.dp)
                                 .sharedElement(
                                     rememberSharedContentState(key = "icon"),
-                                    this@AnimatedVisibility
-                                )
+                                    this@AnimatedVisibility,
+                                ),
                     )
                 }
             }
@@ -198,7 +203,7 @@ fun SharedElementWithMovableContentSample() {
                 painterResource(id = R.drawable.yt_profile),
                 contentDescription = "cute cat",
                 contentScale = ContentScale.FillHeight,
-                modifier = Modifier.clip(shape = RoundedCornerShape(cornerRadius.value))
+                modifier = Modifier.clip(shape = RoundedCornerShape(cornerRadius.value)),
             )
         }
     }
@@ -237,7 +242,7 @@ fun SharedElementWithMovableContentSample() {
                 .aspectRatio(1f)
                 .sharedElementWithCallerManagedVisibility(
                     rememberSharedContentState(key = "YT"),
-                    !showThumbnail
+                    !showThumbnail,
                 )
         ) {
             if (!showThumbnail) {
@@ -258,7 +263,7 @@ fun SharedElementWithFABInOverlaySample() {
             painterResource(id = R.drawable.yt_profile),
             contentDescription = "cute cat",
             contentScale = ContentScale.FillHeight,
-            modifier = modifier.clip(shape = RoundedCornerShape(10))
+            modifier = modifier.clip(shape = RoundedCornerShape(10)),
         )
     }
 
@@ -323,7 +328,7 @@ fun SharedElementWithFABInOverlaySample() {
                             // FAB is rendered on top of the shared elements.
                             zIndexInOverlay = 1f
                         ),
-                onClick = {}
+                onClick = {},
             ) {
                 Icon(Icons.Default.Favorite, contentDescription = "favorite")
             }
@@ -346,7 +351,7 @@ fun SharedElementInAnimatedContentSample() {
             painterResource(id = R.drawable.yt_profile),
             contentDescription = "cute cat",
             contentScale = ContentScale.FillHeight,
-            modifier = modifier.clip(shape = RoundedCornerShape(10))
+            modifier = modifier.clip(shape = RoundedCornerShape(10)),
         )
     }
 
@@ -396,8 +401,8 @@ fun SharedElementInAnimatedContentSample() {
                             .wrapContentWidth(Alignment.CenterHorizontally)
                             .sharedBounds(
                                 rememberSharedContentState(key = "text"),
-                                this@AnimatedContent
-                            )
+                                this@AnimatedContent,
+                            ),
                 )
             } else {
                 Column {
@@ -432,8 +437,8 @@ fun SharedElementInAnimatedContentSample() {
                                         // Here we use a string-based key, in contrast to the key
                                         // above.
                                         rememberSharedContentState(key = "text"),
-                                        this@AnimatedContent
-                                    )
+                                        this@AnimatedContent,
+                                    ),
                         )
                     }
                     Box(
@@ -450,4 +455,71 @@ fun SharedElementInAnimatedContentSample() {
             }
         }
     }
+}
+
+@Sampled
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+fun SharedElementClipRevealSample() {
+    // In this sample, we are creating an animating clip bounds using shared element transition.
+    // In the meantime, we need to anchor the content that is being clipped at its target position
+    // using skipToLookaheadPosition while the clip bounds moves and resizes via animations.
+    var target by remember { mutableStateOf(true) }
+    BackHandler { target = !target }
+    // Creates a SharedTransitionLayout to provide its child content with a SharedTransitionScope.
+    // The child content can therefore set up shared element transitions, and access
+    // skipToLookaheadPosition modifier, as well as other functionalities available in
+    // SharedTransitionScope.
+    SharedTransitionLayout {
+        AnimatedContent(targetState = target) {
+            if (it) {
+                Box(Modifier.fillMaxSize()) {
+                    Button(
+                        modifier =
+                            Modifier.align(Alignment.BottomCenter)
+                                .sharedBounds(
+                                    rememberSharedContentState("clip"),
+                                    this@AnimatedContent,
+                                ),
+                        onClick = { target = false },
+                    ) {
+                        Text("Toggle State")
+                    }
+                }
+            } else {
+                Column(
+                    // Use sharedBounds chained with clipToBounds to animate the clip bounds
+                    // from the previous size and position derived from the shared bounds above
+                    // (when target == true).
+                    Modifier.sharedBounds(
+                            rememberSharedContentState("clip"),
+                            this@AnimatedContent,
+                            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+                        )
+                        .clipToBounds()
+                        // The sharedBounds above would resize its child layout and move it as
+                        // needed. Here we use `skipToLookaheadSize` chained with
+                        // `skipToLookaheadPosition` to keep the child content from being resized
+                        // or moved. As such, only the clip bounds is being animated, creating
+                        // a reveal animation.
+                        .skipToLookaheadSize()
+                        .skipToLookaheadPosition()
+                        .fillMaxSize()
+                        .background(Color.Black),
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("Hello", fontSize = 80.sp, color = Color.White)
+                    Text("Shared", fontSize = 80.sp, color = Color.White)
+                    Text("Clip", fontSize = 80.sp, color = Color.White)
+                    Text("Bounds", fontSize = 80.sp, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BackHandler(content: @Composable () -> Unit) {
+    TODO("Not yet implemented")
 }

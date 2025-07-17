@@ -18,15 +18,21 @@ package androidx.pdf.models;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.pdf.content.PdfPageLinkContent;
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.ext.SdkExtensions;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.pdf.data.ListOfList;
 import androidx.pdf.util.Preconditions;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,14 +83,12 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
     }
 
     /** Return the URL corresponding to the given link. */
-    @NonNull
-    public String getUrl(int link) {
+    public @NonNull String getUrl(int link) {
         return mUrls.get(link);
     }
 
     /** Return the URL corresponding to the given point. */
-    @Nullable
-    public String getUrlAtPoint(int x, int y) {
+    public @Nullable String getUrlAtPoint(int x, int y) {
         for (int rect = 0; rect < mRects.size(); rect++) {
             if (mRects.get(rect).contains(x, y)) {
                 for (int link = 1; link <= mLinkToRect.size(); link++) {
@@ -97,9 +101,8 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
         return null;
     }
 
-    @NonNull
     @Override
-    public String toString() {
+    public @NonNull String toString() {
         return size() + " links";
     }
 
@@ -113,5 +116,66 @@ public class LinkRects extends ListOfList<Rect> implements Parcelable {
         parcel.writeList(mRects);
         parcel.writeList(mLinkToRect);
         parcel.writeList(mUrls);
+    }
+
+    /**
+     * Flattens the list of PdfPageLinkContent objects and converts to a LinkRects objects.
+     * <p>As an example, in case there are 2 weblinks on the page of the document with the 1st link
+     * overflowing to the next line, {@code List<PdfPageLinkContent>} would have the following
+     * values -
+     * <pre>
+     * List(
+     *      PdfPageLinkContent(
+     *          bounds = [RectF(l1, t1, r1, b1), RectF(l2, t2, r2, b2)],
+     *          url = url1
+     *      ),
+     *      PdfPageLinkContent(
+     *          bounds = [RectF(l3, t3, r3, b3)],
+     *          url = url2
+     *      ),
+     * )
+     *
+     * Using the method below, we can flatten the {@code List<PdfPageLinkContent>} to the following
+     * representation -
+     * LinkRects(
+     *      mRects=[Rect(l1, t1, r1, b1), Rect(l2, t2, r2, b2), Rect(l3, t3, r3, b3)],
+     *      mLinkToRect=[0,2],
+     *      mUrls=[url1, url2]
+     * )
+     * </pre>
+     */
+    public static @NonNull LinkRects flattenList(
+            @NonNull List<PdfPageLinkContent> pdfPageLinkContentList) {
+        if (SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13) {
+            List<Rect> rects = new ArrayList<>();
+            List<Integer> linkToRect = new ArrayList<>();
+            List<String> urls = new ArrayList<>();
+            int numRects = 0;
+            for (PdfPageLinkContent pdfPageLinkContent : pdfPageLinkContentList) {
+                List<RectF> rectFBounds = pdfPageLinkContent.getBounds();
+                for (RectF rectF : rectFBounds) {
+                    rects.add(new Rect((int) rectF.left, (int) rectF.top, (int) rectF.right,
+                            (int) rectF.bottom));
+                }
+                urls.add(pdfPageLinkContent.getUri().toString());
+                linkToRect.add(numRects);
+                numRects += pdfPageLinkContent.getBounds().size();
+            }
+
+            return new LinkRects(rects, linkToRect, urls);
+        }
+        throw new UnsupportedOperationException("Operation support above S");
+    }
+
+    public @NonNull List<Rect> getRects() {
+        return mRects;
+    }
+
+    public @NonNull List<Integer> getLinkToRect() {
+        return mLinkToRect;
+    }
+
+    public @NonNull List<String> getUrls() {
+        return mUrls;
     }
 }

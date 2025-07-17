@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.layout
 
+import androidx.collection.MutableScatterMap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -55,7 +56,6 @@ import kotlin.math.max
  * Example usage:
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleBox
- *
  * @param modifier The modifier to be applied to the layout.
  * @param contentAlignment The default alignment inside the Box.
  * @param propagateMinConstraints Whether the incoming min constraints should be passed to content.
@@ -66,41 +66,38 @@ inline fun Box(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val measurePolicy = maybeCachedBoxMeasurePolicy(contentAlignment, propagateMinConstraints)
     Layout(
         content = { BoxScopeInstance.content() },
         measurePolicy = measurePolicy,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
-private fun cacheFor(propagateMinConstraints: Boolean) =
-    HashMap<Alignment, MeasurePolicy>(9).apply {
-        fun putAlignment(it: Alignment) {
-            put(it, BoxMeasurePolicy(it, propagateMinConstraints))
-        }
-        putAlignment(Alignment.TopStart)
-        putAlignment(Alignment.TopCenter)
-        putAlignment(Alignment.TopEnd)
-        putAlignment(Alignment.CenterStart)
-        putAlignment(Alignment.Center)
-        putAlignment(Alignment.CenterEnd)
-        putAlignment(Alignment.BottomStart)
-        putAlignment(Alignment.BottomCenter)
-        putAlignment(Alignment.BottomEnd)
+private fun cacheFor(propagate: Boolean) =
+    MutableScatterMap<Alignment, MeasurePolicy>(9).apply {
+        this[Alignment.TopStart] = BoxMeasurePolicy(Alignment.TopStart, propagate)
+        this[Alignment.TopCenter] = BoxMeasurePolicy(Alignment.TopCenter, propagate)
+        this[Alignment.TopEnd] = BoxMeasurePolicy(Alignment.TopEnd, propagate)
+        this[Alignment.CenterStart] = BoxMeasurePolicy(Alignment.CenterStart, propagate)
+        this[Alignment.Center] = BoxMeasurePolicy(Alignment.Center, propagate)
+        this[Alignment.CenterEnd] = BoxMeasurePolicy(Alignment.CenterEnd, propagate)
+        this[Alignment.BottomStart] = BoxMeasurePolicy(Alignment.BottomStart, propagate)
+        this[Alignment.BottomCenter] = BoxMeasurePolicy(Alignment.BottomCenter, propagate)
+        this[Alignment.BottomEnd] = BoxMeasurePolicy(Alignment.BottomEnd, propagate)
     }
 
-private val cache1 = cacheFor(true)
-private val cache2 = cacheFor(false)
+private val Cache1 = cacheFor(true)
+private val Cache2 = cacheFor(false)
 
 @PublishedApi
 internal fun maybeCachedBoxMeasurePolicy(
     alignment: Alignment,
-    propagateMinConstraints: Boolean
+    propagateMinConstraints: Boolean,
 ): MeasurePolicy {
-    val cache = if (propagateMinConstraints) cache1 else cache2
+    val cache = if (propagateMinConstraints) Cache1 else Cache2
     return cache[alignment] ?: BoxMeasurePolicy(alignment, propagateMinConstraints)
 }
 
@@ -108,7 +105,7 @@ internal fun maybeCachedBoxMeasurePolicy(
 @Composable
 internal fun rememberBoxMeasurePolicy(
     alignment: Alignment,
-    propagateMinConstraints: Boolean
+    propagateMinConstraints: Boolean,
 ): MeasurePolicy =
     if (alignment == Alignment.TopStart && !propagateMinConstraints) {
         DefaultBoxMeasurePolicy
@@ -122,11 +119,11 @@ private val DefaultBoxMeasurePolicy: MeasurePolicy = BoxMeasurePolicy(Alignment.
 
 private data class BoxMeasurePolicy(
     private val alignment: Alignment,
-    private val propagateMinConstraints: Boolean
+    private val propagateMinConstraints: Boolean,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         if (measurables.isEmpty()) {
             return layout(constraints.minWidth, constraints.minHeight) {}
@@ -136,7 +133,7 @@ private data class BoxMeasurePolicy(
             if (propagateMinConstraints) {
                 constraints
             } else {
-                constraints.copy(minWidth = 0, minHeight = 0)
+                constraints.copyMaxDimensions()
             }
 
         if (measurables.size == 1) {
@@ -185,7 +182,7 @@ private data class BoxMeasurePolicy(
                     minWidth = if (boxWidth != Constraints.Infinity) boxWidth else 0,
                     minHeight = if (boxHeight != Constraints.Infinity) boxHeight else 0,
                     maxWidth = boxWidth,
-                    maxHeight = boxHeight
+                    maxHeight = boxHeight,
                 )
             measurables.fastForEachIndexed { index, measurable ->
                 if (measurable.matchesParentSize) {
@@ -211,14 +208,14 @@ private fun Placeable.PlacementScope.placeInBox(
     layoutDirection: LayoutDirection,
     boxWidth: Int,
     boxHeight: Int,
-    alignment: Alignment
+    alignment: Alignment,
 ) {
     val childAlignment = measurable.boxChildDataNode?.alignment ?: alignment
     val position =
         childAlignment.align(
             IntSize(placeable.width, placeable.height),
             IntSize(boxWidth, boxHeight),
-            layoutDirection
+            layoutDirection,
         )
     placeable.place(position)
 }
@@ -230,7 +227,6 @@ private fun Placeable.PlacementScope.placeInBox(
  * Example usage:
  *
  * @sample androidx.compose.foundation.layout.samples.SimpleBox
- *
  * @param modifier The modifier to be applied to the layout.
  */
 @Composable
@@ -277,7 +273,7 @@ internal object BoxScopeInstance : BoxScope {
                     debugInspectorInfo {
                         name = "align"
                         value = alignment
-                    }
+                    },
             )
         )
 
@@ -287,7 +283,7 @@ internal object BoxScopeInstance : BoxScope {
             BoxChildDataElement(
                 alignment = Alignment.Center,
                 matchParentSize = true,
-                inspectorInfo = debugInspectorInfo { name = "matchParentSize" }
+                inspectorInfo = debugInspectorInfo { name = "matchParentSize" },
             )
         )
 }
@@ -300,7 +296,7 @@ private val Measurable.matchesParentSize: Boolean
 private class BoxChildDataElement(
     val alignment: Alignment,
     val matchParentSize: Boolean,
-    val inspectorInfo: InspectorInfo.() -> Unit
+    val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<BoxChildDataNode>() {
     override fun create(): BoxChildDataNode {
         return BoxChildDataNode(alignment, matchParentSize)
@@ -329,9 +325,7 @@ private class BoxChildDataElement(
     }
 }
 
-private class BoxChildDataNode(
-    var alignment: Alignment,
-    var matchParentSize: Boolean,
-) : ParentDataModifierNode, Modifier.Node() {
+private class BoxChildDataNode(var alignment: Alignment, var matchParentSize: Boolean) :
+    ParentDataModifierNode, Modifier.Node() {
     override fun Density.modifyParentData(parentData: Any?) = this@BoxChildDataNode
 }
