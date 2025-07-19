@@ -18,8 +18,6 @@ package androidx.compose.material3.benchmark
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -45,7 +43,6 @@ import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 class NavigationBarBenchmark {
     @get:Rule val benchmarkRule = ComposeBenchmarkRule()
 
@@ -95,7 +92,6 @@ class NavigationBarBenchmark {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal class NavigationBarTestCase(
     private val isShortNavBar: Boolean = false,
     private val shortNavBarIconPosition: NavigationItemIconPosition = NavigationItemIconPosition.Top,
@@ -141,11 +137,7 @@ internal class NavigationBarTestCase(
 
     @Composable
     override fun ContentWrappers(content: @Composable () -> Unit) {
-        if (isShortNavBar) {
-            MaterialExpressiveTheme { content() }
-        } else {
-            MaterialTheme { content() }
-        }
+        MaterialTheme { content() }
     }
 
     override fun toggleState() {
