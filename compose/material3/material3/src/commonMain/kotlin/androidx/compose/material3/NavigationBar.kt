@@ -108,7 +108,6 @@ import kotlin.math.roundToInt
  * @param windowInsets a window insets of the navigation bar.
  * @param content the content of this navigation bar, typically 3-5 [NavigationBarItem]s
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun NavigationBar(
     modifier: Modifier = Modifier,
@@ -136,8 +135,7 @@ fun NavigationBar(
  *
  * [NavigationBarOverride] used when no override is specified.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultNavigationBarOverride : NavigationBarOverride {
+internal object DefaultNavigationBarOverride : NavigationBarOverride {
     @Composable
     override fun NavigationBarOverrideScope.NavigationBar() {
         Surface(
@@ -779,8 +777,7 @@ internal val NavigationBarItemToIconMinimumPadding: Dp = 44.dp
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalNavigationBarOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface NavigationBarOverride {
+internal interface NavigationBarOverride {
     /** Behavior function that is called by the [NavigationBar] component. */
     @Composable fun NavigationBarOverrideScope.NavigationBar()
 }
@@ -800,8 +797,7 @@ interface NavigationBarOverride {
  * @param windowInsets a window insets of the navigation bar.
  * @param content the content of this navigation bar, typically 3-5 [NavigationBarItem]s
  */
-@ExperimentalMaterial3ComponentOverrideApi
-class NavigationBarOverrideScope
+internal class NavigationBarOverrideScope
 internal constructor(
     val modifier: Modifier = Modifier,
     val containerColor: Color,
@@ -812,8 +808,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [NavigationBarOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalNavigationBarOverride: ProvidableCompositionLocal<NavigationBarOverride> =
+internal val LocalNavigationBarOverride: ProvidableCompositionLocal<NavigationBarOverride> =
     compositionLocalOf {
         DefaultNavigationBarOverride
     }

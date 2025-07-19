@@ -86,9 +86,8 @@ fun MaterialTheme(
  * @param shapes A set of corner shapes to be used as this hierarchy's shape system
  * @param typography A set of text styles to be used as this hierarchy's typography system
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MaterialTheme(
+internal fun MaterialTheme(
     colorScheme: ColorScheme = MaterialTheme.colorScheme,
     motionScheme: MotionScheme = MaterialTheme.motionScheme,
     shapes: Shapes = MaterialTheme.shapes,
@@ -139,8 +138,7 @@ object MaterialTheme {
         @Composable @ReadOnlyComposable get() = LocalShapes.current
 
     /** Retrieves the current [MotionScheme] at the call site's position in the hierarchy. */
-    @ExperimentalMaterial3ExpressiveApi
-    val motionScheme: MotionScheme
+    internal val motionScheme: MotionScheme
         @Composable @ReadOnlyComposable get() = LocalMotionScheme.current
 
     /**
@@ -154,8 +152,7 @@ object MaterialTheme {
      * `CompositionLocalConsumerModifierNode` implementations, but in most cases it's recommended to
      * read the motion values from [MaterialTheme.motionScheme].
      */
-    @ExperimentalMaterial3ExpressiveApi
-    val LocalMotionScheme: CompositionLocal<MotionScheme>
+    internal val LocalMotionScheme: CompositionLocal<MotionScheme>
         get() = _localMotionScheme
 }
 
@@ -178,16 +175,14 @@ object MaterialTheme {
  * [MaterialTheme] to specify separate MaterialTheme(s) for different screens / parts of your UI,
  * overriding only the parts of the theme definition that need to change.
  *
- * @sample androidx.compose.material3.samples.MaterialExpressiveThemeSample
  * @param colorScheme A complete definition of the Material Color theme for this hierarchy
  * @param motionScheme A complete definition of the Material motion theme for this hierarchy
  * @param shapes A set of corner shapes to be used as this hierarchy's shape system
  * @param typography A set of text styles to be used as this hierarchy's typography system
  * @param content The content inheriting this theme
  */
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun MaterialExpressiveTheme(
+internal fun MaterialExpressiveTheme(
     colorScheme: ColorScheme? = null,
     motionScheme: MotionScheme? = null,
     shapes: Shapes? = null,
@@ -235,5 +230,4 @@ internal const val TextSelectionBackgroundOpacity = 0.4f
 
 /** Use [MaterialTheme.LocalMotionScheme] to access this publicly. */
 @Suppress("CompositionLocalNaming")
-@ExperimentalMaterial3ExpressiveApi
 private val _localMotionScheme = staticCompositionLocalOf { standard() }
