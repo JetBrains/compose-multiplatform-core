@@ -116,7 +116,6 @@ import kotlin.math.roundToInt
  * @param windowInsets a window insets of the navigation rail.
  * @param content the content of this navigation rail, typically 3-7 [NavigationRailItem]s
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun NavigationRail(
     modifier: Modifier = Modifier,
@@ -144,8 +143,7 @@ fun NavigationRail(
  *
  * [NavigationRailOverride] used when no override is specified.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultNavigationRailOverride : NavigationRailOverride {
+internal object DefaultNavigationRailOverride : NavigationRailOverride {
     @Composable
     override fun NavigationRailOverrideScope.NavigationRail() {
         Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
@@ -804,8 +802,7 @@ private val IndicatorVerticalPaddingNoLabel: Dp =
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalNavigationRailOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface NavigationRailOverride {
+internal interface NavigationRailOverride {
     /** Behavior function that is called by the [NavigationRail] component. */
     @Composable fun NavigationRailOverrideScope.NavigationRail()
 }
@@ -823,8 +820,7 @@ interface NavigationRailOverride {
  * @param windowInsets a window insets of the navigation rail.
  * @param content the content of this navigation rail, typically 3-7 [NavigationRailItem]s
  */
-@ExperimentalMaterial3ComponentOverrideApi
-class NavigationRailOverrideScope
+internal class NavigationRailOverrideScope
 internal constructor(
     val modifier: Modifier = Modifier,
     val containerColor: Color,
@@ -835,8 +831,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [NavigationRailOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalNavigationRailOverride: ProvidableCompositionLocal<NavigationRailOverride> =
+internal val LocalNavigationRailOverride: ProvidableCompositionLocal<NavigationRailOverride> =
     compositionLocalOf {
         DefaultNavigationRailOverride
     }

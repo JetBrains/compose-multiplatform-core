@@ -134,7 +134,6 @@ expect fun AlertDialog(
  * @param properties typically platform specific properties to further configure the dialog.
  * @param content the content of the dialog
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @ExperimentalMaterial3Api
 @Composable
 fun BasicAlertDialog(
@@ -160,8 +159,7 @@ fun BasicAlertDialog(
  * [BasicAlertDialogOverride] used when no override is specified.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
+internal object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
     @Composable
     override fun BasicAlertDialogOverrideScope.BasicAlertDialog() {
         Dialog(onDismissRequest = onDismissRequest, properties = properties) {
@@ -485,8 +483,7 @@ private val TextPadding = PaddingValues(bottom = 24.dp)
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalBasicAlertDialogOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface BasicAlertDialogOverride {
+internal interface BasicAlertDialogOverride {
     /** Behavior function that is called by the [BasicAlertDialog] component. */
     @Composable fun BasicAlertDialogOverrideScope.BasicAlertDialog()
 }
@@ -500,7 +497,6 @@ interface BasicAlertDialogOverride {
  * @param properties typically platform specific properties to further configure the dialog.
  * @param content the content of the dialog
  */
-@ExperimentalMaterial3ComponentOverrideApi
 class BasicAlertDialogOverrideScope
 internal constructor(
     val onDismissRequest: () -> Unit,
@@ -510,8 +506,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [BasicAlertDialogOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalBasicAlertDialogOverride: ProvidableCompositionLocal<BasicAlertDialogOverride> =
+internal val LocalBasicAlertDialogOverride: ProvidableCompositionLocal<BasicAlertDialogOverride> =
     compositionLocalOf {
         DefaultBasicAlertDialogOverride
     }
