@@ -15,26 +15,3 @@
  */
 
 package androidx.compose.material3.samples
-
-import androidx.annotation.Sampled
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.expressiveLightColorScheme
-import androidx.compose.runtime.Composable
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-@Sampled
-fun MaterialExpressiveThemeColorSchemeSample() {
-    @Composable
-    fun MyMaterialTheme(content: @Composable () -> Unit) {
-        MaterialExpressiveTheme(
-            colorScheme =
-                if (isSystemInDarkTheme()) darkColorScheme() else expressiveLightColorScheme()
-        ) {
-            content()
-        }
-    }
-}

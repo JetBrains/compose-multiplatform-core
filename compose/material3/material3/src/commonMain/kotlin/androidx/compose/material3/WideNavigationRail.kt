@@ -157,7 +157,6 @@ import kotlinx.coroutines.launch
  *   except for the center arrangement which considers the entire height of the container
  * @param content the content of this wide navigation rail, typically [WideNavigationRailItem]s
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun WideNavigationRail(
     modifier: Modifier = Modifier,
@@ -189,8 +188,7 @@ fun WideNavigationRail(
  *
  * [WideNavigationRailOverride] used when no override is specified.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultWideNavigationRailOverride : WideNavigationRailOverride {
+internal object DefaultWideNavigationRailOverride : WideNavigationRailOverride {
     @Composable
     override fun WideNavigationRailOverrideScope.WideNavigationRail() {
         WideNavigationRailLayout(
@@ -462,7 +460,6 @@ private fun WideNavigationRailLayout(
  *   expanded modal wide navigation rail's window behavior
  * @param content the content of this modal wide navigation rail, usually [WideNavigationRailItem]s
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun ModalWideNavigationRail(
     modifier: Modifier = Modifier,
@@ -502,8 +499,7 @@ fun ModalWideNavigationRail(
  *
  * [ModalWideNavigationRailOverride] used when no override is specified.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultModalWideNavigationRailOverride : ModalWideNavigationRailOverride {
+internal object DefaultModalWideNavigationRailOverride : ModalWideNavigationRailOverride {
     @Composable
     override fun ModalWideNavigationRailOverrideScope.ModalWideNavigationRail() {
         val rememberContent =
@@ -1336,8 +1332,7 @@ private const val HeaderLayoutIdTag: String = "header"
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalWideNavigationRailOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface WideNavigationRailOverride {
+internal interface WideNavigationRailOverride {
     /** Behavior function that is called by the [WideNavigationRail] component. */
     @Composable fun WideNavigationRailOverrideScope.WideNavigationRail()
 }
@@ -1357,8 +1352,7 @@ interface WideNavigationRailOverride {
  *   except for the center arrangement which considers the entire height of the container
  * @param content the content of this wide navigation rail, typically [WideNavigationRailItem]s
  */
-@ExperimentalMaterial3ComponentOverrideApi
-class WideNavigationRailOverrideScope
+internal class WideNavigationRailOverrideScope
 internal constructor(
     val modifier: Modifier,
     val state: WideNavigationRailState,
@@ -1371,8 +1365,8 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [WideNavigationRailOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalWideNavigationRailOverride: ProvidableCompositionLocal<WideNavigationRailOverride> =
+internal val LocalWideNavigationRailOverride:
+    ProvidableCompositionLocal<WideNavigationRailOverride> =
     compositionLocalOf {
         DefaultWideNavigationRailOverride
     }
@@ -1384,8 +1378,7 @@ val LocalWideNavigationRailOverride: ProvidableCompositionLocal<WideNavigationRa
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalModalWideNavigationRailOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface ModalWideNavigationRailOverride {
+internal interface ModalWideNavigationRailOverride {
     /** Behavior function that is called by the [WideNavigationRail] component. */
     @Composable fun ModalWideNavigationRailOverrideScope.ModalWideNavigationRail()
 }
@@ -1410,8 +1403,7 @@ interface ModalWideNavigationRailOverride {
  *   expanded modal wide navigation rail's window behavior
  * @param content the content of this modal wide navigation rail, usually [WideNavigationRailItem]s
  */
-@ExperimentalMaterial3ComponentOverrideApi
-class ModalWideNavigationRailOverrideScope
+internal class ModalWideNavigationRailOverrideScope
 internal constructor(
     val modifier: Modifier,
     val state: WideNavigationRailState,
@@ -1428,8 +1420,7 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [ModalWideNavigationRailOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalModalWideNavigationRailOverride:
+internal val LocalModalWideNavigationRailOverride:
     ProvidableCompositionLocal<ModalWideNavigationRailOverride> =
     compositionLocalOf {
         DefaultModalWideNavigationRailOverride
