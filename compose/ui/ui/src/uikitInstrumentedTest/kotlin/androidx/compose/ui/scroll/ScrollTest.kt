@@ -410,6 +410,7 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
+            .up()
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
@@ -431,6 +432,8 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = (150 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
+            .up()
 
         waitForIdle()
 
@@ -453,6 +456,8 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dx = -(150 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
+            .up()
 
         waitForIdle()
 
