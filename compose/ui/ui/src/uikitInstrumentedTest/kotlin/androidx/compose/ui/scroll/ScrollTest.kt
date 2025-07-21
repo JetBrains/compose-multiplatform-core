@@ -410,7 +410,6 @@ internal class ScrollTest {
 
         touchDown(DpOffset(screenSize.center.x, 50.dp))
             .dragBy(dy = 50.dp)
-            .up()
 
         waitForIdle()
         assertEquals(initialBoxRect, boxRect)
