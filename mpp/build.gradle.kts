@@ -36,14 +36,9 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:foundation:foundation"),
         ComposeComponent(":compose:foundation:foundation-layout"),
         ComposeComponent(":compose:material:material"),
-        ComposeComponent(":compose:material3:material3"),
         //ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
-        ComposeComponent(":compose:material3:material3-window-size-class"),
-        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
-        // TODO: It's published for all platforms by Google, so we don't need to re-publish it
-        ComposeComponent(":compose:runtime:runtime-annotation", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),
         ComposeComponent(":compose:ui:ui-geometry"),
@@ -77,8 +72,10 @@ val libraryToComponents = mapOf(
     "COMPOSE_MATERIAL_NAVIGATION" to listOf(
         ComposeComponent(":compose:material:material-navigation"),
     ),
-    "COMPOSE_MATERIAL3_COMMON" to listOf(
-        ComposeComponent(":compose:material3:material3-common"),
+    "COMPOSE_MATERIAL3" to listOf(
+        ComposeComponent(":compose:material3:material3"),
+        ComposeComponent(":compose:material3:material3-window-size-class"),
+        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
     ),
     "COMPOSE_MATERIAL3_ADAPTIVE" to listOf(
         ComposeComponent(":compose:material3:adaptive:adaptive"),

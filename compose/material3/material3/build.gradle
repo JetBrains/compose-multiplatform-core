@@ -104,7 +104,7 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 api("org.jetbrains.compose.runtime:runtime:1.8.1")
                 api("org.jetbrains.compose.ui:ui-graphics:1.8.1")
                 api("org.jetbrains.compose.ui:ui-text:1.8.1")
-                api(project(":graphics:graphics-shapes"))
+                api("org.jetbrains.androidx.graphics:graphics-shapes:1.0.0-alpha09")
 
                 implementation("org.jetbrains.compose.ui:ui-util:1.8.1")
                 implementation("org.jetbrains.compose.ui:ui-backhandler:1.8.1")
@@ -140,15 +140,15 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             nativeMain.dependsOn(nonJvmMain)
             darwinMain.dependsOn(nativeMain)
-            jsWasmMain.dependsOn(nonJvmMain)
+            webMain.dependsOn(nonJvmMain)
 
             jsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
             }
             wasmJsMain {
                 kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(jsWasmMain)
+                dependsOn(webMain)
                 dependencies {
                     implementation(libs.kotlinStdlib)
                 }
@@ -198,14 +198,14 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             nativeTest.dependsOn(skikoTest)
             darwinTest.dependsOn(nativeTest)
-            jsWasmTest.dependsOn(skikoTest)
+            webTest.dependsOn(skikoTest)
 
             jsTest {
-                dependsOn(jsWasmTest)
+                dependsOn(webTest)
             }
 
             wasmJsTest {
-                dependsOn(jsWasmTest)
+                dependsOn(webTest)
             }
 
             uikitTest {

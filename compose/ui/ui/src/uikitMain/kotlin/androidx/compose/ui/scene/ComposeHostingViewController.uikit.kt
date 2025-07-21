@@ -54,7 +54,8 @@ import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ApplicationActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
-import androidx.compose.ui.window.FocusStack
+import androidx.compose.ui.window.FocusedViewsList
+import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -102,6 +103,8 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+    // Used for testing
+    val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
     private var layers: UIKitComposeSceneLayersHolder? = null
@@ -133,7 +136,7 @@ internal class ComposeHostingViewController(
     )
     private val systemThemeState: MutableState<SystemTheme> = mutableStateOf(SystemTheme.Unknown)
 
-    var focusStack: FocusStack? = FocusStack()
+    var focusedViewsList: FocusedViewsList? = FocusedViewsList()
 
     /*
      * On iOS >= 13.0 interfaceOrientation will be deduced from [UIWindowScene] of [UIWindow]
@@ -301,7 +304,7 @@ internal class ComposeHostingViewController(
 
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
-            focusStack = focusStack,
+            focusedViewsList = focusedViewsList,
             windowContext = windowContext,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
@@ -461,7 +464,7 @@ internal class ComposeHostingViewController(
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
-                    focusStack = if (focusable) focusStack else null,
+                    focusedViewsList = if (focusable) focusedViewsList else null,
                     windowContext = windowContext,
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
