@@ -577,6 +577,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UILabel")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -587,6 +588,7 @@ internal class ScrollTest {
         findNodeWithTag("Red Box")
             .touchDown()
             .dragBy(dy = (100 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -618,6 +620,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dy = -(250 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -648,6 +651,7 @@ internal class ScrollTest {
         findNodeWithTag("Top Box")
             .touchDown()
             .dragBy(dy = -(100 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -721,6 +725,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dx = -(50 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -755,6 +760,7 @@ internal class ScrollTest {
         findNodeWithTag("UIKit.UIScrollView")
             .touchDown()
             .dragBy(dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -794,6 +800,7 @@ internal class ScrollTest {
             .dragBy(dx = 20.dp, dy = -50.dp)
             .dragBy(dx = -70.dp, dy = 50.dp)
             .dragBy(dy = -150.dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
@@ -831,6 +838,7 @@ internal class ScrollTest {
             .touchDown()
             .dragBy(dx = -(5 + CUPERTINO_TOUCH_SLOP).dp, dy = -(50 + CUPERTINO_TOUCH_SLOP).dp)
             .dragBy(dx = -50.dp, dy = -50.dp)
+            .also { delay(500) }
             .up()
 
         waitForIdle()
