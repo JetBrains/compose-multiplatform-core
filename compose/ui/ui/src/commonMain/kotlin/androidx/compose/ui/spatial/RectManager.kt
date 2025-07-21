@@ -155,13 +155,9 @@ internal class RectManager(
         node: DelegatableNode,
         callback: (RelativeLayoutBounds) -> Unit,
     ): RegistrationHandle {
-        return throttledCallbacks.registerOnRectChanged(
-            id,
-            throttleMillis,
-            debounceMillis,
-            node,
-            callback,
-        )
+        return throttledCallbacks
+            .registerOnRectChanged(id, throttleMillis, debounceMillis, node, callback)
+            .also { scheduleDebounceCallback(true) }
     }
 
     fun registerOnGlobalLayoutCallback(
