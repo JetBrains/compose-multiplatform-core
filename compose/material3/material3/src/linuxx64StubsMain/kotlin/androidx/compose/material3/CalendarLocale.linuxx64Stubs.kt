@@ -16,7 +16,6 @@
 
 package androidx.compose.material3
 
-@ExperimentalMaterial3Api
 actual class CalendarLocale {
     init {
         implementedInJetBrainsFork()
@@ -27,4 +26,5 @@ internal actual fun Int.toLocalString(
     minDigits: Int,
     maxDigits: Int,
     isGroupingUsed: Boolean,
+    locale: CalendarLocale?,
 ): String = implementedInJetBrainsFork()
