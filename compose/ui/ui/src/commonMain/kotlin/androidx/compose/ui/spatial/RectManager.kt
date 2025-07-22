@@ -279,7 +279,7 @@ internal class RectManager(
 
         // If unset is returned then that means there is a rotation/skew/scale
         if (hasNonTranslationTransformations || !offset.isSet) {
-            insertOrUpdateTransformedNode(layoutNode, position, firstPlacement)
+            insertOrUpdateTransformedNode(layoutNode, firstPlacement)
             return
         }
 
@@ -300,30 +300,21 @@ internal class RectManager(
 
     private fun insertOrUpdateTransformedNodeSubhierarchy(layoutNode: LayoutNode) {
         layoutNode.forEachChild {
-            insertOrUpdateTransformedNode(it, it.outerCoordinator.position, false)
+            insertOrUpdateTransformedNode(it, false)
             insertOrUpdateTransformedNodeSubhierarchy(it)
         }
     }
 
     private val cachedRect = MutableRect(0f, 0f, 0f, 0f)
 
-    private fun insertOrUpdateTransformedNode(
-        layoutNode: LayoutNode,
-        position: IntOffset,
-        firstPlacement: Boolean,
-    ) {
+    private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode, firstPlacement: Boolean) {
         val coord = layoutNode.outerCoordinator
         val delegate = layoutNode.measurePassDelegate
         val width = delegate.measuredWidth
         val height = delegate.measuredHeight
         val rect = cachedRect
 
-        rect.set(
-            left = position.x.toFloat(),
-            top = position.y.toFloat(),
-            right = (position.x + width).toFloat(),
-            bottom = (position.y + height).toFloat(),
-        )
+        rect.set(0f, 0f, width.toFloat(), height.toFloat())
 
         coord.boundingRectInRoot(rect)
 
