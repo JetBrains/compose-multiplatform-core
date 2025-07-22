@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":compose:integration-tests:demos:common"))
     implementation(project(":compose:material3:material3"))
     implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
+    implementation("androidx.compose.material3.adaptive:adaptive:1.1.0")
     implementation(project(":compose:material3:material3-window-size-class"))
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
