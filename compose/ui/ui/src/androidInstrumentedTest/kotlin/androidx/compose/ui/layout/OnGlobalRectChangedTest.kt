@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -313,6 +314,31 @@ class OnGlobalRectChangedTest {
             assertNotNull(lastOffsetFromGloballyPositioned)
             assertNotNull(lastOffsetFromRectChanged)
             assertEquals(lastOffsetFromGloballyPositioned, lastOffsetFromRectChanged)
+        }
+    }
+
+    @Test
+    fun callbackIsReExecutedOnReuse() {
+        with(rule.density) {
+            val size = 10
+            var actualSize: Int = Int.MAX_VALUE
+            var reuseKey by mutableStateOf(0)
+            rule.setContent {
+                ReusableContent(reuseKey) {
+                    Box(
+                        Modifier.requiredSize(size.toDp(), size.toDp()).onLayoutRectChanged(0, 0) {
+                            actualSize = it.width
+                        }
+                    )
+                }
+            }
+
+            rule.runOnIdle {
+                actualSize = Int.MAX_VALUE
+                reuseKey++
+            }
+
+            rule.runOnIdle { assertThat(actualSize).isEqualTo(size) }
         }
     }
 
