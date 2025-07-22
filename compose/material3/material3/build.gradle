@@ -52,7 +52,7 @@ androidXMultiplatform {
                 api("androidx.compose.foundation:foundation-layout:1.8.1")
                 api("androidx.compose.foundation:foundation:1.8.1")
                 api("androidx.compose.material:material-ripple:1.8.1")
-                api("androidx.compose.runtime:runtime:1.8.1")
+                api("androidx.compose.runtime:runtime:1.9.0-beta03")
                 api("androidx.compose.ui:ui:1.8.2")
                 api("androidx.compose.ui:ui-text:1.8.1")
                 api("androidx.graphics:graphics-shapes:1.0.1")
