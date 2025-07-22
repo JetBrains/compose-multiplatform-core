@@ -38,6 +38,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.SimpleRow
 import androidx.compose.ui.Wrap
 import androidx.compose.ui.background
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.padding
@@ -1164,6 +1164,43 @@ class OnGlobalRectChangedTest {
                 val expectedTop = ((containerSize - height) / 2)
                 assertThat(actualPosition).isEqualTo(IntOffset(expectedLeft, expectedTop))
             }
+        }
+    }
+
+    @Test
+    fun updatingOffsetInParentsLayoutModifier() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(IntOffset(0), neverEqualPolicy())
+            rule.setContent {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val resolvedInMeasureOffset = offset
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.place(resolvedInMeasureOffset)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(10.dp).onLayoutRectChanged(0, 0) {
+                                actualPosition = it.positionInRoot
+                            }
+                    )
+                }
+            }
+
+            rule.runOnIdle { offset = IntOffset(20, 20) }
+
+            rule.runOnIdle {
+                // during the first rerun the parent might clear the cached offset for it
+                // so we rerun again in order to update the cache and re-calculate the child
+                // position based on it again
+                offset = IntOffset(20, 20)
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
         }
     }
 }
