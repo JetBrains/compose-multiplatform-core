@@ -88,6 +88,7 @@ androidXMultiplatform {
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.kotlinReflect)
                 api(project(":compose:ui:ui-util"))
+                implementation(project(":compose:ui:ui-test"))
             }
         }
 
@@ -248,7 +249,6 @@ androidXMultiplatform {
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:material3:material3"))
-                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
 
