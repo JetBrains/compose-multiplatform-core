@@ -137,29 +137,28 @@ androidXMultiplatform {
             dependsOn(jbTest)
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(jbMain)
         }
 
-        jsNativeTest {
+        nonJvmTest {
             dependsOn(jbTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         webMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         webTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         targets.configureEach { target ->

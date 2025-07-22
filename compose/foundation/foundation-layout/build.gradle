@@ -144,21 +144,20 @@ androidXMultiplatform {
             dependsOn(notMobileTest)
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(skikoMain)
         }
 
-        jsNativeTest {
+        nonJvmTest {
             dependsOn(skikoTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         uikitMain {
@@ -179,12 +178,12 @@ androidXMultiplatform {
         }
 
         webMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
             dependsOn(notMobileMain)
         }
 
         webTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         targets.configureEach { target ->

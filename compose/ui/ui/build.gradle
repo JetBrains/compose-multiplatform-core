@@ -211,10 +211,9 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
-                // TODO: Move to commonTest?
-                // TODO: Uncomment after fix foundation/material build scripts
-//                implementation(project(":compose:material:material"))
-//                implementation(project(":compose:foundation:foundation"))
+                // TODO: Move to commonTest?]
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:foundation:foundation"))
             }
         }
 
@@ -253,21 +252,20 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(skikoMain)
         }
 
-        jsNativeTest {
+        nonJvmTest {
             dependsOn(skikoTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         macosMain {
@@ -291,38 +289,36 @@ androidXMultiplatform {
             dependsOn(nativeTest)
         }
 
-        // TODO: Uncomment after fix foundation/material build scripts
-//        uikitInstrumentedTest {
-//            dependencies {
-//                implementation(project(":compose:material:material"))
-//                implementation(project(":compose:foundation:foundation"))
-//            }
-//        }
+        uikitInstrumentedTest {
+            dependencies {
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:foundation:foundation"))
+            }
+        }
 
-        // TODO: Align naming: webMain
-        jsWasmMain {
-            dependsOn(jsNativeMain)
+        webMain {
+            dependsOn(nonJvmMain)
             dependsOn(notMobileMain)
         }
 
-        jsWasmTest { // TODO: It's already webTest ???
-            dependsOn(jsNativeTest)
+        webTest {
+            dependsOn(nonJvmTest)
             dependsOn(notMobileTest)
         }
 
         jsMain {
             kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
         }
 
         jsTest {
             kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         wasmJsMain {
             kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
             dependencies {
                 api(libs.kotlinXw3c)
                 implementation(libs.skikoWasmJs)
@@ -332,7 +328,7 @@ androidXMultiplatform {
 
         wasmJsTest {
             kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         targets.configureEach { target ->

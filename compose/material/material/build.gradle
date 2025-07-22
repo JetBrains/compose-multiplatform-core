@@ -152,46 +152,44 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(skikoMain)
         }
 
-        jsNativeTest {
+        nonJvmTest {
             dependsOn(skikoTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
-        // TODO: Align naming: webMain
-        jsWasmMain {
-            dependsOn(jsNativeMain)
+        webMain {
+            dependsOn(nonJvmMain)
         }
 
-        jsWasmTest {
-            dependsOn(jsNativeTest)
+        webTest {
+            dependsOn(nonJvmTest)
         }
 
         jsMain {
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
         }
 
         jsTest {
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         wasmJsMain {
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
         }
 
         wasmJsTest {
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         targets.configureEach { target ->

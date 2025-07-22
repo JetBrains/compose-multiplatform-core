@@ -106,8 +106,8 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
-                // TODO: Uncomment after fix foundation/material build scripts
-//                implementation(project(":compose:material:material"))
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:foundation:foundation"))
                 implementation(libs.skiko)
                 implementation(libs.atomicFu)
             }
@@ -129,7 +129,6 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation(libs.junit)
                 implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:foundation:foundation"))
             }
         }
     }

@@ -149,9 +149,8 @@ androidXMultiplatform {
         skikoTest {
             dependsOn(commonTest)
             dependencies {
-                // TODO: Uncomment after fix foundation/material build scripts
-//                implementation(project(":compose:material:material"))
-//                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:foundation:foundation"))
             }
         }
 
@@ -173,21 +172,20 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(skikoMain)
         }
 
-        jsNativeTest {
+        nonJvmTest {
             dependsOn(skikoTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         macosMain {
@@ -207,11 +205,11 @@ androidXMultiplatform {
         }
 
         webMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         webTest {
-            dependsOn(jsNativeTest)
+            dependsOn(nonJvmTest)
         }
 
         targets.configureEach { target ->

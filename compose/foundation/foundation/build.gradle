@@ -171,21 +171,20 @@ androidXMultiplatform {
             }
         }
 
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
+        nonJvmMain {
             dependsOn(skikoMain)
         }
 
-        jsNativeTest {
+        webTest {
             dependsOn(skikoTest)
         }
 
         nativeMain {
-            dependsOn(jsNativeMain)
+            dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(jsNativeTest)
+            dependsOn(webTest)
         }
 
         darwinMain {
@@ -216,34 +215,33 @@ androidXMultiplatform {
             dependsOn(darwinTest)
         }
 
-        // TODO: Align naming: webMain
-        jsWasmMain {
-            dependsOn(jsNativeMain)
+        webMain {
+            dependsOn(nonJvmMain)
         }
 
-        jsWasmTest {
-            dependsOn(jsNativeTest)
+        webTest {
+            dependsOn(webTest)
         }
 
         jsMain {
             kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
         }
 
         jsTest {
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         wasmJsMain {
             kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependsOn(jsWasmMain)
+            dependsOn(webMain)
             dependencies {
                 implementation(libs.kotlinXw3c)
             }
         }
 
         wasmJsTest {
-            dependsOn(jsWasmTest)
+            dependsOn(webTest)
         }
 
         targets.configureEach { target ->
