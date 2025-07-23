@@ -17,6 +17,7 @@
 package androidx.compose.ui.unit
 
 import androidx.compose.ui.platform.PlatformInsets
+import androidx.compose.ui.platform.ValueInsets
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint

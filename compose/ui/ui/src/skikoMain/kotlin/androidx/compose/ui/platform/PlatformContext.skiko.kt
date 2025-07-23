@@ -139,7 +139,7 @@ interface PlatformContext {
     fun requestFocus(): Boolean = true
 
     val dragAndDropManager: PlatformDragAndDropManager get() = EmptyDragAndDropManager
-    
+
     /**
      * The value that will be provided to [LocalPlatformWindowInsets] by default.
      */

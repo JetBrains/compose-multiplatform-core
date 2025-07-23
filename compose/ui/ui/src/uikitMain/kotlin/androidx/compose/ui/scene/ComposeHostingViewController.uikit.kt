@@ -228,15 +228,6 @@ internal class ComposeHostingViewController(
         interfaceOrientationState.value = orientation
     }
 
-    /**
-     * Used for testing purposes.
-     * Updates safe area insets on the main compose scene mediator.
-     */
-    fun updateSafeAreaInsets(insets: PlatformInsets) {
-        mediator?.updateSafeAreaInsets(insets)
-    }
-
-
     override fun viewWillTransitionToSize(
         size: CValue<CGSize>,
         withTransitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
