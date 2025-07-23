@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("WindowInsetsKt")
+
 package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import androidx.compose.ui.platform.NewPlatformInsets
 import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.platform.safeGestures
+import kotlin.jvm.JvmName
 
 actual val WindowInsets.Companion.captionBar: WindowInsets
     @Composable
