@@ -51,6 +51,51 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun throwsOnTargetRemoval() {
+        val previousDump = createDumpText("", listOf("linux", "ios"))
+        val currentDump = createDumpText("", listOf("linux"))
+        val e =
+            assertFailsWith<ValidationException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    KlibDumpParser(currentDump).parse(),
+                    KlibDumpParser(previousDump).parse(),
+                    shouldFreeze = false
+                )
+            }
+        assertThat(e.message).contains("[ios]: Target was removed")
+    }
+
+    @Test
+    fun allowsTargetAdditions() {
+        val previousDump = createDumpText("", listOf("linux"))
+        val currentDump = createDumpText("", listOf("linux", "ios"))
+        KlibDumpParser(previousDump).parse()
+        KlibDumpParser(currentDump).parse()
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            KlibDumpParser(currentDump).parse(),
+            KlibDumpParser(previousDump).parse(),
+            shouldFreeze = false
+        )
+    }
+
+    @Test
+    fun throwsOnAdditionalTargetsWhenAPIIsFrozen() {
+        val previousDump = createDumpText("", listOf("linux"))
+        val currentDump = createDumpText("", listOf("linux", "ios"))
+        KlibDumpParser(previousDump).parse()
+        KlibDumpParser(currentDump).parse()
+        val e =
+            assertFailsWith<ValidationException> {
+                BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+                    KlibDumpParser(currentDump).parse(),
+                    KlibDumpParser(previousDump).parse(),
+                    shouldFreeze = true
+                )
+            }
+        assertThat(e.message).contains("[ios]: Target was added")
+    }
+
+    @Test
     fun makePublicPrivate() {
         val beforeText =
             """
@@ -1054,6 +1099,27 @@ class BinaryCompatibilityCheckerTest {
     }
 
     @Test
+    fun addNewEntityWhenFrozen() {
+        val beforeText =
+            """
+        final class my.lib/A {
+            constructor <init>()
+        }
+        """
+        val afterText =
+            """
+        final class my.lib/A {
+            constructor <init>()
+        }
+        final class my.lib/B {
+            constructor <init>()
+        }
+        """
+        val expectedErrors = listOf("Added declaration my.lib/B to androidx:library")
+        testBeforeAndAfterIsIncompatible(beforeText, afterText, expectedErrors, shouldFreeze = true)
+    }
+
+    @Test
     fun addNewAbstractMethodToClass() {
         val beforeText =
             """
@@ -1407,32 +1473,43 @@ class BinaryCompatibilityCheckerTest {
     private fun testBeforeAndAfterIsCompatible(
         before: String,
         after: String,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
-        runBeforeAndAfter(before, after, baselines)
+        runBeforeAndAfter(before, after, baselines, shouldFreeze)
     }
 
     private fun testBeforeAndAfterIsIncompatible(
         before: String,
         after: String,
         expectedErrors: List<String>,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
-        val e = assertFailsWith<ValidationException> { runBeforeAndAfter(before, after, baselines) }
+        val e =
+            assertFailsWith<ValidationException> {
+                runBeforeAndAfter(before, after, baselines, shouldFreeze)
+            }
         for (error in expectedErrors) assertThat(e.message).contains(error)
     }
 
     private fun runBeforeAndAfter(
         before: String,
         after: String,
-        baselines: Set<String> = emptySet()
+        baselines: Set<String> = emptySet(),
+        shouldFreeze: Boolean = false
     ) {
         val beforeText = createDumpText(before)
         val afterText = createDumpText(after)
         val beforeLibs = KlibDumpParser(beforeText).parse()
         val afterLibs = KlibDumpParser(afterText).parse()
 
-        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(afterLibs, beforeLibs, baselines)
+        BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
+            afterLibs,
+            beforeLibs,
+            baselines,
+            shouldFreeze = shouldFreeze
+        )
     }
 
     private fun createDumpText(
