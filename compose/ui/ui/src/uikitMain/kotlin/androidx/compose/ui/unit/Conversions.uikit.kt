@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.unit
 
-import androidx.compose.ui.platform.PlatformInsets
+import androidx.compose.ui.platform.ValueInsets
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint
@@ -25,7 +25,6 @@ import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGSize
 import platform.CoreGraphics.CGSizeMake
-import platform.UIKit.NSDirectionalEdgeInsets
 import platform.UIKit.UIEdgeInsets
 
 internal fun CGPoint.asDpOffset(): DpOffset = DpOffset(x.dp, y.dp)
@@ -46,21 +45,13 @@ internal fun DpRect.asCGRect() = CGRectMake(
     height.value.toDouble()
 )
 
-internal fun CValue<UIEdgeInsets>.toPlatformInsets() = useContents {
-    PlatformInsets(
-        left = left.dp,
-        top = top.dp,
-        right = right.dp,
-        bottom = bottom.dp
-    )
-}
-
-// TODO: Consider LTR/RTL
-internal fun CValue<NSDirectionalEdgeInsets>.toPlatformInsets() = useContents {
-    PlatformInsets(
-        left = leading.dp,
-        top = top.dp,
-        right = trailing.dp,
-        bottom = bottom.dp
-    )
+internal fun CValue<UIEdgeInsets>.toValueInsets(density: Density) = useContents {
+    with(density) {
+        ValueInsets(
+            left = left.dp.roundToPx(),
+            top = top.dp.roundToPx(),
+            right = right.dp.roundToPx(),
+            bottom = bottom.dp.roundToPx()
+        )
+    }
 }

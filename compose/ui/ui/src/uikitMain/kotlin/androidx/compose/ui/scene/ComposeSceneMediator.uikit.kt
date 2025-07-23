@@ -48,8 +48,6 @@ import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.EmptyViewConfiguration
-import androidx.compose.ui.platform.LocalLayoutMargins
-import androidx.compose.ui.platform.LocalSafeArea
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
@@ -57,10 +55,12 @@ import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
+import androidx.compose.ui.platform.UIKitWindowInsetsConfig
+import androidx.compose.ui.platform.ValueInsets
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
-import androidx.compose.ui.platform.lerp
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalKeyboardOverlapHeight
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -76,8 +76,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toOffset
-import androidx.compose.ui.unit.toPlatformInsets
 import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.unit.toValueInsets
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
@@ -305,6 +306,12 @@ internal class ComposeSceneMediator(
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
+    private val windowInsetsConfig = UIKitWindowInsetsConfig()
+
+    fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
+        this@ComposeSceneMediator.windowInsetsConfig.updateInterfaceOrientation(interfaceOrientation)
+    }
+
     /**
      * A callback to define whether the precondition for the user input view hit test is met.
      *
@@ -337,6 +344,7 @@ internal class ComposeSceneMediator(
                 if (keyboardOverlapHeight != height) {
                     animateKeyboardOffsetChanges = false
                     keyboardOverlapHeight = height
+                    this@ComposeSceneMediator.windowInsetsConfig.updateKeyboardOverlapHeight(height, density)
                 }
             }
         )
@@ -537,23 +545,27 @@ internal class ComposeSceneMediator(
     fun prepareAndGetSizeTransitionAnimation(): suspend (Duration) -> Unit {
         isLayoutTransitionAnimating = true
 
-        val initialLayoutMargins = layoutMargins
-        val initialSafeArea = safeArea
+        val initialLayoutMargins = this@ComposeSceneMediator.windowInsetsConfig.layoutMargins.value
+        val initialSafeAreaInsets = this@ComposeSceneMediator.windowInsetsConfig.safeAreaInsets.value
         val initialSize = scene.size?.toSize() ?: return {}
 
         return { duration ->
             try {
                 if (initialSize != currentViewSize) {
                     withAnimationProgress(duration) { progress ->
-                        layoutMargins = lerp(
-                            start = initialLayoutMargins,
-                            stop = _overlayView.layoutMargins.toPlatformInsets(),
-                            fraction = progress
+                        this@ComposeSceneMediator.windowInsetsConfig.updateLayoutMargins(
+                            lerp(
+                                start = initialLayoutMargins,
+                                stop = _overlayView.layoutMargins.toValueInsets(density),
+                                fraction = progress
+                            )
                         )
-                        safeArea = lerp(
-                            start = initialSafeArea,
-                            stop = _overlayView.safeAreaInsets.toPlatformInsets(),
-                            fraction = progress
+                        this@ComposeSceneMediator.windowInsetsConfig.updateSafeAreaInsets(
+                            lerp(
+                                start = initialSafeAreaInsets,
+                                stop = _overlayView.safeAreaInsets.toValueInsets(density),
+                                fraction = progress
+                            )
                         )
                         size = lerp(
                             start = initialSize,
@@ -577,17 +589,11 @@ internal class ComposeSceneMediator(
     fun retrieveInteropTransaction(): UIKitInteropTransaction =
         interopContainer.retrieveTransaction()
 
-    private var safeArea by mutableStateOf(PlatformInsets.Zero)
-
-    private var layoutMargins by mutableStateOf(PlatformInsets.Zero)
-
     @Composable
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalInteropContainer provides interopContainer,
-            LocalKeyboardOverlapHeight provides keyboardOverlapHeight,
-            LocalSafeArea provides safeArea,
-            LocalLayoutMargins provides layoutMargins,
+            LocalKeyboardOverlapHeight provides keyboardOverlapHeight, // TODO: remove?
             LocalUIView provides _overlayView,
             content = content
         )
@@ -643,9 +649,8 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-        layoutMargins = _overlayView.layoutMargins.toPlatformInsets()
-        safeArea = _overlayView.safeAreaInsets.toPlatformInsets()
-
+        this@ComposeSceneMediator.windowInsetsConfig.updateLayoutMargins(_overlayView.layoutMargins.toValueInsets(density))
+        this@ComposeSceneMediator.windowInsetsConfig.updateSafeAreaInsets(_overlayView.safeAreaInsets.toValueInsets(density))
         size = currentViewSize.roundToIntSize()
     }
 
@@ -712,6 +717,7 @@ internal class ComposeSceneMediator(
         override val textToolbar get() = this@ComposeSceneMediator.textInputService
         override val semanticsOwnerListener get() = this@ComposeSceneMediator.semanticsOwnerListener
         override val dragAndDropManager get() = this@ComposeSceneMediator.dragAndDropManager
+        override val windowInsetsConfig get() = this@ComposeSceneMediator.windowInsetsConfig
 
         override var isKeepScreenOnEnabled: Boolean
             get() = UIKitIdleTimerManager.isIdleTimerDisabled
@@ -840,3 +846,11 @@ private fun UITouch.offsetInView(view: UIView, density: Float): Offset =
     locationInView(view).useContents {
         Offset(x.toFloat() * density, y.toFloat() * density)
     }
+
+private fun lerp(start: ValueInsets, stop: ValueInsets, fraction: Float) =
+    ValueInsets(
+        left = lerp(start.left, stop.left, fraction),
+        right = lerp(start.right, stop.right, fraction),
+        top = lerp(start.top, stop.top, fraction),
+        bottom = lerp(start.bottom, stop.bottom, fraction)
+    )
