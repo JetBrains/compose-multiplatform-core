@@ -16,12 +16,107 @@
 
 package androidx.compose.ui.layout
 
-// TODO https://youtrack.jetbrains.com/issue/CMP-8086
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.CaptionBar
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Ime
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.MandatorySystemGestures
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.NavigationBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.StatusBars
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.SystemGestures
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.TappableElement
+import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Waterfall
+import androidx.compose.ui.node.LayoutModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.TraversableNode
+import androidx.compose.ui.platform.NewPlatformInsets
+import androidx.compose.ui.platform.PlatformWindowInsetsConfig
+import androidx.compose.ui.unit.Constraints
 
-internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> =
-    emptyList()
+internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> {
+    return emptyList()
+}
 
 internal actual fun findInsetsAnimationProperties(
     placementScope: Placeable.PlacementScope,
     windowInsetsRulers: WindowInsetsRulers
-): WindowInsetsAnimation = NoWindowInsetsAnimation
+): WindowInsetsAnimation {
+    return NoWindowInsetsAnimation
+}
+
+internal class RulerProviderModifierElement(
+    val windowInsetsManager: PlatformWindowInsetsConfig
+): ModifierNodeElement<RulerProviderModifierNode>() {
+    override fun create(): RulerProviderModifierNode = RulerProviderModifierNode(windowInsetsManager)
+    override fun hashCode(): Int = windowInsetsManager.hashCode()
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
+            return true
+        }
+        return (other as? RulerProviderModifierElement)?.windowInsetsManager === windowInsetsManager
+    }
+    override fun update(node: RulerProviderModifierNode) = Unit
+}
+
+private const val RulerKey = "androidx.compose.ui.layout.WindowInsetsRulers"
+
+internal class RulerProviderModifierNode(
+    windowInsetsManager: PlatformWindowInsetsConfig,
+) : Modifier.Node(), LayoutModifierNode, TraversableNode {
+
+    val rulerLambda: RulerScope.() -> Unit = {
+        val (width, height) = coordinates.size
+
+        provideInsetsValues(CaptionBar, windowInsetsManager.captionBar, width, height)
+        provideInsetsValues(DisplayCutout, windowInsetsManager.displayCutout, width, height)
+        provideInsetsValues(Ime, windowInsetsManager.ime, width, height)
+        provideInsetsValues(MandatorySystemGestures, windowInsetsManager.mandatorySystemGestures, width, height)
+        provideInsetsValues(NavigationBars, windowInsetsManager.navigationBars, width, height)
+        provideInsetsValues(StatusBars, windowInsetsManager.statusBars, width, height)
+        provideInsetsValues(SystemGestures, windowInsetsManager.systemGestures, width, height)
+        provideInsetsValues(TappableElement, windowInsetsManager.tappableElement, width, height)
+        provideInsetsValues(Waterfall, windowInsetsManager.waterfall, width, height)
+    }
+
+    private fun RulerScope.provideInsetsValues(
+        rulers: WindowInsetsRulers,
+        platformInsets: NewPlatformInsets,
+        width: Int,
+        height: Int
+    ) {
+        provideInsetsValues(rulers.current, platformInsets, width, height)
+        provideInsetsValues(rulers.maximum, platformInsets, width, height)
+    }
+
+    private fun RulerScope.provideInsetsValues(
+        rulers: RectRulers,
+        insets: NewPlatformInsets,
+        width: Int,
+        height: Int,
+    ) {
+        if (insets != NewPlatformInsets.Unspecified) {
+            val left = insets.left
+            val top = insets.top
+            val right = (width - insets.right)
+            val bottom = (height - insets.bottom)
+
+            rulers.left provides left.toFloat()
+            rulers.top provides top.toFloat()
+            rulers.right provides right.toFloat()
+            rulers.bottom provides bottom.toFloat()
+        }
+    }
+
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        val width = placeable.width
+        val height = placeable.height
+        return layout(width, height, rulers = rulerLambda) { placeable.place(0, 0) }
+    }
+
+    override val traverseKey: Any
+        get() = RulerKey
+}
