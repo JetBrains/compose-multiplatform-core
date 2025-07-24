@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.layout
 
-import androidx.compose.testutils.PlatformInsets
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpRect

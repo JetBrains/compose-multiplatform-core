@@ -23,9 +23,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 
 internal class UIKitWindowInsets: PlatformWindowInsets {
-    var layoutMargins = mutableStateOf(ValueInsets.ZERO)
+    var layoutMargins = mutableStateOf(PlatformInsets.Zero)
         private set
-    var safeAreaInsets = mutableStateOf(ValueInsets.ZERO)
+    var safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
         private set
     var keyboardOverlapHeight = mutableStateOf(0)
         private set
@@ -37,30 +37,30 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
         val safeAreaInsets = safeAreaInsets.value
 
         when(orientation) {
-            InterfaceOrientation.Portrait -> ValueInsets(top = safeAreaInsets.top)
-            InterfaceOrientation.PortraitUpsideDown -> ValueInsets(bottom = safeAreaInsets.bottom)
-            InterfaceOrientation.LandscapeLeft -> ValueInsets(left = safeAreaInsets.left)
-            InterfaceOrientation.LandscapeRight -> ValueInsets(right = safeAreaInsets.right)
+            InterfaceOrientation.Portrait -> PlatformInsets(top = safeAreaInsets.top)
+            InterfaceOrientation.PortraitUpsideDown -> PlatformInsets(bottom = safeAreaInsets.bottom)
+            InterfaceOrientation.LandscapeLeft -> PlatformInsets(left = safeAreaInsets.left)
+            InterfaceOrientation.LandscapeRight -> PlatformInsets(right = safeAreaInsets.right)
         }
     }
     private val _ime = derivedStateOf {
-        ValueInsets(bottom = keyboardOverlapHeight.value)
+        PlatformInsets(bottom = keyboardOverlapHeight.value)
     }
     private val _mandatorySystemGesture = derivedStateOf {
         val safeAreaInsets = safeAreaInsets.value
-        ValueInsets(top = safeAreaInsets.top, bottom = safeAreaInsets.bottom)
+        PlatformInsets(top = safeAreaInsets.top, bottom = safeAreaInsets.bottom)
     }
     private val _navigationBars = derivedStateOf {
-        ValueInsets(bottom = safeAreaInsets.value.bottom)
+        PlatformInsets(bottom = safeAreaInsets.value.bottom)
     }
     private val _statusBars = derivedStateOf {
-        ValueInsets(top = safeAreaInsets.value.top)
+        PlatformInsets(top = safeAreaInsets.value.top)
     }
     private val _tappableElement = derivedStateOf {
-        ValueInsets(top = safeAreaInsets.value.top)
+        PlatformInsets(top = safeAreaInsets.value.top)
     }
 
-    override val captionBar: PlatformInsets get() = ValueInsets.ZERO
+    override val captionBar: PlatformInsets get() = PlatformInsets.Zero
     override val displayCutout: PlatformInsets get() = _displayCutout.value
     override val ime: PlatformInsets get() = _ime.value
     override val mandatorySystemGestures: PlatformInsets get() = _mandatorySystemGesture.value
@@ -69,7 +69,7 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
     override val systemBars: PlatformInsets get() = safeAreaInsets.value
     override val systemGestures: PlatformInsets get() = layoutMargins.value
     override val tappableElement: PlatformInsets get() = _tappableElement.value
-    override val waterfall: PlatformInsets get() = ValueInsets.ZERO
+    override val waterfall: PlatformInsets get() = PlatformInsets.Zero
 
     fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
         interfaceOrientation.value = orientation
@@ -83,7 +83,7 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
         this.layoutMargins.value = layoutMargins
     }
 
-    fun updateSafeAreaInsets(safeAreaInsets: ValueInsets) {
+    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
         this.safeAreaInsets.value = safeAreaInsets
     }
 }
