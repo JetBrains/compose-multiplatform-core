@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.testutils.PlatformInsets
 import androidx.compose.ui.FillBox
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.PopupState
