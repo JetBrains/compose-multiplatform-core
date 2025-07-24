@@ -38,5 +38,5 @@ internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
 
 internal actual fun ClipEntry?.hasText(): Boolean = this?.hasPlainText() ?: false
 
-internal actual fun Clipboard?.isReadSupported(): Boolean = true
-internal actual fun Clipboard?.isWriteSupported(): Boolean = true
+internal actual fun Clipboard?.isReadSupported(): Boolean = this != null
+internal actual fun Clipboard?.isWriteSupported(): Boolean = this != null

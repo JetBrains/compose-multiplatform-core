@@ -21,6 +21,7 @@ package androidx.compose.foundation.internal
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.text.AnnotatedString
 import kotlin.js.Promise
 import kotlinx.coroutines.await
@@ -57,13 +58,13 @@ internal actual fun ClipEntry?.hasText(): Boolean {
     return doesJsArrayContainValue(this.clipboardItems.get(0)!!.types, MIME_TYPE_PLAIN_TEXT_JS)
 }
 
-internal actual fun androidx.compose.ui.platform.Clipboard?.isReadSupported(): Boolean =
+internal actual fun Clipboard?.isReadSupported(): Boolean =
     isClipboardReadSupported()
 
 private fun isClipboardReadSupported(): Boolean =
     js("Boolean(window.navigator.clipboard && window.navigator.clipboard.read)")
 
-internal actual fun androidx.compose.ui.platform.Clipboard?.isWriteSupported(): Boolean =
+internal actual fun Clipboard?.isWriteSupported(): Boolean =
     isClipboardWriteSupported()
 
 private fun isClipboardWriteSupported(): Boolean =
