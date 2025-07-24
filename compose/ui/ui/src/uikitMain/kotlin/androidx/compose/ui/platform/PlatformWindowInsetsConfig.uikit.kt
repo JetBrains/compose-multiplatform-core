@@ -27,9 +27,10 @@ internal class UIKitWindowInsetsConfig: PlatformWindowInsetsConfig {
         private set
     var safeAreaInsets = mutableStateOf(ValueInsets.ZERO)
         private set
+    var keyboardOverlapHeight = mutableStateOf(0)
+        private set
 
     private var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
-    private var keyboardOverlapHeight = mutableStateOf(0)
 
     private val _displayCutout = derivedStateOf {
         val orientation = interfaceOrientation.value
@@ -59,16 +60,16 @@ internal class UIKitWindowInsetsConfig: PlatformWindowInsetsConfig {
         ValueInsets(top = safeAreaInsets.value.top)
     }
 
-    override val captionBar: NewPlatformInsets get() = ValueInsets.ZERO
-    override val displayCutout: NewPlatformInsets get() = _displayCutout.value
-    override val ime: NewPlatformInsets get() = _ime.value
-    override val mandatorySystemGestures: NewPlatformInsets get() = _mandatorySystemGesture.value
-    override val navigationBars: NewPlatformInsets get() = _navigationBars.value
-    override val statusBars: NewPlatformInsets get() = _statusBars.value
-    override val systemBars: NewPlatformInsets get() = safeAreaInsets.value
-    override val systemGestures: NewPlatformInsets get() = layoutMargins.value
-    override val tappableElement: NewPlatformInsets get() = _tappableElement.value
-    override val waterfall: NewPlatformInsets get() = ValueInsets.ZERO
+    override val captionBar: PlatformInsets get() = ValueInsets.ZERO
+    override val displayCutout: PlatformInsets get() = _displayCutout.value
+    override val ime: PlatformInsets get() = _ime.value
+    override val mandatorySystemGestures: PlatformInsets get() = _mandatorySystemGesture.value
+    override val navigationBars: PlatformInsets get() = _navigationBars.value
+    override val statusBars: PlatformInsets get() = _statusBars.value
+    override val systemBars: PlatformInsets get() = safeAreaInsets.value
+    override val systemGestures: PlatformInsets get() = layoutMargins.value
+    override val tappableElement: PlatformInsets get() = _tappableElement.value
+    override val waterfall: PlatformInsets get() = ValueInsets.ZERO
 
     fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
         interfaceOrientation.value = orientation

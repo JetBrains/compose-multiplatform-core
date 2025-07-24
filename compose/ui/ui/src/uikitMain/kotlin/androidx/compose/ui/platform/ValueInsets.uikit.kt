@@ -18,7 +18,7 @@ package androidx.compose.ui.platform
 
 internal value class ValueInsets internal constructor(
     val packedValue: Long
-): NewPlatformInsets {
+): PlatformInsets {
     override val left: Int
         inline get() = ((packedValue ushr 48) and 0xFFFF).toInt()
 

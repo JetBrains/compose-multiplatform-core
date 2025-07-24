@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 /**
  * This class represents platform insets.
  */
-interface NewPlatformInsets {
+interface PlatformInsets {
     /**
      * The left inset in pixels.
      */
@@ -48,114 +48,18 @@ interface NewPlatformInsets {
     val bottom: Int
 
     companion object {
-        val Unspecified = object : NewPlatformInsets {
+        val Unspecified = object : PlatformInsets {
             override val left: Int = Int.MAX_VALUE
             override val right: Int = Int.MAX_VALUE
             override val top: Int = Int.MAX_VALUE
             override val bottom: Int = Int.MAX_VALUE
         }
+
+        val Zero = object : PlatformInsets {
+            override val left: Int = 0
+            override val right: Int = 0
+            override val top: Int = 0
+            override val bottom: Int = 0
+        }
     }
 }
-
-// TODO: remove
-@ExperimentalComposeUiApi
-@Immutable
-class PlatformInsets(
-    @Stable
-    val left: Dp = 0.dp,
-    @Stable
-    val top: Dp = 0.dp,
-    @Stable
-    val right: Dp = 0.dp,
-    @Stable
-    val bottom: Dp = 0.dp,
-) {
-    companion object {
-        val Zero = PlatformInsets(0.dp, 0.dp, 0.dp, 0.dp)
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is PlatformInsets) return false
-
-        if (left != other.left) return false
-        if (top != other.top) return false
-        if (right != other.right) return false
-        if (bottom != other.bottom) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = left.hashCode()
-        result = 31 * result + top.hashCode()
-        result = 31 * result + right.hashCode()
-        result = 31 * result + bottom.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "PlatformInsets(left=$left, top=$top, right=$right, bottom=$bottom)"
-    }
-}
-
-internal fun PlatformInsets.union(insets: PlatformInsets) = PlatformInsets(
-    left = maxOf(left, insets.left),
-    top = maxOf(top, insets.top),
-    right = maxOf(right, insets.right),
-    bottom = maxOf(bottom, insets.bottom)
-)
-
-internal fun PlatformInsets.exclude(insets: PlatformInsets) = PlatformInsets(
-    left = (left - insets.left).coerceAtLeast(0.dp),
-    top = (top - insets.top).coerceAtLeast(0.dp),
-    right = (right - insets.right).coerceAtLeast(0.dp),
-    bottom = (bottom - insets.bottom).coerceAtLeast(0.dp)
-)
-
-internal interface InsetsConfig {
-
-    // TODO: Add more granular control. Look at Android's [WindowInsetsCompat]
-    val safeInsets: PlatformInsets
-        @Composable get
-
-    val ime: PlatformInsets
-        @Composable get
-
-    // Don't make it public, it should be implementation details for creating new root layout nodes.
-    // TODO: Ensure encapsulation and proper control flow during refactoring [Owner]s
-    @Composable
-    fun excludeInsets(
-        safeInsets: Boolean,
-        ime: Boolean,
-        content: @Composable () -> Unit
-    )
-}
-
-internal object ZeroInsetsConfig : InsetsConfig {
-    override val safeInsets: PlatformInsets
-        @Composable get() = PlatformInsets.Zero
-
-    override val ime: PlatformInsets
-        @Composable get() = PlatformInsets.Zero
-
-    @Composable
-    override fun excludeInsets(
-        safeInsets: Boolean,
-        ime: Boolean,
-        content: @Composable () -> Unit
-    ) {
-        content()
-    }
-}
-
-/**
- * Represents the configuration for platform-specific insets.
- *
- * This variable is used to override insets in tests. The default value is expected to be
- * different on each platform.
- *
- * TODO: Stabilize and make the window paddings in the foundation-layout module depend on it.
- *  There is a plan to potentially move this variable into the [PlatformContext] interface.
- */
-internal expect var PlatformInsetsConfig: InsetsConfig
