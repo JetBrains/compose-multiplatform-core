@@ -49,13 +49,13 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.EmptyViewConfiguration
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.UIKitIdleTimerManager
 import androidx.compose.ui.platform.UIKitTextInputService
 import androidx.compose.ui.platform.UIKitWindowInsets
-import androidx.compose.ui.platform.ValueInsets
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -842,8 +842,8 @@ private fun UITouch.offsetInView(view: UIView, density: Float): Offset =
         Offset(x.toFloat() * density, y.toFloat() * density)
     }
 
-private fun lerp(start: ValueInsets, stop: ValueInsets, fraction: Float) =
-    ValueInsets(
+private fun lerp(start: PlatformInsets, stop: PlatformInsets, fraction: Float) =
+    PlatformInsets(
         left = lerp(start.left, stop.left, fraction),
         right = lerp(start.right, stop.right, fraction),
         top = lerp(start.top, stop.top, fraction),
