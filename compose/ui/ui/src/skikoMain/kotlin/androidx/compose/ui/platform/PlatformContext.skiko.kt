@@ -140,6 +140,9 @@ interface PlatformContext {
 
     val dragAndDropManager: PlatformDragAndDropManager get() = EmptyDragAndDropManager
 
+    /**
+     * The value that will be provided to [LocalPlatformWindowInsets] by default.
+     */
     val windowInsets: PlatformWindowInsets get() = DefaultPlatformWindowInsets
 
     var isKeepScreenOnEnabled: Boolean
