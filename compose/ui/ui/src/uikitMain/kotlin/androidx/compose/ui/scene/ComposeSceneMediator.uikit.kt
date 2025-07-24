@@ -75,7 +75,7 @@ import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.unit.toValueInsets
+import androidx.compose.ui.unit.toPlatformInsets
 import androidx.compose.ui.util.lerp
 import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
@@ -552,14 +552,14 @@ internal class ComposeSceneMediator(
                         windowInsets.updateLayoutMargins(
                             lerp(
                                 start = initialLayoutMargins,
-                                stop = _overlayView.layoutMargins.toValueInsets(density),
+                                stop = _overlayView.layoutMargins.toPlatformInsets(density),
                                 fraction = progress
                             )
                         )
                         windowInsets.updateSafeAreaInsets(
                             lerp(
                                 start = initialSafeAreaInsets,
-                                stop = _overlayView.safeAreaInsets.toValueInsets(density),
+                                stop = _overlayView.safeAreaInsets.toPlatformInsets(density),
                                 fraction = progress
                             )
                         )
@@ -644,8 +644,8 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-        windowInsets.updateLayoutMargins(_overlayView.layoutMargins.toValueInsets(density))
-        windowInsets.updateSafeAreaInsets(_overlayView.safeAreaInsets.toValueInsets(density))
+        windowInsets.updateLayoutMargins(_overlayView.layoutMargins.toPlatformInsets(density))
+        windowInsets.updateSafeAreaInsets(_overlayView.safeAreaInsets.toPlatformInsets(density))
         size = currentViewSize.roundToIntSize()
     }
 

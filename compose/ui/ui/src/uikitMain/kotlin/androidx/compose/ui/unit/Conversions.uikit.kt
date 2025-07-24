@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.unit
 
-import androidx.compose.ui.platform.ValueInsets
+import androidx.compose.ui.platform.PlatformInsets
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
 import platform.CoreGraphics.CGPoint
@@ -45,13 +45,13 @@ internal fun DpRect.asCGRect() = CGRectMake(
     height.value.toDouble()
 )
 
-internal fun CValue<UIEdgeInsets>.toValueInsets(density: Density) = useContents {
+internal fun CValue<UIEdgeInsets>.toPlatformInsets(density: Density) = useContents {
     with(density) {
-        ValueInsets(
-            left = left.dp.roundToPx(),
-            top = top.dp.roundToPx(),
-            right = right.dp.roundToPx(),
-            bottom = bottom.dp.roundToPx()
+        PlatformInsets(
+            left = left.dp,
+            top = top.dp,
+            right = right.dp,
+            bottom = bottom.dp
         )
     }
 }

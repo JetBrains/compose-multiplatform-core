@@ -16,6 +16,9 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import kotlin.jvm.JvmInline
 
 @InternalComposeUiApi
@@ -82,13 +85,33 @@ interface PlatformInsets {
     val bottom: Int
 
     companion object {
-        val Zero: PlatformInsets = ValueInsets(0,0,0,0)
+        val Zero: PlatformInsets = ValueInsets.Zero
     }
 }
 
 @InternalComposeUiApi
+fun Density.PlatformInsets(
+    left: Dp = 0.dp,
+    top: Dp = 0.dp,
+    right: Dp = 0.dp,
+    bottom: Dp = 0.dp,
+): PlatformInsets = ValueInsets(
+    left.roundToPx(),
+    top.roundToPx(),
+    right.roundToPx(),
+    bottom.roundToPx()
+)
+
+@InternalComposeUiApi
+fun PlatformInsets(
+    left: Int = 0,
+    top: Int = 0,
+    right: Int = 0,
+    bottom: Int = 0
+): PlatformInsets = ValueInsets(left, top, right, bottom)
+
 @JvmInline
-internal value class ValueInsets internal constructor(
+private value class ValueInsets(
     val packedValue: Long
 ): PlatformInsets {
     override val left: Int
@@ -108,12 +131,11 @@ internal value class ValueInsets internal constructor(
     }
 
     companion object {
-        val ZERO = ValueInsets(0L)
+        val Zero = ValueInsets(0L)
     }
 }
 
-@InternalComposeUiApi
-internal inline fun ValueInsets(
+private inline fun ValueInsets(
     left: Int = 0,
     top: Int = 0,
     right: Int = 0,
