@@ -44,10 +44,10 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformWindowInsetsConfig
+import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.WindowInfoImpl
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.scene.CanvasLayersComposeScene
@@ -67,8 +67,6 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.fail
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -656,7 +654,7 @@ class PopupTest {
         }
 
         setContent {
-            CompositionLocalProvider(LocalPlatformWindowInsetsConfig provides config) {
+            CompositionLocalProvider(LocalPlatformWindowInsets provides config) {
                 Popup(
                     popupPositionProvider = object : PopupPositionProvider {
                         override fun calculatePosition(
@@ -749,6 +747,6 @@ class PopupTest {
 
 private fun WindowInsetsConfigSystemBars(
     insets: PlatformInsets
-): PlatformWindowInsetsConfig = object : PlatformWindowInsetsConfig {
+): PlatformWindowInsets = object : PlatformWindowInsets {
     override val systemBars: PlatformInsets get() = insets
 }

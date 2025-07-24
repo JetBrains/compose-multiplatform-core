@@ -14,80 +14,68 @@
  * limitations under the License.
  */
 
+@file:OptIn(InternalComposeUiApi::class)
+
 package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.platform.safeGestures
-import kotlin.jvm.JvmName
 
 actual val WindowInsets.Companion.captionBar: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.captionBar.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.captionBar.toWindowInsets()
 
 actual val WindowInsets.Companion.displayCutout: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.displayCutout.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.displayCutout.toWindowInsets()
 
 actual val WindowInsets.Companion.ime: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.ime.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.ime.toWindowInsets()
 
 actual val WindowInsets.Companion.mandatorySystemGestures: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.mandatorySystemGestures.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.mandatorySystemGestures.toWindowInsets()
 
 actual val WindowInsets.Companion.navigationBars: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.navigationBars.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.navigationBars.toWindowInsets()
 
 actual val WindowInsets.Companion.statusBars: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.statusBars.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.statusBars.toWindowInsets()
 
 actual val WindowInsets.Companion.systemBars: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.systemBars.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.systemBars.toWindowInsets()
 
 actual val WindowInsets.Companion.systemGestures: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.systemGestures.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.systemGestures.toWindowInsets()
 
 actual val WindowInsets.Companion.tappableElement: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.tappableElement.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.tappableElement.toWindowInsets()
 
 actual val WindowInsets.Companion.waterfall: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.waterfall.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.waterfall.toWindowInsets()
 
 actual val WindowInsets.Companion.safeDrawing: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.safeDrawing.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.safeDrawing.toWindowInsets()
 
 actual val WindowInsets.Companion.safeGestures: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.safeGestures.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.safeGestures.toWindowInsets()
 
 actual val WindowInsets.Companion.safeContent: WindowInsets
     @Composable
-    @OptIn(InternalComposeUiApi::class)
-    get() = LocalPlatformWindowInsetsConfig.current.safeContent.toWindowInsets()
+    get() = LocalPlatformWindowInsets.current.safeContent.toWindowInsets()
 
 private fun PlatformInsets.toWindowInsets(): WindowInsets = WindowInsets(left, top, right, bottom)

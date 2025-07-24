@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
 
 @InternalComposeUiApi
-interface PlatformWindowInsetsConfig {
+interface PlatformWindowInsets {
     val captionBar: PlatformInsets get() = PlatformInsets.Zero
     val displayCutout: PlatformInsets get() = PlatformInsets.Zero
     val ime: PlatformInsets get() = PlatformInsets.Zero
@@ -32,15 +31,18 @@ interface PlatformWindowInsetsConfig {
     val waterfall: PlatformInsets get() = PlatformInsets.Zero
 }
 
-val PlatformWindowInsetsConfig.safeDrawing: PlatformInsets get() = InnermostPlatformInsets(
+@InternalComposeUiApi
+val PlatformWindowInsets.safeDrawing: PlatformInsets get() = InnermostPlatformInsets(
     arrayOf(statusBars, navigationBars, captionBar, displayCutout, ime, systemBars, tappableElement)
 )
 
-val PlatformWindowInsetsConfig.safeGestures: PlatformInsets get() = InnermostPlatformInsets(
+@InternalComposeUiApi
+val PlatformWindowInsets.safeGestures: PlatformInsets get() = InnermostPlatformInsets(
     arrayOf(mandatorySystemGestures, systemGestures, tappableElement, waterfall)
 )
 
-val PlatformWindowInsetsConfig.safeContent: PlatformInsets get() = InnermostPlatformInsets(
+@InternalComposeUiApi
+val PlatformWindowInsets.safeContent: PlatformInsets get() = InnermostPlatformInsets(
     arrayOf(statusBars, navigationBars, captionBar, ime, systemGestures, mandatorySystemGestures, tappableElement, displayCutout, waterfall)
 )
 
@@ -52,3 +54,72 @@ private class InnermostPlatformInsets(
     override val right: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.right }
     override val bottom: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.bottom }
 }
+
+/**
+ * This class represents platform insets.
+ */
+@InternalComposeUiApi
+interface PlatformInsets {
+    /**
+     * The left inset in pixels.
+     */
+    val left: Int
+
+    /**
+     * The top inset in pixels.
+     */
+    val top: Int
+
+    /**
+     * The right inset in pixels.
+     */
+    val right: Int
+
+    /**
+     * The bottom inset in pixels.
+     */
+    val bottom: Int
+
+    companion object {
+        val Unspecified: PlatformInsets = ValueInsets(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE)
+        val Zero: PlatformInsets = ValueInsets(0,0,0,0)
+    }
+}
+
+@InternalComposeUiApi
+internal value class ValueInsets internal constructor(
+    val packedValue: Long
+): PlatformInsets {
+    override val left: Int
+        inline get() = ((packedValue ushr 48) and 0xFFFF).toInt()
+
+    override val top: Int
+        inline get() = ((packedValue ushr 32) and 0xFFFF).toInt()
+
+    override val right: Int
+        inline get() = ((packedValue ushr 16) and 0xFFFF).toInt()
+
+    override val bottom: Int
+        inline get() = (packedValue and 0xFFFF).toInt()
+
+    override fun toString(): String {
+        return "ValueInsets($left, $top, $right, $bottom)"
+    }
+
+    companion object {
+        val ZERO = ValueInsets(0L)
+    }
+}
+
+@InternalComposeUiApi
+internal inline fun ValueInsets(
+    left: Int = 0,
+    top: Int = 0,
+    right: Int = 0,
+    bottom: Int = 0
+): ValueInsets = ValueInsets(
+    (left.toLong() shl 48) or
+        (top.toLong() shl 32) or
+        (right.toLong() shl 16) or
+        bottom.toLong()
+)

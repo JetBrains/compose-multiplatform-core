@@ -398,7 +398,7 @@ internal class RootNodeOwner(
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
         val rootModifier = if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
-                Modifier.then(RulerProviderModifierElement(platformContext.windowInsetsConfig))
+                RulerProviderModifierElement(platformContext.windowInsets)
             } else {
                 Modifier
             }

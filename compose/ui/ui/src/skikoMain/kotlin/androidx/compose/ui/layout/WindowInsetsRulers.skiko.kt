@@ -30,7 +30,7 @@ import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformWindowInsetsConfig
+import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.unit.Constraints
 
 internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> {
@@ -45,7 +45,7 @@ internal actual fun findInsetsAnimationProperties(
 }
 
 internal class RulerProviderModifierElement(
-    val windowInsetsManager: PlatformWindowInsetsConfig
+    val windowInsetsManager: PlatformWindowInsets
 ): ModifierNodeElement<RulerProviderModifierNode>() {
     override fun create(): RulerProviderModifierNode = RulerProviderModifierNode(windowInsetsManager)
     override fun hashCode(): Int = windowInsetsManager.hashCode()
@@ -61,7 +61,7 @@ internal class RulerProviderModifierElement(
 private const val RulerKey = "androidx.compose.ui.layout.WindowInsetsRulers"
 
 internal class RulerProviderModifierNode(
-    windowInsetsManager: PlatformWindowInsetsConfig,
+    windowInsetsManager: PlatformWindowInsets,
 ) : Modifier.Node(), LayoutModifierNode, TraversableNode {
 
     val rulerLambda: RulerScope.() -> Unit = {

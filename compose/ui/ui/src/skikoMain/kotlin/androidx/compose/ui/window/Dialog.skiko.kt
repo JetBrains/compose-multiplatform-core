@@ -33,7 +33,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.safeDrawing
@@ -219,11 +219,11 @@ private fun DialogLayout(
 private val DialogProperties.platformInsets: PlatformInsets
     @Composable get() {
         return if (usePlatformInsets && useSoftwareKeyboardInset) {
-            LocalPlatformWindowInsetsConfig.current.safeDrawing
+            LocalPlatformWindowInsets.current.safeDrawing
         } else if (usePlatformInsets) {
-            LocalPlatformWindowInsetsConfig.current.systemBars
+            LocalPlatformWindowInsets.current.systemBars
         } else if (useSoftwareKeyboardInset) {
-            LocalPlatformWindowInsetsConfig.current.ime
+            LocalPlatformWindowInsets.current.ime
         } else {
             PlatformInsets.Zero
         }

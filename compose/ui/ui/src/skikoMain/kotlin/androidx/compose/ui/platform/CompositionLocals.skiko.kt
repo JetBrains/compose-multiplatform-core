@@ -39,6 +39,6 @@ val LocalPlatformScreenReader = staticCompositionLocalOf<PlatformScreenReader> {
 }
 
 @InternalComposeUiApi
-val LocalPlatformWindowInsetsConfig = staticCompositionLocalOf<PlatformWindowInsetsConfig> {
-    error("CompositionLocal LocalPlatformWindowInsetsManager not present")
+val LocalPlatformWindowInsets = staticCompositionLocalOf<PlatformWindowInsets> {
+    error("CompositionLocal LocalPlatformWindowInsets not present")
 }

@@ -38,7 +38,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
+import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.scene.ComposeSceneLayer
@@ -476,7 +476,7 @@ private fun PopupLayout(
 private val PopupProperties.platformInsets: PlatformInsets
     @Composable get() {
         return if (usePlatformInsets) {
-            LocalPlatformWindowInsetsConfig.current.systemBars
+            LocalPlatformWindowInsets.current.systemBars
         } else {
             PlatformInsets.Zero
         }
