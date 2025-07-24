@@ -33,10 +33,10 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformInsetsConfig
-import androidx.compose.ui.platform.union
+import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
@@ -208,32 +208,25 @@ private fun DialogLayout(
             containerSize = containerSize,
             platformInsets = platformInsets
         )
-        PlatformInsetsConfig.excludeInsets(
-            safeInsets = properties.usePlatformInsets,
-            ime = properties.useSoftwareKeyboardInset,
-        ) {
-            Layout(
-                content = currentContent,
-                modifier = modifier,
-                measurePolicy = measurePolicy
-            )
-        }
+        Layout(
+            content = currentContent,
+            modifier = modifier,
+            measurePolicy = measurePolicy
+        )
     }
 }
 
 private val DialogProperties.platformInsets: PlatformInsets
     @Composable get() {
-        val safeInsets = if (usePlatformInsets) {
-            PlatformInsetsConfig.safeInsets
+        return if (usePlatformInsets && useSoftwareKeyboardInset) {
+            LocalPlatformWindowInsetsConfig.current.safeDrawing
+        } else if (usePlatformInsets) {
+            LocalPlatformWindowInsetsConfig.current.systemBars
+        } else if (useSoftwareKeyboardInset) {
+            LocalPlatformWindowInsetsConfig.current.ime
         } else {
             PlatformInsets.Zero
         }
-        val ime = if (useSoftwareKeyboardInset) {
-            PlatformInsetsConfig.ime
-        } else {
-            PlatformInsets.Zero
-        }
-        return safeInsets.union(ime)
     }
 
 @Composable

@@ -38,9 +38,9 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformInsetsConfig
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
@@ -465,22 +465,17 @@ private fun PopupLayout(
             layoutDirection = layoutDirection,
             parentBoundsInWindow = parentBoundsInWindow
         )
-        PlatformInsetsConfig.excludeInsets(
-            safeInsets = properties.usePlatformInsets,
-            ime = false,
-        ) {
-            Layout(
-                content = currentContent,
-                modifier = modifier,
-                measurePolicy = measurePolicy
-            )
-        }
+        Layout(
+            content = currentContent,
+            modifier = modifier,
+            measurePolicy = measurePolicy
+        )
     }
 }
 
 private val PopupProperties.platformInsets: PlatformInsets
     @Composable get() = if (usePlatformInsets) {
-        PlatformInsetsConfig.safeInsets
+        LocalPlatformWindowInsetsConfig.current.systemBars
     } else {
         PlatformInsets.Zero
     }
@@ -512,8 +507,8 @@ private fun rememberPopupMeasurePolicy(
         val positionWithInsets = positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
             // Position provider works in coordinates without insets.
             val boundsWithoutInsets = parentBoundsInWindow.translate(
-                -platformInsets.left.roundToPx(),
-                -platformInsets.top.roundToPx()
+                -platformInsets.left,
+                -platformInsets.top
             )
             val positionInWindow = popupPositionProvider.calculatePosition(
                 anchorBounds = boundsWithoutInsets,

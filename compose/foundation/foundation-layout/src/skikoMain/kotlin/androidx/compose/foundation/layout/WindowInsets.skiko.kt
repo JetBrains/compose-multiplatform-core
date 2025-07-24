@@ -21,7 +21,7 @@ package androidx.compose.foundation.layout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.LocalPlatformWindowInsetsConfig
-import androidx.compose.ui.platform.NewPlatformInsets
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.platform.safeGestures
@@ -92,4 +92,4 @@ actual val WindowInsets.Companion.safeContent: WindowInsets
     @OptIn(InternalComposeUiApi::class)
     get() = LocalPlatformWindowInsetsConfig.current.safeContent.toWindowInsets()
 
-private fun NewPlatformInsets.toWindowInsets(): WindowInsets = WindowInsets(left, top, right, bottom)
+private fun PlatformInsets.toWindowInsets(): WindowInsets = WindowInsets(left, top, right, bottom)

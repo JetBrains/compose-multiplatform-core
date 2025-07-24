@@ -29,7 +29,7 @@ import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Waterfall
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.TraversableNode
-import androidx.compose.ui.platform.NewPlatformInsets
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowInsetsConfig
 import androidx.compose.ui.unit.Constraints
 
@@ -80,7 +80,7 @@ internal class RulerProviderModifierNode(
 
     private fun RulerScope.provideInsetsValues(
         rulers: WindowInsetsRulers,
-        platformInsets: NewPlatformInsets,
+        platformInsets: PlatformInsets,
         width: Int,
         height: Int
     ) {
@@ -90,11 +90,11 @@ internal class RulerProviderModifierNode(
 
     private fun RulerScope.provideInsetsValues(
         rulers: RectRulers,
-        insets: NewPlatformInsets,
+        insets: PlatformInsets,
         width: Int,
         height: Int,
     ) {
-        if (insets != NewPlatformInsets.Unspecified) {
+        if (insets != PlatformInsets.Unspecified) {
             val left = insets.left
             val top = insets.top
             val right = (width - insets.right)
