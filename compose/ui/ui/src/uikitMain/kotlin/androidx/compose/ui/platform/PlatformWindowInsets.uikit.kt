@@ -22,7 +22,7 @@ import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 
-internal class UIKitWindowInsetsConfig: PlatformWindowInsetsConfig {
+internal class UIKitWindowInsets: PlatformWindowInsets {
     var layoutMargins = mutableStateOf(ValueInsets.ZERO)
         private set
     var safeAreaInsets = mutableStateOf(ValueInsets.ZERO)
