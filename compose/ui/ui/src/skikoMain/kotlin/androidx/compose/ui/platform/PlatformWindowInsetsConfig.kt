@@ -20,16 +20,16 @@ import androidx.compose.ui.InternalComposeUiApi
 
 @InternalComposeUiApi
 interface PlatformWindowInsetsConfig {
-    val captionBar: PlatformInsets get() = PlatformInsets.Unspecified
-    val displayCutout: PlatformInsets get() = PlatformInsets.Unspecified
-    val ime: PlatformInsets get() = PlatformInsets.Unspecified
-    val mandatorySystemGestures: PlatformInsets get() = PlatformInsets.Unspecified
-    val navigationBars: PlatformInsets get() = PlatformInsets.Unspecified
-    val statusBars: PlatformInsets get() = PlatformInsets.Unspecified
-    val systemBars: PlatformInsets get() = PlatformInsets.Unspecified
-    val systemGestures: PlatformInsets get() = PlatformInsets.Unspecified
-    val tappableElement: PlatformInsets get() = PlatformInsets.Unspecified
-    val waterfall: PlatformInsets get() = PlatformInsets.Unspecified
+    val captionBar: PlatformInsets get() = PlatformInsets.Zero
+    val displayCutout: PlatformInsets get() = PlatformInsets.Zero
+    val ime: PlatformInsets get() = PlatformInsets.Zero
+    val mandatorySystemGestures: PlatformInsets get() = PlatformInsets.Zero
+    val navigationBars: PlatformInsets get() = PlatformInsets.Zero
+    val statusBars: PlatformInsets get() = PlatformInsets.Zero
+    val systemBars: PlatformInsets get() = PlatformInsets.Zero
+    val systemGestures: PlatformInsets get() = PlatformInsets.Zero
+    val tappableElement: PlatformInsets get() = PlatformInsets.Zero
+    val waterfall: PlatformInsets get() = PlatformInsets.Zero
 }
 
 val PlatformWindowInsetsConfig.safeDrawing: PlatformInsets get() = InnermostPlatformInsets(

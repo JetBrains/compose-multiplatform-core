@@ -218,7 +218,7 @@ private fun DialogLayout(
 
 private val DialogProperties.platformInsets: PlatformInsets
     @Composable get() {
-        val insets = if (usePlatformInsets && useSoftwareKeyboardInset) {
+        return if (usePlatformInsets && useSoftwareKeyboardInset) {
             LocalPlatformWindowInsetsConfig.current.safeDrawing
         } else if (usePlatformInsets) {
             LocalPlatformWindowInsetsConfig.current.systemBars
@@ -226,12 +226,6 @@ private val DialogProperties.platformInsets: PlatformInsets
             LocalPlatformWindowInsetsConfig.current.ime
         } else {
             PlatformInsets.Zero
-        }
-
-        if (insets == PlatformInsets.Unspecified) {
-            return PlatformInsets.Zero
-        } else {
-            return insets
         }
     }
 
