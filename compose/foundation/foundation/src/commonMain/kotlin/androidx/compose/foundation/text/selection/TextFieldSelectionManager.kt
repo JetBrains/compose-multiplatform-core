@@ -771,10 +771,10 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
         get() = !value.selection.collapsed
 
     internal fun canCopy(): Boolean =
-        clipboard.isWriteSupported() && hasSelection && !isPassword
+        hasSelection && !isPassword && (clipboard?.isWriteSupported() == true)
 
     internal suspend fun updateClipboardEntry() {
-        if (clipboard.isReadSupported()) {
+        if (clipboard?.isReadSupported() == true) {
             hasAvailableTextToPaste = hasAvailableTextToPaste()
         }
     }
@@ -795,10 +795,10 @@ internal class TextFieldSelectionManager(val undoManager: UndoManager? = null) {
 
     /** Only fully accurate if [updateClipboardEntry] has been called. */
     internal fun canPaste(): Boolean =
-        editable && clipboard.isReadSupported() && hasAvailableTextToPaste
+        editable && (clipboard?.isReadSupported() == true) && hasAvailableTextToPaste
 
     internal fun canCut(): Boolean =
-        clipboard.isWriteSupported() && hasSelection && editable && !isPassword
+        hasSelection && editable && !isPassword && clipboard?.isWriteSupported() == true
 
     internal fun canSelectAll(): Boolean = value.selection.length != value.text.length
 

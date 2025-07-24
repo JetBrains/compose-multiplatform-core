@@ -57,10 +57,10 @@ internal actual fun ClipEntry?.hasText(): Boolean {
     return doesJsArrayContainValue(this.clipboardItems[0].types, MIME_TYPE_PLAIN_TEXT)
 }
 
-internal actual fun Clipboard?.isReadSupported(): Boolean =
+internal actual fun Clipboard.isReadSupported(): Boolean =
     js("window.navigator.clipboard && window.navigator.clipboard.read")
 
-internal actual fun Clipboard?.isWriteSupported(): Boolean =
+internal actual fun Clipboard.isWriteSupported(): Boolean =
     js("window.navigator.clipboard && (window.navigator.clipboard.write || window.navigator.clipboard.writeText)")
 
 @Suppress("UNUSED_PARAMETER")

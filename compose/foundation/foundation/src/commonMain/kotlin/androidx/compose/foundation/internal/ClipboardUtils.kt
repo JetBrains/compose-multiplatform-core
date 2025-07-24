@@ -51,5 +51,5 @@ internal expect fun ClipEntry?.hasText(): Boolean
  * We use this information for the context menu items.
  */
 // TODO (o.karpovich): must be upstreamed https://youtrack.jetbrains.com/issue/CMP-7544 and its usages
-internal expect fun Clipboard?.isReadSupported(): Boolean
-internal expect fun Clipboard?.isWriteSupported(): Boolean
+internal expect fun Clipboard.isReadSupported(): Boolean
+internal expect fun Clipboard.isWriteSupported(): Boolean
