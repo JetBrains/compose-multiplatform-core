@@ -79,7 +79,7 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
         keyboardOverlapHeight.value = with(density) { height.roundToPx() }
     }
 
-    fun updateLayoutMargins(layoutMargins: ValueInsets) {
+    fun updateLayoutMargins(layoutMargins: PlatformInsets) {
         this.layoutMargins.value = layoutMargins
     }
 
