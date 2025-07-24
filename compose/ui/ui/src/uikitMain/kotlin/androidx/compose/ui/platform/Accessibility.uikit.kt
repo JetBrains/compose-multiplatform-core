@@ -139,6 +139,7 @@ import platform.objc.objc_getProtocol
 import platform.objc.protocol_isEqual
 
 private val DUMMY_UI_ACCESSIBILITY_CONTAINER = NSObject()
+private val USE_HIERARCHICAL_COORDINATE_SPACE = available(OS.Ios to OSVersion(major = 18))
 
 internal sealed interface AccessibilityElementKey {
     val id: Int
@@ -485,10 +486,6 @@ private class AccessibilityElement(
     UIFocusEnvironmentProtocol,
     UICoordinateSpaceProtocol {
 
-    companion object {
-        private val useHierarchicalCoordinateSpace = available(OS.Ios to OSVersion(major = 18))
-    }
-
     /**
      * A cache for the properties that are computed from the [SemanticsNode.config] and are communicated
      * to iOS Accessibility services.
@@ -701,7 +698,7 @@ private class AccessibilityElement(
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
     var focusFrame: CValue<CGRect> = CGRectZero.readValue()
-    override fun frame(): CValue<CGRect> = if (useHierarchicalCoordinateSpace) {
+    override fun frame(): CValue<CGRect> = if (USE_HIERARCHICAL_COORDINATE_SPACE) {
         focusFrame
     } else {
         convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
@@ -742,7 +739,7 @@ private class AccessibilityElement(
     override fun shouldUpdateFocusInContext(context: UIFocusUpdateContext): Boolean = true
 
     override fun coordinateSpace(): UICoordinateSpaceProtocol =
-        if (useHierarchicalCoordinateSpace) {
+        if (USE_HIERARCHICAL_COORDINATE_SPACE) {
             this
         } else {
             mediator.view
