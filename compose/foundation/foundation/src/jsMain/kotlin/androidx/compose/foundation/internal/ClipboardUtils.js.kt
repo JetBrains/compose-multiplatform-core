@@ -19,6 +19,7 @@
 package androidx.compose.foundation.internal
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.text.AnnotatedString
 import kotlin.js.Promise
@@ -27,8 +28,11 @@ import org.w3c.files.Blob
 
 private const val MIME_TYPE_PLAIN_TEXT = "text/plain"
 
+@OptIn(InternalComposeUiApi::class)
 internal actual suspend fun ClipEntry.readText(): String? {
     if (!this.hasText()) return null
+    if (this.fallbackPlainText != null) return this.fallbackPlainText
+
     if (this.clipboardItems.isEmpty()) return null
     val blob = clipboardItems[0].getType(MIME_TYPE_PLAIN_TEXT).await<Blob>()
     return getTextFromBlob(blob).await<String>().toString()
@@ -44,11 +48,19 @@ internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
     return ClipEntry.withPlainText(this.text)
 }
 
+@OptIn(InternalComposeUiApi::class)
 internal actual fun ClipEntry?.hasText(): Boolean {
     if (this == null) return false
+    if (this.fallbackPlainText != null) return true
     if (this.clipboardItems.isEmpty()) return false
     return doesJsArrayContainValue(this.clipboardItems[0].types, MIME_TYPE_PLAIN_TEXT)
 }
+
+internal actual fun androidx.compose.ui.platform.Clipboard?.isReadSupported(): Boolean =
+    js("window.navigator.clipboard && window.navigator.clipboard.read")
+
+internal actual fun androidx.compose.ui.platform.Clipboard?.isWriteSupported(): Boolean =
+    js("window.navigator.clipboard && (window.navigator.clipboard.write || window.navigator.clipboard.writeText)")
 
 @Suppress("UNUSED_PARAMETER")
 private fun doesJsArrayContainValue(jsArray: Array<*>, value: Any): Boolean =

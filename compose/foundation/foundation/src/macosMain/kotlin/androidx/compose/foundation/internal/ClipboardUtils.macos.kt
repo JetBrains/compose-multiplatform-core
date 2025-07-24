@@ -38,6 +38,9 @@ internal actual fun AnnotatedString?.toClipEntry(): ClipEntry? {
 
 internal actual fun ClipEntry?.hasText(): Boolean = this?.getPlainText() != null
 
+internal actual fun androidx.compose.ui.platform.Clipboard?.isReadSupported(): Boolean = true
+internal actual fun androidx.compose.ui.platform.Clipboard?.isWriteSupported(): Boolean = true
+
 internal fun NativeClipboard.hasText(): Boolean {
     return this.types?.contains(platform.AppKit.NSPasteboardTypeString) ?: false
 }
