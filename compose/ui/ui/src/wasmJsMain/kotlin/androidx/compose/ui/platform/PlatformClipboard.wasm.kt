@@ -36,10 +36,24 @@ private val isFullClipboardApiSupported: Boolean by lazy {
     isSecureContext && isFullClipboardApiSupported()
 }
 
+private val isFallbackWriteTextApiAvailable: Boolean by lazy {
+    isSecureContext && isFallbackWriteTextApiAvailable()
+}
+
 class WasmPlatformClipboard : Clipboard {
 
     private val browserClipboard by lazy {
         getW3CClipboard()
+    }
+
+    init {
+        if (!isSecureContext) {
+            warn("Clipboard API is not available in insecure contexts.")
+        } else if (!isFallbackWriteTextApiAvailable) {
+            warn("The browser doesn't support Clipboard.read(), Clipboard.write() and Clipboard.writeText()")
+        } else if (!isFullClipboardApiSupported) {
+            warn("The browser doesn't support Clipboard.read() and Clipboard.write()")
+        }
     }
 
     private val emptyClipboardItems = emptyArray<ClipboardItem>().toJsArray()
@@ -59,9 +73,6 @@ class WasmPlatformClipboard : Clipboard {
     }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        if (!isSecureContext) {
-            println("Clipboard API is not available in insecure contexts.")
-        }
         when {
             isFullClipboardApiSupported -> if (clipEntry == null) {
                 // clear the clipboard
@@ -69,7 +80,7 @@ class WasmPlatformClipboard : Clipboard {
             } else {
                 nativeClipboard.write(clipEntry.clipboardItems).await<Any?>()
             }
-            isFallbackWriteTextApiAvailable() -> {
+            isFallbackWriteTextApiAvailable -> {
                 val text = clipEntry?.fallbackPlainText ?: ""
                 nativeClipboard.writeText(text).await<Any?>()
             }
@@ -81,7 +92,9 @@ class WasmPlatformClipboard : Clipboard {
         get() = browserClipboard
 }
 
-internal actual fun createPlatformClipboard(): Clipboard = WasmPlatformClipboard()
+private val wasmPlatformClipboard: WasmPlatformClipboard by lazy { WasmPlatformClipboard() }
+
+internal actual fun createPlatformClipboard(): Clipboard = wasmPlatformClipboard
 
 actual class ClipEntry
 @ExperimentalComposeUiApi
@@ -96,9 +109,6 @@ constructor(val clipboardItems: JsArray<ClipboardItem>) {
 
     companion object {
         fun withPlainText(text: String): ClipEntry {
-            if (!isSecureContext) {
-                println("ClipboardItem is not available in insecure contexts.")
-            }
             return when {
                 isFullClipboardApiSupported -> ClipEntry(
                     if (isSecureContext) {

@@ -24,7 +24,6 @@ import org.w3c.files.Blob
 
 actual typealias NativeClipboard = W3CTemporaryClipboard
 
-
 private val isSecureContext: Boolean by lazy {
     isSecureContext()
 }
@@ -35,10 +34,24 @@ private val isFullClipboardApiSupported: Boolean by lazy {
     isSecureContext && isFullClipboardApiSupported()
 }
 
+private val isFallbackWriteTextApiAvailable: Boolean by lazy {
+    isSecureContext && isFallbackWriteTextApiAvailable()
+}
+
 class JsPlatformClipboard : Clipboard {
 
     private val browserClipboard by lazy {
         getW3CClipboard()
+    }
+
+    init {
+        if (!isSecureContext) {
+            console.warn("Clipboard API is not available in insecure contexts.")
+        } else if (!isFallbackWriteTextApiAvailable) {
+            console.warn("The browser doesn't support Clipboard.read(), Clipboard.write() and Clipboard.writeText()")
+        } else if (!isFullClipboardApiSupported) {
+            console.warn("The browser doesn't support Clipboard.read() and Clipboard.write()")
+        }
     }
 
     private val emptyClipboardItems = emptyArray<ClipboardItem>()
@@ -77,7 +90,9 @@ class JsPlatformClipboard : Clipboard {
         get() = browserClipboard
 }
 
-internal actual fun createPlatformClipboard(): Clipboard = JsPlatformClipboard()
+private val jsPlatformClipboard: JsPlatformClipboard by lazy { JsPlatformClipboard() }
+
+internal actual fun createPlatformClipboard(): Clipboard = jsPlatformClipboard
 
 actual class ClipEntry
 @ExperimentalComposeUiApi
@@ -92,9 +107,6 @@ constructor(val clipboardItems: Array<ClipboardItem>) {
 
     companion object {
         fun withPlainText(text: String): ClipEntry {
-            if (!isSecureContext) {
-                println("ClipboardItem is not available in insecure contexts.")
-            }
             return when {
                 isFullClipboardApiSupported -> ClipEntry(
                     if (isSecureContext) {

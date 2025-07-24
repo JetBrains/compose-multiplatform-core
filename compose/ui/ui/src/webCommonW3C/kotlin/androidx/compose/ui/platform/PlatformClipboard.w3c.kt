@@ -21,41 +21,19 @@ package androidx.compose.ui.platform
 // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/write#browser_compatibility
 // It's possible to fall back to clipboard.writeText() if the content type is a text.
 internal fun isFullClipboardApiSupported(): Boolean =
-    js("""
+    js(
+        """Boolean(
         window.navigator.clipboard && 
         window.navigator.clipboard.write && 
         window.navigator.clipboard.read && 
         typeof(ClipboardItem) !== 'undefined'
-    """)
+        )
+    """
+    )
 
 internal fun isSecureContext(): Boolean = js("window.isSecureContext === true")
 
 internal fun isFallbackWriteTextApiAvailable(): Boolean =
-    js("window.navigator.clipboard && window.navigator.clipboard.writeText")
-
-/**
- * This Clipboard implementation is dumb.
- * It's created when window.isSecureContext != true.
- * See https://developer.mozilla.org/en-US/docs/Web/API/Clipboard
- */
-internal class DumbInsecureContextClipboard : Clipboard {
-
-    override suspend fun getClipEntry(): ClipEntry? {
-        println("Clipboard is not available in insecure contexts.")
-        return null
-    }
-
-    override suspend fun setClipEntry(clipEntry: ClipEntry?) {
-        println("Clipboard is not available in insecure contexts.")
-    }
-
-    private val browserClipboard by lazy {
-        println("Clipboard is not available in insecure contexts.")
-        getW3CClipboard()
-    }
-
-    override val nativeClipboard: NativeClipboard
-        get() = browserClipboard
-}
+    js("Boolean(window.navigator.clipboard && window.navigator.clipboard.writeText)")
 
 internal fun getW3CClipboard(): NativeClipboard = js("window.navigator.clipboard")
