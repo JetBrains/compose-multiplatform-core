@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.EmptyViewConfiguration
 import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
