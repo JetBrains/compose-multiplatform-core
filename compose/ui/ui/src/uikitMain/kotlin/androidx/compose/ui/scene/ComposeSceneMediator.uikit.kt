@@ -49,7 +49,6 @@ import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.EmptyViewConfiguration
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -61,7 +60,6 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.LocalKeyboardOverlapHeight
 import androidx.compose.ui.uikit.LocalUIView
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
@@ -198,8 +196,6 @@ internal class ComposeSceneMediator(
     private var onPreviewKeyEvent: (KeyEvent) -> Boolean = { false }
 
     private var onKeyEvent: (KeyEvent) -> Boolean = { false }
-
-    private var keyboardOverlapHeight by mutableStateOf(0.dp)
     private var animateKeyboardOffsetChanges by mutableStateOf(false)
     private var platformScreenReader = object : PlatformScreenReader {
         override var isActive by mutableStateOf(false)
@@ -341,9 +337,9 @@ internal class ComposeSceneMediator(
         ComposeSceneKeyboardOffsetManager(
             view = _overlayView,
             keyboardOverlapHeightChanged = { height ->
-                if (keyboardOverlapHeight != height) {
+                val heightPx = with(density) { height.roundToPx() }
+                if (windowInsetsConfig.keyboardOverlapHeight.value != heightPx) {
                     animateKeyboardOffsetChanges = false
-                    keyboardOverlapHeight = height
                     windowInsetsConfig.updateKeyboardOverlapHeight(height, density)
                 }
             }
@@ -593,7 +589,6 @@ internal class ComposeSceneMediator(
     private fun ProvideComposeSceneMediatorCompositionLocals(content: @Composable () -> Unit) =
         CompositionLocalProvider(
             LocalInteropContainer provides interopContainer,
-            LocalKeyboardOverlapHeight provides keyboardOverlapHeight, // TODO: remove?
             LocalUIView provides _overlayView,
             content = content
         )
@@ -602,7 +597,7 @@ internal class ComposeSceneMediator(
     private fun FocusAboveKeyboardIfNeeded(content: @Composable () -> Unit) {
         if (onFocusBehavior == OnFocusBehavior.FocusableAboveKeyboard) {
             OffsetToFocusedRect(
-                insets = PlatformInsets(bottom = keyboardOverlapHeight),
+                insets = windowInsetsConfig.ime,
                 getFocusedRect = ::getFocusedRect,
                 size = scene.size,
                 animationDuration = if (animateKeyboardOffsetChanges) {
