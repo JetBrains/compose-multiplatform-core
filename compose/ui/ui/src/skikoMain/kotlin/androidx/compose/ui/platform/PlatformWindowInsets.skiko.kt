@@ -85,7 +85,7 @@ interface PlatformInsets {
     val bottom: Int
 
     companion object {
-        val Zero: PlatformInsets = ValueInsets.Zero
+        val Zero: PlatformInsets = ValuePlatformInsets(0L)
     }
 }
 
@@ -95,7 +95,7 @@ fun Density.PlatformInsets(
     top: Dp = 0.dp,
     right: Dp = 0.dp,
     bottom: Dp = 0.dp,
-): PlatformInsets = ValueInsets(
+): PlatformInsets = ValuePlatformInsets(
     left.roundToPx(),
     top.roundToPx(),
     right.roundToPx(),
@@ -108,12 +108,20 @@ fun PlatformInsets(
     top: Int = 0,
     right: Int = 0,
     bottom: Int = 0
-): PlatformInsets = ValueInsets(left, top, right, bottom)
+): PlatformInsets = ValuePlatformInsets(left, top, right, bottom)
 
 @JvmInline
-private value class ValueInsets(
+private value class ValuePlatformInsets(
     val packedValue: Long
 ): PlatformInsets {
+
+    constructor(
+        left: Int = 0,
+        top: Int = 0,
+        right: Int = 0,
+        bottom: Int = 0
+    ): this(checkBoundsAndPackInsets(left, top, right, bottom))
+
     override val left: Int
         inline get() = ((packedValue ushr 48) and 0xFFFF).toInt()
 
@@ -131,18 +139,21 @@ private value class ValueInsets(
     }
 
     companion object {
-        val Zero = ValueInsets(0L)
+        private fun checkBoundsAndPackInsets(left: Int, top: Int, right: Int, bottom: Int): Long {
+            checkBounds(left, "left")
+            checkBounds(top, "top")
+            checkBounds(right, "right")
+            checkBounds(bottom, "bottom")
+            return (left.toLong() shl 48) or
+                (top.toLong() shl 32) or
+                (right.toLong() shl 16) or
+                bottom.toLong()
+        }
+
+        private fun checkBounds(value: Int, name: String) {
+            check(value in 0..0xFFFF) {
+                "$name should be in 0..0xFFFF range, but was $value"
+            }
+        }
     }
 }
-
-private inline fun ValueInsets(
-    left: Int = 0,
-    top: Int = 0,
-    right: Int = 0,
-    bottom: Int = 0
-): ValueInsets = ValueInsets(
-    (left.toLong() shl 48) or
-        (top.toLong() shl 32) or
-        (right.toLong() shl 16) or
-        bottom.toLong()
-)
