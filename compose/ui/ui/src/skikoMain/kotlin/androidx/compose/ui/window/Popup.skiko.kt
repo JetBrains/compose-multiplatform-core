@@ -474,10 +474,18 @@ private fun PopupLayout(
 }
 
 private val PopupProperties.platformInsets: PlatformInsets
-    @Composable get() = if (usePlatformInsets) {
-        LocalPlatformWindowInsetsConfig.current.systemBars
-    } else {
-        PlatformInsets.Zero
+    @Composable get() {
+        val insets = if (usePlatformInsets) {
+            LocalPlatformWindowInsetsConfig.current.systemBars
+        } else {
+            PlatformInsets.Zero
+        }
+
+        if (insets == PlatformInsets.Unspecified) {
+            return PlatformInsets.Zero
+        } else {
+            return insets
+        }
     }
 
 private fun Modifier.parentBoundsInWindow(
