@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:JvmName("WindowInsetsKt")
-
 package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Composable
