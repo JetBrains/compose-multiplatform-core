@@ -82,7 +82,6 @@ interface PlatformInsets {
     val bottom: Int
 
     companion object {
-        val Unspecified: PlatformInsets = ValueInsets(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE)
         val Zero: PlatformInsets = ValueInsets(0,0,0,0)
     }
 }

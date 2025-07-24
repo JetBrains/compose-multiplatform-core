@@ -94,17 +94,15 @@ internal class RulerProviderModifierNode(
         width: Int,
         height: Int,
     ) {
-        if (insets != PlatformInsets.Unspecified) {
-            val left = insets.left
-            val top = insets.top
-            val right = (width - insets.right)
-            val bottom = (height - insets.bottom)
+        val left = insets.left
+        val top = insets.top
+        val right = (width - insets.right)
+        val bottom = (height - insets.bottom)
 
-            rulers.left provides left.toFloat()
-            rulers.top provides top.toFloat()
-            rulers.right provides right.toFloat()
-            rulers.bottom provides bottom.toFloat()
-        }
+        rulers.left provides left.toFloat()
+        rulers.top provides top.toFloat()
+        rulers.right provides right.toFloat()
+        rulers.bottom provides bottom.toFloat()
     }
 
     override fun MeasureScope.measure(
