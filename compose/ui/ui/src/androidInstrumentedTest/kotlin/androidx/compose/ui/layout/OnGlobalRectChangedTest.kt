@@ -470,10 +470,11 @@ class OnGlobalRectChangedTest {
         changeLambda.value = false
 
         rule.runOnIdle {
-            assertFalse(lambda2Called)
             assertFalse(lambda1Called)
             assertFalse(layoutCalled)
             assertFalse(placementCalled)
+            // we execute the new lambda when the lambda is updated
+            assertTrue(lambda2Called)
         }
     }
 
@@ -528,6 +529,24 @@ class OnGlobalRectChangedTest {
             rule.runOnIdle {
                 actualSize = Int.MAX_VALUE
                 reuseKey++
+            }
+
+            rule.runOnIdle { assertThat(actualSize).isEqualTo(size) }
+        }
+    }
+
+    @Test
+    fun callbackIsCalledWhenAddedLater() {
+        with(rule.density) {
+            val size = 10
+            var actualSize: Int = Int.MAX_VALUE
+            var dynamicModifier by mutableStateOf<Modifier>(Modifier)
+            rule.setContent {
+                Box(Modifier.requiredSize(size.toDp(), size.toDp()).then(dynamicModifier))
+            }
+
+            rule.runOnIdle {
+                dynamicModifier = Modifier.onLayoutRectChanged(0, 0) { actualSize = it.width }
             }
 
             rule.runOnIdle { assertThat(actualSize).isEqualTo(size) }
@@ -1203,36 +1222,40 @@ class OnGlobalRectChangedTest {
         var box0CallbackCount = 0
         var box1CallbackCount = 0
         var box2CallbackCount = 0
+
+        val box0Callback = { rectInfo: RelativeLayoutBounds ->
+            box0Bounds = rectInfo
+            box0CallbackCount++
+            box0Occlusions = rectInfo.calculateOcclusions()
+        }
+        val box1Callback = { rectInfo: RelativeLayoutBounds ->
+            box1CallbackCount++
+            box1Occlusions = rectInfo.calculateOcclusions()
+        }
+        val box2Callback = { rectInfo: RelativeLayoutBounds ->
+            box2CallbackCount++
+            box2Occlusions = rectInfo.calculateOcclusions()
+        }
         rule.setContent {
             Box(Modifier.fillMaxSize()) {
                 Box(
                     Modifier.fillMaxWidth()
                         .fillMaxHeight(0.5f)
                         .align(Alignment.TopStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box0Bounds = rectInfo
-                            box0CallbackCount++
-                            box0Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box0Callback)
                 )
                 Box(
                     // Should initially occlude first box
                     Modifier.fillMaxWidth()
                         .fillMaxHeight(0.7f)
                         .align(Alignment.BottomStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box1CallbackCount++
-                            box1Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box1Callback)
                 )
                 Box(
                     // Should initially occlude both boxes
                     Modifier.fillMaxSize(box2Fraction)
                         .align(Alignment.BottomStart)
-                        .onLayoutRectChanged(0, 0) { rectInfo ->
-                            box2CallbackCount++
-                            box2Occlusions = rectInfo.calculateOcclusions()
-                        }
+                        .onLayoutRectChanged(0, 0, box2Callback)
                 )
             }
         }
