@@ -16,6 +16,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import kotlin.jvm.JvmInline
 
 @InternalComposeUiApi
 interface PlatformWindowInsets {
@@ -87,6 +88,7 @@ interface PlatformInsets {
 }
 
 @InternalComposeUiApi
+@JvmInline
 internal value class ValueInsets internal constructor(
     val packedValue: Long
 ): PlatformInsets {
