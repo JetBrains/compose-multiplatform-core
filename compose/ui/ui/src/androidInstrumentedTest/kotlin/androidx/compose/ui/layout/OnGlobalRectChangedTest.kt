@@ -91,6 +91,198 @@ class OnGlobalRectChangedTest {
     @get:Rule val rule = createAndroidComposeRule<TestActivity>()
 
     @Test
+    fun correctPositionInRootWhenMovingBothGrandParentAndNodeItself() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeable.place(offset, offset)
+                    }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenMovingGrandParentWithLayerAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    modifier =
+                        Modifier.graphicsLayer {
+                            translationX = offset.toFloat()
+                            translationY = offset.toFloat()
+                        },
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenMovingBothGrandParentWithLayoutModifierAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            rule.setContent {
+                Layout(
+                    modifier =
+                        Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(constraints.maxWidth, constraints.maxHeight) {
+                                placeable.place(offset, offset)
+                            }
+                        },
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) { placeable.place(0, 0) }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle { offset = 10 }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
+    fun correctPositionInRootWhenUnplacingThenPlacingGrandparentWithDifferentOffsetAndNode() {
+        with(rule.density) {
+            var actualPosition: IntOffset = IntOffset.Max
+            var offset by mutableStateOf(0)
+            var shouldPlace by mutableStateOf(true)
+            rule.setContent {
+                Layout(
+                    content = {
+                        Box(Modifier.size(10.dp)) {
+                            Box {
+                                Layout(
+                                    content = {
+                                        Box(
+                                            Modifier.onLayoutRectChanged(0, 0) {
+                                                actualPosition = it.positionInRoot
+                                            }
+                                        )
+                                    }
+                                ) { measurables, constraints ->
+                                    val placeable = measurables.first().measure(constraints)
+                                    layout(constraints.maxWidth, constraints.maxHeight) {
+                                        placeable.place(offset, offset)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) { measurables, constraints ->
+                    val placeable = measurables.first().measure(constraints)
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        if (shouldPlace) {
+                            placeable.place(offset, offset)
+                        }
+                    }
+                }
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset.Zero) }
+
+            rule.runOnIdle {
+                shouldPlace = false
+                offset = 10
+                actualPosition = IntOffset.Max
+            }
+
+            rule.runOnIdle {
+                assertThat(actualPosition).isEqualTo(IntOffset.Max)
+                shouldPlace = true
+            }
+
+            rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(20, 20)) }
+        }
+    }
+
+    @Test
     fun handlesChildrenNodeMoveCorrectly() {
         val size = 50
         var index by mutableStateOf(0)
