@@ -63,10 +63,10 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExportObjCClass
 import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.readValue
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -74,6 +74,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import objcnames.classes.Protocol
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGPointMake
 import platform.CoreGraphics.CGPointZero
@@ -87,13 +90,14 @@ import platform.CoreGraphics.CGRectGetMinX
 import platform.CoreGraphics.CGRectGetMinY
 import platform.CoreGraphics.CGRectIntersectsRect
 import platform.CoreGraphics.CGRectIsEmpty
+import platform.CoreGraphics.CGRectMake
 import platform.CoreGraphics.CGRectZero
-import platform.Foundation.NSNotification
-import platform.Foundation.NSNotificationCenter
-import platform.Foundation.NSSelectorFromString
 import platform.CoreGraphics.CGSize
 import platform.CoreGraphics.CGSizeMake
 import platform.CoreGraphics.CGSizeZero
+import platform.Foundation.NSNotification
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSSelectorFromString
 import platform.QuartzCore.CACurrentMediaTime
 import platform.UIKit.NSStringFromCGRect
 import platform.UIKit.UIAccessibilityContainerType
@@ -114,7 +118,9 @@ import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UICoordinateSpaceProtocol
 import platform.UIKit.UIEdgeInsetsInsetRect
 import platform.UIKit.UIFocusAnimationCoordinator
+import platform.UIKit.UIFocusEffect
 import platform.UIKit.UIFocusEnvironmentProtocol
+import platform.UIKit.UIFocusHaloEffect
 import platform.UIKit.UIFocusItemContainerProtocol
 import platform.UIKit.UIFocusItemProtocol
 import platform.UIKit.UIFocusItemScrollableContainerProtocol
@@ -129,8 +135,6 @@ import platform.UIKit.accessibilityFrame
 import platform.UIKit.isAccessibilityElement
 import platform.UIKit.setAccessibilityElements
 import platform.darwin.NSObject
-import platform.darwin.dispatch_async
-import platform.darwin.dispatch_get_main_queue
 import platform.objc.objc_getProtocol
 import platform.objc.protocol_isEqual
 
@@ -175,11 +179,10 @@ private sealed interface AccessibilityNode {
     fun didResignFocused() {}
 
     val canScroll: Boolean get() = false
-    var scrollContentOffset: CValue<CGPoint>
-        get() = CGPointZero.readValue()
-        set(_) {}
+    val scrollContentOffset: CValue<CGPoint> get() = CGPointZero.readValue()
     val scrollVisibleSize: CValue<CGSize> get() = CGSizeZero.readValue()
     val scrollContentSize: CValue<CGSize> get() = CGSizeZero.readValue()
+    suspend fun scrollBy(delta: CValue<CGPoint>) {}
 
     /**
      * Represents a projection of the Compose semantics node to the iOS world.
@@ -339,8 +342,7 @@ private sealed interface AccessibilityNode {
      * semantic node with all its children.
      */
     class Container(
-        override val semanticsNode: SemanticsNode,
-        private val mediator: AccessibilityMediator
+        override val semanticsNode: SemanticsNode
     ) : AccessibilityNode {
         override val key: AccessibilityElementKey = semanticsNode.containerKey
 
@@ -361,6 +363,14 @@ private sealed interface AccessibilityNode {
 
         override val canScroll: Boolean = horizontalAxis != null || verticalAxis != null
 
+        override val scrollContentOffset: CValue<CGPoint>
+            get() = with(semanticsNode.layoutNode.density) {
+                CGPointMake(
+                    x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                    y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
+                )
+            }
+
         override val scrollContentSize: CValue<CGSize>
             get() {
                 return with(semanticsNode.layoutNode.density) {
@@ -371,46 +381,6 @@ private sealed interface AccessibilityNode {
                 }
             }
 
-        override var scrollContentOffset: CValue<CGPoint>
-            get() {
-                return with(semanticsNode.layoutNode.density) {
-                    CGPointMake(
-                        x = (horizontalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                        y = (verticalAxis?.value() ?: 0f).toDp().value.toDouble(),
-                    )
-                }
-            }
-            set(value) {
-                val newContentOffset = with(semanticsNode.layoutNode.density) {
-                    Offset(x = value.asDpOffset().x.toPx(), y = value.asDpOffset().y.toPx())
-                }
-
-                val currentContentOffset = Offset(
-                    x = horizontalAxis?.value() ?: 0f,
-                    y = verticalAxis?.value() ?: 0f
-                )
-
-                val delta = newContentOffset - currentContentOffset
-
-                if (delta != Offset.Zero) {
-                    // Because iOS updates content offset on every frame,
-                    // no need to animate it.
-                    val motionDurationScale = MotionDurationScaleImpl()
-                    motionDurationScale.scaleFactor = 0f
-                    val frameClock = BroadcastFrameClock()
-                    dispatch_async(dispatch_get_main_queue()) {
-                        frameClock.sendFrame(CACurrentMediaTime().toNanoSeconds())
-                    }
-
-                    CoroutineScope(
-                        context = mediator.coroutineContext + motionDurationScale + frameClock
-                    ).launch(start = CoroutineStart.UNDISPATCHED) {
-                        semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
-                            ?.invoke(delta)
-                    }
-                }
-            }
-
         override val scrollVisibleSize: CValue<CGSize>
             get() = with(semanticsNode.layoutNode.density) {
                 CGSizeMake(
@@ -418,6 +388,17 @@ private sealed interface AccessibilityNode {
                     height = height.toDp().value.toDouble()
                 )
             }
+
+        override suspend fun scrollBy(delta: CValue<CGPoint>) {
+            val deltaInPx = with(semanticsNode.layoutNode.density) {
+                delta.asDpOffset().let {
+                    Offset(it.x.toPx(), it.y.toPx())
+                }
+            }
+
+            semanticsNode.unmergedConfig.getOrNull(SemanticsActions.ScrollByOffset)
+                ?.invoke(deltaInPx)
+        }
     }
 }
 
@@ -495,11 +476,19 @@ private class AccessibilityRoot(
 @ExportObjCClass
 private class AccessibilityElement(
     var node: AccessibilityNode,
+    val mediator: AccessibilityMediator,
     children: List<AccessibilityElement>
 ) : CMPAccessibilityElement(DUMMY_UI_ACCESSIBILITY_CONTAINER),
     UIFocusItemProtocol,
     UIFocusItemContainerProtocol,
-    UIFocusItemScrollableContainerProtocol {
+    UIFocusItemScrollableContainerProtocol,
+    UIFocusEnvironmentProtocol,
+    UICoordinateSpaceProtocol {
+
+    companion object {
+        private val useHierarchicalCoordinateSpace = available(OS.Ios to OSVersion(major = 18))
+    }
+
     /**
      * A cache for the properties that are computed from the [SemanticsNode.config] and are communicated
      * to iOS Accessibility services.
@@ -526,6 +515,10 @@ private class AccessibilityElement(
         setAccessibilityElements(children + nodeSemanticsElements())
         children.forEach { it.setAccessibilityContainer(this) }
     }
+
+    override fun focusEffect(): UIFocusEffect? = UIFocusHaloEffect.effectWithRect(
+        rect = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
+    )
 
     private fun nodeSemanticsElements(): List<Any> =
         getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
@@ -708,7 +701,21 @@ private class AccessibilityElement(
     override fun focusItemContainer(): UIFocusItemContainerProtocol = this
 
     var focusFrame: CValue<CGRect> = CGRectZero.readValue()
-    override fun frame(): CValue<CGRect> = focusFrame
+    override fun frame(): CValue<CGRect> = if (useHierarchicalCoordinateSpace) {
+        focusFrame
+    } else {
+        convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
+    }
+
+    override fun bounds(): CValue<CGRect> {
+        val offset = contentOffset()
+        return CGRectMake(
+            x = offset.useContents { x },
+            y = offset.useContents { y },
+            width = focusFrame.useContents { size.width },
+            height = focusFrame.useContents { size.height }
+        )
+    }
 
     override fun parentFocusEnvironment(): UIFocusEnvironmentProtocol? =
         accessibilityContainer as? UIFocusEnvironmentProtocol
@@ -734,17 +741,12 @@ private class AccessibilityElement(
 
     override fun shouldUpdateFocusInContext(context: UIFocusUpdateContext): Boolean = true
 
-    override fun coordinateSpace(): UICoordinateSpaceProtocol {
-        var component: Any? = accessibilityContainer
-        while (component != null) {
-            when (component) {
-                is UIView -> return component
-                is CMPAccessibilityElement -> component = component.accessibilityContainer
-                else -> error("Unexpected coordinate space.")
-            }
+    override fun coordinateSpace(): UICoordinateSpaceProtocol =
+        if (useHierarchicalCoordinateSpace) {
+            this
+        } else {
+            mediator.view
         }
-        error("Unexpected coordinate space.")
-    }
 
     override fun focusItemsInRect(rect: CValue<CGRect>): List<*> = accessibilityElements?.filter {
         it is UIFocusItemProtocol && CGRectIntersectsRect(it.frame, rect)
@@ -752,20 +754,169 @@ private class AccessibilityElement(
 
     override fun isTransparentFocusItem(): Boolean = true
 
+    override fun drawsFocusRingWhenChildrenFocused(): Boolean = node.canScroll
+
+    // Scrolling
+
+    override fun visibleSize(): CValue<CGSize> = node.scrollVisibleSize
+
+    override fun contentSize(): CValue<CGSize> = node.scrollContentSize
+
+    override fun contentOffset(): CValue<CGPoint> = node.scrollContentOffset
+
     override fun setContentOffset(contentOffset: CValue<CGPoint>) {
-        node.scrollContentOffset = contentOffset
+        val currentContentOffset = contentOffset()
+        val delta = CGPointMake(
+            x = contentOffset.useContents { x } - currentContentOffset.useContents { x },
+            y = contentOffset.useContents { y } - currentContentOffset.useContents { y },
+        )
+
+        val motionDurationScale = MotionDurationScaleImpl()
+        motionDurationScale.scaleFactor = 0f
+        val frameClock = BroadcastFrameClock()
+
+        CoroutineScope(
+            context = mediator.coroutineContext + motionDurationScale + frameClock
+        ).launch {
+            val timerJob = launch {
+                while (true) {
+                    frameClock.sendFrame(CACurrentMediaTime().toNanoSeconds())
+                    delay(1)
+                }
+            }
+            node.scrollBy(delta)
+            timerJob.cancel()
+        }
     }
 
-    override fun visibleSize(): CValue<CGSize> {
-        return node.scrollVisibleSize
+    // UICoordinateSpaceProtocol
+
+    @ObjCSignatureOverride
+    override fun convertPoint(
+        point: CValue<CGPoint>,
+        toCoordinateSpace: UICoordinateSpaceProtocol
+    ): CValue<CGPoint> {
+        val globalPoint = convertPointToGlobal(point)
+        return when (toCoordinateSpace) {
+            is AccessibilityElement -> toCoordinateSpace.convertPointFromGlobal(globalPoint)
+            is UIView -> toCoordinateSpace.convertPoint(globalPoint, fromView = null)
+            else -> mediator.view.window!!.convertPoint(globalPoint, toCoordinateSpace = toCoordinateSpace)
+        }
     }
 
-    override fun contentOffset(): CValue<CGPoint> {
-        return node.scrollContentOffset
+    @ObjCSignatureOverride
+    override fun convertPoint(
+        point: CValue<CGPoint>,
+        fromCoordinateSpace: UICoordinateSpaceProtocol
+    ): CValue<CGPoint> {
+        val globalPoint = when (fromCoordinateSpace) {
+            is AccessibilityElement -> fromCoordinateSpace.convertPointToGlobal(point)
+            is UIView -> fromCoordinateSpace.convertPoint(point, toView = null)
+            else -> mediator.view.window!!.convertPoint(point, fromCoordinateSpace = fromCoordinateSpace)
+        }
+        return convertPointFromGlobal(globalPoint)
     }
 
-    override fun contentSize(): CValue<CGSize> {
-        return node.scrollContentSize
+    @ObjCSignatureOverride
+    override fun convertRect(
+        rect: CValue<CGRect>,
+        toCoordinateSpace: UICoordinateSpaceProtocol
+    ): CValue<CGRect> {
+        val globalRect = convertRectToGlobal(rect)
+        return when (toCoordinateSpace) {
+            is AccessibilityElement -> toCoordinateSpace.convertRectFromGlobal(globalRect)
+            is UIView -> toCoordinateSpace.convertRect(globalRect, fromView = null)
+            else -> mediator.view.window!!.convertRect(globalRect, toCoordinateSpace = toCoordinateSpace)
+        }
+    }
+
+    @ObjCSignatureOverride
+    override fun convertRect(
+        rect: CValue<CGRect>,
+        fromCoordinateSpace: UICoordinateSpaceProtocol
+    ): CValue<CGRect> {
+        val globalRect = when (fromCoordinateSpace) {
+            is AccessibilityElement -> fromCoordinateSpace.convertRectToGlobal(rect)
+            is UIView -> fromCoordinateSpace.convertRect(rect, toView = null)
+            else -> mediator.view.window!!.convertRect(rect, fromCoordinateSpace = fromCoordinateSpace)
+        }
+        return convertRectFromGlobal(globalRect)
+    }
+
+    private fun convertPointToGlobal(point: CValue<CGPoint>): CValue<CGPoint> {
+        var globalPoint = point
+        var current: AccessibilityElement? = this
+        while (current != null) {
+            globalPoint = globalPoint.useContents {
+                CGPointMake(
+                    x = x + CGRectGetMinX(current.focusFrame) - current.contentOffset().useContents { x },
+                    y = y + CGRectGetMinY(current.focusFrame) - current.contentOffset().useContents { y }
+                )
+            }
+            when (val container = current.accessibilityContainer) {
+                is AccessibilityElement -> current = container
+                is AccessibilityRoot -> return container.mediator.view.convertPoint(globalPoint, toView = null)
+                else -> return globalPoint
+            }
+        }
+        return globalPoint
+    }
+
+    private fun convertPointFromGlobal(point: CValue<CGPoint>): CValue<CGPoint> {
+        fun convertPoint(point: CValue<CGPoint>, element: AccessibilityElement): CValue<CGPoint> {
+            val parentPoint = when (val container = element.accessibilityContainer) {
+                is AccessibilityElement -> convertPoint(point, container)
+                is AccessibilityRoot -> container.mediator.view.convertPoint(point, fromView = null)
+                else -> point
+            }
+            return parentPoint.useContents {
+                CGPointMake(
+                    y = y - CGRectGetMinY(element.focusFrame) + element.contentOffset().useContents { y },
+                    x = x - CGRectGetMinX(element.focusFrame) + element.contentOffset().useContents { x }
+                )
+            }
+        }
+        return convertPoint(point, element = this)
+    }
+
+    private fun convertRectToGlobal(rect: CValue<CGRect>): CValue<CGRect> {
+        var globalRect = rect
+        var current: AccessibilityElement? = this
+        while (current != null) {
+            globalRect = globalRect.useContents {
+                CGRectMake(
+                    x = origin.x + CGRectGetMinX(current.focusFrame) - current.contentOffset().useContents { x },
+                    y = origin.y + CGRectGetMinY(current.focusFrame) - current.contentOffset().useContents { y },
+                    width = size.width,
+                    height = size.height
+                )
+            }
+            when (val container = current.accessibilityContainer) {
+                is AccessibilityElement -> current = container
+                is AccessibilityRoot -> return container.mediator.view.convertRect(globalRect, toView = null)
+                else -> return globalRect
+            }
+        }
+        return globalRect
+    }
+
+    private fun convertRectFromGlobal(rect: CValue<CGRect>): CValue<CGRect> {
+        fun convertPoint(rect: CValue<CGRect>, element: AccessibilityElement): CValue<CGRect> {
+            val parentPoint = when (val container = element.accessibilityContainer) {
+                is AccessibilityElement -> convertPoint(rect, container)
+                is AccessibilityRoot -> container.mediator.view.convertRect(rect, fromView = null)
+                else -> rect
+            }
+            return parentPoint.useContents {
+                CGRectMake(
+                    x = origin.x - CGRectGetMinX(element.focusFrame) + element.contentOffset().useContents { x },
+                    y = origin.y - CGRectGetMinY(element.focusFrame) + element.contentOffset().useContents { y },
+                    width = size.width,
+                    height = size.height
+                )
+            }
+        }
+        return convertPoint(rect, element = this)
     }
 }
 
@@ -1080,10 +1231,6 @@ internal class AccessibilityMediator(
         return view.convertRect(rect.toDpRect(view.density).asCGRect(), toView = null)
     }
 
-    private fun convertToRootViewCGRect(rect: Rect): CValue<CGRect> {
-        return rect.toDpRect(view.density).asCGRect()
-    }
-
     fun notifyScrollCompleted(
         scrollResult: AccessibilityScrollEventResult,
         delay: Long,
@@ -1177,12 +1324,13 @@ internal class AccessibilityMediator(
 
     private fun createOrUpdateAccessibilityElement(
         node: AccessibilityNode,
+        container: SemanticsNode,
         children: List<AccessibilityElement> = emptyList(),
         frame: Rect
     ): AccessibilityElement {
         val element = accessibilityElementsMap[node.key]?.also {
             it.update(node = node, children = children)
-        } ?: AccessibilityElement(node = node, children = children).also {
+        } ?: AccessibilityElement(node = node, this, children = children).also {
             accessibilityElementsMap[node.key] = it
         }
 
@@ -1190,7 +1338,22 @@ internal class AccessibilityMediator(
         if (!CGRectEqualToRect(accessibilityFrame, element.accessibilityFrame)) {
             element.setAccessibilityFrame(accessibilityFrame)
         }
-        element.focusFrame = convertToRootViewCGRect(frame)
+
+        val nodeCoordinator = node.semanticsNode.findCoordinatorToGetBounds()
+        val containerCoordinator = container.findCoordinatorToGetBounds()
+        var resultFrame = nodeCoordinator?.let {
+            containerCoordinator?.localBoundingBoxOf(nodeCoordinator, clipBounds = false)
+        } ?: frame
+
+        val dx = container.unmergedConfig
+            .getOrNull(SemanticsProperties.HorizontalScrollAxisRange)?.value() ?: 0f
+        val dy = container.unmergedConfig
+            .getOrNull(SemanticsProperties.VerticalScrollAxisRange)?.value() ?: 0f
+
+        resultFrame = resultFrame.translate(dx, dy)
+
+        element.focusFrame = resultFrame.toDpRect(node.semanticsNode.layoutNode.density).asCGRect()
+
         return element
     }
 
@@ -1257,6 +1420,7 @@ internal class AccessibilityMediator(
 
         fun traverseChildren(
             node: SemanticsNode,
+            container: SemanticsNode,
             isBeyondBounds: Boolean,
             flatten: Boolean
         ): AccessibilityElement {
@@ -1275,6 +1439,7 @@ internal class AccessibilityMediator(
                         mediator = this,
                         isBeyondBounds = isBeyondBounds
                     ),
+                    container = container,
                     children = children,
                     frame = frame
                 )
@@ -1298,13 +1463,13 @@ internal class AccessibilityMediator(
                 afterChildren.sortWith(BeyondBoundsComparator(node.isRTL))
 
                 val visibleElements = sortedChildren.map {
-                    traverseChildren(it, isBeyondBounds = isBeyondBounds, flatten = flattenChildren)
+                    traverseChildren(it, isBeyondBounds = isBeyondBounds, flatten = flattenChildren, container = node)
                 }
                 val beforeElements = beforeChildren.map {
-                    traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren)
+                    traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
                 val afterElements = afterChildren.map {
-                    traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren)
+                    traverseChildren(it, isBeyondBounds = true, flatten = flattenChildren, container = node)
                 }
 
                 if (node.isTraversalGroup || node.id == rootNode.id) {
@@ -1318,7 +1483,8 @@ internal class AccessibilityMediator(
 
                     presentIds.add(node.containerKey)
                     createOrUpdateAccessibilityElement(
-                        node = AccessibilityNode.Container(semanticsNode = node, mediator = this),
+                        node = AccessibilityNode.Container(semanticsNode = node),
+                        container = container,
                         children = beforeElements + containerElements + visibleElements + afterElements,
                         frame = frame
                     )
@@ -1332,6 +1498,7 @@ internal class AccessibilityMediator(
 
         val rootAccessibilityElement = traverseChildren(
             node = rootNode,
+            container = rootNode,
             isBeyondBounds = false,
             flatten = true
         )
