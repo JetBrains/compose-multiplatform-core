@@ -21,4 +21,4 @@ import androidx.compose.ui.InternalComposeUiApi
 
 @InternalComposeUiApi
 @Deprecated("Deprecated in favor of LocalPlatformWindowInsets", level = DeprecationLevel.HIDDEN)
-val LocalSafeArea = compositionLocalWithComputedDefaultOf { LocalPlatformWindowInsets.current.systemBars }
+val LocalSafeArea = compositionLocalWithComputedDefaultOf { LocalPlatformWindowInsets.currentValue.systemBars }
