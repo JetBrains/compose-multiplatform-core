@@ -18,9 +18,11 @@ package androidx.compose.ui.platform
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 
 internal class UIKitWindowInsets: PlatformWindowInsets {
     var layoutMargins = mutableStateOf(PlatformInsets.Zero)
@@ -30,7 +32,40 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
     var keyboardOverlapHeight = mutableStateOf(0)
         private set
 
+    private var sceneSize = mutableStateOf(IntSize.Zero)
     private var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
+
+    private val _displayCutouts = derivedStateOf {
+        val orientation = interfaceOrientation.value
+        val safeAreaInsets = safeAreaInsets.value
+        val sceneSize = sceneSize.value
+
+        val hasCutout = when(orientation) {
+            InterfaceOrientation.Portrait -> safeAreaInsets.top > 0
+            InterfaceOrientation.PortraitUpsideDown -> safeAreaInsets.bottom > 0
+            InterfaceOrientation.LandscapeLeft -> safeAreaInsets.left > 0
+            InterfaceOrientation.LandscapeRight -> safeAreaInsets.right > 0
+        }
+
+        if (!hasCutout || sceneSize.width <= 0 || sceneSize.height <= 0) {
+            emptyList()
+        } else {
+            when (orientation) {
+                InterfaceOrientation.Portrait -> listOf(
+                    Rect(0f, 0f, sceneSize.width.toFloat(), safeAreaInsets.top.toFloat())
+                )
+                InterfaceOrientation.PortraitUpsideDown -> listOf(
+                    Rect(0f, sceneSize.height - safeAreaInsets.bottom.toFloat(), sceneSize.width.toFloat(), sceneSize.height.toFloat())
+                )
+                InterfaceOrientation.LandscapeLeft -> listOf(
+                    Rect(0f, 0f, safeAreaInsets.left.toFloat(), sceneSize.height.toFloat())
+                )
+                InterfaceOrientation.LandscapeRight -> listOf(
+                    Rect(sceneSize.width - safeAreaInsets.right.toFloat(), 0f, sceneSize.width.toFloat(), sceneSize.height.toFloat())
+                )
+            }
+        }
+    }
 
     private val _displayCutout = derivedStateOf {
         val orientation = interfaceOrientation.value
@@ -60,6 +95,7 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
         PlatformInsets(top = safeAreaInsets.value.top)
     }
 
+    override val displayCutouts: List<Rect> get() = _displayCutouts.value
     override val captionBar: PlatformInsets get() = PlatformInsets.Zero
     override val displayCutout: PlatformInsets get() = _displayCutout.value
     override val ime: PlatformInsets get() = _ime.value
@@ -85,5 +121,9 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
 
     fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
         this.safeAreaInsets.value = safeAreaInsets
+    }
+
+    fun updateSceneSize(size: IntSize) {
+        sceneSize.value = size
     }
 }
