@@ -596,7 +596,7 @@ package androidx.wear.watchface.complications.data {
 
   public static final class WeightedElementsComplicationData.Companion {
     method public int getMaxElements();
-    property public java.util.List<? extends androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Element> PLACEHOLDER;
+    property public java.util.List<androidx.wear.watchface.complications.data.WeightedElementsComplicationData.Element> PLACEHOLDER;
     property public androidx.wear.watchface.complications.data.ComplicationType TYPE;
   }
 

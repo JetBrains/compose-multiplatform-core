@@ -61,7 +61,7 @@ public fun AppScaffold(
 
     CompositionLocalProvider(
         LocalScaffoldState provides ScaffoldState(appTimeText = timeText),
-        LocalContentColor provides contentColor
+        LocalContentColor provides contentColor,
     ) {
         val scaffoldState = LocalScaffoldState.current
         Box(Modifier.fillMaxSize().background(containerColor)) {

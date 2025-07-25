@@ -66,13 +66,13 @@ public actual object DataStoreFactory {
         corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<T> =
         create(
             storage = FileStorage(serializer = serializer, produceFile = produceFile),
             corruptionHandler = corruptionHandler,
             migrations = migrations,
-            scope = scope
+            scope = scope,
         )
 
     /**
@@ -108,13 +108,13 @@ public actual object DataStoreFactory {
         storage: Storage<T>,
         corruptionHandler: ReplaceFileCorruptionHandler<T>?,
         migrations: List<DataMigration<T>>,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ): DataStore<T> =
         DataStoreImpl(
             storage = storage,
             corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
             initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope
+            scope = scope,
         )
 
     /**
@@ -146,7 +146,7 @@ public actual object DataStoreFactory {
         serializer: Serializer<T>,
         corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
         migrations: List<DataMigration<T>> = listOf(),
-        scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
     ): DataStore<T> {
         return DataStoreImpl(
             storage =
@@ -156,7 +156,7 @@ public actual object DataStoreFactory {
                 ),
             corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
             initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
-            scope = scope
+            scope = scope,
         )
     }
 }

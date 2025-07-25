@@ -209,4 +209,18 @@ class MeterTest {
         val density = Density(2.789f)
         assertThat(Meter.fromPixel(28.9f, density).toPx(density)).isWithin(1.0e-5f).of(28.9f)
     }
+
+    @Test
+    fun dpPerMeter_getterReevaluatedOnEachCall() {
+        val extensions = XrExtensionsProvider.getXrExtensions()!!
+        val shadowConfig = ShadowConfig.extract(extensions.config!!)
+
+        shadowConfig.setDefaultDpPerMeter(100f)
+
+        assertThat(1.meters.toDp()).isEqualTo(100.dp)
+
+        shadowConfig.setDefaultDpPerMeter(500f)
+
+        assertThat(1.meters.toDp()).isEqualTo(500.dp)
+    }
 }

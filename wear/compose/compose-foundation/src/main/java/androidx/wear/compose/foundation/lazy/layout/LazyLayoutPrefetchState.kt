@@ -45,7 +45,7 @@ import kotlin.time.TimeSource.Monotonic.markNow
 @Stable
 internal class LazyLayoutPrefetchState(
     internal val prefetchScheduler: PrefetchScheduler? = null,
-    private val onNestedPrefetch: (NestedPrefetchScope.() -> Unit)? = null
+    private val onNestedPrefetch: (NestedPrefetchScope.() -> Unit)? = null,
 ) {
 
     private val prefetchMetrics: PrefetchMetrics = PrefetchMetrics()
@@ -113,7 +113,7 @@ internal class LazyLayoutPrefetchState(
                 prefetchHandleProvider.createNestedPrefetchRequest(
                     index,
                     constraints,
-                    prefetchMetrics
+                    prefetchMetrics,
                 )
             )
         }
@@ -239,12 +239,12 @@ private object DummyHandle : PrefetchHandle {
 internal class PrefetchHandleProvider(
     private val itemContentFactory: LazyLayoutItemContentFactory,
     private val subcomposeLayoutState: SubcomposeLayoutState,
-    private val executor: PrefetchScheduler
+    private val executor: PrefetchScheduler,
 ) {
     fun schedulePrefetch(
         index: Int,
         constraints: Constraints,
-        prefetchMetrics: PrefetchMetrics
+        prefetchMetrics: PrefetchMetrics,
     ): PrefetchHandle =
         HandleAndRequestImpl(index, constraints, prefetchMetrics).also {
             executor.schedulePrefetch(it)
@@ -327,7 +327,7 @@ internal class PrefetchHandleProvider(
                 if (
                     shouldExecute(
                         availableTimeNanos,
-                        prefetchMetrics.getCompositionTimeNanos(contentType)
+                        prefetchMetrics.getCompositionTimeNanos(contentType),
                     )
                 ) {
                     trace("compose:lazy:prefetch:compose") {
@@ -373,7 +373,7 @@ internal class PrefetchHandleProvider(
                 if (
                     shouldExecute(
                         availableTimeNanos,
-                        prefetchMetrics.getMeasureTimeNanos(contentType)
+                        prefetchMetrics.getMeasureTimeNanos(contentType),
                     )
                 ) {
                     trace("compose:lazy:prefetch:measure") { performMeasure(constraints) }
@@ -390,7 +390,7 @@ internal class PrefetchHandleProvider(
 
         private fun performFullComposition(
             itemProvider: LazyLayoutItemProvider,
-            contentType: Any?
+            contentType: Any?,
         ) {
             val key = itemProvider.getKey(index)
             val content = itemContentFactory.getContent(index, key, contentType)
@@ -485,15 +485,14 @@ internal fun Modifier.traversablePrefetchState(
         ?: this
 }
 
-private class TraversablePrefetchStateNode(
-    var prefetchState: LazyLayoutPrefetchState,
-) : Modifier.Node(), TraversableNode {
+private class TraversablePrefetchStateNode(var prefetchState: LazyLayoutPrefetchState) :
+    Modifier.Node(), TraversableNode {
 
     override val traverseKey: String = TraversablePrefetchStateNodeKey
 }
 
 private data class TraversablePrefetchStateModifierElement(
-    private val prefetchState: LazyLayoutPrefetchState,
+    private val prefetchState: LazyLayoutPrefetchState
 ) : ModifierNodeElement<TraversablePrefetchStateNode>() {
     override fun create() = TraversablePrefetchStateNode(prefetchState)
 

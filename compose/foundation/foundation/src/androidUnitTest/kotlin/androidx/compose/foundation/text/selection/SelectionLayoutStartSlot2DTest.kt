@@ -56,7 +56,7 @@ open class SelectionLayout2DTest {
         MIDDLE_LEFT,
         MIDDLE,
         MIDDLE_RIGHT,
-        RIGHT
+        RIGHT,
     }
 
     enum class TestVertical {
@@ -64,7 +64,7 @@ open class SelectionLayout2DTest {
         MIDDLE_TOP,
         MIDDLE,
         MIDDLE_BOTTOM,
-        BOTTOM
+        BOTTOM,
     }
 
     internal fun getDirectionsForX(horizontal: TestHorizontal): List<Direction> =
@@ -141,7 +141,7 @@ open class SelectionLayout2DTest {
             endXHandleDirection = endXHandleDirection,
             endYHandleDirection = endYHandleDirection,
             rawPreviousHandleOffset = rawPreviousHandleOffset,
-            textLayoutResult = layoutResult
+            textLayoutResult = layoutResult,
         )
     }
 }

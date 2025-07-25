@@ -44,7 +44,7 @@ dependencies {
 
     androidTestImplementation("androidx.activity:activity:1.0.0")
     androidTestImplementation("androidx.appcompat:appcompat:1.1.0")
-    androidTestImplementation(project(":lifecycle:lifecycle-common"))
+    androidTestImplementation("androidx.lifecycle:lifecycle-common:2.9.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.2")
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(project(":internal-testutils-lifecycle"))
@@ -68,21 +68,21 @@ dependencies {
     androidTestImplementation(libs.kotlinCoroutinesCore)
     androidTestImplementation(libs.testMonitor)
 
+    // DO NOT REMOVE. This is a required run time dependency for Mockito, but is not explicitly
+    // specified as a dependency by the Mockito artifact.
+    androidTestImplementation(libs.opentest4j)
+
     // Including both dexmakers allows support for all API levels plus final mocking support on
     // API 28+. The implementation is swapped based on the finality of the mock type. This
     // delegation is handled manually inside androidx.core.util.mockito.CustomMockMaker.
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.dexmakerMockitoInline)
 
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
 }
 
 android {
@@ -118,5 +118,6 @@ androidx {
     description = "Provides backward-compatible implementations of Android platform APIs and " +
             "features."
     failOnDeprecationWarnings = false
+    enableRobolectric()
     samples(project(":core:core:core-samples"))
 }

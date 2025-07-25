@@ -37,3 +37,13 @@ public class AnchorNotTrackingException(cause: Throwable? = null) :
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AnchorInvalidUuidException(cause: Throwable? = null) :
     AnchorException("Unable to create anchor. Invalid UUID provided.", cause)
+
+/** Anchor was not created due to an authorization error. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorNotAuthorizedException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Not authorized.", cause)
+
+/** Anchor was not created due to an unsupported location. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class AnchorUnsupportedLocationException(cause: Throwable? = null) :
+    AnchorException("Unable to create anchor. Unsupported location.", cause)

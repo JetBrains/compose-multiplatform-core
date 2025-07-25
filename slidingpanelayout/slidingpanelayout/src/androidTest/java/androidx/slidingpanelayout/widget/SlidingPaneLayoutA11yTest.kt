@@ -236,7 +236,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-            null
+            null,
         )
 
         // Verify that it send accessibility TYPE_VIEW_ACCESSIBILITY_FOCUSED event
@@ -268,7 +268,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             AccessibilityNodeInfoCompat.ACTION_CLICK,
-            null
+            null,
         )
 
         assertThat(clicked).isTrue()
@@ -281,7 +281,7 @@ class SlidingPaneLayoutA11yTest {
     fun testPerformActionOnDivider_performScrollLeft_moveLeft() {
         testPerformScrollAction(
             android.R.id.accessibilityActionScrollLeft,
-            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT
+            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT,
         )
     }
 
@@ -289,7 +289,7 @@ class SlidingPaneLayoutA11yTest {
     fun testPerformActionOnDivider_performScrollRight_moveRight() {
         testPerformScrollAction(
             android.R.id.accessibilityActionScrollRight,
-            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT
+            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT,
         )
     }
 
@@ -297,7 +297,7 @@ class SlidingPaneLayoutA11yTest {
     fun testPerformActionOnDivider_performScrollForwardLtr_moveRight() {
         testPerformScrollAction(
             AccessibilityNodeInfoCompat.ACTION_SCROLL_FORWARD,
-            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT
+            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT,
         )
     }
 
@@ -306,7 +306,7 @@ class SlidingPaneLayoutA11yTest {
         testPerformScrollAction(
             AccessibilityNodeInfoCompat.ACTION_SCROLL_FORWARD,
             SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT,
-            View.LAYOUT_DIRECTION_RTL
+            View.LAYOUT_DIRECTION_RTL,
         )
     }
 
@@ -314,7 +314,7 @@ class SlidingPaneLayoutA11yTest {
     fun testPerformActionOnDivider_performScrollBackwardLtr_moveLeft() {
         testPerformScrollAction(
             AccessibilityNodeInfoCompat.ACTION_SCROLL_BACKWARD,
-            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT
+            SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_LEFT,
         )
     }
 
@@ -323,7 +323,7 @@ class SlidingPaneLayoutA11yTest {
         testPerformScrollAction(
             AccessibilityNodeInfoCompat.ACTION_SCROLL_BACKWARD,
             SPLIT_DIVIDER_ACCESSIBILITY_RESIZE_RIGHT,
-            View.LAYOUT_DIRECTION_RTL
+            View.LAYOUT_DIRECTION_RTL,
         )
     }
 
@@ -339,7 +339,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-            null
+            null,
         )
 
         // By default the splitDividerPosition is auto.
@@ -349,7 +349,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollLeft,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(0)
 
@@ -357,7 +357,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollRight,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(SPLIT_DIVIDER_POSITION_AUTO)
 
@@ -365,7 +365,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollRight,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(spl.width)
 
@@ -373,7 +373,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollLeft,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(SPLIT_DIVIDER_POSITION_AUTO)
     }
@@ -390,7 +390,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-            null
+            null,
         )
 
         val dividerPosition = spl.width / 2
@@ -402,7 +402,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollLeft,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(0)
 
@@ -414,7 +414,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             android.R.id.accessibilityActionScrollRight,
-            null
+            null,
         )
         assertThat(spl.splitDividerPosition).isEqualTo(spl.width)
     }
@@ -448,7 +448,7 @@ class SlidingPaneLayoutA11yTest {
 
         spl.measure(
             MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
-            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY)
+            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
         )
 
         spl.layout(0, 0, spl.measuredWidth, spl.measuredHeight)
@@ -489,7 +489,7 @@ class SlidingPaneLayoutA11yTest {
 
         spl.measure(
             MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
-            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY)
+            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
         )
 
         spl.layout(0, 0, spl.measuredWidth, spl.measuredHeight)
@@ -538,7 +538,7 @@ class SlidingPaneLayoutA11yTest {
 
         spl.measure(
             MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
-            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY)
+            MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
         )
 
         spl.layout(0, 0, spl.measuredWidth, spl.measuredHeight)
@@ -560,7 +560,7 @@ class SlidingPaneLayoutA11yTest {
     private fun testPerformScrollAction(
         action: Int,
         expectDirection: Int,
-        layoutDirection: Int = View.LAYOUT_DIRECTION_LTR
+        layoutDirection: Int = View.LAYOUT_DIRECTION_LTR,
     ) {
         val userResizeBehavior = TestUserResizeBehavior()
         val spl = createSlidingPaneLayout {
@@ -576,7 +576,7 @@ class SlidingPaneLayoutA11yTest {
         provider.performAction(
             DIVIDER_VIRTUAL_VIEW_ID,
             AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS,
-            null
+            null,
         )
         provider.performAction(DIVIDER_VIRTUAL_VIEW_ID, action, null)
         userResizeBehavior.expectCall("onAccessibilityResize", expectDirection)
@@ -586,14 +586,14 @@ class SlidingPaneLayoutA11yTest {
 
 private fun createSlidingPaneLayout(
     dividerPosition: Float = 0.3f,
-    initialization: SlidingPaneLayout.() -> Unit
+    initialization: SlidingPaneLayout.() -> Unit,
 ): SlidingPaneLayout {
     return createSlidingPaneLayoutWithParent(dividerPosition, initialization).first
 }
 
 private fun createSlidingPaneLayoutWithParent(
     dividerPosition: Float = 0.3f,
-    initialization: SlidingPaneLayout.() -> Unit
+    initialization: SlidingPaneLayout.() -> Unit,
 ): Pair<SlidingPaneLayout, TestViewParent> {
     val context = InstrumentationRegistry.getInstrumentation().context
     val parent = TestViewParent(context)
@@ -612,7 +612,7 @@ private fun createSlidingPaneLayoutWithParent(
 
     spl.measure(
         MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
-        MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY)
+        MeasureSpec.makeMeasureSpec(100, MeasureSpec.EXACTLY),
     )
 
     spl.layout(0, 0, spl.measuredWidth, spl.measuredHeight)
@@ -655,7 +655,7 @@ private class TestUserResizeBehavior : SlidingPaneLayout.UserResizeBehavior {
 
     override fun onUserResizeCancelled(
         slidingPaneLayout: SlidingPaneLayout,
-        dividerPositionX: Int
+        dividerPositionX: Int,
     ) {
         calls.add(Pair("onUserResizeCancelled", dividerPositionX))
     }

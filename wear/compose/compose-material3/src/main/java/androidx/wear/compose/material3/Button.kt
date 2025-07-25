@@ -143,7 +143,7 @@ public fun Button(
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         transformation = transformation,
-        content = content
+        content = content,
     )
 
 /**
@@ -184,7 +184,9 @@ public fun Button(
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
  *   shape is a key characteristic of the Wear Material3 Theme
  * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.buttonWithContainerPainterColors].
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
  * @param border Optional [BorderStroke] that will be used to resolve the border for this button in
  *   different states.
  * @param contentPadding The spacing values to apply internally between the container and the
@@ -230,7 +232,7 @@ public fun Button(
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         transformation = transformation,
-        content = content
+        content = content,
     )
 
 /**
@@ -314,7 +316,7 @@ public fun FilledTonalButton(
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         transformation = transformation,
-        content = content
+        content = content,
     )
 
 /**
@@ -397,7 +399,7 @@ public fun OutlinedButton(
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         transformation = transformation,
-        content = content
+        content = content,
     )
 
 /**
@@ -480,7 +482,7 @@ public fun ChildButton(
         contentPadding = contentPadding,
         interactionSource = interactionSource,
         transformation = transformation,
-        content = content
+        content = content,
     )
 
 /**
@@ -581,9 +583,9 @@ public fun Button(
                     TextConfiguration(
                         textAlign = TextAlign.Start,
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 2
+                        maxLines = 2,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         icon = icon,
         enabled = enabled,
@@ -606,14 +608,14 @@ public fun Button(
                             if (icon != null || secondaryLabel != null) TextAlign.Start
                             else TextAlign.Center,
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 3
+                        maxLines = 3,
                     ),
-                content = label
-            )
+                content = label,
+            ),
     )
 
 /**
- * Wear Material3 [Button] that offers parameters for container image backgrounds, withthree slots
+ * Wear Material3 [Button] that offers parameters for container image backgrounds, with three slots
  * and a specific layout for an icon, label and secondaryLabel. The icon and secondaryLabel are
  * optional. The items are laid out with the icon, if provided, at the start of a row, with a column
  * next containing the two label slots.
@@ -654,12 +656,13 @@ public fun Button(
  * @param enabled Controls the enabled state of the button. When `false`, this button will not be
  *   clickable
  * @param disabledContainerPainter [Painter] to use to draw the container of the [Button] when not
- *   enabled, such as returned by [ButtonDefaults.containerPainter] with alpha =
- *   [ButtonDefaults.DisabledContainerAlpha].
+ *   enabled, such as returned by [ButtonDefaults.disabledContainerPainter].
  * @param shape Defines the button's shape. It is strongly recommended to use the default as this
  *   shape is a key characteristic of the Wear Material3 Theme
  * @param colors [ButtonColors] that will be used to resolve the background and content color for
- *   this button in different states. See [ButtonDefaults.buttonWithContainerPainterColors].
+ *   this button in different states (the containerColor and disabledContainerColor are overridden
+ *   by containerPainter and disabledContainerPainter respectively). See
+ *   [ButtonDefaults.buttonWithContainerPainterColors].
  * @param border Optional [BorderStroke] that will be used to resolve the button border in different
  *   states.
  * @param contentPadding The spacing values to apply internally between the container and the
@@ -708,7 +711,7 @@ public fun Button(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         icon = icon,
         enabled = enabled,
@@ -733,8 +736,8 @@ public fun Button(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     ),
-                content = label
-            )
+                content = label,
+            ),
     )
 
 /**
@@ -834,7 +837,7 @@ public fun FilledTonalButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         icon = icon,
         enabled = enabled,
@@ -859,8 +862,8 @@ public fun FilledTonalButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     ),
-                content = label
-            )
+                content = label,
+            ),
     )
 
 /**
@@ -955,7 +958,7 @@ public fun OutlinedButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         icon = icon,
         enabled = enabled,
@@ -980,8 +983,8 @@ public fun OutlinedButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     ),
-                content = label
-            )
+                content = label,
+            ),
     )
 
 /**
@@ -1076,7 +1079,7 @@ public fun ChildButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         icon = icon,
         enabled = enabled,
@@ -1101,8 +1104,8 @@ public fun ChildButton(
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 3,
                     ),
-                content = label
-            )
+                content = label,
+            ),
     )
 
 /**
@@ -1234,8 +1237,8 @@ public fun CompactButton(
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
                         ),
-                    label
-                )
+                    label,
+                ),
         )
     } else {
         // Icon only compact buttons have their own layout with a specific width and center aligned
@@ -1323,7 +1326,7 @@ public object ButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         disabledSecondaryContentColor: Color = Color.Unspecified,
-        disabledIconColor: Color = Color.Unspecified
+        disabledIconColor: Color = Color.Unspecified,
     ): ButtonColors =
         MaterialTheme.colorScheme.defaultFilledTonalButtonColors.copy(
             containerColor = containerColor,
@@ -1333,7 +1336,7 @@ public object ButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /**
@@ -1385,7 +1388,7 @@ public object ButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         disabledSecondaryContentColor: Color = Color.Unspecified,
-        disabledIconColor: Color = Color.Unspecified
+        disabledIconColor: Color = Color.Unspecified,
     ): ButtonColors =
         MaterialTheme.colorScheme.defaultFilledVariantButtonColors.copy(
             containerColor = containerColor,
@@ -1395,7 +1398,7 @@ public object ButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /**
@@ -1434,7 +1437,7 @@ public object ButtonDefaults {
         iconColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         disabledSecondaryContentColor: Color = Color.Unspecified,
-        disabledIconColor: Color = Color.Unspecified
+        disabledIconColor: Color = Color.Unspecified,
     ): ButtonColors =
         MaterialTheme.colorScheme.defaultOutlinedButtonColors.copy(
             containerColor = Color.Transparent,
@@ -1444,7 +1447,7 @@ public object ButtonDefaults {
             disabledContainerColor = Color.Transparent,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /**
@@ -1493,7 +1496,7 @@ public object ButtonDefaults {
             disabledContainerColor = Color.Transparent,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /** Creates a [ButtonColors] for the content in a [Button] with an image container painter. */
@@ -1531,7 +1534,7 @@ public object ButtonDefaults {
             iconColor = iconColor,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /**
@@ -1586,9 +1589,7 @@ public object ButtonDefaults {
      * @param containerPainter The [Painter] to use to draw the container background of the [Button]
      *   when enabled. An alpha will be applied to this to achieve a disabled effect.
      */
-    public fun disabledContainerPainter(
-        containerPainter: Painter,
-    ): Painter {
+    public fun disabledContainerPainter(containerPainter: Painter): Painter {
         return containerPainter(painter = containerPainter, alpha = DisabledContainerAlpha)
     }
 
@@ -1621,12 +1622,8 @@ public object ButtonDefaults {
             OutlinedButtonTokens.DisabledContainerBorderColor.value.toDisabledColor(
                 disabledAlpha = OutlinedButtonTokens.DisabledContainerBorderOpacity
             ),
-        borderWidth: Dp = OutlinedButtonTokens.ContainerBorderWidth
-    ): BorderStroke {
-        return remember {
-            BorderStroke(borderWidth, if (enabled) borderColor else disabledBorderColor)
-        }
-    }
+        borderWidth: Dp = OutlinedButtonTokens.ContainerBorderWidth,
+    ): BorderStroke = BorderStroke(borderWidth, if (enabled) borderColor else disabledBorderColor)
 
     /**
      * Creates a [ButtonColors] that represents the default background and content colors used in a
@@ -1657,7 +1654,7 @@ public object ButtonDefaults {
         disabledContainerColor: Color = Color.Unspecified,
         disabledContentColor: Color = Color.Unspecified,
         disabledSecondaryContentColor: Color = Color.Unspecified,
-        disabledIconColor: Color = Color.Unspecified
+        disabledIconColor: Color = Color.Unspecified,
     ): ButtonColors =
         MaterialTheme.colorScheme.defaultButtonColors.copy(
             containerColor = containerColor,
@@ -1667,7 +1664,7 @@ public object ButtonDefaults {
             disabledContainerColor = disabledContainerColor,
             disabledContentColor = disabledContentColor,
             disabledSecondaryContentColor = disabledSecondaryContentColor,
-            disabledIconColor = disabledIconColor
+            disabledIconColor = disabledIconColor,
         )
 
     /** The recommended horizontal padding used by [Button] by default */
@@ -1684,10 +1681,7 @@ public object ButtonDefaults {
 
     /** The default content padding used by [Button] */
     public val ContentPadding: PaddingValues =
-        PaddingValues(
-            horizontal = ButtonHorizontalPadding,
-            vertical = ButtonVerticalPadding,
-        )
+        PaddingValues(horizontal = ButtonHorizontalPadding, vertical = ButtonVerticalPadding)
 
     /** The default content padding used by [Button] with a large icon */
     public val ButtonWithLargeIconContentPadding: PaddingValues =
@@ -1695,7 +1689,7 @@ public object ButtonDefaults {
             start = ButtonLargeIconStartPadding,
             top = ButtonVerticalPadding,
             end = ButtonHorizontalPadding,
-            bottom = ButtonVerticalPadding
+            bottom = ButtonVerticalPadding,
         )
 
     /** The default content padding used by [Button] with an extra large icon */
@@ -1704,7 +1698,7 @@ public object ButtonDefaults {
             start = ButtonExtraLargeIconStartPadding,
             top = ButtonVerticalPadding,
             end = ButtonHorizontalPadding,
-            bottom = ButtonVerticalPadding
+            bottom = ButtonVerticalPadding,
         )
 
     /** The recommended icon size when used in [CompactButton]s containing both icon and text. */
@@ -1737,7 +1731,7 @@ public object ButtonDefaults {
             start = CompactButtonHorizontalPadding,
             top = CompactButtonVerticalPadding,
             end = CompactButtonHorizontalPadding,
-            bottom = CompactButtonVerticalPadding
+            bottom = CompactButtonVerticalPadding,
         )
 
     /**
@@ -1816,7 +1810,7 @@ public object ButtonDefaults {
                             fromToken(FilledTonalButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledTonalButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultFilledTonalButtonColorsCached = it }
         }
@@ -1850,7 +1844,7 @@ public object ButtonDefaults {
                             fromToken(FilledButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultFilledVariantButtonColorsCached = it }
         }
@@ -1878,7 +1872,7 @@ public object ButtonDefaults {
                             fromToken(OutlinedButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = OutlinedButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultOutlinedButtonColorsCached = it }
         }
@@ -1940,7 +1934,7 @@ public object ButtonDefaults {
                             fromToken(FilledButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = FilledButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultButtonColorsCached = it }
         }
@@ -1970,7 +1964,7 @@ public object ButtonDefaults {
                             fromToken(ImageButtonTokens.DisabledContentColor)
                                 .toDisabledColor(
                                     disabledAlpha = ImageButtonTokens.DisabledContentOpacity
-                                )
+                                ),
                     )
                     .also { defaultButtonWithContainerPainterColorsCached = it }
         }
@@ -1986,7 +1980,7 @@ public object ButtonDefaults {
  * Represents the container and content colors used in buttons in different states.
  *
  * @param containerColor The background color of this [Button] when enabled (overridden by the
- *   containerPainter parameter on Buttons with image backgrounds)
+ *   containerPainter parameter on Buttons with image backgrounds).
  * @param contentColor The content color of this [Button] when enabled.
  * @param secondaryContentColor The content color of this [Button] when enabled.
  * @param iconColor The content color of this [Button] when enabled.
@@ -2037,7 +2031,7 @@ public class ButtonColors(
             disabledContainerColor.takeOrElse { this.disabledContainerColor },
             disabledContentColor.takeOrElse { this.disabledContentColor },
             disabledSecondaryContentColor.takeOrElse { this.disabledSecondaryContentColor },
-            disabledIconColor.takeOrElse { this.disabledIconColor }
+            disabledIconColor.takeOrElse { this.disabledIconColor },
         )
 
     /**
@@ -2137,7 +2131,7 @@ private fun ButtonImpl(
     contentPadding: PaddingValues,
     interactionSource: MutableInteractionSource?,
     transformation: SurfaceTransformation?,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val painter =
         if (enabled && containerPainter != null) {
@@ -2171,7 +2165,7 @@ private fun ButtonImpl(
                     interactionSource = interactionSource,
                 )
                 .padding(contentPadding),
-        content = provideScopeContent(colors.contentColor(enabled = enabled), labelFont, content)
+        content = provideScopeContent(colors.contentColor(enabled = enabled), labelFont, content),
     )
 }
 
@@ -2197,7 +2191,7 @@ private fun ButtonImpl(
     contentPadding: PaddingValues,
     interactionSource: MutableInteractionSource?,
     transformation: SurfaceTransformation?,
-    labelContent: @Composable RowScope.() -> Unit
+    labelContent: @Composable RowScope.() -> Unit,
 ) {
     ButtonImpl(
         onClick = onClick,
@@ -2218,7 +2212,7 @@ private fun ButtonImpl(
         if (icon != null) {
             Box(
                 modifier = Modifier.wrapContentSize(align = Alignment.Center),
-                content = provideScopeContent(colors.iconColor(enabled), icon)
+                content = provideScopeContent(colors.iconColor(enabled), icon),
             )
             Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
         }

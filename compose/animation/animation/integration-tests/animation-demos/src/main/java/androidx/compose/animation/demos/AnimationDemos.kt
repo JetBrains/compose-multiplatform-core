@@ -95,7 +95,7 @@ val AnimationDemos =
                     ComposableDemo("Infinite transition") { InfiniteTransitionDemo() },
                     ComposableDemo("Multi-dimensional prop") { MultiDimensionalAnimationDemo() },
                     ComposableDemo("Repeating rotation") { RepeatedRotationDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "Layout Animation Demos",
@@ -118,7 +118,7 @@ val AnimationDemos =
                     ComposableDemo("Scaled Enter/Exit") { ScaleEnterExitDemo() },
                     ComposableDemo("Shrine Cart") { ShrineCartDemo() },
                     ComposableDemo("Screen Transition") { ScreenTransitionDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "\uD83E\uDD7C\uD83E\uDDD1\u200D\uD83D\uDD2C Lookahead Animation Demos",
@@ -152,7 +152,7 @@ val AnimationDemos =
                     ComposableDemo("Floating Toolbar w/ AnimateBounds") {
                         AnimateBoundsOnFloatingToolbarDemo()
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "Suspend Animation Demos",
@@ -171,13 +171,11 @@ val AnimationDemos =
                     },
                     ComposableDemo("Arc Offset Demo") { ArcOffsetDemo() },
                     ComposableDemo("Periodic Spline Demo") { PeriodicMonoSplineDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "Graphics Animation Demos",
-                listOf(
-                    ComposableDemo("Animated Vector Graphics") { AnimatedVectorGraphicsDemo() },
-                )
+                listOf(ComposableDemo("Animated Vector Graphics") { AnimatedVectorGraphicsDemo() }),
             ),
             DemoCategory(
                 "⛔ DO NOT ENTER ⛔",
@@ -192,7 +190,7 @@ val AnimationDemos =
                     ComposableDemo("AnimatedVisibility with Content Size Change") {
                         AnimatedVisibilityContentSizeChange()
                     },
-                )
+                ),
             ),
             DemoCategory(
                 "Visual Aid \uD83D\uDC40 \uD83D\uDC40",
@@ -201,7 +199,7 @@ val AnimationDemos =
                     ComposableDemo("Row Arrangements Demo (Landscape)") { RowConfigurationDemo() },
                     ComposableDemo("Easing Functions Demo") { EasingInfoDemo() },
                     ComposableDemo("Path Easing Function Demo") { PathEasingSample() },
-                )
+                ),
             ),
             DemoCategory(
                 "\uD83C\uDF89 Fun Demos",
@@ -211,7 +209,7 @@ val AnimationDemos =
                     ComposableDemo("Chat screen") { ChatScreen() },
                     ComposableDemo("Game of fling") { FlingGameDemo() },
                     ComposableDemo("Spring chain") { SpringChainDemo() },
-                )
-            )
-        )
+                ),
+            ),
+        ),
     )

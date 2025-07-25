@@ -109,8 +109,8 @@ public final class Flags {
             FLAG_PREFIX + "enable_enterprise_global_search_session";
 
     /**
-     * Enable {@link android.appsearch.app.AppSearchSchema#getDescription} and
-     * {@link android.appsearch.app.AppSearchSchema.PropertyConfig#getDescription} and the related
+     * Enable {@link androidx.appsearch.app.AppSearchSchema#getDescription} and
+     * {@link androidx.appsearch.app.AppSearchSchema.PropertyConfig#getDescription} and the related
      * builders.
      */
     public static final String FLAG_ENABLE_SCHEMA_DESCRIPTION =
@@ -144,15 +144,15 @@ public final class Flags {
     public static final String FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS =
             FLAG_PREFIX + "enable_informational_ranking_expressions";
 
-    /** Enable {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS}.     */
+    /** Enable {@link androidx.appsearch.app.AppSearchResult#RESULT_ALREADY_EXISTS}. */
     public static final String FLAG_ENABLE_RESULT_ALREADY_EXISTS =
             FLAG_PREFIX + "enable_result_already_exists";
 
-    /**  Enable {@link androidx.appsearch.app.AppSearchBlobHandle}.  */
+    /** Enable {@link androidx.appsearch.app.AppSearchBlobHandle}. */
     public static final String FLAG_ENABLE_BLOB_STORE =
             FLAG_PREFIX + "enable_blob_store";
 
-    /**  Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}.  */
+    /** Enable {@link androidx.appsearch.app.GenericDocument#writeToParcel}. */
     public static final String FLAG_ENABLE_GENERIC_DOCUMENT_OVER_IPC =
             FLAG_PREFIX + "enable_generic_document_over_ipc";
 
@@ -226,11 +226,11 @@ public final class Flags {
     public static final String FLAG_ENABLE_RELEASE_BACKUP_SCHEMA_FILE_IF_OVERLAY_PRESENT =
             FLAG_PREFIX + "enable_release_backup_schema_file_if_overlay_present";
 
-    /** Enables retrieving embedding match snippet information. This affects  */
+    /** Enables retrieving embedding match snippet information. This affects */
     public static final String FLAG_ENABLE_EMBEDDING_MATCH_INFO =
             FLAG_PREFIX + "enable_embedding_match_info";
 
-    /** Enables to query visibility documents rather than get.  */
+    /** Enables to query visibility documents rather than get. */
     public static final String FLAG_ENABLE_QUERY_VISIBILITY_DOCUMENTS =
             FLAG_PREFIX + "enable_query_visibility_documents";
 
@@ -245,6 +245,47 @@ public final class Flags {
     /** Enables setting the gzip compression memlevel to 1. */
     public static final String FLAG_ENABLE_COMPRESSION_MEM_LEVEL_ONE =
             FLAG_PREFIX + "enable_compression_mem_level_one";
+
+    /** Enables gzip decompression buffer size memory optimization. */
+    public static final String FLAG_ENABLE_SMALLER_DECOMPRESSION_BUFFER_SIZE =
+            FLAG_PREFIX + "enable_smaller_decompression_buffer_size";
+
+    /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED}. */
+    public static final String FLAG_ENABLE_RESULT_ABORTED =
+            FLAG_PREFIX + "enable_result_aborted";
+
+    /** Enables {@link androidx.appsearch.app.AppSearchResult#RESULT_UNAVAILABLE}. */
+    public static final String FLAG_ENABLE_RESULT_UNAVAILABLE =
+            FLAG_PREFIX + "enable_result_unavailable";
+
+    /**
+     * Enables throwing {@link androidx.appsearch.exceptions.AppSearchException} with code
+     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} if the search result page token
+     * is not found in native.
+     */
+    public static final String FLAG_ENABLE_THROW_EXCEPTION_FOR_NATIVE_NOT_FOUND_PAGE_TOKEN =
+            FLAG_PREFIX + "enable_throw_exception_for_native_not_found_page_token";
+
+    /**
+     * Enable database-scoped set and get schema operations for AppSearch internal impl. This
+     * allows AppSearchImpl to set and get the schema for a single package-database combo at a time.
+     */
+    public static final String FLAG_ENABLE_DATABASE_SCOPED_SCHEMA_OPERATIONS =
+            FLAG_PREFIX + "enable_database_scoped_schema_operations";
+
+    /** Enables the Eigen library for embedding scoring, if Eigen is compiled in. */
+    public static final String FLAG_ENABLE_EIGEN_EMBEDDING_SCORING =
+            FLAG_PREFIX + "enable_eigen_embedding_scoring";
+
+    /**
+     * Enable retrying the critical section of initialization before resetting as a last resort.
+     */
+    public static final String FLAG_ENABLE_INITIALIZATION_RETRIES_BEFORE_RESET =
+            FLAG_PREFIX + "enable_initialization_retries_before_reset";
+
+    /** Enable reset visibility store during initialization. */
+    public static final String FLAG_ENABLE_RESET_VISIBILITY_STORE =
+            FLAG_PREFIX + "enable_reset_visibility_store";
 
     // Whether the features should be enabled.
     //
@@ -376,7 +417,7 @@ public final class Flags {
         return true;
     }
 
-    /**  Whether {@link androidx.appsearch.app.AppSearchBlobHandle} should be enabled. */
+    /** Whether {@link androidx.appsearch.app.AppSearchBlobHandle} should be enabled. */
     public static boolean enableBlobStore() {
         return true;
     }
@@ -412,7 +453,9 @@ public final class Flags {
      * limit or should call into Icing to get the current active document count when the limit is
      * reached.
      */
-    public static boolean enableDocumentLimiterReplaceTracking() { return true; }
+    public static boolean enableDocumentLimiterReplaceTracking() {
+        return true;
+    }
 
     /**
      * Whether the {@link androidx.appsearch.app.SearchSpec.Builder#addFilterDocumentIds} should be
@@ -441,7 +484,6 @@ public final class Flags {
      *
      * <p>Note: delete propagation depends on qualified id join index v3, so
      * {@link #enableQualifiedIdJoinIndexV3()} should also be true.
-     *
      */
     public static boolean enableDeletePropagationType() {
         // TODO(b/384947619): enable this flag once expiry propagation and dependency check are
@@ -510,6 +552,75 @@ public final class Flags {
      * Whether to use a compression memlevel of 1.
      */
     public static boolean enableCompressionMemLevelOne() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} should be
+     * enabled.
+     */
+    public static boolean enableResultAborted() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.app.AppSearchResult#RESULT_UNAVAILABLE} should be
+     * enabled.
+     */
+    public static boolean enableResultUnavailable() {
+        return true;
+    }
+
+    /**
+     * Whether {@link androidx.appsearch.exceptions.AppSearchException} with code
+     * {@link androidx.appsearch.app.AppSearchResult#RESULT_ABORTED} should be thrown if the search
+     * result page token is not found in native.
+     */
+    public static boolean enableThrowExceptionForNativeNotFoundPageToken() {
+        return true;
+    }
+
+    /**
+     * Whether to batch put visibility documents.
+     */
+    public static boolean enableBatchPutVisibilityDocuments() {
+        return true;
+    }
+
+    /**
+     * Whether to enable database-scoped set and get schema operations for AppSearch internal impl.
+     */
+    public static boolean enableDatabaseScopedSchemaOperations() {
+        return true;
+    }
+
+    /**
+     * Whether to enable gzip decompression buffer memory optimization that uses a smaller buffer
+     * size.
+     */
+    public static boolean enableSmallerDecompressionBufferSize() {
+        return true;
+    }
+
+    /** Whether to enable the Eigen library for embedding scoring */
+    public static boolean enableEigenEmbeddingScoring() {
+        // The return value does not matter, since Jetpack does not have Eigen compiled in.
+        // Set it to false for clarity.
+        return false;
+    }
+
+    /**
+     * Whether to enable retrying the critical section of initialization before resetting as a
+     * last resort.
+     */
+    public static boolean enableInitializationRetriesBeforeReset() {
+        return true;
+    }
+
+    /**
+     * Whether to enable reset visibility store during initialization.
+     */
+    public static boolean enableResetVisibilityStore() {
         return true;
     }
 }

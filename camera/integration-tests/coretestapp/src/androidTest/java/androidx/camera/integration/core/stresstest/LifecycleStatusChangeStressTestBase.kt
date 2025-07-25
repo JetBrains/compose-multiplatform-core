@@ -64,15 +64,13 @@ import org.junit.runners.Parameterized
 abstract class LifecycleStatusChangeStressTestBase(
     val implName: String,
     val cameraConfig: CameraXConfig,
-    val cameraId: String
+    val cameraId: String,
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val useCamera =
@@ -84,7 +82,7 @@ abstract class LifecycleStatusChangeStressTestBase(
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.RECORD_AUDIO
+            Manifest.permission.RECORD_AUDIO,
         )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
@@ -162,14 +160,14 @@ abstract class LifecycleStatusChangeStressTestBase(
         useCaseCombination: Int,
         verificationTarget: Int,
         repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
-        enableStreamSharing: Boolean = false
+        enableStreamSharing: Boolean = false,
     ) {
         // Launches CameraXActivity and wait for the preview ready.
         val activityScenario =
             launchCameraXActivityAndWaitForPreviewReady(
                 cameraId,
                 useCaseCombination,
-                forceEnableStreamSharing = enableStreamSharing
+                forceEnableStreamSharing = enableStreamSharing,
             )
 
         // Pauses, resumes the activity, and then checks the test target use case can capture
@@ -214,14 +212,14 @@ abstract class LifecycleStatusChangeStressTestBase(
         useCaseCombination: Int,
         verificationTarget: Int,
         repeatCount: Int = STRESS_TEST_OPERATION_REPEAT_COUNT,
-        enableStreamSharing: Boolean = false
+        enableStreamSharing: Boolean = false,
     ) {
         // Launches CameraXActivity and wait for the preview ready.
         val activityScenario =
             launchCameraXActivityAndWaitForPreviewReady(
                 cameraId,
                 useCaseCombination,
-                forceEnableStreamSharing = enableStreamSharing
+                forceEnableStreamSharing = enableStreamSharing,
             )
 
         // Pauses, resumes the activity repeatedly, and then checks the test target use case can

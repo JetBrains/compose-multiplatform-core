@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.fr() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Réduire la bottom sheet",
     Strings.BottomSheetDismissDescription to "Fermer la bottom sheet",
     Strings.BottomSheetExpandDescription to "Développer la bottom sheet",
+    Strings.FloatingToolbarCollapse to "Réduire la barre d\'outils",
+    Strings.FloatingToolbarExpand to "Développer la barre d\'outils",
     Strings.TooltipPaneDescription to "Info-bulle",
     Strings.TooltipLongPressLabel to "Afficher l\'info-bulle",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.fr() = mapOf(
     Strings.TimePickerHour to "Heure",
     Strings.TimePickerMinuteTextField to "en minutes",
     Strings.TimePickerHourTextField to "en heures",
+    Strings.TimePickerToggleKeyboard to "Passer en mode de saisie de texte pour indiquer l\'heure",
+    Strings.TimePickerToggleTouch to "Passer en mode horloge pour la saisie de l\'heure",
+    Strings.TimePickerDialogTitle to "Sélectionner l\'heure",
+    Strings.TimeInputDialogTitle to "Saisir l\'heure",
     Strings.CloseRail to "Fermer le rail",
     Strings.WideNavigationRailPaneTitle to "Rail de navigation",
 )
@@ -143,6 +149,8 @@ internal fun Translations.frCA() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Réduire la zone de contenu dans le bas de l\'écran",
     Strings.BottomSheetDismissDescription to "Fermer la zone de contenu dans le bas de l\'écran",
     Strings.BottomSheetExpandDescription to "Développer la zone de contenu dans le bas de l\'écran",
+    Strings.FloatingToolbarCollapse to "Réduire la barre d\'outils",
+    Strings.FloatingToolbarExpand to "Développer la barre d\'outils",
     Strings.TooltipPaneDescription to "Infobulle",
     Strings.TooltipLongPressLabel to "Afficher une infobulle",
     Strings.TimePickerPM to "PM",
@@ -157,6 +165,10 @@ internal fun Translations.frCA() = mapOf(
     Strings.TimePickerHour to "Heure",
     Strings.TimePickerMinuteTextField to "pour les minutes",
     Strings.TimePickerHourTextField to "pour l\'heure",
+    Strings.TimePickerToggleKeyboard to "Passer au mode d\'entrée de texte pour entrer l\'heure",
+    Strings.TimePickerToggleTouch to "Passer au mode Horloge pour entrer l\'heure",
+    Strings.TimePickerDialogTitle to "Sélectionner l\'heure",
+    Strings.TimeInputDialogTitle to "Saisir l\'heure",
     Strings.CloseRail to "Fermer le rail",
     Strings.WideNavigationRailPaneTitle to "Rail de navigation",
 )

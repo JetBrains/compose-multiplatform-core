@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.awt
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntRect
@@ -30,6 +31,7 @@ import javax.swing.JFrame
 import javax.swing.JLayeredPane
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.hostOs
@@ -45,16 +47,42 @@ internal fun Component.isParentOf(component: Component?): Boolean {
     return false
 }
 
-internal fun IntRect.toAwtRectangle(density: Density): Rectangle {
-    val left = floor(left / density.density).toInt()
-    val top = floor(top / density.density).toInt()
-    val right = ceil(right / density.density).toInt()
-    val bottom = ceil(bottom / density.density).toInt()
-    val width = right - left
-    val height = bottom - top
-    return Rectangle(
-        left, top, width, height
-    )
+internal fun toAwtRectangle(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    density: Float
+): Rectangle {
+    val rleft = floor(left / density).toInt()
+    val rtop = floor(top / density).toInt()
+    val rright = ceil(right / density).toInt()
+    val rbottom = ceil(bottom / density).toInt()
+    val rwidth = rright - rleft
+    val rheight = rbottom - rtop
+    return Rectangle(rleft, rtop, rwidth, rheight)
+}
+
+internal fun IntRect.toAwtRectangle(density: Density = Density(1f)) = toAwtRectangle(
+    left = left.toFloat(),
+    top = top.toFloat(),
+    right = right.toFloat(),
+    bottom = bottom.toFloat(),
+    density = density.density
+)
+
+/**
+ * Returns a [java.awt.Rectangle] corresponding to this [Rect], in the given density.
+ *
+ * The coordinates are rounded to the nearest integer.
+ */
+internal fun Rect.toAwtRectangleRounded(density: Density): Rectangle {
+    val densityValue = density.density
+    val left = (this.left / densityValue).roundToInt()
+    val top = (this.top / densityValue).roundToInt()
+    val right = (this.right / densityValue).roundToInt()
+    val bottom = (this.bottom / densityValue).roundToInt()
+    return Rectangle(left, top, right - left, bottom - top)
 }
 
 internal fun Color.toAwtColor() = java.awt.Color(red, green, blue, alpha)

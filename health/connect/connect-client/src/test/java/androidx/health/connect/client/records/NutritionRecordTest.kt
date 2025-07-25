@@ -40,7 +40,7 @@ class NutritionRecordTest {
                     endTime = Instant.ofEpochMilli(1678900002L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    energy = Energy.calories(150.0)
+                    energy = Energy.calories(150.0),
                 )
             )
             .isEqualTo(
@@ -50,7 +50,7 @@ class NutritionRecordTest {
                     endTime = Instant.ofEpochMilli(1678900002L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    energy = Energy.calories(150.0)
+                    energy = Energy.calories(150.0),
                 )
             )
     }
@@ -64,7 +64,7 @@ class NutritionRecordTest {
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                energy = Energy.calories(-1.0)
+                energy = Energy.calories(-1.0),
             )
         }
         assertFailsWith<IllegalArgumentException> {
@@ -74,7 +74,7 @@ class NutritionRecordTest {
                 endTime = Instant.ofEpochMilli(1236L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                energy = Energy.calories(100000001.0)
+                energy = Energy.calories(100000001.0),
             )
         }
     }
@@ -101,7 +101,7 @@ class NutritionRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
-                        energy = 240.calories
+                        energy = 240.calories,
                     )
                     .toString()
             )

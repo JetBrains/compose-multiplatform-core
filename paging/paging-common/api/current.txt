@@ -140,7 +140,7 @@ package androidx.paging {
     method public androidx.paging.LoadState component1();
     method public androidx.paging.LoadState component2();
     method public androidx.paging.LoadState component3();
-    method public androidx.paging.LoadStates copy(androidx.paging.LoadState refresh, androidx.paging.LoadState prepend, androidx.paging.LoadState append);
+    method public androidx.paging.LoadStates copy(optional androidx.paging.LoadState refresh, optional androidx.paging.LoadState prepend, optional androidx.paging.LoadState append);
     method public androidx.paging.LoadState getAppend();
     method public androidx.paging.LoadState getPrepend();
     method public androidx.paging.LoadState getRefresh();
@@ -217,9 +217,12 @@ package androidx.paging {
     method @Deprecated public abstract boolean isDetached();
     method @Deprecated public boolean isImmutable();
     method @Deprecated public final void loadAround(int index);
+    method @BytecodeOnly @Deprecated public final T! remove(int);
+    method @BytecodeOnly @Deprecated public Object! removeAt(int);
     method @Deprecated public final void removeWeakCallback(androidx.paging.PagedList.Callback callback);
     method @Deprecated public final void removeWeakLoadStateListener(kotlin.jvm.functions.Function2<? super androidx.paging.LoadType,? super androidx.paging.LoadState,kotlin.Unit> listener);
     method @Deprecated public void retry();
+    method @BytecodeOnly @Deprecated public final int size();
     method @Deprecated public final java.util.List<T> snapshot();
     property @Deprecated public final androidx.paging.PagedList.Config config;
     property @Deprecated public final androidx.paging.DataSource<? extends java.lang.Object?,T> dataSource;
@@ -486,7 +489,7 @@ package androidx.paging {
   public static final class PagingSource.LoadResult.Error<Key, Value> extends androidx.paging.PagingSource.LoadResult<Key,Value> {
     ctor public PagingSource.LoadResult.Error(Throwable throwable);
     method public Throwable component1();
-    method public androidx.paging.PagingSource.LoadResult.Error<Key,Value> copy(Throwable throwable);
+    method public androidx.paging.PagingSource.LoadResult.Error<Key,Value> copy(optional Throwable throwable);
     method public Throwable getThrowable();
     property public Throwable throwable;
   }
@@ -503,7 +506,7 @@ package androidx.paging {
     method public Key? component3();
     method public int component4();
     method public int component5();
-    method public androidx.paging.PagingSource.LoadResult.Page<Key,Value> copy(java.util.List<? extends Value> data, Key? prevKey, Key? nextKey, @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsBefore, @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsAfter);
+    method public androidx.paging.PagingSource.LoadResult.Page<Key,Value> copy(optional java.util.List<? extends Value> data, optional Key? prevKey, optional Key? nextKey, optional @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsBefore, optional @IntRange(from=androidx.paging.PagingSource.LoadResult.Page.COUNT_UNDEFINED.toLong()) int itemsAfter);
     method public java.util.List<Value> getData();
     method public int getItemsAfter();
     method public int getItemsBefore();

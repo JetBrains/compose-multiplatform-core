@@ -17,9 +17,6 @@
 package androidx.camera.camera2.pipe.integration.adapter
 
 import android.annotation.SuppressLint
-import android.graphics.Rect
-import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Log.debug
@@ -87,15 +84,6 @@ constructor(
     private val threads: UseCaseThreads,
     private val videoUsageControl: VideoUsageControl,
 ) : CameraControlInternal {
-    override fun getSensorRect(): Rect {
-        val sensorRect =
-            cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]
-        if ("robolectric" == Build.FINGERPRINT && sensorRect == null) {
-            return Rect(0, 0, 4000, 3000)
-        }
-        return sensorRect!!
-    }
-
     override fun addInteropConfig(config: Config) {
         camera2cameraControl.addCaptureRequestOptions(
             CaptureRequestOptions.Builder.from(config).build()
@@ -153,7 +141,7 @@ constructor(
                         .setLowLightBoostAsync(lowLightBoost)
                         .asVoidListenableFuture()
                 },
-                CameraXExecutors.directExecutor()
+                CameraXExecutors.directExecutor(),
             )
         )
     }
@@ -227,7 +215,7 @@ constructor(
 
     override fun getCameraCapturePipelineAsync(
         @ImageCapture.CaptureMode captureMode: Int,
-        @ImageCapture.FlashType flashType: Int
+        @ImageCapture.FlashType flashType: Int,
     ): ListenableFuture<CameraCapturePipeline> {
         val camera =
             useCaseManager.camera
@@ -238,7 +226,7 @@ constructor(
             camera.getCameraCapturePipeline(
                 captureMode,
                 flashControl.awaitFlashModeUpdate(),
-                flashType
+                flashType,
             )
         }
     }

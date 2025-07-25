@@ -20,9 +20,6 @@ plugins {
     id("kotlin-multiplatform")
 }
 
-dependencies {
-}
-
 kotlin {
     jvm()
 
@@ -39,12 +36,11 @@ kotlin {
     }
 }
 
-task runScaffold(type: JavaExec) {
-    dependsOn(":compose:desktop:desktop:jar")
-    main = "androidx.compose.desktop.examples.material3.Scaffold_jvmKt"
+tasks.register('runScaffold', JavaExec) {
+    mainClass = "androidx.compose.desktop.examples.material3.Scaffold_jvmKt"
     systemProperty("skiko.fps.enabled", "true")
     def compilation = kotlin.jvm().compilations["main"]
     classpath =
-        compilation.output.allOutputs +
-        compilation.runtimeDependencyFiles
+            compilation.output.allOutputs +
+                    compilation.runtimeDependencyFiles
 }

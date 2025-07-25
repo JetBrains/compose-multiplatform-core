@@ -46,7 +46,7 @@ class CustomTypeConverterResolutionTest {
     private fun XTypeSpec.toSource() =
         Source.java(
             "foo.bar.${name!!.toString(CodeLanguage.JAVA)}",
-            "package foo.bar;\n" + toString(CodeLanguage.JAVA)
+            "package foo.bar;\n" + toString(CodeLanguage.JAVA),
         )
 
     companion object {
@@ -62,7 +62,7 @@ class CustomTypeConverterResolutionTest {
                 public class ${CUSTOM_TYPE.simpleNames.first()} {
                     public int value;
                 }
-                """
+                """,
             )
         val CUSTOM_TYPE_CONVERTER = XClassName.get("foo.bar", "MyConverter")
         val CUSTOM_TYPE_CONVERTER_JFO =
@@ -80,7 +80,7 @@ class CustomTypeConverterResolutionTest {
                         return 0;
                     }
                 }
-                """
+                """,
             )
         val CUSTOM_TYPE_SET = CommonTypeNames.SET.parametrizedBy(CUSTOM_TYPE)
         val CUSTOM_TYPE_SET_CONVERTER = XClassName.get("foo.bar", "MySetConverter")
@@ -101,7 +101,7 @@ class CustomTypeConverterResolutionTest {
                         return 0;
                     }
                 }
-                """
+                """,
             )
     }
 
@@ -153,7 +153,7 @@ class CustomTypeConverterResolutionTest {
             createDao(
                 hasConverters = true,
                 hasQueryReturningEntity = true,
-                hasQueryWithCustomParam = true
+                hasQueryWithCustomParam = true,
             )
         runTest(sources = listOf(entity.toSource(), dao.toSource(), database.toSource()))
     }
@@ -212,7 +212,7 @@ class CustomTypeConverterResolutionTest {
 
     private fun runTest(
         sources: List<Source>,
-        onCompilationResult: (CompilationResultSubject) -> Unit = { it.hasErrorCount(0) }
+        onCompilationResult: (CompilationResultSubject) -> Unit = { it.hasErrorCount(0) },
     ) {
         runProcessorTest(
             sources =
@@ -221,7 +221,7 @@ class CustomTypeConverterResolutionTest {
                     CUSTOM_TYPE_CONVERTER_JFO +
                     CUSTOM_TYPE_SET_CONVERTER_JFO,
             createProcessingSteps = { listOf(DatabaseProcessingStep()) },
-            onCompilationResult = onCompilationResult
+            onCompilationResult = onCompilationResult,
         )
     }
 
@@ -229,7 +229,7 @@ class CustomTypeConverterResolutionTest {
         hasCustomField: Boolean = false,
         hasConverters: Boolean = false,
         hasConverterOnField: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
         if (hasConverterOnField && hasConverters) {
             throw IllegalArgumentException("cannot have both converters")
@@ -250,7 +250,7 @@ class CustomTypeConverterResolutionTest {
                                 "myCustomField",
                                 type,
                                 VisibilityModifier.PUBLIC,
-                                isMutable = true
+                                isMutable = true,
                             )
                             .apply {
                                 if (hasConverterOnField) {
@@ -268,7 +268,7 @@ class CustomTypeConverterResolutionTest {
                             name = "id",
                             typeName = XTypeName.PRIMITIVE_INT,
                             visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true
+                            isMutable = true,
                         )
                         .addAnnotation(
                             XAnnotationSpec.builder(RoomAnnotationTypeNames.PRIMARY_KEY).build()
@@ -282,7 +282,7 @@ class CustomTypeConverterResolutionTest {
     private fun createDatabase(
         hasConverters: Boolean = false,
         hasDao: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
         return XTypeSpec.classBuilder(DB, isOpen = true)
             .apply {
@@ -297,7 +297,7 @@ class CustomTypeConverterResolutionTest {
                             name = "id",
                             typeName = XTypeName.PRIMITIVE_INT,
                             visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true
+                            isMutable = true,
                         )
                         .addAnnotation(
                             XAnnotationSpec.builder(RoomAnnotationTypeNames.PRIMARY_KEY).build()
@@ -333,7 +333,7 @@ class CustomTypeConverterResolutionTest {
         hasQueryWithCustomParam: Boolean = false,
         hasMethodConverters: Boolean = false,
         hasParameterConverters: Boolean = false,
-        useCollection: Boolean = false
+        useCollection: Boolean = false,
     ): XTypeSpec {
         val annotationCount =
             listOf(hasMethodConverters, hasConverters, hasParameterConverters)
@@ -364,8 +364,8 @@ class CustomTypeConverterResolutionTest {
                                             "value",
                                             XCodeBlock.of(
                                                 "%S",
-                                                "SELECT * FROM ${ENTITY.simpleNames.first()} LIMIT 1"
-                                            )
+                                                "SELECT * FROM ${ENTITY.simpleNames.first()} LIMIT 1",
+                                            ),
                                         )
                                         .build()
                                 )
@@ -392,8 +392,8 @@ class CustomTypeConverterResolutionTest {
                                             XCodeBlock.of(
                                                 "%S",
                                                 "SELECT COUNT(*) FROM ${ENTITY.simpleNames.first()} where" +
-                                                    " id = :custom"
-                                            )
+                                                    " id = :custom",
+                                            ),
                                         )
                                         .build()
                                 )

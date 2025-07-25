@@ -193,6 +193,7 @@ package androidx.health.connect.client.permission {
     method public static String getReadPermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     method public static String getWritePermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     field public static final androidx.health.connect.client.permission.HealthPermission.Companion Companion;
+    field public static final String PERMISSION_READ_EXERCISE_ROUTES = "android.permission.health.READ_EXERCISE_ROUTES";
     field public static final String PERMISSION_READ_HEALTH_DATA_HISTORY = "android.permission.health.READ_HEALTH_DATA_HISTORY";
     field public static final String PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND";
     field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final String PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES = "android.permission.health.READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES";
@@ -216,6 +217,7 @@ package androidx.health.connect.client.permission {
     method public String getReadPermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
     method public inline <reified T extends androidx.health.connect.client.records.Record> String getWritePermission();
     method public String getWritePermission(kotlin.reflect.KClass<? extends androidx.health.connect.client.records.Record> recordType);
+    property public static String PERMISSION_READ_EXERCISE_ROUTES;
     property public static String PERMISSION_READ_HEALTH_DATA_HISTORY;
     property public static String PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND;
     property @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static String PERMISSION_READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES;
@@ -257,7 +259,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class ActiveCaloriesBurnedRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Energy> ACTIVE_CALORIES_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Energy> ACTIVE_CALORIES_TOTAL;
   }
 
   public final class BasalBodyTemperatureRecord implements androidx.health.connect.client.records.Record {
@@ -289,7 +291,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class BasalMetabolicRateRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Energy> BASAL_CALORIES_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Energy> BASAL_CALORIES_TOTAL;
   }
 
   public final class BloodGlucoseRecord implements androidx.health.connect.client.records.Record {
@@ -379,17 +381,17 @@ package androidx.health.connect.client.records {
     property public static int BODY_POSITION_SITTING_DOWN;
     property public static int BODY_POSITION_STANDING_UP;
     property public static int BODY_POSITION_UNKNOWN;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> DIASTOLIC_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> DIASTOLIC_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> DIASTOLIC_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> DIASTOLIC_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> DIASTOLIC_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> DIASTOLIC_MIN;
     property public static int MEASUREMENT_LOCATION_LEFT_UPPER_ARM;
     property public static int MEASUREMENT_LOCATION_LEFT_WRIST;
     property public static int MEASUREMENT_LOCATION_RIGHT_UPPER_ARM;
     property public static int MEASUREMENT_LOCATION_RIGHT_WRIST;
     property public static int MEASUREMENT_LOCATION_UNKNOWN;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> SYSTOLIC_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> SYSTOLIC_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Pressure> SYSTOLIC_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> SYSTOLIC_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> SYSTOLIC_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Pressure> SYSTOLIC_MIN;
   }
 
   public final class BodyFatRecord implements androidx.health.connect.client.records.Record {
@@ -529,9 +531,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class CyclingPedalingCadenceRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RPM_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RPM_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RPM_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RPM_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RPM_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RPM_MIN;
   }
 
   public static final class CyclingPedalingCadenceRecord.Sample {
@@ -561,7 +563,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class DistanceRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Length> DISTANCE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Length> DISTANCE_TOTAL;
   }
 
   public final class ElevationGainedRecord implements androidx.health.connect.client.records.Record {
@@ -583,7 +585,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class ElevationGainedRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Length> ELEVATION_GAINED_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Length> ELEVATION_GAINED_TOTAL;
   }
 
   public abstract class ExerciseCompletionGoal {
@@ -755,6 +757,7 @@ package androidx.health.connect.client.records {
     method public int getRepetitions();
     method public int getSegmentType();
     method public java.time.Instant getStartTime();
+    method public static boolean isSegmentTypeCompatibleWithSessionType(int segmentType, int sessionType);
     property public java.time.Instant endTime;
     property public int repetitions;
     property public int segmentType;
@@ -831,6 +834,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class ExerciseSegment.Companion {
+    method public boolean isSegmentTypeCompatibleWithSessionType(int segmentType, int sessionType);
     property public static int EXERCISE_SEGMENT_TYPE_ARM_CURL;
     property public static int EXERCISE_SEGMENT_TYPE_BACK_EXTENSION;
     property public static int EXERCISE_SEGMENT_TYPE_BALL_SLAM;
@@ -999,7 +1003,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class ExerciseSessionRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.time.Duration> EXERCISE_DURATION_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> EXERCISE_DURATION_TOTAL;
     property public static int EXERCISE_TYPE_BADMINTON;
     property public static int EXERCISE_TYPE_BASEBALL;
     property public static int EXERCISE_TYPE_BASKETBALL;
@@ -1142,7 +1146,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class FloorsClimbedRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> FLOORS_CLIMBED_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> FLOORS_CLIMBED_TOTAL;
   }
 
   public final class HeartRateRecord implements androidx.health.connect.client.records.Record {
@@ -1167,10 +1171,10 @@ package androidx.health.connect.client.records {
   }
 
   public static final class HeartRateRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_MIN;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> MEASUREMENTS_COUNT;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> MEASUREMENTS_COUNT;
   }
 
   public static final class HeartRateRecord.Sample {
@@ -1210,9 +1214,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class HeightRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Length> HEIGHT_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Length> HEIGHT_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Length> HEIGHT_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Length> HEIGHT_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Length> HEIGHT_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Length> HEIGHT_MIN;
   }
 
   public final class HydrationRecord implements androidx.health.connect.client.records.Record {
@@ -1234,7 +1238,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class HydrationRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Volume> VOLUME_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Volume> VOLUME_TOTAL;
   }
 
   public final class IntermenstrualBleedingRecord implements androidx.health.connect.client.records.Record {
@@ -1414,7 +1418,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class MindfulnessSessionRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.time.Duration> MINDFULNESS_DURATION_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> MINDFULNESS_DURATION_TOTAL;
     property public static int MINDFULNESS_SESSION_TYPE_BREATHING;
     property public static int MINDFULNESS_SESSION_TYPE_MEDITATION;
     property public static int MINDFULNESS_SESSION_TYPE_MOVEMENT;
@@ -1569,48 +1573,48 @@ package androidx.health.connect.client.records {
   }
 
   public static final class NutritionRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> BIOTIN_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> CAFFEINE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> CALCIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> CHLORIDE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> CHOLESTEROL_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> CHROMIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> COPPER_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> DIETARY_FIBER_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Energy> ENERGY_FROM_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Energy> ENERGY_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> FOLATE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> FOLIC_ACID_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> IODINE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> IRON_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> MAGNESIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> MANGANESE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> MOLYBDENUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> MONOUNSATURATED_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> NIACIN_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> PANTOTHENIC_ACID_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> PHOSPHORUS_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> POLYUNSATURATED_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> POTASSIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> PROTEIN_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> RIBOFLAVIN_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> SATURATED_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> SELENIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> SODIUM_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> SUGAR_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> THIAMIN_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> TOTAL_CARBOHYDRATE_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> TOTAL_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> TRANS_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> UNSATURATED_FAT_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_A_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_B12_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_B6_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_C_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_D_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_E_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> VITAMIN_K_TOTAL;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> ZINC_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> BIOTIN_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> CAFFEINE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> CALCIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> CHLORIDE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> CHOLESTEROL_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> CHROMIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> COPPER_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> DIETARY_FIBER_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Energy> ENERGY_FROM_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Energy> ENERGY_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> FOLATE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> FOLIC_ACID_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> IODINE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> IRON_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> MAGNESIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> MANGANESE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> MOLYBDENUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> MONOUNSATURATED_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> NIACIN_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> PANTOTHENIC_ACID_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> PHOSPHORUS_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> POLYUNSATURATED_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> POTASSIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> PROTEIN_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> RIBOFLAVIN_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> SATURATED_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> SELENIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> SODIUM_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> SUGAR_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> THIAMIN_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> TOTAL_CARBOHYDRATE_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> TOTAL_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> TRANS_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> UNSATURATED_FAT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_A_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_B12_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_B6_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_C_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_D_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_E_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> VITAMIN_K_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> ZINC_TOTAL;
   }
 
   public final class OvulationTestRecord implements androidx.health.connect.client.records.Record {
@@ -1745,9 +1749,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class PowerRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Power> POWER_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Power> POWER_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Power> POWER_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Power> POWER_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Power> POWER_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Power> POWER_MIN;
   }
 
   public static final class PowerRecord.Sample {
@@ -1792,9 +1796,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class RestingHeartRateRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> BPM_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> BPM_MIN;
   }
 
   public final class SexualActivityRecord implements androidx.health.connect.client.records.Record {
@@ -1852,9 +1856,9 @@ package androidx.health.connect.client.records {
     property public static int MEASUREMENT_LOCATION_TOE;
     property public static int MEASUREMENT_LOCATION_UNKNOWN;
     property public static int MEASUREMENT_LOCATION_WRIST;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.TemperatureDelta> TEMPERATURE_DELTA_MIN;
   }
 
   public static final class SkinTemperatureRecord.Delta {
@@ -1896,7 +1900,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class SleepSessionRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.time.Duration> SLEEP_DURATION_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.time.Duration> SLEEP_DURATION_TOTAL;
     property public static int STAGE_TYPE_AWAKE;
     property public static int STAGE_TYPE_AWAKE_IN_BED;
     property public static int STAGE_TYPE_DEEP;
@@ -1938,9 +1942,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class SpeedRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Velocity> SPEED_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Velocity> SPEED_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Velocity> SPEED_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Velocity> SPEED_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Velocity> SPEED_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Velocity> SPEED_MIN;
   }
 
   public static final class SpeedRecord.Sample {
@@ -1972,9 +1976,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class StepsCadenceRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RATE_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RATE_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Double> RATE_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RATE_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RATE_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Double> RATE_MIN;
   }
 
   public static final class StepsCadenceRecord.Sample {
@@ -2004,7 +2008,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class StepsRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> COUNT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> COUNT_TOTAL;
   }
 
   public final class TotalCaloriesBurnedRecord implements androidx.health.connect.client.records.Record {
@@ -2026,7 +2030,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class TotalCaloriesBurnedRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Energy> ENERGY_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Energy> ENERGY_TOTAL;
   }
 
   public final class Vo2MaxRecord implements androidx.health.connect.client.records.Record {
@@ -2076,9 +2080,9 @@ package androidx.health.connect.client.records {
   }
 
   public static final class WeightRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> WEIGHT_AVG;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> WEIGHT_MAX;
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends androidx.health.connect.client.units.Mass> WEIGHT_MIN;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> WEIGHT_AVG;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> WEIGHT_MAX;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<androidx.health.connect.client.units.Mass> WEIGHT_MIN;
   }
 
   public final class WheelchairPushesRecord implements androidx.health.connect.client.records.Record {
@@ -2100,7 +2104,7 @@ package androidx.health.connect.client.records {
   }
 
   public static final class WheelchairPushesRecord.Companion {
-    property public androidx.health.connect.client.aggregate.AggregateMetric<? extends java.lang.Long> COUNT_TOTAL;
+    property public androidx.health.connect.client.aggregate.AggregateMetric<java.lang.Long> COUNT_TOTAL;
   }
 
 }
@@ -2416,6 +2420,41 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Energy kilojoules(double value);
   }
 
+  public final class EnergyKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getCalories(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getCalories(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getCalories(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getCalories(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getJoules(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getJoules(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getJoules(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getJoules(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilocalories(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilocalories(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilocalories(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilocalories(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Energy! getKilojoules(long);
+    property public static androidx.health.connect.client.units.Energy double.calories;
+    property public static androidx.health.connect.client.units.Energy long.calories;
+    property public static androidx.health.connect.client.units.Energy float.calories;
+    property public static androidx.health.connect.client.units.Energy int.calories;
+    property public static androidx.health.connect.client.units.Energy double.joules;
+    property public static androidx.health.connect.client.units.Energy long.joules;
+    property public static androidx.health.connect.client.units.Energy float.joules;
+    property public static androidx.health.connect.client.units.Energy int.joules;
+    property public static androidx.health.connect.client.units.Energy double.kilocalories;
+    property public static androidx.health.connect.client.units.Energy long.kilocalories;
+    property public static androidx.health.connect.client.units.Energy float.kilocalories;
+    property public static androidx.health.connect.client.units.Energy int.kilocalories;
+    property public static androidx.health.connect.client.units.Energy double.kilojoules;
+    property public static androidx.health.connect.client.units.Energy long.kilojoules;
+    property public static androidx.health.connect.client.units.Energy float.kilojoules;
+    property public static androidx.health.connect.client.units.Energy int.kilojoules;
+  }
+
   public final class Length implements java.lang.Comparable<androidx.health.connect.client.units.Length> {
     method public int compareTo(androidx.health.connect.client.units.Length other);
     method public static androidx.health.connect.client.units.Length feet(double value);
@@ -2442,6 +2481,49 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Length kilometers(double value);
     method public androidx.health.connect.client.units.Length meters(double value);
     method public androidx.health.connect.client.units.Length miles(double value);
+  }
+
+  public final class LengthKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getFeet(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getFeet(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getFeet(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getFeet(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getInches(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getInches(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getInches(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getInches(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getKilometers(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getKilometers(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getKilometers(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getKilometers(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMeters(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMeters(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMeters(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMeters(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Length! getMiles(long);
+    property public static androidx.health.connect.client.units.Length double.feet;
+    property public static androidx.health.connect.client.units.Length float.feet;
+    property public static androidx.health.connect.client.units.Length long.feet;
+    property public static androidx.health.connect.client.units.Length int.feet;
+    property public static androidx.health.connect.client.units.Length double.inches;
+    property public static androidx.health.connect.client.units.Length float.inches;
+    property public static androidx.health.connect.client.units.Length long.inches;
+    property public static androidx.health.connect.client.units.Length int.inches;
+    property public static androidx.health.connect.client.units.Length double.kilometers;
+    property public static androidx.health.connect.client.units.Length float.kilometers;
+    property public static androidx.health.connect.client.units.Length long.kilometers;
+    property public static androidx.health.connect.client.units.Length int.kilometers;
+    property public static androidx.health.connect.client.units.Length double.meters;
+    property public static androidx.health.connect.client.units.Length long.meters;
+    property public static androidx.health.connect.client.units.Length float.meters;
+    property public static androidx.health.connect.client.units.Length int.meters;
+    property public static androidx.health.connect.client.units.Length double.miles;
+    property public static androidx.health.connect.client.units.Length float.miles;
+    property public static androidx.health.connect.client.units.Length long.miles;
+    property public static androidx.health.connect.client.units.Length int.miles;
   }
 
   public final class Mass implements java.lang.Comparable<androidx.health.connect.client.units.Mass> {
@@ -2476,11 +2558,73 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Mass pounds(double value);
   }
 
+  public final class MassKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getGrams(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getGrams(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getGrams(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getGrams(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getKilograms(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getKilograms(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getKilograms(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getKilograms(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMicrograms(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMicrograms(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMicrograms(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMicrograms(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMilligrams(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMilligrams(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMilligrams(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getMilligrams(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getOunces(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getOunces(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getOunces(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getOunces(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Mass! getPounds(long);
+    property public static androidx.health.connect.client.units.Mass double.grams;
+    property public static androidx.health.connect.client.units.Mass float.grams;
+    property public static androidx.health.connect.client.units.Mass long.grams;
+    property public static androidx.health.connect.client.units.Mass int.grams;
+    property public static androidx.health.connect.client.units.Mass double.kilograms;
+    property public static androidx.health.connect.client.units.Mass float.kilograms;
+    property public static androidx.health.connect.client.units.Mass long.kilograms;
+    property public static androidx.health.connect.client.units.Mass int.kilograms;
+    property public static androidx.health.connect.client.units.Mass double.micrograms;
+    property public static androidx.health.connect.client.units.Mass float.micrograms;
+    property public static androidx.health.connect.client.units.Mass long.micrograms;
+    property public static androidx.health.connect.client.units.Mass int.micrograms;
+    property public static androidx.health.connect.client.units.Mass double.milligrams;
+    property public static androidx.health.connect.client.units.Mass float.milligrams;
+    property public static androidx.health.connect.client.units.Mass long.milligrams;
+    property public static androidx.health.connect.client.units.Mass int.milligrams;
+    property public static androidx.health.connect.client.units.Mass double.ounces;
+    property public static androidx.health.connect.client.units.Mass float.ounces;
+    property public static androidx.health.connect.client.units.Mass long.ounces;
+    property public static androidx.health.connect.client.units.Mass int.ounces;
+    property public static androidx.health.connect.client.units.Mass double.pounds;
+    property public static androidx.health.connect.client.units.Mass float.pounds;
+    property public static androidx.health.connect.client.units.Mass long.pounds;
+    property public static androidx.health.connect.client.units.Mass int.pounds;
+  }
+
   public final class Percentage implements java.lang.Comparable<androidx.health.connect.client.units.Percentage> {
     ctor public Percentage(double value);
     method public int compareTo(androidx.health.connect.client.units.Percentage other);
     method public double getValue();
     property public double value;
+  }
+
+  public final class PercentageKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Percentage! getPercent(long);
+    property public static androidx.health.connect.client.units.Percentage double.percent;
+    property public static androidx.health.connect.client.units.Percentage long.percent;
+    property public static androidx.health.connect.client.units.Percentage float.percent;
+    property public static androidx.health.connect.client.units.Percentage int.percent;
   }
 
   public final class Power implements java.lang.Comparable<androidx.health.connect.client.units.Power> {
@@ -2499,6 +2643,25 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Power watts(double value);
   }
 
+  public final class PowerKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getKilocaloriesPerDay(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getKilocaloriesPerDay(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getKilocaloriesPerDay(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getKilocaloriesPerDay(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Power! getWatts(long);
+    property public static androidx.health.connect.client.units.Power double.kilocaloriesPerDay;
+    property public static androidx.health.connect.client.units.Power long.kilocaloriesPerDay;
+    property public static androidx.health.connect.client.units.Power float.kilocaloriesPerDay;
+    property public static androidx.health.connect.client.units.Power int.kilocaloriesPerDay;
+    property public static androidx.health.connect.client.units.Power double.watts;
+    property public static androidx.health.connect.client.units.Power long.watts;
+    property public static androidx.health.connect.client.units.Power float.watts;
+    property public static androidx.health.connect.client.units.Power int.watts;
+  }
+
   public final class Pressure implements java.lang.Comparable<androidx.health.connect.client.units.Pressure> {
     method public int compareTo(androidx.health.connect.client.units.Pressure other);
     method public double getMillimetersOfMercury();
@@ -2509,6 +2672,17 @@ package androidx.health.connect.client.units {
 
   public static final class Pressure.Companion {
     method public androidx.health.connect.client.units.Pressure millimetersOfMercury(double value);
+  }
+
+  public final class PressureKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Pressure! getMillimetersOfMercury(long);
+    property public static androidx.health.connect.client.units.Pressure double.millimetersOfMercury;
+    property public static androidx.health.connect.client.units.Pressure long.millimetersOfMercury;
+    property public static androidx.health.connect.client.units.Pressure float.millimetersOfMercury;
+    property public static androidx.health.connect.client.units.Pressure int.millimetersOfMercury;
   }
 
   public final class Temperature implements java.lang.Comparable<androidx.health.connect.client.units.Temperature> {
@@ -2543,6 +2717,25 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.TemperatureDelta fahrenheit(double value);
   }
 
+  public final class TemperatureKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getCelsius(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getCelsius(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getCelsius(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getCelsius(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Temperature! getFahrenheit(long);
+    property public static androidx.health.connect.client.units.Temperature double.celsius;
+    property public static androidx.health.connect.client.units.Temperature long.celsius;
+    property public static androidx.health.connect.client.units.Temperature float.celsius;
+    property public static androidx.health.connect.client.units.Temperature int.celsius;
+    property public static androidx.health.connect.client.units.Temperature double.fahrenheit;
+    property public static androidx.health.connect.client.units.Temperature long.fahrenheit;
+    property public static androidx.health.connect.client.units.Temperature float.fahrenheit;
+    property public static androidx.health.connect.client.units.Temperature int.fahrenheit;
+  }
+
   public final class Velocity implements java.lang.Comparable<androidx.health.connect.client.units.Velocity> {
     method public int compareTo(androidx.health.connect.client.units.Velocity other);
     method public double getKilometersPerHour();
@@ -2563,6 +2756,33 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Velocity milesPerHour(double value);
   }
 
+  public final class VelocityKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getKilometersPerHour(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getKilometersPerHour(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getKilometersPerHour(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getKilometersPerHour(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMetersPerSecond(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMetersPerSecond(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMetersPerSecond(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMetersPerSecond(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Velocity! getMilesPerHour(long);
+    property public static androidx.health.connect.client.units.Velocity double.kilometersPerHour;
+    property public static androidx.health.connect.client.units.Velocity long.kilometersPerHour;
+    property public static androidx.health.connect.client.units.Velocity float.kilometersPerHour;
+    property public static androidx.health.connect.client.units.Velocity int.kilometersPerHour;
+    property public static androidx.health.connect.client.units.Velocity double.metersPerSecond;
+    property public static androidx.health.connect.client.units.Velocity long.metersPerSecond;
+    property public static androidx.health.connect.client.units.Velocity float.metersPerSecond;
+    property public static androidx.health.connect.client.units.Velocity int.metersPerSecond;
+    property public static androidx.health.connect.client.units.Velocity double.milesPerHour;
+    property public static androidx.health.connect.client.units.Velocity long.milesPerHour;
+    property public static androidx.health.connect.client.units.Velocity float.milesPerHour;
+    property public static androidx.health.connect.client.units.Velocity int.milesPerHour;
+  }
+
   public final class Volume implements java.lang.Comparable<androidx.health.connect.client.units.Volume> {
     method public int compareTo(androidx.health.connect.client.units.Volume other);
     method public static androidx.health.connect.client.units.Volume fluidOuncesUs(double value);
@@ -2581,6 +2801,33 @@ package androidx.health.connect.client.units {
     method public androidx.health.connect.client.units.Volume fluidOuncesUs(double value);
     method public androidx.health.connect.client.units.Volume liters(double value);
     method public androidx.health.connect.client.units.Volume milliliters(double value);
+  }
+
+  public final class VolumeKt {
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getFluidOuncesUs(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getFluidOuncesUs(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getFluidOuncesUs(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getFluidOuncesUs(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getLiters(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getLiters(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getLiters(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getLiters(long);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(double);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(float);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(int);
+    method @BytecodeOnly public static androidx.health.connect.client.units.Volume! getMilliliters(long);
+    property public static androidx.health.connect.client.units.Volume double.fluidOuncesUs;
+    property public static androidx.health.connect.client.units.Volume long.fluidOuncesUs;
+    property public static androidx.health.connect.client.units.Volume float.fluidOuncesUs;
+    property public static androidx.health.connect.client.units.Volume int.fluidOuncesUs;
+    property public static androidx.health.connect.client.units.Volume double.liters;
+    property public static androidx.health.connect.client.units.Volume long.liters;
+    property public static androidx.health.connect.client.units.Volume float.liters;
+    property public static androidx.health.connect.client.units.Volume int.liters;
+    property public static androidx.health.connect.client.units.Volume double.milliliters;
+    property public static androidx.health.connect.client.units.Volume long.milliliters;
+    property public static androidx.health.connect.client.units.Volume float.milliliters;
+    property public static androidx.health.connect.client.units.Volume int.milliliters;
   }
 
 }

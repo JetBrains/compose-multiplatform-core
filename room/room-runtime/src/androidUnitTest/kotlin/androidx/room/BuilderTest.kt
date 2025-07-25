@@ -60,7 +60,7 @@ class BuilderTest {
             databaseBuilder(
                     context = mock(),
                     name = "TestDatabase",
-                    factory = { TestDatabase::class.instantiateImpl() }
+                    factory = { TestDatabase::class.instantiateImpl() },
                 )
                 .build()
         // Assert that the db is built successfully.

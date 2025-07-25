@@ -47,7 +47,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
     testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
@@ -73,4 +72,5 @@ androidx {
     failOnDeprecationWarnings = false
     // TODO: b/326456246
     optOutJSpecify = true
+    enableRobolectric()
 }

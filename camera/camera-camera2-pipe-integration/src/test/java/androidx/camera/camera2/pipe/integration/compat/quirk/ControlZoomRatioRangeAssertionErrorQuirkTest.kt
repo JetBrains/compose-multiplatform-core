@@ -30,7 +30,7 @@ import org.robolectric.shadows.ShadowBuild
 class ControlZoomRatioRangeAssertionErrorQuirkTest(
     private val brand: String,
     private val model: String,
-    private val quirkEnablingExpected: Boolean
+    private val quirkEnablingExpected: Boolean,
 ) {
     @Test
     fun canEnableControlZoomRatioRangeAssertionErrorQuirkCorrectly() {

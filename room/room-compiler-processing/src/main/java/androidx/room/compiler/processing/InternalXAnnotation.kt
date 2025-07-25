@@ -67,7 +67,7 @@ internal fun XAnnotation.unwrapRepeatedAnnotationsFromContainer(): List<XAnnotat
                     // to how they work (eg different parameters).
                     it.type.typeElement?.hasAnyAnnotation(
                         Repeatable::class,
-                        kotlin.annotation.Repeatable::class
+                        kotlin.annotation.Repeatable::class,
                     ) == true
                 }
 

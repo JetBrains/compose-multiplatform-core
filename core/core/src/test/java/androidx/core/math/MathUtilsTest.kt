@@ -208,7 +208,7 @@ class MathUtilsTest {
     fun testNegateExact() {
         Assert.assertEquals(
             (Int.MIN_VALUE + 1).toLong(),
-            MathUtils.negateExact(Int.MAX_VALUE).toLong()
+            MathUtils.negateExact(Int.MAX_VALUE).toLong(),
         )
         Assert.assertEquals(Long.MIN_VALUE + 1, MathUtils.negateExact(Long.MAX_VALUE))
         Assert.assertThrows(ArithmeticException::class.java) {

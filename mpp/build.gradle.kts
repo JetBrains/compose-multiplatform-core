@@ -36,11 +36,8 @@ val libraryToComponents = mapOf(
         ComposeComponent(":compose:foundation:foundation"),
         ComposeComponent(":compose:foundation:foundation-layout"),
         ComposeComponent(":compose:material:material"),
-        ComposeComponent(":compose:material3:material3"),
         //ComposeComponent(":compose:material:material-icons-core"),
         ComposeComponent(":compose:material:material-ripple"),
-        ComposeComponent(":compose:material3:material3-window-size-class"),
-        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
         ComposeComponent(":compose:runtime:runtime", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:runtime:runtime-saveable", supportedPlatforms = ComposePlatforms.ALL),
         ComposeComponent(":compose:ui:ui"),
@@ -74,6 +71,11 @@ val libraryToComponents = mapOf(
     ),
     "COMPOSE_MATERIAL_NAVIGATION" to listOf(
         ComposeComponent(":compose:material:material-navigation"),
+    ),
+    "COMPOSE_MATERIAL3" to listOf(
+        ComposeComponent(":compose:material3:material3"),
+        ComposeComponent(":compose:material3:material3-window-size-class"),
+        ComposeComponent(":compose:material3:material3-adaptive-navigation-suite"),
     ),
     "COMPOSE_MATERIAL3_COMMON" to listOf(
         ComposeComponent(":compose:material3:material3-common"),
@@ -113,12 +115,9 @@ val libraryToComponents = mapOf(
         ComposeComponent(":navigation:navigation-common", viewModelPlatforms),
         ComposeComponent(":navigation:navigation-runtime", viewModelPlatforms),
     ),
-    "PERFORMANCE" to listOf(
-        ComposeComponent(":performance:performance-annotation", viewModelPlatforms),
-    ),
     "SAVEDSTATE" to listOf(
-        ComposeComponent(":savedstate:savedstate", viewModelPlatforms),
-        ComposeComponent(":savedstate:savedstate-compose"),
+        ComposeComponent(":savedstate:savedstate", supportedPlatforms = ComposePlatforms.ALL_AOSP),
+        ComposeComponent(":savedstate:savedstate-compose", supportedPlatforms = ComposePlatforms.ALL),
     ),
     "WINDOW" to listOf(
         ComposeComponent(":window:window-core", viewModelPlatforms),
@@ -213,6 +212,7 @@ val testWebJs = tasks.register("testWebJs") {
     dependsOn(":compose:runtime:runtime:jsTest")
     dependsOn(":compose:ui:ui-text:jsTest")
     dependsOn(":compose:ui:ui:jsTest")
+    dependsOn(":compose:ui:ui-test:jsTest")
     dependsOn(":navigation:navigation-runtime:jsTest")
 }
 
@@ -224,6 +224,7 @@ val testWebWasm = tasks.register("testWebWasm") {
     dependsOn(":compose:runtime:runtime:wasmJsTest")
     dependsOn(":compose:ui:ui-text:wasmJsTest")
     dependsOn(":compose:ui:ui:wasmJsTest")
+    dependsOn(":compose:ui:ui-test:wasmJsTest")
     dependsOn(":navigation:navigation-runtime:wasmJsTest")
 }
 
@@ -309,8 +310,10 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
         .filterComposePlatforms(klibPlatforms)
 }
 
-fun allTasksWith(name: String) =
-    rootProject.subprojects.flatMap { it.tasks.filter { it.name == name } }
+fun allTasksWith(name: String): List<Task> =
+    rootProject.subprojects.mapNotNull { project ->
+        project.tasks.findByName(name)
+    }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle
 // or just ./gradlew printAllArtifactRedirectionVersions

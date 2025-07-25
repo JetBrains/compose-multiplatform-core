@@ -258,7 +258,7 @@ class TextAutoSizeTest {
     private class TestAutoSize(private val testParam: Int) : TextAutoSize {
         override fun TextAutoSizeLayoutScope.getFontSize(
             constraints: Constraints,
-            text: AnnotatedString
+            text: AnnotatedString,
         ): TextUnit {
             val textLayoutResult = performLayout(constraints, text, testParam.toSp())
             val didOverflow =
@@ -287,13 +287,13 @@ class TextAutoSizeTest {
         private val textOverflow: TextOverflow = TextOverflow.Clip,
         private val maxLines: Int = Int.MAX_VALUE,
         private val style: TextStyle = TextStyle.Default,
-        densityDelegate: Density = Density(1f, 1f)
+        densityDelegate: Density = Density(1f, 1f),
     ) : SimpleTextAutoSizeLayoutScope(), Density by densityDelegate {
 
         override fun performLayout(
             constraints: Constraints,
             text: AnnotatedString,
-            fontSize: TextUnit
+            fontSize: TextUnit,
         ): TextLayoutResult {
             val size =
                 if (fontSize < this.fontSize) {
@@ -323,7 +323,7 @@ class TextAutoSizeTest {
                         layoutDirection = layoutDirection,
                     ),
                 multiParagraph = mockMultiParagraph,
-                size = IntSize(constraints.maxWidth, constraints.maxHeight)
+                size = IntSize(constraints.maxWidth, constraints.maxHeight),
             )
         }
     }

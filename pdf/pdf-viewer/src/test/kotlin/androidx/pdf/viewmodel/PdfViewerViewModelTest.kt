@@ -57,13 +57,13 @@ class PdfViewerViewModelTest {
         DisplayData(
             Uri.parse("content://test.app.authority/fake-file1.pdf"),
             "FakeFile1",
-            mock(Openable::class.java)
+            mock(Openable::class.java),
         )
     private val displayData2 =
         DisplayData(
             Uri.parse("content://test.app.authority/fake-file2.pdf"),
             "FakeFile2",
-            mock(Openable::class.java)
+            mock(Openable::class.java),
         )
     private val testScope = TestScope(UnconfinedTestDispatcher())
 

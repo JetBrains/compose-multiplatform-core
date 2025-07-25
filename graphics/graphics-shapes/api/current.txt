@@ -118,6 +118,7 @@ package androidx.graphics.shapes {
 
   public fun interface PointTransformer {
     method public long transform(float x, float y);
+    method @BytecodeOnly public long transform-XgqJiTY(float, float);
   }
 
   public final class RoundedPolygon {

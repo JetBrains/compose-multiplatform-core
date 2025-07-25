@@ -128,6 +128,7 @@ package androidx.appsearch.app {
     method public boolean isSuccess();
     method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType!> newFailedResult(int, String?);
     method public static <ValueType> androidx.appsearch.app.AppSearchResult<ValueType!> newSuccessfulResult(ValueType?);
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_ABORTED = 13; // 0xd
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_ALREADY_EXISTS = 12; // 0xc
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_DENIED = 9; // 0x9
     field public static final int RESULT_INTERNAL_ERROR = 2; // 0x2
@@ -139,6 +140,7 @@ package androidx.appsearch.app {
     field public static final int RESULT_OUT_OF_SPACE = 5; // 0x5
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_RATE_LIMITED = 10; // 0xa
     field public static final int RESULT_SECURITY_ERROR = 8; // 0x8
+    field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final int RESULT_UNAVAILABLE = 14; // 0xe
     field public static final int RESULT_UNKNOWN_ERROR = 1; // 0x1
   }
 
@@ -1194,6 +1196,14 @@ package androidx.appsearch.observer {
 }
 
 package androidx.appsearch.usagereporting {
+
+  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SEARCH_AND_CLICK_ACCUMULATOR) @androidx.appsearch.app.ExperimentalAppSearchApi public class ActionAccumulator {
+    method @VisibleForTesting public void cancelTimer();
+    method public static com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.usagereporting.ActionAccumulator!> createAsync(android.content.Context, androidx.appsearch.app.AppSearchSession, java.util.concurrent.Executor);
+    method @VisibleForTesting public java.io.File getCacheFile();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> reportSearchAsync(androidx.appsearch.usagereporting.SearchAction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> saveDocumentsToAppSearchAsync() throws androidx.appsearch.exceptions.AppSearchException;
+  }
 
   @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.JOIN_SPEC_AND_QUALIFIED_ID) @androidx.appsearch.annotation.Document(name="builtin:ClickAction") @androidx.appsearch.app.ExperimentalAppSearchApi public class ClickAction extends androidx.appsearch.usagereporting.TakenAction {
     method public String? getQuery();

@@ -16,11 +16,9 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.awt.toAwtRectangleRounded
+import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeOptions
-import androidx.compose.ui.text.input.PlatformTextInputService2
-import androidx.compose.ui.text.input.TextEditingScope
 import androidx.compose.ui.text.input.TextEditorState
 import androidx.compose.ui.text.substring
 import java.awt.Rectangle
@@ -38,64 +36,86 @@ import org.jetbrains.skiko.hostOs
 
 internal class DesktopTextInputService2(
     private val component: PlatformComponent
-) : PlatformTextInputService2 {
+) {
 
-    private var currentInputMethodRequests: InputMethodRequestsImpl? = null
+    private var inputMethodSession: InputMethodSession? = null
 
-    override fun startInput(
-        state: TextEditorState,
-        imeOptions: ImeOptions,
-        editText: (block: TextEditingScope.() -> Unit) -> Unit
-    ) {
+    private var receivedInputMethodEventsSinceStartInput = false
+
+    private var composingText: String = ""
+
+    fun startInput(request: PlatformTextInputMethodRequest) {
+        receivedInputMethodEventsSinceStartInput = false
         component.enableInput(
-            InputMethodRequestsImpl(component, state, editText).also {
-                currentInputMethodRequests = it
+            InputMethodSession(component, request).also {
+                inputMethodSession = it
             }
         )
     }
 
-    override fun stopInput() {
+    fun stopInput() {
         component.disableInput()
 
-        this.currentInputMethodRequests = null
-    }
-
-    override fun focusedRectChanged(rect: Rect) {
-        currentInputMethodRequests?.focusedRect = rect
+        this.inputMethodSession = null
     }
 
     fun onKeyEvent(keyEvent: KeyEvent) {
         when (keyEvent.id) {
             KeyEvent.KEY_TYPED ->
-                currentInputMethodRequests?.charKeyPressed = true
+                inputMethodSession?.charKeyPressed = true
             KeyEvent.KEY_RELEASED ->
-                currentInputMethodRequests?.charKeyPressed = false
+                inputMethodSession?.charKeyPressed = false
         }
     }
 
     fun inputMethodTextChanged(event: InputMethodEvent) {
-        val inputMethodRequests = currentInputMethodRequests ?: return
-        if (!event.isConsumed) {
-            inputMethodRequests.replaceInputMethodText(event)
-            event.consume()
-        }
+        if (event.isConsumed) return
+        val inputMethodSession = inputMethodSession ?: return
+
+        if (commitEventWorkaroundShouldIgnoreEvent(event)) return
+
+        inputMethodSession.replaceInputMethodText(event)
+        event.consume()
     }
 
+    /**
+     * Implements a workaround for https://youtrack.jetbrains.com/issue/CMP-7976; returns whether
+     * the given event should be ignored.
+     *
+     * JBR sends an extra [InputMethodEvent] when focus moves away from a text field. This event
+     * means to commit the current composition. Unfortunately, because we use a single actual Swing
+     * component (see [ComposeSceneMediator]) as a source of [InputMethodEvent]s, this event gets
+     * delivered to a new text session if the focus switches away to another text field.
+     *
+     * Regardless, Compose text fields commit their composition on focus loss (but not window focus
+     * loss) themselves, so we don't need this event.
+     */
+    private fun commitEventWorkaroundShouldIgnoreEvent(event: InputMethodEvent): Boolean {
+        val isFirstEventAfterStartInput = !receivedInputMethodEventsSinceStartInput
+        receivedInputMethodEventsSinceStartInput = true
+
+        val currentComposingText = composingText
+        composingText = event.composingText
+
+        return isFirstEventAfterStartInput &&
+            event.committedText == currentComposingText &&
+            event.composingText.isEmpty()
+    }
 }
 
-private class InputMethodRequestsImpl(
+private class InputMethodSession(
     private val component: PlatformComponent,
-    private val state: TextEditorState,
-    private val editText: (block: TextEditingScope.() -> Unit) -> Unit
+    private val request: PlatformTextInputMethodRequest
 ) : InputMethodRequests {
+
+    private val state: TextEditorState
+        get() = request.state
 
     private val selection: TextRange
         get() = state.selection
 
     private val composition: TextRange?
         get() = state.composition
-
-    var focusedRect: Rect? = null
 
     // This is required to support input of accented characters using press-and-hold method (http://support.apple.com/kb/PH11264).
     // JDK currently properly supports this functionality only for TextComponent/JTextComponent descendants.
@@ -147,13 +167,14 @@ private class InputMethodRequestsImpl(
     }
 
     override fun getTextLocation(offset: TextHitInfo?): Rectangle? {
-        return focusedRect?.let {
-            val x = (it.right / component.density.density).toInt() +
-                component.locationOnScreen.x
-            val y = (it.top / component.density.density).toInt() +
-                component.locationOnScreen.y
-            Rectangle(x, y, it.width.toInt(), it.height.toInt())
-        }
+        val awtRect = request.focusedRectInRoot()?.let {
+            val centerX = it.topCenter.x
+            it.copy(left = centerX, right = centerX).toAwtRectangleRounded(component.density)
+        } ?: return null
+
+        val locationOnScreen = component.locationOnScreen
+        awtRect.translate(locationOnScreen.x, locationOnScreen.y)
+        return awtRect
     }
 
     override fun getCommittedText(
@@ -183,10 +204,10 @@ private class InputMethodRequestsImpl(
     }
 
     fun replaceInputMethodText(event: InputMethodEvent) {
-        val committed = event.text?.toStringUntil(event.committedCharacterCount) ?: ""
-        val composing = event.text?.toStringFrom(event.committedCharacterCount) ?: ""
+        val committed = event.committedText
+        val composing = event.composingText
 
-        editText {
+        request.editText {
             if (needToDeletePreviousChar && selection.min > 0 && composing.isEmpty()) {
                 needToDeletePreviousChar = false
                 deleteSurroundingTextInCodePoints(1, 0)
@@ -197,25 +218,38 @@ private class InputMethodRequestsImpl(
             }
         }
     }
-
 }
 
-private fun AttributedCharacterIterator.toStringUntil(index: Int) = StringBuilder().apply {
-    var i = index
-    if (i > 0) {
-        var c: Char = setIndex(0)
-        while (i > 0) {
+/**
+ * The committed text specified by the event, or an empty string if none.
+ */
+internal val InputMethodEvent.committedText: String
+    get() = text.substringOrEmpty(0, committedCharacterCount)
+
+
+/**
+ * The composing text specified by the event, or an empty string if none.
+ */
+internal val InputMethodEvent.composingText: String
+    get() = text.substringOrEmpty(committedCharacterCount, null)
+
+
+/**
+ * Returns the substring between [start] (inclusive) and [end] (exclusive, or the end of the
+ * iterator, if `null`) of the given [AttributedCharacterIterator].
+ */
+private fun AttributedCharacterIterator?.substringOrEmpty(
+    start: Int,
+    end: Int? = null
+) : String {
+    if (this == null) return ""
+
+    return buildString {
+        index = start
+        var c: Char = current()
+        while ((c != CharacterIterator.DONE) && ((end == null) || (index < end))) {
             append(c)
             c = next()
-            i--
         }
-    }
-}
-
-private fun AttributedCharacterIterator.toStringFrom(index: Int) = StringBuilder().apply {
-    var c: Char = setIndex(index)
-    while (c != CharacterIterator.DONE) {
-        append(c)
-        c = next()
     }
 }

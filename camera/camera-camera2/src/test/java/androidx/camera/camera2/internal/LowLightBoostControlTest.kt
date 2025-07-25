@@ -55,9 +55,7 @@ private const val CAMERA_ID_0 = "0"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(
-    minSdk = 35,
-)
+@Config(minSdk = 35)
 class LowLightBoostControlTest {
 
     private val context = ApplicationProvider.getApplicationContext() as Context
@@ -126,7 +124,7 @@ class LowLightBoostControlTest {
 
             issueControlAeModeCaptureResult(
                 mCaptureResultListener,
-                llbState = LowLightBoostState.ACTIVE
+                llbState = LowLightBoostState.ACTIVE,
             )
             // When low-light boost state is updated, postValue method is invoked. In robolectric
             // test, it is hard to know when will the task is added to the main thread. Adding
@@ -139,7 +137,7 @@ class LowLightBoostControlTest {
 
             issueControlAeModeCaptureResult(
                 mCaptureResultListener,
-                llbState = LowLightBoostState.INACTIVE
+                llbState = LowLightBoostState.INACTIVE,
             )
             runBlocking { delay(100) }
             shadowOf(getMainLooper()).idle()
@@ -251,7 +249,7 @@ class LowLightBoostControlTest {
         val characteristicsCompat =
             CameraCharacteristicsCompat.toCameraCharacteristicsCompat(
                 cameraCharacteristics,
-                CAMERA_ID_0
+                CAMERA_ID_0,
             )
 
         val cameraControlImpl =
@@ -259,20 +257,20 @@ class LowLightBoostControlTest {
                 characteristicsCompat,
                 CameraXExecutors.mainThreadExecutor(),
                 CameraXExecutors.mainThreadExecutor(),
-                mock(CameraControlInternal.ControlUpdateCallback::class.java)
+                mock(CameraControlInternal.ControlUpdateCallback::class.java),
             )
 
         return LowLightBoostControl(
             cameraControlImpl,
             characteristicsCompat,
-            CameraXExecutors.mainThreadExecutor()
+            CameraXExecutors.mainThreadExecutor(),
         )
     }
 
     private fun issueControlAeModeCaptureResult(
         captureResultListener: Camera2CameraControlImpl.CaptureResultListener,
         resultAeMode: Int = CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
-        llbState: Int? = null
+        llbState: Int? = null,
     ) {
         Executors.newSingleThreadScheduledExecutor()
             .schedule(
@@ -291,7 +289,7 @@ class LowLightBoostControlTest {
                     captureResultListener.onCaptureResult(totalCaptureResult)
                 },
                 20,
-                TimeUnit.MILLISECONDS
+                TimeUnit.MILLISECONDS,
             )
     }
 
@@ -314,7 +312,7 @@ class LowLightBoostControlTest {
                                     add(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
                                 }
                             }
-                            .toIntArray()
+                            .toIntArray(),
                     )
                     set(CameraCharacteristics.LENS_FACING, CameraMetadata.LENS_FACING_BACK)
                 }

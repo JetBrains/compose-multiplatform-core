@@ -42,7 +42,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
-    testImplementation(libs.robolectric)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.truth)
     testImplementation(libs.mockitoKotlin4)
@@ -56,9 +55,6 @@ android {
     defaultConfig {
         minSdk = 25
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
 
     buildFeatures {
         aidl = true
@@ -79,4 +75,5 @@ androidx {
     description = "Android Wear Phone Interactions"
     legacyDisableKotlinStrictApiMode = true
     samples(project(":wear:wear-phone-interactions-samples"))
+    enableRobolectric()
 }

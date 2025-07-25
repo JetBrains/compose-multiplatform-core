@@ -63,9 +63,6 @@ android {
             version = 1
         }
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
 }
 
 androidx {

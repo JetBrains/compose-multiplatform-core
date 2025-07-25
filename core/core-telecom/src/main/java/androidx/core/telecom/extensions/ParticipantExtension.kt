@@ -70,7 +70,7 @@ public interface ParticipantExtension {
      */
     public fun addRaiseHandSupport(
         initialRaisedHands: List<Participant> = emptyList(),
-        onHandRaisedChanged: suspend (Boolean) -> Unit
+        onHandRaisedChanged: suspend (Boolean) -> Unit,
     ): RaiseHandState
 
     /**

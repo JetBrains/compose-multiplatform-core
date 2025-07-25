@@ -66,14 +66,14 @@ class DepthStackingApp : ComponentActivity() {
     private fun PanelContent(color: Color, text: String) {
         Box(
             modifier = Modifier.background(color).fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column {
                 Text(
                     text = text,
                     textAlign = TextAlign.Center,
                     fontSize = 20.sp,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             }
         }

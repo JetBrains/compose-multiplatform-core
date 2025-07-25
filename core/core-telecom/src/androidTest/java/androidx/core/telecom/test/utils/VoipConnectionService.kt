@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 class VoipConnectionService : ConnectionService() {
     data class VoipPendingConnectionRequest(
         val callAttributes: CallAttributesCompat,
-        val completableDeferred: CompletableDeferred<AutoVoipConnection>?
+        val completableDeferred: CompletableDeferred<AutoVoipConnection>?,
     )
 
     companion object {
@@ -50,7 +50,7 @@ class VoipConnectionService : ConnectionService() {
         val SINGLETON_PHONE_ACCOUNT_HANDLE =
             PhoneAccountHandle(
                 ComponentName(PACKAGE_NAME, "$PACKAGE_NAME.utils.VoipConnectionService"),
-                PHONE_ACCOUNT_HANDLE_ID
+                PHONE_ACCOUNT_HANDLE_ID,
             )
 
         var mPendingConnectionRequests: ArrayList<VoipPendingConnectionRequest> = ArrayList()
@@ -64,7 +64,7 @@ class VoipConnectionService : ConnectionService() {
         Log.i(
             TAG,
             "createConnectionRequest: request=[$pendingConnectionRequest]," +
-                " handle=[$phoneAccountHandle]"
+                " handle=[$phoneAccountHandle]",
         )
         pendingConnectionRequest.callAttributes.mHandle = phoneAccountHandle
 
@@ -74,7 +74,7 @@ class VoipConnectionService : ConnectionService() {
         val extras =
             Utils.getBundleWithPhoneAccountHandle(
                 pendingConnectionRequest.callAttributes,
-                pendingConnectionRequest.callAttributes.mHandle!!
+                pendingConnectionRequest.callAttributes.mHandle!!,
             )
 
         // Call into the platform to start call
@@ -83,14 +83,14 @@ class VoipConnectionService : ConnectionService() {
         } else {
             telecomManager.addNewIncomingCall(
                 pendingConnectionRequest.callAttributes.mHandle,
-                extras
+                extras,
             )
         }
     }
 
     override fun onCreateOutgoingConnection(
         connectionManagerPhoneAccount: PhoneAccountHandle,
-        request: ConnectionRequest
+        request: ConnectionRequest,
     ): Connection? {
         Log.i(TAG, "onCreateOutgoingConnection")
         val targetRequest: VoipPendingConnectionRequest =
@@ -115,7 +115,7 @@ class VoipConnectionService : ConnectionService() {
 
     override fun onCreateOutgoingConnectionFailed(
         connectionManagerPhoneAccount: PhoneAccountHandle,
-        request: ConnectionRequest
+        request: ConnectionRequest,
     ) {
         Log.i(TAG, "onCreateOutgoingConnectionFailed")
         val pendingRequest: VoipPendingConnectionRequest? =
@@ -126,7 +126,7 @@ class VoipConnectionService : ConnectionService() {
 
     override fun onCreateIncomingConnection(
         connectionManagerPhoneAccount: PhoneAccountHandle,
-        request: ConnectionRequest
+        request: ConnectionRequest,
     ): Connection? {
         Log.i(TAG, "onCreateIncomingConnection")
         val ongoingConnection = AutoVoipConnection(applicationContext)
@@ -146,7 +146,7 @@ class VoipConnectionService : ConnectionService() {
 
     override fun onCreateIncomingConnectionFailed(
         connectionManagerPhoneAccount: PhoneAccountHandle,
-        request: ConnectionRequest
+        request: ConnectionRequest,
     ) {
         Log.i(TAG, "onCreateIncomingConnectionFailed")
         val pendingRequest: VoipPendingConnectionRequest? =
@@ -177,7 +177,7 @@ class VoipConnectionService : ConnectionService() {
     /** Helper methods */
     private fun findTargetPendingConnectionRequest(
         request: ConnectionRequest,
-        direction: Int
+        direction: Int,
     ): VoipPendingConnectionRequest? {
         for (pendingConnectionRequest in mPendingConnectionRequests) {
             if (
@@ -197,7 +197,7 @@ class VoipConnectionService : ConnectionService() {
 
     private fun isSameAddress(
         callAttributes: CallAttributesCompat,
-        request: ConnectionRequest
+        request: ConnectionRequest,
     ): Boolean {
         return request.address?.equals(callAttributes.address) == true
     }

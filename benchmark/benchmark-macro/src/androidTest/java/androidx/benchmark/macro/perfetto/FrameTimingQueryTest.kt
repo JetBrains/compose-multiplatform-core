@@ -46,7 +46,7 @@ class FrameTimingQueryTest {
                 FrameTimingQuery.getFrameData(
                         session = this,
                         captureApiLevel = 28,
-                        packageName = "androidx.benchmark.integration.macrobenchmark.target"
+                        packageName = "androidx.benchmark.integration.macrobenchmark.target",
                     )
                     .getFrameSubMetrics(captureApiLevel = 28)
             }
@@ -55,14 +55,14 @@ class FrameTimingQueryTest {
             expected =
                 mapOf(
                     FrameDurationCpuNs to listOf(9907605L, 6038595L, 4812136L, 3938490L),
-                    FrameDurationUiNs to listOf(3086979L, 2868490L, 2232709L, 1889479L)
+                    FrameDurationUiNs to listOf(3086979L, 2868490L, 2232709L, 1889479L),
                 ),
-            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) }
+            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) },
         )
         assertEquals(
             expected = List(2) { 62 },
             actual = frameSubMetrics.map { it.value.size },
-            message = "Expect same number of frames for each metric"
+            message = "Expect same number of frames for each metric",
         )
     }
 
@@ -77,7 +77,7 @@ class FrameTimingQueryTest {
                 FrameTimingQuery.getFrameData(
                         session = this,
                         captureApiLevel = 31,
-                        packageName = "androidx.benchmark.integration.macrobenchmark.target"
+                        packageName = "androidx.benchmark.integration.macrobenchmark.target",
                     )
                     .getFrameSubMetrics(captureApiLevel = 31)
             }
@@ -90,12 +90,12 @@ class FrameTimingQueryTest {
                     FrameDurationFullNs to listOf(15292863L, 8800138L, 6474705L, 8199845L),
                     FrameOverrunNs to listOf(-5207137L, -11699862L, -14025295L, -12300155L),
                 ),
-            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) }
+            actual = frameSubMetrics.mapValues { it.value.subList(0, 4) },
         )
         assertEquals(
             expected = List(FrameTimingQuery.SubMetric.values().size) { 96 },
             actual = frameSubMetrics.map { it.value.size },
-            message = "Expect same number of frames for each metric"
+            message = "Expect same number of frames for each metric",
         )
     }
 
@@ -115,7 +115,7 @@ class FrameTimingQueryTest {
                     session = this,
                     captureApiLevel = 33,
                     packageName =
-                        "androidx.constraintlayout.compose.integration.macrobenchmark.target"
+                        "androidx.constraintlayout.compose.integration.macrobenchmark.target",
                 )
             }
 
@@ -154,7 +154,7 @@ class FrameTimingQueryTest {
             actual =
                 frameData.getFrameSubMetrics(captureApiLevel = 33).mapValues {
                     it.value.subList(0, 4)
-                }
+                },
         )
     }
 
@@ -169,7 +169,7 @@ class FrameTimingQueryTest {
                 FrameTimingQuery.getFrameData(
                     session = this,
                     captureApiLevel = 34,
-                    packageName = "androidx.compose.integration.macrobenchmark.target"
+                    packageName = "androidx.compose.integration.macrobenchmark.target",
                 )
             }
 
@@ -200,7 +200,7 @@ class FrameTimingQueryTest {
                 FrameTimingQuery.getFrameData(
                     session = this,
                     captureApiLevel = 35,
-                    packageName = packageName
+                    packageName = packageName,
                 )
             }
 

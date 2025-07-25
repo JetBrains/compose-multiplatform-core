@@ -373,6 +373,16 @@ NOTE The `Project Structure` dialog reachable via `File > Project Structure` is
 specify the SDK source path. You must use the "Module Settings" action as
 directed above.
 
+### Flaky Tests
+
+If you are seeing flakiness on emulator runners (not Cuttlefish) then it is
+possible that tests are not cleaning up after themselves, causing
+misconfiguration between tests in the same module.
+
+Cuttlefish does not run tests with module isolation; it runs multiple test
+modules on the same instance, so pollution between modules is possible, making
+it harder to find the cause of the flakiness
+
 ### Accessing FTL outputs
 
 When we run tests on Firebase Test Lab devices, we transfer the results and

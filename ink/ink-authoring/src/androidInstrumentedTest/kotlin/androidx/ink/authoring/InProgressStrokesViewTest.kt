@@ -277,7 +277,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 0L,
                 arrayOf(
                     PointerProperties().apply { id = 9 },
-                    PointerProperties().apply { id = 10 }
+                    PointerProperties().apply { id = 10 },
                 ),
                 arrayOf(
                     PointerCoords().apply {
@@ -296,7 +296,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 downEvent,
                 9,
-                basicBrush(TestColors.AVOCADO_GREEN)
+                basicBrush(TestColors.AVOCADO_GREEN),
             )
             @Suppress("CheckReturnValue")
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
@@ -342,7 +342,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 MotionEvent.ACTION_DOWN,
                 arrayOf(
                     PointerProperties().apply { id = 9 },
-                    PointerProperties().apply { id = 10 }
+                    PointerProperties().apply { id = 10 },
                 ),
                 arrayOf(
                     PointerCoords().apply {
@@ -361,7 +361,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
             activity.inProgressStrokesView.startStroke(
                 downEvent,
                 9,
-                basicBrush(TestColors.AVOCADO_GREEN)
+                basicBrush(TestColors.AVOCADO_GREEN),
             )
             assertThat(activity.inProgressStrokesView.hasUnfinishedStrokes()).isTrue()
             activity.inProgressStrokesView.startStroke(downEvent, 10, basicBrush(TestColors.RED))
@@ -415,13 +415,37 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 moveEvent,
                 moveEvent.getPointerId(0),
                 strokeId,
-                prediction = null,
             )
             val upEvent = stylusInputStream.getUpEvent()
             activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0), strokeId)
         }
 
         assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish")
+        assertThat(finishedStrokeCohorts).hasSize(1)
+        assertThat(finishedStrokeCohorts[0]).hasSize(1)
+    }
+
+    @Test
+    fun startAndAddToAndFinishStroke_withNoStrokeId_showsStrokeAndSendsCallback() {
+        val stylusInputStream =
+            InputStreamBuilder.stylusLine(startX = 25F, startY = 25F, endX = 105F, endY = 205F)
+        activityScenarioRule.scenario.onActivity { activity ->
+            val downEvent = stylusInputStream.getDownEvent()
+            // Don't keep the resulting InProgressStrokeId. Instead, rely on the pointer ID to
+            // identify
+            // the stroke for addToStroke and finishStroke.
+            activity.inProgressStrokesView.startStroke(
+                downEvent,
+                downEvent.getPointerId(0),
+                basicBrush(TestColors.AVOCADO_GREEN),
+            )
+            val moveEvent = stylusInputStream.getNextMoveEvent()
+            activity.inProgressStrokesView.addToStroke(moveEvent, moveEvent.getPointerId(0))
+            val upEvent = stylusInputStream.getUpEvent()
+            activity.inProgressStrokesView.finishStroke(upEvent, upEvent.getPointerId(0))
+        }
+
+        assertThatTakingScreenshotMatchesGolden("start_and_add_and_finish_no_stroke_id")
         assertThat(finishedStrokeCohorts).hasSize(1)
         assertThat(finishedStrokeCohorts[0]).hasSize(1)
     }
@@ -441,7 +465,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 )
             activity.inProgressStrokesView.addToStroke(
                 MutableStrokeInputBatch().apply {
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 45f,
                             y = 70f,
@@ -449,7 +473,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                             toolType = InputToolType.STYLUS,
                         )
                     )
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 65f,
                             y = 115f,
@@ -497,7 +521,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 )
             activity.inProgressStrokesView.addToStroke(
                 MutableStrokeInputBatch().apply {
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 45f,
                             y = 70f,
@@ -505,7 +529,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                             toolType = InputToolType.STYLUS,
                         )
                     )
-                    addOrThrow(
+                    add(
                         StrokeInput.create(
                             x = 65f,
                             y = 115f,
@@ -620,7 +644,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     activity.inProgressStrokesView.addToStroke(
                         moveEvent,
                         pointerId = 0,
-                        prediction = null
+                        prediction = null,
                     )
                 )
                 .isFalse()
@@ -631,7 +655,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     activity.inProgressStrokesView.addToStroke(
                         moveEvent,
                         pointerId = 9,
-                        prediction = null
+                        prediction = null,
                     )
                 )
                 .isTrue()
@@ -763,7 +787,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.finishStroke(
                     upEvent,
                     upEvent.getPointerId(0),
-                    strokeId
+                    strokeId,
                 )
             }
             assertThatTakingScreenshotMatchesGolden(screenshotKey(strokeCount, "step3finish"))
@@ -880,7 +904,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                 activity.inProgressStrokesView.finishStroke(
                     upEvent,
                     upEvent.getPointerId(0),
-                    strokeId
+                    strokeId,
                 )
             }
         }
@@ -932,7 +956,7 @@ class InProgressStrokesViewTest : InProgressStrokesViewTestBase() {
                     canvas,
                     inProgressStroke,
                     strokeToScreenTransform.toMatrix(),
-                    textureAnimationProgress
+                    textureAnimationProgress,
                 )
 
             override fun draw(

@@ -37,20 +37,19 @@ dependencies {
     api(libs.kotlinStdlib)
     implementation(project(":wear:protolayout:protolayout-material-core"))
     lintChecks(project(":wear:protolayout:protolayout-lint"))
-    lintPublish(project(":wear:protolayout:protolayout-lint"))
     compileOnly(project(":annotation:annotation-sampled"))
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.core:core:1.15.0")
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.truth)
+    androidTestImplementation(libs.testUiautomator)
     testImplementation(project(":wear:protolayout:protolayout-proto"))
     testImplementation(project(":wear:protolayout:protolayout-testing"))
     testImplementation(project(":wear:protolayout:protolayout"))
@@ -84,4 +83,5 @@ androidx {
     description = "Material3 components library for ProtoLayout."
     samples(project(":wear:protolayout:protolayout-material3-samples"))
     addGoldenImageAssets()
+    enableRobolectric()
 }

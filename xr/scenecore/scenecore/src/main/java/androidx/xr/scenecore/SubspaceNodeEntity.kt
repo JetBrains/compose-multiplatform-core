@@ -19,6 +19,7 @@ package androidx.xr.scenecore
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.SubspaceNodeEntity as RtSubspaceNodeEntity
+import androidx.xr.runtime.math.FloatSize3d
 import com.google.androidxr.splitengine.SubspaceNode
 
 /**
@@ -34,19 +35,19 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
     BaseEntity<RtSubspaceNodeEntity>(rtEntity, entityManager) {
 
     /** The size of the [SubspaceNodeEntity] in meters, in unscaled local space. */
-    public var size: Dimensions
-        get() = rtEntity.size.toDimensions()
+    public var size: FloatSize3d
+        get() = rtEntity.size.toFloatSize3d()
         set(value) {
             rtEntity.size = value.toRtDimensions()
         }
 
     public companion object {
         /**
-         * Creates a [SubspaceNodeEntity] from a [SubspaceNode] with a given [Dimensions].
+         * Creates a [SubspaceNodeEntity] from a [SubspaceNode] with a given [FloatSize3d].
          *
          * @param session The [Session].
          * @param subspaceNode The [SubspaceNode] to create the [SubspaceNodeEntity] from.
-         * @param size The initial [Dimensions] of the [SubspaceNodeEntity] in meters in unscaled
+         * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
          *   local space.
          * @return The created [SubspaceNodeEntity].
          */
@@ -54,12 +55,12 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
         public fun create(
             session: Session,
             subspaceNode: SubspaceNode,
-            size: Dimensions,
+            size: FloatSize3d,
         ): SubspaceNodeEntity =
             SubspaceNodeEntity(
                 session.platformAdapter.createSubspaceNodeEntity(
                     subspaceNode,
-                    size.toRtDimensions()
+                    size.toRtDimensions(),
                 ),
                 session.scene.entityManager,
             )

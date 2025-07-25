@@ -116,7 +116,7 @@ public fun CurvedScope.curvedText(
         text = text,
         modifier = modifier.sizeIn(maxSweepDegrees = maxSweepAngle),
         angularDirection = angularDirection,
-        overflow = overflow
+        overflow = overflow,
     ) {
         val baseStyle = style ?: MaterialTheme.typography.arcMedium
         val textColor =
@@ -131,7 +131,7 @@ public fun CurvedScope.curvedText(
                 fontSynthesis = fontSynthesis,
                 background = background,
                 letterSpacing = letterSpacing,
-                letterSpacingCounterClockwise = letterSpacingCounterClockwise
+                letterSpacingCounterClockwise = letterSpacingCounterClockwise,
             )
         )
     }

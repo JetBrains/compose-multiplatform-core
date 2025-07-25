@@ -52,7 +52,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
             IntentFilter().apply {
                 addAction(ComplicationDataSourceUpdateRequester.ACTION_REQUEST_UPDATE)
                 addAction(ComplicationDataSourceUpdateRequester.ACTION_REQUEST_UPDATE_ALL)
-            }
+            },
         )
         shadowOf(context.packageManager).setSystemFeature(PackageManager.FEATURE_WATCH, true)
     }
@@ -79,7 +79,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ComplicationDataSourceUpdateRequester.filterRequests(
                     providerComponent,
                     arrayOf(1, 3, 4).toIntArray(),
-                    requests
+                    requests,
                 )
             )
             .isEqualTo(expectedResult)
@@ -104,7 +104,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ComplicationDataSourceUpdateRequester.filterRequests(
                     providerComponent,
                     arrayOf(3, 4).toIntArray(),
-                    requests
+                    requests,
                 )
             )
             .isEqualTo(expectedResult)
@@ -124,7 +124,7 @@ class ComplicationDataSourceUpdateRequesterImplTest {
                 ?.latestIntent
                 ?.getParcelableExtra(
                     ComplicationDataSourceUpdateRequester.EXTRA_PROVIDER_COMPONENT,
-                    ComponentName::class.java
+                    ComponentName::class.java,
                 )
         assertThat(componentName).isNotNull()
         assertThat(componentName).isEqualTo(providerComponent)

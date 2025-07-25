@@ -132,11 +132,11 @@ class OffsetTest {
         assertEquals(Offset(10.0f, 20.0f), -Offset(-10.0f, -20.0f))
         assertEquals(
             Offset(-10.0f, Float.NEGATIVE_INFINITY),
-            -Offset(10.0f, Float.POSITIVE_INFINITY)
+            -Offset(10.0f, Float.POSITIVE_INFINITY),
         )
         assertEquals(
             Offset(-10.0f, Float.POSITIVE_INFINITY),
-            -Offset(10.0f, Float.NEGATIVE_INFINITY)
+            -Offset(10.0f, Float.NEGATIVE_INFINITY),
         )
 
         // behavior for -Unspecified

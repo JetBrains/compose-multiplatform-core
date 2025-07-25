@@ -17,7 +17,6 @@
 package androidx.lifecycle.internal
 
 import androidx.annotation.MainThread
-import androidx.annotation.RestrictTo
 import androidx.savedstate.SavedStateRegistry.SavedStateProvider
 import androidx.savedstate.savedState
 import kotlin.js.JsName
@@ -49,7 +48,6 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
     }
 
     @JsName("fun_savedStateProvider")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     fun savedStateProvider(): SavedStateProvider = savedStateProvider
 
     @MainThread operator fun contains(key: String): Boolean = key in regular
@@ -67,7 +65,8 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
                 }
                 MutableStateFlow(regular[key])
             }
-        @Suppress("UNCHECKED_CAST") return flow.asStateFlow() as StateFlow<T>
+        @Suppress("UNCHECKED_CAST")
+        return flow.asStateFlow() as StateFlow<T>
     }
 
     @MainThread
@@ -83,7 +82,8 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
                 }
                 MutableStateFlow(regular[key])
             }
-        @Suppress("UNCHECKED_CAST") return flow as MutableStateFlow<T>
+        @Suppress("UNCHECKED_CAST")
+        return flow as MutableStateFlow<T>
     }
 
     @MainThread fun keys(): Set<String> = regular.keys + providers.keys
@@ -112,6 +112,7 @@ internal class SavedStateHandleImpl(initialState: Map<String, Any?> = emptyMap()
     fun <T> remove(key: String): T? {
         @Suppress("UNCHECKED_CAST") val latestValue = regular.remove(key) as T?
         flows.remove(key)
+        mutableFlows.remove(key)
         return latestValue
     }
 

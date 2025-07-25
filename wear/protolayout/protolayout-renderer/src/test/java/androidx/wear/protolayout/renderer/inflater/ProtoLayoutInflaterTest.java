@@ -327,14 +327,16 @@ public class ProtoLayoutInflaterTest {
                                                         .setValue("Dynamic Fixed Text")))
                         .setValueForLayout("")
                         .build();
-
         LayoutElement root =
                 LayoutElement.newBuilder().setText(Text.newBuilder().setText(stringProp)).build();
 
         FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
 
-        FrameLayout sizedContainer = (FrameLayout) rootLayout.getChildAt(0);
-        expect.that(sizedContainer.getWidth()).isEqualTo(0);
+        // Check that there's a text element in the layout...
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        assertThat(rootLayout.getChildAt(0)).isInstanceOf(TextView.class);
+        TextView tv = (TextView) rootLayout.getChildAt(0);
+        expect.that(tv.getWidth()).isGreaterThan(0);
     }
 
     // obsoleteContentDescription is tested for backward compatibility
@@ -377,6 +379,7 @@ public class ProtoLayoutInflaterTest {
     // obsoleteContentDescription is tested for backward compatibility
     @SuppressWarnings("deprecation")
     @Test
+    @Config(minSdk = VERSION_CODES.P) // android.view.View#isAccessibilityHeading API requirement
     public void inflate_textView_withSemanticsContentDescription() {
         String textContents = "Hello World";
         String staticDescription = "StaticDescription";
@@ -414,6 +417,7 @@ public class ProtoLayoutInflaterTest {
         assertThat(info.isImportantForAccessibility()).isTrue();
         assertThat(tv.isImportantForAccessibility()).isTrue();
         assertThat(info.isFocusable()).isTrue();
+        assertThat(tv.isAccessibilityHeading()).isFalse();
     }
 
     @Test
@@ -517,6 +521,36 @@ public class ProtoLayoutInflaterTest {
         assertThat(info.getContentDescription().toString())
                 .isEqualTo(targetDynamicContentDescription);
         assertThat(info.getStateDescription().toString()).isEqualTo(targetDynamicStateDescription);
+    }
+
+    @Test
+    @Config(minSdk = VERSION_CODES.P) // android.view.View#isAccessibilityHeading API requirement
+    public void inflate_textView_withSemanticsHeading() {
+        String textContents = "Heading";
+
+        Semantics semantics = Semantics.newBuilder().setHeading(true).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setText(
+                                Text.newBuilder()
+                                        .setText(string(textContents))
+                                        .setModifiers(
+                                                Modifiers.newBuilder().setSemantics(semantics)))
+                        .build();
+
+        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
+
+        // Check that there's a text element in the layout...
+        assertThat(rootLayout.getChildCount()).isEqualTo(1);
+        assertThat(rootLayout.getChildAt(0)).isInstanceOf(TextView.class);
+
+        TextView tv = (TextView) rootLayout.getChildAt(0);
+
+        // Check the text contents.
+        assertThat(tv.getText().toString()).isEqualTo(textContents);
+
+        // Check the accessibility heading.
+        assertThat(tv.isAccessibilityHeading()).isTrue();
     }
 
     @Test
@@ -3194,10 +3228,15 @@ public class ProtoLayoutInflaterTest {
 
     @Test
     public void inflate_textView_ellipsize() {
-        String textContents = "Text that is very large so it will go to many lines";
+        // Manually set more lines because StaticLayout otherwise reports lineCount as 1.
+        String textContents =
+                "Text that is very\n"
+                        + "large so it will go to many lines\n"
+                        + " and it will\n"
+                        + " overflow a lot";
         Text.Builder text1 =
                 Text.newBuilder()
-                        .setLineHeight(sp(16))
+                        .setLineHeight(sp(16)) // Translates to around 35px or more
                         .setText(string(textContents))
                         .setFontStyle(FontStyle.newBuilder().addSize(sp(16)))
                         .setMaxLines(Int32Prop.newBuilder().setValue(6))
@@ -3207,7 +3246,7 @@ public class ProtoLayoutInflaterTest {
         Layout layout1 =
                 fingerprintedLayout(
                         LayoutElement.newBuilder()
-                                .setBox(buildFixedSizeBoxWIthText(text1))
+                                .setBox(buildFixedSizeBoxWithText(text1))
                                 .build());
 
         Text.Builder text2 =
@@ -3216,25 +3255,27 @@ public class ProtoLayoutInflaterTest {
                         // Diff
                         .setLineHeight(sp(4))
                         .setFontStyle(FontStyle.newBuilder().addSize(sp(4)))
-                        .setMaxLines(Int32Prop.newBuilder().setValue(6))
+                        .setMaxLines(Int32Prop.newBuilder().setValue(10))
                         .setOverflow(
                                 TextOverflowProp.newBuilder()
                                         .setValue(TextOverflow.TEXT_OVERFLOW_ELLIPSIZE));
         Layout layout2 =
                 fingerprintedLayout(
                         LayoutElement.newBuilder()
-                                .setBox(buildFixedSizeBoxWIthText(text2))
+                                .setBox(buildFixedSizeBoxWithText(text2))
                                 .build());
 
         // Initial layout.
         Renderer renderer = renderer(layout1);
         ViewGroup inflatedViewParent = renderer.inflate();
+        shadowOf(Looper.getMainLooper()).idle();
         TextView textView1 =
                 (TextView) ((ViewGroup) inflatedViewParent.getChildAt(0)).getChildAt(0);
 
         // Apply the mutation.
         ViewGroupMutation mutation =
                 renderer.computeMutation(getRenderedMetadata(inflatedViewParent), layout2);
+        shadowOf(Looper.getMainLooper()).idle();
         assertThat(mutation).isNotNull();
         assertThat(mutation.isNoOp()).isFalse();
         boolean mutationResult = renderer.applyMutation(inflatedViewParent, mutation);
@@ -3287,9 +3328,10 @@ public class ProtoLayoutInflaterTest {
         expect.that(textView.getFontFeatureSettings()).isEqualTo("'tnum'");
     }
 
-    private static Box.Builder buildFixedSizeBoxWIthText(Text.Builder content) {
+    private static Box.Builder buildFixedSizeBoxWithText(Text.Builder content) {
         return Box.newBuilder()
                 .setWidth(ContainerDimension.newBuilder().setLinearDimension(dp(100)))
+                // Line of text would be ~35
                 .setHeight(ContainerDimension.newBuilder().setLinearDimension(dp(120)))
                 .addContents(LayoutElement.newBuilder().setText(content));
     }
@@ -3801,10 +3843,9 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
-    public void inflate_arcLine_usesZeroValueForLayout() {
+    public void inflate_arcLine_usesArcLength() {
         DynamicFloat arcLength =
                 DynamicFloat.newBuilder().setFixed(FixedFloat.newBuilder().setValue(45f)).build();
-
         ArcLayoutElement arcLine =
                 ArcLayoutElement.newBuilder()
                         .setLine(
@@ -3813,7 +3854,6 @@ public class ProtoLayoutInflaterTest {
                                                 degreesDynamic(arcLength, /* valueForLayout= */ 0f))
                                         .setThickness(dp(12)))
                         .build();
-
         LayoutElement root =
                 LayoutElement.newBuilder()
                         .setArc(
@@ -3823,14 +3863,14 @@ public class ProtoLayoutInflaterTest {
                         .build();
 
         FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
-
         shadowOf(Looper.getMainLooper()).idle();
 
         ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
-        SizedArcContainer sizedContainer = (SizedArcContainer) arcLayout.getChildAt(0);
-        expect.that(sizedContainer.getSweepAngleDegrees()).isEqualTo(0f);
-        WearCurvedLineView line = (WearCurvedLineView) sizedContainer.getChildAt(0);
-        expect.that(line.getMaxSweepAngleDegrees()).isEqualTo(0f);
+        WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
+        expect.that(line.getSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(line.getLineSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(line.getMaxSweepAngleDegrees())
+                .isEqualTo(WearCurvedLineView.SWEEP_ANGLE_WRAP_LENGTH);
     }
 
     @Test
@@ -3893,41 +3933,6 @@ public class ProtoLayoutInflaterTest {
         assertThat(line.getLineSweepAngleDegrees()).isEqualTo(20);
     }
 
-    @Test
-    public void inflate_arcLine_withoutValueForLayout_noLegacyMode_usesZero() {
-        DynamicFloat arcLength =
-                DynamicFloat.newBuilder().setFixed(FixedFloat.newBuilder().setValue(45f)).build();
-
-        LayoutElement root =
-                LayoutElement.newBuilder()
-                        .setArc(
-                                Arc.newBuilder()
-                                        .setAnchorAngle(degrees(0).build())
-                                        .addContents(
-                                                ArcLayoutElement.newBuilder()
-                                                        .setLine(
-                                                                ArcLine.newBuilder()
-                                                                        // Shorter than 360 degrees,
-                                                                        // so should be drawn as an
-                                                                        // arc:
-                                                                        .setLength(
-                                                                                degreesDynamic(
-                                                                                        arcLength))
-                                                                        .setThickness(dp(12)))))
-                        .build();
-
-        FrameLayout rootLayout = renderer(fingerprintedLayout(root)).inflate();
-
-        shadowOf(Looper.getMainLooper()).idle();
-
-        ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
-        SizedArcContainer sizedContainer = (SizedArcContainer) arcLayout.getChildAt(0);
-        WearCurvedLineView line = (WearCurvedLineView) sizedContainer.getChildAt(0);
-        assertThat(sizedContainer.getSweepAngleDegrees()).isEqualTo(0f);
-        assertThat(line.getLineSweepAngleDegrees()).isEqualTo(45f);
-        assertThat(line.getMaxSweepAngleDegrees()).isEqualTo(0);
-    }
-
     private static DegreesProp.@NonNull Builder degreesDynamic(DynamicFloat arcLength) {
         return DegreesProp.newBuilder().setDynamicValue(arcLength);
     }
@@ -3940,7 +3945,7 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
-    public void inflate_arcLine_withoutValueForLayout_legacyMode_usesArcLength() {
+    public void inflate_arcLine_withoutValueForLayout_usesArcLength() {
         DynamicFloat arcLength =
                 DynamicFloat.newBuilder().setFixed(FixedFloat.newBuilder().setValue(45f)).build();
 
@@ -3963,17 +3968,16 @@ public class ProtoLayoutInflaterTest {
                         .build();
 
         FrameLayout rootLayout =
-                renderer(
-                                newRendererConfigBuilder(fingerprintedLayout(root))
-                                        .setAllowLayoutChangingBindsWithoutDefault(true))
-                        .inflate();
+                renderer(newRendererConfigBuilder(fingerprintedLayout(root))).inflate();
 
         shadowOf(Looper.getMainLooper()).idle();
 
         ArcLayout arcLayout = (ArcLayout) rootLayout.getChildAt(0);
         WearCurvedLineView line = (WearCurvedLineView) arcLayout.getChildAt(0);
-        assertThat(line.getSweepAngleDegrees()).isEqualTo(45f);
-        assertThat(line.getLineSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(line.getSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(line.getLineSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(line.getMaxSweepAngleDegrees())
+                .isEqualTo(WearCurvedLineView.SWEEP_ANGLE_WRAP_LENGTH);
     }
 
     @Test
@@ -4477,10 +4481,8 @@ public class ProtoLayoutInflaterTest {
         ViewGroup column = (ViewGroup) inflatedViewParent.getChildAt(0);
         assertThat(column.getChildCount()).isEqualTo(2);
 
-        FrameLayout tv1Wrapper = (FrameLayout) column.getChildAt(0);
-        FrameLayout tv2Wrapper = (FrameLayout) column.getChildAt(1);
-        TextView tv1 = (TextView) tv1Wrapper.getChildAt(0);
-        TextView tv2 = (TextView) tv2Wrapper.getChildAt(0);
+        TextView tv1 = (TextView) column.getChildAt(0);
+        TextView tv2 = (TextView) column.getChildAt(1);
         assertThat(tv1.getText().toString()).isEqualTo("Hello");
         assertThat(tv2.getText().toString()).isEqualTo("World");
 
@@ -4505,14 +4507,11 @@ public class ProtoLayoutInflaterTest {
         assertThat(renderer.getDataPipelineSize()).isEqualTo(2);
         ViewGroup columnAfterMutation = (ViewGroup) inflatedViewParent.getChildAt(0);
         assertThat(columnAfterMutation.getChildCount()).isEqualTo(2);
-        FrameLayout tv1WrapperAfterMutation = (FrameLayout) columnAfterMutation.getChildAt(0);
-        FrameLayout tv2WrapperAfterMutation = (FrameLayout) columnAfterMutation.getChildAt(1);
-        TextView tv1AfterMutation = (TextView) tv1WrapperAfterMutation.getChildAt(0);
-        TextView tv2AfterMutation = (TextView) tv2WrapperAfterMutation.getChildAt(0);
+        TextView tv1AfterMutation = (TextView) columnAfterMutation.getChildAt(0);
+        TextView tv2AfterMutation = (TextView) columnAfterMutation.getChildAt(1);
 
         // Unchanged views should be left exactly the same:
         assertThat(columnAfterMutation).isSameInstanceAs(column);
-        assertThat(tv1WrapperAfterMutation).isSameInstanceAs(tv1Wrapper);
         assertThat(tv1AfterMutation).isSameInstanceAs(tv1);
         // Overall content should match layout2:
         assertThat(tv1AfterMutation.getText().toString()).isEqualTo("Hello");
@@ -4536,10 +4535,8 @@ public class ProtoLayoutInflaterTest {
         ViewGroup column = (ViewGroup) inflatedViewParent.getChildAt(0);
         assertThat(column.getChildCount()).isEqualTo(2);
 
-        FrameLayout tv1Wrapper = (FrameLayout) column.getChildAt(0);
-        TextView tv1 = (TextView) tv1Wrapper.getChildAt(0);
-        FrameLayout tv2Wrapper = (FrameLayout) column.getChildAt(1);
-        TextView tv2 = (TextView) tv2Wrapper.getChildAt(0);
+        TextView tv1 = (TextView) column.getChildAt(0);
+        TextView tv2 = (TextView) column.getChildAt(1);
         assertThat(tv1.getText().toString()).isEqualTo("Hello");
         assertThat(tv2.getText().toString()).isEqualTo("World");
 
@@ -4564,16 +4561,12 @@ public class ProtoLayoutInflaterTest {
         assertThat(renderer.getDataPipelineSize()).isEqualTo(2);
         ViewGroup columnAfterMutation = (ViewGroup) inflatedViewParent.getChildAt(0);
         assertThat(columnAfterMutation.getChildCount()).isEqualTo(2);
-        FrameLayout tv1WrapperAfterMutation = (FrameLayout) columnAfterMutation.getChildAt(0);
-        TextView tv1AfterMutation = (TextView) tv1WrapperAfterMutation.getChildAt(0);
-        FrameLayout tv2WrapperAfterMutation = (FrameLayout) columnAfterMutation.getChildAt(1);
-        TextView tv2AfterMutation = (TextView) tv2WrapperAfterMutation.getChildAt(0);
+        TextView tv1AfterMutation = (TextView) columnAfterMutation.getChildAt(0);
+        TextView tv2AfterMutation = (TextView) columnAfterMutation.getChildAt(1);
 
         // Unchanged views should be left exactly the same:
         expect.that(tv1AfterMutation).isSameInstanceAs(tv1);
         expect.that(tv2AfterMutation).isSameInstanceAs(tv2);
-        expect.that(tv1WrapperAfterMutation).isSameInstanceAs(tv1Wrapper);
-        expect.that(tv2WrapperAfterMutation).isSameInstanceAs(tv2Wrapper);
         // Overall content should match layout2:
         assertThat(tv1AfterMutation.getText().toString()).isEqualTo("Hello");
         assertThat(tv2AfterMutation.getText().toString()).isEqualTo("World");
@@ -4595,10 +4588,8 @@ public class ProtoLayoutInflaterTest {
         ViewGroup column = (ViewGroup) inflatedViewParent.getChildAt(0);
         assertThat(column.getChildCount()).isEqualTo(2);
 
-        FrameLayout tv1Wrapper = (FrameLayout) column.getChildAt(0);
-        FrameLayout tv2Wrapper = (FrameLayout) column.getChildAt(1);
-        TextView tv1 = (TextView) tv1Wrapper.getChildAt(0);
-        TextView tv2 = (TextView) tv2Wrapper.getChildAt(0);
+        TextView tv1 = (TextView) column.getChildAt(0);
+        TextView tv2 = (TextView) column.getChildAt(1);
         assertThat(tv1.getText().toString()).isEqualTo("Hello");
         assertThat(tv2.getText().toString()).isEqualTo("World");
 
@@ -6383,7 +6374,7 @@ public class ProtoLayoutInflaterTest {
     }
 
     @Test
-    public void inflate_dashedArcLine_usesZeroValueForLayout() {
+    public void inflate_dashedArcLine_usesArcLength() {
         DynamicFloat arcLength =
                 DynamicFloat.newBuilder().setFixed(FixedFloat.newBuilder().setValue(45f)).build();
 
@@ -6394,7 +6385,8 @@ public class ProtoLayoutInflaterTest {
                         .build();
 
         WearDashedArcLineView lineView = inflateDashedArcLine(dashedArcLine);
-        expect.that(lineView.getMaxSweepAngleDegrees()).isEqualTo(0f);
+        expect.that(lineView.getSweepAngleDegrees()).isEqualTo(45f);
+        expect.that(lineView.getMaxSweepAngleDegrees()).isEqualTo(360f);
     }
 
     @Test

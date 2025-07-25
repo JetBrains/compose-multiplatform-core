@@ -23,9 +23,7 @@ import kotlin.math.roundToInt
 
 /** Class to compute scroll for [FastScroller] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class FastScrollCalculator(
-    private val context: Context,
-) {
+public class FastScrollCalculator(private val context: Context) {
     internal val scrollerTopMarginPx = context.getDimensions(R.dimen.scroller_top_margin).toInt()
     internal val scrollerBottomMarginPx =
         context.getDimensions(R.dimen.scroller_bottom_margin).toInt()
@@ -64,7 +62,7 @@ public class FastScrollCalculator(
         scrollY: Int,
         viewHeight: Int,
         thumbHeightPx: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ): Int {
         val scrollbarLength = getScrollbarLength(viewHeight, thumbHeightPx)
 
@@ -97,7 +95,7 @@ public class FastScrollCalculator(
         fastScrollY: Int,
         viewHeight: Int,
         thumbHeightPx: Int,
-        estimatedFullHeight: Float
+        estimatedFullHeight: Float,
     ): Int {
         val scrollbarLength = getScrollbarLength(viewHeight, thumbHeightPx)
 

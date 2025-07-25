@@ -210,7 +210,7 @@ fun TextField(
                 .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                 .defaultMinSize(
                     minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minHeight = TextFieldDefaults.MinHeight,
                 ),
         enabled = enabled,
         readOnly = readOnly,
@@ -252,7 +252,7 @@ fun TextField(
                 shape = shape,
                 colors = colors,
             )
-        }
+        },
     )
 }
 
@@ -341,7 +341,7 @@ fun TextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -357,7 +357,7 @@ fun TextField(
                 .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                 .defaultMinSize(
                     minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minHeight = TextFieldDefaults.MinHeight,
                 ),
         onValueChange = onValueChange,
         enabled = enabled,
@@ -389,13 +389,13 @@ fun TextField(
                     shape = shape,
                     colors = colors,
                 )
-            }
+            },
     )
 }
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun TextField(
@@ -418,7 +418,7 @@ fun TextField(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape =
         MaterialTheme.shapes.small.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize),
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     TextField(
         value,
@@ -440,7 +440,7 @@ fun TextField(
         1,
         interactionSource,
         shape,
-        colors
+        colors,
     )
 }
 
@@ -531,7 +531,7 @@ fun TextField(
     minLines: Int = 1,
     interactionSource: MutableInteractionSource? = null,
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     @Suppress("NAME_SHADOWING")
     val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
@@ -547,7 +547,7 @@ fun TextField(
                 .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                 .defaultMinSize(
                     minWidth = TextFieldDefaults.MinWidth,
-                    minHeight = TextFieldDefaults.MinHeight
+                    minHeight = TextFieldDefaults.MinHeight,
                 ),
         onValueChange = onValueChange,
         enabled = enabled,
@@ -579,13 +579,13 @@ fun TextField(
                     shape = shape,
                     colors = colors,
                 )
-            }
+            },
     )
 }
 
 @Deprecated(
     "Maintained for binary compatibility. Use version with minLines instead",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 fun TextField(
@@ -607,7 +607,7 @@ fun TextField(
     maxLines: Int = Int.MAX_VALUE,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = TextFieldDefaults.TextFieldShape,
-    colors: TextFieldColors = TextFieldDefaults.textFieldColors()
+    colors: TextFieldColors = TextFieldDefaults.textFieldColors(),
 ) {
     TextField(
         value,
@@ -629,7 +629,7 @@ fun TextField(
         1,
         interactionSource,
         shape,
-        colors
+        colors,
     )
 }
 
@@ -647,7 +647,7 @@ internal fun TextFieldLayout(
     trailing: @Composable (() -> Unit)?,
     singleLine: Boolean,
     animationProgress: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ) {
     val measurePolicy =
         remember(singleLine, animationProgress, paddingValues) {
@@ -660,7 +660,7 @@ internal fun TextFieldLayout(
             if (leading != null) {
                 Box(
                     modifier = Modifier.layoutId(LeadingId).minimumInteractiveComponentSize(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     leading()
                 }
@@ -668,7 +668,7 @@ internal fun TextFieldLayout(
             if (trailing != null) {
                 Box(
                     modifier = Modifier.layoutId(TrailingId).minimumInteractiveComponentSize(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     trailing()
                 }
@@ -689,7 +689,7 @@ internal fun TextFieldLayout(
                             (endTextFieldPadding - HorizontalIconPadding).coerceAtLeast(0.dp)
                         } else {
                             endTextFieldPadding
-                        }
+                        },
                 )
             if (placeholder != null) {
                 placeholder(Modifier.layoutId(PlaceholderId).then(padding))
@@ -704,18 +704,18 @@ internal fun TextFieldLayout(
                 textField()
             }
         },
-        measurePolicy = measurePolicy
+        measurePolicy = measurePolicy,
     )
 }
 
 private class TextFieldMeasurePolicy(
     private val singleLine: Boolean,
     private val animationProgress: Float,
-    private val paddingValues: PaddingValues
+    private val paddingValues: PaddingValues,
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val topPaddingValue = paddingValues.calculateTopPadding().roundToPx()
         val bottomPaddingValue = paddingValues.calculateBottomPadding().roundToPx()
@@ -741,7 +741,7 @@ private class TextFieldMeasurePolicy(
         val labelConstraints =
             looseConstraints.offset(
                 vertical = -bottomPaddingValue,
-                horizontal = -occupiedSpaceHorizontally
+                horizontal = -occupiedSpaceHorizontally,
             )
         val labelPlaceable =
             measurables.fastFirstOrNull { it.layoutId == LabelId }?.measure(labelConstraints)
@@ -764,7 +764,7 @@ private class TextFieldMeasurePolicy(
                 .copy(minHeight = 0)
                 .offset(
                     vertical = verticalConstraintOffset,
-                    horizontal = -occupiedSpaceHorizontally
+                    horizontal = -occupiedSpaceHorizontally,
                 )
         val textFieldPlaceable =
             measurables.fastFirst { it.layoutId == TextFieldId }.measure(textFieldConstraints)
@@ -783,7 +783,7 @@ private class TextFieldMeasurePolicy(
                 textFieldPlaceable.width,
                 widthOrZero(labelPlaceable),
                 widthOrZero(placeholderPlaceable),
-                constraints
+                constraints,
             )
         val height =
             calculateHeight(
@@ -795,7 +795,7 @@ private class TextFieldMeasurePolicy(
                 heightOrZero(placeholderPlaceable),
                 constraints,
                 density,
-                paddingValues
+                paddingValues,
             )
 
         return layout(width, height) {
@@ -814,7 +814,7 @@ private class TextFieldMeasurePolicy(
                     labelEndPosition,
                     effectiveLabelBaseline + topPadding,
                     animationProgress,
-                    density
+                    density,
                 )
             } else {
                 placeWithoutLabel(
@@ -826,7 +826,7 @@ private class TextFieldMeasurePolicy(
                     trailingPlaceable,
                     singleLine,
                     density,
-                    paddingValues
+                    paddingValues,
                 )
             }
         }
@@ -834,7 +834,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         return intrinsicHeight(measurables, width) { intrinsicMeasurable, w ->
             intrinsicMeasurable.maxIntrinsicHeight(w)
@@ -843,7 +843,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         return intrinsicHeight(measurables, width) { intrinsicMeasurable, w ->
             intrinsicMeasurable.minIntrinsicHeight(w)
@@ -852,7 +852,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         return intrinsicWidth(measurables, height) { intrinsicMeasurable, h ->
             intrinsicMeasurable.maxIntrinsicWidth(h)
@@ -861,7 +861,7 @@ private class TextFieldMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         return intrinsicWidth(measurables, height) { intrinsicMeasurable, h ->
             intrinsicMeasurable.minIntrinsicWidth(h)
@@ -871,7 +871,7 @@ private class TextFieldMeasurePolicy(
     private fun intrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
         height: Int,
-        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int
+        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int,
     ): Int {
         val textFieldWidth =
             intrinsicMeasurer(measurables.fastFirst { it.layoutId == TextFieldId }, height)
@@ -897,14 +897,14 @@ private class TextFieldMeasurePolicy(
             textFieldWidth = textFieldWidth,
             labelWidth = labelWidth,
             placeholderWidth = placeholderWidth,
-            constraints = Constraints()
+            constraints = Constraints(),
         )
     }
 
     private fun IntrinsicMeasureScope.intrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
         width: Int,
-        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int
+        intrinsicMeasurer: (IntrinsicMeasurable, Int) -> Int,
     ): Int {
         var remainingWidth = width
         val leadingHeight =
@@ -949,7 +949,7 @@ private class TextFieldMeasurePolicy(
             placeholderHeight = placeholderHeight,
             constraints = Constraints(),
             density = density,
-            paddingValues = paddingValues
+            paddingValues = paddingValues,
         )
     }
 }
@@ -960,7 +960,7 @@ private fun calculateWidth(
     textFieldWidth: Int,
     labelWidth: Int,
     placeholderWidth: Int,
-    constraints: Constraints
+    constraints: Constraints,
 ): Int {
     val middleSection = maxOf(textFieldWidth, labelWidth, placeholderWidth)
     val wrappedWidth = leadingWidth + middleSection + trailingWidth
@@ -976,7 +976,7 @@ private fun calculateHeight(
     placeholderHeight: Int,
     constraints: Constraints,
     density: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ): Int {
     val paddingToLabel = TextFieldTopPadding.value * density
     val topPaddingValue = paddingValues.calculateTopPadding().value * density
@@ -1010,15 +1010,15 @@ private fun Placeable.PlacementScope.placeWithLabel(
     labelEndPosition: Int,
     textPosition: Int,
     animationProgress: Float,
-    density: Float
+    density: Float,
 ) {
     leadingPlaceable?.placeRelative(
         0,
-        Alignment.CenterVertically.align(leadingPlaceable.height, height)
+        Alignment.CenterVertically.align(leadingPlaceable.height, height),
     )
     trailingPlaceable?.placeRelative(
         width - trailingPlaceable.width,
-        Alignment.CenterVertically.align(trailingPlaceable.height, height)
+        Alignment.CenterVertically.align(trailingPlaceable.height, height),
     )
     labelPlaceable?.let {
         // if it's a single line, the label's start position is in the center of the
@@ -1055,17 +1055,17 @@ private fun Placeable.PlacementScope.placeWithoutLabel(
     trailingPlaceable: Placeable?,
     singleLine: Boolean,
     density: Float,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
 ) {
     val topPadding = (paddingValues.calculateTopPadding().value * density).roundToInt()
 
     leadingPlaceable?.placeRelative(
         0,
-        Alignment.CenterVertically.align(leadingPlaceable.height, height)
+        Alignment.CenterVertically.align(leadingPlaceable.height, height),
     )
     trailingPlaceable?.placeRelative(
         width - trailingPlaceable.width,
-        Alignment.CenterVertically.align(trailingPlaceable.height, height)
+        Alignment.CenterVertically.align(trailingPlaceable.height, height),
     )
 
     // Single line text field without label places its input center vertically. Multiline text

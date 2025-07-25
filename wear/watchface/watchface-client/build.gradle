@@ -50,7 +50,6 @@ dependencies {
 
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRules)
@@ -71,8 +70,6 @@ android {
     defaultConfig {
         minSdk = 26
     }
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface.client"
 }
 
@@ -83,5 +80,6 @@ androidx {
     description = "Client library for controlling androidx watchfaces"
     legacyDisableKotlinStrictApiMode = true
     addGoldenImageAssets()
+    enableRobolectric()
     failOnDeprecationWarnings = false
 }

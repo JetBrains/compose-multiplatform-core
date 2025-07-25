@@ -164,43 +164,59 @@ message BrushTip {
 // Parameters that describe how a stroke mesh should be rendered.
 message BrushPaint {
   message TextureLayer {
+
     // Texture wrapping modes for specifying `TextureLayer::wrap_x` and
     // `wrap_y`.
     enum Wrap {
       WRAP_UNSPECIFIED = 0;
+
       // Repeats texture image horizontally/vertically.
       WRAP_REPEAT = 1;
+
       // Repeats texture image horizontally/vertically, alternating mirror
       // images so that adjacent edges always match.
       WRAP_MIRROR = 2;
+
       // Points outside of the texture have the color of the nearest texture
       // edge point. This mode is typically most useful when the edge pixels of
       // the texture image are all the same, e.g. either transparent or a single
       // solid color.
       WRAP_CLAMP = 3;
     }
+
+
     // Units for specifying `TextureLayer::size`.
     enum SizeUnit {
       SIZE_UNIT_UNSPECIFIED = 0;
+
       // In the same units as the provided `StrokeInput` position.
       SIZE_UNIT_STROKE_COORDINATES = 1;
+
       // As multiples of brush size.
       SIZE_UNIT_BRUSH_SIZE = 2;
+
       reserved 3;
     }
+
+
     // Specification of the origin point to use for the texture.
     enum Origin {
       ORIGIN_UNSPECIFIED = 0;
+
       // The texture origin is the origin of stroke space, however that happens
       // to be defined for a given stroke.
       ORIGIN_STROKE_SPACE_ORIGIN = 1;
+
       // The texture origin is the first input position for the stroke.
       ORIGIN_FIRST_STROKE_INPUT = 2;
+
       // The texture origin is the last input position (including predicted
       // inputs) for the stroke. Note that this means that the texture origin
       // for an in-progress stroke will move as more inputs are added.
       ORIGIN_LAST_STROKE_INPUT = 3;
     }
+
+
     // Specification of how the texture should be applied to the stroke.
     enum Mapping {
       MAPPING_UNSPECIFIED = 0;
@@ -216,6 +232,8 @@ message BrushPaint {
       // stroke at each point.
       MAPPING_WINDING = 2;
     }
+
+
     // Setting for how an incoming ("source" / "src") color should be combined
     // with the already present ("destination" / "dst") color at a given pixel.
     enum BlendMode {
@@ -376,9 +394,13 @@ message BrushPaint {
     optional Wrap wrap_y = 19 [default = WRAP_REPEAT];
 
     reserved 20;
+    reserved 21;
+    reserved 22;
   }
 
-  // The textures to apply to the stroke
+  // Zero or more textures to blend together to affect this coat's appearance.
+  // Each layer is blended into the next one, and finally into the color of the
+  // paint, according to each layer's `blend_mode`.
   repeated TextureLayer texture_layers = 1;
 }
 
@@ -403,15 +425,19 @@ message BrushPaint {
 //   the brush tip. For example, a TargetNode is a terminal node that modifies
 //   a scalar brush tip property like a brush width multiplier.
 //
-// The behavior is specified by a single list of nodes that represents a
-// flattened, post-order traversal of the graph. The simplest form of behavior
-// consists of two nodes:
+// The behavior is specified by a single list of nodes that encode one or more
+// directed trees, where edges point from the leaves (Start nodes) up to the
+// root (a Terminal node). The order of the nodes in the list is given by a
+// post-order traversal of each tree, ignoring edge orientations.
+//
+// The simplest form of behavior consists of two nodes:
 //
 //                     +--------+      +--------+
 //                     | Source | ---> | Target |
 //                     +--------+      +--------+
 //
 // This behavior would be represented by the list {Source, Target}.
+//
 // A more complex behavior could use two source values for a single target:
 //
 //             +----------+      +-----+
@@ -425,31 +451,32 @@ message BrushPaint {
 // This could be represented by the list {Source 1, Source 2, Max, Target}.
 //
 // For each input in a stroke, `BrushTip::behaviors` are applied as follows:
-//   1. A target modifier for each tip
-//   property is accumulated from every `BrushBehavior` present on the current
-//   `BrushTip`:
-//     * Multiple behaviors can affect the same `Target`.
-//     * Depending on the `Target`, modifiers from multiple behaviors will stack
-//     either additively or multiplicatively, according to the descriptions on
-//     that `BrushBehavior::Target`.
-//     * Regardless, the order of specified behaviors does not affect the
-//     result.
+//   1. A target modifier for each tip property is accumulated from every
+//      `BrushBehavior` present on the current `BrushTip`:
+//       * Multiple behaviors can affect the same `Target`.
+//       * Depending on the `Target`, modifiers from multiple behaviors will
+//         stack either additively or multiplicatively, according to the
+//         descriptions on that `BrushBehavior::Target`.
+//       * Regardless, the order of specified behaviors does not affect the
+//         result.
 //   2. The modifiers are applied to the shape and color shift values of the
-//   tip's state according to the descriptions on each `Target`. The resulting
-//   tip property values are then clamped or normalized to within their valid
-//   range of values. E.g. the final value of `BrushTip::corner_rounding` will
-//   be clamped within [0, 1]. Generally:
-//     * The affected shape values are those found in `BrushTip` members.
-//     * The color shift values remain in the range -100% to +100%. Note that
-//     when stored on a vertex, the color shift is encoded such that each
-//     channel is in the range [0, 1], where 0.5 represents a 0% shift.
+//      tip's state according to the descriptions on each `Target`. The
+//      resulting tip property values are then clamped or normalized to within
+//      their valid range of values. E.g. the final value of
+//      `BrushTip::corner_rounding` will be clamped within [0, 1]. Generally:
+//       * The affected shape values are those found in `BrushTip` members.
+//       * The color shift values remain in the range -100% to +100%. Note that
+//         when stored on a vertex, the color shift is encoded such that each
+//         channel is in the range [0, 1], where 0.5 represents a 0% shift.
 //
 // Note that the accumulated tip shape property modifiers may be adjusted by the
 // implementation before being applied: the rates of change of shape properties
 // may be constrained to keep them from changing too rapidly with respect to
 // distance traveled from one input to the next.
 message BrushBehavior {
+
   // A stroke input property, along with its units, that can act as a source for
+  // a `BrushBehavior.SourceNode`.
   enum Source {
     SOURCE_UNSPECIFIED = 0;
 
@@ -646,38 +673,25 @@ message BrushBehavior {
     SOURCE_DISTANCE_REMAINING_AS_FRACTION_OF_STROKE_LENGTH = 39;
   }
 
+
   // `BrushTip` properties that can be modified by a `BrushBehavior`.
   enum Target {
     TARGET_UNSPECIFIED = 0;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // Scales the brush-tip width, starting from the value calculated using
+    // `BrushTip::scale_x`. The final brush width is clamped to a maximum of
+    // twice the baseline width. If multiple behaviors have this target or
+    // `TARGET_SIZE_MULTIPLIER`, they aggregate multiplicatively. (Therefore, if
+    // one behavior scales the width down to zero over time, it "wins out" over
+    // all other width-modifying behaviors.)
     TARGET_WIDTH_MULTIPLIER = 1;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // Same as `TARGET_WIDTH_MULTIPLIER` but for height. Clamping and
+    // aggregation work the same way as for width.
     TARGET_HEIGHT_MULTIPLIER = 2;
 
-    // `TARGET_WIDTH_MULTIPLIER` and `TARGET_HEIGHT_MULTIPLIER` scale the
-    // brush-tip size along one dimension, starting from the values calculated
-    // using `BrushTip::scale`, while `TARGET_SIZE_MULTIPLIER` is a convenience
-    // target that affects both width and height at once. The final brush size
-    // is clamped to a maximum of twice the base size along each dimension. If
-    // multiple behaviors have one of these targets, they stack multiplicatively
-    // (thus allowing one behavior to scale the size down to zero over time,
-    // "winning" over all other size-modifying behaviors).
+    // A convenience target that affects both width and height at once, in the
+    // same way that `TARGET_WIDTH_MULTIPLIER` does.
     TARGET_SIZE_MULTIPLIER = 3;
 
     // Adds the target modifier to `BrushTip::slant`. The final brush slant
@@ -737,12 +751,11 @@ message BrushBehavior {
     // each part of the stroke.
     TARGET_OPACITY_MULTIPLIER = 11;
 
-    // Adds the target modifier to the brush tip x/y position, where one
-    // distance unit is equal to the brush size.
+    // Adds the target modifier to the brush tip X position, where one distance
+    // unit is equal to the brush size.
     TARGET_POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE = 12;
 
-    // Adds the target modifier to the brush tip x/y position, where one
-    // distance unit is equal to the brush size.
+    // Same as `TARGET_POSITION_OFFSET_X_IN_MULTIPLES_OF_BRUSH_SIZE` for Y.
     TARGET_POSITION_OFFSET_Y_IN_MULTIPLES_OF_BRUSH_SIZE = 13;
 
     // Moves the brush tip center forward (or backward, for negative values)
@@ -754,15 +767,16 @@ message BrushBehavior {
     // the direction of stroke travel, where one distance unit is equal to the
     // brush size. If the X- and Y-axes of stroke space were rotated so that the
     // positive X-axis points in the direction of stroke travel, then a positive
-    // value for this offset moves the brush tip center towards the positive
-    // Y-axis (and a negative value moves the brush tip center towards the
-    // negative Y-axis).
+    // value for this offset moves the brush tip center toward positive Y (and a
+    // negative value moves it toward negative Y).
     TARGET_POSITION_OFFSET_LATERAL_IN_MULTIPLES_OF_BRUSH_SIZE = 15;
 
     reserved 16;
     reserved 17;
   }
 
+
+  // Like `Target`, but for vector values.
   enum PolarTarget {
     POLAR_UNSPECIFIED = 0;
 
@@ -785,6 +799,7 @@ message BrushBehavior {
     // negative Y-axis.
     POLAR_POSITION_OFFSET_RELATIVE_IN_RADIANS_AND_MULTIPLES_OF_BRUSH_SIZE = 2;
   }
+
 
   // The desired behavior when an input value is outside the bounds of
   // `source_value_range`.
@@ -810,6 +825,7 @@ message BrushBehavior {
     OUT_OF_RANGE_MIRROR = 3;
   }
 
+
   // List of input properties that might not be reported by `StrokeInput`.
   enum OptionalInputProperty {
     OPTIONAL_INPUT_UNSPECIFIED = 0;
@@ -821,6 +837,7 @@ message BrushBehavior {
     OPTIONAL_INPUT_TILT_X_AND_Y = 4;
   }
 
+
   // A binary operation for combining two values in a `BinaryOpNode`.
   enum BinaryOp {
     BINARY_OP_UNSPECIFIED = 0;
@@ -831,6 +848,7 @@ message BrushBehavior {
     // A + B, or null if either is null
     BINARY_OP_SUM = 2;
   }
+
 
   // Dimensions/units for measuring the `damping_gap` field of a `DampingNode`.
   enum DampingSource {
@@ -852,6 +870,7 @@ message BrushBehavior {
     // `damping_gap` is measured in multiples of the brush size.
     DAMPING_SOURCE_DISTANCE_IN_MULTIPLES_OF_BRUSH_SIZE = 3;
   }
+
 
   // An interpolation function for combining three values in an
   // `InterpolationNode`.
@@ -1087,7 +1106,7 @@ message BrushBehavior {
   // To be valid:
   //   * `target` must be a valid `PolarTarget` enumerator.
   //   * The endpoints of `angle_range` and of `magnitude_range` must be finite
-  //   and distinct.
+  //     and distinct.
   message PolarTargetNode {
     // What aspect of the brush to affect, and how.
     optional PolarTarget target = 1;
@@ -1111,6 +1130,7 @@ message BrushBehavior {
   // Were fields controlling brush behavior, use `nodes` instead.
   reserved 1 to 14;
 }
+
 
 // Specifies a predefined easing function.
 enum PredefinedEasingFunction {
@@ -1197,29 +1217,30 @@ message LinearEasingFunction {
   repeated float y = 2 [packed = true];
 }
 
+
 // Setting to determine the desired output value of the first and last
-// step of [0, 1) for the Steps EasingFunction, see below for more context.
+// step of [0, 1) for the Steps EasingFunction. See below for more context.
 enum StepPosition {
   STEP_POSITION_UNSPECIFIED = 0;
 
   // The step function "jumps" at the start of [0, 1):
-  // * for x in [0, 1/step_count)      =>     y = 1/step_count
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1
+  //   * for x in [0, 1/step_count)      =>     y = 1/step_count
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1
   STEP_POSITION_JUMP_START = 1;
 
   // The step function "jumps" at the end of [0, 1):
-  // * for x in [0, 1/step_count)      =>     y = 0
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/step_count
+  //   * for x in [0, 1/step_count)      =>     y = 0
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/step_count
   STEP_POSITION_JUMP_END = 2;
 
   // The step function does not "jump" at either boundary:
-  // * for x in [0, 1/step_count)      =>     y = 0
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1
+  //   * for x in [0, 1/step_count)      =>     y = 0
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1
   STEP_POSITION_JUMP_NONE = 3;
 
   // The step function "jumps" at both the start and the end:
-  // * for x in [0, 1/step_count)      =>     y = 1/(step_count + 1)
-  // * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/(step_count + 1)
+  //   * for x in [0, 1/step_count)      =>     y = 1/(step_count + 1)
+  //   * for x in [1 - 1/step_count, 1)  =>     y = 1 - 1/(step_count + 1)
   STEP_POSITION_JUMP_BOTH = 4;
 }
 

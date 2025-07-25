@@ -75,14 +75,14 @@ class CompilationTestHelper(
                 val sourceFile = getTestSourceFile(sourceFileName)
                 Source.Companion.kotlin(
                     ensureKotlinFileNameFormat(sourceFileName),
-                    sourceFile.readText()
+                    sourceFile.readText(),
                 )
             } +
                 proxySourceFileNames.map { proxySourceFileName ->
                     val proxySourceFile = getTestSourceFile(proxySourceFileName)
                     Source.Companion.kotlin(
                         ensureKotlinFileNameFormat(proxySourceFile.name),
-                        proxySourceFile.readText()
+                        proxySourceFile.readText(),
                     )
                 }
 
@@ -95,7 +95,7 @@ class CompilationTestHelper(
                     sources = sources,
                     symbolProcessorProviders = symbolProcessorProviders,
                     processorOptions = processorOptions,
-                )
+                ),
             )
 
         return CompilationReport.create(result, outputDir)
@@ -109,7 +109,7 @@ class CompilationTestHelper(
         report: CompilationReport,
         expectGeneratedFileName: String,
         goldenFileName: String,
-        generatedFileContent: String?
+        generatedFileContent: String?,
     ) {
         assertWithMessage(
                 """
@@ -160,8 +160,6 @@ class CompilationTestHelper(
         expectGeneratedSourceFileName: String,
         goldenFileName: String,
     ) {
-        val lineToRemoveRegex =
-            Regex("""// Last generated time \(Workaround for now, will be reverted\): \d+\n?""")
         assertSuccessWithGeneratedContent(
             report,
             expectGeneratedSourceFileName,
@@ -171,8 +169,7 @@ class CompilationTestHelper(
                     sourceFile.source.relativePath.contains(expectGeneratedSourceFileName)
                 }
                 ?.source
-                ?.contents
-                ?.replace(lineToRemoveRegex, "")
+                ?.contents,
         )
     }
 
@@ -194,7 +191,7 @@ class CompilationTestHelper(
                     resourceFile.resource.relativePath.contains(expectGeneratedResourceFileName)
                 }
                 ?.resource
-                ?.getContents()
+                ?.getContents(),
         )
     }
 
@@ -236,7 +233,7 @@ class CompilationTestHelper(
         return File(
                 testFileSrcDir,
                 /** child= */
-                fileName
+                fileName,
             )
             .also { file -> check(file.exists()) { "Source file [${file.path}] does not exist" } }
     }
@@ -245,7 +242,7 @@ class CompilationTestHelper(
         return File(
                 goldenFileSrcDir,
                 /** child= */
-                fileName
+                fileName,
             )
             .also { file -> check(file.exists()) { "Golden file [${file.path}] does not exist" } }
     }
@@ -288,7 +285,7 @@ class CompilationTestHelper(
                     generatedResourceFiles =
                         result.generatedResources.map { resource ->
                             GeneratedResourceFile.create(resource, outputDir)
-                        }
+                        },
                 )
             }
         }

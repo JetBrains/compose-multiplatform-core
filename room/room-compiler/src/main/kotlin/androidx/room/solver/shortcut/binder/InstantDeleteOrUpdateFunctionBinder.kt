@@ -38,7 +38,7 @@ class InstantDeleteOrUpdateFunctionBinder(adapter: DeleteOrUpdateFunctionAdapter
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, XTypeSpec>>,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     ) {
         if (adapter == null) {
             return
@@ -56,17 +56,17 @@ class InstantDeleteOrUpdateFunctionBinder(adapter: DeleteOrUpdateFunctionAdapter
                             parameterTypeName = SQLiteDriverTypeNames.CONNECTION,
                             parameterName = connectionVar,
                             returnTypeName = adapter.returnType.asTypeName().box(),
-                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable
+                            javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                         ) {
                         override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
                             adapter.generateFunctionBody(
                                 scope = scope,
                                 parameters = parameters,
                                 adapters = adapters,
-                                connectionVar = connectionVar
+                                connectionVar = connectionVar,
                             )
                         }
-                    }
+                    },
             )
         val returnPrefix =
             when (scope.language) {

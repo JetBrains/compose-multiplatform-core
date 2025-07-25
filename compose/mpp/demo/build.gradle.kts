@@ -14,43 +14,15 @@
  * limitations under the License.
  */
 
-import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import java.util.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
-    id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
-//  [1.4 Update]  id("application")
-    kotlin("plugin.serialization") version "1.9.21"
-    id("JetbrainsAndroidXPlugin")
-}
-
-AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
-
-dependencies {
-
-}
-
-val resourcesDir = "$buildDir/resources"
-val skikoWasm = configurations.findByName("skikoWasm") ?: configurations.create("skikoWasm")
-
-dependencies {
-    skikoWasm(libs.skikoWasm)
-}
-
-val unzipTask = tasks.register("unzipWasm", Copy::class) {
-    destinationDir = file(resourcesDir)
-    from(skikoWasm.map { zipTree(it) })
-}
-
-repositories {
-    mavenLocal()
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -69,13 +41,18 @@ kotlin {
         browser {
             commonWebpackConfig {
                 outputFileName = "demo.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).copy(
+                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                     open = mapOf(
                         "app" to mapOf(
                             "name" to "google-chrome",
                         )
-                    ),
-                )
+                    )
+                    static = (static ?: mutableListOf()).apply {
+                        // Serve sources to debug inside browser
+                        add(project.rootDir.path)
+                        add(project.projectDir.path)
+                    }
+                }
             }
         }
         binaries.executable()
@@ -149,6 +126,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(libs.kotlinStdlib)
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinSerializationCore)
+
                 implementation(project(":compose:foundation:foundation"))
                 implementation(project(":compose:foundation:foundation-layout"))
                 implementation(project(":compose:material3:material3"))
@@ -157,7 +138,6 @@ kotlin {
                 implementation(project(":compose:material3:adaptive:adaptive-layout"))
                 implementation(project(":compose:material3:adaptive:adaptive-navigation"))
                 implementation(project(":compose:material:material"))
-                implementation(project(":compose:mpp"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":compose:ui:ui-graphics"))
@@ -169,16 +149,20 @@ kotlin {
                 implementation(project(":navigation:navigation-common"))
                 implementation(project(":navigation:navigation-compose"))
                 implementation(project(":navigation:navigation-runtime"))
-                implementation(libs.kotlinStdlib)
-                implementation(libs.kotlinCoroutinesCore)
-                api(libs.kotlinSerializationCore)
+
+                implementation("org.jetbrains.compose.material:material-icons-core:1.7.3") {
+                    // exclude dependencies, because they override local projects when we build 0.0.0-* version
+                    // (see https://repo1.maven.org/maven2/org/jetbrains/compose/material/material-icons-core-desktop/1.6.11/material-icons-core-desktop-1.6.11.module)
+                    exclude("org.jetbrains.compose.runtime")
+                    exclude("org.jetbrains.compose.ui")
+                }
             }
         }
 
         val skikoMain by creating {
             dependsOn(commonMain)
             dependencies {
-                implementation(libs.skikoCommon)
+                implementation(libs.skiko)
             }
         }
 
@@ -187,14 +171,14 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinCoroutinesSwing)
                 implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:desktop:desktop"))
             }
         }
 
         val webMain by creating {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
-            resources.srcDirs(unzipTask.map { it.destinationDir })
+            // TODO Restore unzipTask
+            // resources.srcDirs(unzipTask.map { it.destinationDir })
         }
 
         val jsMain by getting {
@@ -288,7 +272,6 @@ if (System.getProperty("os.name") == "Mac OS X") {
 }
 
 tasks.create("runDesktop", JavaExec::class.java) {
-    dependsOn(":compose:desktop:desktop:jar")
     mainClass.set("androidx.compose.mpp.demo.Main_desktopKt")
     args = listOfNotNull(project.findProperty("args")?.toString())
     systemProperty("skiko.fps.enabled", "true")

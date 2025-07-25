@@ -108,7 +108,7 @@ internal object VaccinesMedicalResourceFactory {
     fun createVaccinesUpsertMedicalResourceRequest(
         dataSourceId: String,
         fhirResourceId: String? = null,
-        completeStatus: CompleteStatus = COMPLETE
+        completeStatus: CompleteStatus = COMPLETE,
     ): UpsertMedicalResourceRequest {
         val data =
             FHIR_RESOURCE_JSON_DATA_IMMUNIZATIONS.apply {
@@ -121,6 +121,6 @@ internal object VaccinesMedicalResourceFactory {
 
     enum class CompleteStatus(internal val stringValue: String) {
         COMPLETE("complete"),
-        INCOMPLETE("incomplete")
+        INCOMPLETE("incomplete"),
     }
 }

@@ -22,7 +22,6 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
-    testImplementation(libs.robolectric)
 
     implementation "androidx.core:core-ktx:1.6.0"
 
@@ -33,9 +32,6 @@ android {
     defaultConfig {
         minSdk = 25
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.ongoing"
 }
 
@@ -46,4 +42,5 @@ androidx {
     inceptionYear = "2021"
     description = "Android Wear Ongoing Activities"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }

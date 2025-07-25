@@ -30,7 +30,7 @@ internal object Api24Compat {
         session: CameraCaptureSession,
         request: CaptureRequest,
         surface: Surface,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         callback.onCaptureBufferLost(session, request, surface, frameNumber)
     }
@@ -44,7 +44,7 @@ internal object Api34Compat {
         session: CameraCaptureSession,
         request: CaptureRequest,
         timestamp: Long,
-        frameNumber: Long
+        frameNumber: Long,
     ) {
         callback.onReadoutStarted(session, request, timestamp, frameNumber)
     }

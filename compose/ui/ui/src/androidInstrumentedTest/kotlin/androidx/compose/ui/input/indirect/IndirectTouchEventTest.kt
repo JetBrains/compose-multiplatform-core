@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.input.indirect
 
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_HOVER_ENTER
 import android.view.MotionEvent.ACTION_MOVE
@@ -24,7 +26,7 @@ import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -45,7 +47,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalIndirectTouchTypeApi
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class IndirectTouchEventTest {
@@ -58,6 +60,31 @@ class IndirectTouchEventTest {
     @Before
     fun before() {
         receivedEvent = null
+    }
+
+    @Test
+    fun convertMotionEventToIndirectTouchEvent_validMotionEvent() {
+
+        val offset = Offset(4f, 6f)
+
+        val motionEvent =
+            MotionEvent.obtain(
+                SystemClock.uptimeMillis(), // downTime,
+                SystemClock.uptimeMillis(), // eventTime,
+                MotionEvent.ACTION_DOWN,
+                offset.x,
+                offset.y,
+                0, // metaState
+            )
+
+        val indirectTouchEvent = IndirectTouchEvent(motionEvent)
+
+        assertThat(indirectTouchEvent).isNotNull()
+        assertThat(indirectTouchEvent.position).isEqualTo(offset)
+        assertThat(indirectTouchEvent.uptimeMillis).isEqualTo(motionEvent.eventTime)
+        assertThat(indirectTouchEvent.type)
+            .isEqualTo(convertActionToIndirectTouchEventType(motionEvent.actionMasked))
+        assertThat(indirectTouchEvent.nativeEvent).isEqualTo(motionEvent)
     }
 
     @Test
@@ -220,7 +247,7 @@ class IndirectTouchEventTest {
 
     @Test
     fun indirectTouchEventContainsEventTime() {
-        val eventTimeMs = 123L
+        val uptimeMs = 123L
         ContentWithInitialFocus {
             Box(
                 modifier =
@@ -236,12 +263,12 @@ class IndirectTouchEventTest {
             rootView.dispatchGenericMotionEvent(
                 MotionEventBuilder.newBuilder()
                     .setSource(SOURCE_TOUCH_NAVIGATION)
-                    .setEventTime(eventTimeMs)
+                    .setEventTime(uptimeMs)
                     .build()
             )
         }
 
-        rule.runOnIdle { assertThat(receivedEvent?.eventTimeMillis).isEqualTo(eventTimeMs) }
+        rule.runOnIdle { assertThat(receivedEvent?.uptimeMillis).isEqualTo(uptimeMs) }
     }
 
     @Test

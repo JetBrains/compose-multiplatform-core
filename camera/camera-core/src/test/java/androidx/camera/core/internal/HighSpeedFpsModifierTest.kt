@@ -57,7 +57,7 @@ class HighSpeedFpsModifierTest {
         val outputConfigs =
             listOf(
                 OutputConfig.builder(previewSurface).build(),
-                OutputConfig.builder(videoSurface).build()
+                OutputConfig.builder(videoSurface).build(),
             )
         val repeatingConfigBuilder =
             CaptureConfig.Builder().apply {
@@ -78,7 +78,7 @@ class HighSpeedFpsModifierTest {
         val outputConfigs =
             listOf(
                 OutputConfig.builder(previewSurface).build(),
-                OutputConfig.builder(videoSurface).build()
+                OutputConfig.builder(videoSurface).build(),
             )
         val repeatingConfigBuilder =
             CaptureConfig.Builder().apply {

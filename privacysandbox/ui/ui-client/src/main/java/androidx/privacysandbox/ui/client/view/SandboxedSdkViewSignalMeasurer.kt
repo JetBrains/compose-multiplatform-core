@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 /** Class for calculating signals related to the presentation of a [SandboxedSdkView]. */
 internal class SandboxedSdkViewSignalMeasurer(
     val view: SandboxedSdkView,
-    private val session: SandboxedUiAdapter.Session
+    private val session: SandboxedUiAdapter.Session,
 ) {
     private var geometryMeasurer = GeometryMeasurer.getInstance()
 
@@ -50,7 +50,7 @@ internal class SandboxedSdkViewSignalMeasurer(
                         geometryData.heightPx,
                         geometryData.onScreenGeometry,
                         view.alpha,
-                        geometryData.obstructions
+                        geometryData.obstructions,
                     )
                 session.notifyUiChanged(SandboxedSdkViewUiInfo.toBundle(sandboxedSdkViewUiInfo))
             }

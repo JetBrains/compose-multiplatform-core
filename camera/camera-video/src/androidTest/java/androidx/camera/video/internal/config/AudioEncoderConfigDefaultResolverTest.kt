@@ -49,7 +49,7 @@ class AudioEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val resolvedAudioConfig =
             AudioEncoderConfigDefaultResolver(
@@ -57,7 +57,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    defaultAudioSettings
+                    defaultAudioSettings,
                 )
                 .get()
 
@@ -76,7 +76,7 @@ class AudioEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         // Get default channel count
         val defaultConfig =
@@ -85,7 +85,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    defaultAudioSettings
+                    defaultAudioSettings,
                 )
                 .get()
         val defaultChannelCount = defaultConfig.channelCount
@@ -99,7 +99,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    higherChannelCountAudioSettings
+                    higherChannelCountAudioSettings,
                 )
                 .get()
 
@@ -111,7 +111,7 @@ class AudioEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         // Get default sample rate
         val defaultConfig =
@@ -120,7 +120,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    defaultAudioSettings
+                    defaultAudioSettings,
                 )
                 .get()
         val defaultSampleRate = defaultConfig.captureSampleRate
@@ -139,7 +139,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    higherSampleRateAudioSettings
+                    higherSampleRateAudioSettings,
                 )
                 .get()
 
@@ -151,7 +151,7 @@ class AudioEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val defaultConfig =
             AudioEncoderConfigDefaultResolver(
@@ -159,7 +159,7 @@ class AudioEncoderConfigDefaultResolverTest {
                     ENCODER_PROFILE,
                     TIMEBASE,
                     defaultAudioSpec,
-                    defaultAudioSettings
+                    defaultAudioSettings,
                 )
                 .get()
         val defaultBitrate = defaultConfig.bitrate
@@ -179,7 +179,7 @@ class AudioEncoderConfigDefaultResolverTest {
                         ENCODER_PROFILE,
                         TIMEBASE,
                         higherAudioSpec,
-                        defaultAudioSettings
+                        defaultAudioSettings,
                     )
                     .get()
                     .bitrate
@@ -192,7 +192,7 @@ class AudioEncoderConfigDefaultResolverTest {
                         ENCODER_PROFILE,
                         TIMEBASE,
                         lowerAudioSpec,
-                        defaultAudioSettings
+                        defaultAudioSettings,
                     )
                     .get()
                     .bitrate

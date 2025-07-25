@@ -89,7 +89,7 @@ public class WheelchairPushesRecord(
             AggregateMetric.longMetric(
                 "WheelchairPushes",
                 AggregateMetric.AggregationType.TOTAL,
-                "count"
+                "count",
             )
     }
 }

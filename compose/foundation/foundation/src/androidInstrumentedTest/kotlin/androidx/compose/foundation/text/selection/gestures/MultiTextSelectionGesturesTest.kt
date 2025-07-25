@@ -68,7 +68,7 @@ internal class MultiTextSelectionGesturesTest : TextSelectionGesturesTest() {
                     textToolbar = textToolbar,
                     spyTextActionModeCallback = spyTextActionModeCallback,
                     hapticFeedback = hapticFeedback,
-                    getActual = { selection.value }
+                    getActual = { selection.value },
                 ) {
                 override fun subAssert() {
                     Truth.assertAbout(MultiSelectionSubject.withContent(texts.value))
@@ -94,11 +94,7 @@ internal class MultiTextSelectionGesturesTest : TextSelectionGesturesTest() {
             texts.value.fastForEach { (str, tag) ->
                 BasicText(
                     text = str,
-                    style =
-                        TextStyle(
-                            fontFamily = fontFamily,
-                            fontSize = fontSize,
-                        ),
+                    style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
                     modifier = Modifier.fillMaxWidth().testTag(tag),
                 )
             }

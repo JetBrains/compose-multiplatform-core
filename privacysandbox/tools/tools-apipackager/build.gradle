@@ -32,7 +32,6 @@ dependencies {
     api(project(":privacysandbox:tools:tools"))
     api(project(":privacysandbox:tools:tools-core"))
     api(libs.kotlinStdlib)
-    implementation(libs.kotlinStdlibJdk8)
     implementation(libs.asm)
     implementation(libs.asmCommons)
     implementation(libs.kotlinMetadataJvm) {

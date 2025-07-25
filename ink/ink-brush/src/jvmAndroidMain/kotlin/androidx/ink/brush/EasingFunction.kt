@@ -37,8 +37,12 @@ import kotlin.jvm.JvmField
 @Suppress("NotCloseable")
 public abstract class EasingFunction private constructor(internal val nativePointer: Long) {
 
-    public fun finalize() {
-        EasingFunctionNative.free(nativePointer)
+    // NOMUTANTS -- Not tested post garbage collection.
+    protected fun finalize() {
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            EasingFunctionNative.free(nativePointer)
+        }
     }
 
     public companion object {
@@ -387,46 +391,45 @@ private object EasingFunctionNative {
         NativeLoader.load()
     }
 
-    @UsedByNative public external fun createPredefined(value: Int): Long
+    @UsedByNative external fun createPredefined(value: Int): Long
 
-    @UsedByNative
-    public external fun createCubicBezier(x1: Float, y1: Float, x2: Float, y2: Float): Long
+    @UsedByNative external fun createCubicBezier(x1: Float, y1: Float, x2: Float, y2: Float): Long
 
-    @UsedByNative public external fun createLinear(points: FloatArray): Long
+    @UsedByNative external fun createLinear(points: FloatArray): Long
 
-    @UsedByNative public external fun createSteps(stepCount: Int, stepPosition: Int): Long
+    @UsedByNative external fun createSteps(stepCount: Int, stepPosition: Int): Long
 
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
-    @UsedByNative public external fun getParametersType(nativePointer: Long): Int
+    @UsedByNative external fun getParametersType(nativePointer: Long): Int
 
     // Predefined easing function accessors:
 
-    @UsedByNative public external fun getPredefinedValueInt(nativePointer: Long): Int
+    @UsedByNative external fun getPredefinedValueInt(nativePointer: Long): Int
 
     // Cubic Bezier easing function accessors:
 
-    @UsedByNative public external fun getCubicBezierX1(nativePointer: Long): Float
+    @UsedByNative external fun getCubicBezierX1(nativePointer: Long): Float
 
-    @UsedByNative public external fun getCubicBezierY1(nativePointer: Long): Float
+    @UsedByNative external fun getCubicBezierY1(nativePointer: Long): Float
 
-    @UsedByNative public external fun getCubicBezierX2(nativePointer: Long): Float
+    @UsedByNative external fun getCubicBezierX2(nativePointer: Long): Float
 
-    @UsedByNative public external fun getCubicBezierY2(nativePointer: Long): Float
+    @UsedByNative external fun getCubicBezierY2(nativePointer: Long): Float
 
     // Linear easing function accessors:
 
-    @UsedByNative public external fun getLinearNumPoints(nativePointer: Long): Int
+    @UsedByNative external fun getLinearNumPoints(nativePointer: Long): Int
 
-    @UsedByNative public external fun getLinearPointX(nativePointer: Long, index: Int): Float
+    @UsedByNative external fun getLinearPointX(nativePointer: Long, index: Int): Float
 
-    @UsedByNative public external fun getLinearPointY(nativePointer: Long, index: Int): Float
+    @UsedByNative external fun getLinearPointY(nativePointer: Long, index: Int): Float
 
     // Steps easing function accessors:
 
-    @UsedByNative public external fun getStepsCount(nativePointer: Long): Int
+    @UsedByNative external fun getStepsCount(nativePointer: Long): Int
 
-    public fun getStepsPosition(nativePointer: Long): EasingFunction.StepPosition =
+    fun getStepsPosition(nativePointer: Long): EasingFunction.StepPosition =
         EasingFunction.StepPosition(getStepsPositionInt(nativePointer))
 
     @UsedByNative private external fun getStepsPositionInt(nativePointer: Long): Int

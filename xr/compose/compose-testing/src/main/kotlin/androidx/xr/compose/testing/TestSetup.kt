@@ -19,16 +19,23 @@ package androidx.xr.compose.testing
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
-import android.view.View
 import androidx.annotation.RestrictTo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.xr.compose.platform.LocalHasXrSpatialFeature
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.LocalSpatialConfiguration
+import androidx.xr.compose.platform.SpatialCapabilities
+import androidx.xr.compose.platform.SpatialConfiguration
+import androidx.xr.compose.unit.DpVolumeSize
+import androidx.xr.compose.unit.Meter
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HeadTrackingMode
+import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.ActivityPose
 import androidx.xr.runtime.internal.ActivitySpace
@@ -39,112 +46,69 @@ import androidx.xr.runtime.internal.HeadActivityPose
 import androidx.xr.runtime.internal.HitTestResult
 import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.PanelEntity
-import androidx.xr.runtime.internal.PerceptionSpaceActivityPose
 import androidx.xr.runtime.internal.PixelDimensions
-import androidx.xr.runtime.internal.SpatialCapabilities
-import androidx.xr.runtime.internal.SpatialEnvironment
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_3D_CONTENT
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_APP_ENVIRONMENT
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_SPATIAL_AUDIO
+import androidx.xr.scenecore.SpatialCapabilities.Companion.SPATIAL_CAPABILITY_UI
 import androidx.xr.scenecore.scene
 import com.google.common.util.concurrent.ListenableFuture
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
+import java.util.concurrent.Executor
 
 /**
- * A Test environment composable wrapper to support testing elevated components locally.
+ * A Test environment composable wrapper to support testing spatial components locally.
  *
- * @param isXrEnabled Whether to enable XR.
- * @param isFullSpace Whether to enable full space mode.
- * @param runtime The [JxrPlatformAdapter] to use for the [Session].
+ * This function simplifies the initializing and configuring Session for testing purposes. It
+ * provides control over whether XR features are enabled and whether the application should operate
+ * in "full space" mode or "home space" mode.
+ *
+ * The created fake Session is then provided down the Composable tree using [LocalSession]. If
+ * [isXrEnabled] is false, the Session will not be created.
+ *
+ * @param isXrEnabled Whether the system XR Spatial feature should be enabled. If false, the Session
+ *   will not be created.
+ * @param runtime The [JxrPlatformAdapter] to use for the Session.
  * @param content The content block containing the compose content to be tested.
  */
 @Composable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun TestSetup(
     isXrEnabled: Boolean = true,
-    isFullSpace: Boolean = true,
-    runtime: JxrPlatformAdapter =
-        TestJxrPlatformAdapter.create(
-            createFakeRuntime(LocalContext.current.getActivity() as SubspaceTestingActivity)
-        ),
+    runtime: JxrPlatformAdapter? = null,
+    onSessionCreated: (Session) -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val activity = LocalContext.current.getActivity() as SubspaceTestingActivity
-    activity.session = createFakeSessionWithTestConfigs(activity, runtime)
-    val session = remember {
-        if (isXrEnabled) {
-            activity.session.apply {
-                // TODO: b/405401088 - There's functions aren't being honored at the moment of
-                // TestSetup
-                // creation.
-                if (isFullSpace) {
-                    scene.spatialEnvironment.requestFullSpaceMode()
-                } else {
-                    scene.spatialEnvironment.requestHomeSpaceMode()
+
+    activity.session =
+        remember(isXrEnabled, activity, runtime) {
+            if (isXrEnabled) {
+                val actualRuntime: JxrPlatformAdapter = runtime ?: createFakeRuntime(activity)
+
+                createFakeSession(activity, actualRuntime).apply {
+                    // Use HeadTrackingMode.DISABLED by default to bypass FOV logic.
+                    configure(Config(headTracking = HeadTrackingMode.DISABLED))
+                    onSessionCreated(this)
                 }
-                resume()
-                configure(Config(headTracking = HeadTrackingMode.Enabled))
+            } else {
+                null
             }
-        } else {
-            null
         }
-    }
 
     CompositionLocalProvider(
-        LocalSession provides session,
-        LocalHasXrSpatialFeature provides isXrEnabled,
+        LocalSession provides activity.session,
+        LocalSpatialConfiguration provides
+            (activity.session?.let { TestSessionSpatialConfiguration(it) }
+                ?: LocalSpatialConfiguration.current),
+        LocalSpatialCapabilities provides
+            (activity.session?.let { TestSessionSpatialCapabilities(it) }
+                ?: SpatialCapabilities.NoCapabilities),
         content = content,
     )
-}
-
-private fun createNonXrSession(activity: Activity): Session {
-    val mockJxrRuntime = mock<JxrPlatformAdapter>()
-    val mockActivitySpace =
-        mock<ActivitySpace>(defaultAnswer = { throw UnsupportedOperationException() })
-    mockJxrRuntime.stub {
-        on { mockJxrRuntime.spatialEnvironment } doReturn mock<SpatialEnvironment>()
-        on { activitySpace } doReturn mockActivitySpace
-        on { activitySpaceRootImpl } doReturn mockActivitySpace
-        on { headActivityPose } doReturn mock<HeadActivityPose>()
-        on { perceptionSpaceActivityPose } doReturn
-            mock<PerceptionSpaceActivityPose>(
-                defaultAnswer = { throw UnsupportedOperationException() }
-            )
-        on { mainPanelEntity } doReturn mock<PanelEntity>()
-        on { requestHomeSpaceMode() } doAnswer { throw UnsupportedOperationException() }
-        on { requestFullSpaceMode() } doAnswer { throw UnsupportedOperationException() }
-        on { spatialCapabilities } doReturn SpatialCapabilities(0)
-        on { createActivityPanelEntity(any(), any(), any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on { createAnchorEntity(any(), any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on { createEntity(any(), any(), any()) } doAnswer { throw UnsupportedOperationException() }
-        on { createGltfEntity(any(), any(), any()) } doAnswer
-            {
-                throw UnsupportedOperationException()
-            }
-        on {
-            createPanelEntity(
-                any<Context>(),
-                any<Pose>(),
-                any<View>(),
-                any<PixelDimensions>(),
-                any<String>(),
-                any<Entity>(),
-            )
-        } doAnswer { throw UnsupportedOperationException() }
-        on { createLoggingEntity(any()) } doAnswer { throw UnsupportedOperationException() }
-    }
-
-    return Session(activity, FakeRuntimeFactory().createRuntime(activity), mockJxrRuntime)
 }
 
 private tailrec fun Context.getActivity(): Activity =
@@ -172,6 +136,7 @@ public class TestHeadActivityPose(
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 
+    @Suppress("AsyncSuffixFuture")
     override fun hitTest(
         origin: Vector3,
         direction: Vector3,
@@ -190,6 +155,7 @@ public class TestHeadActivityPose(
  * @param activitySpacePose The pose of the camera in ActivitySpace.
  * @param activitySpaceScale The scale of the camera in ActivitySpace.
  * @param worldSpaceScale The scale of the camera in WorldSpace.
+ * @param displayResolutionInPixels The pixel dimensions of the camera view.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TestCameraViewActivityPose(
@@ -199,11 +165,13 @@ public class TestCameraViewActivityPose(
     override var activitySpacePose: Pose = Pose.Identity,
     override var activitySpaceScale: Vector3 = Vector3(1f, 1f, 1f),
     override val worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
+    override val displayResolutionInPixels: PixelDimensions = PixelDimensions(0, 0),
 ) : CameraViewActivityPose {
     override fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose {
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 
+    @Suppress("AsyncSuffixFuture")
     override fun hitTest(
         origin: Vector3,
         direction: Vector3,
@@ -214,7 +182,7 @@ public class TestCameraViewActivityPose(
 }
 
 /**
- * A test implementation of [ActivitySpace] that allows for setting custom values.
+ * A test implementation of a SceneCore [ActivitySpace] that allows for setting custom values.
  *
  * This class delegates non-overridden functionality to a base ActivitySpace instance but provides
  * direct control over key properties like [activitySpacePose] and [activitySpaceScale] (via the
@@ -235,14 +203,39 @@ public class TestActivitySpace(
     override fun getScale(relativeTo: Int): Vector3 {
         return activitySpaceScale
     }
+
+    private var spaceUpdateListener: Runnable? = null
+
+    @Suppress("ExecutorRegistration")
+    override fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor?) {
+        this.spaceUpdateListener = listener
+    }
+
+    /**
+     * Manually triggers the listener that was captured via [setOnSpaceUpdatedListener].
+     *
+     * This method is primarily intended for use in unit tests. It simulates the runtime invoking
+     * the listener, which is necessary for testing code that uses suspending functions like
+     * `ActivitySpace.awaitUpdate()` or otherwise waits on the listener callback.
+     *
+     * Call this method in your test after simulating the condition that should cause the space
+     * update (e.g., changing `activitySpaceScale` from zero to non-zero) to manually resume any
+     * coroutine that might be suspended waiting for the `onSpaceUpdated()` callback.
+     *
+     * The listener's `onSpaceUpdated()` method is invoked directly on the calling thread.
+     */
+    public fun triggerOnSpaceUpdatedListener() {
+        spaceUpdateListener?.run()
+    }
 }
 
 /**
  * A test implementation of [JxrPlatformAdapter] that allows for setting custom values for the
  * ActivitySpace, HeadActivityPose, and CameraViewActivityPose.
  *
- * @param fakeRuntimeBase The base [JxrPlatformAdapter] to use for the [JxrPlatformAdapter]
- *   implementation.
+ * [fakeRuntimeBase] is the base [JxrPlatformAdapter] to use for the [JxrPlatformAdapter]
+ * implementation.
+ *
  * @param activitySpace The [ActivitySpace] to use for the [JxrPlatformAdapter] implementation.
  * @param headActivityPose The [TestHeadActivityPose] to use for the [JxrPlatformAdapter]
  *   implementation.
@@ -257,6 +250,7 @@ public class TestActivitySpace(
 public class TestJxrPlatformAdapter
 private constructor(
     private val fakeRuntimeBase: JxrPlatformAdapter,
+    override var mainPanelEntity: PanelEntity = fakeRuntimeBase.mainPanelEntity,
     override var activitySpace: ActivitySpace = fakeRuntimeBase.activitySpace,
     override var headActivityPose: TestHeadActivityPose? =
         TestHeadActivityPose(activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))),
@@ -310,5 +304,56 @@ private constructor(
     public companion object {
         public fun create(fakeRuntimeBase: JxrPlatformAdapter): TestJxrPlatformAdapter =
             TestJxrPlatformAdapter(fakeRuntimeBase = fakeRuntimeBase)
+
+        public fun create(activity: Activity): TestJxrPlatformAdapter =
+            TestJxrPlatformAdapter(fakeRuntimeBase = createFakeRuntime(activity))
     }
 }
+
+private class TestSessionSpatialCapabilities(session: Session) : SpatialCapabilities {
+    private var capabilities by
+        mutableStateOf(session.scene.spatialCapabilities).apply {
+            session.scene.addSpatialCapabilitiesChangedListener { value = it }
+        }
+
+    override val isSpatialUiEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_UI)
+
+    override val isContent3dEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_3D_CONTENT)
+
+    override val isAppEnvironmentEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_APP_ENVIRONMENT)
+
+    override val isPassthroughControlEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL)
+
+    override val isSpatialAudioEnabled: Boolean
+        get() = capabilities.hasCapability(SPATIAL_CAPABILITY_SPATIAL_AUDIO)
+}
+
+/** A [SpatialConfiguration] that is attached to the current [Session]. */
+private class TestSessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
+    override val hasXrSpatialFeature: Boolean = true
+
+    override val bounds: DpVolumeSize by
+        mutableStateOf(session.scene.activitySpace.getBounds().toDpVolumeSize()).apply {
+            session.scene.activitySpace.addBoundsChangedListener { value = it.toDpVolumeSize() }
+        }
+
+    override fun requestHomeSpaceMode() {
+        session.scene.requestHomeSpaceMode()
+    }
+
+    override fun requestFullSpaceMode() {
+        session.scene.requestFullSpaceMode()
+    }
+}
+
+/**
+ * Creates a [DpVolumeSize] from a [FloatSize3d] object in meters.
+ *
+ * @return a [DpVolumeSize] object representing the same volume size in Dp.
+ */
+private fun FloatSize3d.toDpVolumeSize(): DpVolumeSize =
+    DpVolumeSize(Meter(width).toDp(), Meter(height).toDp(), Meter(depth).toDp())

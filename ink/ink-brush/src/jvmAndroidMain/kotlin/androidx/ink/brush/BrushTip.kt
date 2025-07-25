@@ -354,9 +354,12 @@ private constructor(
             " particleGapDurationMillis=$particleGapDurationMillis, behaviors=$behaviors)"
 
     /** Delete native BrushTip memory. */
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS -- Not tested post garbage collection.
-        BrushTipNative.free(nativePointer)
+        // TODO: b/423019041 - Investigate why this is failing in native code with nativePointer=0
+        if (nativePointer != 0L) {
+            BrushTipNative.free(nativePointer)
+        }
     }
 
     // Companion object gets initialized before anything else.
@@ -392,7 +395,7 @@ private object BrushTipNative {
 
     /** Create underlying native object and return reference for all subsequent native calls. */
     @UsedByNative
-    public external fun create(
+    external fun create(
         scaleX: Float,
         scaleY: Float,
         cornerRounding: Float,
@@ -406,27 +409,27 @@ private object BrushTipNative {
     ): Long
 
     /** Release the underlying memory allocated in [create]. */
-    @UsedByNative public external fun free(nativePointer: Long)
+    @UsedByNative external fun free(nativePointer: Long)
 
-    @UsedByNative public external fun getScaleX(nativePointer: Long): Float
+    @UsedByNative external fun getScaleX(nativePointer: Long): Float
 
-    @UsedByNative public external fun getScaleY(nativePointer: Long): Float
+    @UsedByNative external fun getScaleY(nativePointer: Long): Float
 
-    @UsedByNative public external fun getCornerRounding(nativePointer: Long): Float
+    @UsedByNative external fun getCornerRounding(nativePointer: Long): Float
 
-    @UsedByNative public external fun getSlantRadians(nativePointer: Long): Float
+    @UsedByNative external fun getSlantRadians(nativePointer: Long): Float
 
-    @UsedByNative public external fun getPinch(nativePointer: Long): Float
+    @UsedByNative external fun getPinch(nativePointer: Long): Float
 
-    @UsedByNative public external fun getRotationRadians(nativePointer: Long): Float
+    @UsedByNative external fun getRotationRadians(nativePointer: Long): Float
 
-    @UsedByNative public external fun getOpacityMultiplier(nativePointer: Long): Float
+    @UsedByNative external fun getOpacityMultiplier(nativePointer: Long): Float
 
-    @UsedByNative public external fun getParticleGapDistanceScale(nativePointer: Long): Float
+    @UsedByNative external fun getParticleGapDistanceScale(nativePointer: Long): Float
 
-    @UsedByNative public external fun getParticleGapDurationMillis(nativePointer: Long): Long
+    @UsedByNative external fun getParticleGapDurationMillis(nativePointer: Long): Long
 
-    @UsedByNative public external fun getBehaviorCount(nativePointer: Long): Int
+    @UsedByNative external fun getBehaviorCount(nativePointer: Long): Int
 
-    @UsedByNative public external fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long
+    @UsedByNative external fun newCopyOfBrushBehavior(nativePointer: Long, index: Int): Long
 }

@@ -18,7 +18,7 @@ package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.CompositionLocalMap
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.subspace.layout.MeasurePolicy
+import androidx.xr.compose.subspace.layout.SubspaceMeasurePolicy
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 
 /**
@@ -29,8 +29,8 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 @PublishedApi
 internal interface ComposeSubspaceNode {
 
-    /** The [MeasurePolicy] used to define the measure and layout behavior of this node. */
-    public var measurePolicy: MeasurePolicy
+    /** The [SubspaceMeasurePolicy] used to define the measure and layout behavior of this node. */
+    public var measurePolicy: SubspaceMeasurePolicy
 
     /** The [SubspaceModifier] applied to this node. */
     public var modifier: SubspaceModifier
@@ -50,11 +50,11 @@ internal interface ComposeSubspaceNode {
         public val Constructor: () -> ComposeSubspaceNode = SubspaceLayoutNode.Constructor
 
         /**
-         * Sets the [MeasurePolicy] for the given [ComposeSubspaceNode].
+         * Sets the [SubspaceMeasurePolicy] for the given [ComposeSubspaceNode].
          *
-         * @param measurePolicy the [MeasurePolicy] to be applied.
+         * @param measurePolicy the [SubspaceMeasurePolicy] to be applied.
          */
-        public val SetMeasurePolicy: ComposeSubspaceNode.(MeasurePolicy) -> Unit = {
+        public val SetMeasurePolicy: ComposeSubspaceNode.(SubspaceMeasurePolicy) -> Unit = {
             this.measurePolicy = it
         }
 

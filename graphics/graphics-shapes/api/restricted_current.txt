@@ -99,6 +99,7 @@ package androidx.graphics.shapes {
     method public float[] calculateMaxBounds(optional float[] bounds);
     method public inline void forEachCubic(float progress, optional androidx.graphics.shapes.MutableCubic mutableCubic, kotlin.jvm.functions.Function1<? super androidx.graphics.shapes.MutableCubic,kotlin.Unit> callback);
     method public inline void forEachCubic(float progress, kotlin.jvm.functions.Function1<? super androidx.graphics.shapes.MutableCubic,kotlin.Unit> callback);
+    method @BytecodeOnly @kotlin.PublishedApi internal java.util.List<kotlin.Pair<androidx.graphics.shapes.Cubic!,androidx.graphics.shapes.Cubic!>!> getMorphMatch();
     property @kotlin.PublishedApi internal java.util.List<kotlin.Pair<androidx.graphics.shapes.Cubic,androidx.graphics.shapes.Cubic>> morphMatch;
   }
 
@@ -119,6 +120,7 @@ package androidx.graphics.shapes {
 
   public fun interface PointTransformer {
     method public long transform(float x, float y);
+    method @BytecodeOnly public long transform-XgqJiTY(float, float);
   }
 
   public final class RoundedPolygon {

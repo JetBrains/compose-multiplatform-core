@@ -33,7 +33,7 @@ data class Dao(
     val transactionFunctions: List<TransactionFunction>,
     val kotlinBoxedPrimitiveFunctionDelegates: List<KotlinBoxedPrimitiveFunctionDelegate>,
     val kotlinDefaultFunctionDelegates: List<KotlinDefaultFunctionDelegate>,
-    val constructorParamType: XTypeName?
+    val constructorParamType: XTypeName?,
 ) {
     // parsed dao might have a suffix if it is used in multiple databases.
     private var suffix: String? = null
@@ -57,7 +57,7 @@ data class Dao(
     val implTypeName: XClassName by lazy {
         XClassName.get(
             typeName.packageName,
-            typeName.simpleNames.joinToString("_") + (suffix ?: "") + "_Impl"
+            typeName.simpleNames.joinToString("_") + (suffix ?: "") + "_Impl",
         )
     }
 }

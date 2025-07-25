@@ -66,7 +66,7 @@ public expect class NavBackStackEntry :
             hostLifecycleState: Lifecycle.State = Lifecycle.State.CREATED,
             viewModelStoreProvider: NavViewModelStoreProvider? = null,
             id: String = randomUUID(),
-            savedState: SavedState? = null
+            savedState: SavedState? = null,
         ): NavBackStackEntry
 
         internal fun randomUUID(): String

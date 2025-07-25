@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.el() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Σύμπτυξη φύλλου κάτω μέρους",
     Strings.BottomSheetDismissDescription to "Παράβλεψη φύλλου κάτω μέρους",
     Strings.BottomSheetExpandDescription to "Ανάπτυξη φύλλου κάτω μέρους",
+    Strings.FloatingToolbarCollapse to "Σύμπτυξη γραμμής εργαλείων",
+    Strings.FloatingToolbarExpand to "Ανάπτυξη γραμμής εργαλείων",
     Strings.TooltipPaneDescription to "Επεξήγηση εργαλείου",
     Strings.TooltipLongPressLabel to "Προβολή επεξήγησης εργαλείου",
     Strings.TimePickerPM to "μμ",
@@ -86,6 +88,10 @@ internal fun Translations.el() = mapOf(
     Strings.TimePickerHour to "Ώρα",
     Strings.TimePickerMinuteTextField to "για λεπτά",
     Strings.TimePickerHourTextField to "για ώρα",
+    Strings.TimePickerToggleKeyboard to "Εναλλαγή στη λειτουργία εισαγωγής κειμένου για την εισαγωγή της ώρας",
+    Strings.TimePickerToggleTouch to "Εναλλαγή στη λειτουργία ρολογιού για την εισαγωγή της ώρας",
+    Strings.TimePickerDialogTitle to "Επιλογή ώρας",
+    Strings.TimeInputDialogTitle to "Εισαγωγή ώρας",
     Strings.CloseRail to "Κλείσιμο στήλης",
     Strings.WideNavigationRailPaneTitle to "Στήλη πλοήγησης",
 )

@@ -105,7 +105,7 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
         extensionCameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(
                 baseCameraSelector,
-                config.extensionMode
+                config.extensionMode,
             )
 
         instrumentation.runOnMainSync {
@@ -118,7 +118,7 @@ class CameraExtensionsControlTest(private val config: CameraXExtensionTestParams
                     fakeLifecycleOwner,
                     extensionCameraSelector,
                     preview,
-                    imageCapture
+                    imageCapture,
                 )
         }
 

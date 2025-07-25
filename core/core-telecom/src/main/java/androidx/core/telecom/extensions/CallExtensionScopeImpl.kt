@@ -69,7 +69,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 @OptIn(ExperimentalAppActions::class)
 internal data class CallExtensionCreator(
     val extensionCapability: Capability,
-    val onExchangeComplete: suspend (Capability?, CapabilityExchangeListenerRemote?) -> Unit
+    val onExchangeComplete: suspend (Capability?, CapabilityExchangeListenerRemote?) -> Unit,
 )
 
 /**
@@ -80,7 +80,7 @@ internal data class CallExtensionCreator(
 @OptIn(ExperimentalAppActions::class)
 internal data class CapabilityExchangeResult(
     val voipCapabilities: Set<Capability>,
-    val extensionInitializationBinder: CapabilityExchangeListenerRemote
+    val extensionInitializationBinder: CapabilityExchangeListenerRemote,
 )
 
 /**
@@ -103,7 +103,7 @@ internal data class CapabilityExchangeResult(
 internal class CallExtensionScopeImpl(
     private val applicationContext: Context,
     private val callScope: CoroutineScope,
-    private val call: Call
+    private val call: Call,
 ) : CallExtensionScope {
     companion object {
         internal const val TAG = "CallExtensions"
@@ -137,13 +137,13 @@ internal class CallExtensionScopeImpl(
 
     override fun addParticipantExtension(
         onActiveParticipantChanged: suspend (Participant?) -> Unit,
-        onParticipantsUpdated: suspend (Set<Participant>) -> Unit
+        onParticipantsUpdated: suspend (Set<Participant>) -> Unit,
     ): ParticipantExtensionRemoteImpl {
         val extension =
             ParticipantExtensionRemoteImpl(
                 callScope,
                 onActiveParticipantChanged,
-                onParticipantsUpdated
+                onParticipantsUpdated,
             )
         registerExtension {
             CallExtensionCreator(
@@ -153,7 +153,7 @@ internal class CallExtensionScopeImpl(
                         featureVersion = ParticipantExtensionImpl.VERSION
                         supportedActions = extension.actions
                     },
-                onExchangeComplete = extension::onExchangeComplete
+                onExchangeComplete = extension::onExchangeComplete,
             )
         }
         return extension
@@ -161,7 +161,7 @@ internal class CallExtensionScopeImpl(
 
     override fun addMeetingSummaryExtension(
         onCurrentSpeakerChanged: suspend (CharSequence?) -> Unit,
-        onParticipantCountChanged: suspend (Int) -> Unit
+        onParticipantCountChanged: suspend (Int) -> Unit,
     ): MeetingSummaryRemote {
         val extension =
             MeetingSummaryRemoteImpl(callScope, onCurrentSpeakerChanged, onParticipantCountChanged)
@@ -173,7 +173,7 @@ internal class CallExtensionScopeImpl(
                         featureVersion = ParticipantExtensionImpl.MEETING_SUMMARY_VERSION
                         supportedActions = extension.actions
                     },
-                onExchangeComplete = extension::onExchangeComplete
+                onExchangeComplete = extension::onExchangeComplete,
             )
         }
         return extension
@@ -191,7 +191,7 @@ internal class CallExtensionScopeImpl(
                         featureVersion = LocalCallSilenceExtensionImpl.VERSION
                         supportedActions = extension.actions
                     },
-                onExchangeComplete = extension::onExchangeComplete
+                onExchangeComplete = extension::onExchangeComplete,
             )
         }
         return extension
@@ -222,7 +222,7 @@ internal class CallExtensionScopeImpl(
                         featureVersion = CallIconExtensionImpl.VERSION
                         supportedActions = extension.actions
                     },
-                onExchangeComplete = extension::onExchangeComplete
+                onExchangeComplete = extension::onExchangeComplete,
             )
         }
         return extension
@@ -326,7 +326,7 @@ internal class CallExtensionScopeImpl(
         Log.i(
             TAG,
             "resolveCallExtensionsType: Unable to resolve call extension type. " +
-                "Returning $type."
+                "Returning $type.",
         )
         return type
     }
@@ -342,7 +342,7 @@ internal class CallExtensionScopeImpl(
                         Log.i(
                             TAG,
                             "getPhoneAccountIfAllowed: Unable to resolve call extension " +
-                                "type due to lack of permission."
+                                "type due to lack of permission.",
                         )
                         null
                     }
@@ -368,7 +368,7 @@ internal class CallExtensionScopeImpl(
                             Log.w(
                                 TAG,
                                 "connectExtensions: unexpected type: $type." +
-                                    " Proceeding with no extension support"
+                                    " Proceeding with no extension support",
                             )
                             null
                         }
@@ -445,7 +445,7 @@ internal class CallExtensionScopeImpl(
         allRegisteredRemoteExtensions.forEach { remoteExtensionImpl ->
             Log.d(
                 TAG,
-                "initializeExtensions: capability=${remoteExtensionImpl.extensionCapability}"
+                "initializeExtensions: capability=${remoteExtensionImpl.extensionCapability}",
             )
             val capability =
                 extensions.voipCapabilities.firstOrNull {
@@ -462,7 +462,7 @@ internal class CallExtensionScopeImpl(
             Log.d(TAG, "initializeExtensions: negotiated cap=$negotiatedCap")
             remoteExtensionImpl.onExchangeComplete.invoke(
                 negotiatedCap,
-                extensions.extensionInitializationBinder
+                extensions.extensionInitializationBinder,
             )
         }
     }
@@ -479,18 +479,18 @@ internal class CallExtensionScopeImpl(
                 object : ICapabilityExchange.Stub() {
                     override fun beginExchange(
                         capabilities: MutableList<Capability>?,
-                        l: ICapabilityExchangeListener?
+                        l: ICapabilityExchangeListener?,
                     ) {
                         Log.d(
                             TAG,
                             "registerWithRemoteService: received remote result," +
-                                " caps=$capabilities, listener is null=${l == null}"
+                                " caps=$capabilities, listener is null=${l == null}",
                         )
                         continuation.resume(
                             l?.let {
                                 CapabilityExchangeResult(
                                     capabilities?.toSet() ?: Collections.emptySet(),
-                                    CapabilityExchangeListenerRemote(l)
+                                    CapabilityExchangeListenerRemote(l),
                                 )
                             }
                         )
@@ -508,7 +508,7 @@ internal class CallExtensionScopeImpl(
     @ExperimentalAppActions
     private fun calculateNegotiatedCapability(
         localCapability: Capability,
-        remoteCapability: Capability
+        remoteCapability: Capability,
     ): Capability {
         return Capability().apply {
             featureId = localCapability.featureId
@@ -565,7 +565,7 @@ internal class CallExtensionScopeImpl(
                         Log.w(TAG, "waitForDestroy: binderDied called, cleaning up")
                         continuation.resume(Unit)
                     },
-                    0 /* flags */
+                    0, /* flags */
                 )
             if (Api26Impl.getCallState(call) != Call.STATE_DISCONNECTED) {
                 call.registerCallback(callback, Handler(Looper.getMainLooper()))

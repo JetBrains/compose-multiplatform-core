@@ -76,7 +76,7 @@ import kotlin.jvm.JvmName
 inline fun Layout(
     content: @Composable @UiComposable () -> Unit,
     modifier: Modifier = Modifier,
-    measurePolicy: MeasurePolicy
+    measurePolicy: MeasurePolicy,
 ) {
     val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
     val localMap = currentComposer.currentCompositionLocalMap
@@ -89,7 +89,7 @@ inline fun Layout(
             set(compositeKeyHash, SetCompositeKeyHash)
             set(materialized, SetModifier)
         },
-        content = content
+        content = content,
     )
 }
 
@@ -162,12 +162,12 @@ inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
 inline fun Layout(
     contents: List<@Composable @UiComposable () -> Unit>,
     modifier: Modifier = Modifier,
-    measurePolicy: MultiContentMeasurePolicy
+    measurePolicy: MultiContentMeasurePolicy,
 ) {
     Layout(
         content = combineAsVirtualLayouts(contents),
         modifier = modifier,
-        measurePolicy = remember(measurePolicy) { createMeasurePolicy(measurePolicy) }
+        measurePolicy = remember(measurePolicy) { createMeasurePolicy(measurePolicy) },
     )
 }
 
@@ -180,7 +180,7 @@ internal fun combineAsVirtualLayouts(
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
             factory = ComposeUiNode.VirtualConstructor,
             update = { set(compositeKeyHash, SetCompositeKeyHash) },
-            content = content
+            content = content,
         )
     }
 }
@@ -211,7 +211,7 @@ internal fun materializerOf(
 @JvmName("materializerOf")
 @Deprecated(
     "Needed only for backwards compatibility. Do not use.",
-    level = DeprecationLevel.WARNING
+    level = DeprecationLevel.WARNING,
 )
 @PublishedApi
 internal fun materializerOfWithCompositionLocalInjection(
@@ -235,7 +235,7 @@ internal fun materializerOfWithCompositionLocalInjection(
 fun MultiMeasureLayout(
     modifier: Modifier = Modifier,
     content: @Composable @UiComposable () -> Unit,
-    measurePolicy: MeasurePolicy
+    measurePolicy: MeasurePolicy,
 ) {
     val compositeKeyHash = currentCompositeKeyHash.hashCode()
     val materialized = currentComposer.materialize(modifier)
@@ -250,7 +250,7 @@ fun MultiMeasureLayout(
             set(materialized, SetModifier)
             set(compositeKeyHash, SetCompositeKeyHash)
         },
-        content = content
+        content = content,
     )
 }
 
@@ -265,20 +265,20 @@ private class FixedSizeIntrinsicsPlaceable(width: Int, height: Int) : Placeable(
     override fun placeAt(
         position: IntOffset,
         zIndex: Float,
-        layerBlock: (GraphicsLayerScope.() -> Unit)?
+        layerBlock: (GraphicsLayerScope.() -> Unit)?,
     ) {}
 }
 
 /** Identifies an [IntrinsicMeasurable] as a min or max intrinsic measurement. */
 internal enum class IntrinsicMinMax {
     Min,
-    Max
+    Max,
 }
 
 /** Identifies an [IntrinsicMeasurable] as a width or height intrinsic measurement. */
 internal enum class IntrinsicWidthHeight {
     Width,
-    Height
+    Height,
 }
 
 // A large value to use as a replacement for Infinity with DefaultIntrinisicMeasurable.
@@ -297,7 +297,7 @@ internal const val LargeDimension = (1 shl 15) - 1
 internal class DefaultIntrinsicMeasurable(
     val measurable: IntrinsicMeasurable,
     private val minMax: IntrinsicMinMax,
-    private val widthHeight: IntrinsicWidthHeight
+    private val widthHeight: IntrinsicWidthHeight,
 ) : Measurable {
     override val parentData: Any?
         get() = measurable.parentData
@@ -355,7 +355,7 @@ internal class IntrinsicsMeasureScope(
         height: Int,
         alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
-        placementBlock: Placeable.PlacementScope.() -> Unit
+        placementBlock: Placeable.PlacementScope.() -> Unit,
     ): MeasureResult {
         val w = width.fastCoerceAtLeast(0)
         val h = height.fastCoerceAtLeast(0)
@@ -389,7 +389,7 @@ internal class ApproachIntrinsicsMeasureScope(
         height: Int,
         alignmentLines: Map<AlignmentLine, Int>,
         rulers: (RulerScope.() -> Unit)?,
-        placementBlock: Placeable.PlacementScope.() -> Unit
+        placementBlock: Placeable.PlacementScope.() -> Unit,
     ): MeasureResult {
         val w = width.fastCoerceAtLeast(0)
         val h = height.fastCoerceAtLeast(0)

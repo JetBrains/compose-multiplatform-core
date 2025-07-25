@@ -26,7 +26,7 @@ import androidx.privacysandbox.ads.adservices.internal.AdServicesInfo
 import androidx.privacysandbox.ads.adservices.internal.BackCompatManager
 
 /** This class provides APIs for app and ad-SDKs to join / leave custom audiences. */
-abstract class CustomAudienceManager internal constructor() {
+public abstract class CustomAudienceManager internal constructor() {
     /**
      * Adds the user to the given [CustomAudience].
      *
@@ -57,7 +57,7 @@ abstract class CustomAudienceManager internal constructor() {
      * @param request The request to join custom audience.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract suspend fun joinCustomAudience(request: JoinCustomAudienceRequest)
+    public abstract suspend fun joinCustomAudience(request: JoinCustomAudienceRequest)
 
     /**
      * Adds the user to the [CustomAudience] fetched from a {@code fetchUri}.
@@ -93,7 +93,9 @@ abstract class CustomAudienceManager internal constructor() {
      */
     @ExperimentalFeatures.Ext10OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract suspend fun fetchAndJoinCustomAudience(request: FetchAndJoinCustomAudienceRequest)
+    public abstract suspend fun fetchAndJoinCustomAudience(
+        request: FetchAndJoinCustomAudienceRequest
+    )
 
     /**
      * Allows the API caller to schedule a deferred Custom Audience update. For each update the user
@@ -270,7 +272,9 @@ abstract class CustomAudienceManager internal constructor() {
      */
     @ExperimentalFeatures.Ext14OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract suspend fun scheduleCustomAudienceUpdate(request: ScheduleCustomAudienceUpdateRequest)
+    public abstract suspend fun scheduleCustomAudienceUpdate(
+        request: ScheduleCustomAudienceUpdateRequest
+    )
 
     /**
      * Attempts to remove a user from a custom audience by deleting any existing [CustomAudience]
@@ -292,9 +296,9 @@ abstract class CustomAudienceManager internal constructor() {
      * @param request The request to leave custom audience.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract suspend fun leaveCustomAudience(request: LeaveCustomAudienceRequest)
+    public abstract suspend fun leaveCustomAudience(request: LeaveCustomAudienceRequest)
 
-    companion object {
+    public companion object {
         /**
          * Creates [CustomAudienceManager].
          *
@@ -303,7 +307,7 @@ abstract class CustomAudienceManager internal constructor() {
          */
         @JvmStatic
         @SuppressLint("NewApi")
-        fun obtain(context: Context): CustomAudienceManager? {
+        public fun obtain(context: Context): CustomAudienceManager? {
             return if (AdServicesInfo.adServicesVersion() >= 4) {
                 CustomAudienceManagerApi33Ext4Impl(context)
             } else if (AdServicesInfo.extServicesVersionS() >= 9) {

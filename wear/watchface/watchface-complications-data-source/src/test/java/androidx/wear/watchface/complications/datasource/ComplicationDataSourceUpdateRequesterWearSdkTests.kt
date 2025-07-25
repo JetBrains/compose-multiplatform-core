@@ -140,19 +140,19 @@ class ComplicationDataSourceUpdateRequesterWearSdkTests {
                 .updateComplication(
                     eq(fakeConfig1.id),
                     eq(configDataMap[fakeConfig1]!!),
-                    any<Executor>()
+                    any<Executor>(),
                 )
             verify(mockApi)
                 .updateComplication(
                     eq(fakeConfig2.id),
                     eq(configDataMap[fakeConfig2]!!),
-                    any<Executor>()
+                    any<Executor>(),
                 )
             verify(mockApi)
                 .updateComplication(
                     eq(fakeConfig3.id),
                     eq(configDataMap[fakeConfig3]!!),
-                    any<Executor>()
+                    any<Executor>(),
                 )
             verifyNoMoreInteractions(mockApi)
         }
@@ -193,7 +193,7 @@ class ComplicationDataSourceUpdateRequesterWearSdkTests {
         provider: TestRequesterProvider =
             object : TestRequesterProvider {
                 override fun provider() = mockDataSourceProvider()
-            }
+            },
     ) =
         requester?.updateComplicationsUsingWearSdk(IntArray(0), mockApi, testDispatcher) {
             provider.provider()

@@ -21,9 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalAccessorScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 
 @Composable
 internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? =
@@ -32,24 +30,21 @@ internal actual fun rememberPlatformOverscrollEffect(): OverscrollEffect? =
 @Composable
 internal fun rememberOverscrollEffect(applyClip: Boolean): OverscrollEffect {
     val density = LocalDensity.current.density
-    val layoutDirection = LocalLayoutDirection.current
 
-    return remember(density, layoutDirection) {
-        CupertinoOverscrollEffect(density, layoutDirection, applyClip)
+    return remember(density) {
+        CupertinoOverscrollEffect(density, applyClip)
     }
 }
 
 internal actual fun CompositionLocalAccessorScope.defaultOverscrollFactory(): OverscrollFactory? {
     val density = LocalDensity.currentValue
-    val layoutDirection = LocalLayoutDirection.currentValue
-    return CupertinoOverscrollEffectFactory(density, layoutDirection)
+    return CupertinoOverscrollEffectFactory(density)
 }
 
 private data class CupertinoOverscrollEffectFactory(
-    private val density: Density,
-    private val layoutDirection: LayoutDirection
+    private val density: Density
 ) : OverscrollFactory {
     override fun createOverscrollEffect(): OverscrollEffect {
-        return CupertinoOverscrollEffect(density.density, layoutDirection, applyClip = false)
+        return CupertinoOverscrollEffect(density.density, applyClip = false)
     }
 }

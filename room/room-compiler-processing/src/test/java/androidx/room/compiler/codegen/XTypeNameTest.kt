@@ -78,7 +78,7 @@ class XTypeNameTest {
         assertThat(
                 XTypeName(
                         java = JClassName.get("foo", "Bar"),
-                        kotlin = XTypeName.UNAVAILABLE_KTYPE_NAME
+                        kotlin = XTypeName.UNAVAILABLE_KTYPE_NAME,
                     )
                     .hashCode()
             )
@@ -119,7 +119,7 @@ class XTypeNameTest {
             XClassName(
                 java = JClassName.get("test", "Foo"),
                 kotlin = XTypeName.UNAVAILABLE_KTYPE_NAME,
-                nullability = XNullability.UNKNOWN
+                nullability = XNullability.UNKNOWN,
             )
         assertThat(typeName.copy(nullable = true).kotlin)
             .isEqualTo(XTypeName.UNAVAILABLE_KTYPE_NAME)
@@ -193,7 +193,7 @@ class XTypeNameTest {
             }
             class Child: Parent<Unit>()
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             invocation.processingEnv.requireTypeElement("Foo").let { cls ->
@@ -290,7 +290,7 @@ class XTypeNameTest {
                 void g() {}
             }
         """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(javaSrc)) { invocation ->
             invocation.processingEnv.requireTypeElement("Foo").let { cls ->
@@ -315,7 +315,7 @@ class XTypeNameTest {
                     MyGenericType<MyType[]> myGenericType;
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(javaSrc)) { invocation ->
             invocation.processingEnv.requireTypeElement("Test").let { cls ->
@@ -335,7 +335,7 @@ class XTypeNameTest {
                         XTypeName(
                             JParameterizedTypeName.get(
                                 JClassName.get("", "MyGenericType"),
-                                JArrayTypeName.of(JClassName.get("", "MyType"))
+                                JArrayTypeName.of(JClassName.get("", "MyType")),
                             ),
                             KClassName("", "MyGenericType")
                                 .parameterizedBy(
@@ -346,7 +346,7 @@ class XTypeNameTest {
                                         )
                                         .copy(nullable = true)
                                 )
-                                .copy(nullable = true)
+                                .copy(nullable = true),
                         )
                     )
             }
@@ -365,7 +365,7 @@ class XTypeNameTest {
                       val field: $type = TODO()
                     }
                     """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 )
             ) { invocation ->

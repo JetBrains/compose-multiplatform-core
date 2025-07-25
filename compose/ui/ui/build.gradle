@@ -24,7 +24,9 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.konan.target.Family
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 
@@ -36,7 +38,21 @@ plugins {
 
 androidXMultiplatform {
     androidTarget()
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
+
+    // TODO: Migrate iosInstrumentedTest to kotlin 2.1.0
+    //  https://youtrack.jetbrains.com/issue/CMP-7390/Migrate-iosInstrumentedTest-target-to-kotlin-2.1.0
+    //  Kotlin 2.1.0 doesn't support declaring multiple targets of the same type
+    // iosInstrumentedTest()
+
+    // TODO: apply linker flags
+    // configureDarwinFlags()
+
+    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -46,7 +62,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinCoroutinesCore)
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
                 implementation("androidx.collection:collection:1.5.0")
                 // when updating the runtime version please also update the runtime-saveable version
                 implementation(project(":compose:runtime:runtime"))
@@ -58,13 +74,17 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui-unit"))
                 api(project(":compose:ui:ui-util"))
 
-                api("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-                api("androidx.savedstate:savedstate-compose:1.3.0")
+                api(project(":lifecycle:lifecycle-runtime-compose"))
+                api(project(":savedstate:savedstate-compose"))
+
+                implementation(project(":lifecycle:lifecycle-viewmodel"))
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesTest)
                 implementation(libs.kotlinReflect)
                 api(project(":compose:ui:ui-util"))
             }
@@ -73,7 +93,15 @@ androidXMultiplatform {
         jvmMain {
             dependsOn(commonMain)
             dependencies {
+                // TODO: Recheck. Not in fork, no usages
                 api(libs.jspecify)
+            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(project(":compose:ui:ui-test-junit4"))
             }
         }
 
@@ -110,18 +138,6 @@ androidXMultiplatform {
                 // See https://github.com/gradle/gradle/issues/14220 for details.
                 compileOnly("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7")
             }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -164,6 +180,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -171,7 +188,6 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(libs.kotlinTest)
-                implementation(libs.robolectric)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.byteBuddy)
@@ -179,6 +195,176 @@ androidXMultiplatform {
                 implementation(project(":internal-testutils-fonts"))
                 implementation(project(":compose:test-utils"))
             }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+            dependencies {
+                api(libs.skiko)
+                implementation(libs.atomicFu)
+                implementation(project(":compose:ui:ui-backhandler"))
+            }
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+            dependencies {
+                // TODO: Move to commonTest?
+                // TODO: Uncomment after fix foundation/material build scripts
+//                implementation(project(":compose:material:material"))
+//                implementation(project(":compose:foundation:foundation"))
+            }
+        }
+
+        // TODO: Get rid of this. It should rely on compilation target
+        notMobileMain {
+            dependsOn(skikoMain)
+        }
+
+        notMobileTest {
+            dependsOn(skikoTest)
+        }
+
+        desktopMain {
+            dependsOn(jvmMain)
+            dependsOn(skikoMain)
+            dependsOn(notMobileMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+            dependsOn(skikoTest)
+            dependsOn(notMobileTest)
+            dependencies {
+                // TODO: Move to jvmTest?
+                implementation(libs.truth)
+                implementation(libs.mockitoCore)
+                implementation(libs.mockitoCore4)
+                implementation(libs.mockitoKotlin)
+                implementation(libs.mockitoKotlin4)
+                implementation(libs.skikoCurrentOs)
+                implementation(libs.kotlinCoroutinesSwing)
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(project(":compose:material:material"))
+                implementation(project(":compose:material3:material3"))
+                implementation(project(":compose:ui:ui-test-junit4"))
+            }
+        }
+
+        // TODO: Align naming: nonJvmMain
+        jsNativeMain {
+            dependsOn(skikoMain)
+        }
+
+        jsNativeTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(jsNativeMain)
+        }
+
+        nativeTest {
+            dependsOn(jsNativeTest)
+        }
+
+        macosMain {
+            dependsOn(nativeMain)
+            dependsOn(notMobileMain)
+        }
+
+        macosTest {
+            dependsOn(nativeTest)
+            dependsOn(notMobileTest)
+        }
+
+        uikitMain {
+            dependsOn(nativeMain)
+            dependencies {
+                implementation(project(":compose:ui:ui-uikit"))
+            }
+        }
+
+        uikitTest {
+            dependsOn(nativeTest)
+        }
+
+        // TODO: Uncomment after fix foundation/material build scripts
+//        uikitInstrumentedTest {
+//            dependencies {
+//                implementation(project(":compose:material:material"))
+//                implementation(project(":compose:foundation:foundation"))
+//            }
+//        }
+
+        // TODO: Align naming: webMain
+        jsWasmMain {
+            dependsOn(jsNativeMain)
+            dependsOn(notMobileMain)
+        }
+
+        jsWasmTest { // TODO: It's already webTest ???
+            dependsOn(jsNativeTest)
+            dependsOn(notMobileTest)
+        }
+
+        jsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
+            dependsOn(jsWasmMain)
+        }
+
+        jsTest {
+            kotlin.srcDir("src/webTest/kotlin")
+            dependsOn(jsWasmTest)
+        }
+
+        wasmJsMain {
+            kotlin.srcDir("src/webCommonW3C/kotlin")
+            dependsOn(jsWasmMain)
+            dependencies {
+                api(libs.kotlinXw3c)
+                implementation(libs.skikoWasmJs)
+                implementation(libs.skikoJsWasmRuntime)
+            }
+        }
+
+        wasmJsTest {
+            kotlin.srcDir("src/webTest/kotlin")
+            dependsOn(jsWasmTest)
+        }
+
+        targets.configureEach { target ->
+
+            // TODO: Ignore stubs. Remove together with stubs target
+            if (target.name.endsWith("Stubs")) return
+
+            if (target.platformType == KotlinPlatformType.native) {
+                if (target.konanTarget.family == Family.IOS) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
+                } else if (target.konanTarget.family == Family.OSX) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
+                } else {
+                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+                }
+            }
+        }
+
+        // TODO: Align it with AOSP or make explicit
+        configureEach {
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
+        }
+
+        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
     }
 }
@@ -220,16 +406,14 @@ androidx {
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui:ui-samples"))
     addGoldenImageAssets()
+    enableRobolectric()
 }
 
 android {
     compileSdk = 35
-    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
     namespace = "androidx.compose.ui"
     // namespace has to be unique, but default androidx.compose.ui.test package is taken by
     // the androidx.compose.ui:ui-test library
@@ -244,3 +428,6 @@ tasks.withType(KotlinCompile).configureEach {
         ]
     }
 }
+
+// TODO: register UpdateTranslationsTask
+

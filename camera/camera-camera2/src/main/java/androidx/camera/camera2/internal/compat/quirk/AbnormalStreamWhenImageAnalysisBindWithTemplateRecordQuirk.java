@@ -18,17 +18,15 @@ package androidx.camera.camera2.internal.compat.quirk;
 
 import android.os.Build;
 
-import java.util.Locale;
-
 /**
  * <p>QuirkSummary
- *     Bug Id: b/395822788
+ *     Bug Id: b/395822788, b/409478042
  *     Description: Quirk denotes that the camera produces only the first few frames when using
  *                  ImageAnalysis with another stream using TEMPLATE_RECORD (usually a VideoCapture
  *                  stream or a stream shared between Preview and VideoCapture). As a result, when
  *                  binding "Preview + VideoCapture + ImageAnalysis" and enabling StreamSharing, the
  *                  preview freezes after rendering a few frames.
- *     Device(s): Samsung Galaxy M55
+ *     Device(s): Samsung Galaxy F55, M55
  */
 public class AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk implements
         CaptureIntentPreviewQuirk {
@@ -38,8 +36,8 @@ public class AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk implemen
     }
 
     public static boolean isSamsungM55() {
-        return "samsung".equalsIgnoreCase(Build.BRAND) && Build.MODEL.toLowerCase(
-                Locale.US).startsWith("sm-m556");
+        // Samsung Galaxy F55 and M55 share the same device name.
+        return "samsung".equalsIgnoreCase(Build.BRAND) && Build.DEVICE.equalsIgnoreCase("m55xq");
     }
 
     @Override

@@ -22,7 +22,6 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import androidx.room.PooledConnection
 import androidx.room.RoomDatabase
-import androidx.room.getAndroidDriverDatabase
 import androidx.sqlite.SQLITE_DATA_BLOB
 import androidx.sqlite.SQLITE_DATA_FLOAT
 import androidx.sqlite.SQLITE_DATA_INTEGER
@@ -47,14 +46,6 @@ public fun RoomDatabase.getSupportWrapper(): SupportSQLiteDatabase {
     if (inCompatibilityMode()) {
         return openHelper.writableDatabase
     }
-    // If the AndroidSQLiteDriver is installed, it internally has a SQLiteDatabase that can
-    // be wrapped into a SupportSQLiteDatabase.
-    // TODO(b/408010324): Avoid usage of restricted APIs, create separation of concerns.
-    val androidDriverDatabase = getAndroidDriverDatabase()
-    if (androidDriverDatabase != null) {
-        return androidDriverDatabase
-    }
-    // Other drivers for which Room will use a connection pool will utilize a wrapper.
     return synchronized(wrapperCache) {
         wrapperCache.getOrPut(this) { RoomSupportSQLiteDatabase(this) }
     }

@@ -78,7 +78,7 @@ class SplitAttributesTogglePrimaryActivity :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_BACKGROUND_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_BACKGROUND_TEXTS,
                 )
             animationBackgroundDropdown.onItemSelectedListener = this
         }
@@ -93,7 +93,7 @@ class SplitAttributesTogglePrimaryActivity :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             openAnimationDropdown.onItemSelectedListener = this
 
@@ -105,7 +105,7 @@ class SplitAttributesTogglePrimaryActivity :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             closeAnimationDropdown.onItemSelectedListener = this
 
@@ -117,7 +117,7 @@ class SplitAttributesTogglePrimaryActivity :
                 ArrayAdapter(
                     this,
                     android.R.layout.simple_spinner_dropdown_item,
-                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS
+                    DemoActivityEmbeddingController.ANIMATION_SPEC_TEXTS,
                 )
             changeAnimationDropdown.onItemSelectedListener = this
         }

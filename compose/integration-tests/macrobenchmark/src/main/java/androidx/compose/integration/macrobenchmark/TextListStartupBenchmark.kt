@@ -39,7 +39,7 @@ class TextListStartupBenchmark(
     private val startupMode: StartupMode,
     private val compilationMode: CompilationMode,
     private val styled: Boolean,
-    private val prefetch: Boolean
+    private val prefetch: Boolean,
 ) {
     @get:Rule val benchmarkRule = MacrobenchmarkRule()
 
@@ -58,7 +58,7 @@ class TextListStartupBenchmark(
             startupMode = startupMode,
             metrics = getStartupMetrics(),
             iterations = 3,
-            packageName = PackageName
+            packageName = PackageName,
         ) {
             action = Action
             putExtra(BenchmarkConfig.Prefetch, prefetch)

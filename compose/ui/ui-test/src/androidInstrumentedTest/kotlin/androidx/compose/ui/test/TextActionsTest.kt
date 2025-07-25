@@ -73,7 +73,7 @@ class TextActionsTest {
         keyboardActions: KeyboardActions = KeyboardActions.Default,
         enabled: Boolean = true,
         readOnly: Boolean = false,
-        textCallback: (String) -> Unit = {}
+        textCallback: (String) -> Unit = {},
     ) {
         val state = remember { mutableStateOf("") }
         BasicTextField(
@@ -86,7 +86,7 @@ class TextActionsTest {
             onValueChange = {
                 state.value = it
                 textCallback(it)
-            }
+            },
         )
     }
 
@@ -98,7 +98,7 @@ class TextActionsTest {
                 Modifier.semantics {
                     isEditable = true
                     setText { true }
-                }
+                },
             )
         }
 
@@ -120,7 +120,7 @@ class TextActionsTest {
                     isEditable = true
                     insertTextAtCursor { true }
                     requestFocus { true }
-                }
+                },
             )
         }
 
@@ -142,7 +142,7 @@ class TextActionsTest {
                     isEditable = true
                     setText { true }
                     requestFocus { true }
-                }
+                },
             )
         }
 
@@ -224,7 +224,7 @@ class TextActionsTest {
         rule.setContent {
             TextFieldUi(
                 imeAction = ImeAction.Search,
-                keyboardActions = KeyboardActions(onSearch = { actionPerformed = true })
+                keyboardActions = KeyboardActions(onSearch = { actionPerformed = true }),
             )
         }
         assertThat(actionPerformed).isFalse()
@@ -240,7 +240,7 @@ class TextActionsTest {
         rule.setContent {
             TextFieldUi(
                 imeAction = ImeAction.Default,
-                keyboardActions = KeyboardActions { actionPerformed = true }
+                keyboardActions = KeyboardActions { actionPerformed = true },
             )
         }
         assertThat(actionPerformed).isFalse()
@@ -265,7 +265,7 @@ class TextActionsTest {
                     requestFocus { true }
                     insertTextAtCursor { true }
                     onImeAction(ImeAction.Done) { false }
-                }
+                },
             )
         }
 
@@ -298,7 +298,7 @@ class TextActionsTest {
                     isEditable = true
                     setText { true }
                     onImeAction(ImeAction.Done) { true }
-                }
+                },
             )
         }
 
@@ -331,7 +331,7 @@ class TextActionsTest {
             TextFieldUi(
                 imeAction = ImeAction.Done,
                 readOnly = true,
-                keyboardActions = KeyboardActions { actionPerformed = true }
+                keyboardActions = KeyboardActions { actionPerformed = true },
             )
         }
 
@@ -344,7 +344,7 @@ class TextActionsTest {
         enabled: Boolean = true,
         readOnly: Boolean = false,
         visualTransformation: VisualTransformation = VisualTransformation.None,
-        textCallback: (TextRange) -> Unit = {}
+        textCallback: (TextRange) -> Unit = {},
     ) {
         val tfv = remember { mutableStateOf(TextFieldValue("text text text")) }
         val focusRequester = remember { FocusRequester() }
@@ -358,7 +358,7 @@ class TextActionsTest {
             onValueChange = {
                 tfv.value = it
                 textCallback(it.selection)
-            }
+            },
         )
 
         LaunchedEffect(Unit) { focusRequester.requestFocus() }
@@ -444,7 +444,7 @@ class TextActionsTest {
         enabled: Boolean = true,
         readOnly: Boolean = false,
         outputTransformation: OutputTransformation? = null,
-        textCallback: (TextRange) -> Unit = {}
+        textCallback: (TextRange) -> Unit = {},
     ) {
         val tfs = rememberTextFieldState("text text text")
         BasicTextField(
@@ -543,7 +543,7 @@ private object IncreasedVisualTransformation : VisualTransformation {
                 override fun originalToTransformed(offset: Int) = 2 * offset
 
                 override fun transformedToOriginal(offset: Int) = offset / 2
-            }
+            },
         )
     }
 }

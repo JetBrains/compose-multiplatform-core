@@ -207,7 +207,7 @@ class BaseDaoTest {
             abstract class MyDb : RoomDatabase() {
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(source)) { invocation ->
             val dbElm = invocation.context.processingEnv.requireTypeElement("MyDb")
@@ -223,8 +223,8 @@ class BaseDaoTest {
                             TypeWriter.WriterContext(
                                 codeLanguage = CodeLanguage.JAVA,
                                 javaLambdaSyntaxAvailable = false,
-                                targetPlatforms = setOf(XProcessingEnv.Platform.JVM)
-                            )
+                                targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                            ),
                     )
                     .write(invocation.processingEnv)
             }
@@ -243,7 +243,7 @@ class BaseDaoTest {
                 interface BaseDao<K, T> {
                     $code
                 }
-            """
+            """,
             )
         val extension =
             Source.java(
@@ -254,7 +254,7 @@ class BaseDaoTest {
                 @Dao
                 interface MyDao extends BaseDao<Integer, User> {
                 }
-            """
+            """,
             )
         val fakeDb =
             Source.java(
@@ -266,7 +266,7 @@ class BaseDaoTest {
                 // check requirements
                 abstract class MyDb extends RoomDatabase {
                 }
-            """
+            """,
             )
         // https://github.com/google/ksp/issues/2051
         runProcessorTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation
@@ -283,8 +283,8 @@ class BaseDaoTest {
                         TypeWriter.WriterContext(
                             codeLanguage = CodeLanguage.JAVA,
                             javaLambdaSyntaxAvailable = false,
-                            targetPlatforms = setOf(XProcessingEnv.Platform.JVM)
-                        )
+                            targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
+                        ),
                 )
                 .write(invocation.processingEnv)
         }

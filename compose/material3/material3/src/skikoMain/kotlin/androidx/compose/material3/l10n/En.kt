@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.en() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Collapse bottom sheet",
     Strings.BottomSheetDismissDescription to "Dismiss bottom sheet",
     Strings.BottomSheetExpandDescription to "Expand bottom sheet",
+    Strings.FloatingToolbarCollapse to "Collapse toolbar",
+    Strings.FloatingToolbarExpand to "Expand toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Show tooltip",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.en() = mapOf(
     Strings.TimePickerHour to "Hour",
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
+    Strings.TimePickerToggleKeyboard to "Switch to text input mode for the time input",
+    Strings.TimePickerToggleTouch to "Switch to clock mode for the time input",
+    Strings.TimePickerDialogTitle to "Select Time",
+    Strings.TimeInputDialogTitle to "Enter Time",
     Strings.CloseRail to "Close rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )
@@ -143,6 +149,8 @@ internal fun Translations.enAU() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Collapse bottom sheet",
     Strings.BottomSheetDismissDescription to "Dismiss bottom sheet",
     Strings.BottomSheetExpandDescription to "Expand bottom sheet",
+    Strings.FloatingToolbarCollapse to "Collapse toolbar",
+    Strings.FloatingToolbarExpand to "Expand toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Show tooltip",
     Strings.TimePickerPM to "p.m.",
@@ -157,6 +165,10 @@ internal fun Translations.enAU() = mapOf(
     Strings.TimePickerHour to "Hour",
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
+    Strings.TimePickerToggleKeyboard to "Switch to text input mode for the time input",
+    Strings.TimePickerToggleTouch to "Switch to clock mode for the time input",
+    Strings.TimePickerDialogTitle to "Select time",
+    Strings.TimeInputDialogTitle to "Enter time",
     Strings.CloseRail to "Close rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )
@@ -214,6 +226,8 @@ internal fun Translations.enCA() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Collapse bottom sheet",
     Strings.BottomSheetDismissDescription to "Dismiss bottom sheet",
     Strings.BottomSheetExpandDescription to "Expand bottom sheet",
+    Strings.FloatingToolbarCollapse to "Collapse toolbar",
+    Strings.FloatingToolbarExpand to "Expand toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Show tooltip",
     Strings.TimePickerPM to "PM",
@@ -228,6 +242,10 @@ internal fun Translations.enCA() = mapOf(
     Strings.TimePickerHour to "Hour",
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
+    Strings.TimePickerToggleKeyboard to "Switch to text input mode for the time input",
+    Strings.TimePickerToggleTouch to "Switch to clock mode for the time input",
+    Strings.TimePickerDialogTitle to "Select Time",
+    Strings.TimeInputDialogTitle to "Enter Time",
     Strings.CloseRail to "Close rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )
@@ -285,6 +303,8 @@ internal fun Translations.enGB() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Collapse bottom sheet",
     Strings.BottomSheetDismissDescription to "Dismiss bottom sheet",
     Strings.BottomSheetExpandDescription to "Expand bottom sheet",
+    Strings.FloatingToolbarCollapse to "Collapse toolbar",
+    Strings.FloatingToolbarExpand to "Expand toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Show tooltip",
     Strings.TimePickerPM to "p.m.",
@@ -299,6 +319,10 @@ internal fun Translations.enGB() = mapOf(
     Strings.TimePickerHour to "Hour",
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
+    Strings.TimePickerToggleKeyboard to "Switch to text input mode for the time input",
+    Strings.TimePickerToggleTouch to "Switch to clock mode for the time input",
+    Strings.TimePickerDialogTitle to "Select time",
+    Strings.TimeInputDialogTitle to "Enter time",
     Strings.CloseRail to "Close rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )
@@ -356,6 +380,8 @@ internal fun Translations.enIN() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Collapse bottom sheet",
     Strings.BottomSheetDismissDescription to "Dismiss bottom sheet",
     Strings.BottomSheetExpandDescription to "Expand bottom sheet",
+    Strings.FloatingToolbarCollapse to "Collapse toolbar",
+    Strings.FloatingToolbarExpand to "Expand toolbar",
     Strings.TooltipPaneDescription to "Tooltip",
     Strings.TooltipLongPressLabel to "Show tooltip",
     Strings.TimePickerPM to "p.m.",
@@ -370,6 +396,10 @@ internal fun Translations.enIN() = mapOf(
     Strings.TimePickerHour to "Hour",
     Strings.TimePickerMinuteTextField to "for minutes",
     Strings.TimePickerHourTextField to "for hour",
+    Strings.TimePickerToggleKeyboard to "Switch to text input mode for the time input",
+    Strings.TimePickerToggleTouch to "Switch to clock mode for the time input",
+    Strings.TimePickerDialogTitle to "Select time",
+    Strings.TimeInputDialogTitle to "Enter time",
     Strings.CloseRail to "Close rail",
     Strings.WideNavigationRailPaneTitle to "Navigation rail",
 )

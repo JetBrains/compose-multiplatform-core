@@ -39,6 +39,6 @@ abstract class TransactionFunctionBinder(val adapter: TransactionFunctionAdapter
         daoName: XClassName,
         daoImplName: XClassName,
         dbProperty: XPropertySpec,
-        scope: CodeGenScope
+        scope: CodeGenScope,
     )
 }

@@ -42,7 +42,7 @@ class SurfaceTransformationSpecTest {
                 item {
                     Button(
                         onClick = {},
-                        transformation = SurfaceTransformation(spec).also { transformation = it }
+                        transformation = SurfaceTransformation(spec).also { transformation = it },
                     ) {
                         Text("bugaga")
                     }
@@ -65,7 +65,7 @@ class SurfaceTransformationSpecTest {
                         Button(
                             onClick = {},
                             transformation =
-                                SurfaceTransformation(spec).also { transformation = it }
+                                SurfaceTransformation(spec).also { transformation = it },
                         ) {
                             Text("bugaga")
                         }

@@ -36,9 +36,12 @@ androidXMultiplatform {
     jvm()
     mac()
     linux()
+    mingwX64()
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -46,6 +49,24 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.kotlinStdlib)
+            }
+        }
+
+        jsMain {
+            dependsOn(commonMain)
+            dependencies {
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinStdlibJs)
+            }
+        }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                implementation(libs.kotlinStdlibWasm)
             }
         }
     }

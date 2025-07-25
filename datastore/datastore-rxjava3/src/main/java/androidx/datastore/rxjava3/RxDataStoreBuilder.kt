@@ -150,7 +150,7 @@ public class RxDataStoreBuilder<T : Any> {
                     serializer = serializer!!,
                     scope = scope,
                     corruptionHandler = corruptionHandler,
-                    migrations = dataMigrations
+                    migrations = dataMigrations,
                 )
             } else if (context != null && name != null) {
                 DataStoreFactory.create(
@@ -158,7 +158,7 @@ public class RxDataStoreBuilder<T : Any> {
                     serializer = serializer!!,
                     scope = scope,
                     corruptionHandler = corruptionHandler,
-                    migrations = dataMigrations
+                    migrations = dataMigrations,
                 )
             } else {
                 error(

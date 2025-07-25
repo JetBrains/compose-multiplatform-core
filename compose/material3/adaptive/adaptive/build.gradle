@@ -25,17 +25,23 @@
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
-    jvmStubs()
-    linuxX64Stubs()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.material3.adaptive"
+    }
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -43,9 +49,9 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                api("androidx.compose.foundation:foundation:1.7.8")
-                api("androidx.compose.ui:ui-geometry:1.7.8")
-                api("androidx.window:window-core:1.4.0-rc01")
+                api(project(":compose:foundation:foundation"))
+                api(project(":compose:ui:ui"))
+                api(project(":window:window-core"))
             }
         }
 
@@ -60,6 +66,10 @@ androidXMultiplatform {
             }
         }
 
+        jvmTest {
+            dependsOn(commonTest)
+        }
+
         androidMain {
             dependsOn(jvmMain)
             dependencies {
@@ -67,18 +77,6 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation-experimental:1.4.1")
                 api("androidx.window:window:1.4.0-rc01")
             }
-        }
-
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        jvmStubsMain {
-            dependsOn(commonStubsMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -94,11 +92,53 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(commonTest)
+            dependsOn(jvmTest)
             dependencies {
                 implementation(libs.junit)
                 implementation(libs.testRunner)
                 implementation(libs.truth)
+            }
+        }
+
+        nonAndroidMain {
+            dependsOn(commonMain)
+        }
+
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
@@ -110,9 +150,4 @@ androidx {
     inceptionYear = "2023"
     description = "Compose Material Design Adaptive Library"
     legacyDisableKotlinStrictApiMode = true
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.material3.adaptive"
 }

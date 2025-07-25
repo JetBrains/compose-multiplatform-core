@@ -124,7 +124,7 @@ class ContextMenuUiTest {
             colors = colors,
             modifier = modifier,
             leadingIcon = leadingIcon,
-            onClick = onClick
+            onClick = onClick,
         )
     }
 
@@ -561,9 +561,7 @@ class ContextMenuUiTest {
         rule.setContent {
             TestColumn(colors) {
                 testItem(
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) }
                 )
             }
         }
@@ -578,9 +576,7 @@ class ContextMenuUiTest {
             TestColumn(colors) {
                 testItem(
                     enabled = false,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -606,9 +602,7 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(5),
                     enabled = enabled,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -633,7 +627,7 @@ class ContextMenuUiTest {
                 anchorBounds: IntRect,
                 windowSize: IntSize,
                 layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
+                popupContentSize: IntSize,
             ): IntOffset = windowSize.center - popupContentSize.center
         }
 
@@ -682,9 +676,7 @@ class ContextMenuUiTest {
                 testItem(
                     label = "M".repeat(10),
                     enabled = enabled,
-                    leadingIcon = { iconColor ->
-                        Box(Modifier.background(iconColor).fillMaxSize())
-                    },
+                    leadingIcon = { iconColor -> Box(Modifier.background(iconColor).fillMaxSize()) },
                 )
             }
         }
@@ -696,7 +688,7 @@ class ContextMenuUiTest {
                 .containsExactly(
                     TestColors.backgroundColor,
                     TestColors.textColor,
-                    TestColors.iconColor
+                    TestColors.iconColor,
                 )
 
             enabled = false
@@ -705,7 +697,7 @@ class ContextMenuUiTest {
                 .containsExactly(
                     TestColors.backgroundColor,
                     TestColors.disabledTextColor,
-                    TestColors.disabledIconColor
+                    TestColors.disabledIconColor,
                 )
         }
     }

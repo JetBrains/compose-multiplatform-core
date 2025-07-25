@@ -42,7 +42,7 @@ class NavigationDrawerTest {
                     GetComposablesCommand(
                         rootViewId = rule.rootId,
                         skipSystemComposables = false,
-                        extractAllParameters = true
+                        extractAllParameters = true,
                     )
                 )
                 .getComposablesResponse
@@ -50,10 +50,7 @@ class NavigationDrawerTest {
         val parametersResponse =
             rule.inspectorTester
                 .sendCommand(
-                    GetAllParametersCommand(
-                        rootViewId = rule.rootId,
-                        skipSystemComposables = false,
-                    )
+                    GetAllParametersCommand(rootViewId = rule.rootId, skipSystemComposables = false)
                 )
                 .getAllParametersResponse
         val checks = AllParametersChecks(composableResponse, parametersResponse)

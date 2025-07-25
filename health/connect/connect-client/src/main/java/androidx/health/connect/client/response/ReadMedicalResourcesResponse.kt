@@ -43,7 +43,7 @@ import androidx.health.connect.client.request.ReadMedicalResourcesPageRequest
 class ReadMedicalResourcesResponse(
     val medicalResources: List<MedicalResource>,
     val nextPageToken: String?,
-    val remainingCount: Int
+    val remainingCount: Int,
 ) {
     override fun toString(): String =
         toString(
@@ -51,8 +51,8 @@ class ReadMedicalResourcesResponse(
             mapOf(
                 "medicalResources" to medicalResources,
                 "nextPageToken" to nextPageToken,
-                "remainingCount" to remainingCount
-            )
+                "remainingCount" to remainingCount,
+            ),
         )
 
     override fun equals(other: Any?): Boolean {

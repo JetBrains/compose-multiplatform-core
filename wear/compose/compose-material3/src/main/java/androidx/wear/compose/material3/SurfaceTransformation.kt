@@ -71,7 +71,7 @@ public interface SurfaceTransformation {
     public fun createContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke? = null
+        border: BorderStroke? = null,
     ): Painter
 
     /**
@@ -150,7 +150,7 @@ public fun TransformingLazyColumnItemScope.SurfaceTransformation(
 
 private class SurfaceTransformationImpl(
     private val spec: TransformationSpec,
-    private val scope: TransformingLazyColumnItemScope
+    private val scope: TransformingLazyColumnItemScope,
 ) : SurfaceTransformation, TransformedContainerPainterScope {
     override val DrawScope.scrollProgress: TransformingLazyColumnItemScrollProgress
         get() = with(scope) { scrollProgress }
@@ -161,7 +161,7 @@ private class SurfaceTransformationImpl(
     override fun createContainerPainter(
         painter: Painter,
         shape: Shape,
-        border: BorderStroke?
+        border: BorderStroke?,
     ): Painter = with(spec) { createTransformedContainerPainter(painter, shape, border) }
 
     override fun GraphicsLayerScope.applyContainerTransformation() {

@@ -26,7 +26,7 @@ import androidx.sqlite.db.SupportSQLiteStatement
 
 internal class RoomSupportSQLiteStatement(
     private val session: RoomSupportSQLiteSession,
-    private val sql: String
+    private val sql: String,
 ) : SupportSQLiteStatement {
 
     private var isClosed = false

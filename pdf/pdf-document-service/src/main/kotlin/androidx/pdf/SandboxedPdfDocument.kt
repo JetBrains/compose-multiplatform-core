@@ -31,17 +31,20 @@ import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
 import androidx.pdf.PdfDocument.BitmapSource
+import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
+import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
+import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
 import java.util.concurrent.TimeoutException
-import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -64,7 +67,9 @@ import kotlinx.coroutines.withContext
  * @param uri The URI of the PDF document.
  * @param fileDescriptor The [ParcelFileDescriptor] associated with the document.
  * @param connection The [PdfServiceConnection] used to interact with the service.
- * @param dispatcher The [CoroutineDispatcher] used for asynchronous operations.
+ * @param coroutineContext The [CoroutineContext] used for asynchronous operations, particularly for
+ *   I/O-bound tasks such as interacting with the PDF service. It is recommended to use a dispatcher
+ *   appropriate for blocking I/O operations, such as `Dispatchers.IO`.
  * @param pageCount The total number of pages in the document.
  * @param isLinearized Indicates whether the document is linearized.
  * @param formType The type of form present in the document.
@@ -76,14 +81,14 @@ public class SandboxedPdfDocument(
     public val connection: PdfServiceConnection,
     private val password: String?,
     private val fileDescriptor: ParcelFileDescriptor,
-    private val dispatcher: CoroutineDispatcher,
+    private val coroutineContext: CoroutineContext,
     override val pageCount: Int,
     override val isLinearized: Boolean,
-    override val formType: Int
+    override val formType: Int,
 ) : PdfDocument {
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
-    private val closeScope = CoroutineScope(dispatcher + SupervisorJob())
+    private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
 
     /**
      * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
@@ -94,15 +99,36 @@ public class SandboxedPdfDocument(
     private var isDocumentClosedExplicitly = false
 
     override suspend fun getPageInfo(pageNumber: Int): PdfDocument.PageInfo {
+        return getPageInfo(pageNumber, PdfDocument.PageInfoFlags.of(0))
+    }
+
+    override suspend fun getPageInfo(
+        pageNumber: Int,
+        pageInfoFlags: PdfDocument.PageInfoFlags,
+    ): PdfDocument.PageInfo {
         return withDocument { document ->
             // TODO(b/407777410): Update the logic so that callers can refetch the information in
             // case
             //  default value is returned
             val dimensions = document.getPageDimensions(pageNumber)
+
+            // Check if the INCLUDE_FORM_WIDGET_INFO flag is set
+            val formWidgetInfo =
+                if (pageInfoFlags.value and INCLUDE_FORM_WIDGET_INFO != 0L) {
+                    document.getFormWidgetInfos(pageNumber).map { it.toContentClass() }
+                } else {
+                    null
+                }
+
             if (dimensions == null || dimensions.height <= 0 || dimensions.width <= 0) {
-                PdfDocument.PageInfo(pageNumber, DEFAULT_PAGE, DEFAULT_PAGE)
+                PdfDocument.PageInfo(pageNumber, DEFAULT_PAGE, DEFAULT_PAGE, formWidgetInfo)
             } else {
-                PdfDocument.PageInfo(pageNumber, dimensions.height, dimensions.width)
+                PdfDocument.PageInfo(
+                    pageNumber,
+                    dimensions.height,
+                    dimensions.width,
+                    formWidgetInfo,
+                )
             }
         }
     }
@@ -111,9 +137,16 @@ public class SandboxedPdfDocument(
         return pageRange.map { getPageInfo(pageNumber = it) }
     }
 
+    override suspend fun getPageInfos(
+        pageRange: IntRange,
+        pageInfoFlags: PdfDocument.PageInfoFlags,
+    ): List<PdfDocument.PageInfo> {
+        return pageRange.map { getPageInfo(pageNumber = it, pageInfoFlags = pageInfoFlags) }
+    }
+
     override suspend fun searchDocument(
         query: String,
-        pageRange: IntRange
+        pageRange: IntRange,
     ): SparseArray<List<PageMatchBounds>> {
         return withDocument { document ->
             SparseArray<List<PageMatchBounds>>(pageRange.last + 1).apply {
@@ -130,7 +163,7 @@ public class SandboxedPdfDocument(
     override suspend fun getSelectionBounds(
         pageNumber: Int,
         start: PointF,
-        stop: PointF
+        stop: PointF,
     ): PageSelection? {
         return withDocument { document ->
             val startBoundary =
@@ -148,7 +181,7 @@ public class SandboxedPdfDocument(
                 .selectPageText(
                     pageNumber,
                     android.graphics.pdf.models.selection.SelectionBoundary(0),
-                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE)
+                    android.graphics.pdf.models.selection.SelectionBoundary(Int.MAX_VALUE),
                 )
                 ?.toContentClass()
         }
@@ -175,6 +208,26 @@ public class SandboxedPdfDocument(
     }
 
     override fun getPageBitmapSource(pageNumber: Int): BitmapSource = PageBitmapSource(pageNumber)
+
+    override suspend fun getFormWidgetInfos(pageNum: Int): List<FormWidgetInfo> {
+        return getFormWidgetInfos(pageNum, intArrayOf())
+    }
+
+    override suspend fun getFormWidgetInfos(pageNum: Int, types: IntArray): List<FormWidgetInfo> {
+        return withDocument { document ->
+            document.getFormWidgetInfosOfType(pageNum, types).map { it.toContentClass() }
+        }
+    }
+
+    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
+        return withDocument { document -> document.applyEdit(pageNum, record.toAndroidClass()) }
+    }
+
+    override suspend fun write(destination: ParcelFileDescriptor) {
+        return withDocument { document ->
+            document.write(destination, /* removePasswordProtection= */ false)
+        }
+    }
 
     @WorkerThread
     override fun close() {
@@ -206,7 +259,7 @@ public class SandboxedPdfDocument(
                     document.getPageBitmap(
                         pageNumber,
                         scaledPageSizePx.width,
-                        scaledPageSizePx.height
+                        scaledPageSizePx.height,
                     ) ?: getDefaultBitmap(scaledPageSizePx.width, scaledPageSizePx.height)
                 } else {
                     val offsetX = tileRegion.left
@@ -218,7 +271,7 @@ public class SandboxedPdfDocument(
                         scaledPageSizePx.width,
                         scaledPageSizePx.height,
                         offsetX,
-                        offsetY
+                        offsetY,
                     ) ?: getDefaultBitmap(tileRegion.width(), tileRegion.height())
                 }
             }
@@ -264,7 +317,7 @@ public class SandboxedPdfDocument(
 
     private suspend fun <T> withDocumentWithoutRetry(block: (PdfDocumentRemote) -> T): T {
         // If document is already closed, cancel all the pending operations on this document
-        if (isDocumentClosedExplicitly) throw CancellationException("Document is already closed.")
+        if (isDocumentClosedExplicitly) throw DocumentClosedException()
 
         // Create a new job in parent's context. Since with document can be called from any scope,
         // we need a handle to check coroutines actively working with document. Linking to parent's
@@ -277,7 +330,7 @@ public class SandboxedPdfDocument(
                 job.invokeOnCompletion { connection.pendingJobs.remove(job) }
             }
 
-        return withContext(dispatcher + taskJob) {
+        return withContext(coroutineContext + taskJob) {
             // Binder object will be null if the service is disconnected. Let's try reconnecting
             // explicitly
             if (connection.documentBinder == null) {
@@ -292,7 +345,16 @@ public class SandboxedPdfDocument(
                     ?: throw DeadObjectException("connection.documentBinder is still null")
 
             if (connection.needsToReopenDocument) {
-                binder.openPdfDocument(fileDescriptor, password)
+                try {
+                    binder.openPdfDocument(fileDescriptor, password)
+                } catch (e: Exception) {
+                    // Since `connection.connect(uri)` is suspending in nature, a explicit
+                    // document.close() could be triggered independently while current block is
+                    // waiting to be resumed.
+                    // Ensure cancelling any work on this document, if it's closed.
+                    throw if (isDocumentClosedExplicitly) DocumentClosedException(cause = e) else e
+                }
+
                 connection.needsToReopenDocument = false
             }
 

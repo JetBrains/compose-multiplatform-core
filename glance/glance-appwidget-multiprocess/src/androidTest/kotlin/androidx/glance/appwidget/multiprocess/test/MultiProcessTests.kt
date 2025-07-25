@@ -107,7 +107,7 @@ class MultiProcessTests {
             val bound =
                 appWidgetManager.bindAppWidgetIdIfAllowed(
                     appWidgetId,
-                    ComponentName(activity, TestWidgetReceiver::class.java)
+                    ComponentName(activity, TestWidgetReceiver::class.java),
                 )
             assertWithMessage("Failed to bind").that(bound).isTrue()
             Log.v("MultiProcessTests", "Bound widget $appWidgetId")
@@ -116,7 +116,7 @@ class MultiProcessTests {
                 host.createView(
                     activity,
                     appWidgetId,
-                    appWidgetManager.getAppWidgetInfo(appWidgetId)
+                    appWidgetManager.getAppWidgetInfo(appWidgetId),
                 )
             activity.setContentView(hostView)
         }
@@ -194,7 +194,7 @@ class TestAction : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,
-        parameters: ActionParameters
+        parameters: ActionParameters,
     ) {
         checkCustomProcess()
         (context.applicationContext as TestApplication).actionFlow.value = 1

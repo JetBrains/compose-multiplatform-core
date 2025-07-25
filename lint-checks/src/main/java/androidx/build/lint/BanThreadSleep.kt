@@ -60,7 +60,7 @@ class BanThreadSleep : Detector(), SourceCodeScanner {
                 Implementation(
                     BanThreadSleep::class.java,
                     EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-                )
+                ),
             )
     }
 }

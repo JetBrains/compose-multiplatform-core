@@ -33,7 +33,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 @Config(minSdk = 21)
 class JpegHalCorruptImageQuirkTest(
     private val device: String,
-    private val quirkEnablingExpected: Boolean
+    private val quirkEnablingExpected: Boolean,
 ) {
     companion object {
         @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
@@ -60,9 +60,9 @@ class JpegHalCorruptImageQuirkTest(
                         StreamConfigurationMapBuilder.newBuilder().build(),
                         OutputSizesCorrector(
                             FakeCameraMetadata(),
-                            StreamConfigurationMapBuilder.newBuilder().build()
-                        )
-                    )
+                            StreamConfigurationMapBuilder.newBuilder().build(),
+                        ),
+                    ),
                 )
                 .quirks
 

@@ -232,7 +232,6 @@ class DepthSortedSetTest {
         override fun onDetach(node: LayoutNode) = Unit
         override fun calculatePositionInWindow(localPosition: Offset): Offset = throw IllegalStateException()
         override fun calculateLocalPosition(positionInWindow: Offset): Offset = throw IllegalStateException()
-        override fun requestFocus(): Boolean = throw IllegalStateException()
         override fun requestAutofill(node: LayoutNode) = throw IllegalStateException()
         override fun measureAndLayout(sendPointerUpdate: Boolean) = throw IllegalStateException()
         override fun measureAndLayout(layoutNode: LayoutNode, constraints: Constraints) = throw IllegalStateException()
@@ -241,7 +240,6 @@ class DepthSortedSetTest {
             drawBlock: (Canvas, GraphicsLayer?) -> Unit,
             invalidateParentLayer: () -> Unit,
             explicitLayer: GraphicsLayer?,
-            forceUseOldLayers: Boolean
         ): OwnedLayer = throw IllegalStateException()
         override fun onSemanticsChange() = throw IllegalStateException()
         override fun onLayoutChange(layoutNode: LayoutNode) = throw IllegalStateException()
@@ -250,7 +248,6 @@ class DepthSortedSetTest {
         @InternalComposeUiApi
         override fun onInteropViewLayoutChange(view: InteropView) = throw IllegalStateException()
 
-        override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? = throw IllegalStateException()
         override val measureIteration: Long get() = throw IllegalStateException()
         override val viewConfiguration: ViewConfiguration get() = throw IllegalStateException()
         override val snapshotObserver: OwnerSnapshotObserver get() = throw IllegalStateException()

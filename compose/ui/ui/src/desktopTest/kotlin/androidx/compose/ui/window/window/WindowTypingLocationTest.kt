@@ -17,10 +17,8 @@
 package androidx.compose.ui.window.window
 
 import androidx.compose.ui.focusedInputMethodRequests
-import androidx.compose.ui.sendKeyEvent
-import androidx.compose.ui.sendKeyTypedEvent
-import java.awt.event.KeyEvent.KEY_PRESSED
-import java.awt.event.KeyEvent.KEY_RELEASED
+import androidx.compose.ui.sendCharTypedEvents
+import java.awt.Rectangle
 import org.junit.experimental.theories.Theories
 import org.junit.experimental.theories.Theory
 import org.junit.runner.RunWith
@@ -28,30 +26,35 @@ import org.junit.runner.RunWith
 @RunWith(Theories::class)
 class WindowTypingLocationTest: BaseWindowTextFieldTest() {
     @Theory
-    internal fun `input methods text location going right when type`(
+    internal fun `input methods text location going right when typing`(
         textFieldKind: TextFieldKind<*>,
     ) = runTextFieldTest(
         textFieldKind = textFieldKind,
-        name = "input methods text location going right when type"
+        name = "input methods text location going right when typing"
     ) {
         val location0 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 
-        window.sendKeyEvent(81, 'a', KEY_PRESSED)
-        window.sendKeyTypedEvent('a')
-        window.sendKeyEvent(81, 'a', KEY_RELEASED)
-
+        window.sendCharTypedEvents('a')
         awaitIdle()
         val location1 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 
-        window.sendKeyEvent(81, 'a', KEY_PRESSED)
-        window.sendKeyTypedEvent('a')
-        window.sendKeyEvent(81, 'a', KEY_RELEASED)
+        window.sendCharTypedEvents('a')
         awaitIdle()
         val location2 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 
-        assert(location2.x > location1.x && location1.x > location0.x)
-        // don't check location0.y, as it is different for empty text field
-        assert(location2.y == location1.y)
+        fun assertMovedRight(before: Rectangle, after: Rectangle) {
+            assert(after.x > before.x) {
+                "InputMethods X text location after typing (${after.x} should be greater than" +
+                    " before (${before.x})), but isn't"
+            }
+            assert(after.y == before.y) {
+                "InputMethods Y text location after typing (${after.y} should be the same as" +
+                    " before (${before.y})), but isn't"
+            }
+        }
+
+        assertMovedRight(location0, location1)
+        assertMovedRight(location1, location2)
     }
 
     @Theory
@@ -66,15 +69,11 @@ class WindowTypingLocationTest: BaseWindowTextFieldTest() {
 
         val location0 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 
-        window.sendKeyEvent(81, 'a', KEY_PRESSED)
-        window.sendKeyTypedEvent('a')
-        window.sendKeyEvent(81, 'a', KEY_RELEASED)
+        window.sendCharTypedEvents('a')
         awaitIdle()
         val location1 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 
-        window.sendKeyEvent(81, 'a', KEY_PRESSED)
-        window.sendKeyTypedEvent('a')
-        window.sendKeyEvent(81, 'a', KEY_RELEASED)
+        window.sendCharTypedEvents('a')
         awaitIdle()
         val location2 = window.focusedInputMethodRequests()!!.getTextLocation(null)
 

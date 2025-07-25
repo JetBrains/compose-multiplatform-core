@@ -481,7 +481,7 @@ class BrushBehaviorTest {
         val list =
             listOf<BrushBehavior.BinaryOp>(
                 BrushBehavior.BinaryOp.PRODUCT,
-                BrushBehavior.BinaryOp.SUM
+                BrushBehavior.BinaryOp.SUM,
             )
         assertThat(list.toSet()).hasSize(list.size)
     }
@@ -718,7 +718,7 @@ class BrushBehaviorTest {
                 BrushBehavior.NoiseNode(
                     12345,
                     BrushBehavior.DampingSource.DISTANCE_IN_CENTIMETERS,
-                    1f
+                    1f,
                 )
             )
         assertThat(node)
@@ -820,17 +820,17 @@ class BrushBehaviorTest {
         val node1 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node2 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node3 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(2f)
+                BrushBehavior.ConstantNode(2f),
             )
         assertThat(node1).isEqualTo(node2)
         assertThat(node1).isNotEqualTo(node3)
@@ -841,17 +841,17 @@ class BrushBehaviorTest {
         val node1 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node2 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node3 =
             BrushBehavior.ToolTypeFilterNode(
                 setOf(InputToolType.STYLUS),
-                BrushBehavior.ConstantNode(2f)
+                BrushBehavior.ConstantNode(2f),
             )
         assertThat(node1.hashCode()).isEqualTo(node2.hashCode())
         assertThat(node1.hashCode()).isNotEqualTo(node3.hashCode())
@@ -963,17 +963,17 @@ class BrushBehaviorTest {
         val node1 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node2 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node3 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(2f)
+                BrushBehavior.ConstantNode(2f),
             )
         assertThat(node1).isEqualTo(node2)
         assertThat(node1).isNotEqualTo(node3)
@@ -984,17 +984,17 @@ class BrushBehaviorTest {
         val node1 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node2 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(1f)
+                BrushBehavior.ConstantNode(1f),
             )
         val node3 =
             BrushBehavior.ResponseNode(
                 EasingFunction.Predefined.EASE,
-                BrushBehavior.ConstantNode(2f)
+                BrushBehavior.ConstantNode(2f),
             )
         assertThat(node1.hashCode()).isEqualTo(node2.hashCode())
         assertThat(node1.hashCode()).isNotEqualTo(node3.hashCode())

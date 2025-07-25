@@ -16,6 +16,7 @@
 
 package androidx.xr.runtime.internal
 
+import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 
 /**
@@ -27,17 +28,21 @@ import androidx.annotation.RestrictTo
 public class SpatialCapabilities(public val capabilities: Int) {
 
     /** Spatial Capabilities for SceneCore Platform. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
-    public annotation class SpatialCapability {
-        public companion object {
-            public const val SPATIAL_CAPABILITY_UI: Int = 1.shl(0)
-            public const val SPATIAL_CAPABILITY_3D_CONTENT: Int = 1.shl(1)
-            public const val SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL: Int = 1.shl(2)
-            public const val SPATIAL_CAPABILITY_APP_ENVIRONMENT: Int = 1.shl(3)
-            public const val SPATIAL_CAPABILITY_SPATIAL_AUDIO: Int = 1.shl(4)
-            public const val SPATIAL_CAPABILITY_EMBED_ACTIVITY: Int = 1.shl(5)
-        }
-    }
+    @IntDef(
+        flag = true,
+        value =
+            [
+                SPATIAL_CAPABILITY_UI,
+                SPATIAL_CAPABILITY_3D_CONTENT,
+                SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL,
+                SPATIAL_CAPABILITY_APP_ENVIRONMENT,
+                SPATIAL_CAPABILITY_SPATIAL_AUDIO,
+                SPATIAL_CAPABILITY_EMBED_ACTIVITY,
+            ],
+    )
+    internal annotation class SpatialCapability
 
     public fun hasCapability(@SpatialCapability capability: Int): Boolean =
         (capabilities and capability) != 0

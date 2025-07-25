@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.th() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ยุบ Bottom Sheet",
     Strings.BottomSheetDismissDescription to "ปิด Bottom Sheet",
     Strings.BottomSheetExpandDescription to "ขยาย Bottom Sheet",
+    Strings.FloatingToolbarCollapse to "ยุบแถบเครื่องมือ",
+    Strings.FloatingToolbarExpand to "ขยายแถบเครื่องมือ",
     Strings.TooltipPaneDescription to "เคล็ดลับเครื่องมือ",
     Strings.TooltipLongPressLabel to "แสดงเคล็ดลับเครื่องมือ",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.th() = mapOf(
     Strings.TimePickerHour to "ชั่วโมง",
     Strings.TimePickerMinuteTextField to "สำหรับนาที",
     Strings.TimePickerHourTextField to "สำหรับชั่วโมง",
+    Strings.TimePickerToggleKeyboard to "เปลี่ยนเป็นโหมดการป้อนข้อความเพื่อป้อนเวลา",
+    Strings.TimePickerToggleTouch to "สลับเป็นโหมดนาฬิกาเพื่อป้อนเวลา",
+    Strings.TimePickerDialogTitle to "เลือกเวลา",
+    Strings.TimeInputDialogTitle to "ป้อนเวลา",
     Strings.CloseRail to "ปิดแถบข้าง",
     Strings.WideNavigationRailPaneTitle to "แถบข้างสำหรับไปยังส่วนต่างๆ",
 )

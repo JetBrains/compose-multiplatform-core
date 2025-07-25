@@ -65,7 +65,7 @@ object Arguments {
     enum class RuleType {
         Microbenchmark,
         Macrobenchmark,
-        BaselineProfile
+        BaselineProfile,
     }
 
     val enableCompilation: Boolean
@@ -97,6 +97,8 @@ object Arguments {
 
     internal var error: String? = null
     internal val additionalTestOutputDir: String?
+
+    internal val zipInMemoryTraceData: Boolean
 
     private val targetPackageName: String?
 
@@ -190,6 +192,10 @@ object Arguments {
                 ?: arguments.getBenchmarkArgument("fullTracing.enable")?.toBoolean()
                 ?: false
 
+        zipInMemoryTraceData = // experimental
+            arguments.getBenchmarkArgument("zipTraceWithInMemoryEvents.enable")?.toBoolean()
+                ?: false // off by default due to issue opening in Studio
+
         _startupInsightsHelpUrlBase =
             arguments.getBenchmarkArgument("startupInsights.helpUrlBase", defaultValue = null)
 
@@ -210,7 +216,7 @@ object Arguments {
             arguments
                 .getBenchmarkArgument(
                     key = "enabledRules",
-                    defaultValue = RuleType.values().joinToString(separator = ",") { it.toString() }
+                    defaultValue = RuleType.values().joinToString(separator = ",") { it.toString() },
                 )
                 .run {
                     if (this.lowercase() == "none") {
@@ -264,7 +270,7 @@ object Arguments {
             Log.d(
                 BenchmarkState.TAG,
                 "Profiler ${profiler.javaClass.simpleName}, freq " +
-                    "$profilerSampleFrequencyHz, duration $profilerSampleDurationSeconds"
+                    "$profilerSampleFrequencyHz, duration $profilerSampleDurationSeconds",
             )
         }
 
@@ -278,14 +284,14 @@ object Arguments {
                 dryRunMode -> {
                     Log.d(
                         BenchmarkState.TAG,
-                        "Ignoring request for cpuEventCounter due to dryRunMode=true"
+                        "Ignoring request for cpuEventCounter due to dryRunMode=true",
                     )
                     false
                 }
                 !DeviceInfo.supportsCpuEventCounters -> {
                     Log.d(
                         BenchmarkState.TAG,
-                        "Ignoring request for cpuEventCounter due to unrooted device"
+                        "Ignoring request for cpuEventCounter due to unrooted device",
                     )
                     false
                 }
@@ -296,7 +302,7 @@ object Arguments {
                 arguments
                     .getBenchmarkArgument(
                         "cpuEventCounter.events",
-                        "Instructions,CpuCycles,BranchMisses"
+                        "Instructions,CpuCycles,BranchMisses",
                     )
                     .split(",")
                     .map { eventName -> CpuEventCounter.Event.valueOf(eventName) }

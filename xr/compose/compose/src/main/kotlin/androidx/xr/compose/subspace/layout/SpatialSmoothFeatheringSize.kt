@@ -17,13 +17,11 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.annotation.IntRange
-import androidx.annotation.RestrictTo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 
 /** Defines a feathering size based on the percent width and height of the layout. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface SpatialSmoothFeatheringSize {
+internal interface SpatialSmoothFeatheringSize {
     /**
      * Edge feathering based on percent width of the canvas.
      *
@@ -34,7 +32,7 @@ public interface SpatialSmoothFeatheringSize {
     public fun toWidthPercent(pixels: Float, density: Density): Float
 
     /**
-     * Edge feathering based on percent width of the canvas.
+     * Edge feathering based on percent height of the canvas.
      *
      * @param pixels Height of canvas in pixels.
      * @param density The current density of the screen.
@@ -42,19 +40,6 @@ public interface SpatialSmoothFeatheringSize {
      */
     public fun toHeightPercent(pixels: Float, density: Density): Float
 }
-
-/** A size representing no feathering. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public val ZeroFeatheringSize: SpatialSmoothFeatheringSize =
-    object : SpatialSmoothFeatheringSize {
-        override fun toWidthPercent(pixels: Float, density: Density): Float {
-            return 0f
-        }
-
-        override fun toHeightPercent(pixels: Float, density: Density): Float {
-            return 0f
-        }
-    }
 
 /**
  * Defines a smooth feathering size based on the percent width and height of the layout.
@@ -64,8 +49,7 @@ public val ZeroFeatheringSize: SpatialSmoothFeatheringSize =
  * @param percentVertical Value to feather vertical edges. A value of 5 represents 5% of the width
  *   the visible canvas. Accepted value range is 0 - 50 percent.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun spatialSmoothFeatheringSize(
+internal fun spatialSmoothFeatheringSize(
     @IntRange(from = 0, to = 50) percentHorizontal: Int,
     @IntRange(from = 0, to = 50) percentVertical: Int,
 ): SpatialSmoothFeatheringSize = SpatialFeatheringPercentSize(percentHorizontal, percentVertical)
@@ -78,9 +62,10 @@ public fun spatialSmoothFeatheringSize(
  * @param vertical Non-negative [Dp] value to feather vertical edges. Value will be capped at 50% of
  *   canvas height if it is too large.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun spatialSmoothFeatheringSize(horizontal: Dp, vertical: Dp): SpatialSmoothFeatheringSize =
-    SpatialFeatheringDpSize(horizontal, vertical)
+internal fun spatialSmoothFeatheringSize(
+    horizontal: Dp,
+    vertical: Dp,
+): SpatialSmoothFeatheringSize = SpatialFeatheringDpSize(horizontal, vertical)
 
 /**
  * Defines a smooth feathering size using on pixels.
@@ -90,8 +75,7 @@ public fun spatialSmoothFeatheringSize(horizontal: Dp, vertical: Dp): SpatialSmo
  * @param vertical Non-negative pixels value to feather vertical edges. Value will be capped at 50%
  *   of canvas height if it is too large.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun spatialSmoothFeatheringSize(
+internal fun spatialSmoothFeatheringSize(
     horizontal: Float,
     vertical: Float,
 ): SpatialSmoothFeatheringSize = SpatialFeatheringPixelSize(horizontal, vertical)

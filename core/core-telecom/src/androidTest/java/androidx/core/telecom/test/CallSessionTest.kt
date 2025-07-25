@@ -161,7 +161,7 @@ class CallSessionTest : BaseTelecomTest() {
 
             assertEquals(
                 getAvailableEndpoint().size,
-                callChannels.availableEndpointChannel.receive().size
+                callChannels.availableEndpointChannel.receive().size,
             )
             assertNotNull(callChannels.currentEndpointChannel.receive())
             callChannels.closeAllChannels()
@@ -179,45 +179,41 @@ class CallSessionTest : BaseTelecomTest() {
     fun testPlatformEndpointsAreRemappedToExistingEndpoints() {
         setUpV2Test()
         runBlocking {
-            val callSession =
-                initCallSession(
-                    coroutineContext,
-                    CallChannels(),
-                )
+            val callSession = initCallSession(coroutineContext, CallChannels())
 
             val platformEarpiece =
                 CallEndpoint(
                     mEarpieceEndpoint.name,
                     CallEndpoint.TYPE_EARPIECE,
-                    getRandomParcelUuid()
+                    getRandomParcelUuid(),
                 )
             assertNotEquals(mEarpieceEndpoint.identifier, platformEarpiece.identifier)
             val platformSpeaker =
                 CallEndpoint(
                     mSpeakerEndpoint.name,
                     CallEndpoint.TYPE_SPEAKER,
-                    getRandomParcelUuid()
+                    getRandomParcelUuid(),
                 )
             assertNotEquals(mSpeakerEndpoint.identifier, platformSpeaker.identifier)
             val platformBt =
                 CallEndpoint(
                     mBluetoothEndpoint.name,
                     CallEndpoint.TYPE_BLUETOOTH,
-                    getRandomParcelUuid()
+                    getRandomParcelUuid(),
                 )
             assertNotEquals(mBluetoothEndpoint.identifier, platformBt.identifier)
 
             val callSessionUuidRemapping = callSession.mJetpackToPlatformCallEndpoint
             assertEquals(
                 mEarpieceEndpoint,
-                callSession.toRemappedCallEndpointCompat(platformEarpiece)
+                callSession.toRemappedCallEndpointCompat(platformEarpiece),
             )
             assertTrue(callSessionUuidRemapping.containsKey(mEarpieceEndpoint.identifier))
             assertEquals(platformEarpiece, callSessionUuidRemapping[mEarpieceEndpoint.identifier])
 
             assertEquals(
                 mSpeakerEndpoint,
-                callSession.toRemappedCallEndpointCompat(platformSpeaker)
+                callSession.toRemappedCallEndpointCompat(platformSpeaker),
             )
             assertTrue(callSessionUuidRemapping.containsKey(mSpeakerEndpoint.identifier))
             assertEquals(platformSpeaker, callSessionUuidRemapping[mSpeakerEndpoint.identifier])
@@ -242,7 +238,7 @@ class CallSessionTest : BaseTelecomTest() {
             callChannels,
             MutableSharedFlow(),
             { _, _ -> },
-            CompletableDeferred(Unit)
+            CompletableDeferred(Unit),
         )
     }
 

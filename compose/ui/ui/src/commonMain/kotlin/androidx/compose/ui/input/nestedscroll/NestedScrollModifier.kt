@@ -180,7 +180,7 @@ class NestedScrollDispatcher {
     fun dispatchPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset {
         return parent?.onPostScroll(consumed, available, source) ?: Offset.Zero
     }
@@ -260,8 +260,8 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.UserInput",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.UserInput"
-                )
+                        "NestedScrollSource.Companion.UserInput",
+                ),
         )
         val Drag: NestedScrollSource = UserInput
 
@@ -272,13 +272,12 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.SideEffect",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.SideEffect"
-                )
+                        "NestedScrollSource.Companion.SideEffect",
+                ),
         )
         val Fling: NestedScrollSource = SideEffect
 
         /** Relocating when a component asks parents to scroll to bring it into view. */
-        @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
         @Deprecated("Do not use. Will be removed in the future.")
         val Relocate: NestedScrollSource = NestedScrollSource(3)
 
@@ -289,8 +288,8 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
                 ReplaceWith(
                     "NestedScrollSource.UserInput",
                     "import androidx.compose.ui.input.nestedscroll." +
-                        "NestedScrollSource.Companion.UserInput"
-                )
+                        "NestedScrollSource.Companion.UserInput",
+                ),
         )
         val Wheel: NestedScrollSource = UserInput
     }
@@ -363,12 +362,12 @@ value class NestedScrollSource internal constructor(@Suppress("unused") private 
  */
 fun Modifier.nestedScroll(
     connection: NestedScrollConnection,
-    dispatcher: NestedScrollDispatcher? = null
+    dispatcher: NestedScrollDispatcher? = null,
 ): Modifier = this then NestedScrollElement(connection, dispatcher)
 
 private class NestedScrollElement(
     val connection: NestedScrollConnection,
-    val dispatcher: NestedScrollDispatcher?
+    val dispatcher: NestedScrollDispatcher?,
 ) : ModifierNodeElement<NestedScrollNode>() {
     override fun create(): NestedScrollNode {
         return NestedScrollNode(connection, dispatcher)

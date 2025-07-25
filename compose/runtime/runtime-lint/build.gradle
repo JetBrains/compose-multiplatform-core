@@ -39,7 +39,7 @@ dependencies {
     testImplementation(project(":compose:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.androidLintStableAnalysis)
-    testImplementation(libs.androidLintTestsStableAnalysis)
+    testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

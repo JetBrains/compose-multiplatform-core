@@ -19,18 +19,21 @@ package androidx.camera.camera2.internal;
 import android.content.Context;
 import android.hardware.camera2.CameraDevice;
 import android.media.CamcorderProfile;
-import android.util.Pair;
+import android.os.Build;
 import android.util.Size;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
+import androidx.camera.camera2.impl.FeatureCombinationQueryImpl;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.core.CameraUnavailableException;
+import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
-import androidx.camera.core.impl.StreamSpec;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
+import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
 
@@ -104,11 +107,21 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             throws CameraUnavailableException {
         Preconditions.checkNotNull(context);
 
+        FeatureCombinationQuery featureCombinationQuery =
+                FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY;
+
         for (String cameraId : availableCameraIds) {
+            // TODO: b/417839748 - Decide on the appropriate API level for CameraX feature combo API
+            if (Build.VERSION.SDK_INT >= 35) {
+                featureCombinationQuery = new FeatureCombinationQueryImpl(context, cameraId,
+                        cameraManager);
+            }
+
             mCameraSupportedSurfaceCombinationMap.put(
                     cameraId,
                     new SupportedSurfaceCombination(
-                            context, cameraId, cameraManager, mCamcorderProfileHelper));
+                            context, cameraId, cameraManager, mCamcorderProfileHelper,
+                            featureCombinationQuery));
         }
     }
 
@@ -119,6 +132,7 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
      * @param cameraId    the camera id of the camera device to transform the object
      * @param imageFormat the image format info for the surface configuration object
      * @param size        the size info for the surface configuration object
+     * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
      * @throws IllegalStateException if not initialized
      */
@@ -127,7 +141,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
-            @NonNull Size size) {
+            @NonNull Size size,
+            @NonNull StreamUseCase streamUseCase) {
         SupportedSurfaceCombination supportedSurfaceCombination =
                 mCameraSupportedSurfaceCombinationMap.get(cameraId);
 
@@ -137,42 +152,23 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                     supportedSurfaceCombination.transformSurfaceConfig(
                             cameraMode,
                             imageFormat,
-                            size);
+                            size,
+                            streamUseCase);
         }
 
         return surfaceConfig;
     }
 
-    /**
-     * Retrieves a map of suggested stream specifications for the given list of use cases.
-     *
-     * @param cameraMode                        the working camera mode.
-     * @param cameraId                          the camera id of the camera device used by the
-     *                                          use cases
-     * @param existingSurfaces                  list of surfaces already configured and used by
-     *                                          the camera. The stream specifications for these
-     *                                          surface can not change.
-     * @param newUseCaseConfigsSupportedSizeMap map of configurations of the use cases to the
-     *                                          supported sizes list that will be given a
-     *                                          suggested stream specification
-     * @param isPreviewStabilizationOn          whether the preview stabilization is enabled.
-     * @param hasVideoCapture                   whether the use cases has video capture.
-     * @return map of suggested stream specifications for given use cases
-     * @throws IllegalStateException    if not initialized
-     * @throws IllegalArgumentException if {@code newUseCaseConfigs} is an empty list, if
-     *                                  there isn't a supported combination of surfaces
-     *                                  available, or if the {@code cameraId}
-     *                                  is not a valid id.
-     */
     @Override
-    public @NonNull Pair<Map<UseCaseConfig<?>, StreamSpec>, Map<AttachedSurfaceInfo, StreamSpec>>
-            getSuggestedStreamSpecs(
+    public @NonNull SurfaceStreamSpecQueryResult getSuggestedStreamSpecs(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
             boolean isPreviewStabilizationOn,
-            boolean hasVideoCapture) {
+            boolean hasVideoCapture,
+            boolean isFeatureComboInvocation,
+            boolean findMaxSupportedFrameRate) {
         Preconditions.checkArgument(!newUseCaseConfigsSupportedSizeMap.isEmpty(),
                 "No new use cases to be bound.");
 
@@ -189,6 +185,8 @@ public final class Camera2DeviceSurfaceManager implements CameraDeviceSurfaceMan
                 existingSurfaces,
                 newUseCaseConfigsSupportedSizeMap,
                 isPreviewStabilizationOn,
-                hasVideoCapture);
+                hasVideoCapture,
+                isFeatureComboInvocation,
+                findMaxSupportedFrameRate);
     }
 }

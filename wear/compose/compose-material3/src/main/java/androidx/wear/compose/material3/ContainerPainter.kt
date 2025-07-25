@@ -82,7 +82,7 @@ private class DefaultContainerPainter(
             alignment.align(
                 IntSize(scaledSize.width.fastRoundToInt(), scaledSize.height.fastRoundToInt()),
                 IntSize(size.width.fastRoundToInt(), size.height.fastRoundToInt()),
-                layoutDirection
+                layoutDirection,
             )
 
         val dx = alignedPosition.x.toFloat()
@@ -123,10 +123,8 @@ private class DefaultContainerPainter(
     }
 }
 
-internal fun containerPainter(
-    painter: Painter,
-    alpha: Float,
-): Painter = DefaultDisabledContainerPainter(painter, alpha)
+internal fun containerPainter(painter: Painter, alpha: Float): Painter =
+    DefaultDisabledContainerPainter(painter, alpha)
 
 @Stable
 private class DefaultDisabledContainerPainter(

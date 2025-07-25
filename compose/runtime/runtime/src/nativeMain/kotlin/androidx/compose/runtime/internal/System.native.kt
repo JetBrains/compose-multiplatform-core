@@ -16,7 +16,8 @@
 
 package androidx.compose.runtime.internal
 
+import kotlin.experimental.ExperimentalNativeApi
 import kotlin.native.identityHashCode
 
-actual fun identityHashCode(instance: Any?): Int =
-    instance.identityHashCode()
+@OptIn(ExperimentalNativeApi::class)
+public actual fun identityHashCode(instance: Any?): Int = instance.identityHashCode()

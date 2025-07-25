@@ -82,7 +82,7 @@ class RestrictToDetectorTest :
                     """
                     )
                     .indented(),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .run()
             .expect(expected)
@@ -128,7 +128,7 @@ class RestrictToDetectorTest :
                         PrivateClass.method(); // Not enforced in tests
                     }
                 }
-                """
+                """,
                         )
                         .indented(),
                     library,
@@ -142,7 +142,7 @@ class RestrictToDetectorTest :
                 """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
         lint()
             .projects(project)
@@ -226,7 +226,7 @@ class RestrictToDetectorTest :
                 """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
                 .name("lib")
                 .type(ProjectDescription.Type.LIBRARY)
@@ -251,7 +251,7 @@ class RestrictToDetectorTest :
                 """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
                 .dependsOn(library)
                 .name("app")
@@ -339,7 +339,7 @@ class RestrictToDetectorTest :
                 """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
         lint()
             .projects(project)
@@ -407,7 +407,7 @@ class RestrictToDetectorTest :
                         "zjQ35rn48PPq64yhNuHzYw95rbn3Q/hLYD/zujpZqxdFvbNYvwhs+qSpWxNY" +
                         "/Yd9b7zC1oSQfFl5cErewhTw/BEwCIIYQYHEyCTCgJqvYDkOlClRAUoWRdeK" +
                         "nEFEULTZ4sigyCaA4gg59uRRTDhJOFuhG4bsS1EUw/KYcER/gDcrG0gBCxDy" +
-                        "ArVNZgbxABAMMsu2BAAA"
+                        "ArVNZgbxABAMMsu2BAAA",
                 ),
                 java(
                     "" +
@@ -428,7 +428,7 @@ class RestrictToDetectorTest :
                         "    compile 'my.group.id:mylib:25.0.0-SNAPSHOT'\n" +
                         "}"
                 ),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .run()
             .expectClean()
@@ -462,7 +462,7 @@ class RestrictToDetectorTest :
                   @SuppressWarnings("ClassNameDiffersFromFileName")
                   public class MyTestJavaClass extends RestrictedClass {
                   }
-                  """
+                  """,
                     )
                     .indented(),
                 kotlin(
@@ -497,7 +497,7 @@ class RestrictToDetectorTest :
                 """
                     )
                     .indented(),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .skipTestModes(TestMode.TYPE_ALIAS)
             .run()
@@ -547,7 +547,7 @@ class RestrictToDetectorTest :
                 }
                 """
                 ),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .run()
             .expect(
@@ -584,7 +584,7 @@ class RestrictToDetectorTest :
                 """
                     )
                     .indented(),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .run()
             .expect(
@@ -659,7 +659,7 @@ class RestrictToDetectorTest :
                 """
                     )
                     .indented(),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .run()
             .expect(
@@ -686,19 +686,19 @@ class RestrictToDetectorTest :
             "androidx.wear.tiles:tiles-material:",
             DefaultLintModelModuleLibrary(":@@:wear:tiles:tiles-material", "", null, false)
                 .getMavenNameFromIdentifier()!!
-                .toString()
+                .toString(),
         )
 
         assertEquals(
             "androidx.wear.tiles:tiles-material:",
             DefaultLintModelModuleLibrary(":@@:wear:tiles:tiles-material::debug", "", null, false)
                 .getMavenNameFromIdentifier()!!
-                .toString()
+                .toString(),
         )
 
         assertEquals(
             null,
-            DefaultLintModelModuleLibrary("", "", null, false).getMavenNameFromIdentifier()
+            DefaultLintModelModuleLibrary("", "", null, false).getMavenNameFromIdentifier(),
         )
     }
 
@@ -791,7 +791,7 @@ class RestrictToDetectorTest :
                     """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
                 .name("lib1")
 
@@ -820,7 +820,7 @@ class RestrictToDetectorTest :
                     """
                         )
                         .indented(),
-                    SUPPORT_ANNOTATIONS_JAR
+                    SUPPORT_ANNOTATIONS_JAR,
                 )
                 .name("lib3")
 
@@ -854,7 +854,7 @@ class RestrictToDetectorTest :
                     group=other.app
                     """
                         )
-                        .indented()
+                        .indented(),
                 )
                 .name("lib2")
                 .dependsOn(library)
@@ -969,9 +969,9 @@ class RestrictToDetectorTest :
               }
               """
                                 )
-                                .indented(),
+                                .indented()
                         ),
-                    compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR)
+                    compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
                 ),
                 gradle(
                         """
@@ -983,7 +983,7 @@ class RestrictToDetectorTest :
                 """
                     )
                     .indented(),
-                SUPPORT_ANNOTATIONS_JAR
+                SUPPORT_ANNOTATIONS_JAR,
             )
             .allowKotlinClassStubs(true)
             .run()
@@ -1409,9 +1409,9 @@ class RestrictToDetectorTest :
                         import androidx.annotation.RestrictTo;
                         """
                             )
-                            .indented()
+                            .indented(),
                     ),
-                compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR)
+                compileOnly = listOf(SUPPORT_ANNOTATIONS_JAR),
             )
     }
 }

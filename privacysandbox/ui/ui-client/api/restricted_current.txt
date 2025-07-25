@@ -18,7 +18,7 @@ package androidx.privacysandbox.ui.client.view {
   public final class SandboxedSdkView extends android.view.ViewGroup {
     ctor public SandboxedSdkView(android.content.Context context);
     ctor public SandboxedSdkView(android.content.Context context, optional android.util.AttributeSet? attrs);
-    method public void orderProviderUiAboveClientUi(boolean providerUiOnTop);
+    method @SuppressCompatibility @androidx.privacysandbox.ui.core.ExperimentalFeatures.ChangingContentUiZOrderApi public void orderProviderUiAboveClientUi(boolean providerUiOnTop);
     method public void preserveSessionOnWindowDetachment(optional boolean preserveSessionOnWindowDetachment);
     method public void setAdapter(androidx.privacysandbox.ui.core.SandboxedUiAdapter? sandboxedUiAdapter);
     method public void setEventListener(androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener? eventListener);

@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,23 +77,17 @@ import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.EdgeOffset.Companion.outer
-import androidx.xr.compose.spatial.EdgeOffset.Companion.overlap
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.SpatialPopup
-import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.scene
 import kotlinx.coroutines.launch
 
 class ManualTestXrSpatialElevationActivity : ComponentActivity() {
-
-    val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(android.R.style.Theme_Translucent_NoTitleBar)
         super.onCreate(savedInstanceState)
@@ -110,7 +104,7 @@ private fun App() {
     var contentText by remember { mutableStateOf("Opening additional context.") }
     var showPopup by remember { mutableStateOf(false) }
 
-    Orbiter(position = OrbiterEdge.Start, offset = overlap(8.dp)) {
+    Orbiter(position = ContentEdge.Start, offset = 8.dp, offsetType = OrbiterOffsetType.Overlap) {
         NavigationRail(
             modifier =
                 Modifier.width(80.dp).height(IntrinsicSize.Min).clip(RoundedCornerShape(20.dp))
@@ -150,24 +144,21 @@ private fun App() {
             )
         }
     }
-    Orbiter(position = OrbiterEdge.End, offset = outer(72.dp)) {
+    Orbiter(position = ContentEdge.End, offset = 72.dp, offsetType = OrbiterOffsetType.OuterEdge) {
         Row(
             modifier = Modifier.animateContentSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
         ) {
             if (shouldExpand) {
-                Card(
-                    modifier =
-                        Modifier.size(width = 360.dp, height = 100.dp)
-                            .wrapContentSize(Alignment.Center)
-                ) {
+                Card(Modifier.widthIn(max = 320.dp)) {
                     Text(
                         text = contentText,
                         modifier = Modifier.padding(16.dp),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
+                Spacer(Modifier.size(16.dp))
             }
             IconMenuOrnament(
                 onClick = {
@@ -197,15 +188,11 @@ private fun App() {
                     }
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                        Button(
-                            onClick = { session.scene.spatialEnvironment.requestHomeSpaceMode() }
-                        ) {
+                        Button(onClick = { session.scene.requestHomeSpaceMode() }) {
                             Text("Enter Home Space Mode")
                         }
                     } else {
-                        Button(
-                            onClick = { session.scene.spatialEnvironment.requestFullSpaceMode() }
-                        ) {
+                        Button(onClick = { session.scene.requestFullSpaceMode() }) {
                             Text("Enter Full Space Mode")
                         }
                     }
@@ -256,9 +243,8 @@ private fun RowItem(modifier: Modifier = Modifier, content: @Composable () -> Un
     Surface(
         color = Color.Gray,
         modifier = modifier.padding(20.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)),
-    ) {
-        content()
-    }
+        content = content,
+    )
 }
 
 @Composable

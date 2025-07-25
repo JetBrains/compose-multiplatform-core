@@ -26,14 +26,14 @@ class SingleProcessDataStoreStressTest() : BaseSingleProcessDataStoreStressTest(
         corruptionHandler: ReplaceFileCorruptionHandler<T>?,
         migrations: List<DataMigration<T>>,
         scope: CoroutineScope,
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<T> {
         return DataStoreFactory.create(
             serializer,
             corruptionHandler,
             migrations,
             scope,
-            produceFile
+            produceFile,
         )
     }
 }

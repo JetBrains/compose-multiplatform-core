@@ -147,7 +147,7 @@ class BoxWithConstraintsDetector : Detector(), SourceCodeScanner {
                     UnusedConstraintsParameter,
                     node,
                     context.getLocation(contentArgument),
-                    "BoxWithConstraints scope is not used"
+                    "BoxWithConstraints scope is not used",
                 )
             }
         }
@@ -168,8 +168,8 @@ class BoxWithConstraintsDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     BoxWithConstraintsDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

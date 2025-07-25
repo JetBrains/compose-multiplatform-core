@@ -31,7 +31,7 @@ tasks.withType(Test).configureEach {
 }
 
 dependencies {
-    implementation("com.android.tools.build:gradle-api:8.1.1")
+    implementation("com.android.tools.build:gradle-api:8.8.0-alpha06")
     implementation(libs.kotlinStdlib)
     compileOnly(libs.androidGradlePlugin)
     compileOnly(libs.kspGradlePlugin)
@@ -39,10 +39,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(project(":internal-testutils-gradle-plugin"))
 
-    testPlugin("com.android.tools.build:gradle:8.1.1")
-    testPlugin("com.android.tools.build:aapt2:8.1.1-10154469")
-    testPlugin("com.android.tools.build:aapt2:8.1.1-10154469:linux")
-    testPlugin("com.android.tools.build:aapt2:8.1.1-10154469:osx")
+    testPlugin("com.android.tools.build:gradle:8.8.0-alpha06")
+    testPlugin("com.android.tools.build:aapt2:8.8.0-alpha06-12006047")
+    testPlugin("com.android.tools.build:aapt2:8.8.0-alpha06-12006047:linux")
+    testPlugin("com.android.tools.build:aapt2:8.8.0-alpha06-120060479:osx")
     testPlugin("com.google.devtools.ksp:symbol-processing-api:1.9.22-1.0.17")
     testPlugin(libs.kotlinGradlePlugin)
     testPlugin(libs.kspGradlePlugin)

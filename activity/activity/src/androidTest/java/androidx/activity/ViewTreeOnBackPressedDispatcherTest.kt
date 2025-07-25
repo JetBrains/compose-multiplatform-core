@@ -132,12 +132,12 @@ class ViewTreeOnBackPressedDispatcherTest {
         assertEquals(
             "disjoint parent sees owner",
             rootFakeOwner,
-            parent.findViewTreeOnBackPressedDispatcherOwner()
+            parent.findViewTreeOnBackPressedDispatcherOwner(),
         )
         assertEquals(
             "disjoint child sees owner",
             rootFakeOwner,
-            child.findViewTreeOnBackPressedDispatcherOwner()
+            child.findViewTreeOnBackPressedDispatcherOwner(),
         )
     }
 
@@ -161,7 +161,7 @@ class ViewTreeOnBackPressedDispatcherTest {
         assertEquals(
             "child sees owner",
             parentFakeOwner,
-            child.findViewTreeOnBackPressedDispatcherOwner()
+            child.findViewTreeOnBackPressedDispatcherOwner(),
         )
     }
 

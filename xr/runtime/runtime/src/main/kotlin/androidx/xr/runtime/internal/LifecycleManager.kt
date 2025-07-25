@@ -17,6 +17,7 @@
 package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.Config
 import kotlin.time.ComparableTimeMark
 
 /** Describes the lifecycle a runtime implementation. */

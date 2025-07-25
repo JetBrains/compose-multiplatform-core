@@ -80,7 +80,7 @@ internal fun Project.addToModuleInfo(testName: String, projectIsolationEnabled: 
             it.testModules.add(
                 TestModule(
                     name = testName,
-                    path = listOf(projectDir.toRelativeString(getSupportRootFolder()))
+                    path = listOf(projectDir.toRelativeString(getSupportRootFolder())),
                 )
             )
         }

@@ -33,12 +33,12 @@ enum class CallState {
     HELD,
     DISCONNECTING,
     DISCONNECTED,
-    UNKNOWN
+    UNKNOWN,
 }
 
 enum class Direction {
     INCOMING,
-    OUTGOING
+    OUTGOING,
 }
 
 enum class AudioRoute {
@@ -47,12 +47,12 @@ enum class AudioRoute {
     SPEAKER,
     BLUETOOTH,
     HEADSET,
-    STREAMING
+    STREAMING,
 }
 
 enum class CallType {
     AUDIO,
-    VIDEO
+    VIDEO,
 }
 
 enum class Capability {
@@ -71,14 +71,14 @@ data class BaseCallData(
     val direction: Direction,
     val callType: CallType,
     val capabilities: List<Capability>,
-    val onStateChanged: (transition: CallStateTransition) -> Unit
+    val onStateChanged: (transition: CallStateTransition) -> Unit,
 )
 
 /** Represents a call endpoint from the application's perspective */
 data class CallAudioEndpoint(
     val id: String,
     val audioRoute: AudioRoute,
-    val frameworkName: String? = null
+    val frameworkName: String? = null,
 )
 
 /** data related to the extensions to the call */
@@ -89,14 +89,14 @@ data class ParticipantExtensionData(
     val selfParticipant: Participant?,
     val participants: Set<Participant>,
     val raiseHandData: RaiseHandData? = null,
-    val kickParticipantData: KickParticipantData? = null
+    val kickParticipantData: KickParticipantData? = null,
 )
 
 @OptIn(ExperimentalAppActions::class)
 data class LocalCallSilenceData(
     val isLocallySilenced: Boolean,
     val onInCallServiceUiUpdate: (Boolean) -> Unit,
-    val extension: LocalCallSilenceExtensionRemote?
+    val extension: LocalCallSilenceExtensionRemote?,
 )
 
 /** data related to the call icon extension */
@@ -117,5 +117,5 @@ data class CallData(
     val meetingSummaryData: MeetingSummaryData,
     val participantExtensionData: ParticipantExtensionData?,
     val localSilenceData: LocalCallSilenceData?,
-    val callIconData: CallIconData?
+    val callIconData: CallIconData?,
 )

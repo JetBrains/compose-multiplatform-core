@@ -16,10 +16,12 @@
 
 package androidx.compose.ui.graphics
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.addressOf
 import platform.posix.memcpy
 
+@OptIn(ExperimentalForeignApi::class)
 internal actual fun ByteArray.putBytesInto(array: IntArray, offset: Int, length: Int) {
     this.usePinned { bytes ->
         array.usePinned { ints ->

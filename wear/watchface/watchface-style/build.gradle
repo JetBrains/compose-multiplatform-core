@@ -70,7 +70,6 @@ dependencies {
     testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.junit)
@@ -102,9 +101,6 @@ android {
     defaultConfig {
         minSdk = 26
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     sourceSets.androidTest.assets.srcDir(copyApkTaskProvider)
     namespace = "androidx.wear.watchface.style"
 }
@@ -116,4 +112,5 @@ androidx {
     description = "Android Wear Watchface Style"
     legacyDisableKotlinStrictApiMode = true
     failOnDeprecationWarnings = false
+    enableRobolectric()
 }

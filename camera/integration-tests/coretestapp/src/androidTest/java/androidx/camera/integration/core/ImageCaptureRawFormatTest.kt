@@ -53,17 +53,12 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-private val BACK_SELECTOR = CameraSelector.DEFAULT_BACK_CAMERA
-private const val BACK_LENS_FACING = CameraSelector.LENS_FACING_BACK
-
 @LargeTest
 @RunWith(Parameterized::class)
 class ImageCaptureRawFormatTest(implName: String, private val cameraXConfig: CameraXConfig) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName == CameraPipeConfig::class.simpleName,
-        )
+        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
 
     @get:Rule
     val cameraRule =
@@ -85,11 +80,12 @@ class ImageCaptureRawFormatTest(implName: String, private val cameraXConfig: Cam
     private val mainExecutor = ContextCompat.getMainExecutor(context)
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+    private lateinit var cameraSelector: CameraSelector
 
     @Before
     fun setUp(): Unit = runBlocking {
         CoreAppTestUtil.assumeCompatibleDevice()
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(BACK_LENS_FACING))
+        cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
         createDefaultPictureFolderIfNotExist()
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
@@ -112,7 +108,7 @@ class ImageCaptureRawFormatTest(implName: String, private val cameraXConfig: Cam
     fun takePicture_withBufferFormatRaw10() = runBlocking {
         // RAW10 does not work in redmi 8
         assumeFalse(Build.DEVICE.equals("olive", ignoreCase = true)) // Redmi 8
-        val cameraCharacteristics = CameraUtil.getCameraCharacteristics(BACK_LENS_FACING)
+        val cameraCharacteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
         val map = cameraCharacteristics!!.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
         val resolutions = map!!.getOutputSizes(ImageFormat.RAW10)
 
@@ -124,7 +120,7 @@ class ImageCaptureRawFormatTest(implName: String, private val cameraXConfig: Cam
         val useCase = ImageCapture.Builder().setBufferFormat(ImageFormat.RAW10).build()
 
         withContext(Dispatchers.Main) {
-            cameraProvider.bindToLifecycle(fakeLifecycleOwner, BACK_SELECTOR, useCase)
+            cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, useCase)
         }
 
         val callback = FakeOnImageCapturedCallback(captureCount = 1)
@@ -153,7 +149,7 @@ class ImageCaptureRawFormatTest(implName: String, private val cameraXConfig: Cam
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
     }
 }

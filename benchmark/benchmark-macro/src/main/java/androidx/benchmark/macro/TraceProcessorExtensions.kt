@@ -142,7 +142,7 @@ internal class ShellServerLifecycleManager : ServerLifecycleManager {
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 fun <T> TraceProcessor.Companion.runSingleSessionServer(
     absoluteTracePath: String,
-    block: TraceProcessor.Session.() -> T
+    block: TraceProcessor.Session.() -> T,
 ) = TraceProcessor.runServer { loadTrace(PerfettoTrace(absoluteTracePath), block) }
 
 /**
@@ -159,7 +159,7 @@ fun <T> TraceProcessor.Companion.runSingleSessionServer(
 @ExperimentalTraceProcessorApi
 fun <T> TraceProcessor.Companion.runServer(
     timeoutMs: Long = DEFAULT_TIMEOUT_MS,
-    block: TraceProcessor.() -> T
+    block: TraceProcessor.() -> T,
 ): T = startServer(timeoutMs).use { block(it.traceProcessor) }
 
 /**
@@ -195,7 +195,7 @@ fun TraceProcessor.Companion.startServer(
                                     listOf(
                                         Profiler.ResultFile.ofPerfettoTrace(
                                             label = label,
-                                            absolutePath = trace.path
+                                            absolutePath = trace.path,
                                         )
                                     )
                             )
@@ -213,5 +213,5 @@ fun TraceProcessor.Companion.startServer(
                     InMemoryTracing.endSection()
                 }
             },
-        timeoutMs = timeoutMs
+        timeoutMs = timeoutMs,
     )

@@ -194,7 +194,7 @@ class AndroidTextContextMenuToolbarProviderTest {
                                 minHeight = smallerSizeDp,
                                 maxWidth = largerSizeDp,
                                 maxHeight = largerSizeDp,
-                            )
+                            ),
                 ) {
                     it()
                 }
@@ -208,7 +208,7 @@ class AndroidTextContextMenuToolbarProviderTest {
                         }
                         .testTag(innerContentTestTag)
                 )
-            }
+            },
         ) {
             assertThat(actualConstraints).isEqualTo(expectedConstraints)
             rule.onNodeWithTag(innerContentTestTag).assertIsDisplayed()
@@ -402,7 +402,7 @@ class AndroidTextContextMenuToolbarProviderTest {
         coroutineScope: CoroutineScope,
     ) : CoroutineScope by coroutineScope {
         fun showTextContextMenu(
-            dataProvider: TextContextMenuDataProvider = testDataProvider(),
+            dataProvider: TextContextMenuDataProvider = testDataProvider()
         ): Job =
             rule
                 .runOnUiThread {

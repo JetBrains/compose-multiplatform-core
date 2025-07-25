@@ -153,7 +153,7 @@ internal class CanvasInProgressStrokesRenderHelperV21(
                 canvas,
                 inProgressStroke,
                 strokeToMainViewTransform,
-                textureAnimationProgress
+                textureAnimationProgress,
             )
         }
     }

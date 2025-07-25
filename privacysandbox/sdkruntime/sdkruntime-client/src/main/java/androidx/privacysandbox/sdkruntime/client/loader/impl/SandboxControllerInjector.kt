@@ -25,7 +25,8 @@ import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.SandboxedS
 import androidx.privacysandbox.sdkruntime.client.loader.impl.injector.SdkActivityHandlerWrapper
 import androidx.privacysandbox.sdkruntime.core.SdkSandboxClientImportanceListenerCompat
 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackendHolder
 import androidx.privacysandbox.sdkruntime.core.internal.ClientFeature
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -33,59 +34,70 @@ import java.lang.reflect.Proxy
 import java.util.concurrent.Executor
 
 /**
- * Injects local implementation of [SdkSandboxControllerCompat.SandboxControllerImpl] to
- * [SdkSandboxControllerCompat] loaded by SDK Classloader. Using [Proxy] to allow interaction
+ * Injects local implementation of [SdkSandboxControllerBackend] to
+ * [SdkSandboxControllerBackendHolder] loaded by SDK Classloader. Using [Proxy] to allow interaction
  * between classes loaded by different classloaders.
  */
 internal object SandboxControllerInjector {
 
     /**
-     * Injects local implementation to SDK instance of [SdkSandboxControllerCompat].
-     * 1) Retrieve [SdkSandboxControllerCompat] loaded by [sdkClassLoader]
-     * 2) Create proxy that implements class from (1) and delegate to [controller]
-     * 3) Call (via reflection) [SdkSandboxControllerCompat.injectLocalImpl] with proxy from (2)
+     * Injects local implementation to SDK instance of [SdkSandboxControllerBackendHolder].
+     * 1) Retrieve [SdkSandboxControllerBackend] class loaded by [sdkClassLoader]
+     * 2) Retrieve [SdkSandboxControllerBackendHolder] class loaded by [sdkClassLoader]
+     * 3) Create proxy that implements class from (1) and delegate to [controller]
+     * 4) Call [SdkSandboxControllerBackendHolder.injectLocalBackend] on (2) with proxy from (3).
+     * 4) For legacy versions calls
+     *    [androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat.injectLocalImpl]
+     *    instead.
      */
     @SuppressLint("BanUncheckedReflection") // using reflection on library classes
     fun inject(
         sdkClassLoader: ClassLoader,
         sdkVersion: Int,
-        controller: SdkSandboxControllerCompat.SandboxControllerImpl
+        controller: SdkSandboxControllerBackend,
     ) {
-        val controllerClass =
-            Class.forName(
-                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat",
-                /* initialize = */ false,
-                sdkClassLoader
-            )
+        val backendClassName: String
+        val holderClassName: String
+        val holderInjectMethodName: String
 
-        val controllerImplClass =
-            Class.forName(
-                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat\$SandboxControllerImpl",
-                /* initialize = */ false,
-                sdkClassLoader
-            )
+        if (ClientFeature.SDK_SANDBOX_CONTROLLER_BACKEND_HOLDER.isAvailable(sdkVersion)) {
+            backendClassName =
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackend"
+            holderClassName =
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackendHolder"
+            holderInjectMethodName = "injectLocalBackend"
+        } else {
+            backendClassName =
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat\$SandboxControllerImpl"
+            holderClassName =
+                "androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat"
+            holderInjectMethodName = "injectLocalImpl"
+        }
 
-        val injectMethod = controllerClass.getMethod("injectLocalImpl", controllerImplClass)
+        val backendClass = Class.forName(backendClassName, /* initialize= */ false, sdkClassLoader)
+        val backendHolderClass =
+            Class.forName(holderClassName, /* initialize= */ false, sdkClassLoader)
+        val injectMethod = backendHolderClass.getMethod(holderInjectMethodName, backendClass)
         val proxy =
             Proxy.newProxyInstance(
                 sdkClassLoader,
-                arrayOf(controllerImplClass),
-                buildInvocationHandler(controller, sdkClassLoader, sdkVersion)
+                arrayOf(backendClass),
+                buildInvocationHandler(controller, sdkClassLoader, sdkVersion),
             )
 
         injectMethod.invoke(null, proxy)
     }
 
     /**
-     * Creates [InvocationHandler] for SDK side proxy of [SdkSandboxControllerCompat].
+     * Creates [InvocationHandler] for SDK side proxy of [SdkSandboxControllerBackend].
      * 1) Convert SDK side arguments to App side arguments
      * 2) Calling App side [controller]
      * 3) Convert App side result object to SDK side result object.
      */
     private fun buildInvocationHandler(
-        controller: SdkSandboxControllerCompat.SandboxControllerImpl,
+        controller: SdkSandboxControllerBackend,
         sdkClassLoader: ClassLoader,
-        sdkVersion: Int
+        sdkVersion: Int,
     ): InvocationHandler {
         val handlerBuilder = HandlerBuilder()
 
@@ -103,11 +115,11 @@ internal object SandboxControllerInjector {
         val activityMethodsHandler = ActivityMethodsHandler(controller, sdkHandlerWrapper)
         handlerBuilder.addHandlerFor(
             "registerSdkSandboxActivityHandler",
-            activityMethodsHandler.registerMethodHandler
+            activityMethodsHandler.registerMethodHandler,
         )
         handlerBuilder.addHandlerFor(
             "unregisterSdkSandboxActivityHandler",
-            activityMethodsHandler.unregisterMethodHandler
+            activityMethodsHandler.unregisterMethodHandler,
         )
 
         val loadSdkCallbackWrapper = LoadSdkCallbackWrapper.createFor(sdkClassLoader)
@@ -116,7 +128,7 @@ internal object SandboxControllerInjector {
                 sdkName = args!![0] as String,
                 params = args[1] as Bundle,
                 executor = args[2] as Executor,
-                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!)
+                callback = loadSdkCallbackWrapper.wrapLoadSdkCallback(args[3]!!),
             )
         }
 
@@ -132,11 +144,11 @@ internal object SandboxControllerInjector {
                 ClientImportanceListenerMethodsHandler(controller, sdkListenerWrapper)
             handlerBuilder.addHandlerFor(
                 "registerSdkSandboxClientImportanceListener",
-                clientImportanceListenerMethodsHandler.registerMethodHandler
+                clientImportanceListenerMethodsHandler.registerMethodHandler,
             )
             handlerBuilder.addHandlerFor(
                 "unregisterSdkSandboxClientImportanceListener",
-                clientImportanceListenerMethodsHandler.unregisterMethodHandler
+                clientImportanceListenerMethodsHandler.unregisterMethodHandler,
             )
         }
 
@@ -181,8 +193,8 @@ internal object SandboxControllerInjector {
     }
 
     private class ActivityMethodsHandler(
-        private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
-        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper
+        private val controller: SdkSandboxControllerBackend,
+        private val sdkActivityHandlerWrapper: SdkActivityHandlerWrapper,
     ) {
         val registerMethodHandler = MethodHandler { args ->
             registerSdkSandboxActivityHandler(sdkSideHandler = args!![0]!!)
@@ -223,13 +235,13 @@ internal object SandboxControllerInjector {
     }
 
     private class ClientImportanceListenerMethodsHandler(
-        private val controller: SdkSandboxControllerCompat.SandboxControllerImpl,
-        private val clientImportanceListenerWrapper: ClientImportanceListenerWrapper
+        private val controller: SdkSandboxControllerBackend,
+        private val clientImportanceListenerWrapper: ClientImportanceListenerWrapper,
     ) {
         val registerMethodHandler = MethodHandler { args ->
             registerSdkSandboxClientImportanceListener(
                 sdkSideExecutor = args!![0]!!,
-                sdkSideListener = args[1]!!
+                sdkSideListener = args[1]!!,
             )
         }
         val unregisterMethodHandler = MethodHandler { args ->
@@ -240,12 +252,12 @@ internal object SandboxControllerInjector {
 
         private fun registerSdkSandboxClientImportanceListener(
             sdkSideExecutor: Any,
-            sdkSideListener: Any
+            sdkSideListener: Any,
         ): Any {
             val listenerToRegister = wrapSdkClientImportanceListener(sdkSideListener)
             return controller.registerSdkSandboxClientImportanceListener(
                 sdkSideExecutor as Executor,
-                listenerToRegister
+                listenerToRegister,
             )
         }
 

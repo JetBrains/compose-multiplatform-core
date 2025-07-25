@@ -24,8 +24,8 @@ import android.graphics.ComposeShader
 import android.graphics.Matrix
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
-import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.strokes.StrokeInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -207,7 +207,7 @@ class BrushPaintCacheTest {
                 ComposeColor.Red,
                 brushSize = 10f,
                 StrokeInput(),
-                StrokeInput()
+                StrokeInput(),
             )
 
         val expectedLocalMatrix =
@@ -229,7 +229,7 @@ class BrushPaintCacheTest {
                     ComposeColor.Red,
                     brushSize = 20f,
                     StrokeInput(),
-                    StrokeInput()
+                    StrokeInput(),
                 )
             )
             .isSameInstanceAs(paint)
@@ -382,7 +382,7 @@ class BrushPaintCacheTest {
                     ComposeColor.Blue,
                     brushSize,
                     StrokeInput(),
-                    StrokeInput()
+                    StrokeInput(),
                 )
             )
             .isSameInstanceAs(paint)

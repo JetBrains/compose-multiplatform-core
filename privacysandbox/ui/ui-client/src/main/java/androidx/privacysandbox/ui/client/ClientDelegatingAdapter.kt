@@ -59,7 +59,7 @@ internal class ClientDelegatingAdapter(
      * conditions on opening a session with the delegate and changing the delegate so, a lock must
      * be acquired when dealing with this variable.
      */
-    @GuardedBy("lock") var latestDelegate: SandboxedUiAdapter
+    @GuardedBy("lock") var latestDelegate: SandboxedUiAdapter,
 ) : SandboxedUiAdapter {
     private companion object {
         private const val TAG = "ClientDelegatingAdapter"
@@ -94,7 +94,7 @@ internal class ClientDelegatingAdapter(
     private inner class ClientWrapper(
         private var client: RefreshableSessionClient?,
         /** the delegate that was used when this [ClientWrapper] was created to open a session. */
-        private val delegateUsed: SandboxedUiAdapter
+        private val delegateUsed: SandboxedUiAdapter,
     ) : SandboxedUiAdapter.SessionClient {
 
         // It is possible that onSessionError and onSessionOpened race in certain conditions so,
@@ -159,7 +159,7 @@ internal class ClientDelegatingAdapter(
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SandboxedUiAdapter.SessionClient
+        client: SandboxedUiAdapter.SessionClient,
     ) {
         val delegateUsed: SandboxedUiAdapter = synchronized(lock) { latestDelegate }
         delegateUsed.openSession(
@@ -169,7 +169,7 @@ internal class ClientDelegatingAdapter(
             initialHeight,
             isZOrderOnTop,
             clientExecutor,
-            ClientWrapper(client as RefreshableSessionClient, delegateUsed)
+            ClientWrapper(client as RefreshableSessionClient, delegateUsed),
         )
     }
 

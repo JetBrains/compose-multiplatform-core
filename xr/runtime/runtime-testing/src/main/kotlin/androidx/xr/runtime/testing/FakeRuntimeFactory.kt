@@ -26,7 +26,15 @@ import androidx.xr.runtime.internal.RuntimeFactory
 public class FakeRuntimeFactory() : RuntimeFactory {
     public companion object {
         /** Will be passed to the [FakeLifecycleManager] constructor during testing */
-        @get:JvmName("hasCreatePermission") public var hasCreatePermission: Boolean = true
+        @JvmStatic
+        @get:JvmName("hasCreatePermission")
+        public var hasCreatePermission: Boolean = true
+        /**
+         * Exception that will be thrown when [FakeLifecycleManager.create] is called. Setting this
+         * value will cause the next call to [FakeLifecycleManager.create] to throw this exception.
+         * Setting this value to null will clear the exception and allow the next call to succeed.
+         */
+        public var lifecycleCreateException: Exception? = null
     }
 
     override val requirements: Set<Feature> = emptySet()

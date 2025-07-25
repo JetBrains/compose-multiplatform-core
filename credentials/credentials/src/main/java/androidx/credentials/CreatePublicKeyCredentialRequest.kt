@@ -219,7 +219,7 @@ private constructor(
         @JvmStatic
         internal fun toCandidateDataBundle(
             requestJson: String,
-            clientDataHash: ByteArray?
+            clientDataHash: ByteArray?,
         ): Bundle {
             val bundle = Bundle()
             bundle.putString(

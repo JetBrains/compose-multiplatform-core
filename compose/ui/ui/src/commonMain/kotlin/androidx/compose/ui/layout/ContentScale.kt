@@ -123,7 +123,7 @@ interface ContentScale {
                 override fun computeScaleFactor(srcSize: Size, dstSize: Size): ScaleFactor =
                     ScaleFactor(
                         computeFillWidth(srcSize, dstSize),
-                        computeFillHeight(srcSize, dstSize)
+                        computeFillHeight(srcSize, dstSize),
                     )
             }
     }

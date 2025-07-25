@@ -57,7 +57,7 @@ class DateInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Box(wrap.testTag(wrapperTestTag)) {
                 DatePicker(
                     state = rememberDatePickerState(initialDisplayMode = DisplayMode.Input),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -83,9 +83,9 @@ class DateInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
                     state =
                         rememberDatePickerState(
                             initialSelectedDateMillis = dayMillis,
-                            initialDisplayMode = DisplayMode.Input
+                            initialDisplayMode = DisplayMode.Input,
                         ),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -107,9 +107,9 @@ class DateInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
                                     // All dates are invalid for the sake of this test.
                                     override fun isSelectableDate(utcTimeMillis: Long): Boolean =
                                         false
-                                }
+                                },
                         ),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -123,15 +123,15 @@ class DateInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
             DatePickerDialog(
                 onDismissRequest = {},
                 confirmButton = { TextButton(onClick = {}) { Text("OK") } },
-                dismissButton = { TextButton(onClick = {}) { Text("Cancel") } }
+                dismissButton = { TextButton(onClick = {}) { Text("Cancel") } },
             ) {
                 DatePicker(
                     state =
                         rememberDatePickerState(
                             initialSelectedDateMillis = selectedDayMillis,
-                            initialDisplayMode = DisplayMode.Input
+                            initialDisplayMode = DisplayMode.Input,
                         ),
-                    showModeToggle = false
+                    showModeToggle = false,
                 )
             }
         }
@@ -140,7 +140,7 @@ class DateInputScreenshotTest(private val scheme: ColorSchemeWrapper) {
             .captureToImage()
             .assertAgainstGolden(
                 rule = screenshotRule,
-                goldenIdentifier = "dateInput_inDialog_${scheme.name}"
+                goldenIdentifier = "dateInput_inDialog_${scheme.name}",
             )
     }
 

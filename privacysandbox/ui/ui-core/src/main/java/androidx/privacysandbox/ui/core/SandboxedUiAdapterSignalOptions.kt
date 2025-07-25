@@ -20,8 +20,8 @@ package androidx.privacysandbox.ui.core
  * This class defines the set of signal options which can be set on a [SessionObserverFactory] which
  * is associated with a [SandboxedUiAdapter].
  */
-class SandboxedUiAdapterSignalOptions {
-    companion object {
+public class SandboxedUiAdapterSignalOptions {
+    public companion object {
         /**
          * When this signal option is set, information about the geometry of the UI container
          * hosting the [SandboxedUiAdapter.Session] will be sent through
@@ -32,7 +32,7 @@ class SandboxedUiAdapterSignalOptions {
          * [SandboxedSdkViewUiInfo.onScreenGeometry] and
          * [SandboxedSdkViewUiInfo.uiContainerOpacityHint].
          */
-        const val GEOMETRY = "geometry"
+        public const val GEOMETRY: String = "geometry"
 
         /**
          * When this signal option is set, information about obstructions on the UI container
@@ -41,6 +41,6 @@ class SandboxedUiAdapterSignalOptions {
          *
          * The information that will be collected is [SandboxedSdkViewUiInfo.obstructedGeometry].
          */
-        const val OBSTRUCTIONS = "obstructions"
+        public const val OBSTRUCTIONS: String = "obstructions"
     }
 }

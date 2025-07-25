@@ -64,7 +64,7 @@ fun IconButtonMeasurementsDemo() {
         val columnScrollState = rememberScrollState()
         val padding = 16.dp
         Column(
-            modifier = Modifier.padding(horizontal = padding).verticalScroll(columnScrollState),
+            modifier = Modifier.padding(horizontal = padding).verticalScroll(columnScrollState)
         ) {
             Spacer(modifier = Modifier.height(padding + 48.dp))
             Text("XSmall", modifier = Modifier.height(48.dp + padding))
@@ -81,19 +81,19 @@ fun IconButtonMeasurementsDemo() {
                     .width(136.dp)
                     .verticalScroll(columnScrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(padding)
+            verticalArrangement = Arrangement.spacedBy(padding),
         ) {
             Text("Default", modifier = Modifier.height(48.dp))
             // XSmall uniform round icon button
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraSmallContainerSize()),
-                shape = IconButtonDefaults.extraSmallRoundShape
+                shape = IconButtonDefaults.extraSmallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
                 )
             }
 
@@ -101,12 +101,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
-                shape = IconButtonDefaults.smallRoundShape
+                shape = IconButtonDefaults.smallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 )
             }
 
@@ -114,12 +114,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.mediumContainerSize()),
-                shape = IconButtonDefaults.mediumRoundShape
+                shape = IconButtonDefaults.mediumRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 )
             }
 
@@ -127,12 +127,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.largeContainerSize()),
-                shape = IconButtonDefaults.largeRoundShape
+                shape = IconButtonDefaults.largeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.largeIconSize),
                 )
             }
 
@@ -140,12 +140,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraLargeContainerSize()),
-                shape = IconButtonDefaults.extraLargeRoundShape
+                shape = IconButtonDefaults.extraLargeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize),
                 )
             }
         }
@@ -157,7 +157,7 @@ fun IconButtonMeasurementsDemo() {
                     .width(104.dp)
                     .verticalScroll(columnScrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(padding)
+            verticalArrangement = Arrangement.spacedBy(padding),
         ) {
             Text("Narrow", modifier = Modifier.height(48.dp))
 
@@ -165,12 +165,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraSmallContainerSize(Narrow)),
-                shape = IconButtonDefaults.extraSmallRoundShape
+                shape = IconButtonDefaults.extraSmallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
                 )
             }
 
@@ -178,12 +178,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize(Narrow)),
-                shape = IconButtonDefaults.smallRoundShape
+                shape = IconButtonDefaults.smallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 )
             }
 
@@ -191,12 +191,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.mediumContainerSize(Narrow)),
-                shape = IconButtonDefaults.mediumRoundShape
+                shape = IconButtonDefaults.mediumRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 )
             }
 
@@ -204,12 +204,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.largeContainerSize(Narrow)),
-                shape = IconButtonDefaults.largeRoundShape
+                shape = IconButtonDefaults.largeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.largeIconSize),
                 )
             }
 
@@ -217,12 +217,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraLargeContainerSize(Narrow)),
-                shape = IconButtonDefaults.extraLargeRoundShape
+                shape = IconButtonDefaults.extraLargeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize),
                 )
             }
         }
@@ -234,7 +234,7 @@ fun IconButtonMeasurementsDemo() {
                     .width(184.dp)
                     .verticalScroll(columnScrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(padding)
+            verticalArrangement = Arrangement.spacedBy(padding),
         ) {
             Text("Wide", modifier = Modifier.height(48.dp))
 
@@ -242,24 +242,24 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraSmallContainerSize(Wide)),
-                shape = IconButtonDefaults.extraSmallRoundShape
+                shape = IconButtonDefaults.extraSmallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
                 )
             }
             // Small wide round icon button
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize(Wide)),
-                shape = IconButtonDefaults.smallRoundShape
+                shape = IconButtonDefaults.smallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 )
             }
 
@@ -267,12 +267,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.mediumContainerSize(Wide)),
-                shape = IconButtonDefaults.mediumRoundShape
+                shape = IconButtonDefaults.mediumRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 )
             }
 
@@ -280,12 +280,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.largeContainerSize(Wide)),
-                shape = IconButtonDefaults.largeRoundShape
+                shape = IconButtonDefaults.largeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.largeIconSize),
                 )
             }
 
@@ -293,12 +293,12 @@ fun IconButtonMeasurementsDemo() {
             FilledIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraLargeContainerSize(Wide)),
-                shape = IconButtonDefaults.extraLargeRoundShape
+                shape = IconButtonDefaults.extraLargeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize),
                 )
             }
         }
@@ -318,18 +318,18 @@ fun IconButtonCornerRadiusDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // extra small round icon button
             OutlinedIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.extraSmallContainerSize()),
-                shape = IconButtonDefaults.extraSmallRoundShape
+                shape = IconButtonDefaults.extraSmallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
                 )
             }
 
@@ -337,12 +337,12 @@ fun IconButtonCornerRadiusDemo() {
             OutlinedIconButton(
                 onClick = { /* doSomething() */ },
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
-                shape = IconButtonDefaults.smallRoundShape
+                shape = IconButtonDefaults.smallRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 )
             }
 
@@ -352,12 +352,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.mediumContainerSize()),
-                shape = IconButtonDefaults.mediumRoundShape
+                shape = IconButtonDefaults.mediumRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 )
             }
 
@@ -367,12 +367,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.largeContainerSize()),
-                shape = IconButtonDefaults.largeRoundShape
+                shape = IconButtonDefaults.largeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.largeIconSize),
                 )
             }
 
@@ -382,12 +382,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.extraLargeContainerSize()),
-                shape = IconButtonDefaults.extraLargeRoundShape
+                shape = IconButtonDefaults.extraLargeRoundShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize),
                 )
             }
         }
@@ -399,7 +399,7 @@ fun IconButtonCornerRadiusDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // extra small square icon button
             OutlinedIconButton(
@@ -408,12 +408,12 @@ fun IconButtonCornerRadiusDemo() {
                     Modifier
                         // .minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.extraSmallContainerSize()),
-                shape = IconButtonDefaults.extraSmallSquareShape
+                shape = IconButtonDefaults.extraSmallSquareShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraSmallIconSize),
                 )
             }
 
@@ -424,12 +424,12 @@ fun IconButtonCornerRadiusDemo() {
                     Modifier
                         // .minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.smallContainerSize()),
-                shape = IconButtonDefaults.smallSquareShape
+                shape = IconButtonDefaults.smallSquareShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.smallIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.smallIconSize),
                 )
             }
 
@@ -439,12 +439,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.mediumContainerSize()),
-                shape = IconButtonDefaults.mediumSquareShape
+                shape = IconButtonDefaults.mediumSquareShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
                 )
             }
 
@@ -454,12 +454,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.largeContainerSize()),
-                shape = IconButtonDefaults.largeSquareShape
+                shape = IconButtonDefaults.largeSquareShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.largeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.largeIconSize),
                 )
             }
 
@@ -469,12 +469,12 @@ fun IconButtonCornerRadiusDemo() {
                 modifier =
                     Modifier.minimumInteractiveComponentSize()
                         .size(IconButtonDefaults.extraLargeContainerSize()),
-                shape = IconButtonDefaults.extraLargeSquareShape
+                shape = IconButtonDefaults.extraLargeSquareShape,
             ) {
                 Icon(
                     Icons.Outlined.Lock,
                     contentDescription = "Localized description",
-                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize)
+                    modifier = Modifier.size(IconButtonDefaults.extraLargeIconSize),
                 )
             }
         }
@@ -494,7 +494,7 @@ fun IconButtonAndToggleButtonsDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(Modifier.width(72.dp))
             Text("Filled")
@@ -509,7 +509,7 @@ fun IconButtonAndToggleButtonsDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Spacer(Modifier.width(76.dp))
 
@@ -537,7 +537,7 @@ fun IconButtonAndToggleButtonsDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             var checked by remember { mutableStateOf(false) }
             Text(
@@ -553,7 +553,7 @@ fun IconButtonAndToggleButtonsDemo() {
             FilledIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -561,7 +561,7 @@ fun IconButtonAndToggleButtonsDemo() {
             FilledTonalIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -569,7 +569,7 @@ fun IconButtonAndToggleButtonsDemo() {
             OutlinedIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -577,7 +577,7 @@ fun IconButtonAndToggleButtonsDemo() {
             IconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -590,7 +590,7 @@ fun IconButtonAndToggleButtonsDemo() {
                     .horizontalScroll(rowScrollState)
                     .padding(horizontal = padding),
             horizontalArrangement = Arrangement.spacedBy(padding),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             var checked by remember { mutableStateOf(true) }
 
@@ -601,13 +601,13 @@ fun IconButtonAndToggleButtonsDemo() {
                     } else {
                         "Selected"
                     },
-                modifier = Modifier.defaultMinSize(minWidth = 76.dp)
+                modifier = Modifier.defaultMinSize(minWidth = 76.dp),
             )
 
             FilledIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -615,7 +615,7 @@ fun IconButtonAndToggleButtonsDemo() {
             FilledTonalIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -623,7 +623,7 @@ fun IconButtonAndToggleButtonsDemo() {
             OutlinedIconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }
@@ -631,7 +631,7 @@ fun IconButtonAndToggleButtonsDemo() {
             IconToggleButton(
                 checked = checked,
                 onCheckedChange = { checked = it },
-                shapes = IconButtonDefaults.toggleableShapes()
+                shapes = IconButtonDefaults.toggleableShapes(),
             ) {
                 IconFor(checked)
             }

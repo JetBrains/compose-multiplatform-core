@@ -68,7 +68,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                 pHF0SQFbNDlmWm5BDxJ5G7po3MQD2qcJt1J/FVPkZfCQvFuE6s/8hNyHlPto
                 FKvXIX/mAt/CLObI1uwi0v7CZib7ghufkft4ScNAKVVZR5n2l4Qu0f3Lx8g4
                 WHGw6lC2aw4lctvBHdw9BotxD/ePMRUjG8OOUYy1Pf0LK8v1wXoEAAA=
-                """
+                """,
         )
 
     val LocalContextStub =
@@ -106,7 +106,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                 msf+itLnHPt8WAuMDfFjF/AObmOcbIOeR37EcJnNvuPuN5S+XOGwUMtZFrBE
                 63uK3qf9pw5R8DHto+pTt7M+NfLQxyM8PgRLMYcnhxhJUUzhpphPjT36F/cv
                 7rmKBAAA
-                """
+                """,
         )
 
     val ContextStub =
@@ -136,7 +136,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                 4fhJdofsFFtRTw7bcqysXpreYzQZ98IbZUXlYaKNGoVtFStOr7SOjDQq0jFq
                 EHzl5aj2BRjLrPxEA+mTd6y8MRGoMLqJ6WCXMftXgFV4Sb6XYAn7yY8Q1jjL
                 duA0sd7ERhM55Jmi0EQRmx1QjC1scx7Di7ETw/0FYlRJz84BAAA=
-                """
+                """,
         )
 
     @Test
@@ -165,7 +165,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                 Stubs.Composable,
                 Stubs.CompositionLocal,
                 LocalContextStub,
-                ContextStub
+                ContextStub,
             )
             .run()
             .expect(
@@ -213,7 +213,7 @@ class LocalContextCastIssueDetectorTest : LintDetectorTest() {
                 LocalActivityStub,
                 LocalContextStub,
                 ContextStub,
-                COMPONENT_ACTIVITY
+                COMPONENT_ACTIVITY,
             )
             .run()
             .expectClean()

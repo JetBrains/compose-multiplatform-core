@@ -21,6 +21,7 @@ import androidx.compose.foundation.gestures.snapping.offsetOnMainAxis
 import androidx.compose.foundation.gestures.snapping.sizeOnMainAxis
 import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.CacheWindowScope
+import androidx.compose.foundation.lazy.layout.InvalidItemIndex
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
 import androidx.compose.foundation.lazy.layout.NestedPrefetchScope
@@ -49,7 +50,7 @@ internal class LazyGridCacheWindowPrefetchStrategy(cacheWindow: LazyLayoutCacheW
     /** Adapts the LazyGridPrefetchScope and LazyGridLayoutInfo to a single scope. */
     private inline fun LazyGridPrefetchScope.applyWindowScope(
         layoutInfo: LazyGridLayoutInfo,
-        block: CacheWindowScope.() -> Unit
+        block: CacheWindowScope.() -> Unit,
     ) {
         cacheWindowScope.layoutInfo = layoutInfo
         cacheWindowScope.prefetchScope = this
@@ -109,7 +110,7 @@ private class LazyGridCacheWindowScope() : CacheWindowScope {
 
     override fun schedulePrefetch(
         lineIndex: Int,
-        onItemPrefetched: (Int, Int) -> Unit
+        onItemPrefetched: (Int, Int) -> Unit,
     ): List<PrefetchHandle> {
         return prefetchScope.scheduleLinePrefetch(lineIndex) {
             var tallestElement = Int.MIN_VALUE
@@ -141,4 +142,16 @@ private class LazyGridCacheWindowScope() : CacheWindowScope {
 
     val LazyGridItemInfo.lineIndex: Int
         get() = lineIndex(layoutInfo.orientation)
+
+    override fun getLastIndexInLine(lineIndex: Int): Int {
+        val measureResult = layoutInfo as? LazyGridMeasureResult ?: return InvalidItemIndex
+        val itemsInLine = measureResult.prefetchInfoRetriever.invoke(lineIndex)
+        return if (itemsInLine.isEmpty()) {
+            InvalidItemIndex
+        } else {
+            // the first index in this line plus the number of items in this line
+            // gives me the last index in this line
+            itemsInLine.first().first + itemsInLine.size - 1
+        }
+    }
 }

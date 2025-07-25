@@ -58,7 +58,7 @@ internal abstract class TextField2SelectionGesturesTest(
                 textToolbar = textToolbar,
                 spyTextActionModeCallback = spyTextActionModeCallback,
                 hapticFeedback = hapticFeedback,
-                getActual = { textFieldState }
+                getActual = { textFieldState },
             )
     }
 

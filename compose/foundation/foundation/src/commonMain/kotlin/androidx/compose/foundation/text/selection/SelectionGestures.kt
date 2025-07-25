@@ -73,7 +73,7 @@ internal interface MouseSelectionObserver {
      * @return if event will be consumed
      */
     // if returns true event will be consumed
-    fun onStart(downPosition: Offset, adjustment: SelectionAdjustment): Boolean
+    fun onStart(downPosition: Offset, adjustment: SelectionAdjustment, clickCount: Int): Boolean
 
     /**
      * Invoked when dragging (without shift).
@@ -106,7 +106,7 @@ internal fun Modifier.selectionGestureInput(
     mouseSelectionObserver: MouseSelectionObserver,
     textDragObserver: TextDragObserver,
 ): Modifier = composed {
-    // TODO(https://youtrack.jetbrains.com/issue/COMPOSE-79) how we can rewrite this without `composed`?
+    // TODO(https://youtrack.jetbrains.com/issue/CMP-79) how we can rewrite this without `composed`?
     val currentMouseSelectionObserver by rememberUpdatedState(mouseSelectionObserver)
     val currentTextDragObserver by rememberUpdatedState(textDragObserver)
     this.pointerInput(Unit) {
@@ -128,7 +128,7 @@ internal fun Modifier.selectionGestureInput(
 
 private suspend fun AwaitPointerEventScope.touchSelection(
     observer: TextDragObserver,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     try {
         val firstDown = down.changes.first()
@@ -157,7 +157,7 @@ private suspend fun AwaitPointerEventScope.touchSelection(
 private suspend fun AwaitPointerEventScope.mouseSelection(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     val downChange = down.changes[0]
     clicksCounter.update(downChange)
@@ -185,7 +185,8 @@ private suspend fun AwaitPointerEventScope.mouseSelection(
                 else -> SelectionAdjustment.Paragraph
             }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment)
+        val started =
+            observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             var dragConsumed = selectionAdjustment != SelectionAdjustment.None
             val shouldConsumeUp =
@@ -240,7 +241,7 @@ internal suspend fun PointerInputScope.selectionGesturePointerInputBtf2(
  */
 internal suspend fun AwaitPointerEventScope.touchSelectionFirstPress(
     observer: TextDragObserver,
-    downEvent: PointerEvent
+    downEvent: PointerEvent,
 ) {
     try {
         val firstDown = downEvent.changes.first()
@@ -270,7 +271,7 @@ private enum class DownResolution {
     Up,
     Drag,
     Timeout,
-    Cancel
+    Cancel,
 }
 
 /**
@@ -279,7 +280,7 @@ private enum class DownResolution {
  */
 private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
     observer: TextDragObserver,
-    downEvent: PointerEvent
+    downEvent: PointerEvent,
 ) {
     try {
         val firstDown = downEvent.changes.first()
@@ -354,7 +355,7 @@ private suspend fun AwaitPointerEventScope.touchSelectionSubsequentPress(
 internal suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
     observer: MouseSelectionObserver,
     clicksCounter: ClicksCounter,
-    down: PointerEvent
+    down: PointerEvent,
 ) {
     val downChange = down.changes[0]
     if (down.keyboardModifiers.isShiftPressed) {
@@ -384,7 +385,8 @@ internal suspend fun AwaitPointerEventScope.mouseSelectionBtf2(
                 else -> SelectionAdjustment.Paragraph
             }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment)
+        val started =
+            observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             try {
                 downChange.consume()
@@ -418,8 +420,8 @@ internal class ClicksCounter(
         // Here and further event means upcoming event (new)
         if (
             currentPrevEvent != null &&
-                timeIsTolerable(currentPrevEvent, event) &&
-                positionIsTolerable(currentPrevEvent, event)
+            timeIsTolerable(currentPrevEvent, event) &&
+            positionIsTolerable(currentPrevEvent, event)
         ) {
             clicks += 1
         } else {

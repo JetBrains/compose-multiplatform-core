@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 
 @OptIn(
     ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
-    ExperimentalMaterial3AdaptiveApi::class
+    ExperimentalMaterial3AdaptiveApi::class,
 )
 @Composable
 private fun <S, T : PaneScaffoldValue<S>> Pane(
@@ -46,7 +46,7 @@ private fun <S, T : PaneScaffoldValue<S>> Pane(
 
 @OptIn(
     ExperimentalMaterial3AdaptiveComponentOverrideApi::class,
-    ExperimentalMaterial3AdaptiveApi::class
+    ExperimentalMaterial3AdaptiveApi::class,
 )
 @ExperimentalMaterial3XrApi
 internal object XrAnimatedPaneOverride : AnimatedPaneOverride {

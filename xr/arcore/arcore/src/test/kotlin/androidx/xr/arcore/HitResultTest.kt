@@ -36,7 +36,7 @@ class HitResultTest {
         override val state: StateFlow<Trackable.State> =
             MutableStateFlow(
                 object : Trackable.State {
-                    override val trackingState = TrackingState.Stopped
+                    override val trackingState = TrackingState.STOPPED
                 }
             )
     }

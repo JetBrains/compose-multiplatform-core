@@ -109,7 +109,7 @@ class FhirVersion(val major: Int, val minor: Int, val patch: Int) : Comparable<F
             return FhirVersion(
                 result.groupValues[1].toInt(),
                 result.groupValues[2].toInt(),
-                result.groupValues[3].toInt()
+                result.groupValues[3].toInt(),
             )
         }
     }

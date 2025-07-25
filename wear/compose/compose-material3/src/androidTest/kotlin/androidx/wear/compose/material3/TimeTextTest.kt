@@ -57,7 +57,7 @@ class TimeTextTest {
                 timeSource =
                     object : TimeSource {
                         @Composable override fun currentTime(): String = timeText
-                    },
+                    }
             ) { time ->
                 // Use 'curvedText' instead of 'timeTextCurvedText' so that we get a content
                 // description that can be verified.
@@ -124,12 +124,7 @@ class TimeTextTest {
             TimeText { time ->
                 curvedText(time)
                 timeTextSeparator()
-                curvedComposable {
-                    Text(
-                        modifier = Modifier.testTag(TEST_TAG),
-                        text = "Compose",
-                    )
-                }
+                curvedComposable { Text(modifier = Modifier.testTag(TEST_TAG), text = "Compose") }
             }
         }
 

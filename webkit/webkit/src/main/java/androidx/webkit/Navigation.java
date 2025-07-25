@@ -19,6 +19,7 @@ package androidx.webkit;
 import android.os.Bundle;
 import android.webkit.WebView;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -49,6 +50,14 @@ public interface Navigation {
      */
     @Nullable
     Page getPage();
+
+    /**
+     * Returns the URL of this navigation.
+     *
+     * @return The URL of this navigation as a String.
+     */
+    @NonNull
+    String getUrl();
 
     /**
      * Indicates whether the navigation is initiated by the page/renderer (e.g., link clicks, JS

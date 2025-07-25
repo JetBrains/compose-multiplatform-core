@@ -87,7 +87,7 @@ public class RemoteWorkManagerClientTest {
                 mContext.bindService(
                     any(Intent::class.java),
                     any(ServiceConnection::class.java),
-                    anyInt()
+                    anyInt(),
                 )
             )
             .thenReturn(false)

@@ -60,7 +60,7 @@ data class LegacyDateTime(
         ZonedDateTime.of(
             LocalDate.of(date.year, date.month, date.day),
             LocalTime.of(timeOfDay.hours, timeOfDay.minutes, timeOfDay.seconds, timeOfDay.nanos),
-            ZoneId.of(timeZone)
+            ZoneId.of(timeZone),
         )
 }
 
@@ -135,7 +135,7 @@ fun ZonedDateTime.toLegacyDateTime(): LegacyDateTime {
                 hours = this.hour,
                 minutes = this.minute,
                 seconds = this.second,
-                nanos = this.nano
-            )
+                nanos = this.nano,
+            ),
     )
 }

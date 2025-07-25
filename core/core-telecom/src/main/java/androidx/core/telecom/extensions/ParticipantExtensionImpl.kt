@@ -62,7 +62,7 @@ internal typealias ActionConnector =
 @RequiresApi(VERSION_CODES.O)
 internal class ParticipantExtensionImpl(
     initialParticipants: List<Participant>,
-    initialActiveParticipant: Participant?
+    initialActiveParticipant: Participant?,
 ) : ParticipantExtension {
     companion object {
         /**
@@ -114,7 +114,7 @@ internal class ParticipantExtensionImpl(
 
     override fun addRaiseHandSupport(
         initialRaisedHands: List<Participant>,
-        onHandRaisedChanged: suspend (Boolean) -> Unit
+        onHandRaisedChanged: suspend (Boolean) -> Unit,
     ): RaiseHandState {
         val state = RaiseHandStateImpl(participants, initialRaisedHands, onHandRaisedChanged)
         registerAction(RAISE_HAND_ACTION, connector = state::connect)
@@ -207,7 +207,7 @@ internal class ParticipantExtensionImpl(
      */
     private fun onCreateMeetingSummaryExtension(
         coroutineScope: CoroutineScope,
-        binder: MeetingSummaryStateListenerRemote
+        binder: MeetingSummaryStateListenerRemote,
     ) {
         Log.i(LOG_TAG, "onCreateMeetingSummaryExtension")
         // sync state
@@ -246,7 +246,7 @@ internal class ParticipantExtensionImpl(
     private fun onCreateParticipantExtension(
         coroutineScope: CoroutineScope,
         remoteActions: Set<Int>,
-        binder: ParticipantStateListenerRemote
+        binder: ParticipantStateListenerRemote,
     ) {
         Log.i(LOG_TAG, "onCreatePE: actions=$remoteActions")
 

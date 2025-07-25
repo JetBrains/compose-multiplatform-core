@@ -34,7 +34,7 @@ import kotlin.concurrent.withLock
 @RequiresWindowSdkExtension(version = 1)
 internal open class ExtensionWindowBackendApi1(
     val component: WindowLayoutComponent,
-    private val consumerAdapter: ConsumerAdapter
+    private val consumerAdapter: ConsumerAdapter,
 ) : ExtensionWindowBackendApi0() {
 
     private val globalLock = ReentrantLock()
@@ -62,7 +62,7 @@ internal open class ExtensionWindowBackendApi1(
     override fun registerLayoutChangeCallback(
         @UiContext context: Context,
         executor: Executor,
-        callback: Consumer<WindowLayoutInfo>
+        callback: Consumer<WindowLayoutInfo>,
     ) {
         globalLock.withLock {
             contextToListeners[context]?.let { listener ->
@@ -85,7 +85,7 @@ internal open class ExtensionWindowBackendApi1(
                                 "addWindowLayoutInfoListener",
                                 "removeWindowLayoutInfoListener",
                                 context,
-                                consumer::accept
+                                consumer::accept,
                             )
                         } else {
                             // WM Extensions v1 addWindowLayoutInfoListener only

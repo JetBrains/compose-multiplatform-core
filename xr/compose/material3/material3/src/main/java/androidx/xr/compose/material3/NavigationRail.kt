@@ -41,10 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrNavigationRailOverride.NavigationRail
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterDefaults
-import androidx.xr.compose.spatial.OrbiterEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /**
@@ -88,11 +87,7 @@ public fun NavigationRail(
 ) {
     val orbiterProperties = LocalNavigationRailOrbiterProperties.current
     VerticalOrbiter(orbiterProperties) {
-        Surface(
-            color = containerColor,
-            contentColor = contentColor,
-            modifier = modifier,
-        ) {
+        Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
             Column(
                 // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
                 // which do not produce the desired result in XR.
@@ -119,8 +114,8 @@ public fun NavigationRail(
 }
 
 private object XrNavigationRailTokens {
-    /** The [EdgeOffset] for NavigationRail Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+    /** The [OrbiterOffset] for NavigationRail Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 
     /**
      * Vertical padding between the contents of the [NavigationRail] and its top/bottom, and
@@ -153,21 +148,17 @@ internal object XrNavigationRailOverride : NavigationRailOverride {
  * The default [VerticalOrbiterProperties] used by [NavigationRail] if none is specified in
  * [LocalNavigationRailOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultNavigationRailOrbiterProperties: VerticalOrbiterProperties =
     VerticalOrbiterProperties(
-        position = OrbiterEdge.Vertical.Start,
-        offset = XrNavigationRailTokens.OrbiterEdgeOffset,
+        position = ContentEdge.Vertical.Start,
+        offset = XrNavigationRailTokens.OrbiterOffset,
+        offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterVertically,
-        settings = OrbiterDefaults.Settings,
         shape = SpatialRoundedCornerShape(CornerSize(50)),
     )
 
 /** The [VerticalOrbiterProperties] used by [NavigationRail]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalNavigationRailOrbiterProperties:
     ProvidableCompositionLocal<VerticalOrbiterProperties> =

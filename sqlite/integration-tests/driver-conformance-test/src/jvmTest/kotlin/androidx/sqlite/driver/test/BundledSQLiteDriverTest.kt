@@ -86,7 +86,7 @@ class BundledSQLiteDriverTest : BaseBundledConformanceTest() {
                     Class.forName(
                         "androidx.sqlite.driver.bundled.BundledSQLiteDriver\$NativeLibraryObject",
                         /* initialize = */ true,
-                        tempClassLoader
+                        tempClassLoader,
                     )
                 }
                 .hasCauseThat()

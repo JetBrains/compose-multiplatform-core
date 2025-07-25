@@ -38,7 +38,7 @@ object Transformations {
     fun getTextureViewCorrectionMatrix(
         displayRotationDegrees: Int,
         width: Int,
-        height: Int
+        height: Int,
     ): Matrix {
         val surfaceRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
         return getRectToRect(surfaceRect, surfaceRect, -displayRotationDegrees)
@@ -62,7 +62,7 @@ object Transformations {
         surfaceResolution: Size,
         transformationInfo: TransformationInfo,
         layoutDirection: Int,
-        scaleType: ScaleType
+        scaleType: ScaleType,
     ) =
         getSurfaceToViewfinderMatrix(
             viewfinderSize = viewfinderSize,
@@ -70,7 +70,7 @@ object Transformations {
             transformationInfo = transformationInfo,
             layoutDirection = layoutDirection,
             contentScale = scaleType.contentScale,
-            alignment = scaleType.alignment
+            alignment = scaleType.alignment,
         )
 
     @JvmStatic
@@ -80,7 +80,7 @@ object Transformations {
         transformationInfo: TransformationInfo,
         layoutDirection: Int,
         contentScale: ContentScale,
-        alignment: Alignment
+        alignment: Alignment,
     ): Matrix {
         val rotatedViewportSize = transformationInfo.rotatedViewportFor(surfaceResolution)
         // Get the target of the mapping, the coordinates of the crop rect in view finder.
@@ -98,7 +98,7 @@ object Transformations {
                     viewfinderSize = viewfinderSize,
                     layoutDirection = layoutDirection,
                     contentScale = contentScale,
-                    alignment = alignment
+                    alignment = alignment,
                 )
             }
 
@@ -131,21 +131,21 @@ object Transformations {
                     destination = viewfinderSize,
                     layoutDirection = layoutDirection,
                     contentScale = contentScale,
-                    alignment = alignment
+                    alignment = alignment,
                 )
             }
         return RectF(
                 0f,
                 0f,
                 rotatedViewportSize.width.toFloat(),
-                rotatedViewportSize.height.toFloat()
+                rotatedViewportSize.height.toFloat(),
             )
             .also(matrix::mapRect)
     }
 
     internal fun isViewportAspectRatioMatchViewfinder(
         rotatedViewportSize: SizeF,
-        viewfinderSize: Size
+        viewfinderSize: Size,
     ): Boolean =
         isAspectRatioMatchingWithRoundingError(rotatedViewportSize, false, viewfinderSize, true)
 
@@ -220,7 +220,7 @@ object Transformations {
         size1: SizeF,
         isAccurate1: Boolean,
         size2: Size,
-        isAccurate2: Boolean
+        isAccurate2: Boolean,
     ): Boolean {
         // The crop rect coordinates are rounded values. Each value is at most .5 away from their
         // true values. So the width/height, which is the difference of 2 coordinates, are at most
@@ -260,7 +260,7 @@ object Transformations {
             cropRectLeft.let { if (it.isNaN()) 0f else it },
             cropRectTop.let { if (it.isNaN()) 0f else it },
             cropRectRight.let { if (it.isNaN()) resolution.width.toFloat() else it },
-            cropRectBottom.let { if (it.isNaN()) resolution.height.toFloat() else it }
+            cropRectBottom.let { if (it.isNaN()) resolution.height.toFloat() else it },
         )
 
     private fun TransformationInfo.rotatedViewportFor(resolution: Size): SizeF =

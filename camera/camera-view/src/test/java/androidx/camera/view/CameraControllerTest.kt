@@ -72,6 +72,7 @@ import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -295,7 +296,7 @@ class CameraControllerTest {
         assertThat(
                 getPreviewTransformPassedToAnalyzer(
                     COORDINATE_SYSTEM_VIEW_REFERENCED,
-                    previewViewTransform
+                    previewViewTransform,
                 )
             )
             .isEqualTo(previewViewTransform)
@@ -312,7 +313,7 @@ class CameraControllerTest {
         assertThat(
                 getPreviewTransformPassedToAnalyzer(
                         COORDINATE_SYSTEM_ORIGINAL,
-                        previewViewTransform
+                        previewViewTransform,
                     )!!
                     .isIdentity
             )
@@ -321,7 +322,7 @@ class CameraControllerTest {
 
     private fun getPreviewTransformPassedToAnalyzer(
         coordinateSystem: Int,
-        previewTransform: Matrix?
+        previewTransform: Matrix?,
     ): Matrix? {
         var matrix: Matrix? = Matrix()
         val analyzer =
@@ -576,7 +577,7 @@ class CameraControllerTest {
                     }
 
                     override fun clear() {}
-                }
+                },
             )
         )
 
@@ -585,7 +586,7 @@ class CameraControllerTest {
 
         controller.takePicture(
             MoreExecutors.directExecutor(),
-            object : ImageCapture.OnImageCapturedCallback() {}
+            object : ImageCapture.OnImageCapturedCallback() {},
         )
 
         // ensure FLASH_MODE_SCREEN was retained
@@ -601,7 +602,7 @@ class CameraControllerTest {
         Assert.assertThrows(IllegalStateException::class.java) {
             controller.takePicture(
                 MoreExecutors.directExecutor(),
-                object : ImageCapture.OnImageCapturedCallback() {}
+                object : ImageCapture.OnImageCapturedCallback() {},
             )
         }
     }
@@ -671,7 +672,7 @@ class CameraControllerTest {
         // Arrange & Act: Set a 16:9 viewport.
         controller.attachPreviewSurface(
             {},
-            ViewPort.Builder(Rational(9, 16), Surface.ROTATION_90).build()
+            ViewPort.Builder(Rational(9, 16), Surface.ROTATION_90).build(),
         )
 
         // Assert: The aspect ratio of the use case configs should be override by viewport,
@@ -693,7 +694,7 @@ class CameraControllerTest {
         // Arrange: Set a 4:3 viewport.
         controller.attachPreviewSurface(
             {},
-            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
+            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build(),
         )
 
         // Act: Explicitly set a 16:9 resolution selector.
@@ -721,7 +722,7 @@ class CameraControllerTest {
         // Arrange: Set a 4:3 viewport.
         controller.attachPreviewSurface(
             {},
-            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
+            ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build(),
         )
 
         // Act: Explicitly set a 16:9 target size.
@@ -856,7 +857,7 @@ class CameraControllerTest {
         controller.onTapToFocus(pointFactory, 0f, 0f)
         ShadowSystemClock.advanceBy(
             FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - 1,
-            TimeUnit.MILLISECONDS
+            TimeUnit.MILLISECONDS,
         )
 
         shadowOf(getMainLooper()).idle()
@@ -872,7 +873,7 @@ class CameraControllerTest {
         controller.onTapToFocus(pointFactory, 0f, 0f)
         ShadowSystemClock.advanceBy(
             FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - 1,
-            TimeUnit.MILLISECONDS
+            TimeUnit.MILLISECONDS,
         )
 
         shadowOf(getMainLooper()).idle()
@@ -1003,6 +1004,7 @@ class CameraControllerTest {
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 
+    @Ignore // b/425365173
     @Test
     fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
         completeCameraInitialization()
@@ -1016,8 +1018,8 @@ class CameraControllerTest {
         shadowOf(getMainLooper()).idle()
         assumeTrue(controller.tapToFocusInfoState.value?.focusState == TAP_TO_FOCUS_STARTED)
 
-        // Advance to end of time
-        ShadowSystemClock.advanceBy(Long.MAX_VALUE, TimeUnit.SECONDS)
+        // Advance to 1 hour of time
+        ShadowSystemClock.advanceBy(1, TimeUnit.HOURS)
 
         // State is still the previous STARTED state
         shadowOf(getMainLooper()).idle()
@@ -1041,7 +1043,7 @@ class CameraControllerTest {
         // Advance the clock to the 1st tap cancellation time by advancing by the remaining time.
         ShadowSystemClock.advanceBy(
             FOCUS_AUTO_CANCEL_DEFAULT_TIMEOUT_MILLIS - tapInterval,
-            TimeUnit.MILLISECONDS
+            TimeUnit.MILLISECONDS,
         )
 
         shadowOf(getMainLooper()).idle()

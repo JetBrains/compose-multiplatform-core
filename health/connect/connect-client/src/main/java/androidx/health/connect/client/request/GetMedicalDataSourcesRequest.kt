@@ -53,13 +53,7 @@ class GetMedicalDataSourcesRequest(val packageNames: List<String>) {
                 .build()
         }
 
-    override fun toString() =
-        toString(
-            this,
-            mapOf(
-                "packageNames" to packageNames,
-            )
-        )
+    override fun toString() = toString(this, mapOf("packageNames" to packageNames))
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

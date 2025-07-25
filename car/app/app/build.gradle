@@ -70,15 +70,12 @@ dependencies {
 
     annotationProcessor(libs.nullaway)
 
-    // TODO(shiufai): We need this for assertThrows. Point back to the AndroidX shared version if
-    // it is ever upgraded.
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)
     testImplementation(libs.mockitoKotlin4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
     testImplementation(project(":car:app:app-testing"))
 }
@@ -101,8 +98,6 @@ android {
             version = 1
         }
     }
-
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.car.app"
 }
 
@@ -112,6 +107,7 @@ androidx {
     inceptionYear = "2020"
     description = "Build navigation, parking, and charging apps for Android Auto"
     legacyDisableKotlinStrictApiMode = true
+    enableRobolectric()
 }
 
 // Use MetalavaRunnerKt to execute Metalava operations. MetalavaRunnerKt is defined in the buildSrc

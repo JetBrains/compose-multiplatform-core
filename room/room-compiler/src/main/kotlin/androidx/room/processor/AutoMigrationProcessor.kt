@@ -39,7 +39,7 @@ class AutoMigrationProcessor(
     val context: Context,
     val spec: XType?,
     val fromSchemaBundle: DatabaseBundle,
-    val toSchemaBundle: DatabaseBundle
+    val toSchemaBundle: DatabaseBundle,
 ) {
     /**
      * Retrieves two schemas of the same database provided in the @AutoMigration annotation, detects
@@ -67,14 +67,14 @@ class AutoMigrationProcessor(
                     context.checker.check(
                         constructors.isEmpty() || constructors.any { it.parameters.isEmpty() },
                         typeElement,
-                        ProcessorErrors.AUTOMIGRATION_SPEC_MISSING_NOARG_CONSTRUCTOR
+                        ProcessorErrors.AUTOMIGRATION_SPEC_MISSING_NOARG_CONSTRUCTOR,
                     )
                 }
 
                 context.checker.check(
                     typeElement.enclosingTypeElement == null || typeElement.isStatic(),
                     typeElement,
-                    INNER_CLASS_AUTOMIGRATION_SPEC_MUST_BE_STATIC
+                    INNER_CLASS_AUTOMIGRATION_SPEC_MUST_BE_STATIC,
                 )
 
                 val implementsMigrationSpec =
@@ -86,7 +86,7 @@ class AutoMigrationProcessor(
                         typeElement,
                         autoMigrationElementMustImplementSpec(
                             typeElement.asClassName().canonicalName
-                        )
+                        ),
                     )
                     return null
                 }
@@ -99,7 +99,7 @@ class AutoMigrationProcessor(
             context.logger.e(
                 autoMigrationToVersionMustBeGreaterThanFrom(
                     toSchemaBundle.version,
-                    fromSchemaBundle.version
+                    fromSchemaBundle.version,
                 )
             )
             return null
@@ -111,7 +111,7 @@ class AutoMigrationProcessor(
                 element.getAnnotations(DeleteColumn::class).map {
                     AutoMigration.DeletedColumn(
                         tableName = it.getAsString("tableName"),
-                        columnName = it.getAsString("columnName")
+                        columnName = it.getAsString("columnName"),
                     )
                 }
             } ?: emptyList()
@@ -128,7 +128,7 @@ class AutoMigrationProcessor(
                 element.getAnnotations(RenameTable::class).map {
                     AutoMigration.RenamedTable(
                         originalTableName = it.getAsString("fromTableName"),
-                        newTableName = it.getAsString("toTableName")
+                        newTableName = it.getAsString("toTableName"),
                     )
                 }
             } ?: emptyList()
@@ -139,7 +139,7 @@ class AutoMigrationProcessor(
                     AutoMigration.RenamedColumn(
                         tableName = it.getAsString("tableName"),
                         originalColumnName = it.getAsString("fromColumnName"),
-                        newColumnName = it.getAsString("toColumnName")
+                        newColumnName = it.getAsString("toColumnName"),
                     )
                 }
             } ?: emptyList()
@@ -153,7 +153,7 @@ class AutoMigrationProcessor(
                         deleteColumnEntries = deleteColumnEntries,
                         deleteTableEntries = deleteTableEntries,
                         renameTableEntries = renameTableEntries,
-                        renameColumnEntries = renameColumnEntries
+                        renameColumnEntries = renameColumnEntries,
                     )
                     .diffSchemas()
             } catch (ex: DiffException) {

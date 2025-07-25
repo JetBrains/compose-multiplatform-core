@@ -55,6 +55,11 @@ import org.jetbrains.skiko.currentNanoTime
 /**
  * Render Compose [content] into an [Image]
  *
+ * This function doesn't support concurrent use from different threads. This includes use from a
+ * thread that is not the main UI thread concurrently with other compose scenes (e.g. a regular
+ * Compose application). To be used as part of a Compose application, it must be called from
+ * the main UI thread only.
+ *
  * @param width The width of the content.
  * @param height The height of the content.
  * @param density Density of the content which will be used to convert [dp] units.
@@ -102,7 +107,10 @@ inline fun <R> ImageComposeScene.use(
  * Instead of calling [close] manually, you can use the helper function [use],
  * it will close the scene for you.
  *
- * [ImageComposeScene] doesn't support concurrent read/write access from different threads.
+ * [ImageComposeScene] doesn't support concurrent use from different threads. This includes use
+ * from a thread that is not the main UI thread concurrently with other compose scenes (e.g. a
+ * regular Compose application). To be used as part of a Compose application, it must be used from
+ * the main UI thread only.
  *
  * @param width The width of the content.
  * @param height The height of the content.

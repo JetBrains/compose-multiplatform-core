@@ -38,7 +38,7 @@ import kotlinx.coroutines.flow.flowOn
 internal class WindowInfoTrackerImpl(
     private val windowMetricsCalculator: WindowMetricsCalculator,
     private val windowBackend: WindowBackend,
-    private val windowSdkExtensions: WindowSdkExtensions
+    private val windowSdkExtensions: WindowSdkExtensions,
 ) : WindowInfoTracker {
 
     /**

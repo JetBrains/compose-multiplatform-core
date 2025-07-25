@@ -143,7 +143,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable {}
+                    modifier = Modifier.testTag("myClickable").combinedClickable {},
                 )
             }
         }
@@ -161,7 +161,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable(enabled = false) {}
+                    modifier = Modifier.testTag("myClickable").combinedClickable(enabled = false) {},
                 )
             }
         }
@@ -185,7 +185,7 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -214,7 +214,7 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick
-                        ) {}
+                        ) {},
                 )
             }
         }
@@ -267,7 +267,7 @@ class CombinedClickableTest {
             Box {
                 BasicText(
                     "ClickableText",
-                    modifier = Modifier.testTag("myClickable").combinedClickable(onClick = onClick)
+                    modifier = Modifier.testTag("myClickable").combinedClickable(onClick = onClick),
                 )
             }
         }
@@ -277,6 +277,37 @@ class CombinedClickableTest {
         rule.runOnIdle { assertThat(counter).isEqualTo(1) }
 
         rule.onNodeWithTag("myClickable").performClick()
+
+        rule.runOnIdle { assertThat(counter).isEqualTo(2) }
+    }
+
+    @Test
+    fun click_withIndirectTouchEvent() {
+        var counter = 0
+        val onClick: () -> Unit = { ++counter }
+        val focusRequester = FocusRequester()
+        lateinit var inputModeManager: InputModeManager
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(onClick = onClick),
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
+
+        rule.runOnIdle { assertThat(counter).isEqualTo(1) }
+
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
 
         rule.runOnIdle { assertThat(counter).isEqualTo(2) }
     }
@@ -316,7 +347,7 @@ class CombinedClickableTest {
                 BasicText(
                     "ClickableText",
                     modifier =
-                        Modifier.testTag("myClickable").combinedClickable(onLongClick = onClick) {}
+                        Modifier.testTag("myClickable").combinedClickable(onLongClick = onClick) {},
                 )
             }
         }
@@ -352,8 +383,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 onLongClick = onClick,
-                                hapticFeedbackEnabled = true
-                            ) {}
+                                hapticFeedbackEnabled = true,
+                            ) {},
                     )
                 }
             }
@@ -404,8 +435,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 onLongClick = onClick,
-                                hapticFeedbackEnabled = false
-                            ) {}
+                                hapticFeedbackEnabled = false,
+                            ) {},
                     )
                 }
             }
@@ -447,8 +478,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -484,8 +515,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -528,8 +559,8 @@ class CombinedClickableTest {
                         .focusRequester(focusRequester)
                         .combinedClickable(
                             onLongClick = { ++longClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
         rule.runOnIdle {
@@ -568,7 +599,7 @@ class CombinedClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .combinedClickable(onLongClick = onLongClick, onClick = onClick)
+                            .combinedClickable(onLongClick = onLongClick, onClick = onClick),
                 )
             }
         }
@@ -601,7 +632,7 @@ class CombinedClickableTest {
                     "ClickableText",
                     modifier =
                         Modifier.testTag("myClickable")
-                            .combinedClickable(onDoubleClick = onDoubleClick, onClick = onClick)
+                            .combinedClickable(onDoubleClick = onDoubleClick, onClick = onClick),
                 )
             }
         }
@@ -641,8 +672,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -686,8 +717,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -717,8 +748,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -762,8 +793,8 @@ class CombinedClickableTest {
                     Modifier.testTag("myClickable")
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
-                            onClick = { ++clickCounter }
-                        )
+                            onClick = { ++clickCounter },
+                        ),
             )
         }
 
@@ -824,8 +855,8 @@ class CombinedClickableTest {
                         .combinedClickable(
                             onDoubleClick = { ++doubleClickCounter },
                             onClick = { ++clickCounter },
-                            onLongClick = { ++longClickCounter }
-                        )
+                            onLongClick = { ++longClickCounter },
+                        ),
             )
         }
 
@@ -863,8 +894,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -896,6 +927,60 @@ class CombinedClickableTest {
     }
 
     @Test
+    fun interactionSource_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(currentTime = 0L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(currentTime = 16L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_immediateRelease_noScrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -911,8 +996,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -927,6 +1012,57 @@ class CombinedClickableTest {
             down(center)
             up()
         }
+
+        // Press finished so we should see both press and release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateRelease_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+
+        rule.mainClock.autoAdvance = false
+
+        val focusRequester = FocusRequester()
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
 
         // Press finished so we should see both press and release
         rule.runOnIdle {
@@ -954,8 +1090,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -970,6 +1106,54 @@ class CombinedClickableTest {
             down(center)
             cancel()
         }
+
+        // We are not in a scrollable container, so we should see a press and immediate cancel
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateCancel_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            inputModeManager = LocalInputModeManager.current
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
 
         // We are not in a scrollable container, so we should see a press and immediate cancel
         rule.runOnIdle {
@@ -998,12 +1182,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1018,6 +1202,60 @@ class CombinedClickableTest {
             down(centerLeft)
             moveTo(centerRight)
         }
+
+        // The press should fire, and then the drag should instantly cancel it
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateDrag_noScrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
 
         // The press should fire, and then the drag should instantly cancel it
         rule.runOnIdle {
@@ -1045,8 +1283,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1086,6 +1324,72 @@ class CombinedClickableTest {
     }
 
     @Test
+    fun interactionSource_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+
+        val halfTapIndicationDelay = TapIndicationDelay / 2
+
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        // Haven't reached the tap delay yet, so we shouldn't have started a press
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        // Advance past the tap delay
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchReleaseEvent(halfTapIndicationDelay + 16L)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_immediateRelease_scrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -1101,8 +1405,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1117,6 +1421,56 @@ class CombinedClickableTest {
             down(center)
             up()
         }
+
+        // We haven't reached the tap delay, but we have finished a press so we should have
+        // emitted both press and release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_immediateRelease_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
 
         // We haven't reached the tap delay, but we have finished a press so we should have
         // emitted both press and release
@@ -1145,8 +1499,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1161,6 +1515,49 @@ class CombinedClickableTest {
             down(center)
             cancel()
         }
+
+        // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
+        // shown
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Test
+    fun interactionSource_immediateCancel_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
 
         // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
         // shown
@@ -1184,12 +1581,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1204,6 +1601,54 @@ class CombinedClickableTest {
             down(centerLeft)
             moveTo(centerRight)
         }
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        // We started a drag before the timeout, so no press should be emitted
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+    }
+
+    @Test
+    fun interactionSource_immediateDrag_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1228,12 +1673,12 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable")
                             .draggable(
                                 state = rememberDraggableState {},
-                                orientation = Orientation.Horizontal
+                                orientation = Orientation.Horizontal,
                             )
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1266,6 +1711,66 @@ class CombinedClickableTest {
     }
 
     @Test
+    fun interactionSource_dragAfterTimeout_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchMoveEvents(3, 16L, pressPosition, 16L, 1, 50f)
+
+        // The drag should cancel the press
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_cancelledGesture_scrollableContainer() {
         val interactionSource = MutableInteractionSource()
 
@@ -1281,8 +1786,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1314,6 +1819,63 @@ class CombinedClickableTest {
     }
 
     @Test
+    fun interactionSource_cancelledGesture_scrollableContainer_indirectTouch() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        val pressPosition = (TouchPadEnd - TouchPadStart) / 2f
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+
+        rule.mainClock.advanceTimeBy(TapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
     fun interactionSource_resetWhenDisposed() {
         val interactionSource = MutableInteractionSource()
         var emitClickableText by mutableStateOf(true)
@@ -1331,8 +1893,8 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("myClickable").combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                     )
                 }
             }
@@ -1381,8 +1943,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1424,8 +1986,8 @@ class CombinedClickableTest {
                     modifier =
                         Modifier.testTag("myClickable").combinedClickable(
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1471,8 +2033,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1509,8 +2071,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -1574,8 +2136,8 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1645,8 +2207,8 @@ class CombinedClickableTest {
                         Modifier.testTag("myClickable").combinedClickable(
                             onLongClick = onLongClick,
                             interactionSource = interactionSource,
-                            indication = null
-                        ) {}
+                            indication = null,
+                        ) {},
                 )
             }
         }
@@ -1708,8 +2270,8 @@ class CombinedClickableTest {
                                 enabled = enabled.value,
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -1801,7 +2363,7 @@ class CombinedClickableTest {
                 Modifier.combinedClickable(
                     onDoubleClick = outerOnDoubleClick,
                     onLongClick = outerOnLongClick,
-                    onClick = outerOnClick
+                    onClick = outerOnClick,
                 )
             ) {
                 BasicText(
@@ -1812,8 +2374,8 @@ class CombinedClickableTest {
                                 enabled = enabled.value,
                                 onDoubleClick = onDoubleClick,
                                 onLongClick = onLongClick,
-                                onClick = onClick
-                            )
+                                onClick = onClick,
+                            ),
                 )
             }
         }
@@ -1919,8 +2481,8 @@ class CombinedClickableTest {
                             enabled = enabled.value,
                             onClick = {},
                             interactionSource = interactionSource,
-                            indication = null
-                        )
+                            indication = null,
+                        ),
             )
         }
 
@@ -1985,7 +2547,7 @@ class CombinedClickableTest {
                             Modifier.testTag("myClickable")
                                 .focusRequester(requester)
                                 .onFocusEvent { focusState = it }
-                                .combinedClickable(enabled = enabled.value) {}
+                                .combinedClickable(enabled = enabled.value) {},
                     )
                 }
             }
@@ -2071,7 +2633,7 @@ class CombinedClickableTest {
                     "onDoubleClick",
                     "onLongClick",
                     "onLongClickLabel",
-                    "hapticFeedbackEnabled"
+                    "hapticFeedbackEnabled",
                 )
         }
     }
@@ -2084,7 +2646,7 @@ class CombinedClickableTest {
                 Modifier.combinedClickable(
                         onClick = onClick,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
                     )
                     .first() as InspectableValue
             assertThat(modifier.nameFallback).isEqualTo("combinedClickable")
@@ -2100,7 +2662,7 @@ class CombinedClickableTest {
                     "onLongClickLabel",
                     "indicationNodeFactory",
                     "interactionSource",
-                    "hapticFeedbackEnabled"
+                    "hapticFeedbackEnabled",
                 )
         }
     }
@@ -2195,8 +2757,8 @@ class CombinedClickableTest {
                             .focusRequester(focusRequester)
                             .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) {}
+                                indication = null,
+                            ) {},
                 )
             }
         }
@@ -2225,7 +2787,7 @@ class CombinedClickableTest {
                         modifier =
                             Modifier.testTag("clickable").combinedClickable(
                                 interactionSource = interactionSource
-                            ) {}
+                            ) {},
                     )
                 }
             }
@@ -2248,8 +2810,8 @@ class CombinedClickableTest {
                                     role = if (moveContent) Role.Button else Role.Checkbox,
                                     onClickLabel = moveContent.toString(),
                                     onLongClick = {},
-                                    onLongClickLabel = moveContent.toString()
-                                ) {}
+                                    onLongClickLabel = moveContent.toString(),
+                                ) {},
                         )
                     }
                 }
@@ -2293,8 +2855,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                onDoubleClick = onDoubleClick
-                            )
+                                onDoubleClick = onDoubleClick,
+                            ),
                 )
             }
         }
@@ -2329,7 +2891,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -2363,7 +2925,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)
@@ -2399,8 +2961,8 @@ class CombinedClickableTest {
                             .combinedClickable(
                                 onClick = onClick,
                                 onLongClick = onLongClick,
-                                onDoubleClick = onDoubleClick
-                            )
+                                onDoubleClick = onDoubleClick,
+                            ),
                 )
             }
         }
@@ -2447,7 +3009,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_NONE
+                /* classification = */ CLASSIFICATION_NONE,
             )
 
         view.dispatchTouchEvent(downEvent)
@@ -2481,7 +3043,7 @@ class CombinedClickableTest {
                 /* source = */ InputDevice.SOURCE_TOUCHSCREEN,
                 /* displayId = */ 0,
                 /* flags = */ 0,
-                /* classification = */ CLASSIFICATION_DEEP_PRESS
+                /* classification = */ CLASSIFICATION_DEEP_PRESS,
             )
 
         view.dispatchTouchEvent(deepPressMoveEvent)

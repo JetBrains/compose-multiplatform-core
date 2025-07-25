@@ -254,7 +254,7 @@ private class LazyLayoutSemanticsModifierNode(
             ScrollAxisRange(
                 value = { state.scrollOffset },
                 maxValue = { state.maxScrollOffset },
-                reverseScrolling = reverseScrolling
+                reverseScrolling = reverseScrolling,
             )
 
         scrollToIndexAction =

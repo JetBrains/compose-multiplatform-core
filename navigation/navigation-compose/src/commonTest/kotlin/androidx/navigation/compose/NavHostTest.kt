@@ -34,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
@@ -61,8 +60,7 @@ import androidx.navigation.createGraph
 import androidx.navigation.navigation
 import androidx.navigation.plusAssign
 import androidx.navigation.testing.TestNavHostController
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.compose.LocalSavedStateRegistryOwner
+import androidx.savedstate.SavedState
 import androidx.testutils.TestNavigator
 import androidx.testutils.test
 import kotlin.reflect.KClass
@@ -965,6 +963,43 @@ class NavHostTest {
     }
 
     @Test
+    fun testNavHostDeeplink() = runComposeUiTestOnUiThread {
+        lateinit var navController: NavHostController
+
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            // Add the flags to make NavController think this is a deep link
+            val activity = LocalContext.current as? Activity
+            activity?.intent?.run {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            navController = rememberNavController()
+            NavHost(navController, startDestination = first) {
+                composable(first) { BasicText(first) }
+                composable(
+                    second,
+                    deepLinks = listOf(navDeepLink { action = Intent.ACTION_MAIN }),
+                ) {
+                    BasicText(second)
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        val firstEntry = navController.getBackStackEntry(first)
+        val secondEntry = navController.getBackStackEntry(second)
+
+        composeTestRule.mainClock.autoAdvance = true
+
+        composeTestRule.runOnIdle {
+            assertThat(firstEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
+            assertThat(secondEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
+        }
+    }
+
+    @Test
     fun testStateSaved() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
         lateinit var text: MutableState<String>
@@ -1145,7 +1180,43 @@ class NavHostTest {
     }
 
     @Test
-    fun nestedNavHostRestore() = runComposeUiTestOnUiThread {
+    fun navBackStackEntrySingleTopLifecycleTest() = runComposeUiTestOnUiThread {
+        var lastEvent: Lifecycle.Event? = null
+        lateinit var navController: NavHostController
+        setContentWithLifecycleOwner {
+            navController = rememberNavController()
+            NavHost(navController, startDestination = "First") {
+                composable("First") {
+                    val lifecycleOwner = LocalLifecycleOwner.current
+                    DisposableEffect(lifecycleOwner) {
+                        val observer = LifecycleEventObserver { _, event -> lastEvent = event }
+                        lifecycleOwner.lifecycle.addObserver(observer)
+
+                        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                    }
+                }
+                composable("Second") {}
+            }
+        }
+
+        runOnIdle { navController.navigate("Second") }
+
+        runOnIdle {
+            navController.navigate("First") {
+                popUpTo("First")
+                launchSingleTop = true
+            }
+        }
+
+        runOnIdle {
+            assertWithMessage("Lifecycle should have been resumed")
+                .that(lastEvent)
+                .isEqualTo(Lifecycle.Event.ON_RESUME)
+        }
+    }
+
+    @Test
+    fun testPopWithBackHandler() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
         setContentWithLifecycleOwner {
             navController = rememberNavController()

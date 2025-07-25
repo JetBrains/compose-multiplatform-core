@@ -63,7 +63,7 @@ protected constructor(
         BOOLEAN_PROPERTY,
         BYTES_PROPERTY,
         EMBEDDING_PROPERTY,
-        BLOB_HANDLE_PROPERTY
+        BLOB_HANDLE_PROPERTY,
     }
 
     companion object {
@@ -80,7 +80,7 @@ protected constructor(
         fun tryParse(
             annotation: AnnotationMirror,
             defaultName: String,
-            helper: IntrospectionHelper
+            helper: IntrospectionHelper,
         ): DataPropertyAnnotation? {
             val annotationParams = helper.getAnnotationParams(annotation)
             val qualifiedClassName = annotation.annotationType.toString()

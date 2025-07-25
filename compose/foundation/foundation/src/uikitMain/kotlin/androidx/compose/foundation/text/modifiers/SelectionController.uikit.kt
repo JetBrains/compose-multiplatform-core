@@ -175,7 +175,8 @@ internal actual fun SelectionRegistrar.makeSelectionModifier(
 
         override fun onStart(
             downPosition: Offset,
-            adjustment: SelectionAdjustment
+            adjustment: SelectionAdjustment,
+            clickCount: Int,
         ): Boolean {
             layoutCoordinates()?.let {
                 if (!it.isAttached) return false
@@ -324,7 +325,7 @@ private suspend fun AwaitPointerEventScope.mouseSelection(
             else -> SelectionAdjustment.Paragraph
         }
 
-        val started = observer.onStart(downChange.position, selectionAdjustment)
+        val started = observer.onStart(downChange.position, selectionAdjustment, clicksCounter.clicks)
         if (started) {
             val shouldConsumeUp = drag(downChange.id) {
                 if (observer.onDrag(it.position, selectionAdjustment)) {

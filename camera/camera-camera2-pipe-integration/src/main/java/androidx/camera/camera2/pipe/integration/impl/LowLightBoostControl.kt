@@ -95,7 +95,7 @@ constructor(
                     override fun onTotalCaptureResult(
                         requestMetadata: RequestMetadata,
                         frameNumber: FrameNumber,
-                        totalCaptureResult: FrameInfo
+                        totalCaptureResult: FrameInfo,
                     ) {
                         if (
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
@@ -130,7 +130,7 @@ constructor(
      */
     public fun setLowLightBoostAsync(
         lowLightBoost: Boolean,
-        cancelPreviousTask: Boolean = true
+        cancelPreviousTask: Boolean = true,
     ): Deferred<Unit> {
         debug { "LowLightBoostControl#setLowLightBoostAsync: lowLightBoost = $lowLightBoost" }
 

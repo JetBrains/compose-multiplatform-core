@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3.samples
 
-import androidx.annotation.Sampled
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,7 +91,7 @@ fun TransformingLazyColumnExpandableCardSample() {
                                 Text("Expanded content is available here")
                             }
                         },
-                        content = { Text("Tap on Card to expand") }
+                        content = { Text("Tap on Card to expand") },
                     )
                 }
             }
@@ -100,7 +99,6 @@ fun TransformingLazyColumnExpandableCardSample() {
     }
 }
 
-@Sampled
 @Preview
 @Composable
 fun TransformingLazyColumnReducedMotionSample() {
@@ -118,7 +116,7 @@ fun TransformingLazyColumnReducedMotionSample() {
                                 Modifier.fillMaxWidth()
                                     .transformedHeight(this, transformationSpec)
                                     .animateItem(),
-                            transformation = SurfaceTransformation(transformationSpec)
+                            transformation = SurfaceTransformation(transformationSpec),
                         ) {
                             Text("Item $it")
                         }
@@ -153,7 +151,7 @@ fun TransformingLazyColumnAnimationSample() {
             state,
             edgeButton = {
                 EdgeButton(onClick = { elements = elements.shuffled() }) { Text("Shuffle") }
-            }
+            },
         ) { contentPadding ->
             TransformingLazyColumn(state = state, contentPadding = contentPadding) {
                 itemsIndexed(elements, key = { _, key -> key }) { index, cardKey ->
@@ -161,14 +159,14 @@ fun TransformingLazyColumnAnimationSample() {
                         onClick = {},
                         modifier =
                             Modifier.transformedHeight(this, transformationSpec).animateItem(),
-                        transformation = SurfaceTransformation(transformationSpec)
+                        transformation = SurfaceTransformation(transformationSpec),
                     ) {
                         Text("Card $cardKey")
                         Row {
                             Spacer(modifier = Modifier.weight(1f))
                             CompactButton(
                                 onClick = { removeCardAt(index) },
-                                enabled = elements.count() > 1
+                                enabled = elements.count() > 1,
                             ) {
                                 Text("-")
                             }

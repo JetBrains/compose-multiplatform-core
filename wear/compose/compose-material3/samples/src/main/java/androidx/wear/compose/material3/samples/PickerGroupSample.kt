@@ -44,27 +44,23 @@ fun PickerGroupSample() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.size(30.dp))
         val label = if (selectedPickerIndex == 0) "Hours" else "Minutes"
-        AnimatedContent(
-            targetState = label,
-        ) { targetText ->
-            Text(text = targetText)
-        }
+        AnimatedContent(targetState = label) { targetText -> Text(text = targetText) }
         Spacer(modifier = Modifier.size(10.dp))
         PickerGroup(
             selectedPickerState =
                 if (selectedPickerIndex == 0) pickerStateHour else pickerStateMinute,
-            autoCenter = false
+            autoCenter = false,
         ) {
             PickerGroupItem(
                 pickerState = pickerStateHour,
                 selected = selectedPickerIndex == 0,
                 onSelected = { selectedPickerIndex = 0 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
 
             PickerGroupItem(
@@ -72,7 +68,7 @@ fun PickerGroupSample() {
                 selected = selectedPickerIndex == 1,
                 onSelected = { selectedPickerIndex = 1 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
         }
     }
@@ -93,7 +89,7 @@ fun AutoCenteringPickerGroup() {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val headingText = mapOf(0 to "Hours", 1 to "Minutes", 2 to "Seconds", 3 to "Milli")
         Spacer(modifier = Modifier.size(30.dp))
@@ -107,28 +103,28 @@ fun AutoCenteringPickerGroup() {
                 selected = selectedPickerIndex == 0,
                 onSelected = { selectedPickerIndex = 0 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
                 pickerState = pickerStateMinute,
                 selected = selectedPickerIndex == 1,
                 onSelected = { selectedPickerIndex = 1 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
                 pickerState = pickerStateSeconds,
                 selected = selectedPickerIndex == 2,
                 onSelected = { selectedPickerIndex = 2 },
                 option = { optionIndex, _ -> Text(text = "%02d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
             PickerGroupItem(
                 pickerState = pickerStateMilliSeconds,
                 selected = selectedPickerIndex == 3,
                 onSelected = { selectedPickerIndex = 3 },
                 option = { optionIndex, _ -> Text(text = "%03d".format(optionIndex)) },
-                modifier = Modifier.size(80.dp, 100.dp)
+                modifier = Modifier.size(80.dp, 100.dp),
             )
         }
     }

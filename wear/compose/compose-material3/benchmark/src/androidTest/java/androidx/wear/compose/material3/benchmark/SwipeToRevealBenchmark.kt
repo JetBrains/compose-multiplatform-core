@@ -39,15 +39,15 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.wear.compose.foundation.RevealState
-import androidx.wear.compose.foundation.RevealValue
-import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.RevealDirection.Companion.Bidirectional
+import androidx.wear.compose.material3.RevealState
+import androidx.wear.compose.material3.RevealValue
 import androidx.wear.compose.material3.SwipeToReveal
-import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.rememberRevealState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.junit.Rule
@@ -104,35 +104,30 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
     @Composable
     override fun MeasuredContent() {
         coroutineScope = rememberCoroutineScope()
-        revealState =
-            rememberRevealState(
-                anchors =
-                    SwipeToRevealDefaults.bidirectionalAnchors(
-                        useAnchoredActions = false,
-                    )
-            )
+        revealState = rememberRevealState()
 
         SwipeToReveal(
-            revealState = revealState,
-            actions = {
-                primaryAction(
+            primaryAction = {
+                PrimaryActionButton(
                     onClick = {},
                     icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                    text = { Text("Delete") }
+                    text = { Text("Delete") },
                 )
-                secondaryAction(
+            },
+            onSwipePrimaryAction = {},
+            secondaryAction = {
+                SecondaryActionButton(
                     onClick = {},
-                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
+                    icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
                 )
-                undoPrimaryAction(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
-                undoSecondaryAction(
-                    onClick = {},
-                    text = { Text("Undo Delete") },
-                )
-            }
+            },
+            undoPrimaryAction = { UndoActionButton(onClick = {}, text = { Text("Undo Delete") }) },
+            undoSecondaryAction = {
+                UndoActionButton(onClick = {}, text = { Text("Undo Delete") })
+            },
+            revealState = revealState,
+            revealDirection = Bidirectional,
+            hasPartiallyRevealedState = false,
         ) {
             Button(
                 modifier =
@@ -143,7 +138,7 @@ internal class SwipeToRevealTestCase : LayeredComposeTestCase(), ToggleableTestC
                                 CustomAccessibilityAction("Options") { true },
                             )
                     },
-                onClick = {}
+                onClick = {},
             ) {
                 Text("This Button has two actions", modifier = Modifier.fillMaxSize())
             }

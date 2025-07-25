@@ -16,7 +16,10 @@
 
 package androidx.appsearch.builtintypes;
 
+import android.os.Build;
+
 import androidx.annotation.OptIn;
+import androidx.annotation.RequiresApi;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.serializers.DurationAsLongSerializer;
@@ -33,6 +36,7 @@ import java.util.List;
 /**
  * AppSearch document representing an {@link Event} entity.
  */
+@RequiresApi(api = Build.VERSION_CODES.O)
 @Document(name = "builtin:Event")
 public class Event extends Thing {
 

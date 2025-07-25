@@ -18,12 +18,13 @@ package androidx.xr.scenecore.impl;
 
 import android.media.MediaPlayer;
 
-import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.MediaPlayerExtensionsWrapper;
 import androidx.xr.runtime.internal.PointSourceParams;
 import androidx.xr.runtime.internal.SoundFieldAttributes;
 
 import com.android.extensions.xr.media.MediaPlayerExtensions;
+
+import org.jspecify.annotations.NonNull;
 
 /** Implementation of the {@link MediaPlayerExtensionsWrapper}. */
 final class MediaPlayerExtensionsWrapperImpl implements MediaPlayerExtensionsWrapper {

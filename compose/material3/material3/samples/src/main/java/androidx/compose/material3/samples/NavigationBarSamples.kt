@@ -63,12 +63,12 @@ fun ShortNavigationBarSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = null
+                        contentDescription = null,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index }
+                onClick = { selectedItem = index },
             )
         }
     }
@@ -88,7 +88,7 @@ fun ShortNavigationBarWithHorizontalItemsSample() {
     Column {
         Text(
             "Note: this is configuration is better displayed in medium screen sizes.",
-            Modifier.padding(16.dp)
+            Modifier.padding(16.dp),
         )
 
         Spacer(Modifier.height(32.dp))
@@ -101,12 +101,12 @@ fun ShortNavigationBarWithHorizontalItemsSample() {
                         Icon(
                             if (selectedItem == index) selectedIcons[index]
                             else unselectedIcons[index],
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(item) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
         }
@@ -129,12 +129,12 @@ fun NavigationBarSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item
+                        contentDescription = item,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
-                onClick = { selectedItem = index }
+                onClick = { selectedItem = index },
             )
         }
     }
@@ -154,13 +154,13 @@ fun NavigationBarWithOnlySelectedLabelsSample() {
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item
+                        contentDescription = item,
                     )
                 },
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false
+                alwaysShowLabel = false,
             )
         }
     }

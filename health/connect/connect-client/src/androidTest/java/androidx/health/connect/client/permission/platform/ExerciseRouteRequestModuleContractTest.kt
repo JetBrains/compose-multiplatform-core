@@ -97,7 +97,7 @@ class ExerciseRouteRequestModuleContractTest {
 
         intent.putExtra(
             HealthConnectManager.EXTRA_EXERCISE_ROUTE,
-            PlatformExerciseRoute(listOf(location1, location2))
+            PlatformExerciseRoute(listOf(location1, location2)),
         )
         val result = requestRouteContract.parseResult(0, intent)
         assertThat(result)
@@ -110,13 +110,13 @@ class ExerciseRouteRequestModuleContractTest {
                             longitude = -23.4,
                             horizontalAccuracy = Length.meters(0.9),
                             verticalAccuracy = Length.meters(0.3),
-                            altitude = Length.meters(12.3)
+                            altitude = Length.meters(12.3),
                         ),
                         ExerciseRoute.Location(
                             time = Instant.ofEpochMilli(3456L),
                             latitude = 23.45,
                             longitude = -23.45,
-                        )
+                        ),
                     )
                 )
             )

@@ -26,7 +26,6 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.filters.LargeTest
@@ -47,12 +46,12 @@ import org.junit.runners.Parameterized.Parameters
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 23)
-class RoomDriverBenchmark(private val driver: SQLiteDriver?) {
+class RoomDriverBenchmark(private val useDriver: UseDriver) {
 
     @get:Rule val benchmarkRule = BenchmarkRule()
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
-    private lateinit var database: TestDatabase
+    private var database: TestDatabase? = null
 
     private fun createMemoryDatabase(): TestDatabase {
         return Room.inMemoryDatabaseBuilder<TestDatabase>(context).buildForTest()
@@ -63,8 +62,12 @@ class RoomDriverBenchmark(private val driver: SQLiteDriver?) {
     }
 
     private fun RoomDatabase.Builder<TestDatabase>.buildForTest(): TestDatabase {
-        if (driver != null) {
-            setDriver(driver)
+        when (useDriver) {
+            UseDriver.ANDROID -> setDriver(AndroidSQLiteDriver())
+            UseDriver.BUNDLED -> setDriver(BundledSQLiteDriver())
+            UseDriver.NONE -> {
+                /* no driver */
+            }
         }
         val db = build()
         database = db
@@ -78,7 +81,7 @@ class RoomDriverBenchmark(private val driver: SQLiteDriver?) {
 
     @After
     fun cleanup() {
-        database.close()
+        database?.close()
     }
 
     @Test
@@ -174,9 +177,13 @@ class RoomDriverBenchmark(private val driver: SQLiteDriver?) {
     }
 
     companion object {
-        @JvmStatic
-        @Parameters(name = "driver = {0}")
-        fun drivers() = arrayOf(BundledSQLiteDriver(), AndroidSQLiteDriver(), null)
+        @JvmStatic @Parameters(name = "driver = {0}") fun drivers() = UseDriver.entries
+
+        enum class UseDriver {
+            ANDROID,
+            BUNDLED,
+            NONE,
+        }
 
         const val SMALL_AMOUNT = 25
         const val LARGE_AMOUNT = 1000

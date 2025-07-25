@@ -18,7 +18,7 @@
 
 package androidx.compose.ui.node
 
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.node.RootForTest.UncaughtExceptionHandler
@@ -51,7 +51,7 @@ interface RootForTest {
      *
      * @return true if the event was consumed. False otherwise.
      */
-    @ExperimentalComposeUiApi
+    @ExperimentalIndirectTouchTypeApi
     fun sendIndirectTouchEvent(indirectTouchEvent: IndirectTouchEvent): Boolean = false
 
     /**

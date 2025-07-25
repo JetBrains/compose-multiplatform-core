@@ -34,7 +34,7 @@ import org.robolectric.util.ReflectionHelpers
 class CaptureFailedRetryEnablerTest(
     private val brand: String,
     private val model: String,
-    private val expectedResult: Int
+    private val expectedResult: Int,
 ) {
 
     companion object {

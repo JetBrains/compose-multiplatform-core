@@ -162,7 +162,7 @@ class NavControllerRouteTest {
     val nav_multiple_navigation_route_graph =
         createNavController().createGraph(
             route = "nav_multi_module_base",
-            startDestination = "simple_child_start"
+            startDestination = "simple_child_start",
         ) {
             navigation(route = "simple_child_start", startDestination = "simple_child_start_test") {
                 test("simple_child_start_test")
@@ -170,7 +170,7 @@ class NavControllerRouteTest {
             }
             navigation(
                 route = "deep_link_child_start",
-                startDestination = "deep_link_child_start_test"
+                startDestination = "deep_link_child_start_test",
             ) {
                 test("deep_link_child_start_test")
                 test("deep_link_child_second_test") {
@@ -178,7 +178,7 @@ class NavControllerRouteTest {
                 }
                 navigation(
                     route = "deep_link_child_second",
-                    startDestination = "deep_link_grandchild_start_test"
+                    startDestination = "deep_link_grandchild_start_test",
                 ) {
                     test("deep_link_grandchild_start_test") {
                         deepLink {
@@ -215,19 +215,19 @@ class NavControllerRouteTest {
 
     private enum class TestEnum {
         ONE,
-        TWO
+        TWO,
     }
 
     private enum class TestEnumWithArg(val number: Int) {
         ONE(1),
-        TWO(2)
+        TWO(2),
     }
 
     @Serializable
     private class EnumWrapper {
         enum class NestedEnum(val number: Int) {
             ONE(1),
-            TWO(2)
+            TWO(2),
         }
     }
 
@@ -441,7 +441,7 @@ class NavControllerRouteTest {
                 navController.graph =
                     navController.createGraph(
                         route = "graph",
-                        startDestination = "start_test/{arg}"
+                        startDestination = "start_test/{arg}",
                     ) {
                         test("start_test/{arg}") {
                             // does not have default value to fallback to
@@ -590,7 +590,7 @@ class NavControllerRouteTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
             }
@@ -654,7 +654,7 @@ class NavControllerRouteTest {
         val graph =
             navController.createGraph(
                 route = "graph",
-                startDestination = "start/{arg}?arg2={arg2}"
+                startDestination = "start/{arg}?arg2={arg2}",
             ) {
                 test("start/{arg}?arg2={arg2}") {
                     argument("arg") {
@@ -687,7 +687,7 @@ class NavControllerRouteTest {
         val graph =
             navController.createGraph(
                 route = "graph",
-                startDestination = "start/myArg?arg2={arg2}"
+                startDestination = "start/myArg?arg2={arg2}",
             ) {
                 test("start/{arg}?arg2={arg2}") {
                     argument("arg") {
@@ -720,7 +720,7 @@ class NavControllerRouteTest {
         val graph =
             navController.createGraph(
                 route = "graph",
-                startDestination = "start/{arg}?arg2=myArg2"
+                startDestination = "start/{arg}?arg2=myArg2",
             ) {
                 test("start/{arg}?arg2={arg2}") {
                     argument("arg") {
@@ -772,7 +772,7 @@ class NavControllerRouteTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
             }
@@ -796,7 +796,7 @@ class NavControllerRouteTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
             }
@@ -982,7 +982,7 @@ class NavControllerRouteTest {
                 "graph_one",
                 "shared_startDest",
                 "graph_two",
-                "shared_startDest"
+                "shared_startDest",
             )
             .inOrder()
 
@@ -994,7 +994,7 @@ class NavControllerRouteTest {
                 "graph_one",
                 "shared_startDest",
                 "graph_two",
-                "shared_startDest"
+                "shared_startDest",
             )
             .inOrder()
     }
@@ -1024,7 +1024,7 @@ class NavControllerRouteTest {
                 "graph_one",
                 "shared_startDest",
                 "graph_two",
-                "shared_startDest"
+                "shared_startDest",
             )
             .inOrder()
 
@@ -1199,7 +1199,7 @@ class NavControllerRouteTest {
 
                 override fun parseValue(
                     value: String,
-                    previousValue: List<CustomType>
+                    previousValue: List<CustomType>,
                 ): List<CustomType> {
                     val list = mutableListOf<CustomType>()
                     list.addAll(previousValue)
@@ -1964,7 +1964,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?{arg}"
+                startDestination = "start_test?{arg}",
             ) {
                 test("start_test?{arg}") {
                     argument("arg") {
@@ -1987,7 +1987,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?opt={arg}"
+                startDestination = "start_test?opt={arg}",
             ) {
                 test("start_test?opt={arg}") {
                     argument("arg") {
@@ -2010,7 +2010,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?opt=null"
+                startDestination = "start_test?opt=null",
             ) {
                 test("start_test?opt={arg}") {
                     argument("arg") {
@@ -2091,7 +2091,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?myArg"
+                startDestination = "start_test?myArg",
             ) {
                 test("start_test?{arg}") { argument("arg") { type = NavType.StringType } }
             }
@@ -2114,7 +2114,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?opt=myArg"
+                startDestination = "start_test?opt=myArg",
             ) {
                 test("start_test?opt={arg}") { argument("arg") { type = NavType.StringType } }
             }
@@ -2459,7 +2459,7 @@ class NavControllerRouteTest {
         navController.graph =
             navController.createGraph(
                 route = TestGraph::class,
-                startDestination = TestClass::class
+                startDestination = TestClass::class,
             ) {
                 test<TestClass>()
             }
@@ -2703,7 +2703,7 @@ class NavControllerRouteTest {
         navController.graph =
             createNavController().createGraph(
                 route = "nav_root",
-                startDestination = "start_test?opt={arg}"
+                startDestination = "start_test?opt={arg}",
             ) {
                 test("start_test")
                 test("second_test?opt={arg}") {
@@ -2864,7 +2864,7 @@ class NavControllerRouteTest {
         navController.graph =
             navController.createGraph(
                 route = TestGraph::class,
-                startDestination = TestClass::class
+                startDestination = TestClass::class,
             ) {
                 test<TestClass>()
             }
@@ -3007,7 +3007,7 @@ class NavControllerRouteTest {
         navController.graph =
             navController.createGraph(
                 route = TestGraph::class,
-                startDestination = TestClass::class
+                startDestination = TestClass::class,
             ) {
                 test<TestClass>()
             }
@@ -3794,7 +3794,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uriOnly"),
                 null,
-                null
+                null,
             )
 
         navController.navigate(deepLink)
@@ -3969,7 +3969,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/test/uriAction"),
                 "uri.action",
-                null
+                null,
             )
 
         navController.navigate(deepLink)
@@ -3987,7 +3987,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uriMime"),
                 null,
-                "uri/mime"
+                "uri/mime",
             )
 
         navController.navigate(deepLink)
@@ -4215,7 +4215,7 @@ class NavControllerRouteTest {
                 Intent.ACTION_VIEW,
                 Uri.parse("android-app://androidx.navigation.test/test/argument1/argument2"),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
 
         Intents.init()
@@ -4245,7 +4245,7 @@ class NavControllerRouteTest {
                     object : LifecycleEventObserver {
                         override fun onStateChanged(
                             source: LifecycleOwner,
-                            event: Lifecycle.Event
+                            event: Lifecycle.Event,
                         ) {
                             if (event.targetState == Lifecycle.State.DESTROYED) {
                                 destroyActivityLatch.countDown()
@@ -4266,7 +4266,7 @@ class NavControllerRouteTest {
                 not(hasData(anyString())), // The rethrow should not use the URI as primary target.
                 hasExtra(
                     NavController.KEY_DEEP_LINK_IDS,
-                    intArrayOf(createRoute("nav_root").hashCode())
+                    intArrayOf(createRoute("nav_root").hashCode()),
                 ),
                 hasExtra(
                     Matchers.`is`(NavController.KEY_DEEP_LINK_EXTRAS),
@@ -4278,11 +4278,11 @@ class NavControllerRouteTest {
                             allOf(
                                 hasAction(intent.action),
                                 hasData(intent.data),
-                                hasComponent(intent.component)
-                            )
-                        )
-                    )
-                )
+                                hasComponent(intent.component),
+                            ),
+                        ),
+                    ),
+                ),
             )
         )
 
@@ -5553,11 +5553,7 @@ class NavControllerRouteTest {
         val navController = createNavController()
         navController.graph = nav_simple_route_graph
 
-        val args =
-            bundleOf(
-                "test" to "test",
-                "arg2" to "value",
-            )
+        val args = bundleOf("test" to "test", "arg2" to "value")
         val taskStackBuilder =
             navController
                 .createDeepLink()
@@ -5611,7 +5607,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uriOnly"),
                 null,
-                null
+                null,
             )
 
         navController.handleDeepLink(deepLink)
@@ -5655,7 +5651,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/test/uriAction"),
                 "uri.action",
-                null
+                null,
             )
 
         navController.handleDeepLink(deepLink)
@@ -5673,7 +5669,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uriMime"),
                 null,
-                "uri/mime"
+                "uri/mime",
             )
 
         navController.handleDeepLink(deepLink)
@@ -5714,7 +5710,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/test/uriAction"),
                 null,
-                null
+                null,
             )
 
         val result = navController.handleDeepLink(deepLink)
@@ -5730,7 +5726,7 @@ class NavControllerRouteTest {
             NavDeepLinkRequest(
                 Uri.parse("android-app://androidx.navigation.test/uriMime"),
                 null,
-                null
+                null,
             )
 
         val result = navController.handleDeepLink(deepLink)
@@ -5822,7 +5818,7 @@ class NavControllerRouteTest {
                 "simple_child_second_test",
                 // Then to the second destination added via addDestination()
                 "deep_link_child_start_test",
-                "deep_link_child_second_test"
+                "deep_link_child_second_test",
             )
             .inOrder()
     }
@@ -5940,7 +5936,7 @@ class NavControllerRouteTest {
                 Intent.ACTION_VIEW,
                 Uri.parse(createRoute("explicit_start_deeplink")),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
 
         assertWithMessage("handleDeepLink should return true with valid deep link")
@@ -5957,7 +5953,7 @@ class NavControllerRouteTest {
                 Intent.ACTION_VIEW,
                 Uri.parse(createRoute("start")),
                 ApplicationProvider.getApplicationContext() as Context,
-                TestActivity::class.java
+                TestActivity::class.java,
             )
 
         assertWithMessage("handleDeepLink should return false with invalid deep link")
@@ -6060,5 +6056,5 @@ class NavControllerRouteTest {
 
 private enum class TestTopLevelEnum {
     ONE,
-    TWO
+    TWO,
 }

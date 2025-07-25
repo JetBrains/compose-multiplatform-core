@@ -311,4 +311,13 @@ public class WebSettingsNoOpAdapter extends WebSettingsAdapter {
     public boolean getHasEnrolledInstrumentEnabled() {
         return false;
     }
+
+    @Override
+    public void setCookieAccessForShouldInterceptRequestEnabled(boolean enabled) {
+    }
+
+    @Override
+    public boolean getCookieAccessForShouldInterceptRequestEnabled() {
+        return false;
+    }
 }

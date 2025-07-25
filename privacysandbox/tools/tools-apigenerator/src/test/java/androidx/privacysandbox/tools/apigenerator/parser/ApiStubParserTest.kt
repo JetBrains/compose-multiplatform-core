@@ -97,16 +97,13 @@ class ApiStubParserTest {
         val expectedPayloadOption =
             AnnotatedEnumClass(
                 type = Type("com.mysdk", "PayloadOption"),
-                variants = listOf("SHAKEN", "STIRRED")
+                variants = listOf("SHAKEN", "STIRRED"),
             )
         val expectedPayloadType =
             AnnotatedDataClass(
                 type = Type("com.mysdk", "PayloadType"),
                 properties =
-                    listOf(
-                        ValueProperty("size", Types.long),
-                        ValueProperty("appId", Types.string),
-                    )
+                    listOf(ValueProperty("size", Types.long), ValueProperty("appId", Types.string)),
             )
         val expectedPayloadRequest =
             AnnotatedDataClass(
@@ -114,16 +111,13 @@ class ApiStubParserTest {
                 properties =
                     listOf(
                         ValueProperty("type", expectedPayloadType.type),
-                        ValueProperty("option", expectedPayloadOption.type)
-                    )
+                        ValueProperty("option", expectedPayloadOption.type),
+                    ),
             )
         val expectedPayloadResponse =
             AnnotatedDataClass(
                 type = Type("com.mysdk", "PayloadResponse"),
-                properties =
-                    listOf(
-                        ValueProperty("url", Types.string),
-                    )
+                properties = listOf(ValueProperty("url", Types.string)),
             )
         val expectedService =
             AnnotatedInterface(
@@ -135,7 +129,7 @@ class ApiStubParserTest {
                             parameters =
                                 listOf(
                                     Parameter("magicNumber", Types.int),
-                                    Parameter("awesomeString", Types.string.asNullable())
+                                    Parameter("awesomeString", Types.string.asNullable()),
                                 ),
                             returnType = Types.unit,
                             isSuspend = false,
@@ -164,7 +158,7 @@ class ApiStubParserTest {
                             returnType = Types.list(Types.long),
                             isSuspend = true,
                         ),
-                    )
+                    ),
             )
         val expectedInterfaces =
             listOf(
@@ -179,7 +173,7 @@ class ApiStubParserTest {
                                 returnType = expectedPayloadResponse.type,
                                 isSuspend = true,
                             )
-                        )
+                        ),
                 ),
                 AnnotatedInterface(
                     type = Type(packageName = "com.mysdk", simpleName = "MyUiInterface"),
@@ -190,7 +184,7 @@ class ApiStubParserTest {
                     type = Type(packageName = "com.mysdk", simpleName = "MySharedUiInterface"),
                     superTypes = listOf(Types.sharedUiAdapter),
                     methods = listOf(),
-                )
+                ),
             )
         val expectedCallback =
             AnnotatedInterface(
@@ -199,14 +193,11 @@ class ApiStubParserTest {
                     listOf(
                         Method(
                             name = "onComplete",
-                            parameters =
-                                listOf(
-                                    Parameter("status", Types.int),
-                                ),
+                            parameters = listOf(Parameter("status", Types.int)),
                             returnType = Types.unit,
                             isSuspend = false,
-                        ),
-                    )
+                        )
+                    ),
             )
 
         val actualApi = compileAndParseApi(source)
@@ -233,40 +224,35 @@ class ApiStubParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk
-                """
+                """,
                     ),
                     Source.kotlin(
                         "com/mysdk/NonAnnotatedInterface.kt",
                         """
                     package com.mysdk
                     interface NonAnnotatedInterface
-                """
+                """,
                     ),
                     Source.kotlin(
                         "com/mysdk/NonAnnotatedClass.kt",
                         """
                     package com.mysdk
                     class NonAnnotatedClass
-                """
+                """,
                     ),
                     Source.java(
                         "com/mysdk/NonAnnotatedJavaClass",
                         """
                     package com.mysdk;
                     class NonAnnotatedJavaClass {}
-                """
-                    )
+                """,
+                    ),
                 )
                 .services
 
         assertThat(interfaces)
             .containsExactly(
-                AnnotatedInterface(
-                    Type(
-                        packageName = "com.mysdk",
-                        simpleName = "MySdk",
-                    )
-                )
+                AnnotatedInterface(Type(packageName = "com.mysdk", simpleName = "MySdk"))
             )
     }
 
@@ -279,7 +265,7 @@ class ApiStubParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).services)
@@ -298,7 +284,7 @@ class ApiStubParserTest {
                     interface MySdk {
                         fun useLauncher(launcher: SdkActivityLauncher)
                     }
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).containsSdkActivityLauncher()).isTrue()
@@ -320,7 +306,7 @@ class ApiStubParserTest {
                     interface MyInterface {
                         fun useLauncher(launcher: SdkActivityLauncher)
                     }
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).containsSdkActivityLauncher()).isTrue()
@@ -342,7 +328,7 @@ class ApiStubParserTest {
                     interface MyCallback {
                         fun useLauncher(launcher: SdkActivityLauncher)
                     }
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).containsSdkActivityLauncher()).isTrue()
@@ -362,7 +348,7 @@ class ApiStubParserTest {
 
                     @PrivacySandboxValue
                     data class MyValue(val launcher: SdkActivityLauncher)
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).containsSdkActivityLauncher()).isTrue()
@@ -381,7 +367,7 @@ class ApiStubParserTest {
                     interface MySdk {
                         fun doStuff(input: String)
                     }
-                """
+                """,
             )
 
         assertThat(compileAndParseApi(source).containsSdkActivityLauncher()).isFalse()
@@ -397,7 +383,7 @@ class ApiStubParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService;
                     @PrivacySandboxService
                     interface MySdk {}
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -417,7 +403,7 @@ class ApiStubParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     class MySdk
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -441,7 +427,7 @@ class ApiStubParserTest {
                     interface MySdk
                     @PrivacySandboxValue
                     class Value
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -465,7 +451,7 @@ class ApiStubParserTest {
                     interface MySdk
                     @PrivacySandboxValue
                     interface Value
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -489,7 +475,7 @@ class ApiStubParserTest {
                     interface MySdk
                     @PrivacySandboxValue
                     data class Value(var message: String)
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -512,7 +498,7 @@ class ApiStubParserTest {
                       @PrivacySandboxService
                       interface InnerMySdk
                     }
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -531,7 +517,7 @@ class ApiStubParserTest {
                 """
                     package com.mysdk
                     interface MySdk
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }
@@ -556,7 +542,7 @@ class ApiStubParserTest {
                        FOO,
                        BAR,
                     }
-                """
+                """,
             )
 
         assertThrows<PrivacySandboxParsingException> { compileAndParseApi(source) }

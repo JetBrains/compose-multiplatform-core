@@ -57,7 +57,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
         val firstCallAttributes: CallAttributesCompat,
         val firstCallExpectInactive: Boolean = true,
         val secondCallAttributes: CallAttributesCompat,
-        val secondCallExpectInactive: Boolean = false
+        val secondCallExpectInactive: Boolean = false,
     )
 
     // List of call scenarios to test. Each scenario represents a different
@@ -70,7 +70,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
                 firstCallAttributes = OUTGOING_CALL_ATTRIBUTES,
                 firstCallExpectInactive = true,
                 secondCallAttributes = INCOMING_CALL_ATTRIBUTES,
-                secondCallExpectInactive = false
+                secondCallExpectInactive = false,
             ),
             // Scenario 2: Start a call and make an outgoing call. The active call
             // is expected to become inactive when the outgoing call starts.
@@ -78,8 +78,8 @@ class ConcurrentCallingTest : BaseTelecomTest() {
                 firstCallAttributes = INCOMING_CALL_ATTRIBUTES,
                 firstCallExpectInactive = true,
                 secondCallAttributes = OUTGOING_CALL_ATTRIBUTES,
-                secondCallExpectInactive = false
-            )
+                secondCallExpectInactive = false,
+            ),
         )
 
     @SdkSuppress(minSdkVersion = VERSION_CODES.O)
@@ -100,7 +100,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
                         addCall(
                             activeResult = firstCallIsActive,
                             callAttributes = scenario.firstCallAttributes,
-                            expectInactiveCallback = scenario.firstCallExpectInactive
+                            expectInactiveCallback = scenario.firstCallExpectInactive,
                         )
                     }
 
@@ -113,7 +113,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
                     val secondCallDeferred = async {
                         addCall(
                             callAttributes = scenario.secondCallAttributes,
-                            expectInactiveCallback = scenario.secondCallExpectInactive
+                            expectInactiveCallback = scenario.secondCallExpectInactive,
                         )
                     }
 
@@ -141,7 +141,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
         activeResult: CompletableDeferred<CallControlResult> =
             CompletableDeferred<CallControlResult>(),
         callAttributes: CallAttributesCompat,
-        expectInactiveCallback: Boolean
+        expectInactiveCallback: Boolean,
     ): CallControlResult {
         val inactiveCall = run {
             // TODO:: b/391963273 to fix onSetInactive issue on P- builds
@@ -162,7 +162,7 @@ class ConcurrentCallingTest : BaseTelecomTest() {
                 {
                     Log.d(TAG, "onSetInActive: name=[${callAttributes.displayName}] completing")
                     inactiveCall.complete(Unit)
-                }
+                },
             ) {
                 launch {
                     try {

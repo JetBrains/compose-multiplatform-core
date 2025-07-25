@@ -24,6 +24,7 @@ import kotlin.math.abs
 import kotlin.math.cbrt
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -167,6 +168,7 @@ class MathHelpersTest {
     }
 
     @Test
+    @Ignore // Currently it takes ~5m, consider doing it in parallel before enabling
     fun testCosSinError() {
         val maxCosError = 1.63232e-3f
         val maxSinError = 1.63198e-3f

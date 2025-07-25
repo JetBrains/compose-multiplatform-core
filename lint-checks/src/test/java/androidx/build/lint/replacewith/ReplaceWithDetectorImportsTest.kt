@@ -65,7 +65,7 @@ Fix for src/replacewith/MethodWithImportsJava.java line 42: Replace with `newMet
         val input =
             arrayOf(
                 ktSample("replacewith.MethodWithImportsKotlin"),
-                javaSample("replacewith.ReplaceWithUsageJava")
+                javaSample("replacewith.ReplaceWithUsageJava"),
             )
 
         val expected =
@@ -145,7 +145,7 @@ Fix for src/replacewith/MethodWithNoImportsJava.java line 41: Replace with `newM
         val input =
             arrayOf(
                 ktSample("replacewith.MethodWithNoImportsKotlin"),
-                javaSample("replacewith.ReplaceWithUsageJava")
+                javaSample("replacewith.ReplaceWithUsageJava"),
             )
 
         val expected =

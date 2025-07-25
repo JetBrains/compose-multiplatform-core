@@ -32,6 +32,8 @@ internal class UIKitInteropContainer(
     private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()
     private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
 
+    val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
+
     // TODO: Android reuses `owner.snapshotObserver`. We should probably do the same with RootNodeOwner.
     /**
      * Snapshot observer that is used by underlying [InteropViewHolder] to observe changes in

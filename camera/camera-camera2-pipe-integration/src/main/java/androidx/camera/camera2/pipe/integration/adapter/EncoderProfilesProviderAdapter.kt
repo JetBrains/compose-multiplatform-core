@@ -53,7 +53,7 @@ public class EncoderProfilesProviderAdapter(
             Logger.w(
                 TAG,
                 "Camera id is not an integer:  $cameraIdString, unable to create" +
-                    " EncoderProfilesProviderAdapter."
+                    " EncoderProfilesProviderAdapter.",
             )
         }
         this.hasValidCameraId = hasValidCameraId
@@ -124,7 +124,7 @@ public class EncoderProfilesProviderAdapter(
                 Logger.d(
                     TAG,
                     "EncoderProfiles contains invalid video profiles, use " +
-                        "CamcorderProfile to create EncoderProfilesProxy."
+                        "CamcorderProfile to create EncoderProfilesProxy.",
                 )
             } else {
                 try {
@@ -134,7 +134,7 @@ public class EncoderProfilesProviderAdapter(
                         TAG,
                         "Failed to create EncoderProfilesProxy, EncoderProfiles might " +
                             "contain invalid video profiles. Use CamcorderProfile instead.",
-                        e
+                        e,
                     )
                 }
             }

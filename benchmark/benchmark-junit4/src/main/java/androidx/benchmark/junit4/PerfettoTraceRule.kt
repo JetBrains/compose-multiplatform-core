@@ -79,7 +79,7 @@ class PerfettoTraceRule(
     val enableUserspaceTracing: Boolean = false,
 
     /** Callback for each captured trace. */
-    val traceCallback: ((PerfettoTrace) -> Unit)? = null
+    val traceCallback: ((PerfettoTrace) -> Unit)? = null,
 ) : TestRule {
     constructor(
         /**
@@ -97,22 +97,22 @@ class PerfettoTraceRule(
         enableUserspaceTracing: Boolean = false,
 
         /** Callback for each captured trace. */
-        traceCallback: ((PerfettoTrace) -> Unit)? = null
+        traceCallback: ((PerfettoTrace) -> Unit)? = null,
     ) : this(
         config =
             PerfettoConfig.Benchmark(
                 appTagPackages = if (enableAppTagTracing) listOf(thisPackage) else emptyList(),
-                useStackSamplingConfig = false
+                useStackSamplingConfig = false,
             ),
         enableUserspaceTracing = enableUserspaceTracing,
-        traceCallback = traceCallback
+        traceCallback = traceCallback,
     )
 
     override fun apply(
         @Suppress("InvalidNullabilityOverride") // JUnit missing annotations
         base: Statement,
         @Suppress("InvalidNullabilityOverride") // JUnit missing annotations
-        description: Description
+        description: Description,
     ): Statement =
         object : Statement() {
             override fun evaluate() {
@@ -125,7 +125,7 @@ class PerfettoTraceRule(
                             if (enableUserspaceTracing && Build.VERSION.SDK_INT >= 23) {
                                 PerfettoCapture.PerfettoSdkConfig(
                                     thisPackage,
-                                    InitialProcessState.Alive
+                                    InitialProcessState.Alive,
                                 )
                             } else null,
                         traceCallback = { path ->
@@ -134,7 +134,7 @@ class PerfettoTraceRule(
                                 reportSummaryToIde(
                                     testName = label,
                                     profilerResults =
-                                        listOf(Profiler.ResultFile.ofPerfettoTrace("Trace", path))
+                                        listOf(Profiler.ResultFile.ofPerfettoTrace("Trace", path)),
                                 )
                             }
                             traceCallback?.invoke(trace)
@@ -143,7 +143,7 @@ class PerfettoTraceRule(
                         // Temporary, see b/409397427
                         // after that is resolved, switch back to PerfettoTrace.record()
                         inMemoryTracingLabel = "InMemoryTracing",
-                        block = { base.evaluate() }
+                        block = { base.evaluate() },
                     )
             }
         }

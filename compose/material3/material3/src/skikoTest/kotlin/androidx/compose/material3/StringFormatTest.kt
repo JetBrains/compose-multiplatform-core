@@ -16,7 +16,7 @@
 
 package androidx.compose.material3
 
-import androidx.compose.material3.internal.format
+import androidx.compose.material3.internal.formatString
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -24,50 +24,50 @@ class StringFormatTest {
 
     @Test
     fun no_args() {
-        val result = "str".format()
+        val result = formatString("str")
         assertEquals("str", result)
     }
 
     @Test
     fun one_number_arg() {
-        val result = "str %1\$d".format(1)
+        val result = formatString("str %1\$d", 1)
         assertEquals("str 1", result)
     }
 
     @Test
     fun one_string_arg() {
-        val result = "str %1\$s".format("1")
+        val result = formatString("str %1\$s", "1")
         assertEquals("str 1", result)
     }
 
     @Test
     fun two_number_args() {
-        val result = "str %1\$d %2\$d".format(1, 2)
+        val result = formatString("str %1\$d %2\$d", 1, 2)
         assertEquals("str 1 2", result)
     }
 
     @Test
     fun two_string_args() {
-        val result = "str %1\$s %2\$s".format("1", "2")
+        val result = formatString("str %1\$s %2\$s", "1", "2")
         assertEquals("str 1 2", result)
     }
 
     @Test
     fun string_and_number_args() {
-        val result = "str %1\$s %2\$d".format("1", 2)
+        val result = formatString("str %1\$s %2\$d", "1", 2)
         assertEquals("str 1 2", result)
     }
 
     @Test
     fun too_many_args() {
-        val result = "str %1\$d".format(1, 2)
+        val result = formatString("str %1\$d", 1, 2)
         assertEquals("str 1", result)
     }
 
     @Test
     fun not_enough_args() {
         // Behavior is not specified. We can consider different variants.
-        val result = "str %1\$d".format()
+        val result = formatString("str %1\$d", )
         assertEquals("str %1\$d", result)
     }
 

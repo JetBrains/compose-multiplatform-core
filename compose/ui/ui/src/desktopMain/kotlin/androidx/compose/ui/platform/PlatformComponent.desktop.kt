@@ -21,18 +21,20 @@ import java.awt.Point
 import java.awt.im.InputMethodRequests
 
 internal interface PlatformComponent {
-    fun enableInput(inputMethodRequests: InputMethodRequests)
-    fun disableInput()
     // Input service needs to know this information to implement Input Method support
     val locationOnScreen: Point
     val density: Density
 
+    fun enableInput(inputMethodRequests: InputMethodRequests)
+
+    fun disableInput()
+
     companion object {
         val Empty = object : PlatformComponent {
-            override fun enableInput(inputMethodRequests: InputMethodRequests) = Unit
-            override fun disableInput() = Unit
             override val locationOnScreen = Point(0, 0)
             override val density = Density(1f)
+            override fun enableInput(inputMethodRequests: InputMethodRequests) = Unit
+            override fun disableInput() = Unit
         }
     }
 }

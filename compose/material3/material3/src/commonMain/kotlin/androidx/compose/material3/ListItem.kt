@@ -107,7 +107,7 @@ fun ListItem(
         ProvideTextStyleFromToken(
             colors.headlineColor(enabled = true),
             ListTokens.ListItemLabelTextFont,
-            headlineContent
+            headlineContent,
         )
     }
     val decoratedSupportingContent: @Composable (() -> Unit)? =
@@ -116,7 +116,7 @@ fun ListItem(
                 ProvideTextStyleFromToken(
                     colors.supportingColor(),
                     ListTokens.ListItemSupportingTextFont,
-                    it
+                    it,
                 )
             }
         }
@@ -126,7 +126,7 @@ fun ListItem(
                 ProvideTextStyleFromToken(
                     colors.overlineColor(),
                     ListTokens.ListItemOverlineFont,
-                    it
+                    it,
                 )
             }
         }
@@ -136,7 +136,7 @@ fun ListItem(
                 Box(Modifier.padding(end = LeadingContentEndPadding)) {
                     CompositionLocalProvider(
                         LocalContentColor provides colors.leadingIconColor(enabled = true),
-                        content = it
+                        content = it,
                     )
                 }
             }
@@ -148,7 +148,7 @@ fun ListItem(
                     ProvideTextStyleFromToken(
                         colors.trailingIconColor(enabled = true),
                         ListTokens.ListItemTrailingSupportingTextFont,
-                        content = it
+                        content = it,
                     )
                 }
             }
@@ -183,13 +183,7 @@ private fun ListItemLayout(
     val measurePolicy = remember { ListItemMeasurePolicy() }
     Layout(
         contents =
-            listOf(
-                headline,
-                overline ?: {},
-                supporting ?: {},
-                leading ?: {},
-                trailing ?: {},
-            ),
+            listOf(headline, overline ?: {}, supporting ?: {}, leading ?: {}, trailing ?: {}),
         measurePolicy = measurePolicy,
     )
 }
@@ -197,7 +191,7 @@ private fun ListItemLayout(
 private class ListItemMeasurePolicy : MultiContentMeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<List<Measurable>>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val (
             headlineMeasurable,
@@ -272,7 +266,7 @@ private class ListItemMeasurePolicy : MultiContentMeasurePolicy {
                 ?.measure(
                     paddedLooseConstraints.offset(
                         horizontal = -currentTotalWidth,
-                        vertical = -currentTotalHeight
+                        vertical = -currentTotalHeight,
                     )
                 )
         currentTotalHeight += supportingPlaceable.heightOrZero
@@ -286,7 +280,7 @@ private class ListItemMeasurePolicy : MultiContentMeasurePolicy {
                 ?.measure(
                     paddedLooseConstraints.offset(
                         horizontal = -currentTotalWidth,
-                        vertical = -currentTotalHeight
+                        vertical = -currentTotalHeight,
                     )
                 )
 
@@ -338,22 +332,22 @@ private class ListItemMeasurePolicy : MultiContentMeasurePolicy {
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
-        width: Int
+        width: Int,
     ): Int = calculateIntrinsicHeight(measurables, width, IntrinsicMeasurable::maxIntrinsicHeight)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
-        height: Int
+        height: Int,
     ): Int = calculateIntrinsicWidth(measurables, height, IntrinsicMeasurable::maxIntrinsicWidth)
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<List<IntrinsicMeasurable>>,
-        width: Int
+        width: Int,
     ): Int = calculateIntrinsicHeight(measurables, width, IntrinsicMeasurable::minIntrinsicHeight)
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<List<IntrinsicMeasurable>>,
-        height: Int
+        height: Int,
     ): Int = calculateIntrinsicWidth(measurables, height, IntrinsicMeasurable::minIntrinsicWidth)
 
     private fun IntrinsicMeasureScope.calculateIntrinsicWidth(
@@ -495,7 +489,7 @@ private fun MeasureScope.place(
         leadingPlaceable?.let {
             it.placeRelative(
                 x = startPadding,
-                y = if (isThreeLine) topPadding else CenterVertically.align(it.height, height)
+                y = if (isThreeLine) topPadding else CenterVertically.align(it.height, height),
             )
         }
 
@@ -523,7 +517,7 @@ private fun MeasureScope.place(
         trailingPlaceable?.let {
             it.placeRelative(
                 x = width - endPadding - it.width,
-                y = if (isThreeLine) topPadding else CenterVertically.align(it.height, height)
+                y = if (isThreeLine) topPadding else CenterVertically.align(it.height, height),
             )
         }
     }
@@ -710,7 +704,7 @@ private fun ProvideTextStyleFromToken(
     ProvideContentColorTextStyle(
         contentColor = color,
         textStyle = textToken.value,
-        content = content
+        content = content,
     )
 
 /** Helper class to define list item type. Used for padding and sizing definition. */

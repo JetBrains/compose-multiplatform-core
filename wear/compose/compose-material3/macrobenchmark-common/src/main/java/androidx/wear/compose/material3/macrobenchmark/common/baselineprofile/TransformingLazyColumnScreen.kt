@@ -55,7 +55,7 @@ val TransformingLazyColumnScreen =
                                     modifier =
                                         Modifier.transformedHeight(this, transformationSpec)
                                             .animateItem(),
-                                    transformation = SurfaceTransformation(transformationSpec)
+                                    transformation = SurfaceTransformation(transformationSpec),
                                 ) {
                                     Text("Card $it")
                                 }
@@ -63,7 +63,7 @@ val TransformingLazyColumnScreen =
                             item {
                                 ListHeader(
                                     modifier = Modifier.transformedHeight(this, transformationSpec),
-                                    transformation = SurfaceTransformation(transformationSpec)
+                                    transformation = SurfaceTransformation(transformationSpec),
                                 ) {
                                     Text("Buttons")
                                 }
@@ -74,7 +74,7 @@ val TransformingLazyColumnScreen =
                                     modifier =
                                         Modifier.transformedHeight(this, transformationSpec)
                                             .animateItem(),
-                                    transformation = SurfaceTransformation(transformationSpec)
+                                    transformation = SurfaceTransformation(transformationSpec),
                                 ) {
                                     Text("Button $it")
                                 }

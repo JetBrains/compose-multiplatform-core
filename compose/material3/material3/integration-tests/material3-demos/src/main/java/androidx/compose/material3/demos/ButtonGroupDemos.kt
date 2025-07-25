@@ -16,6 +16,7 @@
 
 package androidx.compose.material3.demos
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,11 +30,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DoNotDisturbOn
 import androidx.compose.material.icons.filled.FlashlightOn
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.DoNotDisturbOn
@@ -44,13 +47,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButtonDefaults.IconButtonWidthOption.Companion.Narrow
 import androidx.compose.material3.IconButtonDefaults.IconButtonWidthOption.Companion.Wide
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
@@ -59,6 +61,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -69,27 +72,28 @@ fun ButtonGroupDemos() {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box {
             ButtonGroup(
                 overflowIndicator = { menuState ->
-                    IconButton(
-                        onClick = {
+                    FilledIconToggleButton(
+                        checked = false,
+                        onCheckedChange = {
                             if (menuState.isExpanded) {
                                 menuState.dismiss()
                             } else {
                                 menuState.show()
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Localized description"
+                            contentDescription = "Localized description",
                         )
                     }
                 },
-                modifier = Modifier.padding(horizontal = 8.dp)
+                modifier = Modifier.padding(horizontal = 8.dp),
             ) {
                 customItem(
                     buttonGroupContent = {
@@ -98,71 +102,108 @@ fun ButtonGroupDemos() {
                             checked = checked[0],
                             onCheckedChange = { checked[0] = it },
                             shapes = IconButtonDefaults.toggleableShapes(),
-                            modifier = Modifier.animateWidth(interactionSources[0])
+                            modifier = Modifier.animateWidth(interactionSources[0]),
                         ) {
                             if (checked[0]) {
                                 Icon(
                                     Icons.Filled.Bluetooth,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Bluetooth,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Bluetooth") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[0]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[0]) {
                                     Icon(
-                                        Icons.Filled.Bluetooth,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Bluetooth,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Bluetooth,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[0] = !checked[0]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
-                        FilledIconButton(
+                        FilledIconToggleButton(
                             interactionSource = interactionSources[1],
-                            onClick = { /* doSomething() */ },
-                            shapes = IconButtonDefaults.shapes(),
+                            checked = checked[1],
+                            onCheckedChange = { checked[1] = it },
+                            shapes = IconButtonDefaults.toggleableShapes(),
                             modifier =
                                 Modifier.width(IconButtonDefaults.smallContainerSize(Wide).width)
-                                    .animateWidth(interactionSources[1])
+                                    .animateWidth(interactionSources[1]),
                         ) {
-                            Icon(Icons.Filled.Alarm, contentDescription = "Localized description")
+                            if (checked[1]) {
+                                Icon(
+                                    Icons.Filled.Alarm,
+                                    contentDescription = "Localized description",
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Alarm,
+                                    contentDescription = "Localized description",
+                                )
+                            }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Alarm") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[1]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Alarm,
-                                    contentDescription = "Localized description"
-                                )
+                                if (checked[0]) {
+                                    Icon(
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Filled.Alarm,
+                                        contentDescription = "Localized description",
+                                    )
+                                }
                             },
-                            onClick = { state.dismiss() }
+                            onClick = {
+                                checked[1] = !checked[1]
+                                state.dismiss()
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -170,46 +211,59 @@ fun ButtonGroupDemos() {
                             checked = checked[2],
                             onCheckedChange = { checked[2] = it },
                             modifier = Modifier.width(125.dp).animateWidth(interactionSources[2]),
-                            interactionSource = interactionSources[2]
+                            interactionSource = interactionSources[2],
                         ) {
                             if (checked[2]) {
                                 Icon(
                                     Icons.Filled.DoNotDisturbOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.DoNotDisturbOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Spacer(
+                                modifier =
+                                    Modifier.size(
+                                        ButtonDefaults.iconSpacingFor(ButtonDefaults.MinHeight)
+                                    )
+                            )
                             Text("focus")
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Focus") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[2]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[2]) {
                                     Icon(
-                                        Icons.Filled.DoNotDisturbOn,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.DoNotDisturbOn,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.DoNotDisturbOn,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[2] = !checked[2]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -219,44 +273,52 @@ fun ButtonGroupDemos() {
                             interactionSource = interactionSources[3],
                             modifier =
                                 Modifier.width(IconButtonDefaults.smallContainerSize(Narrow).width)
-                                    .animateWidth(interactionSources[3])
+                                    .animateWidth(interactionSources[3]),
                         ) {
                             if (checked[3]) {
                                 Icon(
                                     Icons.Filled.FlashlightOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.FlashlightOn,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Flashlight") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[3]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[3]) {
                                     Icon(
-                                        Icons.Filled.FlashlightOn,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.FlashlightOn,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.FlashlightOn,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[3] = !checked[3]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -266,48 +328,56 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[4] = it },
                             interactionSource = interactionSources[4],
-                            modifier = Modifier.animateWidth(interactionSources[4])
+                            modifier = Modifier.animateWidth(interactionSources[4]),
                         ) {
                             if (checked[4]) {
                                 Icon(
                                     Icons.Filled.Wifi,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Wifi,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
+                            modifier =
+                                Modifier.background(
+                                    if (checked[4]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             text = { Text("Wifi") },
                             leadingIcon = {
                                 if (checked[4]) {
                                     Icon(
-                                        Icons.Filled.Wifi,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Wifi,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Wifi,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[4] = !checked[4]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -317,48 +387,56 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[5] = it },
                             interactionSource = interactionSources[5],
-                            modifier = Modifier.animateWidth(interactionSources[5])
+                            modifier = Modifier.animateWidth(interactionSources[5]),
                         ) {
                             if (checked[5]) {
                                 Icon(
                                     Icons.Filled.Wallet,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Wallet,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
-                            enabled = true,
                             text = { Text("Wallet") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[5]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[5]) {
                                     Icon(
-                                        Icons.Filled.Wallet,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Wallet,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Wallet,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[5] = !checked[5]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
                 customItem(
                     buttonGroupContent = {
@@ -368,48 +446,57 @@ fun ButtonGroupDemos() {
                                 ToggleButtonDefaults.shapes(
                                     ToggleButtonDefaults.squareShape,
                                     ToggleButtonDefaults.pressedShape,
-                                    ToggleButtonDefaults.checkedShape
+                                    ToggleButtonDefaults.checkedShape,
                                 ),
                             onCheckedChange = { checked[6] = it },
                             interactionSource = interactionSources[6],
-                            modifier = Modifier.animateWidth(interactionSources[6])
+                            modifier = Modifier.animateWidth(interactionSources[6]),
                         ) {
                             if (checked[6]) {
                                 Icon(
                                     Icons.Filled.Calculate,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             } else {
                                 Icon(
                                     Icons.Outlined.Calculate,
-                                    contentDescription = "Localized description"
+                                    contentDescription = "Localized description",
                                 )
                             }
                         }
                     },
                     menuContent = { state ->
+                        // Use expressive menu when available
                         DropdownMenuItem(
                             enabled = true,
                             text = { Text("Calculator") },
+                            modifier =
+                                Modifier.background(
+                                    if (checked[6]) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        Color.Unspecified
+                                    }
+                                ),
                             leadingIcon = {
                                 if (checked[6]) {
                                     Icon(
-                                        Icons.Filled.Calculate,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Check,
+                                        contentDescription = "Localized description",
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Calculate,
-                                        contentDescription = "Localized description"
+                                        Icons.Filled.Calculate,
+                                        contentDescription = "Localized description",
                                     )
                                 }
                             },
                             onClick = {
                                 checked[6] = !checked[6]
                                 state.dismiss()
-                            }
+                            },
                         )
-                    }
+                    },
                 )
             }
         }

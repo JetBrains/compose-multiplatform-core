@@ -44,7 +44,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class ViewfinderViewBitmapTest(
     private val implementationMode: ImplementationMode,
-    private val scaleType: ScaleType
+    private val scaleType: ScaleType,
 ) {
     companion object {
         @JvmStatic
@@ -57,7 +57,7 @@ class ViewfinderViewBitmapTest(
                         ScaleType.FILL_END,
                         ScaleType.FIT_CENTER,
                         ScaleType.FIT_START,
-                        ScaleType.FIT_END
+                        ScaleType.FIT_END,
                     )
                     .map { scaleType -> arrayOf(impl, scaleType) }
             }
@@ -88,7 +88,7 @@ class ViewfinderViewBitmapTest(
                     try {
                         ContextCompat.getDrawable(
                                 context,
-                                androidx.camera.viewfinder.view.test.R.drawable.baseline_face_2_24
+                                androidx.camera.viewfinder.view.test.R.drawable.baseline_face_2_24,
                             )
                             ?.let { drawable ->
                                 // Map input drawable to the output surface
@@ -97,7 +97,7 @@ class ViewfinderViewBitmapTest(
                                             0f,
                                             0f,
                                             drawable.intrinsicWidth.toFloat(),
-                                            drawable.intrinsicHeight.toFloat()
+                                            drawable.intrinsicHeight.toFloat(),
                                         )
                                         .also { srcRect ->
                                             Matrix()
@@ -108,9 +108,9 @@ class ViewfinderViewBitmapTest(
                                                             0f,
                                                             0f,
                                                             canvas.width.toFloat(),
-                                                            canvas.height.toFloat()
+                                                            canvas.height.toFloat(),
                                                         ),
-                                                        Matrix.ScaleToFit.CENTER
+                                                        Matrix.ScaleToFit.CENTER,
                                                     )
                                                 }
                                                 .mapRect(srcRect)

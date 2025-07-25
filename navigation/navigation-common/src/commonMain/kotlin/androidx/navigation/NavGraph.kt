@@ -57,7 +57,7 @@ public expect open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
         route: String,
         searchChildren: Boolean,
         searchParent: Boolean,
-        lastVisited: NavDestination
+        lastVisited: NavDestination,
     ): DeepLinkMatch?
 
     /**
@@ -70,7 +70,7 @@ public expect open class NavGraph(navGraphNavigator: Navigator<out NavGraph>) :
         navDeepLinkRequest: NavDeepLinkRequest,
         searchChildren: Boolean,
         searchParent: Boolean,
-        lastVisited: NavDestination
+        lastVisited: NavDestination,
     ): DeepLinkMatch?
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

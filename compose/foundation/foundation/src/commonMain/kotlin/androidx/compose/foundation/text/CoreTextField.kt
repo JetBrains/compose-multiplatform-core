@@ -35,6 +35,7 @@ import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
 import androidx.compose.foundation.text.input.internal.legacyTextInputServiceAdapterAndService
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
+import androidx.compose.foundation.text.selection.SelectedTextType
 import androidx.compose.foundation.text.selection.SelectionHandleAnchor
 import androidx.compose.foundation.text.selection.SelectionHandleInfo
 import androidx.compose.foundation.text.selection.SelectionHandleInfoKey
@@ -43,9 +44,9 @@ import androidx.compose.foundation.text.selection.TextFieldSelectionHandle
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
+import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
 import androidx.compose.foundation.text.selection.selectionGestureInput
 import androidx.compose.foundation.text.selection.textFieldMagnifier
-import androidx.compose.foundation.text.selection.updateSelectionTouchMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.DontMemoize
@@ -73,8 +74,6 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -261,10 +260,10 @@ internal fun CoreTextField(
                     style = textStyle,
                     softWrap = softWrap,
                     density = density,
-                    fontFamilyResolver = fontFamilyResolver
+                    fontFamilyResolver = fontFamilyResolver,
                 ),
                 recomposeScope = scope,
-                keyboardController = keyboardController
+                keyboardController = keyboardController,
             )
         }
     state.update(
@@ -277,7 +276,7 @@ internal fun CoreTextField(
         onValueChange,
         keyboardActions,
         focusManager,
-        selectionBackgroundColor
+        selectionBackgroundColor,
     )
 
     // notify the EditProcessor of value every recomposition
@@ -302,8 +301,13 @@ internal fun CoreTextField(
     manager.focusRequester = focusRequester
     manager.editable = !readOnly
     manager.enabled = enabled
+    @OptIn(ExperimentalFoundationApi::class)
+    if (ComposeFoundationFlags.isSmartSelectionEnabled) {
+        manager.platformSelectionBehaviors =
+            rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
+    }
 
-    // TODO: upstreaming https://youtrack.jetbrains.com/issue/CMP-7517/Upstream-rememberClipboardEventsHandler
+    // TODO: Upstreaming https://youtrack.jetbrains.com/issue/CMP-7517
     rememberClipboardEventsHandler(
         isEnabled = state.hasFocus,
         onCopy = { manager.onCopyWithResult() },
@@ -316,7 +320,7 @@ internal fun CoreTextField(
         Modifier.textFieldFocusModifier(
             enabled = enabled,
             focusRequester = focusRequester,
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         ) {
             if (state.hasFocus == it.isFocused) {
                 return@textFieldFocusModifier
@@ -343,7 +347,7 @@ internal fun CoreTextField(
                             value,
                             state.textDelegate,
                             layoutResult.value,
-                            offsetMapping
+                            offsetMapping,
                         )
                     }
                 }
@@ -365,7 +369,7 @@ internal fun CoreTextField(
                             state,
                             manager.value,
                             imeOptions,
-                            manager.offsetMapping
+                            manager.offsetMapping,
                         )
                     } else {
                         endInputSession(state)
@@ -394,7 +398,7 @@ internal fun CoreTextField(
                         offsetMapping,
                         layoutResult.value,
                         state.highlightPaint,
-                        state.selectionBackgroundColor
+                        state.selectionBackgroundColor,
                     )
                 }
             }
@@ -428,7 +432,7 @@ internal fun CoreTextField(
                                 inputSession,
                                 value,
                                 offsetMapping,
-                                layoutResult
+                                layoutResult,
                             )
                         }
                     }
@@ -448,7 +452,7 @@ internal fun CoreTextField(
             offsetMapping,
             manager,
             imeOptions,
-            focusRequester
+            focusRequester,
         )
 
     val showCursor = enabled && !readOnly && windowInfo.isWindowFocused && !state.hasHighlight()
@@ -465,7 +469,7 @@ internal fun CoreTextField(
                     editProcessor = state.processor,
                     imeOptions = imeOptions,
                     onValueChange = state.onValueChange,
-                    onImeActionPerformed = state.onImeActionPerformed
+                    onImeActionPerformed = state.onImeActionPerformed,
                 )
         }
         onDispose { /* do nothing */ }
@@ -573,7 +577,7 @@ internal fun CoreTextField(
                         object : MeasurePolicy {
                             override fun MeasureScope.measure(
                                 measurables: List<Measurable>,
-                                constraints: Constraints
+                                constraints: Constraints,
                             ): MeasureResult {
                                 val prevProxy =
                                     Snapshot.withoutReadObservation { state.layoutResult }
@@ -583,7 +587,7 @@ internal fun CoreTextField(
                                         state.textDelegate,
                                         constraints,
                                         layoutDirection,
-                                        prevResult
+                                        prevResult,
                                     )
                                 if (prevResult != result) {
                                     state.layoutResult =
@@ -617,19 +621,19 @@ internal fun CoreTextField(
                                     alignmentLines =
                                         mapOf(
                                             FirstBaseline to result.firstBaseline.fastRoundToInt(),
-                                            LastBaseline to result.lastBaseline.fastRoundToInt()
-                                        )
+                                            LastBaseline to result.lastBaseline.fastRoundToInt(),
+                                        ),
                                 ) {}
                             }
 
                             override fun IntrinsicMeasureScope.maxIntrinsicWidth(
                                 measurables: List<IntrinsicMeasurable>,
-                                height: Int
+                                height: Int,
                             ): Int {
                                 state.textDelegate.layoutIntrinsics(layoutDirection)
                                 return state.textDelegate.maxIntrinsicWidth
                             }
-                        }
+                        },
                 )
 
                 SelectionToolbarAndHandles(
@@ -638,7 +642,7 @@ internal fun CoreTextField(
                         state.handleState != HandleState.None &&
                             state.layoutCoordinates != null &&
                             state.layoutCoordinates!!.isAttached &&
-                            showHandleAndMagnifier
+                            showHandleAndMagnifier,
                 )
 
                 if (
@@ -655,7 +659,7 @@ internal fun CoreTextField(
 private fun CoreTextFieldRootBox(
     modifier: Modifier,
     manager: TextFieldSelectionManager,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(modifier, propagateMinConstraints = true) { ContextMenuArea(manager, content) }
 }
@@ -689,7 +693,7 @@ internal enum class HandleState {
      * TextField will exit this state and enters [HandleState.Selection] state. Also notice that
      * TextField won't enter this state if the current input text is empty.
      */
-    Cursor
+    Cursor,
 }
 
 /**
@@ -700,7 +704,7 @@ internal enum class HandleState {
 internal enum class Handle {
     Cursor,
     SelectionStart,
-    SelectionEnd
+    SelectionEnd,
 }
 
 /**
@@ -709,7 +713,7 @@ internal enum class Handle {
  */
 private fun Modifier.previewKeyEventToDeselectOnBack(
     state: LegacyTextFieldState,
-    manager: TextFieldSelectionManager
+    manager: TextFieldSelectionManager,
 ) = onPreviewKeyEvent { keyEvent ->
     if (state.handleState == HandleState.Selection && keyEvent.cancelsTextSelection()) {
         manager.deselect()
@@ -895,7 +899,7 @@ internal class LegacyTextFieldState(
         onValueChange: (TextFieldValue) -> Unit,
         keyboardActions: KeyboardActions,
         focusManager: FocusManager,
-        selectionBackgroundColor: Color
+        selectionBackgroundColor: Color,
     ) {
         this.onValueChangeOriginal = onValueChange
         this.selectionBackgroundColor = selectionBackgroundColor
@@ -925,7 +929,7 @@ internal class LegacyTextFieldState(
 internal fun requestFocusAndShowKeyboardIfNeeded(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
-    allowKeyboard: Boolean
+    allowKeyboard: Boolean,
 ) {
     if (!state.hasFocus) {
         focusRequester.requestFocus()
@@ -939,7 +943,7 @@ private fun startInputSession(
     state: LegacyTextFieldState,
     value: TextFieldValue,
     imeOptions: ImeOptions,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     state.inputSession =
         TextFieldDelegate.onFocus(
@@ -948,7 +952,7 @@ private fun startInputSession(
             state.processor,
             imeOptions,
             state.onValueChange,
-            state.onImeActionPerformed
+            state.onImeActionPerformed,
         )
     notifyFocusedRect(state, value, offsetMapping)
 }
@@ -984,7 +988,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
     value: TextFieldValue,
     textDelegate: TextDelegate,
     textLayoutResult: TextLayoutResult,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     val selectionEndInTransformed = offsetMapping.originalToTransformed(value.selection.max)
     val selectionEndBounds =
@@ -1000,7 +1004,7 @@ internal suspend fun BringIntoViewRequester.bringSelectionEndIntoView(
                     computeSizeForDefaultText(
                         textDelegate.style,
                         textDelegate.density,
-                        textDelegate.fontFamilyResolver
+                        textDelegate.fontFamilyResolver,
                     )
                 Rect(0f, 0f, 1.0f, defaultSize.height.toFloat())
             }
@@ -1028,14 +1032,14 @@ private fun SelectionToolbarAndHandles(manager: TextFieldSelectionManager, show:
                             TextFieldSelectionHandle(
                                 isStartHandle = true,
                                 direction = startDirection,
-                                manager = manager
+                                manager = manager,
                             )
                         }
                         if (manager.state?.showSelectionHandleEnd == true) {
                             TextFieldSelectionHandle(
                                 isStartHandle = false,
                                 direction = endDirection,
-                                manager = manager
+                                manager = manager,
                             )
                         }
                     }
@@ -1083,7 +1087,7 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
                                 anchor = SelectionHandleAnchor.Middle,
                                 visible = true,
                             )
-                    }
+                    },
         )
     }
 }
@@ -1092,14 +1096,14 @@ internal fun TextFieldCursorHandle(manager: TextFieldSelectionManager) {
 internal expect fun CursorHandle(
     offsetProvider: OffsetProvider,
     modifier: Modifier,
-    minTouchTargetSize: DpSize = DpSize.Unspecified
+    minTouchTargetSize: DpSize = DpSize.Unspecified,
 )
 
 // TODO(b/262648050) Try to find a better API.
 private fun notifyFocusedRect(
     state: LegacyTextFieldState,
     value: TextFieldValue,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ) {
     // If this reports state reads it causes an invalidation cycle.
     // This function doesn't need to be invalidated anyway because it's already explicitly called
@@ -1115,7 +1119,7 @@ private fun notifyFocusedRect(
             layoutCoordinates,
             inputSession,
             state.hasFocus,
-            offsetMapping
+            offsetMapping,
         )
     }
 }
@@ -1123,7 +1127,7 @@ private fun notifyFocusedRect(
 @OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.addContextMenuComponents(
     textFieldSelectionManager: TextFieldSelectionManager,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
 ): Modifier =
     if (ComposeFoundationFlags.isNewContextMenuEnabled)
         addBasicTextFieldTextContextMenuComponents(textFieldSelectionManager, coroutineScope)

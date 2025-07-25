@@ -38,6 +38,8 @@ import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.internal.FloatProducer
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.IndicatorBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.LoadingIndicator
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
 import androidx.compose.material3.value
@@ -70,13 +72,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScrollModifierNode
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -142,14 +142,14 @@ fun PullToRefreshBox(
         Indicator(
             modifier = Modifier.align(Alignment.TopCenter),
             isRefreshing = isRefreshing,
-            state = state
+            state = state,
         )
     },
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier.pullToRefresh(state = state, isRefreshing = isRefreshing, onRefresh = onRefresh),
-        contentAlignment = contentAlignment
+        contentAlignment = contentAlignment,
     ) {
         content()
         indicator()
@@ -183,7 +183,7 @@ fun Modifier.pullToRefresh(
             isRefreshing = isRefreshing,
             enabled = enabled,
             onRefresh = onRefresh,
-            threshold = threshold
+            threshold = threshold,
         )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,7 +200,7 @@ internal class PullToRefreshElement(
             onRefresh = onRefresh,
             enabled = enabled,
             state = state,
-            threshold = threshold
+            threshold = threshold,
         )
 
     override fun update(node: PullToRefreshModifierNode) {
@@ -253,16 +253,13 @@ internal class PullToRefreshModifierNode(
     var enabled: Boolean,
     var state: PullToRefreshState,
     var threshold: Dp,
-) : DelegatingNode(), CompositionLocalConsumerModifierNode, NestedScrollConnection {
+) : DelegatingNode(), NestedScrollConnection {
 
     override val shouldAutoInvalidate: Boolean
         get() = false
 
     private var nestedScrollNode: DelegatableNode =
-        nestedScrollModifierNode(
-            connection = this,
-            dispatcher = null,
-        )
+        nestedScrollModifierNode(connection = this, dispatcher = null)
 
     private var verticalOffset by mutableFloatStateOf(0f)
     private var distancePulled by mutableFloatStateOf(0f)
@@ -271,7 +268,7 @@ internal class PullToRefreshModifierNode(
         get() = distancePulled * DragMultiplier
 
     private val thresholdPx
-        get() = with(currentValueOf(LocalDensity)) { threshold.roundToPx() }
+        get() = with(requireDensity()) { threshold.roundToPx() }
 
     private val progress
         get() = adjustedDistancePulled / thresholdPx
@@ -282,10 +279,7 @@ internal class PullToRefreshModifierNode(
         verticalOffset = if (isRefreshing) thresholdPx.toFloat() else 0f
     }
 
-    override fun onPreScroll(
-        available: Offset,
-        source: NestedScrollSource,
-    ): Offset =
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
         when {
             state.isAnimating -> Offset.Zero
             !enabled -> Offset.Zero
@@ -299,7 +293,7 @@ internal class PullToRefreshModifierNode(
     override fun onPostScroll(
         consumed: Offset,
         available: Offset,
-        source: NestedScrollSource
+        source: NestedScrollSource,
     ): Offset =
         when {
             state.isAnimating -> Offset.Zero
@@ -394,8 +388,12 @@ internal class PullToRefreshModifierNode(
         try {
             state.animateToThreshold()
         } finally {
-            distancePulled = thresholdPx.toFloat()
-            verticalOffset = thresholdPx.toFloat()
+            if (isAttached) {
+                // Don't read density if the node is not attached. This will get updated next
+                // time the node is attached
+                distancePulled = thresholdPx.toFloat()
+                verticalOffset = thresholdPx.toFloat()
+            }
         }
     }
 
@@ -418,7 +416,7 @@ object PullToRefreshDefaults {
     /** The default container color for [Indicator] */
     @Deprecated(
         "Use loadingIndicatorContainerColor instead",
-        ReplaceWith("loadingIndicatorContainerColor")
+        ReplaceWith("loadingIndicatorContainerColor"),
     )
     val containerColor: Color
         @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -477,7 +475,7 @@ object PullToRefreshDefaults {
         shape: Shape = PullToRefreshDefaults.shape,
         containerColor: Color = Color.Unspecified,
         elevation: Dp = Elevation,
-        content: @Composable BoxScope.() -> Unit
+        content: @Composable BoxScope.() -> Unit,
     ) {
         Box(
             modifier =
@@ -488,7 +486,7 @@ object PullToRefreshDefaults {
                             top = 0f,
                             left = -Float.MAX_VALUE,
                             right = Float.MAX_VALUE,
-                            bottom = Float.MAX_VALUE
+                            bottom = Float.MAX_VALUE,
                         ) {
                             this@drawWithContent.drawContent()
                         }
@@ -506,13 +504,13 @@ object PullToRefreshDefaults {
                                     shadowElevation = if (showElevation) elevation.toPx() else 0f
                                     this.shape = shape
                                     clip = true
-                                }
+                                },
                             )
                         }
                     }
                     .background(color = containerColor, shape = shape),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
     }
 
@@ -548,7 +546,7 @@ object PullToRefreshDefaults {
             // TODO Load the motionScheme tokens from the component tokens file
             Crossfade(
                 targetState = isRefreshing,
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             ) { refreshing ->
                 if (refreshing) {
                     CircularProgressIndicator(
@@ -587,7 +585,7 @@ object PullToRefreshDefaults {
         containerColor: Color = this.loadingIndicatorContainerColor,
         color: Color = this.loadingIndicatorColor,
         elevation: Dp = LoadingIndicatorElevation,
-        threshold: Dp = PositionalThreshold
+        threshold: Dp = PositionalThreshold,
     ) {
         IndicatorBox(
             modifier = modifier.size(width = LoaderIndicatorWidth, height = LoaderIndicatorHeight),
@@ -600,7 +598,7 @@ object PullToRefreshDefaults {
             // TODO Load the motionScheme tokens from the component tokens file
             Crossfade(
                 targetState = isRefreshing,
-                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
             ) { refreshing ->
                 if (refreshing) {
                     ContainedLoadingIndicator(
@@ -608,10 +606,10 @@ object PullToRefreshDefaults {
                         modifier =
                             Modifier.requiredSize(
                                 width = LoaderIndicatorWidth,
-                                height = LoaderIndicatorHeight
+                                height = LoaderIndicatorHeight,
                             ),
                         containerColor = containerColor,
-                        indicatorColor = color
+                        indicatorColor = color,
                     )
                 } else {
                     // The LoadingIndicator will rotate and morph for a coerced progress value of 0
@@ -623,7 +621,7 @@ object PullToRefreshDefaults {
                         modifier =
                             Modifier.requiredSize(
                                     width = LoaderIndicatorWidth,
-                                    height = LoaderIndicatorHeight
+                                    height = LoaderIndicatorHeight,
                                 )
                                 .drawWithContent {
                                     val progress = state.distanceFraction
@@ -639,7 +637,7 @@ object PullToRefreshDefaults {
                                     }
                                 },
                         containerColor = containerColor,
-                        indicatorColor = color
+                        indicatorColor = color,
                     )
                 }
             }
@@ -730,17 +728,14 @@ private constructor(private val anim: Animatable<Float, AnimationVector1D>) : Pu
         val Saver =
             Saver<PullToRefreshStateImpl, Float>(
                 save = { it.anim.value },
-                restore = { PullToRefreshStateImpl(Animatable(it, Float.VectorConverter)) }
+                restore = { PullToRefreshStateImpl(Animatable(it, Float.VectorConverter)) },
             )
     }
 }
 
 /** The default pull indicator for [PullToRefreshBox] */
 @Composable
-private fun CircularArrowProgressIndicator(
-    progress: FloatProducer,
-    color: Color,
-) {
+private fun CircularArrowProgressIndicator(progress: FloatProducer, color: Color) {
     val path = remember { Path().apply { fillType = PathFillType.EvenOdd } }
     // TODO: Consider refactoring this sub-component utilizing Modifier.Node
     val targetAlpha by remember { derivedStateOf { if (progress() >= 1f) MaxAlpha else MinAlpha } }
@@ -748,7 +743,7 @@ private fun CircularArrowProgressIndicator(
     val alphaState =
         animateFloatAsState(
             targetValue = targetAlpha,
-            animationSpec = MotionSchemeKeyTokens.DefaultEffects.value()
+            animationSpec = MotionSchemeKeyTokens.DefaultEffects.value(),
         )
 
     Canvas(
@@ -776,7 +771,7 @@ private fun DrawScope.drawCircularIndicator(
     alpha: Float,
     values: ArrowValues,
     arcBounds: Rect,
-    strokeWidth: Dp
+    strokeWidth: Dp,
 ) {
     drawArc(
         color = color,
@@ -786,7 +781,7 @@ private fun DrawScope.drawCircularIndicator(
         useCenter = false,
         topLeft = arcBounds.topLeft,
         size = arcBounds.size,
-        style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Butt)
+        style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Butt),
     )
 }
 
@@ -795,7 +790,7 @@ private class ArrowValues(
     val rotation: Float,
     val startAngle: Float,
     val endAngle: Float,
-    val scale: Float
+    val scale: Float,
 )
 
 private fun ArrowValues(progress: Float): ArrowValues {

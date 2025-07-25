@@ -31,7 +31,7 @@ class HitResultTest {
             throw NotImplementedError("Not implemented")
         }
 
-        override val trackingState: TrackingState = TrackingState.Stopped
+        override val trackingState: TrackingState = TrackingState.STOPPED
     }
 
     @Test

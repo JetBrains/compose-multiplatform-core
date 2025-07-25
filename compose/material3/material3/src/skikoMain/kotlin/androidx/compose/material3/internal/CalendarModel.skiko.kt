@@ -34,5 +34,6 @@ internal actual fun formatWithSkeleton(
     return PlatformDateFormat(locale).formatWithSkeleton(
         utcTimeMillis = utcTimeMillis,
         skeleton = skeleton,
+        cache = cache
     )
 }

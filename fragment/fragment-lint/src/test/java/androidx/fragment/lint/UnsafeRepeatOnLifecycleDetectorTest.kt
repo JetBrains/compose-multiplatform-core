@@ -65,7 +65,7 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 *REPEAT_ON_LIFECYCLE_STUBS,
                 TestFiles.kt(
                     TEMPLATE.format("Fragment()", "repeatOnLifecycle(Lifecycle.State.STARTED) { }")
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -88,9 +88,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "Fragment()",
-                        "lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -113,9 +113,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "Fragment()",
-                        "viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -130,9 +130,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "Fragment()",
-                        "getViewLifecycleOwner().repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "getViewLifecycleOwner().repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -147,9 +147,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "Fragment()",
-                        "viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -164,9 +164,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "Fragment()",
-                        "getViewLifecycleOwner().lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "getViewLifecycleOwner().lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -181,9 +181,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "BaseFragment(), FragmentListener",
-                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -206,9 +206,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "FragmentListener, OtherFragmentListener, BaseFragment()",
-                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -231,9 +231,9 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                 TestFiles.kt(
                     TEMPLATE.format(
                         "DialogFragment()",
-                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }"
+                        "repeatOnLifecycle(Lifecycle.State.STARTED) { }",
                     )
-                )
+                ),
             )
             .allowCompilationErrors(false)
             .run()
@@ -267,7 +267,7 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                     }
                 """
                     )
-                    .indented()
+                    .indented(),
             )
             .allowCompilationErrors(false)
             .run()
@@ -299,7 +299,7 @@ class UnsafeRepeatOnLifecycleDetectorTest : LintDetectorTest() {
                     }
                 """
                     )
-                    .indented()
+                    .indented(),
             )
             .allowCompilationErrors(false)
             .run()

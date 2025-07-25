@@ -89,12 +89,12 @@ class SplitPlaceholderRule : SplitRule {
         minSmallestWidthDp,
         maxAspectRatioInPortrait,
         maxAspectRatioInLandscape,
-        defaultSplitAttributes
+        defaultSplitAttributes,
     ) {
         checkArgument(
             finishPrimaryWithPlaceholder != NEVER,
             "NEVER is not a valid configuration for SplitPlaceholderRule. " +
-                "Please use FINISH_ALWAYS or FINISH_ADJACENT instead or refer to the current API."
+                "Please use FINISH_ALWAYS or FINISH_ADJACENT instead or refer to the current API.",
         )
         this.filters = filters.toSet()
         this.placeholderIntent = placeholderIntent

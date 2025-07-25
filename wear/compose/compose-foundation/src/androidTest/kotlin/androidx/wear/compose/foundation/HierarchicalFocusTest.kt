@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.getValue
@@ -34,18 +33,14 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Assert
@@ -360,11 +355,11 @@ class HierarchicalFocusTest {
         var numCallbacks = 0
         rule.setContent {
             if (hasHfcBefore.value) {
-                Box(Modifier.hierarchicalFocus(focusEnabled = false).size(50.dp))
+                Box(Modifier.hierarchicalFocusGroup(active = false).size(50.dp))
             }
-            Box(Modifier.hierarchicalFocus(focusEnabled = true) { numCallbacks++ }.size(50.dp))
+            Box(Modifier.hierarchicalOnFocusChanged { numCallbacks++ }.size(50.dp))
             if (hasHfcAfter.value) {
-                Box(Modifier.hierarchicalFocus(focusEnabled = false).size(50.dp))
+                Box(Modifier.hierarchicalFocusGroup(active = false).size(50.dp))
             }
         }
 
@@ -387,11 +382,12 @@ class HierarchicalFocusTest {
         var activeFocusCalls = 0
         var focused = false
         rule.setContent {
-            Column(Modifier.hierarchicalFocus(false)) {
+            Column(Modifier.hierarchicalFocusGroup(false)) {
                 repeat(3) {
                     Box(
                         Modifier.size(10.dp)
-                            .hierarchicalFocus(it == selected.intValue) { activeFocusCalls++ }
+                            .hierarchicalFocusGroup(it == selected.intValue)
+                            .hierarchicalOnFocusChanged { activeFocusCalls++ }
                             .focusable()
                     )
                 }
@@ -417,61 +413,6 @@ class HierarchicalFocusTest {
     }
 
     @Test
-    fun all_selector_callbacks_called() {
-        val focused = Array<Boolean?>(3) { null }
-        rule.setContent {
-            Box(Modifier.size(10.dp).hierarchicalFocus(true) { focused[0] = it }) {
-                Box(Modifier.size(10.dp).hierarchicalFocus(true) { focused[1] = it }) {
-                    Box(Modifier.size(10.dp).hierarchicalFocus(true) { focused[2] = it })
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        assertContentEquals(arrayOf(true, true, true), focused)
-    }
-
-    @Test
-    fun removing_focused_element_calls_clear_focus() {
-        var clearFocusCalled = false
-        val dummyFocusManager =
-            object : FocusManager {
-                override fun clearFocus(force: Boolean) {
-                    clearFocusCalled = true
-                }
-
-                override fun moveFocus(focusDirection: FocusDirection) = true
-            }
-
-        val activeNodePresent = mutableStateOf(true)
-        rule.setContent {
-            CompositionLocalProvider(LocalFocusManager provides dummyFocusManager) {
-                if (activeNodePresent.value) {
-                    Box(
-                        Modifier.size(50.dp)
-                            .hierarchicalFocus(true)
-                            .hierarchicalFocusRequester()
-                            .focusable()
-                    )
-                }
-                Box(
-                    Modifier.size(50.dp)
-                        .hierarchicalFocus(false)
-                        .hierarchicalFocusRequester()
-                        .focusable()
-                )
-            }
-        }
-
-        assertEquals(false, clearFocusCalled)
-        rule.runOnIdle { activeNodePresent.value = false }
-
-        rule.waitForIdle()
-        assertEquals(true, clearFocusCalled)
-    }
-
-    @Test
     fun on_active_focus_alone_works() {
         var activeFocus: Boolean? = null
 
@@ -479,12 +420,39 @@ class HierarchicalFocusTest {
             Box(
                 Modifier.size(50.dp)
                     .onFocusChanged { activeFocus = it.isFocused }
-                    .hierarchicalFocusRequester()
+                    .requestFocusOnHierarchyActive()
                     .focusable()
             )
         }
 
         rule.runOnIdle { assertEquals(true, activeFocus) }
+    }
+
+    @Test
+    fun non_leaf_requester_takes_priority() {
+        var activeFocus1: Boolean? = null
+        var activeFocus2: Boolean? = null
+
+        rule.setContent {
+            Box(
+                Modifier.size(50.dp)
+                    .onFocusChanged { activeFocus1 = it.isFocused }
+                    .requestFocusOnHierarchyActive()
+                    .focusable()
+            ) {
+                Box(
+                    Modifier.size(50.dp)
+                        .onFocusChanged { activeFocus2 = it.isFocused }
+                        .requestFocusOnHierarchyActive()
+                        .focusable()
+                ) {}
+            }
+        }
+
+        rule.waitForIdle()
+
+        Assert.assertEquals(true, activeFocus1)
+        Assert.assertEquals(false, activeFocus2)
     }
 
     @Composable

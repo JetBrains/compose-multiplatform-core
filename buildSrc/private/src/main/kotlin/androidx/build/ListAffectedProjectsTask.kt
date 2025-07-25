@@ -59,7 +59,7 @@ abstract class ListAffectedProjectsTask : DefaultTask() {
 
     @Option(
         option = "baseCommit",
-        description = "The base commit to compare changes against. Defaults to last merge commit."
+        description = "The base commit to compare changes against. Defaults to last merge commit.",
     )
     fun setBaseCommit(commit: String?) {
         changedFiles.set(project.getChangedFilesProvider(project.provider { commit }))
@@ -68,7 +68,7 @@ abstract class ListAffectedProjectsTask : DefaultTask() {
     @Suppress("UNUSED")
     @Option(
         option = "tasksToRun",
-        description = "Comma-separated list of tasks to run (e.g. 'bOS, allHostTests')"
+        description = "Comma-separated list of tasks to run (e.g. 'bOS, allHostTests')",
     )
     fun setTasksRun(tasks: String) {
         tasksToRun.set(tasks.split(",").map(String::trim))
@@ -77,7 +77,7 @@ abstract class ListAffectedProjectsTask : DefaultTask() {
     @Suppress("UNUSED")
     @Option(
         option = "runOnDependentProjects",
-        description = "Boolean flag to also run tasks on dependent projects"
+        description = "Boolean flag to also run tasks on dependent projects",
     )
     fun setRunOnDependentProjects(flag: String) {
         this.shouldRunOnDependentProjects.set(flag.toBoolean())
@@ -140,7 +140,7 @@ abstract class ListAffectedProjectsTask : DefaultTask() {
 
 private fun findAllProjectsDependingOn(
     projectPath: String,
-    projectConsumers: Map<String, Collection<String>>
+    projectConsumers: Map<String, Collection<String>>,
 ): Set<String> {
     val result = mutableSetOf<String>()
     val toBeTraversed = ArrayDeque<String>().apply { add(projectPath) }

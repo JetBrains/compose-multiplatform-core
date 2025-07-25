@@ -150,7 +150,7 @@ class DemoActivityEmbeddingController private constructor() {
                 EmbeddingAnimationBackground.DEFAULT,
                 EmbeddingAnimationBackground.createColorBackground(Color.BLUE),
                 EmbeddingAnimationBackground.createColorBackground(Color.GREEN),
-                EmbeddingAnimationBackground.createColorBackground(Color.YELLOW)
+                EmbeddingAnimationBackground.createColorBackground(Color.YELLOW),
             )
 
         /** Animation spec constants. */
@@ -158,7 +158,7 @@ class DemoActivityEmbeddingController private constructor() {
         val ANIMATION_SPEC_VALUES =
             arrayOf(
                 EmbeddingAnimationParams.AnimationSpec.DEFAULT,
-                EmbeddingAnimationParams.AnimationSpec.JUMP_CUT
+                EmbeddingAnimationParams.AnimationSpec.JUMP_CUT,
             )
     }
 }

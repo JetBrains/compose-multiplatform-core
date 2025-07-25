@@ -101,7 +101,7 @@ class LayoutElementAssertionsProviderTest {
             LayoutElementAssertionsProvider(TEST_LAYOUT)
                 .withDynamicData(
                     intAppKey mapTo intAppValue,
-                    PlatformHealthSources.Keys.DAILY_STEPS mapTo dailySteps
+                    PlatformHealthSources.Keys.DAILY_STEPS mapTo dailySteps,
                 )
                 .withDynamicData(PlatformEventSources.Keys.LAYOUT_VISIBILITY mapTo visibility)
 

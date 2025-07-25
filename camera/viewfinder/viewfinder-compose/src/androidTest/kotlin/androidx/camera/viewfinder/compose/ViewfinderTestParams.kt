@@ -42,10 +42,10 @@ data class ViewfinderTestParams(
         TransformationInfo(
             sourceRotation = sourceRotation,
             isSourceMirroredHorizontally = isMirroredHorizontally,
-            isSourceMirroredVertically = isMirroredVertically
+            isSourceMirroredVertically = isMirroredVertically,
         ),
     val alignment: Alignment = Alignment.Center,
-    val contentScale: ContentScale = ContentScale.Crop
+    val contentScale: ContentScale = ContentScale.Crop,
 ) {
     companion object {
         val TEST_VIEWFINDER_SIZE = DpSize(360.dp, 640.dp)

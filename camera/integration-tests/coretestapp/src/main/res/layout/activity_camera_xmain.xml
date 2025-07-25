@@ -243,6 +243,19 @@ limitations under the License.
         app:layout_constraintTop_toBottomOf="@id/VideoToggle" />
 
     <ImageButton
+        android:id="@+id/iterate_camera_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="1dp"
+        android:background="@android:drawable/btn_default"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_camera_switch_v2"
+        android:translationZ="1dp"
+        app:layout_constraintLeft_toRightOf="@id/direction_toggle"
+        app:layout_constraintTop_toBottomOf="@id/VideoToggle" />
+
+    <ImageButton
         android:id="@+id/flash_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -252,7 +265,7 @@ limitations under the License.
         android:scaleType="fitXY"
         android:src="@drawable/ic_flash_off"
         android:translationZ="1dp"
-        app:layout_constraintLeft_toRightOf="@id/direction_toggle"
+        app:layout_constraintLeft_toRightOf="@id/iterate_camera_toggle"
         app:layout_constraintTop_toBottomOf="@id/VideoToggle" />
 
     <ImageButton

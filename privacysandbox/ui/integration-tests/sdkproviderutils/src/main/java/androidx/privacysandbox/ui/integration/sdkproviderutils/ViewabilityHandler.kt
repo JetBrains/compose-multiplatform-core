@@ -37,7 +37,7 @@ class ViewabilityHandler {
 
         fun addObserverFactoryToAdapter(
             adapter: AbstractSandboxedUiAdapter,
-            drawViewability: Boolean
+            drawViewability: Boolean,
         ) {
             adapter.addObserverFactory(SessionObserverFactoryImpl(drawViewability))
         }
@@ -48,7 +48,7 @@ class ViewabilityHandler {
             override val signalOptions: Set<String> =
                 setOf(
                     SandboxedUiAdapterSignalOptions.GEOMETRY,
-                    SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+                    SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
                 )
 
             override fun create(): SessionObserver {
@@ -75,7 +75,7 @@ class ViewabilityHandler {
                                         sandboxedSdkViewUiInfo.onScreenGeometry.left + scrollX,
                                         sandboxedSdkViewUiInfo.onScreenGeometry.top + scrollY,
                                         sandboxedSdkViewUiInfo.onScreenGeometry.right + scrollX,
-                                        sandboxedSdkViewUiInfo.onScreenGeometry.bottom + scrollY
+                                        sandboxedSdkViewUiInfo.onScreenGeometry.bottom + scrollY,
                                     )
                                 drawRedRectangle(rect)
                             }

@@ -35,7 +35,7 @@ import androidx.annotation.RequiresApi
  */
 @Deprecated(
     "Superseded by PickVisualMediaRequest that takes an optional maxItems",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 ) // Binary API compatibility.
 fun PickVisualMediaRequest(mediaType: VisualMediaType = ImageAndVideo) =
     PickVisualMediaRequest.Builder().setMediaType(mediaType).build()
@@ -51,12 +51,12 @@ fun PickVisualMediaRequest(mediaType: VisualMediaType = ImageAndVideo) =
  */
 @Deprecated(
     "Superseded by PickVisualMediaRequest that take optional isOrderedSelection and defaultTab",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 ) // Binary API compatibility.
 @Suppress("MissingJvmstatic")
 fun PickVisualMediaRequest(
     mediaType: VisualMediaType = ImageAndVideo,
-    @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems()
+    @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems(),
 ) = PickVisualMediaRequest.Builder().setMediaType(mediaType).setMaxItems(maxItems).build()
 
 /**
@@ -79,7 +79,7 @@ fun PickVisualMediaRequest(
     mediaType: VisualMediaType = ImageAndVideo,
     @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems(),
     isOrderedSelection: Boolean = false,
-    defaultTab: DefaultTab = DefaultTab.PhotosTab
+    defaultTab: DefaultTab = DefaultTab.PhotosTab,
 ) =
     PickVisualMediaRequest.Builder()
         .setMediaType(mediaType)
@@ -112,7 +112,7 @@ fun PickVisualMediaRequest(
     mediaType: VisualMediaType = ImageAndVideo,
     @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems(),
     isOrderedSelection: Boolean = false,
-    defaultTab: DefaultTab = DefaultTab.PhotosTab
+    defaultTab: DefaultTab = DefaultTab.PhotosTab,
 ) =
     PickVisualMediaRequest.Builder()
         .setMediaType(mediaType)
@@ -142,7 +142,7 @@ fun PickVisualMediaRequest(
     mediaType: VisualMediaType = ImageAndVideo,
     @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems(),
     isOrderedSelection: Boolean = false,
-    defaultTab: DefaultTab = DefaultTab.PhotosTab
+    defaultTab: DefaultTab = DefaultTab.PhotosTab,
 ) =
     PickVisualMediaRequest.Builder()
         .setMediaType(mediaType)
@@ -174,7 +174,7 @@ fun PickVisualMediaRequest(
     mediaType: VisualMediaType = ImageAndVideo,
     @IntRange(from = 2) maxItems: Int = PickMultipleVisualMedia.getMaxItems(),
     isOrderedSelection: Boolean = false,
-    defaultTab: DefaultTab = DefaultTab.PhotosTab
+    defaultTab: DefaultTab = DefaultTab.PhotosTab,
 ) =
     PickVisualMediaRequest.Builder()
         .setMediaType(mediaType)

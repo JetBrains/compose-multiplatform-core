@@ -135,7 +135,7 @@ class TonalPalette(
     val tertiary30: Color,
     val tertiary20: Color,
     val tertiary10: Color,
-    val tertiary0: Color
+    val tertiary0: Color,
 )
 
 object TonalPaletteDefaults {
@@ -231,6 +231,6 @@ object TonalPaletteDefaults {
             neutralVariant17 = Color.Unspecified,
             neutralVariant12 = Color.Unspecified,
             neutralVariant6 = Color.Unspecified,
-            neutralVariant4 = Color.Unspecified
+            neutralVariant4 = Color.Unspecified,
         )
 }

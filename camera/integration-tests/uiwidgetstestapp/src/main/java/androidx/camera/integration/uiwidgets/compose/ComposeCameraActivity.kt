@@ -43,7 +43,7 @@ class ComposeCameraActivity : ComponentActivity() {
         setContent {
             PermissionsUI(
                 permissions = REQUIRED_PERMISSIONS,
-                checkAllPermissionGranted = { checkAllPermissionsGranted(it) }
+                checkAllPermissionGranted = { checkAllPermissionsGranted(it) },
             ) {
                 ComposeCameraApp(onStreamStateChange = this::onStreamStateChange)
             }
@@ -61,7 +61,7 @@ class ComposeCameraActivity : ComponentActivity() {
     // Used to assert that PreviewView is streaming within reasonable timeout
     fun waitForStreamState(
         expectedScreen: ComposeCameraScreen,
-        expectedState: StreamState
+        expectedState: StreamState,
     ): Boolean {
         this.expectedScreen = expectedScreen
         expectedStreamState = expectedState

@@ -96,6 +96,8 @@ import kotlinx.coroutines.test.runTest as coroutineRunTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 
 @LargeTest
 @RunWith(ContextMenuFlagFlipperRunner::class)
@@ -347,6 +349,33 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
             assertTextToolbarDoesNotHaveItem(SELECT_ALL)
         }
 
+    // Regression test for b/422754681
+    @Test
+    fun toolbarDoesNotAccessClipData_whenEvaluatingPaste() {
+        val clipboard = FakeClipboard("hello, world")
+        runTest(singleLine = true, clipboard = { clipboard }) {
+            clickCenter()
+            Handle.Cursor.click()
+
+            verify(clipboard.nativeClipboard, never()).primaryClip
+            assertThat(clipboard.getClipEntryCalled).isEqualTo(0)
+        }
+    }
+
+    // Regression test for b/422754681
+    @Test
+    fun toolbarDoesNotAccessClipDescription_ifNoClipData_whenEvaluatingPaste() {
+        val clipboard = FakeClipboard()
+        runTest(singleLine = true, clipboard = { clipboard }) {
+            clickCenter()
+            Handle.Cursor.click()
+
+            verify(clipboard.nativeClipboard, never()).primaryClip
+            verify(clipboard.nativeClipboard, never()).primaryClipDescription
+            assertThat(clipboard.getClipEntryCalled).isEqualTo(0)
+        }
+    }
+
     @Test
     fun toolbarDoesNotShowPaste_whenClipboardHasNoContent() =
         runTest(singleLine = true) {
@@ -368,7 +397,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
         runTest(
             singleLine = true,
             clipboard = {
-                FakeClipboard(supportsClipEntry = true).apply {
+                FakeClipboard().apply {
                     setClipEntry(createClipData(block = { addUri() }).toClipEntry())
                 }
             },
@@ -383,11 +412,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
     fun toolbarShowsPaste_whenClipboardHasContent_andReceiveContentConfigured() =
         runTest(
             singleLine = true,
-            clipboard = {
-                FakeClipboard(supportsClipEntry = true).apply {
-                    setClipEntry(createClipData().toClipEntry())
-                }
-            },
+            clipboard = { FakeClipboard().apply { setClipEntry(createClipData().toClipEntry()) } },
             modifier = Modifier.contentReceiver { null },
         ) {
             clickCenter()
@@ -482,7 +507,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                 val initialSelection = selection
                 replace(0, length, originalValue.toString())
                 selection = initialSelection
-            }
+            },
         ) {
             requestTextFieldFocus()
             setSelectionViaSemanticsShowingToolbar(1 to 5)
@@ -566,7 +591,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
         clipboard: suspend () -> Clipboard = { FakeClipboard() },
         modifier: Modifier = Modifier,
         inputTransformation: InputTransformation? = null,
-        block: suspend TestScope.() -> Unit
+        block: suspend TestScope.() -> Unit,
     ) = coroutineRunTest {
         TestScope(
                 initialTextFieldState = textFieldState,
@@ -618,7 +643,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                                     textStyle =
                                         TextStyle(
                                             fontFamily = TEST_FONT_FAMILY,
-                                            fontSize = fontSize
+                                            fontSize = fontSize,
                                         ),
                                     enabled = enabled,
                                     lineLimits =
@@ -628,7 +653,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                                             TextFieldLineLimits.Default
                                         },
                                     inputTransformation = filter,
-                                    readOnly = readOnly
+                                    readOnly = readOnly,
                                 )
                             }
                         }
@@ -761,7 +786,7 @@ class TextFieldTextContextMenuToolbarTest : FocusedWindowTest {
                     /* deviceId = */ KeyCharacterMap.VIRTUAL_KEYBOARD,
                     /* scancode= */ 0,
                     /* flags= */ 0,
-                    /* source= */ InputDevice.SOURCE_KEYBOARD
+                    /* source= */ InputDevice.SOURCE_KEYBOARD,
                 )
             )
         }

@@ -66,7 +66,7 @@ public class TimeInterval(public var start: Instant, public var end: Instant) {
  */
 public class TimelineEntry(
     public var validity: TimeInterval,
-    public var complicationData: ComplicationData
+    public var complicationData: ComplicationData,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -117,7 +117,7 @@ public class TimelineEntry(
  */
 public class ComplicationDataTimeline(
     public val defaultComplicationData: ComplicationData,
-    public val timelineEntries: Collection<TimelineEntry>
+    public val timelineEntries: Collection<TimelineEntry>,
 ) {
     /** Throws [IllegalArgumentException] if the [ComplicationDataTimeline] is invalid. */
     internal fun validate() {

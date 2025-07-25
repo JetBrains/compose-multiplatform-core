@@ -88,14 +88,8 @@ fun SimpleSearchBarSample() {
             )
         }
 
-    SearchBar(
-        state = searchBarState,
-        inputField = inputField,
-    )
-    ExpandedFullScreenSearchBar(
-        state = searchBarState,
-        inputField = inputField,
-    ) {
+    SearchBar(state = searchBarState, inputField = inputField)
+    ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
         SearchResults(
             onResultClick = { result ->
                 textFieldState.setTextAndPlaceCursorAtEnd(result)
@@ -145,10 +139,7 @@ fun FullScreenSearchBarScaffoldSample() {
                 state = searchBarState,
                 inputField = inputField,
             )
-            ExpandedFullScreenSearchBar(
-                state = searchBarState,
-                inputField = inputField,
-            ) {
+            ExpandedFullScreenSearchBar(state = searchBarState, inputField = inputField) {
                 SearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
@@ -156,12 +147,9 @@ fun FullScreenSearchBarScaffoldSample() {
                     }
                 )
             }
-        }
+        },
     ) { padding ->
-        LazyColumn(
-            contentPadding = padding,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        LazyColumn(contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val list = List(100) { "Text $it" }
             items(count = list.size) {
                 Text(
@@ -213,10 +201,7 @@ fun DockedSearchBarScaffoldSample() {
                 state = searchBarState,
                 inputField = inputField,
             )
-            ExpandedDockedSearchBar(
-                state = searchBarState,
-                inputField = inputField,
-            ) {
+            ExpandedDockedSearchBar(state = searchBarState, inputField = inputField) {
                 SearchResults(
                     onResultClick = { result ->
                         textFieldState.setTextAndPlaceCursorAtEnd(result)
@@ -224,12 +209,9 @@ fun DockedSearchBarScaffoldSample() {
                     }
                 )
             }
-        }
+        },
     ) { padding ->
-        LazyColumn(
-            contentPadding = padding,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        LazyColumn(contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val list = List(100) { "Text $it" }
             items(count = list.size) {
                 Text(
@@ -242,10 +224,7 @@ fun DockedSearchBarScaffoldSample() {
 }
 
 @Composable
-private fun SearchResults(
-    onResultClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun SearchResults(onResultClick: (String) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState())) {
         repeat(10) { idx ->
             val resultText = "Suggestion $idx"
@@ -257,7 +236,7 @@ private fun SearchResults(
                 modifier =
                     Modifier.clickable { onResultClick(resultText) }
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
             )
         }
     }

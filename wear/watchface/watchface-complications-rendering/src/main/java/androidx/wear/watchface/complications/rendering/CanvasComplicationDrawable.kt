@@ -55,7 +55,7 @@ public open class CanvasComplicationDrawable
 constructor(
     drawable: ComplicationDrawable,
     private val watchState: WatchState,
-    private val invalidateCallback: CanvasComplication.InvalidateCallback
+    private val invalidateCallback: CanvasComplication.InvalidateCallback,
 ) : CanvasComplication {
 
     internal companion object {
@@ -71,13 +71,13 @@ constructor(
             TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 EXPANSION_DP,
-                Resources.getSystem().displayMetrics
+                Resources.getSystem().displayMetrics,
             ),
             TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 STROKE_WIDTH_DP,
-                Resources.getSystem().displayMetrics
-            )
+                Resources.getSystem().displayMetrics,
+            ),
         )
     }
 
@@ -116,7 +116,7 @@ constructor(
         bounds: Rect,
         zonedDateTime: ZonedDateTime,
         renderParameters: RenderParameters,
-        slotId: Int
+        slotId: Int,
     ) {
         if (!renderParameters.watchFaceLayers.contains(WatchFaceLayer.COMPLICATIONS)) {
             return
@@ -139,7 +139,7 @@ constructor(
         bounds: Rect,
         boundsType: Int,
         zonedDateTime: ZonedDateTime,
-        @ColorInt color: Int
+        @ColorInt color: Int,
     ) {
         if (boundsType == ComplicationSlotBoundsType.ROUND_RECT) {
             complicationHighlightRenderer.drawComplicationHighlight(canvas, bounds, color)
@@ -165,7 +165,7 @@ constructor(
     @CallSuper
     override fun loadData(
         complicationData: ComplicationData,
-        loadDrawablesAsynchronous: Boolean
+        loadDrawablesAsynchronous: Boolean,
     ): Unit =
         TraceEvent("CanvasComplicationDrawable.setIdAndData").use {
             _data = complicationData

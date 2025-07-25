@@ -18,19 +18,7 @@
 
 package androidx.sqlite.driver
 
-import androidx.annotation.RestrictTo
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.framework.FrameworkSQLiteDatabase
-
 internal object ResultCode {
     const val SQLITE_MISUSE = 21
     const val SQLITE_RANGE = 25
 }
-
-/**
- * Gets a new instance of a [SupportSQLiteDatabase] that wraps this connection's
- * [android.database.sqlite.SQLiteDatabase].
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun AndroidSQLiteConnection.getSupportSQLiteDatabase(): SupportSQLiteDatabase =
-    FrameworkSQLiteDatabase(db)

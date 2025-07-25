@@ -64,7 +64,7 @@ internal fun Modifier.testTextContextMenuDataReader(
 ): Modifier = this then TestTextContextMenuDataReaderElement(invoker)
 
 private data class TestTextContextMenuDataReaderElement(
-    val invoker: TestTextContextMenuDataInvoker,
+    val invoker: TestTextContextMenuDataInvoker
 ) : ModifierNodeElement<TestTextContextMenuDataReaderNode>() {
     override fun create(): TestTextContextMenuDataReaderNode =
         TestTextContextMenuDataReaderNode(invoker)
@@ -74,9 +74,8 @@ private data class TestTextContextMenuDataReaderElement(
     }
 }
 
-internal class TestTextContextMenuDataReaderNode(
-    invoker: TestTextContextMenuDataInvoker,
-) : Modifier.Node() {
+internal class TestTextContextMenuDataReaderNode(invoker: TestTextContextMenuDataInvoker) :
+    Modifier.Node() {
     var invoker: TestTextContextMenuDataInvoker = invoker
         private set
 
@@ -161,7 +160,7 @@ internal fun numbersToData(vararg itemNumbers: Int): TextContextMenuData =
 
 internal fun testDataProvider(
     positioner: (LayoutCoordinates) -> Offset = { defaultPositioner(it) },
-    data: () -> TextContextMenuData
+    data: () -> TextContextMenuData,
 ): TextContextMenuDataProvider =
     object : TextContextMenuDataProvider {
         override fun position(destinationCoordinates: LayoutCoordinates): Offset =
@@ -178,13 +177,13 @@ internal fun defaultPositioner(destinationCoordinates: LayoutCoordinates): Offse
 
 internal fun testItem(
     i: Int,
-    onClick: TextContextMenuSession.() -> Unit = {}
+    onClick: TextContextMenuSession.() -> Unit = {},
 ): TextContextMenuItem =
     TextContextMenuItem(
         key = i,
         label = labelForNumber(i),
         leadingIcon = R.drawable.ic_vector_asset_test,
-        onClick = onClick
+        onClick = onClick,
     )
 
 internal fun labelForNumber(i: Int): String = "Item $i"

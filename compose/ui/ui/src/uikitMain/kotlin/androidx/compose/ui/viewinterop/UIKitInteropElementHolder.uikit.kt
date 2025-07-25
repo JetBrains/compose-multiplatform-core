@@ -33,6 +33,8 @@ import kotlinx.cinterop.CValue
 import platform.CoreGraphics.CGRect
 import platform.CoreGraphics.CGRectIntersection
 import platform.CoreGraphics.CGRectIsEmpty
+import platform.UIKit.UIView
+import platform.UIKit.accessibilityFrame
 
 internal abstract class UIKitInteropElementHolder<T : InteropView>(
     factory: () -> T,
@@ -117,9 +119,16 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                 .toRect()
                 .toDpRect(density)
                 .asCGRect()
+            val groupAccessibilityFrame = unclippedRect
+                .toRect()
+                .toDpRect(density)
+                .asCGRect()
 
             container.scheduleUpdate {
-                group.setFrame(groupFrame)
+                UIView.performWithoutAnimation {
+                    group.setFrame(groupFrame)
+                    group.accessibilityFrame = groupAccessibilityFrame
+                }
             }
         }
 
@@ -145,7 +154,9 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
                         .asCGRect()
 
                 container.scheduleUpdate {
-                    userComponentCGRect = newUserComponentCGRect
+                    UIView.performWithoutAnimation {
+                        userComponentCGRect = newUserComponentCGRect
+                    }
                 }
 
                 currentUserComponentRect = userComponentRect

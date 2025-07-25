@@ -18,8 +18,6 @@ package androidx.xr.scenecore.impl;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.GltfEntity;
 import androidx.xr.runtime.internal.MaterialResource;
@@ -31,6 +29,9 @@ import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
 import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.apibindings.ImpressApi;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -46,7 +47,7 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     private final SubspaceNode mSubspace;
     private final int mModelImpressNode;
     private final int mSubspaceImpressNode;
-    @AnimationState private int mAnimationState = AnimationState.STOPPED;
+    @AnimationStateValue private int mAnimationState = AnimationState.STOPPED;
 
     GltfEntityImpl(
             GltfModelResourceImpl gltfModelResource,
@@ -60,9 +61,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         mImpressApi = impressApi;
         mSplitEngineSubspaceManager = splitEngineSubspaceManager;
         setParent(parentEntity);
-
-        // TODO(b/377907379): - Punt this logic to the UI thread, so that applications can create
-        // Gltf entities from any thread.
 
         // System will only render Impress nodes that are parented by this subspace node.
         mSubspaceImpressNode = impressApi.createImpressNode();
@@ -90,11 +88,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
         // notified that the animation has stopped, been cancelled (by starting another animation)
         // and / or shown an error state if something went wrong.
 
-        // TODO(b/377907379): - Punt this logic to the UI thread.
-
-        // Note that at the moment this future will be garbage collected, since we don't return it
-        // from
-        // this method.
         ListenableFuture<Void> future =
                 mImpressApi.animateGltfModel(mModelImpressNode, animationName, looping);
         mAnimationState = AnimationState.PLAYING;
@@ -128,13 +121,14 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
 
     @Override
     public void stopAnimation() {
-        // TODO(b/377907379): - Punt this logic to the UI thread.
-        mImpressApi.stopGltfModelAnimation(mModelImpressNode);
-        mAnimationState = AnimationState.STOPPED;
+        if (mAnimationState == AnimationState.PLAYING) {
+            mImpressApi.stopGltfModelAnimation(mModelImpressNode);
+            mAnimationState = AnimationState.STOPPED;
+        }
     }
 
     @Override
-    @AnimationState
+    @AnimationStateValue
     public int getAnimationState() {
         return mAnimationState;
     }
@@ -151,7 +145,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
-        // TODO(b/377907379): - Punt this logic to the UI thread.
         // Destroying the subspace will also destroy the underlying Impress nodes.
         if (mSubspace != null) {
             mSplitEngineSubspaceManager.deleteSubspace(mSubspace.subspaceId);
@@ -160,7 +153,6 @@ class GltfEntityImpl extends AndroidXrEntity implements GltfEntity {
     }
 
     public void setColliderEnabled(boolean enableCollider) {
-        // TODO(b/377907379): - Punt this logic to the UI thread
         mImpressApi.setGltfModelColliderEnabled(mModelImpressNode, enableCollider);
     }
 }

@@ -77,7 +77,7 @@ class HydrationRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
-                        volume = 2.4.liters
+                        volume = 2.4.liters,
                     )
                     .toString()
             )

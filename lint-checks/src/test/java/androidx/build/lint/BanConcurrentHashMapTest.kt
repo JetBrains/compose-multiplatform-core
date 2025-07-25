@@ -48,7 +48,7 @@ class BanConcurrentHashMapTest :
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val expected =
@@ -82,7 +82,7 @@ import java.util.concurrent.ConcurrentHashMap;
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val expected =
@@ -118,7 +118,7 @@ src/androidx/ConcurrentHashMapUsageJava.java:8: Error: Detected ConcurrentHashMa
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val expected =
@@ -156,7 +156,7 @@ import java.util.concurrent.ConcurrentHashMap
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val expected =
@@ -192,7 +192,7 @@ src/androidx/ConcurrentHashMapUsageKotlin.kt:7: Error: Detected ConcurrentHashMa
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         val expected =

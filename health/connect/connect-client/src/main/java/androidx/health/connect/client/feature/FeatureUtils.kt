@@ -74,7 +74,7 @@ internal fun <T> withPhrFeatureCheck(apiName: String, block: () -> T): T {
 internal suspend fun <T> withPhrFeatureCheckSuspend(
     kClass: KClass<*>,
     methodName: String,
-    block: suspend () -> T
+    block: suspend () -> T,
 ): T {
     return withPhrFeatureCheckSuspend("${kClass.simpleName}#$methodName", block)
 }

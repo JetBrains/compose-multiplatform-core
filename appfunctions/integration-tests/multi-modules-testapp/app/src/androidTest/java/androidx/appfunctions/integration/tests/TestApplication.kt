@@ -18,7 +18,7 @@ package androidx.appfunctions.integration.tests
 
 import android.app.Application
 import android.util.Log
-import androidx.appfunctions.AppFunctionConfiguration
+import androidx.appfunctions.service.AppFunctionConfiguration
 
 class TestApplication : Application(), AppFunctionConfiguration.Provider {
 

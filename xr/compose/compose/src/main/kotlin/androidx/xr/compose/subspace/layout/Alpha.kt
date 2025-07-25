@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace.layout
 
 import androidx.annotation.FloatRange
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 
 /**
@@ -25,10 +24,9 @@ import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
  * 0.0f means fully transparent while a value of 1.0f is completely opaque. Elements with
  * semi-transparent alpha values (> 0.0 but < 1.0f) will be rendered using alpha-blending.
  *
- * @param alpha - Opacity of this element (and its children). Must be between `0` and `1`,
- *   inclusive. Values < `0` or > `1` will be clamped.
+ * @param alpha the opacity of this element (and its children). Must be a value between 0 and 1,
+ *   inclusive. Values < 0 or > 1 will be clamped.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceModifier.alpha(
     @FloatRange(from = 0.0, to = 1.0) alpha: Float
 ): SubspaceModifier = this.then(AlphaElement(alpha))

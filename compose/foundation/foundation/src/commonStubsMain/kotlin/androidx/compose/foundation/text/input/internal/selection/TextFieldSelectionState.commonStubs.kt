@@ -18,9 +18,19 @@ package androidx.compose.foundation.text.input.internal.selection
 
 import androidx.compose.foundation.implementedInJetBrainsFork
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.Clipboard
 import kotlinx.coroutines.CoroutineScope
 
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     state: TextFieldSelectionState,
     coroutineScope: CoroutineScope,
 ): Modifier = implementedInJetBrainsFork()
+
+internal actual class ClipboardPasteState actual constructor(clipboard: Clipboard) {
+    actual val hasText: Boolean = implementedInJetBrainsFork()
+    actual val hasClip: Boolean = implementedInJetBrainsFork()
+
+    actual suspend fun update() {
+        implementedInJetBrainsFork()
+    }
+}

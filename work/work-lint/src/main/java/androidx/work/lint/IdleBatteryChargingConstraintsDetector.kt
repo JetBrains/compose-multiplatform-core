@@ -59,8 +59,8 @@ class IdleBatteryChargingConstraintsDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         IdleBatteryChargingConstraintsDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE)
-                    )
+                        EnumSet.of(Scope.JAVA_FILE),
+                    ),
             )
     }
 

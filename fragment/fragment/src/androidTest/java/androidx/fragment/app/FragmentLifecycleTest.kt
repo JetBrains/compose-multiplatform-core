@@ -1509,7 +1509,7 @@ class FragmentLifecycleTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ) =
             TextView(inflater.context).also {
                 assertWithMessage("child FragmentManagers not the same instance")
@@ -1631,7 +1631,7 @@ class FragmentLifecycleTest {
         override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?
+            savedInstanceState: Bundle?,
         ): View? {
             return inflater.inflate(
                 if (count % 2 == 0) {
@@ -1640,7 +1640,7 @@ class FragmentLifecycleTest {
                     R.layout.activity_content
                 },
                 container,
-                false
+                false,
             )
         }
 

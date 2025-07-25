@@ -19,6 +19,7 @@ package androidx.wear.watchface.complications.datasource
 import android.content.ComponentName
 import android.content.Context
 import android.os.OutcomeReceiver
+import android.util.Log
 import androidx.annotation.OpenForTesting
 import androidx.annotation.RequiresApi
 import androidx.wear.watchface.complications.data.ComplicationData as AndroidXComplicationData
@@ -50,7 +51,7 @@ internal interface WearSdkComplicationsApi {
     suspend fun getActiveConfigs(executor: Executor): Set<WearSdkActiveComplicationConfig>
 
     /** Calls [ComplicationsManager.updateComplication]. */
-    suspend fun updateComplication(id: Int, data: WearSdkComplicationData, executor: Executor): Void
+    suspend fun updateComplication(id: Int, data: WearSdkComplicationData, executor: Executor)
 
     fun create(context: Context) = Impl(context)
 
@@ -72,11 +73,16 @@ internal interface WearSdkComplicationsApi {
         override suspend fun updateComplication(
             id: Int,
             data: WearSdkComplicationData,
-            executor: Executor
-        ) =
-            suspendForOutcomeReceiver<Void> { outcomeReceiver ->
-                manager.updateComplication(id, data.data, executor, outcomeReceiver)
+            executor: Executor,
+        ) {
+            try {
+                suspendForOutcomeReceiver<Void> { outcomeReceiver ->
+                    manager.updateComplication(id, data.data, executor, outcomeReceiver)
+                }
+            } catch (error: Throwable) {
+                Log.e(TAG, "Failed to update complication= $error")
             }
+        }
 
         suspend fun <T> suspendForOutcomeReceiver(block: (OutcomeReceiver<T, Throwable>) -> Unit) =
             suspendCancellableCoroutine<T> { continuation ->
@@ -95,6 +101,10 @@ internal interface WearSdkComplicationsApi {
                     continuation.resumeWithException(error)
                 }
             }
+
+        internal companion object {
+            internal const val TAG = "WearSdkComplicationsApi"
+        }
     }
 }
 
@@ -107,7 +117,7 @@ internal class WearSdkActiveComplicationConfig(
     val providerComponent: ComponentName,
     val id: Int,
     val dataType: ComplicationType,
-    val targetWatchFace: Int
+    val targetWatchFace: Int,
 ) {
     internal constructor(
         config: ActiveComplicationConfig
@@ -115,7 +125,7 @@ internal class WearSdkActiveComplicationConfig(
         config.config.providerComponent,
         config.config.id,
         ComplicationType.fromWireType(config.config.dataType),
-        config.targetWatchFaceSafety
+        config.targetWatchFaceSafety,
     )
 
     /**
@@ -127,7 +137,7 @@ internal class WearSdkActiveComplicationConfig(
     ): Pair<ComponentName, ComplicationRequest> =
         Pair(
             providerComponent,
-            ComplicationRequest(id, dataType, immediateResponseRequired, targetWatchFace)
+            ComplicationRequest(id, dataType, immediateResponseRequired, targetWatchFace),
         )
 }
 
@@ -146,15 +156,15 @@ internal open class WearSdkComplicationRequestListener
 internal constructor(
     val id: Int,
     val dataType: Int,
-    val continuation: Continuation<Pair<Int, WearSdkComplicationData>>
+    val continuation: Continuation<Pair<Int, WearSdkComplicationData>>,
 ) : ComplicationDataSourceService.ComplicationRequestListener {
     internal constructor(
         request: ComplicationRequest,
-        continuation: Continuation<Pair<Int, WearSdkComplicationData>>
+        continuation: Continuation<Pair<Int, WearSdkComplicationData>>,
     ) : this(
         request.complicationInstanceId,
         request.complicationType.toWireComplicationType(),
-        continuation
+        continuation,
     )
 
     override fun onComplicationData(complicationData: AndroidXComplicationData?) {
@@ -235,7 +245,7 @@ internal interface WearSdkComplicationDataRequester {
         ): Pair<Int, WearSdkComplicationData> = suspendCancellableCoroutine { continuation ->
             requester.onComplicationRequest(
                 request,
-                WearSdkComplicationRequestListener(request, continuation)
+                WearSdkComplicationRequestListener(request, continuation),
             )
         }
     }

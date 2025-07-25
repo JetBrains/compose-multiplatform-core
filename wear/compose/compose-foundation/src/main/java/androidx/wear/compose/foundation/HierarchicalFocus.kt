@@ -16,13 +16,11 @@
 
 package androidx.wear.compose.foundation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequesterModifierNode
+import androidx.compose.ui.focus.requestFocus
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.TraversableNode
@@ -37,142 +35,102 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.VerticalPager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
- * [hierarchicalFocus] is used to coordinate focus within an app, which can have multiple screens
- * and/or layers within a screen, and updates focus as the user interacts with the app. In most
- * cases, this is automatically handled by Wear Compose components and no action is necessary.
+ * [hierarchicalFocusGroup] is used to annotate composables in an application, so we can keep track
+ * of what is the active part of the composition. In turn, this is used to coordinate focus in a
+ * declarative way, requesting focus when needed, as the user navigates through the app (such as
+ * between screens or between pages within a screen). In most cases, this is automatically handled
+ * by Wear Compose components and no action is necessary. In particular this is done by
+ * [BasicSwipeToDismissBox], [HorizontalPager], [VerticalPager] and PickerGroup. This modifier is
+ * useful if you implement a custom component that needs to direct focus to one of several children,
+ * like a custom Pager, a Tabbed layout, etc.
  *
- * This is done automatically by [BasicSwipeToDismissBox], [HorizontalPager], [VerticalPager] and
- * PickerGroup. This modifier is useful if you implement a custom component that needs to direct
- * focus to one of several children, like a custom Pager, a Tabbed layout, etc.
+ * [hierarchicalFocusGroup]s can be nested to form a focus tree, with an implicit root. For sibling
+ * [hierarchicalFocusGroup]s, only one should have active = true. Within the focus tree, components
+ * that need to request focus can do so using [Modifier.requestFocusOnHierarchyActive]. Note that
+ * ScalingLazyColumn and TransformingLazyColumn are using it already, so there is no need to add it
+ * explicitly.
  *
- * [hierarchicalFocus]s can be nested to form a focus tree, with an implicit root. Within the focus
- * tree, components that need to request focus can do so using [Modifier.hierarchicalFocusRequester]
- * (either providing their own [FocusRequester] and adding their own [Modifier.focusRequester], or
- * by using the parameter-less version) We call those nodes which have [hierarchicalFocusRequester]
- * leaves in the tree. Note that ScalingLazyColumn and TransformingLazyColumn is using it already,
- * so there is no need to be add it explicitly.
- *
- * When focus changes, the focus tree is examined and the leaf which has all its [hierarchicalFocus]
- * ancestors with focusEnabled = true will request focus. If no such leaf exists, the focus will be
+ * When focus changes, the focus tree is examined and the topmost (closest to the root of the tree)
+ * [requestFocusOnHierarchyActive] which has all its [hierarchicalFocusGroup] ancestors with active
+ * = true will request focus. If no such [requestFocusOnHierarchyActive] exists, the focus will be
  * cleared.
+ *
+ * NOTE: This shouldn't be used together with [FocusRequester.requestFocus] calls in
+ * [LaunchedEffect].
  *
  * Example usage:
  *
  * @sample androidx.wear.compose.foundation.samples.HierarchicalFocusSample
  *
- * Sample using nested [hierarchicalFocus]:
+ * Sample using nested [hierarchicalFocusGroup]:
  *
  * @sample androidx.wear.compose.foundation.samples.HierarchicalFocus2Levels
- * @param focusEnabled Pass true when this sub tree of the focus tree is active and may require the
+ * @param active Pass true when this sub tree of the focus tree is active and may require the
  *   focus - otherwise, pass false. For example, a pager can apply this modifier to each page's
- *   content with a call to [hierarchicalFocus], marking only the current page as focus enabled.
- * @param onFocusChange optional, a lambda to be invoked when the focus state on this branch of the
- *   focus tree changes.
+ *   content with a call to [hierarchicalFocusGroup], marking only the current page as active.
  */
-public fun Modifier.hierarchicalFocus(
-    focusEnabled: Boolean,
-    onFocusChange: ((Boolean) -> Unit)? = null
-): Modifier {
+public fun Modifier.hierarchicalFocusGroup(active: Boolean): Modifier {
     return this.then(
         HierarchicalFocusCoordinatorModifierElement(
-            focusEnabled = focusEnabled,
+            active = active,
             activeFocus = false,
-            onFocusChange
+            onFocusChanged = null,
         )
     )
 }
 
 /**
- * This Modifier defines leaf nodes in the focus tree defined by [hierarchicalFocus].
+ * This Modifier is used in conjunction with [hierarchicalFocusGroup] and will request focus on the
+ * following focusable element when needed (i.e. this needs to be before that element in the
+ * Modifier chain). The focusable element is usually a [Modifier.rotaryScrollable] (or, in some
+ * rarer cases a [Modifier.focusable] or [Modifier.focusTarget])
  *
- * This modifier will request focus on the provided [FocusRequester] when this is the leaf with all
- * its ancestor [hierarchicalFocus] nodes with focusEnabled = true. If you want to observe changes
- * to the focus state of the focus tree, use the onFocusChange parameter on [hierarchicalFocus]
+ * Multiple [requestFocusOnHierarchyActive] Modifiers shouldn't be siblings, in those cases they
+ * need to surround each with a [hierarchicalFocusGroup], and at most one of them should have active
+ * = true, to inform which [requestFocusOnHierarchyActive] should get the focus.
  *
- * The parameterless [hierarchicalFocusRequester] is a convenient alternative that avoids the need
- * to both define a focus requester yourself then add the [focusRequester] modifier.
+ * NOTE: This shouldn't be used together with [FocusRequester.requestFocus] calls in
+ * [LaunchedEffect].
  *
- * @param focusRequester the [FocusRequester] to request focus on.
+ * Example usage:
+ *
+ * @sample androidx.wear.compose.foundation.samples.HierarchicalFocusSample
  */
-public fun Modifier.hierarchicalFocusRequester(focusRequester: FocusRequester) =
+public fun Modifier.requestFocusOnHierarchyActive(): Modifier =
     this.then(
-        HierarchicalFocusCoordinatorModifierElement(focusEnabled = true, activeFocus = true) {
-            if (it) focusRequester.requestFocus()
-        }
+        HierarchicalFocusCoordinatorModifierElement(
+            active = true,
+            activeFocus = true,
+            onFocusChanged = null,
+        )
     )
-
-/**
- * This parameter-less overload of [hierarchicalFocusRequester] avoids the need to define a focus
- * requester yourself, and it also adds a [Modifier.focusRequester], given that it would not
- * otherwise be available outside of this modifier. If you need to share the [FocusRequester] with
- * other modifiers (typically [Modifier.rotaryScrollable]), use the overload of
- * [hierarchicalFocusRequester] with a focusRequester parameter and apply [Modifier.focusRequester]
- * if necessary.
- */
-@Composable
-public fun Modifier.hierarchicalFocusRequester() =
-    remember { FocusRequester() }
-        .let { focusRequester ->
-            this.then(
-                    HierarchicalFocusCoordinatorModifierElement(
-                        focusEnabled = true,
-                        activeFocus = true
-                    ) {
-                        if (it) focusRequester.requestFocus()
-                    }
-                )
-                .focusRequester(focusRequester)
-        }
-
-@Deprecated(
-    "Replaced by Modifier.hierarchicalFocusRequester(), use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
-)
-@Composable
-public fun rememberActiveFocusRequester(): FocusRequester =
-    remember { FocusRequester() }
-        .also { focusRequester -> Box(Modifier.hierarchicalFocusRequester(focusRequester)) }
-
-@Deprecated(
-    "Replaced by Modifier.hierarchicalFocus(), use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
-)
-@Composable
-public fun HierarchicalFocusCoordinator(
-    requiresFocus: () -> Boolean,
-    content: @Composable () -> Unit
-) {
-    Box(Modifier.hierarchicalFocus(requiresFocus())) { content() }
-}
-
-@Deprecated(
-    "Replaced by Modifier.hierarchicalFocusRequester() or Modifier.hierarchicalFocus(), use that instead",
-    level = DeprecationLevel.WARNING // TODO: b/369332589 - Make hidden in a follow up cl
-)
-@Composable
-public fun ActiveFocusListener(onFocusChanged: CoroutineScope.(Boolean) -> Unit) {
-    val scope = rememberCoroutineScope()
-    Box(Modifier.hierarchicalFocus(true) { scope.launch { onFocusChanged(it) } })
-}
 
 private const val HFCTraversalKey = "HFCTraversalKey"
 
+// Only used to support backwards compatibility, and to avoid marking more private APIs as internal
+internal fun Modifier.hierarchicalOnFocusChanged(onFocusChanged: (Boolean) -> Unit): Modifier =
+    this.then(
+        HierarchicalFocusCoordinatorModifierElement(
+            active = true,
+            activeFocus = true,
+            onFocusChanged = onFocusChanged,
+        )
+    )
+
 private class HierarchicalFocusCoordinatorModifierElement(
-    val focusEnabled: Boolean,
+    val active: Boolean,
     val activeFocus: Boolean,
     val onFocusChanged: ((Boolean) -> Unit)?,
 ) : ModifierNodeElement<HierarchicalFocusCoordinatorModifierNode>() {
     override fun create(): HierarchicalFocusCoordinatorModifierNode =
-        HierarchicalFocusCoordinatorModifierNode(focusEnabled, activeFocus, onFocusChanged)
+        HierarchicalFocusCoordinatorModifierNode(active, activeFocus, onFocusChanged)
 
     override fun update(node: HierarchicalFocusCoordinatorModifierNode) {
         node.onFocusChanged = onFocusChanged
         node.activeFocus = activeFocus
-        node.focusEnabled = focusEnabled
+        node.active = active
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -181,24 +139,28 @@ private class HierarchicalFocusCoordinatorModifierElement(
 
     override fun equals(other: Any?) =
         other is HierarchicalFocusCoordinatorModifierElement &&
-            focusEnabled == other.focusEnabled &&
+            active == other.active &&
             activeFocus == other.activeFocus &&
             onFocusChanged === other.onFocusChanged
 
     override fun hashCode() =
-        (focusEnabled.hashCode() * 31 + onFocusChanged.hashCode()) * 31 + activeFocus.hashCode()
+        (active.hashCode() * 31 + onFocusChanged.hashCode()) * 31 + activeFocus.hashCode()
 }
 
 private class HierarchicalFocusCoordinatorModifierNode(
-    focusEnabled: Boolean,
+    active: Boolean,
     var activeFocus: Boolean,
-    var onFocusChanged: ((Boolean) -> Unit)?
-) : Modifier.Node(), TraversableNode, CompositionLocalConsumerModifierNode {
+    var onFocusChanged: ((Boolean) -> Unit)?,
+) :
+    Modifier.Node(),
+    TraversableNode,
+    CompositionLocalConsumerModifierNode,
+    FocusRequesterModifierNode {
     override val traverseKey = HFCTraversalKey
 
-    var focusEnabled: Boolean = focusEnabled
+    var active: Boolean = active
         set(value) {
-            if (value != focusEnabled) {
+            if (value != this.active) {
                 field = value
                 scheduleUpdateAfterTreeSettles()
             }
@@ -209,16 +171,12 @@ private class HierarchicalFocusCoordinatorModifierNode(
         scheduleUpdateAfterTreeSettles()
     }
 
-    // We only need to call FocusManager.clearFocus when the focused node leaves the composition.
-    @Suppress("SuspiciousCompositionLocalModifierRead")
     override fun onDetach() {
         super.onDetach()
         if (lastActiveNodePath.remove(this)) {
             // This was the part of the active node chain, and it's now leaving the composition.
             onFocusChanged?.invoke(false)
-            // See if there is some other node that got focus, if not, call clearFocus.
-            if (lastActiveNodePath.none { it.focusEnabled && it.isAttached && it.activeFocus })
-                currentValueOf(LocalFocusManager).clearFocus()
+            // No need to clear focus, if the focused node is gone.
         }
     }
 
@@ -239,10 +197,8 @@ private class HierarchicalFocusCoordinatorModifierNode(
                 // We only care about changes in the active part of the tree.
                 if (parentActiveNodes.isNotEmpty()) {
                     val nextActiveNodePath =
-                        parentActiveNodes
-                            .fastFirstOrNull { it.focusEnabled }
-                            ?.findActive()
-                            ?.parentChain() ?: emptyList()
+                        parentActiveNodes.fastFirstOrNull { it.active }?.findActive()?.parentChain()
+                            ?: emptyList()
 
                     if (nextActiveNodePath != lastActiveNodePath) {
                         // Note that we assume the lists to be small (less than 5 elements, if this
@@ -252,8 +208,14 @@ private class HierarchicalFocusCoordinatorModifierNode(
                         nextActiveNodePath.fastForEach { node ->
                             if (!lastActiveNodePath.contains(node)) {
                                 // Gaining focus
-                                node.onFocusChanged?.invoke(true)
-                                if (node.activeFocus) focusSet = true
+                                if (node.activeFocus) {
+                                    if (!focusSet) {
+                                        node.onFocusChanged?.invoke(true) ?: node.requestFocus()
+                                        focusSet = true
+                                    }
+                                } else {
+                                    node.onFocusChanged?.invoke(true)
+                                }
                             }
                         }
 
@@ -274,13 +236,12 @@ private class HierarchicalFocusCoordinatorModifierNode(
         }
     }
 
-    // Returns true iff all ancestors up to and including root have focus enabled,
-    // not including this node.
+    // Returns true iff all ancestors up to and including root are active, not including this node.
     private fun parentChainActive(): Boolean {
         var node: HierarchicalFocusCoordinatorModifierNode? = this
         while (node != null) {
             node = node.findNearestAncestor()
-            if (node?.focusEnabled == false) return false
+            if (node?.active == false) return false
         }
         return true
     }
@@ -289,16 +250,16 @@ private class HierarchicalFocusCoordinatorModifierNode(
     private fun parentChain(): List<HierarchicalFocusCoordinatorModifierNode> =
         (findNearestAncestor()?.parentChain() ?: emptyList()) + this
 
-    // Search on the subtree rooted at this node the first node that has focus enabled and has a
-    // path of focus enabled nodes up to and including this node.
+    // Search on the subtree rooted at this node the first node that are active and has a
+    // path of active nodes up to and including this node.
     // If this node has no children, it returns itself. If all children of this node have
-    // focusEnabled == false, return null
+    // active == false, return null
     private fun findActive(): HierarchicalFocusCoordinatorModifierNode? {
         var hasChildren = false
         var activeNode: HierarchicalFocusCoordinatorModifierNode? = null
         traverseDescendants {
             hasChildren = true
-            if (it.focusEnabled) {
+            if (it.active && it.isAttached) {
                 activeNode = it.findActive()
                 TraverseDescendantsAction.CancelTraversal
             } else {

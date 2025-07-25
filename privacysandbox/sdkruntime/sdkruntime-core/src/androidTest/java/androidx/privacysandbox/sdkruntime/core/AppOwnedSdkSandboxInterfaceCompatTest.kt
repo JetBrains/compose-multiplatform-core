@@ -42,7 +42,7 @@ class AppOwnedSdkSandboxInterfaceCompatTest {
     fun setUp() {
         assumeTrue(
             "Requires AppOwnedInterfacesApi API available",
-            BuildCompat.AD_SERVICES_EXTENSION_INT >= 8
+            BuildCompat.AD_SERVICES_EXTENSION_INT >= 8,
         )
     }
 

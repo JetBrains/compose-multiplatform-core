@@ -117,6 +117,7 @@ import androidx.compose.ui.demos.viewinterop.ViewInteropDemo
 import androidx.compose.ui.samples.NestedScrollConnectionSample
 import androidx.compose.ui.samples.SetFrameRateCategorySample
 import androidx.compose.ui.samples.SetFrameRateSample
+import androidx.compose.ui.samples.SourceAndTargetInsetsSample
 import androidx.compose.ui.samples.TraverseModifierDemo
 
 private val GestureDemos =
@@ -146,14 +147,14 @@ private val GestureDemos =
                         MultiButtonsWithLoggingUsingPointerInput()
                     },
                     ComposableDemo("Event Types") { EventTypesDemo() },
-                )
+                ),
             ),
             DemoCategory(
                 "Building Block Gestures",
                 listOf(
                     ComposableDemo("Drag Slop Exceeded") { DragSlopExceededGestureFilterDemo() },
-                    ComposableDemo("Raw Drag") { RawDragGestureFilterDemo() }
-                )
+                    ComposableDemo("Raw Drag") { RawDragGestureFilterDemo() },
+                ),
             ),
             DemoCategory(
                 "Combinations / Case Studies",
@@ -174,17 +175,17 @@ private val GestureDemos =
                     ComposableDemo("Pointer Input Lambda Stats") { PointerInputLambdaExecutions() },
                     ComposableDemo("Pointer Input Lambda Stats w/ external function") {
                         PointerInputLambdaExecutionsUsingExternalFunctions()
-                    }
-                )
+                    },
+                ),
             ),
             DemoCategory(
                 "New nested scroll",
                 listOf(
                     ComposableDemo("Nested scroll connection") { NestedScrollConnectionSample() },
-                    ComposableDemo("Nested scroll dispatch") { NestedScrollDispatchDemo() }
-                )
-            )
-        )
+                    ComposableDemo("Nested scroll dispatch") { NestedScrollDispatchDemo() },
+                ),
+            ),
+        ),
     )
 
 private val FocusDemos =
@@ -212,8 +213,8 @@ private val FocusDemos =
             ComposableDemo("Focus In Adjacent Scrollable Rows") { AdjacentScrollablesFocusDemo() },
             ComposableDemo("Clickable in LazyColumn") { ClickableInLazyColumnDemo() },
             ComposableDemo("Nested LazyLists") { NestedLazyListFocusSearchDemo() },
-            ComposableDemo("Conditional Focusability") { ConditionalFocusabilityDemo() }
-        )
+            ComposableDemo("Conditional Focusability") { ConditionalFocusabilityDemo() },
+        ),
     )
 
 private val KeyInputDemos =
@@ -222,7 +223,7 @@ private val KeyInputDemos =
         listOf(
             ComposableDemo("onKeyEvent") { KeyInputDemo() },
             ComposableDemo("onPreviewKeyEvent") { InterceptEnterToSendMessageDemo() },
-        )
+        ),
     )
 
 private val GraphicsDemos =
@@ -231,8 +232,8 @@ private val GraphicsDemos =
         listOf(
             ComposableDemo("VectorGraphicsDemo") { VectorGraphicsDemo() },
             ComposableDemo("DeclarativeGraphicsDemo") { DeclarativeGraphicsDemo() },
-            ActivityDemo("Painter Resources Demo", PainterResourcesDemoActivity::class)
-        )
+            ActivityDemo("Painter Resources Demo", PainterResourcesDemoActivity::class),
+        ),
     )
 
 private val NestedScrollInteropDemos =
@@ -241,24 +242,24 @@ private val NestedScrollInteropDemos =
         listOf(
             ActivityDemo(
                 "(Collaborating) View -> Compose",
-                ComposeInAndroidCoordinatorLayout::class
+                ComposeInAndroidCoordinatorLayout::class,
             ),
             ActivityDemo("Compose -> Sliding Pane", ComposeInSwipeToRefreshLayout::class),
             ActivityDemo(
                 "(Collaborating) View -> Compose -> View",
-                ViewComposeViewNestedScrollInteropDemo::class
+                ViewComposeViewNestedScrollInteropDemo::class,
             ),
             ActivityDemo(
                 "Material Bottom Sheet Interop",
-                BottomSheetFragmentNestedScrollInteropDemo::class
+                BottomSheetFragmentNestedScrollInteropDemo::class,
             ),
             ComposableDemo("Compose -> View") {
                 NestedScrollInteropComposeParentWithAndroidChild()
             },
             ComposableDemo("Compose -> (Collaborating) View -> Compose Interop") {
                 ComposeViewComposeNestedInterop()
-            }
-        )
+            },
+        ),
     )
 
 private val ViewInteropDemos =
@@ -274,8 +275,8 @@ private val ViewInteropDemos =
             ComposableDemo("RecyclerView Focus Transfer") { RecyclerViewFocusTransferDemo() },
             NestedScrollInteropDemos,
             ComposableDemo("Resize ComposeView") { ResizeComposeViewDemo() },
-            ComposableDemo("LazyColumn of Android Views") { ScrollingAndroidViewsDemo() }
-        )
+            ComposableDemo("LazyColumn of Android Views") { ScrollingAndroidViewsDemo() },
+        ),
     )
 
 private val ModifierDemos =
@@ -283,8 +284,8 @@ private val ModifierDemos =
         "Modifiers",
         listOf(
             ComposableDemo("Inter-Modifier Communication") { CommunicatingModifierDemo() },
-            ComposableDemo("Traversing Modifiers") { TraverseModifierDemo() }
-        )
+            ComposableDemo("Traversing Modifiers") { TraverseModifierDemo() },
+        ),
     )
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -299,7 +300,7 @@ private val FrameRateDemos =
             ComposableDemo("Resize Text") { ResizingContentDemo() },
             ComposableDemo("Composable Movement") { MovingContentDemo() },
             ComposableDemo("Movable Content") { MovableContentDemo() },
-        )
+        ),
     )
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -319,7 +320,7 @@ private val AutofillDemos =
             ComposableDemo("Multipage Navigation Sample") { MultiPageLoginDemo() },
             ComposableDemo("Old and New Autofill Mixed") { MixedOldNewAutofillDemo() },
             ComposableDemo("Old Autofill demo") { ExplicitAutofillTypesDemo() },
-        )
+        ),
     )
 
 val AccessibilityDemos =
@@ -333,8 +334,8 @@ val AccessibilityDemos =
             ComposableDemo("Nested Containers—False") { NestedContainersFalseDemo() },
             ComposableDemo("Linear Progress Indicator") { LinearProgressIndicatorDemo() },
             ComposableDemo("Dual LTR and RTL Scene") { SimpleRtlLayoutDemo() },
-            ComposableDemo("Scrolling Tooltip scene") { SampleScrollingTooltipScreen() }
-        )
+            ComposableDemo("Scrolling Tooltip scene") { SampleScrollingTooltipScreen() },
+        ),
     )
 
 val CoreDemos =
@@ -358,6 +359,9 @@ val CoreDemos =
             AccessibilityDemos,
             ComposableDemo("Screen coordinates") { ScreenCoordinatesDemo(it) },
             ComposableDemo("Clipboard") { ClipboardDemo() },
-            ActivityDemo("Simple chat", SimpleChatActivity::class)
-        )
+            ActivityDemo("Simple chat", SimpleChatActivity::class),
+            ComposableDemo("Window insets Source and Target Rulers") {
+                SourceAndTargetInsetsSample()
+            },
+        ),
     )

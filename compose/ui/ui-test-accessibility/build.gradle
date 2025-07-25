@@ -33,17 +33,7 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.test.accessibility"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
-
         compileSdk = 35
-        aarMetadata.minCompileSdk = 35
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -87,6 +77,5 @@ androidx {
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
     inceptionYear = "2025"
     description = "Compose testing library for accessibility checks"
-    metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-test-accessibility:ui-test-accessibility-samples"))
 }

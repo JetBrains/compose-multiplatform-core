@@ -85,7 +85,7 @@ internal class AsyncInitWithUiThreadTaskWatchFace : WatchFaceService() {
         surfaceHolder: SurfaceHolder,
         watchState: WatchState,
         complicationSlotsManager: ComplicationSlotsManager,
-        currentUserStyleRepository: CurrentUserStyleRepository
+        currentUserStyleRepository: CurrentUserStyleRepository,
     ): WatchFace =
         withContext(mainThreadCoroutineScope.coroutineContext) {
             WatchFace(
@@ -97,20 +97,20 @@ internal class AsyncInitWithUiThreadTaskWatchFace : WatchFaceService() {
                         currentUserStyleRepository,
                         watchState,
                         CanvasType.SOFTWARE,
-                        16
+                        16,
                     ) {
                     override fun render(
                         canvas: Canvas,
                         bounds: Rect,
-                        zonedDateTime: ZonedDateTime
+                        zonedDateTime: ZonedDateTime,
                     ) {}
 
                     override fun renderHighlightLayer(
                         canvas: Canvas,
                         bounds: Rect,
-                        zonedDateTime: ZonedDateTime
+                        zonedDateTime: ZonedDateTime,
                     ) {}
-                }
+                },
             )
         }
 }
@@ -128,7 +128,7 @@ internal class StatefulWatchFaceServiceWatchFaceService : StatefulWatchFaceServi
 
     override fun createComplicationSlotsManager(
         currentUserStyleRepository: CurrentUserStyleRepository,
-        extra: MyExtra
+        extra: MyExtra,
     ): ComplicationSlotsManager {
         require(extra.data == 123)
         return ComplicationSlotsManager(emptyList(), currentUserStyleRepository)
@@ -139,7 +139,7 @@ internal class StatefulWatchFaceServiceWatchFaceService : StatefulWatchFaceServi
         watchState: WatchState,
         complicationSlotsManager: ComplicationSlotsManager,
         currentUserStyleRepository: CurrentUserStyleRepository,
-        extra: MyExtra
+        extra: MyExtra,
     ): WatchFace {
         require(extra.data == 123)
         return WatchFace(
@@ -151,16 +151,16 @@ internal class StatefulWatchFaceServiceWatchFaceService : StatefulWatchFaceServi
                     currentUserStyleRepository,
                     watchState,
                     CanvasType.SOFTWARE,
-                    16
+                    16,
                 ) {
                 override fun render(canvas: Canvas, bounds: Rect, zonedDateTime: ZonedDateTime) {}
 
                 override fun renderHighlightLayer(
                     canvas: Canvas,
                     bounds: Rect,
-                    zonedDateTime: ZonedDateTime
+                    zonedDateTime: ZonedDateTime,
                 ) {}
-            }
+            },
         )
     }
 }
@@ -171,7 +171,7 @@ val DEVICE_CONFIG =
         /* hasLowBitAmbient = */ false,
         /* hasBurnInProtection = */ false,
         /* analogPreviewReferenceTimeMillis = */ 0,
-        /* digitalPreviewReferenceTimeMillis = */ 0
+        /* digitalPreviewReferenceTimeMillis = */ 0,
     )
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O_MR1, maxSdkVersion = 32) // b/271922712
@@ -208,12 +208,12 @@ public class WatchFaceControlServiceTest {
                 HeadlessWatchFaceInstanceParams(
                     ComponentName(
                         ApplicationProvider.getApplicationContext<Context>(),
-                        ExampleCanvasAnalogWatchFaceService::class.java
+                        ExampleCanvasAnalogWatchFaceService::class.java,
                     ),
                     DEVICE_CONFIG,
                     width,
                     height,
-                    null
+                    null,
                 )
             )
     }
@@ -230,12 +230,12 @@ public class WatchFaceControlServiceTest {
                 HeadlessWatchFaceInstanceParams(
                     ComponentName(
                         ApplicationProvider.getApplicationContext<Context>(),
-                        ExampleOpenGLWatchFaceService::class.java
+                        ExampleOpenGLWatchFaceService::class.java,
                     ),
                     DEVICE_CONFIG,
                     width,
                     height,
-                    null
+                    null,
                 )
             )
     }
@@ -250,7 +250,7 @@ public class WatchFaceControlServiceTest {
                         RenderParameters(
                                 DrawMode.INTERACTIVE,
                                 WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
-                                null
+                                null,
                             )
                             .toWireFormat(),
                         TIME_MILLIS,
@@ -262,11 +262,11 @@ public class WatchFaceControlServiceTest {
                                         value = 100.0f,
                                         min = 0.0f,
                                         max = 100.0f,
-                                        ComplicationText.EMPTY
+                                        ComplicationText.EMPTY,
                                     )
                                     .setText(PlainComplicationText.Builder("100%").build())
                                     .build()
-                                    .asWireComplicationData()
+                                    .asWireComplicationData(),
                             ),
                             IdAndComplicationDataWireFormat(
                                 EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
@@ -274,13 +274,13 @@ public class WatchFaceControlServiceTest {
                                         value = 75.0f,
                                         min = 0.0f,
                                         max = 100.0f,
-                                        ComplicationText.EMPTY
+                                        ComplicationText.EMPTY,
                                     )
                                     .setText(PlainComplicationText.Builder("75%").build())
                                     .build()
-                                    .asWireComplicationData()
-                            )
-                        )
+                                    .asWireComplicationData(),
+                            ),
+                        ),
                     )
                 )
             )
@@ -298,7 +298,7 @@ public class WatchFaceControlServiceTest {
                         RenderParameters(
                                 DrawMode.INTERACTIVE,
                                 WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
-                                null
+                                null,
                             )
                             .toWireFormat(),
                         TIME_MILLIS,
@@ -308,23 +308,23 @@ public class WatchFaceControlServiceTest {
                                 EXAMPLE_CANVAS_WATCHFACE_LEFT_COMPLICATION_ID,
                                 ShortTextComplicationData.Builder(
                                         PlainComplicationText.Builder("Mon").build(),
-                                        ComplicationText.EMPTY
+                                        ComplicationText.EMPTY,
                                     )
                                     .setTitle(PlainComplicationText.Builder("23rd").build())
                                     .build()
-                                    .asWireComplicationData()
+                                    .asWireComplicationData(),
                             ),
                             IdAndComplicationDataWireFormat(
                                 EXAMPLE_CANVAS_WATCHFACE_RIGHT_COMPLICATION_ID,
                                 ShortTextComplicationData.Builder(
                                         PlainComplicationText.Builder("100").build(),
-                                        ComplicationText.EMPTY
+                                        ComplicationText.EMPTY,
                                     )
                                     .setTitle(PlainComplicationText.Builder("Steps").build())
                                     .build()
-                                    .asWireComplicationData()
-                            )
-                        )
+                                    .asWireComplicationData(),
+                            ),
+                        ),
                     )
                 )
             )
@@ -342,7 +342,7 @@ public class WatchFaceControlServiceTest {
                         RenderParameters(
                                 DrawMode.INTERACTIVE,
                                 WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
-                                null
+                                null,
                             )
                             .toWireFormat(),
                         TIME_MILLIS,
@@ -352,13 +352,13 @@ public class WatchFaceControlServiceTest {
                                 EXAMPLE_OPENGL_COMPLICATION_ID,
                                 ShortTextComplicationData.Builder(
                                         PlainComplicationText.Builder("Mon").build(),
-                                        ComplicationText.EMPTY
+                                        ComplicationText.EMPTY,
                                     )
                                     .setTitle(PlainComplicationText.Builder("23rd").build())
                                     .build()
-                                    .asWireComplicationData()
+                                    .asWireComplicationData(),
                             )
-                        )
+                        ),
                     )
                 )
             )
@@ -383,12 +383,12 @@ public class WatchFaceControlServiceTest {
                         TIME_MILLIS,
                         ShortTextComplicationData.Builder(
                                 PlainComplicationText.Builder("Mon").build(),
-                                ComplicationText.EMPTY
+                                ComplicationText.EMPTY,
                             )
                             .setTitle(PlainComplicationText.Builder("23rd").build())
                             .build()
                             .asWireComplicationData(),
-                        null
+                        null,
                     )
                 )
             )
@@ -415,13 +415,13 @@ public class WatchFaceControlServiceTest {
                         GoalProgressComplicationData.Builder(
                                 value = 12345.0f,
                                 targetValue = 10000.0f,
-                                PlainComplicationText.Builder("12345 steps").build()
+                                PlainComplicationText.Builder("12345 steps").build(),
                             )
                             .setText(PlainComplicationText.Builder("12345").build())
                             .setTitle(PlainComplicationText.Builder("Steps").build())
                             .build()
                             .asWireComplicationData(),
-                        null
+                        null,
                     )
                 )
             )
@@ -448,7 +448,7 @@ public class WatchFaceControlServiceTest {
                                 value = 75f,
                                 min = 0.0f,
                                 max = 100.0f,
-                                PlainComplicationText.Builder("Rainbow colors").build()
+                                PlainComplicationText.Builder("Rainbow colors").build(),
                             )
                             .setText(PlainComplicationText.Builder("Colors").build())
                             .setValueType(RangedValueComplicationData.TYPE_RATING)
@@ -460,14 +460,14 @@ public class WatchFaceControlServiceTest {
                                         Color.argb(255, 255, 255, 0),
                                         Color.RED,
                                         Color.argb(255, 255, 0, 255),
-                                        Color.argb(255, 92, 64, 51)
+                                        Color.argb(255, 92, 64, 51),
                                     ),
-                                    interpolated = true
+                                    interpolated = true,
                                 )
                             )
                             .build()
                             .asWireComplicationData(),
-                        null
+                        null,
                     )
                 )
             )
@@ -494,26 +494,26 @@ public class WatchFaceControlServiceTest {
                                 value = 75f,
                                 min = 0.0f,
                                 max = 100.0f,
-                                PlainComplicationText.Builder("Rainbow colors").build()
+                                PlainComplicationText.Builder("Rainbow colors").build(),
                             )
                             .setText(PlainComplicationText.Builder("Colors").build())
                             .setValueType(RangedValueComplicationData.TYPE_RATING)
                             .setColorRamp(
                                 ColorRamp(
                                     intArrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW),
-                                    interpolated = false
+                                    interpolated = false,
                                 )
                             )
                             .build()
                             .asWireComplicationData(),
-                        null
+                        null,
                     )
                 )
             )
 
         bitmap.assertAgainstGolden(
             screenshotRule,
-            "nonInterpolatedColorRampRangedValueComplication"
+            "nonInterpolatedColorRampRangedValueComplication",
         )
     }
 
@@ -537,27 +537,27 @@ public class WatchFaceControlServiceTest {
                                 listOf(
                                     WeightedElementsComplicationData.Element(
                                         weight = 1.0f,
-                                        Color.RED
+                                        Color.RED,
                                     ),
                                     WeightedElementsComplicationData.Element(
                                         weight = 1.0f,
-                                        Color.GREEN
+                                        Color.GREEN,
                                     ),
                                     WeightedElementsComplicationData.Element(
                                         weight = 2.0f,
-                                        Color.BLUE
+                                        Color.BLUE,
                                     ),
                                     WeightedElementsComplicationData.Element(
                                         weight = 3.0f,
-                                        Color.YELLOW
-                                    )
+                                        Color.YELLOW,
+                                    ),
                                 ),
-                                PlainComplicationText.Builder("Example").build()
+                                PlainComplicationText.Builder("Example").build(),
                             )
                             .setText(PlainComplicationText.Builder("Calories").build())
                             .build()
                             .asWireComplicationData(),
-                        null
+                        null,
                     )
                 )
             )
@@ -579,12 +579,12 @@ public class WatchFaceControlServiceTest {
                 HeadlessWatchFaceInstanceParams(
                     ComponentName(
                         ApplicationProvider.getApplicationContext<Context>(),
-                        AsyncInitWithUiThreadTaskWatchFace::class.java
+                        AsyncInitWithUiThreadTaskWatchFace::class.java,
                     ),
                     DEVICE_CONFIG,
                     /* width = */ 100,
                     /* height = */ 100,
-                    /* instanceId = */ null
+                    /* instanceId = */ null,
                 )
             )
 
@@ -598,7 +598,7 @@ public class WatchFaceControlServiceTest {
                     .createWatchFaceService(
                         ComponentName(
                             ApplicationProvider.getApplicationContext(),
-                            WatchFaceControlServiceTest::class.java
+                            WatchFaceControlServiceTest::class.java,
                         )
                     )
             )
@@ -620,12 +620,12 @@ public class WatchFaceControlServiceTest {
                 HeadlessWatchFaceInstanceParams(
                     ComponentName(
                         ApplicationProvider.getApplicationContext<Context>(),
-                        StatefulWatchFaceServiceWatchFaceService::class.java
+                        StatefulWatchFaceServiceWatchFaceService::class.java,
                     ),
                     DEVICE_CONFIG,
                     /* width = */ 100,
                     /* height = */ 100,
-                    /* instanceId = */ null
+                    /* instanceId = */ null,
                 )
             )
 

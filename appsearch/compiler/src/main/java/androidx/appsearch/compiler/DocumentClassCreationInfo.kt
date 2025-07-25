@@ -79,7 +79,7 @@ data class DocumentClassCreationInfo(
      * Maps an annotated getter/field to the corresponding setter/field on the object returned by
      * the [CreationMethod].
      */
-    val settersAndFields: Map<AnnotatedGetterOrField, SetterOrField>
+    val settersAndFields: Map<AnnotatedGetterOrField, SetterOrField>,
 ) {
     companion object {
         /** Infers the [DocumentClassCreationInfo] for a specified document class. */
@@ -124,7 +124,7 @@ data class DocumentClassCreationInfo(
                     documentClass,
                     annotatedGettersAndFields,
                     builderProducer,
-                    helper
+                    helper,
                 )
 
             // Start building the exception in case we don't find a suitable creation method
@@ -140,9 +140,9 @@ data class DocumentClassCreationInfo(
                                 "builder producer"
                             },
                             documentClass.qualifiedName,
-                            getCommaSeparatedJvmNames(remainingGettersAndFields)
+                            getCommaSeparatedJvmNames(remainingGettersAndFields),
                         ),
-                    documentClass
+                    documentClass,
                 )
             exception.addWarnings(setterNotFoundErrors)
 
@@ -162,9 +162,9 @@ data class DocumentClassCreationInfo(
                                         "creation method"
                                     },
                                     documentClass.qualifiedName,
-                                    getCommaSeparatedJvmNames(missingParams)
+                                    getCommaSeparatedJvmNames(missingParams),
                                 ),
-                            creationMethod.element
+                            creationMethod.element,
                         )
                     )
                     continue
@@ -202,7 +202,7 @@ data class DocumentClassCreationInfo(
             val exception =
                 ProcessingException(
                     "Could not find any of the setter(s): $setterSignatures",
-                    getterOrField.element
+                    getterOrField.element,
                 )
 
             val potentialSetters =
@@ -231,7 +231,7 @@ data class DocumentClassCreationInfo(
                         ProcessingException(
                             ("Setter cannot be used: takes ${method.parameters.size} parameters " +
                                 "instead of 1"),
-                            method
+                            method,
                         )
                     )
                     continue
@@ -314,7 +314,7 @@ data class DocumentClassCreationInfo(
                         CreationMethod.inferParamAssociationsAndCreate(
                             candidate,
                             annotatedGettersAndFields,
-                            /* returnsDocumentClass= */ builderProducer == null
+                            /* returnsDocumentClass= */ builderProducer == null,
                         )
                     )
                 } catch (e: ProcessingException) {
@@ -391,7 +391,7 @@ data class DocumentClassCreationInfo(
                             method.returnType,
                             documentClass,
                             annotatedElement,
-                            helper
+                            helper,
                         )
                         method.returnType as DeclaredType
                     } else {
@@ -402,7 +402,7 @@ data class DocumentClassCreationInfo(
                             builderClass.asType(),
                             documentClass,
                             annotatedElement,
-                            helper
+                            helper,
                         )
                         annotatedElement.asType() as DeclaredType
                     }
@@ -413,7 +413,7 @@ data class DocumentClassCreationInfo(
             private fun isAnnotatedWithBuilderProducer(element: Element): Boolean {
                 return !IntrospectionHelper.getAnnotations(
                         element,
-                        IntrospectionHelper.BUILDER_PRODUCER_CLASS
+                        IntrospectionHelper.BUILDER_PRODUCER_CLASS,
                     )
                     .isEmpty()
             }
@@ -427,7 +427,7 @@ data class DocumentClassCreationInfo(
                 ) {
                     throw ProcessingException(
                         "Builder producer must be a method or a class",
-                        annotatedElement
+                        annotatedElement,
                     )
                 }
             }
@@ -441,7 +441,7 @@ data class DocumentClassCreationInfo(
                 if (annotatedElement.modifiers.contains(Modifier.PRIVATE)) {
                     throw ProcessingException(
                         "Builder producer cannot be private",
-                        annotatedElement
+                        annotatedElement,
                     )
                 }
             }
@@ -464,7 +464,7 @@ data class DocumentClassCreationInfo(
                     ProcessingException(
                         ("Invalid builder producer: $builderType does not have a method " +
                             "$documentClass build()"),
-                        annotatedElement
+                        annotatedElement,
                     )
                 if (builderType.kind != TypeKind.DECLARED) {
                     throw exception

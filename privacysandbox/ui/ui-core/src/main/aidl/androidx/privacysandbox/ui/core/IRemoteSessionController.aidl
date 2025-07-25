@@ -18,6 +18,7 @@ package androidx.privacysandbox.ui.core;
 
 import androidx.privacysandbox.ui.core.IMotionEventTransferCallback;
 
+// Any api change in this interface should also be made to [androidx.privacysandbox.ui.client.IRemoteSessionController]
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 oneway interface IRemoteSessionController {
     void close();

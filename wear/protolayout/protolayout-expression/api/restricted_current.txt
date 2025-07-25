@@ -424,16 +424,33 @@ package androidx.wear.protolayout.expression {
   }
 
   public final class PlatformEventSources {
-    method @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool isLayoutUpdatePending();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool isLayoutVisible();
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus layoutUpdateStatus();
+    property public static int LAYOUT_UPDATE_IDLE;
+    property public static int LAYOUT_UPDATE_IDLE_ERROR;
+    property public static int LAYOUT_UPDATE_WAITING;
     field public static final androidx.wear.protolayout.expression.PlatformEventSources INSTANCE;
+    field public static final int LAYOUT_UPDATE_IDLE = 0; // 0x0
+    field public static final int LAYOUT_UPDATE_IDLE_ERROR = 2; // 0x2
+    field public static final int LAYOUT_UPDATE_WAITING = 1; // 0x1
+  }
+
+  public static final class PlatformEventSources.DynamicLayoutUpdateStatus implements androidx.wear.protolayout.expression.DynamicBuilders.DynamicInt32 {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus constant(int value);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> dynamicDataValueOf(int value);
+    field public static final androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus.Companion Companion;
+  }
+
+  public static final class PlatformEventSources.DynamicLayoutUpdateStatus.Companion {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus constant(int value);
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> dynamicDataValueOf(int value);
   }
 
   public static final class PlatformEventSources.Keys {
-    property @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_UPDATE_PENDING;
+    property public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> LAYOUT_UPDATE_STATUS;
     property public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_VISIBILITY;
     field public static final androidx.wear.protolayout.expression.PlatformEventSources.Keys INSTANCE;
-    field @SuppressCompatibility @androidx.wear.protolayout.expression.ProtoLayoutExperimental public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_UPDATE_PENDING;
+    field public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> LAYOUT_UPDATE_STATUS;
     field public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_VISIBILITY;
   }
 

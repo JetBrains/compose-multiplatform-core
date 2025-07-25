@@ -15,8 +15,10 @@
   -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING" />
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_FINE" />
   <uses-permission android:name="android.permission.HAND_TRACKING" />
+  <uses-permission android:name="android.permission.FACE_TRACKING" />
   <application android:label="ARCore Whitebox" android:taskAffinity="">
     <activity
         android:name=".MainActivity"
@@ -31,7 +33,12 @@
       </intent-filter>
     </activity>
     <activity
-        android:name=".helloar.HelloArActivity"
+        android:name=".helloar.HelloArObjectActivity"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
+    </activity>
+    <activity
+        android:name=".helloar.HelloArPlaneActivity"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
     </activity>
@@ -45,5 +52,19 @@
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
     </activity>
+    <activity
+        android:name=".depthmaps.DepthMapActivity"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
+    </activity>
+    <activity
+        android:name=".facetracking.FaceTrackingActivity"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
+    </activity>
   </application>
+  <queries>
+    <!-- TODO: replace with settings action - b/425946793 -->
+    <package android:name="com.google.xr.facetracking.calibration" />
+  </queries>
 </manifest>

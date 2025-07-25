@@ -87,8 +87,8 @@ internal class Controller3ASubmit3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                        mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF)
-                )
+                        mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF),
+                ),
             )
         }
         val result3A = result.await()
@@ -112,8 +112,8 @@ internal class Controller3ASubmit3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_MODE to
                                 CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -137,8 +137,8 @@ internal class Controller3ASubmit3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_MODE to
                                 CaptureResult.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -162,8 +162,8 @@ internal class Controller3ASubmit3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -187,8 +187,8 @@ internal class Controller3ASubmit3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -214,8 +214,8 @@ internal class Controller3ASubmit3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()

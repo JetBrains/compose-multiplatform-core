@@ -20,11 +20,34 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.Component
 import androidx.xr.runtime.internal.Entity
 
-// TODO: b/405218432 - Implement this correctly instead of stubbing it out.
 /** Test-only implementation of [Component] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeComponent : Component {
-    override fun onAttach(entity: Entity): Boolean = true
+    /**
+     * For test purposes only.
+     *
+     * This variable is used to simulate the condition about whether this component can be attached
+     * to an entity or not. In tests, you can change this variable's value and verify that your code
+     * responds correctly to [onAttach].
+     */
+    public var canBeAttached: Boolean = true
 
-    override fun onDetach(entity: Entity) {}
+    /**
+     * Lifecycle event, called when component is attached to an Entity.
+     *
+     * @param entity Entity the component is attached to.
+     * @return True if the component can attach to the given entity.
+     */
+    override fun onAttach(entity: Entity): Boolean {
+        return canBeAttached
+    }
+
+    /**
+     * Lifecycle event, called when component is detached from an Entity.
+     *
+     * @param entity Entity the component detached from.
+     */
+    override fun onDetach(entity: Entity) {
+        canBeAttached = true
+    }
 }

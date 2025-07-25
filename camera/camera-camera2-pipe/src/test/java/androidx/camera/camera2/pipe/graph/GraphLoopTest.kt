@@ -75,7 +75,7 @@ class GraphLoopTest {
     private val surfaceMap =
         mapOf(
             stream1 to fakeSurfaces.createFakeSurface(),
-            stream2 to fakeSurfaces.createFakeSurface()
+            stream2 to fakeSurfaces.createFakeSurface(),
         )
 
     private val csp1 =

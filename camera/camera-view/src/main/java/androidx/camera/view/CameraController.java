@@ -595,8 +595,9 @@ public abstract class CameraController {
     }
 
     private void startListeningToRotationEvents() {
-        mRotationProvider.addListener(mainThreadExecutor(),
-                mDeviceRotationListener);
+        if (!mRotationProvider.addListener(mainThreadExecutor(), mDeviceRotationListener)) {
+            Logger.w(TAG, "The device cannot detect rotation changes.");
+        }
     }
 
     private void stopListeningToRotationEvents() {

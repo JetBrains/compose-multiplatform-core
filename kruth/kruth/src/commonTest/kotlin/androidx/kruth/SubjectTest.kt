@@ -159,10 +159,7 @@ class SubjectTest {
         fun getArray(): Array<*> =
             arrayOf(
                 intArrayOf(1, 2, 3),
-                arrayOf(
-                    intArrayOf(1, 2, 3),
-                    arrayOf("a", null, "b"),
-                ),
+                arrayOf(intArrayOf(1, 2, 3), arrayOf("a", null, "b")),
                 listOf(1, 2, 3),
                 "a",
             )
@@ -175,10 +172,7 @@ class SubjectTest {
         fun getArray(arg: Int): Array<*> =
             arrayOf(
                 intArrayOf(1, 2, 3),
-                arrayOf(
-                    intArrayOf(1, arg, 3),
-                    arrayOf("a", null, "b"),
-                ),
+                arrayOf(intArrayOf(1, arg, 3), arrayOf("a", null, "b")),
                 listOf(1, 2, 3),
                 "a",
             )

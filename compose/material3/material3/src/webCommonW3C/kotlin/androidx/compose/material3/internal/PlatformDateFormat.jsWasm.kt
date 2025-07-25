@@ -54,6 +54,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithPattern(
         utcTimeMillis: Long,
         pattern: String,
+        cache: MutableMap<String, Any>
     ): String {
 
         val date = Instant
@@ -91,6 +92,7 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithSkeleton(
         utcTimeMillis: Long,
         skeleton: String,
+        cache: MutableMap<String, Any>
     ): String {
         val jsDate = Date(utcTimeMillis.toDouble())
 
@@ -140,7 +142,12 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     }
 
     @OptIn(FormatStringsInDatetimeFormats::class)
-    actual fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate? {
+    actual fun parse(
+        date: String,
+        pattern: String,
+        locale: CalendarLocale,
+        cache: MutableMap<String, Any>
+    ): CalendarDate? {
         // TODO https://youtrack.jetbrains.com/issue/CMP-7146/Properly-use-locale-in-CalendarModel.parse-implementations
         return try {
             LocalDate.parse(

@@ -35,7 +35,8 @@ class SnapshotIdSetTests {
     @Test
     fun shouldBeAbleToSetItems() {
         val times = 10000L
-        val set = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index.toSnapshotId()) }
+        val set =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index.toSnapshotId()) }
 
         repeat(times) { set.shouldBe(it, true) }
     }
@@ -65,7 +66,8 @@ class SnapshotIdSetTests {
     @Test
     fun shouldBeAbleToClearEvens() {
         val times = 10000L
-        val allSet = (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index.toSnapshotId()) }
+        val allSet =
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.set(index.toSnapshotId()) }
 
         val set =
             (0..times).fold(allSet) { prev, index ->
@@ -79,7 +81,9 @@ class SnapshotIdSetTests {
     fun shouldBeAbleToCrawlSet() {
         val times = 10000L
         val set =
-            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index -> prev.clear(index.toSnapshotId() - 1).set(index.toSnapshotId()) }
+            (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
+                prev.clear(index.toSnapshotId() - 1).set(index.toSnapshotId())
+            }
 
         set.shouldBe(times, true)
         repeat(times - 1) { set.shouldBe(it, false) }
@@ -90,7 +94,11 @@ class SnapshotIdSetTests {
         val times = 10000L
         val set =
             (0..times).fold(SnapshotIdSet.EMPTY) { prev, index ->
-                prev.let { if ((index - 1L) % 33L != 0L) it.clear(index.toSnapshotId() - 1) else it }.set(index.toSnapshotId())
+                prev
+                    .let {
+                        if ((index - 1L) % 33L != 0L) it.clear(index.toSnapshotId() - 1) else it
+                    }
+                    .set(index.toSnapshotId())
             }
 
         set.shouldBe(times, true)
@@ -5628,9 +5636,10 @@ class SnapshotIdSetTests {
         operations.fold(SnapshotIdSet.EMPTY) { prev, (value, op) ->
             assertTrue(
                 prev.get(value.toSnapshotId()) != op,
-                "Error on bit $value, expected ${!op}, received $op"
+                "Error on bit $value, expected ${!op}, received $op",
             )
-            val result = if (op) prev.set(value.toSnapshotId()) else prev.clear(value.toSnapshotId())
+            val result =
+                if (op) prev.set(value.toSnapshotId()) else prev.clear(value.toSnapshotId())
             result
         }
     }

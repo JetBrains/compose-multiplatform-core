@@ -86,7 +86,7 @@ class RotaryScrollTest {
 
         testScroll(
             beforeScroll = { itemIndex = state.firstVisibleItemIndex },
-            rotaryAction = { rotateToScrollVertically(itemSizePx) }
+            rotaryAction = { rotateToScrollVertically(itemSizePx) },
         )
 
         rule.runOnIdle { Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(itemIndex + 1) }
@@ -109,7 +109,7 @@ class RotaryScrollTest {
                 advanceEventTime(20)
                 rotateToScrollVertically(2f)
                 advanceEventTime(20)
-            }
+            },
         )
 
         rule.runOnIdle { Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(itemIndex + 2) }
@@ -134,7 +134,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(itemSizePx)
                 advanceEventTime(50)
             },
-            lowRes = true
+            lowRes = true,
         )
 
         rule.runOnIdle { Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(itemIndex + 1) }
@@ -150,7 +150,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(itemSizePx)
                 advanceEventTime(300)
                 rotateToScrollVertically(itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle { Truth.assertThat(state.firstVisibleItemIndex).isEqualTo(itemIndex + 2) }
@@ -172,7 +172,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(-itemSizePx)
                 advanceEventTime(10)
                 rotateToScrollVertically(-itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -198,7 +198,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(itemSizePx * 5)
                 advanceEventTime(10)
                 rotateToScrollVertically(itemSizePx * 6)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -228,7 +228,7 @@ class RotaryScrollTest {
                 advanceEventTime(20)
                 rotateToScrollVertically(itemSizePx)
                 advanceEventTime(20)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -257,7 +257,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(itemSizePx)
             },
-            lowRes = true
+            lowRes = true,
         )
 
         rule.runOnIdle {
@@ -283,7 +283,7 @@ class RotaryScrollTest {
                 // Keeping delay larger than a fling threshold
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -315,7 +315,7 @@ class RotaryScrollTest {
                 // Keeping delay larger than a fling threshold
                 advanceEventTime(50)
                 rotateToScrollVertically(itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -346,7 +346,7 @@ class RotaryScrollTest {
                 // Keeping delay larger than a fling threshold
                 advanceEventTime(50)
                 rotateToScrollVertically(itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -376,7 +376,7 @@ class RotaryScrollTest {
                 // Keeping delay larger than a fling threshold
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -400,7 +400,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(-itemSizePx)
                 advanceEventTime(20)
                 rotateToScrollVertically(-itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -425,7 +425,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(itemSizePx)
                 advanceEventTime(20)
                 rotateToScrollVertically(itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -449,7 +449,7 @@ class RotaryScrollTest {
                 rotateToScrollVertically(itemSizePx)
                 advanceEventTime(20)
                 rotateToScrollVertically(itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -480,7 +480,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -512,7 +512,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -545,7 +545,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -575,7 +575,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -601,7 +601,7 @@ class RotaryScrollTest {
                 advanceEventTime(20)
                 rotateToScrollVertically(-itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -626,7 +626,7 @@ class RotaryScrollTest {
                 advanceEventTime(20)
                 rotateToScrollVertically(itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -652,7 +652,7 @@ class RotaryScrollTest {
                 advanceEventTime(20)
                 rotateToScrollVertically(itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -681,7 +681,7 @@ class RotaryScrollTest {
                 // Keeping delay larger than a fling threshold
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
-            }
+            },
         )
 
         rule.runOnIdle {
@@ -712,7 +712,7 @@ class RotaryScrollTest {
                 advanceEventTime(50)
                 rotateToScrollVertically(-itemSizePx)
             },
-            reverseDirection = true
+            reverseDirection = true,
         )
 
         rule.runOnIdle {
@@ -737,9 +737,9 @@ class RotaryScrollTest {
                             .testTag(TEST_TAG)
                             .rotaryScrollable(
                                 RotaryScrollableDefaults.snapBehavior(state),
-                                focusRequester
+                                focusRequester,
                             ),
-                    state = state
+                    state = state,
                 ) {}
             }
         }
@@ -757,7 +757,7 @@ class RotaryScrollTest {
         beforeScroll: () -> Unit,
         rotaryAction: RotaryInjectionScope.() -> Unit,
         reverseDirection: Boolean = false,
-        lowRes: Boolean = false
+        lowRes: Boolean = false,
     ) {
         rule.setContent {
             state = rememberLazyListState()
@@ -769,7 +769,7 @@ class RotaryScrollTest {
                     focusRequester = focusRequester,
                     behavior = RotaryScrollableDefaults.behavior(state),
                     scrollableState = state,
-                    reverseDirection = reverseDirection
+                    reverseDirection = reverseDirection,
                 )
             }
         }
@@ -784,7 +784,7 @@ class RotaryScrollTest {
         rotaryAction: RotaryInjectionScope.() -> Unit,
         initialItem: Int = 0,
         reverseDirection: Boolean = false,
-        lowRes: Boolean = false
+        lowRes: Boolean = false,
     ) {
         rule.setContent {
             state = rememberLazyListState(initialFirstVisibleItemIndex = initialItem)
@@ -796,7 +796,7 @@ class RotaryScrollTest {
                     focusRequester = focusRequester,
                     behavior = RotaryScrollableDefaults.behavior(state),
                     scrollableState = state,
-                    reverseDirection = reverseDirection
+                    reverseDirection = reverseDirection,
                 )
             }
         }
@@ -811,7 +811,7 @@ class RotaryScrollTest {
         consumedNestedScroll: (Float) -> Float = { it },
         initialItem: Int = 0,
         reverseDirection: Boolean = false,
-        lowRes: Boolean = false
+        lowRes: Boolean = false,
     ) {
         val scrollable = ScrollableState(consumedNestedScroll)
         rule.setContent {
@@ -825,7 +825,7 @@ class RotaryScrollTest {
                         focusRequester = focusRequester,
                         behavior = RotaryScrollableDefaults.behavior(state),
                         scrollableState = state,
-                        reverseDirection = reverseDirection
+                        reverseDirection = reverseDirection,
                     )
                 }
             }
@@ -849,7 +849,7 @@ class RotaryScrollTest {
                     .testTag(TEST_TAG)
                     .rotaryScrollable(behavior, focusRequester, reverseDirection, overscrollEffect),
             state = scrollableState,
-            reverseLayout = reverseDirection
+            reverseLayout = reverseDirection,
         ) {
             items(itemsCount) {
                 BasicText(modifier = Modifier.height(itemSize), text = "Item #$it")
@@ -874,7 +874,7 @@ class RotaryScrollTest {
                             viewConfiguration,
                             deviceId,
                             MotionEvent.AXIS_SCROLL,
-                            SOURCE_ROTARY_ENCODER
+                            SOURCE_ROTARY_ENCODER,
                         ) != Integer.MIN_VALUE
                 )
                     return true
@@ -901,11 +901,7 @@ internal fun MockRotaryResolution(lowRes: Boolean = false, content: @Composable 
 
     doReturn(mockPackageManager).`when`(mockContext).packageManager
 
-    CompositionLocalProvider(
-        LocalContext provides mockContext,
-    ) {
-        content()
-    }
+    CompositionLocalProvider(LocalContext provides mockContext) { content() }
 }
 
 // Custom offset overscroll that only counts the number of times each callback is triggered and
@@ -929,7 +925,7 @@ private class OffsetOverscrollEffectCounter : OverscrollEffect {
     override fun applyToScroll(
         delta: Offset,
         source: NestedScrollSource,
-        performScroll: (Offset) -> Offset
+        performScroll: (Offset) -> Offset,
     ): Offset {
         val consumedScroll = performScroll(delta)
         if (consumedScroll.x != 0.0f || consumedScroll.y != 0.0f) {
@@ -942,7 +938,7 @@ private class OffsetOverscrollEffectCounter : OverscrollEffect {
 
     override suspend fun applyToFling(
         velocity: Velocity,
-        performFling: suspend (Velocity) -> Velocity
+        performFling: suspend (Velocity) -> Velocity,
     ) {
         val consumedVelocity = performFling(velocity)
         if (consumedVelocity.x != 0.0f || consumedVelocity.y != 0.0f) {

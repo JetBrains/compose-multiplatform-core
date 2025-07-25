@@ -115,13 +115,13 @@ internal class TraceProcessorHttpServer(
             method = METHOD_POST,
             url = PATH_QUERY,
             encodeBlock = { QueryArgs.ADAPTER.encode(it, QueryArgs(sqlQuery)) },
-            decodeBlock = decodeBlock
+            decodeBlock = decodeBlock,
         )
 
     /** Computes the given metrics on a previously parsed trace. */
     fun computeMetric(
         metrics: List<String>,
-        resultFormat: ComputeMetricArgs.ResultFormat
+        resultFormat: ComputeMetricArgs.ResultFormat,
     ): ComputeMetricResult =
         httpRequest(
             method = METHOD_POST,
@@ -129,7 +129,7 @@ internal class TraceProcessorHttpServer(
             encodeBlock = {
                 ComputeMetricArgs.ADAPTER.encode(it, ComputeMetricArgs(metrics, resultFormat))
             },
-            decodeBlock = { ComputeMetricResult.ADAPTER.decode(it) }
+            decodeBlock = { ComputeMetricResult.ADAPTER.decode(it) },
         )
 
     /**
@@ -147,7 +147,7 @@ internal class TraceProcessorHttpServer(
                     method = METHOD_POST,
                     url = PATH_PARSE,
                     encodeBlock = { it.write(buffer, 0, read) },
-                    decodeBlock = { AppendTraceDataResult.ADAPTER.decode(it) }
+                    decodeBlock = { AppendTraceDataResult.ADAPTER.decode(it) },
                 )
             )
         }
@@ -160,7 +160,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_NOTIFY_EOF,
             encodeBlock = null,
-            decodeBlock = {}
+            decodeBlock = {},
         )
 
     /** Clears the loaded trace and restore the state of the initial tables */
@@ -169,7 +169,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_RESTORE_INITIAL_TABLES,
             encodeBlock = null,
-            decodeBlock = {}
+            decodeBlock = {},
         )
 
     /** Checks the status of the trace_shell_processor http server. */
@@ -178,7 +178,7 @@ internal class TraceProcessorHttpServer(
             method = METHOD_GET,
             url = PATH_STATUS,
             encodeBlock = null,
-            decodeBlock = { StatusResult.ADAPTER.decode(it) }
+            decodeBlock = { StatusResult.ADAPTER.decode(it) },
         )
 
     private fun <T> httpRequest(
@@ -186,7 +186,7 @@ internal class TraceProcessorHttpServer(
         url: String,
         contentType: String = "application/octet-stream",
         encodeBlock: ((OutputStream) -> Unit)?,
-        decodeBlock: ((InputStream) -> T)
+        decodeBlock: ((InputStream) -> T),
     ): T {
         with(URL("$HTTP_ADDRESS:${port}$url").openConnection() as HttpURLConnection) {
             requestMethod = method

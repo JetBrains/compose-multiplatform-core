@@ -58,7 +58,7 @@ fun ImageVector.Companion.vectorResource(@DrawableRes id: Int): ImageVector {
 fun ImageVector.Companion.vectorResource(
     theme: Resources.Theme? = null,
     res: Resources,
-    resId: Int
+    resId: Int,
 ): ImageVector {
     val value = TypedValue()
     res.getValue(resId, value, true)
@@ -67,7 +67,7 @@ fun ImageVector.Companion.vectorResource(
             theme,
             res,
             res.getXml(resId).apply { seekToStartTag() },
-            value.changingConfigurations
+            value.changingConfigurations,
         )
         .imageVector
 }
@@ -81,7 +81,7 @@ internal fun loadVectorResourceInner(
     theme: Resources.Theme? = null,
     res: Resources,
     parser: XmlResourceParser,
-    changingConfigurations: Int
+    changingConfigurations: Int,
 ): ImageVectorCache.ImageVectorEntry {
     val attrs = Xml.asAttributeSet(parser)
     val resourceParser = AndroidVectorParser(parser)

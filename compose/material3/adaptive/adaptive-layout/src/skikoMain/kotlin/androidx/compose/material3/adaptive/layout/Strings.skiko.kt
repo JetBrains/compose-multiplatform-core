@@ -21,6 +21,8 @@ import androidx.compose.material3.adaptive.l10n.translationFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.text.intl.Locale
 import kotlin.jvm.JvmInline
 
@@ -62,10 +64,7 @@ internal fun String.format(vararg formatArgs: Any?): String {
     return result
 }
 
-@Composable
-@ReadOnlyComposable
-internal actual fun getString(string: Strings): String {
-    val locale = Locale.current
+private fun getString(string: Strings, locale: Locale): String {
     val tag = localeTag(language = locale.language, region = locale.region)
     val translation = translationByLocaleTag.getOrPut(tag) {
         findTranslation(locale)
@@ -75,8 +74,29 @@ internal actual fun getString(string: Strings): String {
 
 @Composable
 @ReadOnlyComposable
+internal actual fun getString(string: Strings): String {
+    val locale = Locale.current
+    return getString(string, locale)
+}
+
+@Composable
+@ReadOnlyComposable
 internal actual fun getString(string: Strings, vararg formatArgs: Any): String {
-    return getString(string).format(*formatArgs)
+    val locale = Locale.current
+    return getString(string, locale).format(*formatArgs)
+}
+
+internal actual fun CompositionLocalConsumerModifierNode.getString(string: Strings): String {
+    val locale = Locale.current
+    return getString(string, locale)
+}
+
+internal actual fun CompositionLocalConsumerModifierNode.getString(
+    string: Strings,
+    vararg formatArgs: Any
+): String {
+    val locale = Locale.current
+    return getString(string, locale).format(*formatArgs)
 }
 
 /**

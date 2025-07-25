@@ -43,7 +43,7 @@ import javax.lang.model.element.Modifier
  */
 data class PropertyAccessor(
     /** The getter/field element. */
-    val element: Element,
+    val element: Element
 ) {
     companion object {
         /**
@@ -57,7 +57,7 @@ data class PropertyAccessor(
         fun infer(
             getterOrField: AnnotatedGetterOrField,
             neighboringMethods: Collection<ExecutableElement>,
-            helper: IntrospectionHelper
+            helper: IntrospectionHelper,
         ): PropertyAccessor {
             if (!getterOrField.element.modifiers.contains(Modifier.PRIVATE)) {
                 // Accessible as-is
@@ -67,7 +67,7 @@ data class PropertyAccessor(
             if (getterOrField.isGetter) {
                 throw ProcessingException(
                     "Annotated getter must not be private",
-                    getterOrField.element
+                    getterOrField.element,
                 )
             }
 
@@ -80,7 +80,7 @@ data class PropertyAccessor(
         private fun findCorrespondingGetter(
             privateField: AnnotatedGetterOrField,
             neighboringMethods: Collection<ExecutableElement>,
-            helper: IntrospectionHelper
+            helper: IntrospectionHelper,
         ): ExecutableElement {
             val getterNames = getAcceptableGetterNames(privateField, helper)
             val potentialGetters: List<ExecutableElement> =
@@ -99,7 +99,7 @@ data class PropertyAccessor(
                 ProcessingException(
                     ("Field '${privateField.jvmName}' cannot be read: it is private and has no " +
                         "suitable getters $potentialSignatures"),
-                    privateField.element
+                    privateField.element,
                 )
 
             for (method in potentialGetters) {
@@ -117,7 +117,7 @@ data class PropertyAccessor(
 
         private fun getAcceptableGetterNames(
             privateField: AnnotatedGetterOrField,
-            helper: IntrospectionHelper
+            helper: IntrospectionHelper,
         ): Set<String> {
             // String mMyField -> {myField, getMyField}
             // boolean mMyField -> {myField, getMyField, isMyField}
@@ -131,7 +131,7 @@ data class PropertyAccessor(
                 helper.isFieldOfExactType(
                     privateField.element,
                     helper.booleanPrimitiveType,
-                    helper.booleanBoxType
+                    helper.booleanBoxType,
                 )
             if (isBooleanField && privateField.elementTypeCategory == ElementTypeCategory.SINGLE) {
                 getterNames.add("is$upperCamelCase")

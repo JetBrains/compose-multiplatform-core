@@ -231,7 +231,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -246,7 +246,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -261,7 +261,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -276,7 +276,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -291,7 +291,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -306,7 +306,7 @@ class SwitchButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -348,7 +348,7 @@ class SwitchButtonTest {
             SwitchButtonWithDefaults(
                 checked = true,
                 onCheckedChange = {},
-                label = { Text(text = textContent) }
+                label = { Text(text = textContent) },
             )
         }
 
@@ -363,7 +363,7 @@ class SwitchButtonTest {
             SplitSwitchButtonWithDefaults(
                 checked = true,
                 onCheckedChange = {},
-                label = { Text(text = textContent) }
+                label = { Text(text = textContent) },
             )
         }
 
@@ -385,7 +385,7 @@ class SwitchButtonTest {
                                     "height for the SwitchButton."
                         )
                     },
-                    secondaryLabel = { Text(text = "Secondary label with text.") }
+                    secondaryLabel = { Text(text = "Secondary label with text.") },
                 )
             }
             .assertHeightIsAtLeast(minHeight)
@@ -406,7 +406,7 @@ class SwitchButtonTest {
                                     "to test height is adjustable. This should exceed the " +
                                     "minimum height for the SplitSwitchButton."
                         )
-                    }
+                    },
                 )
             }
             .assertHeightIsAtLeast(minHeight)
@@ -554,7 +554,7 @@ class SwitchButtonTest {
         verifySwitchButtonBackgroundColor(
             checked = true,
             enabled = true,
-            expectedColor = CHECKED_COLOR
+            expectedColor = CHECKED_COLOR,
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -563,7 +563,7 @@ class SwitchButtonTest {
         verifySwitchButtonBackgroundColor(
             checked = false,
             enabled = true,
-            expectedColor = UNCHECKED_COLOR
+            expectedColor = UNCHECKED_COLOR,
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -572,7 +572,7 @@ class SwitchButtonTest {
         verifySplitSwitchButtonBackgroundColor(
             checked = true,
             enabled = true,
-            expectedColor = CHECKED_COLOR
+            expectedColor = CHECKED_COLOR,
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -581,7 +581,7 @@ class SwitchButtonTest {
         verifySplitSwitchButtonBackgroundColor(
             checked = false,
             enabled = true,
-            expectedColor = UNCHECKED_COLOR
+            expectedColor = UNCHECKED_COLOR,
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -648,9 +648,9 @@ class SwitchButtonTest {
                         checkedThumbColor = thumbColor,
                         checkedThumbIconColor = thumbIconColor,
                         checkedTrackColor = trackColor,
-                        checkedTrackBorderColor = trackBorderColor
+                        checkedTrackBorderColor = trackBorderColor,
                     ),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -677,9 +677,9 @@ class SwitchButtonTest {
                     SwitchButtonDefaults.switchButtonColors(
                         uncheckedThumbColor = thumbColor,
                         uncheckedTrackColor = trackColor,
-                        uncheckedTrackBorderColor = trackBorderColor
+                        uncheckedTrackBorderColor = trackBorderColor,
                     ),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -705,9 +705,9 @@ class SwitchButtonTest {
                         disabledCheckedThumbColor = thumbColor,
                         disabledCheckedThumbIconColor = thumbIconColor,
                         disabledCheckedTrackColor = trackColor,
-                        disabledCheckedTrackBorderColor = trackBorderColor
+                        disabledCheckedTrackBorderColor = trackBorderColor,
                     ),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -732,9 +732,9 @@ class SwitchButtonTest {
                 colors =
                     SwitchButtonDefaults.switchButtonColors(
                         disabledUncheckedThumbColor = thumbColor,
-                        disabledUncheckedTrackBorderColor = trackBorderColor
+                        disabledUncheckedTrackBorderColor = trackBorderColor,
                     ),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -747,7 +747,7 @@ class SwitchButtonTest {
     private fun verifySwitchButtonBackgroundColor(
         checked: Boolean,
         enabled: Boolean,
-        expectedColor: Color
+        expectedColor: Color,
     ) {
         rule.setContentWithTheme {
             SwitchButtonWithDefaults(
@@ -755,7 +755,7 @@ class SwitchButtonTest {
                 colors =
                     SwitchButtonDefaults.switchButtonColors(
                         checkedContainerColor = CHECKED_COLOR,
-                        uncheckedContainerColor = UNCHECKED_COLOR
+                        uncheckedContainerColor = UNCHECKED_COLOR,
                     ),
                 onCheckedChange = {},
                 enabled = enabled,
@@ -770,7 +770,7 @@ class SwitchButtonTest {
     private fun verifySplitSwitchButtonBackgroundColor(
         checked: Boolean,
         enabled: Boolean,
-        expectedColor: Color
+        expectedColor: Color,
     ) {
         rule.setContentWithTheme {
             SplitSwitchButtonWithDefaults(
@@ -778,7 +778,7 @@ class SwitchButtonTest {
                 colors =
                     SwitchButtonDefaults.splitSwitchButtonColors(
                         checkedContainerColor = CHECKED_COLOR,
-                        uncheckedContainerColor = UNCHECKED_COLOR
+                        uncheckedContainerColor = UNCHECKED_COLOR,
                     ),
                 onCheckedChange = {},
                 enabled = enabled,
@@ -859,7 +859,7 @@ private fun ComposeContentTestRule.verifySwitchButtonColors(enabled: Boolean, ch
                 enabled = enabled,
                 label = { actualLabelColor = LocalContentColor.current },
                 secondaryLabel = { actualSecondaryLabelColor = LocalContentColor.current },
-                icon = { actualIconColor = LocalContentColor.current }
+                icon = { actualIconColor = LocalContentColor.current },
             )
         }
     }
@@ -871,14 +871,14 @@ private fun ComposeContentTestRule.verifySwitchButtonColors(enabled: Boolean, ch
         .captureToImage()
         .assertContainsColor(
             if (expectedContainerColor != Color.Transparent) expectedContainerColor
-            else testBackgroundColor,
+            else testBackgroundColor
         )
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 private fun ComposeContentTestRule.verifySplitToggleButtonColors(
     enabled: Boolean,
-    checked: Boolean
+    checked: Boolean,
 ) {
     val testBackgroundColor = Color.White
     var expectedContainerColor = Color.Transparent
@@ -912,15 +912,12 @@ private fun ComposeContentTestRule.verifySplitToggleButtonColors(
         .captureToImage()
         .assertContainsColor(
             if (expectedContainerColor != Color.Transparent) expectedContainerColor
-            else testBackgroundColor,
+            else testBackgroundColor
         )
 }
 
 @Composable
-private fun switch_button_container_color(
-    checked: Boolean,
-    enabled: Boolean,
-): Color {
+private fun switch_button_container_color(checked: Boolean, enabled: Boolean): Color {
     return if (checked && enabled) MaterialTheme.colorScheme.primaryContainer
     else if (!checked && enabled) MaterialTheme.colorScheme.surfaceContainer
     else MaterialTheme.colorScheme.onSurface.toDisabledColor(disabledAlpha = 0.12f)

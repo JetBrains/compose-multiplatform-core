@@ -54,7 +54,7 @@ class DeleteOrUpdateFunctionAdapter private constructor(val returnType: XType) {
         scope: CodeGenScope,
         parameters: List<ShortcutQueryParameter>,
         adapters: Map<String, Pair<XPropertySpec, Any>>,
-        connectionVar: String
+        connectionVar: String,
     ) {
         scope.builder.apply {
             val hasReturnValue =
@@ -72,7 +72,7 @@ class DeleteOrUpdateFunctionAdapter private constructor(val returnType: XType) {
                     name = resultVar,
                     typeName = XTypeName.PRIMITIVE_INT,
                     isMutable = true,
-                    assignExpr = XCodeBlock.of("0")
+                    assignExpr = XCodeBlock.of("0"),
                 )
             }
             parameters.forEach { param ->
@@ -83,7 +83,7 @@ class DeleteOrUpdateFunctionAdapter private constructor(val returnType: XType) {
                     adapter.name,
                     param.handleFunctionName,
                     connectionVar,
-                    param.name
+                    param.name,
                 )
             }
             when (scope.language) {

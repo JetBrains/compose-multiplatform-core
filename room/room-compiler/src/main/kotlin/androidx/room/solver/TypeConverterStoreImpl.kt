@@ -30,7 +30,7 @@ class TypeConverterStoreImpl(
     /** Available TypeConverters */
     override val typeConverters: List<TypeConverter>,
     /** List of types that can be saved into db/read from without a converter. */
-    private val knownColumnTypes: List<XType>
+    private val knownColumnTypes: List<XType>,
 ) : TypeConverterStore {
     override fun findConverterIntoStatement(input: XType, columnTypes: List<XType>?) =
         findTypeConverter(inputs = listOf(input), outputs = columnTypes ?: knownColumnTypes)

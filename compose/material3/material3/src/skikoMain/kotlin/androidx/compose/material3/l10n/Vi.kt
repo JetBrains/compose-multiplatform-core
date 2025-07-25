@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.vi() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Thu gọn bảng dưới cùng",
     Strings.BottomSheetDismissDescription to "Đóng bảng dưới cùng",
     Strings.BottomSheetExpandDescription to "Mở rộng bảng dưới cùng",
+    Strings.FloatingToolbarCollapse to "Thu gọn thanh công cụ",
+    Strings.FloatingToolbarExpand to "Mở rộng thanh công cụ",
     Strings.TooltipPaneDescription to "Chú giải công cụ",
     Strings.TooltipLongPressLabel to "Hiện chú giải công cụ",
     Strings.TimePickerPM to "CH",
@@ -86,6 +88,10 @@ internal fun Translations.vi() = mapOf(
     Strings.TimePickerHour to "Giờ",
     Strings.TimePickerMinuteTextField to "nhập phút",
     Strings.TimePickerHourTextField to "nhập giờ",
+    Strings.TimePickerToggleKeyboard to "Chuyển sang chế độ nhập văn bản để nhập thời gian",
+    Strings.TimePickerToggleTouch to "Chuyển sang chế độ đồng hồ để nhập thời gian",
+    Strings.TimePickerDialogTitle to "Chọn thời gian",
+    Strings.TimeInputDialogTitle to "Nhập thời gian",
     Strings.CloseRail to "Đóng dải điều hướng",
     Strings.WideNavigationRailPaneTitle to "Dải điều hướng",
 )

@@ -41,7 +41,7 @@ class ViewfinderTransformsScreenshotTest(
     private val implementationMode: ImplementationMode,
     private val contentScale: ContentScale,
     private val alignment: Alignment,
-    private val name: String
+    private val name: String,
 ) {
 
     companion object {
@@ -57,7 +57,7 @@ class ViewfinderTransformsScreenshotTest(
                         arrayOf(ContentScale.Fit, Alignment.TopStart, "fit_start"),
                         arrayOf(ContentScale.Fit, Alignment.BottomEnd, "fit_end"),
                         arrayOf(ContentScale.FillBounds, Alignment.Center, "fill_bounds_center"),
-                        arrayOf(ContentScale.None, Alignment.Center, "none_center")
+                        arrayOf(ContentScale.None, Alignment.Center, "none_center"),
                     )
                     .map { args -> arrayOf(impl, *args) }
             }
@@ -80,14 +80,14 @@ class ViewfinderTransformsScreenshotTest(
                 sourceResolution = Size(720, 540),
                 implementationMode = implementationMode,
                 alignment = alignment,
-                contentScale = contentScale
+                contentScale = contentScale,
             )
 
         drawAndAssertAgainstGolden(
             composeTestRule = composeTestRule,
             screenshotRule = screenshotRule,
             testParams = testParams,
-            goldenIdentifier = "upright_face_with_mapped_touch_point_$name"
+            goldenIdentifier = "upright_face_with_mapped_touch_point_$name",
         )
     }
 }

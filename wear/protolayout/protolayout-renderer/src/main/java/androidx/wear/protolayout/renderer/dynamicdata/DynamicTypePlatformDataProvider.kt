@@ -24,6 +24,8 @@ import androidx.wear.protolayout.expression.DynamicBuilders.DynamicType
 import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue
 import androidx.wear.protolayout.expression.PlatformDataKey
 import androidx.wear.protolayout.expression.PlatformDataValues
+import androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus
+import androidx.wear.protolayout.expression.PlatformEventSources.LayoutUpdateStatus
 import androidx.wear.protolayout.expression.pipeline.PlatformDataProvider
 import androidx.wear.protolayout.expression.pipeline.PlatformDataReceiver
 import java.util.concurrent.Executor
@@ -94,7 +96,7 @@ private constructor(
         @JvmStatic
         public fun forDynamicBool(
             key: PlatformDataKey<DynamicBool>,
-            initialValue: Boolean
+            initialValue: Boolean,
         ): DynamicTypePlatformDataProvider<Boolean, DynamicBool> =
             DynamicTypePlatformDataProvider(key, initialValue) { DynamicDataValue.fromBool(it) }
 
@@ -105,5 +107,15 @@ private constructor(
             initialValue: Int,
         ): DynamicTypePlatformDataProvider<Int, DynamicInt32> =
             DynamicTypePlatformDataProvider(key, initialValue) { DynamicDataValue.fromInt(it) }
+
+        /** Creates a new [PlatformDataProvider] for a [DynamicLayoutUpdateStatus]. */
+        @JvmStatic
+        public fun forDynamicLayoutUpdateStatus(
+            key: PlatformDataKey<DynamicLayoutUpdateStatus>,
+            @LayoutUpdateStatus initialValue: Int,
+        ): DynamicTypePlatformDataProvider<Int, DynamicLayoutUpdateStatus> =
+            DynamicTypePlatformDataProvider(key, initialValue) {
+                DynamicLayoutUpdateStatus.dynamicDataValueOf(it)
+            }
     }
 }

@@ -148,7 +148,7 @@ class OffsetTest {
                     SpatialPanel(SubspaceModifier.testTag("panel").offset(x = offsetX)) {
                         Button(
                             modifier = Modifier.testTag("button"),
-                            onClick = { offsetX = offsetX + 10.dp }
+                            onClick = { offsetX = offsetX + 10.dp },
                         ) {
                             Text(text = "Click to change offset")
                         }

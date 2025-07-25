@@ -141,7 +141,7 @@ class SkinTemperatureRecord(
                 SKIN_TEMPERATURE_TYPE_NAME,
                 AVERAGE,
                 TEMPERATURE_DELTA_FIELD_NAME,
-                TemperatureDelta::celsius
+                TemperatureDelta::celsius,
             )
 
         /**
@@ -156,7 +156,7 @@ class SkinTemperatureRecord(
                 SKIN_TEMPERATURE_TYPE_NAME,
                 MINIMUM,
                 TEMPERATURE_DELTA_FIELD_NAME,
-                TemperatureDelta::celsius
+                TemperatureDelta::celsius,
             )
 
         /**
@@ -171,7 +171,7 @@ class SkinTemperatureRecord(
                 SKIN_TEMPERATURE_TYPE_NAME,
                 MAXIMUM,
                 TEMPERATURE_DELTA_FIELD_NAME,
-                TemperatureDelta::celsius
+                TemperatureDelta::celsius,
             )
 
         /** Use this if the location is unknown. */

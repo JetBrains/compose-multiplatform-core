@@ -63,7 +63,7 @@ class ListDelegateImpl<T> : ListDelegate<T> {
             mStub.requestItemRange(
                 startIndex,
                 endIndex,
-                RemoteUtils.createOnDoneCallbackStub(callback)
+                RemoteUtils.createOnDoneCallbackStub(callback),
             )
         } catch (e: RemoteException) {
             throw RuntimeException(e)

@@ -80,7 +80,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
                 modifier = Modifier.testTag(testTag),
-                readOnly = true
+                readOnly = true,
             )
         }
 
@@ -102,7 +102,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
                 visualTransformation = extraStarsVisualTransformation(),
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -123,7 +123,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 value = "text".repeat(10),
                 onValueChange = {},
                 visualTransformation = ReducedVisualTransformation(),
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -144,7 +144,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             BasicTextField(
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -169,7 +169,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             BasicTextField(
                 value = textFieldValue.value,
                 onValueChange = { textFieldValue.value = it },
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -195,7 +195,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle(
             text = "text text text",
             visualTransformation = VisualTransformation.None,
-            expectedCursorPositions = (0..14).toList()
+            expectedCursorPositions = (0..14).toList(),
         )
     }
 
@@ -205,7 +205,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle(
             text = "text text text",
             visualTransformation = PasswordVisualTransformation(),
-            expectedCursorPositions = (0..14).toList()
+            expectedCursorPositions = (0..14).toList(),
         )
     }
 
@@ -215,7 +215,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle(
             text = "text".repeat(10),
             visualTransformation = ReducedVisualTransformation(),
-            expectedCursorPositions = (0..40).filter { it % 2 == 0 }.toList()
+            expectedCursorPositions = (0..40).filter { it % 2 == 0 }.toList(),
         )
     }
 
@@ -237,7 +237,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag(testTag)
+                    modifier = Modifier.testTag(testTag),
                 )
             }
         }
@@ -281,7 +281,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag(testTag)
+                    modifier = Modifier.testTag(testTag),
                 )
             }
         }
@@ -309,7 +309,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
     private fun textField_dragsCursorHandle(
         text: String,
         visualTransformation: VisualTransformation,
-        expectedCursorPositions: List<Int>
+        expectedCursorPositions: List<Int>,
     ) {
         val textFieldValue = mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
         val cursorPositions = mutableListOf<Int>()
@@ -327,7 +327,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                     }
                 },
                 visualTransformation = visualTransformation,
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -361,7 +361,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                 BasicTextField(
                     value = textFieldValue.value,
                     onValueChange = { textFieldValue.value = it },
-                    modifier = Modifier.testTag(testTag)
+                    modifier = Modifier.testTag(testTag),
                 )
             }
         }
@@ -388,7 +388,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle_newContextMenu(
             text = "text text text",
             visualTransformation = VisualTransformation.None,
-            expectedCursorPositions = (0..14).toList()
+            expectedCursorPositions = (0..14).toList(),
         )
     }
 
@@ -398,7 +398,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle_newContextMenu(
             text = "text text text",
             visualTransformation = PasswordVisualTransformation(),
-            expectedCursorPositions = (0..14).toList()
+            expectedCursorPositions = (0..14).toList(),
         )
     }
 
@@ -408,7 +408,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         textField_dragsCursorHandle_newContextMenu(
             text = "text".repeat(10),
             visualTransformation = ReducedVisualTransformation(),
-            expectedCursorPositions = (0..40).filter { it % 2 == 0 }.toList()
+            expectedCursorPositions = (0..40).filter { it % 2 == 0 }.toList(),
         )
     }
 
@@ -432,7 +432,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                     BasicTextField(
                         value = textFieldValue.value,
                         onValueChange = { textFieldValue.value = it },
-                        modifier = Modifier.testTag(testTag)
+                        modifier = Modifier.testTag(testTag),
                     )
                 }
             }
@@ -479,7 +479,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                     BasicTextField(
                         value = textFieldValue.value,
                         onValueChange = { textFieldValue.value = it },
-                        modifier = Modifier.testTag(testTag)
+                        modifier = Modifier.testTag(testTag),
                     )
                 }
             }
@@ -508,7 +508,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
     private fun textField_dragsCursorHandle_newContextMenu(
         text: String,
         visualTransformation: VisualTransformation,
-        expectedCursorPositions: List<Int>
+        expectedCursorPositions: List<Int>,
     ) {
         val textFieldValue = mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
         val cursorPositions = mutableListOf<Int>()
@@ -529,7 +529,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                         }
                     },
                     visualTransformation = visualTransformation,
-                    modifier = Modifier.testTag(testTag)
+                    modifier = Modifier.testTag(testTag),
                 )
             }
         }
@@ -557,7 +557,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             text = "text".repeat(5),
             visualTransformation = VisualTransformation.None,
             expectedSelectionRanges = (11..19).map { TextRange(0, it) }.toList(),
-            toLeft = false
+            toLeft = false,
         )
     }
 
@@ -567,7 +567,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             text = "text".repeat(5),
             visualTransformation = PasswordVisualTransformation(),
             expectedSelectionRanges = (11..19).map { TextRange(0, it) }.toList(),
-            toLeft = false
+            toLeft = false,
         )
     }
 
@@ -578,7 +578,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             visualTransformation = ReducedVisualTransformation(),
             expectedSelectionRanges =
                 (21..39).filter { it % 2 == 0 }.map { TextRange(0, it) }.toList(),
-            toLeft = false
+            toLeft = false,
         )
     }
 
@@ -588,7 +588,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             text = "text".repeat(5),
             visualTransformation = VisualTransformation.None,
             expectedSelectionRanges = (9 downTo 1).map { TextRange(it, 20) }.toList(),
-            toLeft = true
+            toLeft = true,
         )
     }
 
@@ -598,7 +598,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             text = "text".repeat(5),
             visualTransformation = PasswordVisualTransformation(),
             expectedSelectionRanges = (9 downTo 1).map { TextRange(it, 20) }.toList(),
-            toLeft = true
+            toLeft = true,
         )
     }
 
@@ -609,7 +609,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
             visualTransformation = ReducedVisualTransformation(),
             expectedSelectionRanges =
                 (19 downTo 1).filter { it % 2 == 0 }.map { TextRange(it, 40) }.toList(),
-            toLeft = true
+            toLeft = true,
         )
     }
 
@@ -627,7 +627,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                         textAlign = TextAlign.End,
                         letterSpacing = 1.2.sp,
                     ),
-                modifier = Modifier.testTag(testTag).fillMaxWidth()
+                modifier = Modifier.testTag(testTag).fillMaxWidth(),
             )
         }
 
@@ -642,7 +642,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
         text: String,
         visualTransformation: VisualTransformation,
         expectedSelectionRanges: List<TextRange>,
-        toLeft: Boolean
+        toLeft: Boolean,
     ) {
         val textFieldValue = mutableStateOf(TextFieldValue(text, TextRange(Int.MAX_VALUE)))
         val selectionRanges = mutableListOf<TextRange>()
@@ -656,7 +656,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                     }
                 },
                 visualTransformation = visualTransformation,
-                modifier = Modifier.testTag(testTag)
+                modifier = Modifier.testTag(testTag),
             )
         }
 
@@ -689,7 +689,7 @@ class TextFieldSelectionTest : FocusedWindowTest {
                         override fun originalToTransformed(offset: Int) = offset * 2
 
                         override fun transformedToOriginal(offset: Int) = offset / 2
-                    }
+                    },
             )
         }
     }

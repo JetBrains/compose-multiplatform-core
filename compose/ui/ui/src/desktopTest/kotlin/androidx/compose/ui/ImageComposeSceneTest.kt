@@ -26,9 +26,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.ExtendedFloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -115,7 +112,7 @@ class ImageComposeSceneTest {
                 it.setContent {
                     Box(Modifier.fillMaxWidth()) {
                         ExtendedFloatingActionButton(
-                            icon = { Icon(Icons.Filled.AccountBox, "") },
+                            icon = { Box(Modifier.size(100.dp).background(Color.Red)) },
                             text = {},
                             onClick = {},
                             modifier = Modifier.fillMaxWidth()

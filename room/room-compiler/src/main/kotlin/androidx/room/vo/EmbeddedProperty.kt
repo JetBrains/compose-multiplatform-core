@@ -23,7 +23,7 @@ import androidx.room.compiler.processing.XNullability
 data class EmbeddedProperty(
     val property: Property,
     val prefix: String = "",
-    val parent: EmbeddedProperty?
+    val parent: EmbeddedProperty?,
 ) {
     val getter by lazy { property.getter }
     val setter by lazy { property.setter }

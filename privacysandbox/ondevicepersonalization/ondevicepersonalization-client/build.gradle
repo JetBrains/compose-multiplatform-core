@@ -61,5 +61,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "This library enables integration with On Device Personalization APIs provided by Privacy Sandbox on Android."
-    legacyDisableKotlinStrictApiMode = true
 }

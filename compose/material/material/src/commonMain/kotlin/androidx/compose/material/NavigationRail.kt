@@ -105,13 +105,13 @@ fun NavigationRail(
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = NavigationRailDefaults.Elevation,
     header: @Composable (ColumnScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier,
         color = backgroundColor,
         contentColor = contentColor,
-        elevation = elevation
+        elevation = elevation,
     ) {
         Column(
             Modifier.fillMaxHeight()
@@ -169,7 +169,7 @@ fun NavigationRail(
     contentColor: Color = contentColorFor(backgroundColor),
     elevation: Dp = NavigationRailDefaults.Elevation,
     header: @Composable (ColumnScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     NavigationRail(ZeroInsets, modifier, backgroundColor, contentColor, elevation, header, content)
 }
@@ -208,7 +208,7 @@ fun NavigationRailItem(
     alwaysShowLabel: Boolean = true,
     interactionSource: MutableInteractionSource? = null,
     selectedContentColor: Color = MaterialTheme.colors.primary,
-    unselectedContentColor: Color = LocalContentColor.current.copy(alpha = ContentAlpha.medium)
+    unselectedContentColor: Color = LocalContentColor.current.copy(alpha = ContentAlpha.medium),
 ) {
     val styledLabel: @Composable (() -> Unit)? =
         label?.let {
@@ -233,10 +233,10 @@ fun NavigationRailItem(
                 enabled = enabled,
                 role = Role.Tab,
                 interactionSource = interactionSource,
-                indication = ripple
+                indication = ripple,
             )
             .size(itemSize),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         NavigationRailTransition(selectedContentColor, unselectedContentColor, selected) { progress
             ->
@@ -245,7 +245,7 @@ fun NavigationRailItem(
             NavigationRailItemBaselineLayout(
                 icon = icon,
                 label = styledLabel,
-                iconPositionAnimationProgress = animationProgress
+                iconPositionAnimationProgress = animationProgress,
             )
         }
     }
@@ -282,12 +282,12 @@ private fun NavigationRailTransition(
     activeColor: Color,
     inactiveColor: Color,
     selected: Boolean,
-    content: @Composable (animationProgress: Float) -> Unit
+    content: @Composable (animationProgress: Float) -> Unit,
 ) {
     val animationProgress by
         animateFloatAsState(
             targetValue = if (selected) 1f else 0f,
-            animationSpec = NavigationRailAnimationSpec
+            animationSpec = NavigationRailAnimationSpec,
         )
 
     val color = lerp(inactiveColor, activeColor, animationProgress)
@@ -314,7 +314,7 @@ private fun NavigationRailTransition(
 private fun NavigationRailItemBaselineLayout(
     icon: @Composable () -> Unit,
     label: @Composable (() -> Unit)?,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ) {
     Layout({
         Box(Modifier.layoutId("icon")) { icon() }
@@ -344,7 +344,7 @@ private fun NavigationRailItemBaselineLayout(
                 labelPlaceable!!,
                 iconPlaceable,
                 constraints,
-                iconPositionAnimationProgress
+                iconPositionAnimationProgress,
             )
         }
     }
@@ -353,7 +353,7 @@ private fun NavigationRailItemBaselineLayout(
 /** Places the provided [iconPlaceable] in the vertical center of the provided [constraints] */
 private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val iconX = max(0, (constraints.maxWidth - iconPlaceable.width) / 2)
     val iconY = max(0, (constraints.maxHeight - iconPlaceable.height) / 2)
@@ -385,7 +385,7 @@ private fun MeasureScope.placeLabelAndIcon(
     labelPlaceable: Placeable,
     iconPlaceable: Placeable,
     constraints: Constraints,
-    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float
+    @FloatRange(from = 0.0, to = 1.0) iconPositionAnimationProgress: Float,
 ): MeasureResult {
     val baseline = labelPlaceable[LastBaseline]
     val labelBaselineOffset = ItemLabelBaselineBottomOffset.roundToPx()

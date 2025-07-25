@@ -31,6 +31,8 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -84,7 +86,7 @@ import kotlinx.coroutines.launch
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -92,14 +94,14 @@ public fun NavHost(
     startDestination: String,
     modifier: Modifier = Modifier,
     route: String? = null,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
         remember(route, startDestination, builder) {
             navController.createGraph(startDestination, route, builder)
         },
-        modifier
+        modifier,
     )
 }
 
@@ -125,7 +127,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -142,7 +144,7 @@ public fun NavHost(
         enterTransition,
     popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -154,7 +156,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -187,26 +189,26 @@ public fun NavHost(
     contentAlignment: Alignment = Alignment.TopStart,
     route: String? = null,
     enterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+   		AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         DefaultNavTransitions.enterTransition,
     exitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         DefaultNavTransitions.exitTransition,
     popEnterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         enterTransition,
     popExitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
     sizeTransform:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        DefaultNavTransitions.sizeTransform,
-    builder: NavGraphBuilder.() -> Unit
+        (@JvmSuppressWildcards
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
+        null,
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -219,7 +221,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -255,26 +257,26 @@ public fun NavHost(
     route: KClass<*>? = null,
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     enterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         DefaultNavTransitions.enterTransition,
     exitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         DefaultNavTransitions.exitTransition,
     popEnterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         enterTransition,
     popExitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
     sizeTransform:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        DefaultNavTransitions.sizeTransform,
-    builder: NavGraphBuilder.() -> Unit
+        (@JvmSuppressWildcards
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
+        null,
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -287,7 +289,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -323,26 +325,26 @@ public fun NavHost(
     route: KClass<*>? = null,
     typeMap: Map<KType, @JvmSuppressWildcards NavType<*>> = emptyMap(),
     enterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         DefaultNavTransitions.enterTransition,
     exitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         DefaultNavTransitions.exitTransition,
     popEnterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         enterTransition,
     popExitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
     sizeTransform:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        DefaultNavTransitions.sizeTransform,
-    builder: NavGraphBuilder.() -> Unit
+        (@JvmSuppressWildcards
+        AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
+        null,
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     NavHost(
         navController,
@@ -355,7 +357,7 @@ public fun NavHost(
         exitTransition,
         popEnterTransition,
         popExitTransition,
-        sizeTransform
+        sizeTransform,
     )
 }
 
@@ -374,13 +376,13 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports AnimatedContent",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
     navController: NavHostController,
     graph: NavGraph,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ): Unit = NavHost(navController, graph, modifier)
 
 /**
@@ -400,7 +402,7 @@ public fun NavHost(
  */
 @Deprecated(
     message = "Deprecated in favor of NavHost that supports sizeTransform",
-    level = DeprecationLevel.HIDDEN
+    level = DeprecationLevel.HIDDEN,
 )
 @Composable
 public fun NavHost(
@@ -425,7 +427,7 @@ public fun NavHost(
         enterTransition,
         exitTransition,
         popEnterTransition,
-        popExitTransition
+        popExitTransition,
     )
 }
 
@@ -452,25 +454,25 @@ public expect fun NavHost(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     enterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         DefaultNavTransitions.enterTransition,
     exitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         DefaultNavTransitions.exitTransition,
     popEnterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition) =
         enterTransition,
     popExitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition) =
         exitTransition,
     sizeTransform:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
-        DefaultNavTransitions.sizeTransform
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)? =
+        DefaultNavTransitions.sizeTransform,
 )
 
 @Composable
@@ -480,23 +482,23 @@ internal fun NavHost(
     modifier: Modifier,
     contentAlignment: Alignment,
     enterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
     exitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
     popEnterTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
     popExitTransition:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
     sizeTransform:
-    (@JvmSuppressWildcards
-    AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?,
+    	(@JvmSuppressWildcards
+    	AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?,
     drawOnBottomEntryDuringAnimation:
-    (@Composable (isBackAnimation: Boolean, progress: Float) -> Unit)?,
-    limitBackGestureSwipeEdge: Int?
+        (@Composable BoxScope.(isBackAnimation: Boolean, progress: Float) -> Unit)?,
+        limitBackGestureSwipeEdge: Int?,
 ) {
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -653,7 +655,7 @@ internal fun NavHost(
                     animate(
                         transitionState.fraction,
                         0f,
-                        animationSpec = tween((transitionState.fraction * totalDuration).toInt())
+                        animationSpec = tween((transitionState.fraction * totalDuration).toInt()),
                     ) { value, _ ->
                         this@LaunchedEffect.launch {
                             if (value > 0) {
@@ -690,14 +692,14 @@ internal fun NavHost(
                         finalEnter(this),
                         finalExit(this),
                         targetZIndex,
-                        finalSizeTransform(this)
+                        finalSizeTransform(this),
                     )
                 } else {
                     EnterTransition.None togetherWith ExitTransition.None
                 }
             },
             contentAlignment,
-            contentKey = { it.id }
+            contentKey = { it.id },
         ) {
             // In some specific cases, such as clearing your back stack by changing your
             // start destination, AnimatedContent can contain an entry that is no longer
@@ -719,28 +721,33 @@ internal fun NavHost(
             // while in the scope of the composable, we provide the navBackStackEntry as the
             // ViewModelStoreOwner and LifecycleOwner
             currentEntry?.LocalOwnersProvider(saveableStateHolder) {
-                (currentEntry.destination as ComposeNavigator.Destination).content(
-                    this,
-                    currentEntry
-                )
-            }
+                val destination = (currentEntry.destination as ComposeNavigator.Destination)
+                if (drawOnBottomEntryDuringAnimation == null) {
+                    destination.content(this, currentEntry)
+                } else {
+                    Box {
+                        with(this@AnimatedContent) {
+                            destination.content(this, currentEntry)
+                        }
 
-            if (currentEntry != null && drawOnBottomEntryDuringAnimation != null) {
-                val currentEntryId = currentEntry.id
-                val initialEntryId = transition.segment.initialState.id
-                val targetEntryId = transition.segment.targetState.id
-                if (
-                    zIndices.contains(currentEntryId) &&
-                    zIndices.contains(initialEntryId) &&
-                    zIndices.contains(targetEntryId)
-                ) {
-                    val currentEntryZ = zIndices[currentEntryId]
-                    val initialEntryZ = zIndices[initialEntryId]
-                    val targetEntryZ = zIndices[targetEntryId]
-                    val isDrawBehind = currentEntryZ < initialEntryZ || currentEntryZ < targetEntryZ
-                    if (isDrawBehind) {
-                        val isGoBack = currentEntryZ == targetEntryZ
-                        drawOnBottomEntryDuringAnimation(isGoBack, transitionState.fraction)
+                        val currentEntryId = currentEntry.id
+                        val initialEntryId = transition.segment.initialState.id
+                        val targetEntryId = transition.segment.targetState.id
+                        if (
+                            zIndices.contains(currentEntryId) &&
+                            zIndices.contains(initialEntryId) &&
+                            zIndices.contains(targetEntryId)
+                        ) {
+                            val currentEntryZ = zIndices[currentEntryId]
+                            val initialEntryZ = zIndices[initialEntryId]
+                            val targetEntryZ = zIndices[targetEntryId]
+                            val isDrawBehind =
+                                currentEntryZ < initialEntryZ || currentEntryZ < targetEntryZ
+                            if (isDrawBehind) {
+                                val isGoBack = currentEntryZ == targetEntryZ
+                                drawOnBottomEntryDuringAnimation(isGoBack, transitionState.fraction)
+                            }
+                        }
                     }
                 }
             }

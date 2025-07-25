@@ -172,7 +172,7 @@ fun SecureTextField(
                     .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                     .defaultMinSize(
                         minWidth = TextFieldDefaults.MinWidth,
-                        minHeight = TextFieldDefaults.MinHeight
+                        minHeight = TextFieldDefaults.MinHeight,
                     ),
             enabled = enabled,
             textStyle = mergedTextStyle,
@@ -210,8 +210,8 @@ fun SecureTextField(
                             colors = colors,
                             shape = shape,
                         )
-                    }
-                )
+                    },
+                ),
         )
     }
 }
@@ -343,7 +343,7 @@ fun OutlinedSecureTextField(
                     .defaultErrorSemantics(isError, getString(Strings.DefaultErrorMessage))
                     .defaultMinSize(
                         minWidth = OutlinedTextFieldDefaults.MinWidth,
-                        minHeight = OutlinedTextFieldDefaults.MinHeight
+                        minHeight = OutlinedTextFieldDefaults.MinHeight,
                     ),
             enabled = enabled,
             textStyle = mergedTextStyle,
@@ -381,8 +381,8 @@ fun OutlinedSecureTextField(
                             colors = colors,
                             shape = shape,
                         )
-                    }
-                )
+                    },
+                ),
         )
     }
 }

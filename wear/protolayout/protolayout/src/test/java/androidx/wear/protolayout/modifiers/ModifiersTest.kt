@@ -46,7 +46,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .toProtoLayoutModifiers()
 
@@ -70,7 +70,7 @@ class ModifiersTest {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
                 .toProtoLayoutModifiers()
@@ -83,13 +83,21 @@ class ModifiersTest {
     }
 
     @Test
+    fun semanticsHeading_toModifier() {
+        val modifiers = LayoutModifier.semanticsHeading(true).toProtoLayoutModifiers()
+
+        assertThat(modifiers.semantics?.isHeading).isTrue()
+    }
+
+    @Test
     fun clearSemantics_fromModifier() {
         val modifiers =
             LayoutModifier.contentDescription(
                     STATIC_CONTENT_DESCRIPTION,
-                    DYNAMIC_CONTENT_DESCRIPTION
+                    DYNAMIC_CONTENT_DESCRIPTION,
                 )
                 .semanticsRole(SEMANTICS_ROLE_BUTTON)
+                .semanticsHeading(true)
                 .clearSemantics()
                 .toProtoLayoutModifiers()
 
@@ -195,7 +203,7 @@ class ModifiersTest {
                         loadAction(dynamicDataMapOf(statePair1, statePair2)),
                         id = id,
                         minClickableWidth = minTouchWidth,
-                        minClickableHeight = minTouchHeight
+                        minClickableHeight = minTouchHeight,
                     )
                 )
                 .toProtoLayoutModifiers()
@@ -231,7 +239,7 @@ class ModifiersTest {
                     top = TOP_PADDING,
                     end = END_PADDING,
                     bottom = BOTTOM_PADDING,
-                    rtlAware = true
+                    rtlAware = true,
                 )
                 .padding(PADDING_ALL)
                 .toProtoLayoutModifiers()

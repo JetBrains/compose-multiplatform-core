@@ -71,6 +71,16 @@ class MainActivityTest {
     }
 
     @Test
+    fun remoteRendering_afterGetAdapter_works(): Unit = runTest {
+        onView(withId(R.id.sandboxedSdkView)).check(matches(hasChildCount(0)))
+
+        getActivity().getUiAdapterAndRenderAd()
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+
+        onView(withId(R.id.sandboxedSdkView)).check(matches(hasChildCount(1)))
+    }
+
+    @Test
     fun nativeUiPresentation_works(): Unit = runTest {
         val appOwnedTextView = getActivity().findViewById<TextView>(R.id.appOwnedTextView)
         assertThat(appOwnedTextView.text).isEqualTo("Text from app")

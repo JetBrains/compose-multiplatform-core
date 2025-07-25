@@ -100,7 +100,7 @@ public interface ExtensionInitializationScope {
      */
     public fun addParticipantExtension(
         initialParticipants: List<Participant> = emptyList(),
-        initialActiveParticipant: Participant? = null
+        initialActiveParticipant: Participant? = null,
     ): ParticipantExtension
 
     /**

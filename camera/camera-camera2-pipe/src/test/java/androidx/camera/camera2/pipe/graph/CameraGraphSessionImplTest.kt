@@ -69,7 +69,7 @@ internal class CameraGraphSessionImplTest {
                     mapOf(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE to 1.0f)
             ),
             graphState3A,
-            listener3A
+            listener3A,
         )
     private val frameCaptureQueue = FrameCaptureQueue()
     private val sessionMutex = SessionLock()
@@ -82,7 +82,7 @@ internal class CameraGraphSessionImplTest {
             graphProcessor,
             controller3A,
             frameCaptureQueue,
-            parameters
+            parameters,
         )
 
     @Test
@@ -172,8 +172,8 @@ internal class CameraGraphSessionImplTest {
                         resultMetadata =
                             mapOf(CaptureResult.CONTROL_AE_STATE to CONTROL_AE_STATE_LOCKED)
                     ),
-                requestMetadata = requestMetadata
-            )
+                requestMetadata = requestMetadata,
+            ),
         )
 
         assertThat(result.await().status).isEqualTo(Result3A.Status.OK)

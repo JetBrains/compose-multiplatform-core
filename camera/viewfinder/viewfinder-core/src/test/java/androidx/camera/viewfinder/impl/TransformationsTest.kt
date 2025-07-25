@@ -45,9 +45,9 @@ class TransformationsTest {
                 Transformations.isViewportAspectRatioMatchViewfinder(
                     SizeF(
                         (VIEWFINDER_SIZE.width + 1).toFloat(),
-                        (VIEWFINDER_SIZE.height - 1).toFloat()
+                        (VIEWFINDER_SIZE.height - 1).toFloat(),
                     ),
-                    VIEWFINDER_SIZE
+                    VIEWFINDER_SIZE,
                 )
             )
             .isTrue()
@@ -59,9 +59,9 @@ class TransformationsTest {
                 Transformations.isViewportAspectRatioMatchViewfinder(
                     SizeF(
                         (VIEWFINDER_SIZE.width + 2).toFloat(),
-                        (VIEWFINDER_SIZE.height - 2).toFloat()
+                        (VIEWFINDER_SIZE.height - 2).toFloat(),
                     ),
-                    VIEWFINDER_SIZE
+                    VIEWFINDER_SIZE,
                 )
             )
             .isFalse()
@@ -79,7 +79,7 @@ class TransformationsTest {
                     SURFACE_SIZE.width,
                     SURFACE_SIZE.height,
                     0,
-                    SURFACE_SIZE.height
+                    SURFACE_SIZE.height,
                 )
             )
     }
@@ -96,7 +96,7 @@ class TransformationsTest {
                     SURFACE_SIZE.width,
                     0,
                     SURFACE_SIZE.width,
-                    SURFACE_SIZE.height
+                    SURFACE_SIZE.height,
                 )
             )
     }
@@ -113,7 +113,7 @@ class TransformationsTest {
                     0,
                     0,
                     SURFACE_SIZE.width,
-                    0
+                    0,
                 )
             )
     }
@@ -130,7 +130,7 @@ class TransformationsTest {
                     0,
                     SURFACE_SIZE.height,
                     0,
-                    0
+                    0,
                 )
             )
     }
@@ -143,7 +143,7 @@ class TransformationsTest {
                         displayRotationDegrees =
                             Transformations.surfaceRotationToRotationDegrees(rotation),
                         width = SURFACE_SIZE.width,
-                        height = SURFACE_SIZE.height
+                        height = SURFACE_SIZE.height,
                     )
                     .mapPoints(this)
             }
@@ -169,6 +169,6 @@ class TransformationsTest {
             width.toFloat(),
             height.toFloat(),
             0f,
-            height.toFloat()
+            height.toFloat(),
         )
 }

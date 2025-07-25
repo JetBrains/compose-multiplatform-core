@@ -52,7 +52,7 @@ fun SurfaceTransformationOnCustomComponent() {
         title: String,
         body: String,
         transformation: SurfaceTransformation,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Column(
             modifier =
@@ -61,7 +61,7 @@ fun SurfaceTransformationOnCustomComponent() {
                     .paint(
                         transformation.createContainerPainter(
                             ColorPainter(color = Color.Gray),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
                         )
                     )
                     .graphicsLayer { with(transformation) { applyContainerTransformation() } }

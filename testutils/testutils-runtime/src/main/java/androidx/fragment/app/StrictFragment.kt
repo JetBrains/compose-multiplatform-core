@@ -198,6 +198,6 @@ open class StrictFragment(@LayoutRes contentLayoutId: Int = 0) : Fragment(conten
         VIEW_CREATED,
         ACTIVITY_CREATED,
         STARTED,
-        RESUMED
+        RESUMED,
     }
 }

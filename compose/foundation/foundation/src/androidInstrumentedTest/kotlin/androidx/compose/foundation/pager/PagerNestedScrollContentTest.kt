@@ -86,7 +86,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -132,7 +132,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -165,7 +165,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 override fun onPostScroll(
                     consumed: Offset,
                     available: Offset,
-                    source: NestedScrollSource
+                    source: NestedScrollSource,
                 ): Offset {
                     scrollAvailable += available
                     return Offset.Zero
@@ -173,7 +173,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
 
                 override suspend fun onPostFling(
                     consumed: Velocity,
-                    available: Velocity
+                    available: Velocity,
                 ): Velocity {
                     postFlingVelocity = available
                     return Velocity.Zero
@@ -181,7 +181,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             }
         createPager(
             pageCount = { DefaultPageCount },
-            nestedScrollConnection = dataCapturingConnection
+            nestedScrollConnection = dataCapturingConnection,
         ) {
             LazyList(
                 modifier = Modifier.fillMaxSize(),
@@ -195,7 +195,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -239,7 +239,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -292,7 +292,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -353,7 +353,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                 verticalArrangement = Arrangement.Top,
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.Top,
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 items(10) {
                     Box(modifier = Modifier.size(100.dp)) { BasicText(text = it.toString()) }
@@ -417,7 +417,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
                             }
                             .size(150.dp)
                             .focusable(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     BasicText(text = "page=$page-item=$item")
                 }
@@ -427,7 +427,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
             modifier = Modifier.fillMaxSize(),
             pageCount = { DefaultPageCount },
             initialPage = 3,
-            pageSize = { PageSize.Fixed(100.dp) }
+            pageSize = { PageSize.Fixed(100.dp) },
         ) { page ->
             val focusRequester =
                 remember(page) {
@@ -502,7 +502,7 @@ class PagerNestedScrollContentTest(config: ParamConfig) : BasePagerTest(config =
         createPager(
             modifier = Modifier.fillMaxSize(),
             pageCount = { DefaultPageCount },
-            initialPage = 3
+            initialPage = 3,
         ) { page ->
             val focusRequester = remember {
                 FocusRequester().apply { if (page == 5) pagerFocusRequester = this }

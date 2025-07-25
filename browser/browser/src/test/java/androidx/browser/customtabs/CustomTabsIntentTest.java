@@ -907,4 +907,39 @@ public class CustomTabsIntentTest {
         Bundle extras = intent.getExtras();
         assertEquals(icon, (Bitmap) extras.getParcelable(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON));
     }
+
+    @Test
+    public void testOpenInBrowserButton() {
+        Intent intent = new CustomTabsIntent.Builder().build().intent;
+        assertEquals(CustomTabsIntent.getOpenInBrowserButtonState(intent),
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_DEFAULT);
+
+        intent = new CustomTabsIntent.Builder().setOpenInBrowserButtonState(
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_ON).build().intent;
+        assertEquals(CustomTabsIntent.getOpenInBrowserButtonState(intent),
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_ON);
+
+        intent = new CustomTabsIntent.Builder().setOpenInBrowserButtonState(
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_OFF).build().intent;
+        assertEquals(CustomTabsIntent.getOpenInBrowserButtonState(intent),
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_OFF);
+
+        intent = new CustomTabsIntent.Builder().setOpenInBrowserButtonState(
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_DEFAULT).build().intent;
+        assertEquals(CustomTabsIntent.getOpenInBrowserButtonState(intent),
+                CustomTabsIntent.OPEN_IN_BROWSER_STATE_DEFAULT);
+
+        try {
+            new CustomTabsIntent.Builder().setOpenInBrowserButtonState(-1);
+            fail("The state value be higher than 0.");
+        } catch (IllegalArgumentException exception) {
+        }
+
+        try {
+            new CustomTabsIntent.Builder().setOpenInBrowserButtonState(
+                    CustomTabsIntent.OPEN_IN_BROWSER_STATE_OFF + 1);
+            fail("The state value should not be higher than the max value.");
+        } catch (IllegalArgumentException exception) {
+        }
+    }
 }

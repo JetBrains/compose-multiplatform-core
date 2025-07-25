@@ -141,7 +141,7 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
                 readGroupVersion(
                     groupDefinition = groupDefinition,
                     groupName = groupName,
-                    key = AtomicGroupVersion
+                    key = AtomicGroupVersion,
                 )
             val overrideApplyToProjects =
                 (groupDefinition.getArray("overrideInclude")?.toList() ?: listOf()).map {
@@ -160,7 +160,7 @@ abstract class LibraryVersionsService : BuildService<LibraryVersionsService.Para
 
             return project.gradle.sharedServices.registerIfAbsent(
                 "libraryVersionsService",
-                LibraryVersionsService::class.java
+                LibraryVersionsService::class.java,
             ) { spec ->
                 spec.parameters.tomlFileName = tomlFileName
                 spec.parameters.tomlFileContents = toml
@@ -176,7 +176,7 @@ private data class LibraryGroupAssociation(
     // the group
     val libraryGroup: LibraryGroup,
     // the paths of any additional projects that this group should be assigned to
-    val overrideIncludeInProjectPaths: List<String>
+    val overrideIncludeInProjectPaths: List<String>,
 )
 
 private const val VersionReferencePrefix = "versions."
@@ -189,5 +189,5 @@ private val ALLOWED_ATOMIC_GROUP_EXCEPTIONS =
         "androidx.camera",
         "androidx.compose.material3",
         "androidx.lifecycle",
-        "androidx.tracing"
+        "androidx.tracing",
     )

@@ -61,7 +61,7 @@ internal object AppSearchMetadataHelper {
                         .addFilterNamespaces("app_functions")
                         .addFilterPackageNames("android")
                         .addFilterSchemas("AppFunctionStaticMetadata")
-                        .build()
+                        .build(),
                 )
             var nextPage = searchResults.nextPageAsync.await()
             while (nextPage.isNotEmpty()) {

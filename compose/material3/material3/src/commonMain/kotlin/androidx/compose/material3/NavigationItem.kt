@@ -244,7 +244,7 @@ internal fun NavigationItem(
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
-    interactionSource: MutableInteractionSource
+    interactionSource: MutableInteractionSource,
 ) {
     val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
@@ -271,7 +271,7 @@ internal fun NavigationItem(
             )
             .defaultMinSize(
                 minWidth = LocalMinimumInteractiveComponentSize.current,
-                minHeight = LocalMinimumInteractiveComponentSize.current
+                minHeight = LocalMinimumInteractiveComponentSize.current,
             )
             .onSizeChanged { itemWidth = it.width },
         contentAlignment = Alignment.Center,
@@ -288,7 +288,7 @@ internal fun NavigationItem(
                 deltaOffset =
                     Offset(
                         (itemWidth - indicatorWidth.roundToPx()).toFloat() / 2,
-                        IndicatorVerticalOffset.toPx()
+                        IndicatorVerticalOffset.toPx(),
                     )
             }
             offsetInteractionSource =
@@ -309,7 +309,7 @@ internal fun NavigationItem(
             indicatorVerticalPadding = indicatorVerticalPadding,
             indicatorToLabelVerticalPadding = indicatorToLabelVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            topIconItemVerticalPadding = topIconItemVerticalPadding
+            topIconItemVerticalPadding = topIconItemVerticalPadding,
         )
     }
 }
@@ -343,7 +343,7 @@ internal fun AnimatedNavigationItem(
     enabled: Boolean,
     label: @Composable (() -> Unit)?,
     iconPosition: NavigationItemIconPosition,
-    interactionSource: MutableInteractionSource
+    interactionSource: MutableInteractionSource,
 ) {
     val iconColor = colors.iconColor(selected = selected, enabled = enabled)
     val styledIcon: @Composable () -> Unit = {
@@ -364,7 +364,7 @@ internal fun AnimatedNavigationItem(
             )
             .defaultMinSize(
                 minWidth = LocalMinimumInteractiveComponentSize.current,
-                minHeight = LocalMinimumInteractiveComponentSize.current
+                minHeight = LocalMinimumInteractiveComponentSize.current,
             )
             .onSizeChanged { itemWidth = it.width },
         contentAlignment = Alignment.Center,
@@ -376,7 +376,7 @@ internal fun AnimatedNavigationItem(
             animateFloatAsState(
                 targetValue = if (isIconPositionTop) 0f else 1f,
                 // TODO Load the motionScheme tokens from the component tokens file
-                animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+                animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
             )
 
         val textStyle by remember {
@@ -393,7 +393,7 @@ internal fun AnimatedNavigationItem(
                         labelTextStyle = textStyle,
                         colors = colors,
                         enabled = enabled,
-                        content = label
+                        content = label,
                     )
                 }
             } else {
@@ -410,7 +410,7 @@ internal fun AnimatedNavigationItem(
                 deltaOffset =
                     Offset(
                         (itemWidth - topIconIndicatorWidth.roundToPx()).toFloat() / 2,
-                        IndicatorVerticalOffset.toPx()
+                        IndicatorVerticalOffset.toPx(),
                     )
             }
             offsetInteractionSource =
@@ -435,7 +435,7 @@ internal fun AnimatedNavigationItem(
             startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
             noLabelIndicatorPadding = noLabelIndicatorPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            itemHorizontalPadding = itemHorizontalPadding
+            itemHorizontalPadding = itemHorizontalPadding,
         )
     }
 }
@@ -454,7 +454,7 @@ private fun NavigationItemLayout(
     indicatorVerticalPadding: Dp,
     indicatorToLabelVerticalPadding: Dp,
     startIconToLabelHorizontalPadding: Dp,
-    topIconItemVerticalPadding: Dp
+    topIconItemVerticalPadding: Dp,
 ) {
     Layout(
         modifier = Modifier.badgeBounds(),
@@ -479,7 +479,7 @@ private fun NavigationItemLayout(
                     indicatorHorizontalPadding,
                     indicatorVerticalPadding,
                     indicatorToLabelVerticalPadding,
-                    topIconItemVerticalPadding
+                    topIconItemVerticalPadding,
                 )
             } else {
                 StartIconMeasurePolicy(
@@ -488,7 +488,7 @@ private fun NavigationItemLayout(
                     indicatorVerticalPadding,
                     startIconToLabelHorizontalPadding,
                 )
-            }
+            },
     )
 }
 
@@ -539,7 +539,7 @@ private fun AnimatedNavigationItemLayout(
                     startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
                     startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
                     startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-                    itemHorizontalPadding = itemHorizontalPadding
+                    itemHorizontalPadding = itemHorizontalPadding,
                 )
             } else {
                 // If no label, default to circular indicator for the item.
@@ -549,9 +549,9 @@ private fun AnimatedNavigationItemLayout(
                     indicatorHorizontalPadding = noLabelIndicatorPadding,
                     indicatorVerticalPadding = noLabelIndicatorPadding,
                     indicatorToLabelVerticalPadding = 0.dp,
-                    topIconItemVerticalPadding = 0.dp
+                    topIconItemVerticalPadding = 0.dp,
                 )
-            }
+            },
     )
 }
 
@@ -565,7 +565,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
@@ -576,7 +576,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 .measure(
                     looseConstraints.offset(
                         horizontal = -(indicatorHorizontalPadding * 2).roundToPx(),
-                        vertical = -(indicatorVerticalPadding * 2).roundToPx()
+                        vertical = -(indicatorVerticalPadding * 2).roundToPx(),
                     )
                 )
         // Next, when measuring the indicator and ripple, still need to obey looseConstraints.
@@ -622,7 +622,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
                 constraints,
                 indicatorToLabelVerticalPadding,
                 indicatorVerticalPadding,
-                topIconItemVerticalPadding
+                topIconItemVerticalPadding,
             )
         } else {
             placeIcon(iconPlaceable, indicatorRipplePlaceable, indicatorPlaceable, constraints)
@@ -631,7 +631,7 @@ private class TopIconOrIconOnlyMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val iconHeight =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicHeight(width)
@@ -657,7 +657,7 @@ private class StartIconMeasurePolicy(
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
@@ -708,13 +708,13 @@ private class StartIconMeasurePolicy(
             indicatorRipplePlaceable,
             indicatorPlaceable,
             constraints,
-            startIconToLabelHorizontalPadding
+            startIconToLabelHorizontalPadding,
         )
     }
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val iconWidth =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicWidth(height)
@@ -728,7 +728,7 @@ private class StartIconMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val iconHeight =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicHeight(width)
@@ -755,7 +755,7 @@ private class AnimatedMeasurePolicy(
 ) : MeasurePolicy {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         @Suppress("NAME_SHADOWING") val indicatorAnimationProgress = indicatorAnimationProgress()
         val iconPositionProgressValue = iconPositionProgress()
@@ -795,7 +795,7 @@ private class AnimatedMeasurePolicy(
                     looseConstraints.constrain(
                         Constraints.fixed(
                             width = indicatorWidthProgress,
-                            height = indicatorHeightProgress
+                            height = indicatorHeightProgress,
                         )
                     )
                 )
@@ -806,7 +806,7 @@ private class AnimatedMeasurePolicy(
                     looseConstraints.constrain(
                         Constraints.fixed(
                             width = animatedIndicatorWidth,
-                            height = indicatorHeightProgress
+                            height = indicatorHeightProgress,
                         )
                     )
                 )
@@ -826,13 +826,13 @@ private class AnimatedMeasurePolicy(
             startIconIndicatorHorizontalPadding = startIconIndicatorHorizontalPadding,
             startIconIndicatorVerticalPadding = startIconIndicatorVerticalPadding,
             startIconToLabelHorizontalPadding = startIconToLabelHorizontalPadding,
-            itemHorizontalPadding = itemHorizontalPadding
+            itemHorizontalPadding = itemHorizontalPadding,
         )
     }
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val iconWidth =
             measurables.fastFirst { it.layoutId == IconLayoutIdTag }.maxIntrinsicWidth(height)
@@ -866,7 +866,7 @@ private fun MeasureScope.placeIcon(
     iconPlaceable: Placeable,
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
-    constraints: Constraints
+    constraints: Constraints,
 ): MeasureResult {
     val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
     val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
@@ -957,7 +957,7 @@ private fun MeasureScope.placeLabelAndStartIcon(
     indicatorRipplePlaceable: Placeable,
     indicatorPlaceable: Placeable,
     constraints: Constraints,
-    startIconToLabelHorizontalPadding: Dp
+    startIconToLabelHorizontalPadding: Dp,
 ): MeasureResult {
     val width = constraints.constrainWidth(indicatorRipplePlaceable.width)
     val height = constraints.constrainHeight(indicatorRipplePlaceable.height)
@@ -1005,7 +1005,7 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
         constraints.constrainWidth(
             maxOf(
                 labelPlaceable.width,
-                (topIconIndicatorWidth + (itemHorizontalPadding * 2).roundToPx())
+                (topIconIndicatorWidth + (itemHorizontalPadding * 2).roundToPx()),
             )
         )
     val widthStartIcon =
@@ -1075,7 +1075,7 @@ private fun MeasureScope.placeAnimatedLabelAndIcon(
             y = labelY,
             layerBlock = {
                 alpha = 4 * (iconPositionProgress - 0.5f) * (iconPositionProgress - 0.5f)
-            }
+            },
         )
         indicatorRipplePlaceable.placeRelativeWithLayer(rippleX, 0)
     }
@@ -1093,7 +1093,7 @@ private fun StyledLabel(
     ProvideContentColorTextStyle(
         contentColor = textColor,
         textStyle = labelTextStyle,
-        content = content
+        content = content,
     )
 }
 
@@ -1102,7 +1102,7 @@ private fun animateIndicatorProgressAsState(selected: Boolean) =
     animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
         // TODO Load the motionScheme tokens from the component tokens file
-        animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value()
+        animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value(),
     )
 
 @Composable
@@ -1123,10 +1123,7 @@ private fun Indicator(
     Box(
         Modifier.layoutId(IndicatorLayoutIdTag)
             .graphicsLayer { alpha = indicatorAnimationProgress() }
-            .background(
-                color = indicatorColor,
-                shape = indicatorShape,
-            )
+            .background(color = indicatorColor, shape = indicatorShape)
     )
 }
 

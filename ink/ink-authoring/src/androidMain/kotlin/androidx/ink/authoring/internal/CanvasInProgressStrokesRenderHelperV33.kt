@@ -135,7 +135,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                 holder: SurfaceHolder,
                 format: Int,
                 width: Int,
-                height: Int
+                height: Int,
             ) {
                 if (width == 0 || height == 0) {
                     onViewHiddenOrNoBounds()
@@ -477,7 +477,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                     // contents of the front buffer (restricted to the clip region).
                     setUseCompositingLayer(
                         /* forceToLayer= */ true,
-                        /* paint= */ offScreenFrameBufferPaint
+                        /* paint= */ offScreenFrameBufferPaint,
                     )
                 }
             val frontBufferRenderNode = createRenderNode("$debugName-Front")
@@ -507,7 +507,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                         1,
                         HardwareBuffer.RGBA_8888,
                         1,
-                        DESIRED_USAGE_FLAGS
+                        DESIRED_USAGE_FLAGS,
                     )
                 ) {
                     DESIRED_USAGE_FLAGS
@@ -702,7 +702,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                     canvas,
                     inProgressStroke,
                     strokeToMainViewTransform,
-                    textureAnimationProgress
+                    textureAnimationProgress,
                 )
             }
         }
@@ -763,7 +763,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                 BuffersState(
                     active = state.inactive,
                     inactive = state.active,
-                    inactiveIsReady = false
+                    inactiveIsReady = false,
                 )
             buffersState.checkAndSet(state, newState)
             // Allow input to be resumed right away, because there is another buffer that is visible
@@ -807,7 +807,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
             uiThreadExecutor.executeDelayed(
                 inactiveBufferIsHiddenCallback,
                 500,
-                TimeUnit.MILLISECONDS
+                TimeUnit.MILLISECONDS,
             )
             // This will lead to onInactiveBufferHidden below.
         }

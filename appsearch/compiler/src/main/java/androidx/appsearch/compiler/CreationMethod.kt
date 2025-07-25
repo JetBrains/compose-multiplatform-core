@@ -81,14 +81,14 @@ data class CreationMethod(
         fun inferParamAssociationsAndCreate(
             method: ExecutableElement,
             gettersAndFields: Collection<AnnotatedGetterOrField>,
-            returnsDocumentClass: Boolean
+            returnsDocumentClass: Boolean,
         ): CreationMethod {
             if (method.modifiers.contains(Modifier.PRIVATE)) {
                 throw ProcessingException(
                     ("Method cannot be used to create a " +
                         (if (returnsDocumentClass) "document class" else "builder") +
                         ": private visibility"),
-                    method
+                    method,
                 )
             }
 
@@ -100,7 +100,7 @@ data class CreationMethod(
                     ("Method cannot be used to create a " +
                         (if (returnsDocumentClass) "document class" else "builder") +
                         ": abstract constructor"),
-                    method
+                    method,
                 )
             }
 
@@ -117,7 +117,7 @@ data class CreationMethod(
                         ?: throw ProcessingException(
                             "Parameter \"$paramName\" is not an AppSearch parameter; " +
                                 "don't know how to supply it.",
-                            method
+                            method,
                         )
                 paramAssociations.add(correspondingGetterOrField)
             }

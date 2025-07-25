@@ -370,7 +370,7 @@ package androidx.graphics.opengl.egl {
     ctor public EGLVersion(int major, int minor);
     method public int component1();
     method public int component2();
-    method public androidx.graphics.opengl.egl.EGLVersion copy(int major, int minor);
+    method public androidx.graphics.opengl.egl.EGLVersion copy(optional int major, optional int minor);
     method public int getMajor();
     method public int getMinor();
     property public int major;

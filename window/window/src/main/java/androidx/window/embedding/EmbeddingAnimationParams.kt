@@ -53,7 +53,7 @@ private constructor(
          * The unique integer value for the `splitAnimationSpec`. This can be used as an enum value
          * when defining `splitAnimationSpec` attributes in XML.
          */
-        internal val value: Int,
+        internal val value: Int
     ) {
 
         /**
@@ -209,7 +209,7 @@ private constructor(
                 animationBackground,
                 openAnimation,
                 closeAnimation,
-                changeAnimation
+                changeAnimation,
             )
     }
 }

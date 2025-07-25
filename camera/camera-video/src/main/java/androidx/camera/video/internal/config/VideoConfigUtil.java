@@ -36,7 +36,7 @@ import static android.media.MediaCodecInfo.CodecProfileLevel.VP9Profile3HDR;
 import static android.media.MediaCodecInfo.CodecProfileLevel.VP9Profile3HDR10Plus;
 
 import static androidx.camera.core.SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED;
-import static androidx.camera.video.VideoSpec.FRAME_RATE_RANGE_AUTO;
+import static androidx.camera.video.VideoSpec.ENCODE_FRAME_RATE_AUTO;
 import static androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_HLG;
 import static androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ;
 import static androidx.camera.video.internal.encoder.VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT709;
@@ -384,10 +384,10 @@ public final class VideoConfigUtil {
         }
 
         int encodeFrameRate;
-        if (FRAME_RATE_RANGE_AUTO.equals(videoSpec.getFrameRate())) {
-            encodeFrameRate = captureFrameRate;
+        if (videoSpec.getEncodeFrameRate() != ENCODE_FRAME_RATE_AUTO) {
+            encodeFrameRate = videoSpec.getEncodeFrameRate();
         } else {
-            encodeFrameRate = videoSpec.getFrameRate().getUpper();
+            encodeFrameRate = captureFrameRate;
         }
 
         Logger.d(TAG, String.format(Locale.ENGLISH,

@@ -46,6 +46,12 @@
          android:layout_height="wrap_content"
          android:text="Hide Main Panel (for 3s)" />
       <Switch
+         android:id="@+id/hide_panel1_pointer"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:background="@android:color/white"
+         android:text="Hide pointer for 1st child panel" />
+      <Switch
          android:id="@+id/hide_all"
          android:layout_width="match_parent"
          android:layout_height="wrap_content"

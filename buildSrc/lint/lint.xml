@@ -45,4 +45,7 @@
         <!-- playground builds have dependency files in "transformed" instead of ".transforms" -->
         <ignore path="**/.gradle/**/transforms*/**/transformed/**" />
     </issue>
+    <issue id="AndroidXFlaggedApi">
+        <option name="allowlist" value="androidx.lint-checks,androidx.mediarouter" />
+    </issue>
 </lint>

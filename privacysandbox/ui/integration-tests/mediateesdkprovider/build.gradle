@@ -22,7 +22,7 @@ plugins {
 
 android {
     namespace = "androidx.privacysandbox.ui.integration.mediateesdkprovider"
-    compileSdk = 35
+    compileSdk = 36
     compileSdkExtension = 14
 
     buildTypes {

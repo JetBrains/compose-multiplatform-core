@@ -81,7 +81,7 @@ fun SharedElementDemos() {
                 Tab(
                     index == selectedTab,
                     { selectedTab = index },
-                    modifier = Modifier.padding(5.dp)
+                    modifier = Modifier.padding(5.dp),
                 ) {
                     Text(text)
                 }
@@ -150,7 +150,7 @@ fun ScaleContentTransition() {
                                 EnterTransition.None,
                                 ExitTransition.None,
                                 resizeMode = ScaleToBounds(contentScale = ContentScale.Crop),
-                            )
+                            ),
                 )
             } else {
                 Image(
@@ -166,7 +166,7 @@ fun ScaleContentTransition() {
                                 resizeMode = ScaleToBounds(contentScale = ContentScale.Crop),
                             )
                             .requiredSize(200.dp)
-                            .clip(shape = RoundedCornerShape(10))
+                            .clip(shape = RoundedCornerShape(10)),
                 )
             }
         }

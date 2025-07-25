@@ -19,10 +19,10 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.AppFunctionCompilerOptions
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSchemaDefinition
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy
 import androidx.appfunctions.compiler.core.AppFunctionInventoryCodeBuilder
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
 import androidx.appfunctions.compiler.core.IntrospectionHelper
-import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -31,6 +31,7 @@ import com.google.devtools.ksp.symbol.KSAnnotated
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.TypeSpec
 
+// TODO(b/403525399): Aggregate shared components at the top level to reduce memory usage.
 /**
  * Generates the static mapped inventory to look up AppFunctionMetadata with schema as the key.
  *
@@ -57,30 +58,40 @@ class AppFunctionSchemaInventoryProcessor(
             return emptyList()
         }
 
-        val schemaDefinitions =
-            AppFunctionSymbolResolver(resolver).getAppFunctionSchemaDefinitionFromAllModules()
-        generateSchemaAppFunctionInventoryClass(schemaDefinitions)
+        val symbolResolver = AppFunctionSymbolResolver(resolver)
+        val schemaDefinitions = symbolResolver.getAppFunctionSchemaDefinitionFromAllModules()
+        val resolvedAnnotatedSerializableProxies =
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies(
+                symbolResolver.resolveAllAnnotatedSerializableProxiesFromModule()
+            )
+        generateSchemaAppFunctionInventoryClass(
+            schemaDefinitions,
+            resolvedAnnotatedSerializableProxies,
+        )
 
         hasProcessed = true
         return emptyList()
     }
 
     private fun generateSchemaAppFunctionInventoryClass(
-        schemaDefinitions: List<AnnotatedAppFunctionSchemaDefinition>
+        schemaDefinitions: List<AnnotatedAppFunctionSchemaDefinition>,
+        resolvedAnnotatedSerializableProxies:
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies,
     ) {
+        val packageName = IntrospectionHelper.SCHEMA_APP_FUNCTION_INVENTORY_CLASS.packageName
         val inventoryClassName = SCHEMA_INVENTORY_CLASS_NAME
         val inventoryClassBuilder = TypeSpec.classBuilder(inventoryClassName)
         inventoryClassBuilder.superclass(IntrospectionHelper.SCHEMA_APP_FUNCTION_INVENTORY_CLASS)
         inventoryClassBuilder.addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
         AppFunctionInventoryCodeBuilder(inventoryClassBuilder)
-            .addFunctionMetadataProperties(schemaDefinitions.map { it.createAppFunctionMetadata() })
+            .addFunctionMetadataProperties(
+                schemaDefinitions.map {
+                    it.createAppFunctionMetadata(resolvedAnnotatedSerializableProxies)
+                }
+            )
 
         val fileSpec =
-            FileSpec.builder(
-                    IntrospectionHelper.APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME,
-                    inventoryClassName
-                )
-                .addGeneratedTimeStamp()
+            FileSpec.builder(packageName, inventoryClassName)
                 .addType(inventoryClassBuilder.build())
                 .build()
         codeGenerator
@@ -89,10 +100,10 @@ class AppFunctionSchemaInventoryProcessor(
                     aggregating = true,
                     *schemaDefinitions
                         .flatMap(AnnotatedAppFunctionSchemaDefinition::getSourceFiles)
-                        .toTypedArray()
+                        .toTypedArray(),
                 ),
-                IntrospectionHelper.APP_FUNCTIONS_AGGREGATED_DEPS_PACKAGE_NAME,
-                inventoryClassName
+                packageName,
+                inventoryClassName,
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }

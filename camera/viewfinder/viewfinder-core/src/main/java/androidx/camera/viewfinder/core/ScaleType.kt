@@ -29,7 +29,7 @@ import kotlin.math.min
 enum class ScaleType(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) val id: Int,
     internal val contentScale: ContentScale,
-    internal val alignment: Alignment
+    internal val alignment: Alignment,
 ) {
     /**
      * Scale the input frames, maintaining the source aspect ratio, so it fills the entire

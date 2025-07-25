@@ -113,7 +113,7 @@ internal data class RadialPoint(val distance: Float, val angle: Float)
 internal class RadialDimensions(
     absoluteClockwise: Boolean,
     rowCoords: LayoutCoordinates,
-    coords: LayoutCoordinates
+    coords: LayoutCoordinates,
 ) {
     // Row dimmensions
     val rowCenter: Offset
@@ -184,7 +184,7 @@ internal class RadialDimensions(
         // The outerRadius is greater than the innerRadius
         assertTrue(
             outerRadius > innerRadius + FLOAT_TOLERANCE,
-            "innerRadius = $innerRadius, outerRadius = $outerRadius"
+            "innerRadius = $innerRadius, outerRadius = $outerRadius",
         )
     }
 
@@ -197,7 +197,7 @@ internal class RadialDimensions(
             thickness = outerRadius - innerRadius,
             centerOffset = rowCenter,
             measureRadius = (outerRadius + innerRadius) / 2,
-            startAngleRadians = startAngle.toRadians()
+            startAngleRadians = startAngle.toRadians(),
         )
 
     fun toRadialCoordinates(coords: LayoutCoordinates, x: Float, y: Float): RadialPoint {

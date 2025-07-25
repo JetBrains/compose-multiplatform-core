@@ -25,9 +25,21 @@ import platform.Foundation.NSDate
 import platform.Foundation.NSDateFormatter
 import platform.Foundation.NSDateFormatterShortStyle
 import platform.Foundation.dateWithTimeIntervalSince1970
+import platform.Foundation.localeIdentifier
 import platform.Foundation.timeIntervalSince1970
 
 internal actual class PlatformDateFormat actual constructor(private val locale: CalendarLocale) {
+
+    private val baseDateFormatter by lazy {
+        createBaseFormatter()
+    }
+
+    private val shortDateFormatter by lazy {
+        NSDateFormatter().apply {
+            setLocale(this@PlatformDateFormat.locale)
+            setDateStyle(NSDateFormatterShortStyle)
+        }
+    }
 
     actual val firstDayOfWeek: Int
         get() = firstDayOfWeek()
@@ -35,37 +47,31 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     actual fun formatWithPattern(
         utcTimeMillis: Long,
         pattern: String,
+        cache: MutableMap<String, Any>
     ): String {
-
         val nsDate = NSDate.dateWithTimeIntervalSince1970(utcTimeMillis / 1000.0)
 
-        return NSDateFormatter().apply {
-            setTimeZone(TimeZone.UTC.toNSTimeZone())
-            setLocale(this@PlatformDateFormat.locale)
-            setDateFormat(pattern)
-        }.stringFromDate(nsDate)
+        return getCachedDateFormatterForPattern(pattern = pattern, useLocale = true, cache = cache).stringFromDate(nsDate)
     }
 
     actual fun formatWithSkeleton(
         utcTimeMillis: Long,
         skeleton: String,
+        cache: MutableMap<String, Any>
     ): String {
-
         val nsDate = NSDate.dateWithTimeIntervalSince1970(utcTimeMillis / 1000.0)
 
-        return NSDateFormatter().apply {
-            setTimeZone(TimeZone.UTC.toNSTimeZone())
-            setLocale(this@PlatformDateFormat.locale)
-            setLocalizedDateFormatFromTemplate(skeleton)
-        }.stringFromDate(nsDate)
+        return getCachedDateFormatterForSkeleton(skeleton = skeleton, cache = cache).stringFromDate(nsDate)
     }
 
-    actual fun parse(date: String, pattern: String, locale: CalendarLocale): CalendarDate? {
+    actual fun parse(
+        date: String,
+        pattern: String,
+        locale: CalendarLocale,
+        cache: MutableMap<String, Any>
+    ): CalendarDate? {
         // TODO https://youtrack.jetbrains.com/issue/CMP-7146/Properly-use-locale-in-CalendarModel.parse-implementations
-        val nsDate = NSDateFormatter().apply {
-            setTimeZone(TimeZone.UTC.toNSTimeZone())
-            setDateFormat(pattern)
-        }.dateFromString(date) ?: return null
+        val nsDate = getCachedDateFormatterForPattern(pattern = pattern, useLocale = false, cache = cache).dateFromString(date) ?: return null
 
         return Instant
             .fromEpochMilliseconds((nsDate.timeIntervalSince1970 * 1000).toLong())
@@ -73,20 +79,14 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
     }
 
     actual fun getDateInputFormat(): DateInputFormat {
-
-        val pattern = NSDateFormatter().apply {
-            setLocale(this@PlatformDateFormat.locale)
-            setDateStyle(NSDateFormatterShortStyle)
-        }.dateFormat
+        val pattern = shortDateFormatter.dateFormat
 
         return datePatternAsInputFormat(pattern)
     }
 
     @Suppress("UNCHECKED_CAST")
     actual val weekdayNames: List<Pair<String, String>> get() {
-        val formatter = NSDateFormatter().apply {
-            setLocale(this@PlatformDateFormat.locale)
-        }
+        val formatter = baseDateFormatter
 
         val fromSundayToSaturday = formatter.standaloneWeekdaySymbols
             .zip(formatter.veryShortStandaloneWeekdaySymbols) as List<Pair<String, String>>
@@ -106,5 +106,38 @@ internal actual class PlatformDateFormat actual constructor(private val locale: 
         return NSDateFormatter
             .dateFormatFromTemplate("j", 0UL, locale)
             ?.contains('a') == false
+    }
+
+    private fun getCachedDateFormatterForSkeleton(
+        skeleton: String,
+        cache: MutableMap<String, Any>
+    ): NSDateFormatter {
+        return cache.getOrPut("S:$skeleton${this@PlatformDateFormat.locale.localeIdentifier}") {
+            createBaseFormatter().apply {
+                setLocalizedDateFormatFromTemplate(skeleton)
+            }
+        } as NSDateFormatter
+    }
+
+    private fun getCachedDateFormatterForPattern(
+        pattern: String,
+        useLocale: Boolean,
+        cache: MutableMap<String, Any>
+    ): NSDateFormatter {
+        val localeKey = if (useLocale) this@PlatformDateFormat.locale.localeIdentifier else "NO_LOC"
+        return cache.getOrPut("P:$pattern:$localeKey") {
+            createBaseFormatter(useLocale).apply {
+                setDateFormat(pattern)
+            }
+        } as NSDateFormatter
+    }
+
+    private fun createBaseFormatter(useLocale: Boolean = true): NSDateFormatter {
+        return NSDateFormatter().apply {
+            setTimeZone(TimeZone.UTC.toNSTimeZone())
+            if (useLocale) {
+                setLocale(this@PlatformDateFormat.locale)
+            }
+        }
     }
 }

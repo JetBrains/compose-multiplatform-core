@@ -163,13 +163,13 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
     protected enum class VerticalDirection {
         UP,
         DOWN,
-        CENTER
+        CENTER,
     }
 
     protected enum class HorizontalDirection {
         START,
         END,
-        CENTER
+        CENTER,
     }
 
     // nudge 2f since we start 1f inwards from the edges and want to ensure we move over them if
@@ -177,11 +177,7 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
     protected fun Offset.nudge(
         xDirection: HorizontalDirection = HorizontalDirection.CENTER,
         yDirection: VerticalDirection = VerticalDirection.CENTER,
-    ): Offset =
-        Offset(
-            x = x.adjustHorizontal(xDirection, 2f),
-            y = y.adjustVertical(yDirection, 2f),
-        )
+    ): Offset = Offset(x = x.adjustHorizontal(xDirection, 2f), y = y.adjustVertical(yDirection, 2f))
 
     private fun Float.adjustVertical(direction: VerticalDirection, diff: Float): Float =
         this +
@@ -235,10 +231,7 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
         rule.waitForIdle()
     }
 
-    protected fun touchDragTo(
-        position: Offset,
-        durationMillis: Long = 200L,
-    ) {
+    protected fun touchDragTo(position: Offset, durationMillis: Long = 200L) {
         rule.onNodeWithTag(pointerAreaTag).touchDragNodeTo(position, durationMillis)
         rule.waitForIdle()
     }
@@ -248,10 +241,7 @@ internal abstract class AbstractSelectionGesturesTest : FocusedWindowTest {
         rule.waitForIdle()
     }
 
-    protected fun mouseDragTo(
-        position: Offset,
-        durationMillis: Long = 200L,
-    ) {
+    protected fun mouseDragTo(position: Offset, durationMillis: Long = 200L) {
         rule.onNodeWithTag(pointerAreaTag).mouseDragNodeTo(position, durationMillis)
         rule.waitForIdle()
     }

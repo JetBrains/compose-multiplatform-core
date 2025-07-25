@@ -38,7 +38,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.semantics.focused
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -105,7 +105,7 @@ public fun DatePicker(
     minValidDate: LocalDate? = null,
     maxValidDate: LocalDate? = null,
     datePickerType: DatePickerType = DatePickerDefaults.datePickerType,
-    colors: DatePickerColors = DatePickerDefaults.datePickerColors()
+    colors: DatePickerColors = DatePickerDefaults.datePickerColors(),
 ) {
     val inspectionMode = LocalInspectionMode.current
     val fullyDrawn = remember { Animatable(if (inspectionMode) 1f else 0f) }
@@ -146,12 +146,12 @@ public fun DatePicker(
         if (isLargeScreen) {
             DatePickerTokens.ContentLargeTypography.value.copy(
                 textAlign = TextAlign.Center,
-                fontFeatureSettings = "tnum"
+                fontFeatureSettings = "tnum",
             )
         } else {
             DatePickerTokens.ContentTypography.value.copy(
                 textAlign = TextAlign.Center,
-                fontFeatureSettings = "tnum"
+                fontFeatureSettings = "tnum",
             )
         }
     val optionHeight = if (isLargeScreen) 48.dp else 36.dp
@@ -194,45 +194,19 @@ public fun DatePicker(
 
     val shortMonthNames = remember { getMonthNames("MMM") }
     val fullMonthNames = remember { getMonthNames("MMMM") }
-    val yearContentDescription by
-        remember(
-            selectedIndex,
-            datePickerState.selectedYear,
-        ) {
-            derivedStateOf {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedYear,
-                    yearString,
-                )
-            }
+    val yearContentDescription = {
+        createDescriptionDatePicker(selectedIndex, datePickerState.selectedYear, yearString)
+    }
+    val monthContentDescription = {
+        if (selectedIndex == null) {
+            monthString
+        } else {
+            fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
         }
-    val monthContentDescription by
-        remember(
-            selectedIndex,
-            datePickerState.selectedMonth,
-        ) {
-            derivedStateOf {
-                if (selectedIndex == null) {
-                    monthString
-                } else {
-                    fullMonthNames[(datePickerState.selectedMonth - 1) % 12]
-                }
-            }
-        }
-    val dayContentDescription by
-        remember(
-            selectedIndex,
-            datePickerState.selectedDay,
-        ) {
-            derivedStateOf {
-                createDescriptionDatePicker(
-                    selectedIndex,
-                    datePickerState.selectedDay,
-                    dayString,
-                )
-            }
-        }
+    }
+    val dayContentDescription = {
+        createDescriptionDatePicker(selectedIndex, datePickerState.selectedDay, dayString)
+    }
 
     val datePickerOptions = datePickerType.toDatePickerOptions()
     val confirmButtonIndex = datePickerOptions.size
@@ -277,11 +251,12 @@ public fun DatePicker(
                             horizontal =
                                 PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                         )
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .semantics(mergeDescendants = true) { heading() },
                 color = colors.pickerLabelColor,
                 style = labelTextStyle,
                 maxLines = maxTextLines,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(if (isLargeScreen) 6.dp else 4.dp))
             FontScaleIndependent {
@@ -291,6 +266,7 @@ public fun DatePicker(
                     remember(
                         density.density,
                         LocalConfiguration.current.screenWidthDp,
+                        optionTextStyle,
                     ) {
                         val mm =
                             measurer.measure(
@@ -309,7 +285,7 @@ public fun DatePicker(
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
                             (digitWidth * 2).toDp() + 1.dp,
-                            minimumInteractiveComponentSize
+                            minimumInteractiveComponentSize,
                         )
                     }
                 val monthYearWidth =
@@ -317,7 +293,7 @@ public fun DatePicker(
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
                             maxOf(maxMonthWidth.toDp(), (digitWidth * 4).toDp()) + 1.dp,
-                            minimumInteractiveComponentSize
+                            minimumInteractiveComponentSize,
                         )
                     }
 
@@ -334,7 +310,7 @@ public fun DatePicker(
                                         selectedIndex,
                                     )
                                     .roundToPx(),
-                                0
+                                0,
                             )
                         },
                     verticalAlignment = Alignment.CenterVertically,
@@ -380,7 +356,7 @@ public fun DatePicker(
                                                     datePickerState.isDayValid(
                                                         datePickerState.dayValue(it)
                                                     )
-                                                }
+                                                },
                                             ),
                                         verticalSpacing = spacing,
                                     )
@@ -409,7 +385,7 @@ public fun DatePicker(
                                                     datePickerState.isMonthValid(
                                                         datePickerState.monthValue(it)
                                                     )
-                                                }
+                                                },
                                             ),
                                         verticalSpacing = spacing,
                                     )
@@ -437,7 +413,7 @@ public fun DatePicker(
                                                     datePickerState.isYearValid(
                                                         datePickerState.yearValue(it)
                                                     )
-                                                }
+                                                },
                                             ),
                                         verticalSpacing = spacing,
                                     )
@@ -718,7 +694,7 @@ public class DatePickerColors(
 private enum class DatePickerOption {
     Day,
     Month,
-    Year
+    Year,
 }
 
 private fun DatePickerType.toDatePickerOptions() =
@@ -731,11 +707,7 @@ private fun DatePickerType.toDatePickerOptions() =
     }
 
 @RequiresApi(Build.VERSION_CODES.O)
-private fun verifyDates(
-    date: LocalDate,
-    minDate: LocalDate,
-    maxDate: LocalDate,
-) {
+private fun verifyDates(date: LocalDate, minDate: LocalDate, maxDate: LocalDate) {
     require(maxDate >= minDate) { "maxDate should be greater than or equal to minDate" }
     require(date in minDate..maxDate) { "date should lie between minDate and maxDate" }
 }

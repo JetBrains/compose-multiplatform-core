@@ -139,12 +139,14 @@ class FontRasterizationSettings(
     }
 }
 
+@OptIn(ExperimentalTextApi::class)
 internal fun FontSmoothing.toSkFontEdging() = when (this) {
     FontSmoothing.None -> org.jetbrains.skia.FontEdging.ALIAS
     FontSmoothing.AntiAlias -> org.jetbrains.skia.FontEdging.ANTI_ALIAS
     FontSmoothing.SubpixelAntiAlias -> org.jetbrains.skia.FontEdging.SUBPIXEL_ANTI_ALIAS
 }
 
+@OptIn(ExperimentalTextApi::class)
 internal fun FontHinting.toSkFontHinting() = when (this) {
     FontHinting.None -> org.jetbrains.skia.FontHinting.NONE
     FontHinting.Slight -> org.jetbrains.skia.FontHinting.SLIGHT
@@ -152,6 +154,7 @@ internal fun FontHinting.toSkFontHinting() = when (this) {
     FontHinting.Full -> org.jetbrains.skia.FontHinting.FULL
 }
 
+@OptIn(ExperimentalTextApi::class)
 internal fun FontRasterizationSettings.toSkFontRastrSettings() = FontRastrSettings(
     edging = smoothing.toSkFontEdging(),
     hinting = hinting.toSkFontHinting(),

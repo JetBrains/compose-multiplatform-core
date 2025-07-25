@@ -140,7 +140,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
             override fun onDrawFrontBufferedLayer(
                 canvas: Canvas,
                 bufferWidth: Int,
-                bufferHeight: Int
+                bufferHeight: Int,
             ) {
                 recordRenderThreadIdentity()
 
@@ -176,7 +176,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     transactionSetDataSpace(
                         frontBufferedLayerSurfaceControl,
-                        DataSpace.DATASPACE_DISPLAY_P3
+                        DataSpace.DATASPACE_DISPLAY_P3,
                     )
                 }
                 callback.setCustomLatencyDataField(finishesDrawCallsSetter)
@@ -301,7 +301,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
                 canvas,
                 inProgressStroke,
                 strokeToMainViewTransform,
-                textureAnimationProgress
+                textureAnimationProgress,
             )
         }
     }
@@ -378,7 +378,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
                     // contents of the front buffer (restricted to the clip region).
                     setUseCompositingLayer(
                         /* forceToLayer= */ true,
-                        /* paint= */ offScreenFrameBufferPaint
+                        /* paint= */ offScreenFrameBufferPaint,
                     )
                 }
     }

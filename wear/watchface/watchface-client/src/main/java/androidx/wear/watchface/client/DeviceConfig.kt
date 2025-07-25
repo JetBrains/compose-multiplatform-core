@@ -38,7 +38,7 @@ public class DeviceConfig(
     @get:JvmName("hasLowBitAmbient") public val hasLowBitAmbient: Boolean,
     @get:JvmName("hasBurnInProtection") public val hasBurnInProtection: Boolean,
     public val analogPreviewReferenceTimeMillis: Long,
-    public val digitalPreviewReferenceTimeMillis: Long
+    public val digitalPreviewReferenceTimeMillis: Long,
 ) {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun asWireDeviceConfig(): WireDeviceConfig =
@@ -46,7 +46,7 @@ public class DeviceConfig(
             hasLowBitAmbient,
             hasBurnInProtection,
             analogPreviewReferenceTimeMillis,
-            digitalPreviewReferenceTimeMillis
+            digitalPreviewReferenceTimeMillis,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -92,5 +92,5 @@ public fun WireDeviceConfig.asApiDeviceConfig(): DeviceConfig =
         hasLowBitAmbient,
         hasBurnInProtection,
         analogPreviewReferenceTimeMillis,
-        digitalPreviewReferenceTimeMillis
+        digitalPreviewReferenceTimeMillis,
     )

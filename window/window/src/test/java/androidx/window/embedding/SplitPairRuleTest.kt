@@ -58,7 +58,7 @@ internal class SplitPairRuleTest {
         return SplitPairFilter(
             ActivityComponentInfo("package", "class"),
             ActivityComponentInfo("otherPackage", "otherClass"),
-            null
+            null,
         )
     }
 
@@ -364,7 +364,7 @@ internal class SplitPairRuleTest {
             SplitPairFilter(
                 ActivityComponentInfo("a", "b"),
                 ActivityComponentInfo("c", "d"),
-                "ACTION"
+                "ACTION",
             )
         )
         val ruleString =

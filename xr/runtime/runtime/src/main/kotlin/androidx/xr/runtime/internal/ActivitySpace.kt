@@ -18,6 +18,7 @@ package androidx.xr.runtime.internal
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue
+import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
 import com.google.common.util.concurrent.ListenableFuture
 
@@ -71,10 +72,20 @@ public interface ActivitySpace : SystemSpaceEntity {
      *   something and where relative to the given ActivityPose. Listeners will be called on the
      *   main thread if Runnable::run is supplied.
      */
+    @Suppress("AsyncSuffixFuture")
     public fun hitTestRelativeToActivityPose(
         origin: Vector3,
         direction: Vector3,
         @HitTestFilterValue hitTestFilter: Int,
         activityPose: ActivityPose,
     ): ListenableFuture<HitTestResult>
+
+    /**
+     * A recommended box for content to be placed in when in Full Space Mode.
+     *
+     * The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
+     * ActivitySpace's transform. The dimensions are always in meters. This provides a
+     * device-specific default volume that developers can use to size their content appropriately.
+     */
+    public val recommendedContentBoxInFullSpace: BoundingBox
 }

@@ -31,6 +31,7 @@ import java.util.PriorityQueue
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
+@Suppress("DEPRECATION") // b/420551535
 @ExperimentalFoundationApi
 @Composable
 internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
@@ -89,6 +90,7 @@ internal actual fun rememberDefaultPrefetchScheduler(): PrefetchScheduler {
  *    precompose on the different thread this issue is also not so critical given that we don't need
  *    to calculate the deadline. Tracking bug: 187393922
  */
+@Suppress("DEPRECATION") // b/420551535
 @ExperimentalFoundationApi
 internal class AndroidPrefetchScheduler(private val view: View) :
     PrefetchScheduler,
@@ -106,7 +108,6 @@ internal class AndroidPrefetchScheduler(private val view: View) :
     private var prefetchScheduled = false
     private val choreographer = Choreographer.getInstance()
     private val scope = PrefetchRequestScopeImpl()
-    override var isFrameIdle: Boolean = false
 
     /** Is true when LazyList was composed and not yet disposed. */
     private var isActive = false
@@ -148,12 +149,12 @@ internal class AndroidPrefetchScheduler(private val view: View) :
         val viewDrawTimeNanos = TimeUnit.MILLISECONDS.toNanos(view.drawingTime)
 
         // enter idle mode if the last time we draw was 2 frames ago.
-        isFrameIdle = (System.nanoTime() > viewDrawTimeNanos + 2 * frameIntervalNs)
+        scope.isFrameIdle = (System.nanoTime() > viewDrawTimeNanos + 2 * frameIntervalNs)
         scope.nextFrameTimeNs = maxOf(frameStartTimeNanos, viewDrawTimeNanos) + frameIntervalNs
         var scheduleForNextFrame = false
         while (prefetchRequests.isNotEmpty() && !scheduleForNextFrame) {
             scheduleForNextFrame =
-                if (isFrameIdle) {
+                if (scope.isFrameIdle) {
                     trace("compose:lazy:prefetch:idle_frame") { runRequest() }
                 } else {
                     runRequest()
@@ -183,6 +184,7 @@ internal class AndroidPrefetchScheduler(private val view: View) :
             } else {
                 prefetchRequests.poll()
             }
+            scope.isFrameIdle = false // reset idle state for subsequent requests.
         } else {
             scheduleForNextFrame = true
         }
@@ -230,9 +232,23 @@ internal class AndroidPrefetchScheduler(private val view: View) :
     }
 
     class PrefetchRequestScopeImpl() : PrefetchRequestScope {
+
+        /**
+         * If the [PrefetchRequest] execution can do "overtime". Overtime here means more time than
+         * what is available in this frame. If this is true, it [availableTimeNanos] will return
+         * [Long.MAX_VALUE] indicating that any time constraints taken into consideration to execute
+         * this will request will be ignored.
+         */
+        var isFrameIdle: Boolean = false
+
         var nextFrameTimeNs: Long = 0L
 
-        override fun availableTimeNanos() = max(0, nextFrameTimeNs - System.nanoTime())
+        override fun availableTimeNanos() =
+            if (isFrameIdle) {
+                Long.MAX_VALUE
+            } else {
+                max(0, nextFrameTimeNs - System.nanoTime())
+            }
     }
 
     companion object {
@@ -261,6 +277,7 @@ internal class AndroidPrefetchScheduler(private val view: View) :
     }
 }
 
+@Suppress("DEPRECATION") // b/420551535
 @ExperimentalFoundationApi
 private val RobolectricImpl =
     if (Build.FINGERPRINT.lowercase() == "robolectric") {
@@ -274,6 +291,7 @@ private val RobolectricImpl =
         null
     }
 
+@Suppress("DEPRECATION") // b/420551535
 @ExperimentalFoundationApi
 internal class PriorityTask(val priority: Int, val request: PrefetchRequest) {
     companion object {

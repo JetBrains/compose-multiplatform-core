@@ -32,7 +32,7 @@ class FakePdfServiceConnection(
     override val isConnected: Boolean,
     override var documentBinder: PdfDocumentRemote? = null,
     override var needsToReopenDocument: Boolean = false,
-    private val onServiceConnected: () -> Unit = {}
+    private val onServiceConnected: () -> Unit = {},
 ) : PdfServiceConnection {
 
     override val pendingJobs: Queue<Job> = ConcurrentLinkedQueue()

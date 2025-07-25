@@ -28,12 +28,12 @@ internal fun waitForStableInternal(
     stableIntervalMs: Long,
     stablePollIntervalMs: Long,
     bitmapProvider: () -> (Bitmap?),
-    rootViewNodeProvider: () -> (ViewNode)
+    rootElementNodeProvider: () -> (ElementNode),
 ): StableResult {
 
     // Setting up states pre-iterations
     var stableBitmap = bitmapProvider()
-    var stableRootNode = rootViewNodeProvider()
+    var stableRootNode = rootElementNodeProvider()
 
     // This keeps updating the stable node either until the timeout
     // (in which case timeout = true) or until the stability has been achieved.
@@ -55,7 +55,7 @@ internal fun waitForStableInternal(
 
         // Acquire another state and see if it's changed.
         val currentScreenshot = bitmapProvider()
-        val currentRootNode = rootViewNodeProvider()
+        val currentRootNode = rootElementNodeProvider()
 
         val viewHierarchyEquals = stableRootNode == currentRootNode
         val bitmapEquals = stableBitmap?.sameAs(currentScreenshot) != false
@@ -77,6 +77,6 @@ internal fun waitForStableInternal(
     return StableResult(
         node = stableRootNode.accessibilityNodeInfo,
         screenshot = stableBitmap,
-        isTimeout = timeoutClock.timeout
+        isTimeout = timeoutClock.timeout,
     )
 }

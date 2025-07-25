@@ -213,7 +213,7 @@ class MemoryLeakTest {
         iterations: Int,
         gcFrequency: Int,
         ignoreFirstRun: Boolean = false,
-        operationToPerform: suspend () -> Unit
+        operationToPerform: suspend () -> Unit,
     ) {
         val rawStats = ArrayList<Long>(iterations / gcFrequency)
 

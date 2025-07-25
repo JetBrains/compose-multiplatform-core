@@ -84,7 +84,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.AVERAGE,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /**
@@ -95,7 +95,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MINIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
 
         /**
@@ -106,7 +106,7 @@ public class RestingHeartRateRecord(
             AggregateMetric.longMetric(
                 REST_HEART_RATE_TYPE_NAME,
                 AggregateMetric.AggregationType.MAXIMUM,
-                BPM_FIELD_NAME
+                BPM_FIELD_NAME,
             )
     }
 }

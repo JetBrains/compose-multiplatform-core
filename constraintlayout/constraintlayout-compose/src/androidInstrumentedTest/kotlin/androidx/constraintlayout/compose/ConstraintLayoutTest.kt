@@ -158,12 +158,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -219,12 +219,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -280,12 +280,12 @@ class ConstraintLayoutTest {
                 // constraints.
                 assertEquals(
                     (displaySize.width / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.width
+                    aspectRatioBoxSize.value!!.width,
                 )
                 // Aspect ratio is preserved.
                 assertEquals(
                     (displaySize.width / 2f / 2f).roundToInt(),
-                    aspectRatioBoxSize.value!!.height
+                    aspectRatioBoxSize.value!!.height,
                 )
                 // Divider has fixed width 1.dp in constraint set.
                 assertEquals(1.dp.roundToPx(), dividerSize.value!!.width)
@@ -294,7 +294,7 @@ class ConstraintLayoutTest {
                 // which in turns is given by the size of the aspect ratio box.
                 assertEquals(
                     (aspectRatioBoxSize.value!!.height * 0.8f).roundToInt(),
-                    dividerSize.value!!.height
+                    dividerSize.value!!.height,
                 )
             }
         }
@@ -357,14 +357,14 @@ class ConstraintLayoutTest {
                         "${aspectRatioBoxSize.value!!.height}, " +
                         "divider: ${dividerSize.value!!.height}",
                     (aspectRatioBoxSize.value!!.height * 0.8f).roundToInt(),
-                    dividerSize.value!!.height
+                    dividerSize.value!!.height,
                 )
                 assertEquals(
                     "broken, aspect height ${aspectRatioBoxSize.value!!.width}x" +
                         "${aspectRatioBoxSize.value!!.height}," +
                         " divider: ${dividerSize.value!!.height}",
                     aspectRatioBoxSize.value!!.width,
-                    540
+                    540,
                 )
             }
         }
@@ -480,12 +480,12 @@ class ConstraintLayoutTest {
                 assertEquals(
                     Offset(((displayWidth - boxSize) / 2f), ((displayHeight - boxSize) / 2f))
                         .round(),
-                    position[0]
+                    position[0],
                 )
                 assertEquals(
                     Offset((displayWidth / 2f + offset), ((displayHeight - boxSize) / 2f - boxSize))
                         .round(),
-                    position[1]
+                    position[1],
                 )
                 assertEquals(IntOffset(offset, (displayHeight - boxSize - offset)), position[2])
             }
@@ -521,7 +521,7 @@ class ConstraintLayoutTest {
                                 bottom.linkTo(parent.bottom, margin = offset.toDp())
                             }
                         },
-                    modifier = Modifier.fillMaxSize().onGloballyPositioned { rootSize = it.size }
+                    modifier = Modifier.fillMaxSize().onGloballyPositioned { rootSize = it.size },
                 ) {
                     for (i in 0..2) {
                         Box(
@@ -539,12 +539,12 @@ class ConstraintLayoutTest {
             rule.runOnIdle {
                 assertEquals(
                     Offset((displayWidth - boxSize) / 2f, (displayHeight - boxSize) / 2f).round(),
-                    position[0]
+                    position[0],
                 )
                 assertEquals(
                     Offset((displayWidth / 2f + offset), ((displayHeight - boxSize) / 2f - boxSize))
                         .round(),
-                    position[1]
+                    position[1],
                 )
                 assertEquals(IntOffset(offset, (displayHeight - boxSize - offset)), position[2])
             }
@@ -595,21 +595,21 @@ class ConstraintLayoutTest {
             rule.runOnIdle {
                 assertEquals(
                     Offset((displayWidth - boxSize) / 2f, (displayHeight - boxSize) / 2f),
-                    position[0].value
+                    position[0].value,
                 )
                 assertEquals(
                     Offset(
                         (displayWidth / 2 - offset - boxSize).toFloat(),
-                        ((displayHeight - boxSize) / 2 - boxSize).toFloat()
+                        ((displayHeight - boxSize) / 2 - boxSize).toFloat(),
                     ),
-                    position[1].value
+                    position[1].value,
                 )
                 assertEquals(
                     Offset(
                         (displayWidth - offset - boxSize).toFloat(),
-                        (displayHeight - boxSize - offset).toFloat()
+                        (displayHeight - boxSize - offset).toFloat(),
                     ),
-                    position[2].value
+                    position[2].value,
                 )
             }
         }
@@ -632,7 +632,7 @@ class ConstraintLayoutTest {
                             createGuidelineFromStart(0.25f),
                             createGuidelineFromAbsoluteLeft(0.25f),
                             createGuidelineFromEnd(0.25f),
-                            createGuidelineFromAbsoluteRight(0.25f)
+                            createGuidelineFromAbsoluteRight(0.25f),
                         )
 
                     guidelines.forEachIndexed { index, guideline ->
@@ -659,7 +659,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonGuidelinesContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     position.forEachIndexed { index, _ ->
                         Box(
@@ -693,7 +693,7 @@ class ConstraintLayoutTest {
                                 createGuidelineFromStart(0.25f),
                                 createGuidelineFromAbsoluteLeft(0.25f),
                                 createGuidelineFromEnd(0.25f),
-                                createGuidelineFromAbsoluteRight(0.25f)
+                                createGuidelineFromAbsoluteRight(0.25f),
                             )
 
                         guidelines.forEachIndexed { index, guideline ->
@@ -724,7 +724,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonGuidelinesContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         position.forEachIndexed { index, _ ->
                             Box(
@@ -768,7 +768,7 @@ class ConstraintLayoutTest {
                             createStartBarrier(box1, box2),
                             createAbsoluteLeftBarrier(box1, box2),
                             createEndBarrier(box1, box2),
-                            createAbsoluteRightBarrier(box1, box2)
+                            createAbsoluteRightBarrier(box1, box2),
                         )
 
                     barriers.forEachIndexed { index, barrier ->
@@ -795,7 +795,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonBarriersContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     Box(Modifier.size(1.toDp()).layoutId("boxA"))
                     Box(Modifier.size(1.toDp()).layoutId("boxB"))
@@ -841,7 +841,7 @@ class ConstraintLayoutTest {
                                 createStartBarrier(box1, box2),
                                 createAbsoluteLeftBarrier(box1, box2),
                                 createEndBarrier(box1, box2),
-                                createAbsoluteRightBarrier(box1, box2)
+                                createAbsoluteRightBarrier(box1, box2),
                             )
 
                         barriers.forEachIndexed { index, barrier ->
@@ -872,7 +872,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonBarriersContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         Box(Modifier.size(1.toDp()).layoutId("boxA"))
                         Box(Modifier.size(1.toDp()).layoutId("boxB"))
@@ -929,7 +929,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     constraintSet = ConstraintSet(getJsonAnchorsContent(offset.value)),
-                    Modifier.size(size)
+                    Modifier.size(size),
                 ) {
                     Box(Modifier.size(1.toDp()).layoutId("box"))
                     position.forEachIndexed { index, _ ->
@@ -993,7 +993,7 @@ class ConstraintLayoutTest {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     ConstraintLayout(
                         constraintSet = ConstraintSet(getJsonAnchorsContent(offset.value)),
-                        Modifier.size(size)
+                        Modifier.size(size),
                     ) {
                         Box(Modifier.size(1.toDp()).layoutId("box"))
                         position.forEachIndexed { index, _ ->
@@ -1176,7 +1176,7 @@ class ConstraintLayoutTest {
         rule.setContent {
             ConstraintLayout(
                 modifier = if (first.value) Modifier else Modifier.padding(10.dp),
-                constraintSet = ConstraintSet {}
+                constraintSet = ConstraintSet {},
             ) {
                 Box(if (first.value) Modifier else Modifier.size(20.dp))
             }
@@ -1573,7 +1573,7 @@ class ConstraintLayoutTest {
             }
             ConstraintLayout(
                 modifier = Modifier.size(200.dp),
-                constraintSet = if (startOrEnd) start else end
+                constraintSet = if (startOrEnd) start else end,
             ) {
                 Box(modifier = Modifier.background(Color.Red).testTag(boxTag).layoutId(boxTag))
             }
@@ -1620,7 +1620,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    constraintSet = constraintSet
+                    constraintSet = constraintSet,
                 ) {
                     Box(
                         modifier =
@@ -1717,7 +1717,7 @@ class ConstraintLayoutTest {
                             horizontalBias = horBias
                             verticalBias = verBias
                         }
-                    }
+                    },
             ) {
                 Box(modifier = Modifier.background(Color.Red).layoutTestId("box"))
             }
@@ -1786,7 +1786,7 @@ class ConstraintLayoutTest {
                                 start.linkTo(box0.end)
                             }
                         },
-                    Modifier.size(rootSize.toDp())
+                    Modifier.size(rootSize.toDp()),
                 ) {
                     Box(
                         Modifier.layoutId("box0").onGloballyPositioned {
@@ -1856,7 +1856,7 @@ class ConstraintLayoutTest {
                                             endMargin = 0.dp,
                                             startGoneMargin = 0.dp,
                                             endGoneMargin = 0.dp,
-                                            bias = box2Bias // affected by Rtl
+                                            bias = box2Bias, // affected by Rtl
                                         )
                                     }
                                     .onGloballyPositioned {
@@ -2059,7 +2059,7 @@ class ConstraintLayoutTest {
                     layout(
                         width = placeable.width,
                         height = placeable.height,
-                        alignmentLines = mapOf(FirstBaseline to halfHeight)
+                        alignmentLines = mapOf(FirstBaseline to halfHeight),
                     ) {
                         placeable.place(0, 0)
                     }
@@ -2204,7 +2204,7 @@ class ConstraintLayoutTest {
                             (rootSizePx - boxSizePx) / 2f + translationYPx,
                         )
                         .round(),
-                    position
+                    position,
                 )
             }
         }
@@ -2236,7 +2236,7 @@ class ConstraintLayoutTest {
                 """
                                 .trimIndent()
                         ),
-                    Modifier.size(rootSizePx.toDp())
+                    Modifier.size(rootSizePx.toDp()),
                 ) {
                     Box(
                         Modifier.layoutId("box").onPlaced {
@@ -2254,7 +2254,7 @@ class ConstraintLayoutTest {
                             (rootSizePx - boxSizePx) / 2f + translationYPx,
                         )
                         .round(),
-                    position
+                    position,
                 )
             }
         }
@@ -2335,7 +2335,7 @@ class ConstraintLayoutTest {
             rule.setContent {
                 ConstraintLayout(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    animateChangesSpec = tween(durationMs)
+                    animateChangesSpec = tween(durationMs),
                 ) {
                     val boxRef = createRef()
                     Box(
@@ -2446,7 +2446,7 @@ class ConstraintLayoutTest {
                     minWidth = minWidth,
                     maxWidth = maxWidth,
                     minHeight = minHeight,
-                    maxHeight = maxHeight
+                    maxHeight = maxHeight,
                 )
             }
             rule.waitForIdle()

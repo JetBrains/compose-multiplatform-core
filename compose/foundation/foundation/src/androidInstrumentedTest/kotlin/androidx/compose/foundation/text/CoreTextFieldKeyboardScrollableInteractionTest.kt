@@ -73,12 +73,12 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
 ) {
     enum class ScrollableType {
         ScrollableColumn,
-        LazyList
+        LazyList,
     }
 
     enum class SoftInputMode {
         AdjustResize,
-        AdjustPan
+        AdjustPan,
     }
 
     companion object {
@@ -164,7 +164,7 @@ class CoreTextFieldKeyboardScrollableInteractionTest(
                 } else {
                     inner()
                 }
-            }
+            },
         )
     }
 

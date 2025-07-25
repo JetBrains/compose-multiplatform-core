@@ -115,15 +115,6 @@ final class MotionEvents {
                 && e.getButtonState() == 0;
     }
 
-    /**
-     * Returns true if the event is a drag event (which is presumbaly, but not
-     * explicitly required to be a mouse event).
-     */
-    static boolean isPointerDragEvent(MotionEvent e) {
-        return isPrimaryMouseButtonPressed(e)
-                && isActionMove(e);
-    }
-
     private static boolean hasBit(int metaState, int bit) {
         return (metaState & bit) != 0;
     }

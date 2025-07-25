@@ -78,18 +78,14 @@ class TransformingLazyColumnPrefetchStrategyTest {
         composeList(prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)))
             .inOrder()
         strategy.reset()
 
         rule.runOnIdle { runBlocking { state.scrollBy(5f) } }
 
         assertThat(strategy.callbacks)
-            .contains(
-                Callback.OnScroll(delta = -5f, visibleIndices = listOf(0, 1, 2)),
-            )
+            .contains(Callback.OnScroll(delta = -5f, visibleIndices = listOf(0, 1, 2)))
     }
 
     @Test
@@ -99,18 +95,14 @@ class TransformingLazyColumnPrefetchStrategyTest {
         composeList(anchorItemIndex = 10, anchorItemScrollOffset = 0, prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(9, 10, 11)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(9, 10, 11)))
             .inOrder()
         strategy.reset()
 
         rule.runOnIdle { runBlocking { state.scrollBy(-5f) } }
 
         assertThat(strategy.callbacks)
-            .contains(
-                Callback.OnScroll(delta = 5f, visibleIndices = listOf(9, 10, 11)),
-            )
+            .contains(Callback.OnScroll(delta = 5f, visibleIndices = listOf(9, 10, 11)))
     }
 
     @Test
@@ -120,21 +112,17 @@ class TransformingLazyColumnPrefetchStrategyTest {
         composeList(prefetchStrategy = strategy)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)))
             .inOrder()
         strategy.reset()
 
         rule.runOnIdle { runBlocking { state.scrollBy(itemsSizePx + 5f) } }
 
         assertThat(strategy.callbacks)
-            .contains(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(1, 2, 3)),
-            )
+            .contains(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(1, 2, 3)))
         assertThat(strategy.callbacks)
             .contains(
-                Callback.OnScroll(delta = -(itemsSizePx + 5f), visibleIndices = listOf(1, 2, 3)),
+                Callback.OnScroll(delta = -(itemsSizePx + 5f), visibleIndices = listOf(1, 2, 3))
             )
     }
 
@@ -146,9 +134,7 @@ class TransformingLazyColumnPrefetchStrategyTest {
         composeList(prefetchStrategy = strategy, numItems = numItems)
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0, 1, 2)))
             .inOrder()
         strategy.reset()
 
@@ -157,9 +143,7 @@ class TransformingLazyColumnPrefetchStrategyTest {
         rule.waitForIdle()
 
         assertThat(strategy.callbacks)
-            .containsExactly(
-                Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0)),
-            )
+            .containsExactly(Callback.OnVisibleItemsUpdated(visibleIndices = listOf(0)))
             .inOrder()
     }
 
@@ -185,14 +169,14 @@ class TransformingLazyColumnPrefetchStrategyTest {
         anchorItemScrollOffset: Int = 0,
         numItems: MutableState<Int> = mutableStateOf(100),
         prefetchStrategy: TransformingLazyColumnPrefetchStrategy =
-            DefaultTransformingLazyColumnPrefetchStrategy()
+            DefaultTransformingLazyColumnPrefetchStrategy(),
     ) {
         rule.setContent {
             state =
                 rememberTransformingLazyColumnState(
                     initialAnchorItemIndex = anchorItemIndex,
                     initialAnchorItemScrollOffset = anchorItemScrollOffset,
-                    prefetchStrategy = prefetchStrategy
+                    prefetchStrategy = prefetchStrategy,
                 )
             TransformingLazyColumn(
                 modifier = Modifier.height(itemsSizeDp * 1.5f),
@@ -227,7 +211,7 @@ class TransformingLazyColumnPrefetchStrategyTest {
 
         override fun TransformingLazyColumnPrefetchScope.onScroll(
             delta: Float,
-            measureResult: TransformingLazyColumnMeasureResult
+            measureResult: TransformingLazyColumnMeasureResult,
         ) {
             _callbacks.add(Callback.OnScroll(delta, measureResult.visibleItems.map { it.index }))
         }
@@ -260,7 +244,7 @@ class TransformingLazyColumnPrefetchStrategyTest {
 
         override fun TransformingLazyColumnPrefetchScope.onScroll(
             delta: Float,
-            measureResult: TransformingLazyColumnMeasureResult
+            measureResult: TransformingLazyColumnMeasureResult,
         ) {
             val index = measureResult.visibleItems.last().index + 1
             if (handle != null && index != prefetchIndex) {

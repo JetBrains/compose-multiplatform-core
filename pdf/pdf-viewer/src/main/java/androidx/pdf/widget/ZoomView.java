@@ -272,8 +272,8 @@ public class ZoomView extends GestureTrackingView implements ZoomScrollRestorer 
 
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.ZoomView, defStyle,
                 defStyle);
-        mMinZoom = ta.getFloat(R.styleable.ZoomView_minZoom, DEFAULT_MIN_ZOOM);
-        mMaxZoom = ta.getFloat(R.styleable.ZoomView_maxZoom, DEFAULT_MAX_ZOOM);
+        mMinZoom = ta.getFloat(R.styleable.ZoomView_minimumZoom, DEFAULT_MIN_ZOOM);
+        mMaxZoom = ta.getFloat(R.styleable.ZoomView_maximumZoom, DEFAULT_MAX_ZOOM);
         mSaveState = ta.getBoolean(R.styleable.ZoomView_saveState, true);
 
         ta.recycle();

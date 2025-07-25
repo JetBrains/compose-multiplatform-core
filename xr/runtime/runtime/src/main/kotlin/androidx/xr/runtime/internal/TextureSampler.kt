@@ -32,6 +32,7 @@ import androidx.annotation.RestrictTo
  * @param compareFunc compare function for the texture sampler.
  * @param anisotropyLog2 anisotropy log 2 for the texture sampler.
  */
+// TODO(b/422251760): Use POKO pattern for internal inline value class.
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class TextureSampler(
     @TextureSampler.WrapMode public val wrapModeS: Int,

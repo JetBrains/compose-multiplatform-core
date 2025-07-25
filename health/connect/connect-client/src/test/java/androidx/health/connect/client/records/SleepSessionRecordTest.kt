@@ -44,7 +44,7 @@ class SleepSessionRecordTest {
                                 startTime = Instant.ofEpochMilli(1234),
                                 endTime = Instant.ofEpochMilli(1236),
                                 stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                            ),
+                            )
                         ),
                 )
             )
@@ -63,7 +63,7 @@ class SleepSessionRecordTest {
                                 startTime = Instant.ofEpochMilli(1234),
                                 endTime = Instant.ofEpochMilli(1236),
                                 stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                            ),
+                            )
                         ),
                 )
             )
@@ -102,7 +102,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1235L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         )
-                    )
+                    ),
             )
         }
 
@@ -122,7 +122,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1236L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         )
-                    )
+                    ),
             )
         }
     }
@@ -150,7 +150,7 @@ class SleepSessionRecordTest {
                             endTime = Instant.ofEpochMilli(1236L),
                             stage = SleepSessionRecord.STAGE_TYPE_DEEP,
                         ),
-                    )
+                    ),
             )
         }
     }
@@ -179,7 +179,7 @@ class SleepSessionRecordTest {
             SleepSessionRecord.Stage(
                 startTime = Instant.ofEpochMilli(1234L),
                 endTime = Instant.ofEpochMilli(1234L),
-                stage = SleepSessionRecord.STAGE_TYPE_AWAKE
+                stage = SleepSessionRecord.STAGE_TYPE_AWAKE,
             )
         }
     }
@@ -201,7 +201,7 @@ class SleepSessionRecordTest {
                                     startTime = Instant.ofEpochMilli(1234),
                                     endTime = Instant.ofEpochMilli(1236),
                                     stage = SleepSessionRecord.STAGE_TYPE_DEEP,
-                                ),
+                                )
                             ),
                     )
                     .toString()

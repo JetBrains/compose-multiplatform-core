@@ -83,7 +83,7 @@ class XTypeTest {
                 public void rawParamTypeArgument(List<Set> param1) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(parent)) {
             val type = it.processingEnv.requireType("foo.bar.Parent")
@@ -91,7 +91,7 @@ class XTypeTest {
                 .isEqualTo(
                     JParameterizedTypeName.get(
                         JClassName.get("foo.bar", "Parent"),
-                        JClassName.get("", "InputStreamType")
+                        JClassName.get("", "InputStreamType"),
                     )
                 )
             if (it.isKsp) {
@@ -101,7 +101,7 @@ class XTypeTest {
                             .parameterizedBy(
                                 KTypeVariableName(
                                     "InputStreamType",
-                                    KClassName("java.io", "InputStream").copy(nullable = true)
+                                    KClassName("java.io", "InputStream").copy(nullable = true),
                                 )
                             )
                     )
@@ -113,7 +113,7 @@ class XTypeTest {
                 val expected =
                     TypeVariableName.get(
                         "InputStreamType",
-                        JClassName.get("java.io", "InputStream")
+                        JClassName.get("java.io", "InputStream"),
                     )
                 assertThat(firstType.asTypeName().java).isEqualTo(expected)
                 // equals in TypeVariableName just checks the string representation but we want
@@ -126,7 +126,7 @@ class XTypeTest {
                     val expected =
                         KTypeVariableName(
                             "InputStreamType",
-                            KClassName("java.io", "InputStream").copy(nullable = true)
+                            KClassName("java.io", "InputStream").copy(nullable = true),
                         )
                     assertThat(firstType.asTypeName().kotlin).isEqualTo(expected)
                     assertThat((firstType.asTypeName().kotlin as KTypeVariableName).bounds)
@@ -141,7 +141,7 @@ class XTypeTest {
                     .isEqualTo(
                         JParameterizedTypeName.get(
                             JClassName.get("java.util", "Set"),
-                            JWildcardTypeName.subtypeOf(Any::class.java)
+                            JWildcardTypeName.subtypeOf(Any::class.java),
                         )
                     )
                 if (it.isKsp) {
@@ -218,7 +218,7 @@ class XTypeTest {
                 fun fOut(): FooOut<*> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         fun checkKsp(invocation: XTestInvocation) {
             invocation.processingEnv.requireTypeElement("foo.bar.Test").let { cls ->
@@ -320,7 +320,7 @@ class XTypeTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         fun handler(invocation: XTestInvocation) {
             invocation.processingEnv.requireTypeElement("foo.bar.Test").let { cls ->
@@ -364,7 +364,7 @@ class XTypeTest {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -376,13 +376,13 @@ class XTypeTest {
                     fun badMethod(): qux.NotExistingType = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -422,7 +422,7 @@ class XTypeTest {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -434,13 +434,13 @@ class XTypeTest {
                     fun badMethod(): qux.Outer.NotExistingType = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -480,7 +480,7 @@ class XTypeTest {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -492,13 +492,13 @@ class XTypeTest {
                     fun badMethod(): foo.bar.KotlinSource.NotExistingType = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -540,7 +540,7 @@ class XTypeTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -552,13 +552,13 @@ class XTypeTest {
                     fun badMethod(): qux.NotExistingType<List<String>> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -604,7 +604,7 @@ class XTypeTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -616,13 +616,13 @@ class XTypeTest {
                     fun badMethod(): qux.NotExistingType<*> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -668,7 +668,7 @@ class XTypeTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -680,13 +680,13 @@ class XTypeTest {
                     fun badMethod(): qux.NotExistingType<out Number> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -732,7 +732,7 @@ class XTypeTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -744,13 +744,13 @@ class XTypeTest {
                     fun badMethod(): List<qux.NotExistingType> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -803,7 +803,7 @@ class XTypeTest {
                     }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSource =
             Source.kotlin(
@@ -815,13 +815,13 @@ class XTypeTest {
                     fun badMethod(): List<qux.NotExistingType<String>> = TODO()
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
 
         runProcessorTest(
             sources = listOf(javaSource, kotlinSource),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             fun testErrorType(source: Source) {
                 val errorTypeName =
@@ -875,7 +875,7 @@ class XTypeTest {
                 void method(String... inputs);
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(subject)) {
             val type = it.processingEnv.requireType("foo.bar.Baz")
@@ -898,7 +898,7 @@ class XTypeTest {
                 Integer integerField;
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSrc =
             Source.kotlin(
@@ -909,7 +909,7 @@ class XTypeTest {
                 val integerProp : Int? = null
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaSrc, kotlinSrc)) { invocation ->
             val javaElm = invocation.processingEnv.requireTypeElement("JavaClass")
@@ -935,7 +935,7 @@ class XTypeTest {
                     "intField" to "intProp",
                     "intProp" to "intField",
                     "integerField" to "integerProp",
-                    "integerProp" to "integerField"
+                    "integerProp" to "integerField",
                 ) + fields.map { it.name to it.name }.toSet()
             assertThat(results).containsExactlyElementsIn(expected)
         }
@@ -1004,7 +1004,7 @@ class XTypeTest {
                 public class Baz extends IDontExist {
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(missingSuperClassType)) {
             it.assertCompilationResult { compilationDidFail() }
@@ -1021,7 +1021,7 @@ class XTypeTest {
                 public class Baz implements IDontExist {
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(missingSuperInterfaceType)) {
             it.assertCompilationResult { compilationDidFail() }
@@ -1054,12 +1054,12 @@ class XTypeTest {
                 abstract class ValidSuperClass
                 interface ValidSuperInterface
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources = listOf(src),
             kotlincArguments =
-                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true")
+                listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
         ) { invocation ->
             invocation.assertCompilationResult { compilationDidFail() }
             invocation.processingEnv.requireTypeElement("test.SubjectInterface").let {
@@ -1141,13 +1141,13 @@ class XTypeTest {
             val subject =
                 it.processingEnv.getDeclaredType(
                     it.processingEnv.requireTypeElement(List::class),
-                    it.processingEnv.requireType(String::class)
+                    it.processingEnv.requireType(String::class),
                 )
             assertThat(subject.asTypeName().java)
                 .isEqualTo(
                     ParameterizedTypeName.get(
                         List::class.asJClassName(),
-                        String::class.asJClassName()
+                        String::class.asJClassName(),
                     )
                 )
             assertThat(subject.rawType.asTypeName().java).isEqualTo(List::class.asJClassName())
@@ -1164,14 +1164,14 @@ class XTypeTest {
             val listOfInts =
                 it.processingEnv.getDeclaredType(
                     it.processingEnv.requireTypeElement(List::class),
-                    it.processingEnv.requireType(Integer::class)
+                    it.processingEnv.requireType(Integer::class),
                 )
             assertThat(subject.rawType).isEqualTo(listOfInts.rawType)
 
             val setOfStrings =
                 it.processingEnv.getDeclaredType(
                     it.processingEnv.requireTypeElement(Set::class),
-                    it.processingEnv.requireType(String::class)
+                    it.processingEnv.requireType(String::class),
                 )
             assertThat(subject.rawType).isNotEqualTo(setOfStrings.rawType)
         }
@@ -1194,9 +1194,9 @@ class XTypeTest {
                         interface Foo<T> extends FooSuper<T> {}
                         interface FooSuper<T> {}
                         """
-                            .trimIndent()
+                            .trimIndent(),
                     )
-                ),
+                )
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val rawFoo = subject.getDeclaredField("rawFoo")
@@ -1213,7 +1213,7 @@ class XTypeTest {
                             .parametrizedBy(ANY_OBJECT.copy(nullable = true))
                     } else {
                         XClassName.get("test", "FooSuper")
-                    }
+                    },
                 )
                 .inOrder()
         }
@@ -1237,9 +1237,9 @@ class XTypeTest {
                         interface FooSuper<T> {}
                         interface Bar {}
                         """
-                            .trimIndent()
+                            .trimIndent(),
                     )
-                ),
+                )
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val rawFoo = subject.getDeclaredField("rawFoo")
@@ -1256,7 +1256,7 @@ class XTypeTest {
                             .parametrizedBy(XClassName.get("test", "Bar").copy(nullable = true))
                     } else {
                         XClassName.get("test", "FooSuper")
-                    }
+                    },
                 )
                 .inOrder()
         }
@@ -1281,9 +1281,9 @@ class XTypeTest {
                         interface Bar {}
                         interface Baz {}
                         """
-                            .trimIndent()
+                            .trimIndent(),
                     )
-                ),
+                )
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val rawFoo = subject.getDeclaredField("rawFoo")
@@ -1300,7 +1300,7 @@ class XTypeTest {
                             .parametrizedBy(XClassName.get("test", "Bar").copy(nullable = true))
                     } else {
                         XClassName.get("test", "FooSuper")
-                    }
+                    },
                 )
                 .inOrder()
         }
@@ -1316,7 +1316,7 @@ class XTypeTest {
                 suspend fun unitSuspend() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(kotlinSubject)) { invocation ->
             invocation.processingEnv.requireTypeElement("KotlinSubject").let {
@@ -1351,7 +1351,7 @@ class XTypeTest {
                 Void anotherVoid();
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSubject =
             Source.kotlin(
@@ -1361,7 +1361,7 @@ class XTypeTest {
                 fun voidMethod() {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaBase, kotlinSubject)) { invocation ->
             invocation.processingEnv.requireTypeElement("KotlinSubject").let {
@@ -1395,7 +1395,7 @@ class XTypeTest {
                 fun method(sr: SelfReferencing<*>) { TODO() }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val typeElement = invocation.processingEnv.requireTypeElement("SelfReferencing")
@@ -1447,7 +1447,7 @@ class XTypeTest {
                 static void method(SelfReferencing sr) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val typeElement = invocation.processingEnv.requireTypeElement("SelfReferencing")
@@ -1500,7 +1500,7 @@ class XTypeTest {
                 fun noStar(node : Node<TX, RX>) { TODO() }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val nodeElm = invocation.processingEnv.requireTypeElement("Node")
@@ -1599,7 +1599,7 @@ class XTypeTest {
                         | > | > | TX
                         | > | > | RX
                     """
-                            .trimIndent()
+                            .trimIndent(),
                 )
             nodeElm
                 .getDeclaredMethods()
@@ -1628,7 +1628,7 @@ class XTypeTest {
                 """
             class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : List<TX>>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val elm = invocation.processingEnv.requireTypeElement("SelfReferencing")
@@ -1697,7 +1697,7 @@ class XTypeTest {
             class Generic<T>
             class SelfReferencing<TX : SelfReferencing<TX, RX>, RX : Generic<TX>>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val elm = invocation.processingEnv.requireTypeElement("SelfReferencing")
@@ -1742,7 +1742,7 @@ class XTypeTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSource =
             Source.java(
@@ -1755,7 +1755,7 @@ class XTypeTest {
                     }
                 }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src, javaSource)) { invocation ->
             val styleApplier = invocation.processingEnv.requireType("StyleApplier")
@@ -1852,7 +1852,7 @@ class XTypeTest {
                 fun setLists(starList: List<*>, rList: List<R>) {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(libSource)) { invocation ->
             val actual =
@@ -1884,7 +1884,7 @@ class XTypeTest {
             abstract class AbstractClass<T> {}
             interface MyInterface {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(listOf(libSource)) { invocation ->
             invocation.processingEnv.requireType("foo.bar.Baz").let {
@@ -1933,7 +1933,7 @@ class XTypeTest {
             }
             class Bar {}
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -1952,7 +1952,7 @@ class XTypeTest {
             }
             class Bar
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -1982,7 +1982,7 @@ class XTypeTest {
               int i;
             }
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -1999,7 +1999,7 @@ class XTypeTest {
               val i: Int = TODO()
             }
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -2108,7 +2108,7 @@ class XTypeTest {
                 T2 method2();
             }
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -2131,7 +2131,7 @@ class XTypeTest {
                 fun method2(): T2
             }
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -2147,7 +2147,7 @@ class XTypeTest {
             override fun process(
                 env: XProcessingEnv,
                 elementsByAnnotation: Map<String, Set<XElement>>,
-                isLastRound: Boolean
+                isLastRound: Boolean,
             ): Set<XElement> {
                 val barElement = env.requireTypeElement("test.Bar")
                 val missingTypeName = ClassName.get("", "MissingType")
@@ -2180,9 +2180,9 @@ class XTypeTest {
                 class Foo<T> {}
                 @interface Inspect {}
                 """
-                            .trimIndent()
+                            .trimIndent(),
                     )
-                ),
+                )
         ) { invocation ->
             val elements =
                 step.annotations().associateWith { annotation ->
@@ -2194,7 +2194,7 @@ class XTypeTest {
             step.process(
                 env = invocation.processingEnv,
                 elementsByAnnotation = elements,
-                isLastRound = false
+                isLastRound = false,
             )
             invocation.assertCompilationResult {
                 hasError()
@@ -2213,12 +2213,12 @@ class XTypeTest {
             class Bar : Foo<MissingType>()
             open class Foo<T>
             """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 ),
             kotlincArguments =
                 listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
-            createProcessingSteps = { listOf(TypeArgumentProcessingStep()) }
+            createProcessingSteps = { listOf(TypeArgumentProcessingStep()) },
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
@@ -2234,7 +2234,7 @@ class XTypeTest {
             override fun process(
                 env: XProcessingEnv,
                 elementsByAnnotation: Map<String, Set<XElement>>,
-                isLastRound: Boolean
+                isLastRound: Boolean,
             ): Set<XElement> {
                 val missingTypeName = ClassName.get("", "MissingType")
                 val wildcardTypeName = WildcardTypeName.subtypeOf(missingTypeName)
@@ -2272,7 +2272,7 @@ class XTypeTest {
                 }
                 @interface Inspect {}
                 """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 ),
             createProcessingSteps = { listOf(WildcardProcessingStep()) },
@@ -2293,12 +2293,12 @@ class XTypeTest {
               val foo: Foo<out MissingType> = TODO()
             }
             """
-                            .trimIndent()
+                            .trimIndent(),
                     )
                 ),
             kotlincArguments =
                 listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
-            createProcessingSteps = { listOf(WildcardProcessingStep()) }
+            createProcessingSteps = { listOf(WildcardProcessingStep()) },
         ) { result ->
             result.hasError()
             result.hasErrorCount(1)
@@ -2329,7 +2329,7 @@ class XTypeTest {
                 processingEnv
                     .getDeclaredType(
                         fooElement,
-                        processingEnv.getWildcardType(producerExtends = barType)
+                        processingEnv.getWildcardType(producerExtends = barType),
                     )
                     .run { if (isJavaSrc) makeNullable() else makeNonNullable() }
             val fooExtendsBarUsageType = usageElement.getDeclaredField("fooExtendsBar").type
@@ -2341,7 +2341,7 @@ class XTypeTest {
                 processingEnv
                     .getDeclaredType(
                         fooElement,
-                        processingEnv.getWildcardType(consumerSuper = barType)
+                        processingEnv.getWildcardType(consumerSuper = barType),
                     )
                     .run { if (isJavaSrc) makeNullable() else makeNonNullable() }
             val fooSuperBarUsageType = usageElement.getDeclaredField("fooSuperBar").type
@@ -2371,7 +2371,7 @@ class XTypeTest {
             interface Foo<T> {}
             interface Bar {}
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -2393,7 +2393,7 @@ class XTypeTest {
             interface Foo<T>
             interface Bar
             """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             )
         ) {
@@ -2415,7 +2415,7 @@ class XTypeTest {
                 }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaImplSubject =
             Source.java(
@@ -2425,7 +2425,7 @@ class XTypeTest {
             class JavaFooImpl extends JavaFoo<String> {
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val kotlinSubject =
             Source.kotlin(
@@ -2441,7 +2441,7 @@ class XTypeTest {
 
             class KotlinFooImpl : KotlinFoo<String>()
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(javaSubject, javaImplSubject, kotlinSubject)) { invocation
             ->
@@ -2476,7 +2476,7 @@ class XTypeTest {
                 fun listOfGeneric(): List<E> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) {
             val fooTypeElement = it.processingEnv.requireTypeElement("Foo")
@@ -2505,7 +2505,7 @@ class XTypeTest {
               fun barQualified(missing: bar.MissingType) = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources = listOf(src),
@@ -2541,7 +2541,7 @@ class XTypeTest {
             class Foo<T> {}
             class Bar<T1, T2> {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(sources = listOf(src)) { invocation ->
             val fooTypeName = XClassName.get("test", "Foo")
@@ -2554,14 +2554,14 @@ class XTypeTest {
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             assertHasTypeName(
                 type = subject.getDeclaredField("foo").type,
-                expectedTypeName = fooTypeName.copy(nullable = true)
+                expectedTypeName = fooTypeName.copy(nullable = true),
             )
             assertHasTypeName(
                 type = subject.getDeclaredField("fooFoo").type,
                 expectedTypeName =
                     fooTypeName
                         .parametrizedBy(fooTypeName.copy(nullable = true))
-                        .copy(nullable = true)
+                        .copy(nullable = true),
             )
             assertHasTypeName(
                 type = subject.getDeclaredField("fooFooFoo").type,
@@ -2572,7 +2572,7 @@ class XTypeTest {
                                 .parametrizedBy(fooTypeName.copy(nullable = true))
                                 .copy(nullable = true)
                         )
-                        .copy(nullable = true)
+                        .copy(nullable = true),
             )
             assertHasTypeName(
                 type = subject.getDeclaredField("barFooFoo").type,
@@ -2580,9 +2580,9 @@ class XTypeTest {
                     barTypeName
                         .parametrizedBy(
                             fooTypeName.copy(nullable = true),
-                            fooTypeName.copy(nullable = true)
+                            fooTypeName.copy(nullable = true),
                         )
-                        .copy(nullable = true)
+                        .copy(nullable = true),
             )
 
             // Test manually wrapping raw type using XProcessingEnv#getDeclaredType()
@@ -2591,7 +2591,7 @@ class XTypeTest {
                 val fooFoo: XType = invocation.processingEnv.getDeclaredType(fooTypeElement, foo)
                 assertHasTypeName(
                     type = fooFoo,
-                    expectedTypeName = fooTypeName.parametrizedBy(fooTypeName.copy(nullable = true))
+                    expectedTypeName = fooTypeName.parametrizedBy(fooTypeName.copy(nullable = true)),
                 )
 
                 val fooFooFoo: XType =
@@ -2601,7 +2601,7 @@ class XTypeTest {
                     expectedTypeName =
                         fooTypeName.parametrizedBy(
                             fooTypeName.parametrizedBy(fooTypeName.copy(nullable = true))
-                        )
+                        ),
                 )
 
                 val barTypeElement = invocation.processingEnv.requireTypeElement("test.Bar")
@@ -2612,8 +2612,8 @@ class XTypeTest {
                     expectedTypeName =
                         barTypeName.parametrizedBy(
                             fooTypeName.copy(nullable = true),
-                            fooTypeName.copy(nullable = true)
-                        )
+                            fooTypeName.copy(nullable = true),
+                        ),
                 )
             }
 
@@ -2621,18 +2621,18 @@ class XTypeTest {
             subject.getDeclaredField("fooFoo").type.let { fooFoo ->
                 assertHasTypeName(
                     type = fooFoo.typeArguments.single(),
-                    expectedTypeName = fooTypeName.copy(nullable = true)
+                    expectedTypeName = fooTypeName.copy(nullable = true),
                 )
             }
             subject.getDeclaredField("barFooFoo").type.let { barFooFoo ->
                 assertThat(barFooFoo.typeArguments).hasSize(2)
                 assertHasTypeName(
                     type = barFooFoo.typeArguments[0],
-                    expectedTypeName = fooTypeName.copy(nullable = true)
+                    expectedTypeName = fooTypeName.copy(nullable = true),
                 )
                 assertHasTypeName(
                     type = barFooFoo.typeArguments[1],
-                    expectedTypeName = fooTypeName.copy(nullable = true)
+                    expectedTypeName = fooTypeName.copy(nullable = true),
                 )
             }
         }
@@ -2658,7 +2658,7 @@ class XTypeTest {
                 class KotlinNested : @KotlinAnnotation KotlinInterface
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         // KSP can't read nested annotations in Java sources if the filename does not match
         // the outer class.
@@ -2675,7 +2675,7 @@ class XTypeTest {
                 @interface JavaNestedAnnotation {}
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSrc =
             Source.java(
@@ -2687,7 +2687,7 @@ class XTypeTest {
             class JavaClass extends @JavaAnnotation.JavaNestedAnnotation JavaBase
                 implements @JavaAnnotation JavaInterface {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         fun checkKotlin(invocation: XTestInvocation) {
             val kotlinTypeElement =
@@ -2742,7 +2742,7 @@ class XTypeTest {
             handler = {
                 checkKotlin(it)
                 checkJava(it)
-            }
+            },
         )
         runProcessorTest(
             classpath = compileFiles(listOf(kotlinSrc)),
@@ -2750,16 +2750,14 @@ class XTypeTest {
                 // We can't see type annotations from precompiled Java classes. Skipping it
                 // for now: https://github.com/google/ksp/issues/1296
                 checkKotlin(it)
-            }
+            },
         )
     }
 
     @Test
     fun selfReferenceTypesDoesNotInfinitelyRecurse() {
         fun runTest(src: Source) {
-            runProcessorTest(
-                sources = listOf(src),
-            ) { invocation ->
+            runProcessorTest(sources = listOf(src)) { invocation ->
                 val fooTypeElement = invocation.processingEnv.requireTypeElement("test.Usage")
                 val fooType = fooTypeElement.getDeclaredField("foo").type
 
@@ -2767,7 +2765,7 @@ class XTypeTest {
                     .isEqualTo(
                         JParameterizedTypeName.get(
                             JClassName.get("test", "Foo"),
-                            JWildcardTypeName.subtypeOf(JClassName.OBJECT)
+                            JWildcardTypeName.subtypeOf(JClassName.OBJECT),
                         )
                     )
 
@@ -2789,8 +2787,8 @@ class XTypeTest {
                 }
                 abstract class Foo<T extends Foo<T>> {}
                 """
-                    .trimIndent()
-            ),
+                    .trimIndent(),
+            )
         )
         runTest(
             Source.kotlin(
@@ -2803,7 +2801,7 @@ class XTypeTest {
             }
             abstract class Foo<T: Foo<T>>
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         )
     }
@@ -2817,7 +2815,7 @@ class XTypeTest {
             package test;
             public interface BaseInterface<T> {}
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val selfReferenceClass =
             Source.java(
@@ -2826,7 +2824,7 @@ class XTypeTest {
             package test;
             public abstract class SelfRef<T extends SelfRef<T>> { }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val source =
             Source.java(
@@ -2835,11 +2833,9 @@ class XTypeTest {
             package test;
             public final class Subject implements BaseInterface<SelfRef<?>> { }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
-        runProcessorTest(
-            sources = listOf(baseInterface, selfReferenceClass, source),
-        ) {
+        runProcessorTest(sources = listOf(baseInterface, selfReferenceClass, source)) {
             val subject = it.processingEnv.requireTypeElement("test.Subject")
             val superType =
                 subject.type.superTypes
@@ -2852,17 +2848,15 @@ class XTypeTest {
                         JClassName.get("test", "BaseInterface"),
                         JParameterizedTypeName.get(
                             JClassName.get("test", "SelfRef"),
-                            JWildcardTypeName.subtypeOf(JClassName.OBJECT)
-                        )
+                            JWildcardTypeName.subtypeOf(JClassName.OBJECT),
+                        ),
                     )
                 )
         }
     }
 
     @Test
-    fun valueTypes(
-        @TestParameter isPrecompiled: Boolean,
-    ) {
+    fun valueTypes(@TestParameter isPrecompiled: Boolean) {
         val kotlinSrc =
             Source.kotlin(
                 "KotlinClass.kt",
@@ -2873,7 +2867,7 @@ class XTypeTest {
                 fun setPackageNames(pkgNames: Set<PackageName>) { }
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources =
@@ -2887,7 +2881,7 @@ class XTypeTest {
                     compileFiles(listOf(kotlinSrc))
                 } else {
                     emptyList()
-                }
+                },
         ) { invocation ->
             val kotlinElm = invocation.processingEnv.requireTypeElement("KotlinClass")
 
@@ -2933,7 +2927,7 @@ class XTypeTest {
                 fun nonKotlinGenericValueClassIndirectUsage(): List<MyGenericInlineClass<Int>> = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSrc =
             Source.java(
@@ -2954,7 +2948,7 @@ class XTypeTest {
                 List<MyGenericInlineClass<Integer>> customGenericInlineClassIndirectUsage();
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources =
@@ -3118,7 +3112,7 @@ class XTypeTest {
                 fun innerWithoutArgsInOuterWithoutArgs(): KotlinOuterWithoutArgs.InnerWithoutArgs = TODO()
             }
             """
-                    .trimIndent()
+                    .trimIndent(),
             )
         val javaSrc =
             Source.java(
@@ -3150,7 +3144,7 @@ class XTypeTest {
                     JavaOuterWithoutArgs.NestedWithoutArgs nestedWithoutArgsInOuterWithoutArgs() { throw new RuntimeException("Stub"); }
                 }
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         runProcessorTest(
             sources =

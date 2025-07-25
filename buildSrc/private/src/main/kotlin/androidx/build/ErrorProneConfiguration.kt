@@ -123,7 +123,7 @@ private fun JavaCompile.configureWithErrorProne() {
             "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
             "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
             "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-            "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED"
+            "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
         )
     )
     val compilerArgs = this.options.compilerArgs
@@ -267,9 +267,9 @@ private fun JavaCompile.configureWithErrorProne() {
                     // Nullaway
                     "-XepIgnoreUnknownCheckNames", // https://github.com/uber/NullAway/issues/25
                     "-Xep:NullAway:ERROR",
-                    "-XepOpt:NullAway:AnnotatedPackages=android.arch,android.support,androidx"
+                    "-XepOpt:NullAway:AnnotatedPackages=android.arch,android.support,androidx",
                 )
-                .joinToString(" ")
+                .joinToString(" "),
         )
 }
 
@@ -283,7 +283,7 @@ private fun JavaCompile.configureWithErrorProne() {
 private fun Project.makeErrorProneTask(
     compileTaskProvider: TaskProvider<out JavaCompile>?,
     taskSuffix: String = "",
-    onConfigure: (errorProneTask: JavaCompile) -> Unit = {}
+    onConfigure: (errorProneTask: JavaCompile) -> Unit = {},
 ) = afterEvaluate {
     val compileTaskProviderExists = provider { compileTaskProvider != null }
     val errorProneTaskProvider =

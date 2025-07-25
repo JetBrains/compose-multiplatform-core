@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.pl() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Zwiń planszę dolną",
     Strings.BottomSheetDismissDescription to "Zamknij planszę dolną",
     Strings.BottomSheetExpandDescription to "Rozwiń planszę dolną",
+    Strings.FloatingToolbarCollapse to "Zwiń pasek narzędzi",
+    Strings.FloatingToolbarExpand to "Rozwiń pasek narzędzi",
     Strings.TooltipPaneDescription to "Etykietka",
     Strings.TooltipLongPressLabel to "Pokaż etykietkę",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.pl() = mapOf(
     Strings.TimePickerHour to "Godzina",
     Strings.TimePickerMinuteTextField to "aby wpisać minuty",
     Strings.TimePickerHourTextField to "aby wpisać godzinę",
+    Strings.TimePickerToggleKeyboard to "Aby podać czas, włącz tryb wprowadzania tekstu",
+    Strings.TimePickerToggleTouch to "Aby podać czas, włącz tryb zegara",
+    Strings.TimePickerDialogTitle to "Wybierz godzinę",
+    Strings.TimeInputDialogTitle to "Wpisz godzinę",
     Strings.CloseRail to "Zamknij kolumnę",
     Strings.WideNavigationRailPaneTitle to "Kolumna nawigacji",
 )

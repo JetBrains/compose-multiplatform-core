@@ -62,7 +62,7 @@ class UserStyleSchemaInflateTest {
             .containsExactly(
                 WatchFaceLayer.BASE,
                 WatchFaceLayer.COMPLICATIONS,
-                WatchFaceLayer.COMPLICATIONS_OVERLAY
+                WatchFaceLayer.COMPLICATIONS_OVERLAY,
             )
         assertThat(setting0.icon!!.resId).isEqualTo(R.drawable.color_style_icon)
         assertThat(setting0.watchFaceEditorData!!.icon!!.resId)
@@ -117,7 +117,7 @@ class UserStyleSchemaInflateTest {
             .containsExactly(
                 WatchFaceLayer.BASE,
                 WatchFaceLayer.COMPLICATIONS,
-                WatchFaceLayer.COMPLICATIONS_OVERLAY
+                WatchFaceLayer.COMPLICATIONS_OVERLAY,
             )
         assertThat(setting1.icon).isNull()
         assertThat(setting1.options.size).isEqualTo(2)
@@ -388,7 +388,7 @@ class UserStyleSchemaInflateTest {
             .containsExactly(
                 WatchFaceLayer.BASE,
                 WatchFaceLayer.COMPLICATIONS,
-                WatchFaceLayer.COMPLICATIONS_OVERLAY
+                WatchFaceLayer.COMPLICATIONS_OVERLAY,
             )
         assertThat(setting0.icon!!.resId).isEqualTo(R.drawable.color_style_icon)
         assertThat(setting0.watchFaceEditorData!!.icon!!.resId)

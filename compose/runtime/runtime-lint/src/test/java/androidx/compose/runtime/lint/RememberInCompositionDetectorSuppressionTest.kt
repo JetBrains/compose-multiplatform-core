@@ -108,7 +108,7 @@ class RememberInCompositionDetectorSuppressionTest() : LintDetectorTest() {
             xQABz5v3MGveL4BxjVlcc2Bu8xfaP/2YsM7YrMUFPGXszBLwgD0ff1bjKp6z
             3eHYAscejhEm6CboJVjEElssJ1jBozHI4jGejNGw6Fj0LSKL1l+I5fARwwIA
             AA==
-            """
+            """,
         )
 
     @Test
@@ -136,7 +136,7 @@ class RememberInCompositionDetectorSuppressionTest() : LintDetectorTest() {
                 Stubs.Animatable,
                 Stubs.StateFactoryMarker,
                 Stubs.SnapshotState,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -182,7 +182,7 @@ src/androidx/compose/runtime/foo/test.kt:11: Error: Calling a @RememberInComposi
                 Stubs.Animatable,
                 Stubs.StateFactoryMarker,
                 Stubs.SnapshotState,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expect(
@@ -233,7 +233,7 @@ src/androidx/compose/runtime/foo/test.kt:16: Error: Calling a @RememberInComposi
                 Stubs.Animatable,
                 Stubs.StateFactoryMarker,
                 Stubs.SnapshotState,
-                Stubs.Remember
+                Stubs.Remember,
             )
             .run()
             .expectClean()

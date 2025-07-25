@@ -78,6 +78,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
@@ -99,14 +100,10 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusDirection.Companion.Down
 import androidx.compose.ui.focus.FocusDirection.Companion.Enter
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
-import androidx.compose.ui.focus.FocusDirection.Companion.Left
-import androidx.compose.ui.focus.FocusDirection.Companion.Next
-import androidx.compose.ui.focus.FocusDirection.Companion.Previous
-import androidx.compose.ui.focus.FocusDirection.Companion.Right
-import androidx.compose.ui.focus.FocusDirection.Companion.Up
 import androidx.compose.ui.focus.FocusOwner
 import androidx.compose.ui.focus.FocusOwnerImpl
 import androidx.compose.ui.focus.FocusTargetNode
+import androidx.compose.ui.focus.PlatformFocusOwner
 import androidx.compose.ui.focus.calculateBoundingRectRelativeTo
 import androidx.compose.ui.focus.focusRect
 import androidx.compose.ui.focus.is1dFocusSearch
@@ -132,26 +129,11 @@ import androidx.compose.ui.input.InputMode.Companion.Keyboard
 import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.InputModeManagerImpl
+import androidx.compose.ui.input.indirect.AndroidIndirectTouchEvent
 import androidx.compose.ui.input.indirect.IndirectTouchEvent
-import androidx.compose.ui.input.indirect.IndirectTouchEventType
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.Key.Companion.Back
-import androidx.compose.ui.input.key.Key.Companion.DirectionCenter
-import androidx.compose.ui.input.key.Key.Companion.DirectionDown
-import androidx.compose.ui.input.key.Key.Companion.DirectionLeft
-import androidx.compose.ui.input.key.Key.Companion.DirectionRight
-import androidx.compose.ui.input.key.Key.Companion.DirectionUp
-import androidx.compose.ui.input.key.Key.Companion.Escape
-import androidx.compose.ui.input.key.Key.Companion.NavigateNext
-import androidx.compose.ui.input.key.Key.Companion.NavigatePrevious
-import androidx.compose.ui.input.key.Key.Companion.NumPadEnter
-import androidx.compose.ui.input.key.Key.Companion.PageDown
-import androidx.compose.ui.input.key.Key.Companion.PageUp
-import androidx.compose.ui.input.key.Key.Companion.Tab
+import androidx.compose.ui.input.indirect.convertActionToIndirectTouchEventType
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
-import androidx.compose.ui.input.key.isShiftPressed
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.AndroidPointerIcon
@@ -243,11 +225,12 @@ internal var platformTextInputServiceInterceptor:
 
 private const val ONE_FRAME_120_HERTZ_IN_MILLISECONDS = 8L
 
-@Suppress("ViewConstructor", "VisibleForTests", "ConstPropertyName", "NullAnnotationGroup")
+@Suppress("ViewConstructor", "VisibleForTests", "NullAnnotationGroup")
 @OptIn(InternalComposeUiApi::class)
 internal class AndroidComposeView(context: Context, coroutineContext: CoroutineContext) :
     ViewGroup(context),
     Owner,
+    PlatformFocusOwner,
     ViewRootForTest,
     MatrixPositionCalculator,
     DefaultLifecycleObserver,
@@ -303,18 +286,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             override fun equals(other: Any?) = other === this
         }
 
-    override val focusOwner: FocusOwner =
-        FocusOwnerImpl(
-            onRequestApplyChangesListener = ::registerOnEndApplyChangesListener,
-            onRequestFocusForOwner = ::onRequestFocusForOwner,
-            onMoveFocusInterop = ::onMoveFocusInChildren,
-            onClearFocusForOwner = ::onClearFocusForOwner,
-            onFocusRectInterop = ::onFetchFocusRect,
-            onLayoutDirection = ::layoutDirection
-        )
+    override val focusOwner: FocusOwner = FocusOwnerImpl(this, this)
 
     override fun getImportantForAutofill(): Int {
-        return View.IMPORTANT_FOR_AUTOFILL_YES
+        return IMPORTANT_FOR_AUTOFILL_YES
     }
 
     override var coroutineContext: CoroutineContext = coroutineContext
@@ -350,9 +325,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     /**
      * Because AndroidComposeView always accepts focus, we have to divert focus to another View if
-     * there is nothing focusable within. However, if there are only nonfocusable ComposeViews, then
-     * the redirection can recurse infinitely. This makes sure that if that happens, then it can
-     * bail when it is detected
+     * there is nothing focusable within. However, if there are only non focusable ComposeViews,
+     * then the redirection can recurse infinitely. This makes sure that if that happens, then it
+     * can bail when it is detected
      */
     private var processingRequestFocusForNextNonChildView = false
 
@@ -360,7 +335,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     // we return the key event to the view system if focus search finds a suitable view which is not
     // a compose sub-view. However if move focus is triggered programmatically, we have to manually
     // implement this behavior because the view system does not have a moveFocus API.
-    private fun onMoveFocusInChildren(focusDirection: FocusDirection): Boolean {
+    override fun moveFocusInChildren(focusDirection: FocusDirection): Boolean {
         @OptIn(ExperimentalComposeUiApi::class)
         if (!ComposeUiFlags.isViewFocusFixEnabled) {
             // The view system does not have an API corresponding to Enter/Exit.
@@ -368,7 +343,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
             val direction =
                 checkNotNull(focusDirection.toAndroidFocusDirection()) { "Invalid focus direction" }
-            val focusedRect = onFetchFocusRect()?.toAndroidRect()
+            val focusedRect = getEmbeddedViewFocusRect()?.toAndroidRect()
 
             val nextView =
                 FocusFinderCompat.instance.let {
@@ -398,7 +373,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (focusDirection.is1dFocusSearch() && androidViewsHandler.hasFocus()) {
             focusedRect = null
         } else {
-            focusedRect = onFetchFocusRect()?.toAndroidRect()
+            focusedRect = getEmbeddedViewFocusRect()?.toAndroidRect()
             if (nextView != null && focusedRect != null) {
                 root.offsetDescendantRectToMyCoords(this, focusedRect)
                 root.offsetRectIntoDescendantCoords(nextView, focusedRect)
@@ -425,7 +400,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     // has focus, the rect returned by focusOwner would be the bounds of the focus target
     // surrounding the embedded view. For a more accurate focus rect, we use the bounds of the
     // focused sub-view.
-    private fun onFetchFocusRect(): androidx.compose.ui.geometry.Rect? =
+    override fun getEmbeddedViewFocusRect(): androidx.compose.ui.geometry.Rect? =
+        // TODO(b/378570682): This function should only fetch the bounds of the embedded focused
+        //  view. Move the focusOwner.getFocusRect() logic to all call sites of this function.
         if (isFocused) {
             focusOwner.getFocusRect()
         } else {
@@ -436,7 +413,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     //  that this common logic can be used by all owners.
     private val keyInputModifier =
         Modifier.onKeyEvent { keyEvent ->
-            val focusDirection = getFocusDirection(keyEvent)
+            val focusDirection = keyEvent.toFocusDirection()
             if (focusDirection == null || keyEvent.type != KeyDown) return@onKeyEvent false
 
             val androidDirection = focusDirection.toAndroidFocusDirection()
@@ -446,10 +423,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 if (hasFocus() && androidDirection != null) {
                     // A child AndroidView is focused. See if the view has a child that should be
                     // focused next.
-                    if (onMoveFocusInChildren(focusDirection)) return@onKeyEvent true
+                    if (moveFocusInChildren(focusDirection)) return@onKeyEvent true
                 }
             }
-            val focusedRect = onFetchFocusRect()
+            val focusedRect = getEmbeddedViewFocusRect()
 
             // Consume the key event if we moved focus or if focus search or requestFocus is
             // cancelled.
@@ -490,7 +467,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     force = false,
                     refreshFocusEvents = true,
                     clearOwnerFocus = false,
-                    focusDirection = focusDirection
+                    focusDirection = focusDirection,
                 )
 
             // Consume the key event if clearFocus was cancelled.
@@ -559,7 +536,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     internal var contentCaptureManager =
         AndroidContentCaptureManager(
             view = this,
-            onContentCaptureSession = ::getContentCaptureSessionCompat
+            onContentCaptureSession = ::getContentCaptureSessionCompat,
         )
 
     /**
@@ -611,7 +588,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 semanticsOwner = semanticsOwner,
                 view = this,
                 rectManager = rectManager,
-                packageName = context.packageName
+                packageName = context.packageName,
             )
         } else {
             null
@@ -759,15 +736,15 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 AndroidPlatformTextInputSession(
                     view = this,
                     textInputService = textInputService,
-                    coroutineScope = it
+                    coroutineScope = it,
                 )
             },
-            session = session
+            session = session,
         )
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
-        replaceWith = ReplaceWith("fontFamilyResolver")
+        replaceWith = ReplaceWith("fontFamilyResolver"),
     )
     @Suppress("DEPRECATION")
     override val fontLoader: Font.ResourceLoader = AndroidFontResourceLoader(context)
@@ -789,8 +766,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override var layoutDirection by
         mutableStateOf(
             // We don't use the attached View's layout direction here since that layout direction
-            // may not
-            // be resolved since composables may be composed without attaching to the RootViewImpl.
+            // may not be resolved since composables may be composed without attaching to the
+            // RootViewImpl.
             // In Jetpack Compose, use the locale layout direction (i.e. layoutDirection came from
             // configuration) as a default layout direction.
             toLayoutDirection(context.resources.configuration.layoutDirection)
@@ -816,7 +793,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     Keyboard -> if (isInTouchMode) requestFocusFromTouch() else true
                     else -> false
                 }
-            }
+            },
         )
     override val inputModeManager: InputModeManager
         get() = _inputModeManager
@@ -881,7 +858,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                             lastMotionEvent,
                             newAction,
                             relayoutTime,
-                            forceHover = false
+                            forceHover = false,
                         )
                     }
                 }
@@ -940,8 +917,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (SDK_INT >= O) {
             AndroidComposeViewVerificationHelperMethodsO.focusable(
                 this,
-                focusable = View.FOCUSABLE,
-                defaultFocusHighlightEnabled = false
+                focusable = FOCUSABLE,
+                defaultFocusHighlightEnabled = false,
             )
         }
         isFocusableInTouchMode = true
@@ -970,12 +947,19 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
      * system for accurate focus searching and so ViewRootImpl will scroll correctly.
      */
     override fun getFocusedRect(rect: Rect) {
-        onFetchFocusRect()?.run {
-            rect.left = left.fastRoundToInt()
-            rect.top = top.fastRoundToInt()
-            rect.right = right.fastRoundToInt()
-            rect.bottom = bottom.fastRoundToInt()
-        } ?: super.getFocusedRect(rect)
+        val focusRect = getEmbeddedViewFocusRect()
+        if (focusRect != null) {
+            rect.left = focusRect.left.fastRoundToInt()
+            rect.top = focusRect.top.fastRoundToInt()
+            rect.right = focusRect.right.fastRoundToInt()
+            rect.bottom = focusRect.bottom.fastRoundToInt()
+        } else {
+            if (focusOwner.focusSearch(Down, null) { true } != true) {
+                rect.set(Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE, Int.MIN_VALUE)
+            } else {
+                super.getFocusedRect(rect)
+            }
+        }
     }
 
     /**
@@ -1003,14 +987,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override fun onScrollCaptureSearch(
         localVisibleRect: Rect,
         windowOffset: Point,
-        targets: Consumer<ScrollCaptureTarget>
+        targets: Consumer<ScrollCaptureTarget>,
     ) {
         if (SDK_INT >= 31) {
             scrollCapture?.onScrollCaptureSearch(
                 view = this,
                 semanticsOwner = semanticsOwner,
                 coroutineContext = coroutineContext,
-                targets = targets
+                targets = targets,
             )
         }
     }
@@ -1052,10 +1036,10 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             nextView == null -> this // No found View, so go to the found Compose focus item
             focusDirection.is1dFocusSearch() -> super.focusSearch(focused, direction)
             isBetterCandidate(
-                focusTarget!!.focusRect(),
+                focusTarget.focusRect(),
                 nextView.calculateBoundingRectRelativeTo(this),
                 focusedBounds,
-                focusDirection
+                focusDirection,
             ) -> this // Compose focus is better than View focus
             else -> nextView // View focus is better than Compose focus
         }
@@ -1076,7 +1060,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             val focusDirection = toFocusDirection(direction) ?: Enter
             return focusOwner.focusSearch(
                 focusDirection = focusDirection,
-                focusedRect = previouslyFocusedRect?.toComposeRect()
+                focusedRect = previouslyFocusedRect?.toComposeRect(),
             ) {
                 it.requestFocus(focusDirection)
             } == true
@@ -1088,21 +1072,17 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         // we just return false to indicate that nothing can be focused.
         if (processingRequestFocusForNextNonChildView) return false
 
-        // If there is currently a focusRequest() in operation, a clearFocus() due to AndroidView
-        // may cause a recursive requestFocus(). This prevents that reentrant call.
-        if (focusOwner.focusTransactionManager.ongoingTransaction) return false
-
         val focusDirection = toFocusDirection(direction) ?: Enter
 
         // If the root has focus, it means a sub-view is focused,
         // and is trying to move focus within itself.
-        if (hasFocus() && onMoveFocusInChildren(focusDirection)) return true
+        if (hasFocus() && moveFocusInChildren(focusDirection)) return true
 
         var foundFocusable = false
         val focusSearchResult =
             focusOwner.focusSearch(
                 focusDirection = focusDirection,
-                focusedRect = previouslyFocusedRect?.toComposeRect()
+                focusedRect = previouslyFocusedRect?.toComposeRect(),
             ) {
                 foundFocusable = true
                 it.requestFocus(focusDirection)
@@ -1148,9 +1128,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         return requestFocusResult
     }
 
-    private fun onRequestFocusForOwner(
+    override fun requestOwnerFocus(
         focusDirection: FocusDirection?,
-        previouslyFocusedRect: androidx.compose.ui.geometry.Rect?
+        previouslyFocusedRect: androidx.compose.ui.geometry.Rect?,
     ): Boolean {
         // We don't request focus if the view is already focused, or if an embedded view is focused,
         // because this would cause the embedded view to lose focus.
@@ -1158,11 +1138,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
         return super.requestFocus(
             focusDirection?.toAndroidFocusDirection() ?: FOCUS_DOWN,
-            @Suppress("DEPRECATION") previouslyFocusedRect?.toAndroidRect()
+            @Suppress("DEPRECATION") previouslyFocusedRect?.toAndroidRect(),
         )
     }
 
-    private fun onClearFocusForOwner() {
+    override fun clearOwnerFocus() {
         @OptIn(ExperimentalComposeUiApi::class)
         if (isFocused || (!ComposeUiFlags.isViewFocusFixEnabled && hasFocus())) {
             super.clearFocus()
@@ -1211,7 +1191,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             focusOwner.dispatchKeyEvent(keyEvent)
 
     /** This function is used by the testing framework to send indirect touch events. */
-    @OptIn(ExperimentalComposeUiApi::class)
+    @OptIn(ExperimentalIndirectTouchTypeApi::class)
     override fun sendIndirectTouchEvent(indirectTouchEvent: IndirectTouchEvent): Boolean {
         return focusOwner.dispatchIndirectTouchEvent(indirectTouchEvent)
     }
@@ -1233,7 +1213,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     // TODO(b/320510084): Add tests to verify that embedded views receive key
                     // events.
                     super.dispatchKeyEvent(event)
-                }
+                },
             )
         }
 
@@ -1378,7 +1358,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     private fun addExtraDataToAccessibilityNodeInfoHelper(
         virtualViewId: Int,
         info: AccessibilityNodeInfo,
-        extraDataKey: String
+        extraDataKey: String,
     ) {
         // This extra is just for testing: needed a way to retrieve `traversalBefore` and
         // `traversalAfter` from a non-sealed instance of an ANI
@@ -1413,7 +1393,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             generateDefaultLayoutParams().also {
                 it.width = width
                 it.height = height
-            }
+            },
         )
 
     override fun addView(child: View?, params: LayoutParams?) = addView(child, -1, params)
@@ -1437,14 +1417,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         androidViewsHandler.layoutNodeToHolder[layoutNode] = view
         // Fetching AccessibilityNodeInfo from a View which is not set to
         // IMPORTANT_FOR_ACCESSIBILITY_YES will return null.
-        view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES)
+        view.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES)
         val thisView = this
         ViewCompat.setAccessibilityDelegate(
             view,
             object : AccessibilityDelegateCompat() {
                 override fun onInitializeAccessibilityNodeInfo(
                     host: View,
-                    info: AccessibilityNodeInfoCompat
+                    info: AccessibilityNodeInfoCompat,
                 ) {
                     super.onInitializeAccessibilityNodeInfo(host, info)
 
@@ -1485,7 +1465,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                         addExtraDataToAccessibilityNodeInfoHelper(
                             semanticsId,
                             info.unwrap(),
-                            composeAccessibilityDelegate.ExtraDataTestTraversalBeforeVal
+                            composeAccessibilityDelegate.ExtraDataTestTraversalBeforeVal,
                         )
                     }
 
@@ -1501,11 +1481,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                         addExtraDataToAccessibilityNodeInfoHelper(
                             semanticsId,
                             info.unwrap(),
-                            composeAccessibilityDelegate.ExtraDataTestTraversalAfterVal
+                            composeAccessibilityDelegate.ExtraDataTestTraversalAfterVal,
                         )
                     }
                 }
-            }
+            },
         )
     }
 
@@ -1518,7 +1498,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         androidViewsHandler.layoutNodeToHolder.remove(
             androidViewsHandler.holderToLayoutNode.remove(view)
         )
-        view.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO)
+        view.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_AUTO)
     }
 
     /** Called to ask the owner to draw a child Android [View] to [canvas]. */
@@ -1617,7 +1597,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
         forceRequest: Boolean,
-        scheduleMeasureAndLayout: Boolean
+        scheduleMeasureAndLayout: Boolean,
     ) {
         if (affectsLookahead) {
             if (
@@ -1637,7 +1617,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override fun onRequestRelayout(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
-        forceRequest: Boolean
+        forceRequest: Boolean,
     ) {
         if (affectsLookahead) {
             if (measureAndLayoutDelegate.requestLookaheadRelayout(layoutNode, forceRequest)) {
@@ -1677,7 +1657,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     minWidth = minWidth,
                     maxWidth = maxWidth,
                     minHeight = minHeight,
-                    maxHeight = maxHeight
+                    maxHeight = maxHeight,
                 )
             if (onMeasureConstraints == null) {
                 // first onMeasure after last onLayout
@@ -1694,7 +1674,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             if (_androidViewsHandler != null) {
                 androidViewsHandler.measure(
                     MeasureSpec.makeMeasureSpec(root.width, MeasureSpec.EXACTLY),
-                    MeasureSpec.makeMeasureSpec(root.height, MeasureSpec.EXACTLY)
+                    MeasureSpec.makeMeasureSpec(root.height, MeasureSpec.EXACTLY),
                 )
             }
         }
@@ -1741,6 +1721,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
+    private var _rootView: View? = null
+
     private fun updatePositionCacheAndDispatch() {
         var positionChanged = false
         getLocationOnScreen(tmpPositionArray)
@@ -1759,7 +1741,21 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             }
         }
         recalculateWindowPosition()
-        rectManager.updateOffsets(globalPosition, windowPosition.round(), viewToWindowMatrix)
+
+        val rootView: View =
+            _rootView
+                ?: rootView.let {
+                    _rootView = it
+                    it
+                }
+
+        rectManager.updateOffsets(
+            globalPosition,
+            windowPosition.round(),
+            viewToWindowMatrix,
+            rootView.width,
+            rootView.height,
+        )
         measureAndLayoutDelegate.dispatchOnPositionedCallbacks(forceDispatch = positionChanged)
         @OptIn(ExperimentalComposeUiApi::class)
         if (ComposeUiFlags.isRectTrackingEnabled) {
@@ -1773,7 +1769,6 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
         explicitLayer: GraphicsLayer?,
-        forceUseOldLayers: Boolean
     ): OwnedLayer {
         if (explicitLayer != null) {
             return GraphicsLayerOwnerLayer(
@@ -1781,29 +1776,27 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 context = null,
                 ownerView = this,
                 drawBlock = drawBlock,
-                invalidateParentLayer = invalidateParentLayer
+                invalidateParentLayer = invalidateParentLayer,
             )
         }
-        if (!forceUseOldLayers) {
-            // First try the layer cache
-            val layer = layerCache.pop()
-            if (layer !== null) {
-                layer.reuseLayer(drawBlock, invalidateParentLayer)
-                return layer
-            }
+        // First try the layer cache
+        val layer = layerCache.pop()
+        if (layer !== null) {
+            layer.reuseLayer(drawBlock, invalidateParentLayer)
+            return layer
+        }
 
-            // Prior to M ViewLayer implementation might be doing extra drawing in order
-            // to support the software rendering. This extra drawing is breaking some of tests
-            // and we can't fully migrate to it until we figure out how to solve it.
-            if (SDK_INT >= M) {
-                return GraphicsLayerOwnerLayer(
-                    graphicsLayer = graphicsContext.createGraphicsLayer(),
-                    context = graphicsContext,
-                    ownerView = this,
-                    drawBlock = drawBlock,
-                    invalidateParentLayer = invalidateParentLayer
-                )
-            }
+        // Prior to M ViewLayer implementation might be doing extra drawing in order
+        // to support the software rendering. This extra drawing is breaking some of tests
+        // and we can't fully migrate to it until we figure out how to solve it.
+        if (SDK_INT >= M) {
+            return GraphicsLayerOwnerLayer(
+                graphicsLayer = graphicsContext.createGraphicsLayer(),
+                context = graphicsContext,
+                ownerView = this,
+                drawBlock = drawBlock,
+                invalidateParentLayer = invalidateParentLayer,
+            )
         }
 
         // RenderNode is supported on Q+ for certain, but may also be supported on M-O.
@@ -1882,6 +1875,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
             _autofillManager?.onPostLayoutNodeReused(layoutNode, oldSemanticsId)
         }
+        // Sometimes, while scrolling with reuse, a child LayoutNode, might not
+        // require measure or layout at all, but at a minimum we need to update RectManager with
+        // the correct information.
+        rectManager.onLayoutPositionChanged(
+            layoutNode,
+            layoutNode.layoutDelegate.measurePassDelegate.lastPosition,
+            true,
+        )
     }
 
     override fun onInteropViewLayoutChange(view: InteropView) {
@@ -1893,30 +1894,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         scheduleMeasureAndLayout()
     }
 
-    override fun getFocusDirection(keyEvent: KeyEvent): FocusDirection? {
-        return when (keyEvent.key) {
-            NavigatePrevious -> Previous
-            NavigateNext -> Next
-            Tab -> if (keyEvent.isShiftPressed) Previous else Next
-            DirectionRight -> Right
-            DirectionLeft -> Left
-            // For the initial key input of a new composable, both up/down and page up/down will
-            // trigger the composable to get focus (so the composable can handle key events to
-            // move focus or scroll content). Remember, composables can't receive key events without
-            // focus.
-            DirectionUp,
-            PageUp -> Up
-            DirectionDown,
-            PageDown -> Down
-            DirectionCenter,
-            Key.Enter,
-            NumPadEnter -> Enter
-            Back,
-            Escape -> Exit
-            else -> null
-        }
-    }
-
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchDraw(canvas: android.graphics.Canvas) {
         if (!isAttachedToWindow) {
             invalidateLayers(root)
@@ -1932,7 +1910,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             canvasHolder.drawInto(canvas) {
                 root.draw(
                     canvas = this,
-                    graphicsLayer = null // the root node will provide the root graphics layer
+                    graphicsLayer = null, // the root node will provide the root graphics layer
                 )
             }
 
@@ -1982,6 +1960,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
             currentFrameRate = Float.NaN
             currentFrameRateCategory = Float.NaN
+        }
+        if (ComposeUiFlags.isRectTrackingEnabled) {
+            rectManager.dispatchCallbacks()
         }
     }
 
@@ -2094,7 +2075,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             val viewTreeOwners =
                 ViewTreeOwners(
                     lifecycleOwner = lifecycleOwner,
-                    savedStateRegistryOwner = savedStateRegistryOwner
+                    savedStateRegistryOwner = savedStateRegistryOwner,
                 )
             _viewTreeOwners = viewTreeOwners
             onViewTreeOwnersAvailable?.invoke(viewTreeOwners)
@@ -2179,12 +2160,12 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override fun onCreateVirtualViewTranslationRequests(
         virtualIds: LongArray,
         supportedFormats: IntArray,
-        requestsCollector: Consumer<ViewTranslationRequest?>
+        requestsCollector: Consumer<ViewTranslationRequest?>,
     ) {
         contentCaptureManager.onCreateVirtualViewTranslationRequests(
             virtualIds,
             supportedFormats,
-            requestsCollector
+            requestsCollector,
         )
     }
 
@@ -2220,13 +2201,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     handleMotionEvent(motionEvent).dispatchedToAPointerInputModifier
                 }
             else -> {
-                @OptIn(ExperimentalComposeUiApi::class)
+                @OptIn(ExperimentalIndirectTouchTypeApi::class)
                 if (!motionEvent.isFromSource(SOURCE_CLASS_POINTER)) {
                     val indirectTouchEvent =
-                        IndirectTouchEvent(
+                        AndroidIndirectTouchEvent(
                             position = Offset(motionEvent.x, motionEvent.y),
-                            eventTimeMillis = motionEvent.eventTime,
+                            uptimeMillis = motionEvent.eventTime,
                             type = convertActionToIndirectTouchEventType(motionEvent.actionMasked),
+                            nativeEvent = motionEvent,
                         )
                     val handled =
                         focusOwner.dispatchIndirectTouchEvent(indirectTouchEvent) {
@@ -2242,24 +2224,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    private fun convertActionToIndirectTouchEventType(actionMasked: Int): IndirectTouchEventType {
-        return when (actionMasked) {
-            ACTION_UP -> IndirectTouchEventType.Release
-            ACTION_DOWN -> IndirectTouchEventType.Press
-            ACTION_MOVE -> IndirectTouchEventType.Move
-            else -> IndirectTouchEventType.Unknown
-        }
-    }
-
     // TODO(shepshapard): Test this method.
-    @OptIn(ExperimentalComposeUiApi::class)
     override fun dispatchTouchEvent(motionEvent: MotionEvent): Boolean {
-        if (ComposeUiFlags.isHitPathTrackerLoggingEnabled) {
-            println("POINTER_INPUT_DEBUG_LOG_TAG AndroidComposeView.dispatchTouchEvent()")
-            println("POINTER_INPUT_DEBUG_LOG_TAG \t\tmotionEvent: $motionEvent")
-        }
-
         if (hoverExitReceived) {
             // Go ahead and send ACTION_HOVER_EXIT if this isn't an ACTION_DOWN for the same
             // pointer
@@ -2302,7 +2268,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 horizontalScrollPixels =
                     axisValue * getScaledHorizontalScrollFactor(config, context),
                 uptimeMillis = event.eventTime,
-                inputDeviceId = event.deviceId
+                inputDeviceId = event.deviceId,
             )
         return focusOwner.dispatchRotaryEvent(rotaryEvent) {
             super.dispatchGenericMotionEvent(event)
@@ -2479,7 +2445,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             result
         } else {
             pointerInputEventProcessor.processCancel()
-            ProcessResult(dispatchedToAPointerInputModifier = false, anyMovementConsumed = false)
+            ProcessResult(
+                dispatchedToAPointerInputModifier = false,
+                anyMovementConsumed = false,
+                anyChangeConsumed = false,
+            )
         }
     }
 
@@ -2488,7 +2458,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         motionEvent: MotionEvent,
         action: Int,
         eventTime: Long,
-        forceHover: Boolean = true
+        forceHover: Boolean = true,
     ) {
         // don't send any events for pointers that are "up" unless they support hover
         val upIndex =
@@ -2537,7 +2507,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 /* deviceId */ motionEvent.deviceId,
                 /* edgeFlags */ motionEvent.edgeFlags,
                 /* source */ motionEvent.source,
-                /* flags */ motionEvent.flags
+                /* flags */ motionEvent.flags,
             )
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(event, this)!!
 
@@ -2765,7 +2735,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     private fun findViewByAccessibilityIdRootedAtCurrentView(
         accessibilityId: Int,
-        currentView: View
+        currentView: View,
     ): View? {
         if (SDK_INT < Q) {
             val getAccessibilityViewIdMethod =
@@ -2779,7 +2749,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                     val foundView =
                         findViewByAccessibilityIdRootedAtCurrentView(
                             accessibilityId,
-                            currentView.getChildAt(i)
+                            currentView.getChildAt(i),
                         )
                     if (foundView != null) {
                         return foundView
@@ -2793,7 +2763,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     @RequiresApi(N)
     override fun onResolvePointerIcon(
         event: MotionEvent,
-        pointerIndex: Int
+        pointerIndex: Int,
     ): android.view.PointerIcon {
         val toolType = event.getToolType(pointerIndex)
         if (
@@ -2806,7 +2776,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             if (icon != null) {
                 return AndroidComposeViewVerificationHelperMethodsN.toAndroidPointerIcon(
                     context,
-                    icon
+                    icon,
                 )
             }
         }
@@ -2827,7 +2797,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 if (SDK_INT >= N) {
                     AndroidComposeViewVerificationHelperMethodsN.setPointerIcon(
                         this@AndroidComposeView,
-                        currentMouseCursorIcon
+                        currentMouseCursorIcon,
                     )
                 }
             }
@@ -2868,7 +2838,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             } else {
                 findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this)
             }
-        } catch (e: NoSuchMethodException) {
+        } catch (_: NoSuchMethodException) {
             return null
         }
     }
@@ -2962,7 +2932,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                         systemPropertiesClass?.getDeclaredMethod(
                             "getBoolean",
                             String::class.java,
-                            Boolean::class.java
+                            Boolean::class.java,
                         )
                 }
                 getBooleanMethod?.invoke(null, "debug.layout", false) as? Boolean == true
@@ -3002,7 +2972,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                             addChangeCallbackMethod =
                                 systemPropertiesClass?.getDeclaredMethod(
                                     "addChangeCallback",
-                                    Runnable::class.java
+                                    Runnable::class.java,
                                 )
                         }
                         addChangeCallbackMethod?.invoke(null, runnable)
@@ -3040,7 +3010,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         /** The [LifecycleOwner] associated with this owner. */
         val lifecycleOwner: LifecycleOwner,
         /** The [SavedStateRegistryOwner] associated with this owner. */
-        val savedStateRegistryOwner: SavedStateRegistryOwner
+        val savedStateRegistryOwner: SavedStateRegistryOwner,
     )
 }
 
@@ -3100,7 +3070,7 @@ private object AndroidComposeViewVerificationHelperMethodsN {
             else ->
                 android.view.PointerIcon.getSystemIcon(
                     context,
-                    android.view.PointerIcon.TYPE_DEFAULT
+                    android.view.PointerIcon.TYPE_DEFAULT,
                 )
         }
 
@@ -3292,7 +3262,7 @@ private object AndroidComposeViewStartDragAndDropN {
     fun startDragAndDrop(
         view: View,
         transferData: DragAndDropTransferData,
-        dragShadowBuilder: ComposeDragShadowBuilder
+        dragShadowBuilder: ComposeDragShadowBuilder,
     ): Boolean =
         view.startDragAndDrop(
             transferData.clipData,
@@ -3315,7 +3285,7 @@ private fun View.containsDescendant(other: View): Boolean {
 private fun View.getContentCaptureSessionCompat(): ContentCaptureSessionCompat? {
     ViewCompatShims.setImportantForContentCapture(
         this,
-        ViewCompatShims.IMPORTANT_FOR_CONTENT_CAPTURE_YES
+        ViewCompatShims.IMPORTANT_FOR_CONTENT_CAPTURE_YES,
     )
     return ViewCompatShims.getContentCaptureSession(this)
 }
@@ -3324,7 +3294,7 @@ private class BringIntoViewOnScreenResponderNode(var view: ViewGroup) :
     Modifier.Node(), BringIntoViewModifierNode {
     override suspend fun bringIntoView(
         childCoordinates: LayoutCoordinates,
-        boundsProvider: () -> androidx.compose.ui.geometry.Rect?
+        boundsProvider: () -> androidx.compose.ui.geometry.Rect?,
     ) {
         val childOffset = childCoordinates.positionInRoot()
         val rootRect = boundsProvider()?.translate(childOffset)

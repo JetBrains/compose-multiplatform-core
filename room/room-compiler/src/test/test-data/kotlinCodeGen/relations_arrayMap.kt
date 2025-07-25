@@ -61,7 +61,7 @@ public class MyDao_Impl(
           }
           _result = SongWithArtist(_tmpSong,_tmpArtist)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <SongWithArtist>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'SongWithArtist'.")
         }
         _result
       } finally {
@@ -98,7 +98,7 @@ public class MyDao_Impl(
           _tmpSongsCollection = _collectionSongs.getValue(_tmpKey_1)
           _result = ArtistAndSongs(_tmpArtist,_tmpSongsCollection)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <ArtistAndSongs>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'ArtistAndSongs'.")
         }
         _result
       } finally {
@@ -135,7 +135,7 @@ public class MyDao_Impl(
           _tmpSongsCollection = _collectionSongs.getValue(_tmpKey_1)
           _result = PlaylistAndSongs(_tmpPlaylist,_tmpSongsCollection)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <PlaylistAndSongs>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'PlaylistAndSongs'.")
         }
         _result
       } finally {

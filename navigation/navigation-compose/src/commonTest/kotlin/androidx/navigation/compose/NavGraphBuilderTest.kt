@@ -135,7 +135,7 @@ class NavGraphBuilderTest {
                 composable(firstRoute) {}
                 composable(
                     secondRoute,
-                    arguments = listOf(navArgument(key) { defaultValue = defaultArg })
+                    arguments = listOf(navArgument(key) { defaultValue = defaultArg }),
                 ) {}
             }
         }
@@ -144,6 +144,31 @@ class NavGraphBuilderTest {
             navController.navigate(secondRoute)
             assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(defaultArg)
+        }
+    }
+
+    @Test
+    fun testNavigationNestedStart() = runComposeUiTestOnUiThread {
+        lateinit var navController: TestNavHostController
+        val uriString = "https://www.example.com"
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(NavUriUtils.parse(uriString)).build()
+        setContentWithLifecycleOwner {
+            navController = TestNavHostController()
+            navController.navigatorProvider.addNavigator(ComposeNavigator())
+
+            NavHost(navController, startDestination = firstRoute) {
+                composable(firstRoute) {}
+                composable(
+                    secondRoute,
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
+                ) {}
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(uriString.toUri())
+            assertThat(navController.currentBackStackEntry!!.destination.hasDeepLink(deeplink))
+                .isTrue()
         }
     }
 
@@ -205,7 +230,7 @@ class NavGraphBuilderTest {
                 navigation(
                     startDestination = thirdRoute,
                     route = secondRoute,
-                    arguments = listOf(navArgument(key) { defaultValue = defaultArg })
+                    arguments = listOf(navArgument(key) { defaultValue = defaultArg }),
                 ) {
                     composable(thirdRoute) {}
                 }
@@ -216,6 +241,36 @@ class NavGraphBuilderTest {
             navController.navigate(secondRoute)
             assertThat(navController.currentBackStackEntry!!.arguments!!.read { getString(key) })
                 .isEqualTo(defaultArg)
+        }
+    }
+
+    @Test
+    fun testNestedNavigationDeepLink() = runComposeUiTestOnUiThread {
+        lateinit var navController: TestNavHostController
+        val uriString = "https://www.example.com"
+        val deeplink = NavDeepLinkRequest.Builder.fromUri(UriNavUriUtils.parse(uriString)).build()
+        setContentWithLifecycleOwner {
+            navController = TestNavHostController(LocalContext.current)
+            navController.navigatorProvider.addNavigator(ComposeNavigator())
+
+            NavHost(navController, startDestination = firstRoute) {
+                composable(firstRoute) {}
+                navigation(
+                    startDestination = thirdRoute,
+                    route = secondRoute,
+                    deepLinks = listOf(navDeepLink { uriPattern = uriString })
+                ) {
+                    composable(thirdRoute) {}
+                }
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            navController.navigate(uriString.toUri())
+            assertThat(
+                    navController.getBackStackEntry(secondRoute).destination.hasDeepLink(deeplink)
+                )
+                .isTrue()
         }
     }
 
@@ -556,10 +611,7 @@ class NavGraphBuilderTest {
 
             NavHost(navController, startDestination = firstRoute) {
                 composable(firstRoute) {}
-                navigation(
-                    startDestination = TEST_CLASS_ARG_ROUTE,
-                    route = secondRoute,
-                ) {
+                navigation(startDestination = TEST_CLASS_ARG_ROUTE, route = secondRoute) {
                     composable<TestClassArg> {}
                 }
             }
@@ -673,10 +725,7 @@ class NavGraphBuilderTest {
 
             NavHost(navController, startDestination = firstRoute) {
                 composable(firstRoute) {}
-                navigation(
-                    startDestination = TEST_CLASS_ARG_ROUTE,
-                    route = secondRoute,
-                ) {
+                navigation(startDestination = TEST_CLASS_ARG_ROUTE, route = secondRoute) {
                     dialog<TestClassArg> {}
                 }
             }

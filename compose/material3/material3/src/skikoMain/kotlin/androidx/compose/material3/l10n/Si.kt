@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.si() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "පහළම පත්‍රය හකුළන්න",
     Strings.BottomSheetDismissDescription to "පහළම පත්‍රය අස් කරන්න",
     Strings.BottomSheetExpandDescription to "පහළම පත්‍රය දිග හරින්න",
+    Strings.FloatingToolbarCollapse to "මෙවලම් තීරුව හකුළන්න",
+    Strings.FloatingToolbarExpand to "මෙවලම් තීරුව පුළුල් කරන්න",
     Strings.TooltipPaneDescription to "මෙවලම් ඉඟිය",
     Strings.TooltipLongPressLabel to "මෙවලම් ඉඟිය පෙන්වන්න",
     Strings.TimePickerPM to "ප.ව.",
@@ -86,6 +88,10 @@ internal fun Translations.si() = mapOf(
     Strings.TimePickerHour to "පැය",
     Strings.TimePickerMinuteTextField to "මිනිත්තු ගණනක් සඳහා",
     Strings.TimePickerHourTextField to "පැයක් සඳහා",
+    Strings.TimePickerToggleKeyboard to "වේලා ආදානය සඳහා පෙළ ආදාන ප්‍රකාරය වෙත මාරු වෙන්න",
+    Strings.TimePickerToggleTouch to "වේලා ආදානය සඳහා ඔරලෝසු ප්‍රකාරය වෙත මාරු වෙන්න",
+    Strings.TimePickerDialogTitle to "වේලාව තෝරන්න",
+    Strings.TimeInputDialogTitle to "වේලාව ඇතුළු කරන්න",
     Strings.CloseRail to "පීල්ල වසන්න",
     Strings.WideNavigationRailPaneTitle to "සංචාලන පීල්ල",
 )

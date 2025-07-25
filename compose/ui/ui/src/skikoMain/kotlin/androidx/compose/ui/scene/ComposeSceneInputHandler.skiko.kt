@@ -36,6 +36,7 @@ import androidx.compose.ui.input.pointer.SyntheticEventSender
 import androidx.compose.ui.input.pointer.areAnyPressed
 import androidx.compose.ui.input.pointer.copy
 import androidx.compose.ui.node.RootNodeOwner
+import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.trace
 import org.jetbrains.skiko.currentNanoTime
 
@@ -162,7 +163,7 @@ internal class ComposeSceneInputHandler(
         val iterator = pointerPositions.iterator()
         while (iterator.hasNext()) {
             val pointerId = iterator.next().key
-            val pointer = event.pointers.find { it.id == pointerId } ?: continue
+            val pointer = event.pointers.fastFirstOrNull { it.id == pointerId } ?: continue
             if ((pointer.type != PointerType.Mouse && !pointer.down) ||
                 (pointer.type == PointerType.Mouse && event.eventType == PointerEventType.Exit)
             ) {

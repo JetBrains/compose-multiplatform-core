@@ -45,7 +45,7 @@ data class RoundRect(
     val bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
 
     /** The bottom-left radius */
-    val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero
+    val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
 ) {
     /** The distance between the left and right edges of this rectangle. */
     val width: Float
@@ -85,23 +85,23 @@ data class RoundRect(
                         topLeftCornerRadius =
                             CornerRadius(
                                 topLeftCornerRadius.x * scale,
-                                topLeftCornerRadius.y * scale
+                                topLeftCornerRadius.y * scale,
                             ),
                         topRightCornerRadius =
                             CornerRadius(
                                 topRightCornerRadius.x * scale,
-                                topRightCornerRadius.y * scale
+                                topRightCornerRadius.y * scale,
                             ),
                         bottomRightCornerRadius =
                             CornerRadius(
                                 bottomRightCornerRadius.x * scale,
-                                bottomRightCornerRadius.y * scale
+                                bottomRightCornerRadius.y * scale,
                             ),
                         bottomLeftCornerRadius =
                             CornerRadius(
                                 bottomLeftCornerRadius.x * scale,
-                                bottomLeftCornerRadius.y * scale
-                            )
+                                bottomLeftCornerRadius.y * scale,
+                            ),
                     )
                 }
                 .also {
@@ -230,7 +230,7 @@ fun RoundRect(
     right: Float,
     bottom: Float,
     radiusX: Float,
-    radiusY: Float
+    radiusY: Float,
 ): RoundRect {
     val radius = CornerRadius(radiusX, radiusY)
     return RoundRect(
@@ -241,7 +241,7 @@ fun RoundRect(
         topLeftCornerRadius = radius,
         topRightCornerRadius = radius,
         bottomRightCornerRadius = radius,
-        bottomLeftCornerRadius = radius
+        bottomLeftCornerRadius = radius,
     )
 }
 
@@ -263,7 +263,7 @@ fun RoundRect(rect: Rect, radiusX: Float, radiusY: Float): RoundRect =
         right = rect.right,
         bottom = rect.bottom,
         radiusX = radiusX,
-        radiusY = radiusY
+        radiusY = radiusY,
     )
 
 /**
@@ -283,7 +283,7 @@ fun RoundRect(
     topLeft: CornerRadius = CornerRadius.Zero,
     topRight: CornerRadius = CornerRadius.Zero,
     bottomRight: CornerRadius = CornerRadius.Zero,
-    bottomLeft: CornerRadius = CornerRadius.Zero
+    bottomLeft: CornerRadius = CornerRadius.Zero,
 ): RoundRect =
     RoundRect(
         left = rect.left,
@@ -293,7 +293,7 @@ fun RoundRect(
         topLeftCornerRadius = topLeft,
         topRightCornerRadius = topRight,
         bottomRightCornerRadius = bottomRight,
-        bottomLeftCornerRadius = bottomLeft
+        bottomLeftCornerRadius = bottomLeft,
     )
 
 /** Returns a new [RoundRect] translated by the given offset. */
@@ -306,7 +306,7 @@ fun RoundRect.translate(offset: Offset): RoundRect =
         topLeftCornerRadius = topLeftCornerRadius,
         topRightCornerRadius = topRightCornerRadius,
         bottomRightCornerRadius = bottomRightCornerRadius,
-        bottomLeftCornerRadius = bottomLeftCornerRadius
+        bottomLeftCornerRadius = bottomLeftCornerRadius,
     )
 
 /** The bounding box of this rounded rectangle (the rectangle with no rounded corners). */
@@ -331,7 +331,7 @@ val RoundRect.safeInnerRect: Rect
             left + leftRadius * insetFactor,
             top + topRadius * insetFactor,
             right - rightRadius * insetFactor,
-            bottom - bottomRadius * insetFactor
+            bottom - bottomRadius * insetFactor,
         )
     }
 
@@ -418,5 +418,5 @@ fun lerp(start: RoundRect, stop: RoundRect, fraction: Float): RoundRect =
         bottomRightCornerRadius =
             lerp(start.bottomRightCornerRadius, stop.bottomRightCornerRadius, fraction),
         bottomLeftCornerRadius =
-            lerp(start.bottomLeftCornerRadius, stop.bottomLeftCornerRadius, fraction)
+            lerp(start.bottomLeftCornerRadius, stop.bottomLeftCornerRadius, fraction),
     )

@@ -49,7 +49,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
         return LambdaPreparedQueryResultBinder(
             returnType = typeArg,
             functionName = rxType.factoryMethodName,
-            adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(typeArg, query)
+            adapter = context.typeAdapterStore.findPreparedQueryResultAdapter(typeArg, query),
         )
     }
 
@@ -63,7 +63,7 @@ internal constructor(val context: Context, private val rxType: RxType) :
                 RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX2_COMPLETABLE),
                 RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_SINGLE),
                 RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_MAYBE),
-                RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX3_COMPLETABLE)
+                RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX3_COMPLETABLE),
             )
     }
 }

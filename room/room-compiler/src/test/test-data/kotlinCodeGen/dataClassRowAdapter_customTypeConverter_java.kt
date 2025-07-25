@@ -73,7 +73,7 @@ public class MyDao_Impl(
           _tmpData = FooConverter.fromString(_tmp_1)
           _result = MyEntity(_tmpPk,_tmpData)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
         }
         _result
       } finally {

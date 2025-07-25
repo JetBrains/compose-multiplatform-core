@@ -51,7 +51,7 @@ class PlatformAppOwnedSdkRegistryTest {
     fun setUp() {
         assumeTrue(
             "Requires AppOwnedInterfacesApi API available",
-            isAppOwnedInterfacesApiAvailable()
+            isAppOwnedInterfacesApiAvailable(),
         )
         context = ApplicationProvider.getApplicationContext()
         sdkRegistry = PlatformAppOwnedSdkRegistry(context)

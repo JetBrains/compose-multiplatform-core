@@ -135,7 +135,7 @@ final class TouchInputHandler<K> extends MotionInputHandler<K> {
             checkArgument(MotionEvents.isActionDown(e));
         }
 
-        if (!mDetailsLookup.overItemWithSelectionKey(e)) {
+        if (mDetailsLookup.overItemWithSelectionKeyAsItem(e) == null) {
             if (DEBUG) Log.d(TAG, "Ignoring LongPress on non-model-backed item.");
             return;
         }

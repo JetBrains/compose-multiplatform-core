@@ -88,7 +88,7 @@ public class CurvedSemanticsScope {
 internal class SemanticWrapper(
     child: CurvedChild,
     private val isClearingSemantics: Boolean,
-    private val properties: CurvedSemanticsScope.() -> Unit
+    private val properties: CurvedSemanticsScope.() -> Unit,
 ) : BaseCurvedChildWrapper(child) {
     @Composable
     override fun SubComposition(semanticProperties: CurvedSemanticProperties) {
@@ -99,7 +99,7 @@ internal class SemanticWrapper(
                 CurvedSemanticProperties(
                     scope.contentDescription,
                     scope.traversalIndex,
-                    isClearingSemantics
+                    isClearingSemantics,
                 )
             )
         )

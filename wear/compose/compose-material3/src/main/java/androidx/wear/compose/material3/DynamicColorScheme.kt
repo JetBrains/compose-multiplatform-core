@@ -34,9 +34,7 @@ import androidx.compose.ui.graphics.toArgb
  *
  * @param context The context required to get system resource data.
  */
-public fun dynamicColorScheme(
-    context: Context,
-): ColorScheme? =
+public fun dynamicColorScheme(context: Context): ColorScheme? =
     if (!isDynamicColorSchemeEnabled(context)) {
         null
     } else {
@@ -58,7 +56,7 @@ public fun dynamicColorScheme(
             onSecondaryContainer =
                 ResourceHelper.getColor(
                     context,
-                    android.R.color.system_on_secondary_container_dark
+                    android.R.color.system_on_secondary_container_dark,
                 ),
             tertiary = ResourceHelper.getColor(context, android.R.color.system_tertiary_fixed),
             tertiaryDim =
@@ -75,7 +73,7 @@ public fun dynamicColorScheme(
             surfaceContainerHigh =
                 ResourceHelper.getColor(
                     context,
-                    android.R.color.system_surface_container_high_dark
+                    android.R.color.system_surface_container_high_dark,
                 ),
             onSurface = ResourceHelper.getColor(context, android.R.color.system_on_surface_dark),
             onSurfaceVariant =

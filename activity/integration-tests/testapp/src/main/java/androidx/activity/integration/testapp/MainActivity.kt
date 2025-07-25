@@ -137,7 +137,7 @@ class MainActivity : ComponentActivity() {
                     pickVisualMedia.launch(
                         PickVisualMediaRequest(
                             mediaType = PickVisualMedia.ImageOnly,
-                            defaultTab = PickVisualMedia.DefaultTab.AlbumsTab
+                            defaultTab = PickVisualMedia.DefaultTab.AlbumsTab,
                         )
                     )
                 }
@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
                     pickVisualMedia.launch(
                         PickVisualMediaRequest(
                             mediaType = PickVisualMedia.ImageOnly,
-                            accentColor = 0xFF123456
+                            accentColor = 0xFF123456,
                         )
                     )
                 }
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
                     pickMultipleVisualMedia.launch(
                         PickVisualMediaRequest(
                             mediaType = PickVisualMedia.ImageAndVideo,
-                            maxItems = 3
+                            maxItems = 3,
                         )
                     )
                 }
@@ -173,7 +173,7 @@ class MainActivity : ComponentActivity() {
                             PickVisualMediaRequest(
                                 mediaType = PickVisualMedia.VideoOnly,
                                 mediaCapabilitiesForTranscoding =
-                                    MediaCapabilities.Builder().build()
+                                    MediaCapabilities.Builder().build(),
                             )
                         )
                     }
@@ -187,12 +187,12 @@ class MainActivity : ComponentActivity() {
                                     context,
                                     0,
                                     Intent(MediaStore.ACTION_IMAGE_CAPTURE),
-                                    PendingIntent.FLAG_IMMUTABLE
+                                    PendingIntent.FLAG_IMMUTABLE,
                                 )
                             )
                             .setFlags(
                                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP,
-                                1
+                                1,
                             )
                             .build()
                     intentSender.launch(request)

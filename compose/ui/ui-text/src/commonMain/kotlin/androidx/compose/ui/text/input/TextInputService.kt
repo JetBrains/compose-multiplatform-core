@@ -56,7 +56,7 @@ open class TextInputService(private val platformTextInputService: PlatformTextIn
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     ): TextInputSession {
         platformTextInputService.startInput(value, imeOptions, onEditCommand, onImeActionPerformed)
         val nextSession = TextInputSession(this, platformTextInputService)
@@ -111,7 +111,7 @@ open class TextInputService(private val platformTextInputService: PlatformTextIn
         message =
             "Use SoftwareKeyboardController.show or " +
                 "TextInputSession.showSoftwareKeyboard instead.",
-        replaceWith = ReplaceWith("textInputSession.showSoftwareKeyboard()")
+        replaceWith = ReplaceWith("textInputSession.showSoftwareKeyboard()"),
     )
     // TODO(b/183448615) @InternalTextApi
     fun showSoftwareKeyboard() {
@@ -125,7 +125,7 @@ open class TextInputService(private val platformTextInputService: PlatformTextIn
         message =
             "Use SoftwareKeyboardController.hide or " +
                 "TextInputSession.hideSoftwareKeyboard instead.",
-        replaceWith = ReplaceWith("textInputSession.hideSoftwareKeyboard()")
+        replaceWith = ReplaceWith("textInputSession.hideSoftwareKeyboard()"),
     )
     // TODO(b/183448615) @InternalTextApi
     fun hideSoftwareKeyboard(): Unit = platformTextInputService.hideSoftwareKeyboard()
@@ -140,7 +140,7 @@ open class TextInputService(private val platformTextInputService: PlatformTextIn
 @Deprecated("Use PlatformTextInputModifierNode instead.")
 class TextInputSession(
     private val textInputService: TextInputService,
-    private val platformTextInputService: PlatformTextInputService
+    private val platformTextInputService: PlatformTextInputService,
 ) {
     /**
      * If this session is currently open.
@@ -214,7 +214,7 @@ class TextInputSession(
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) = ensureOpenSession {
         platformTextInputService.updateTextLayoutResult(
             textFieldValue,
@@ -222,7 +222,7 @@ class TextInputSession(
             textLayoutResult,
             textFieldToRootTransform,
             innerTextFieldBounds,
-            decorationBoxBounds
+            decorationBoxBounds,
         )
     }
 
@@ -295,7 +295,7 @@ interface PlatformTextInputService {
         value: TextFieldValue,
         imeOptions: ImeOptions,
         onEditCommand: (List<EditCommand>) -> Unit,
-        onImeActionPerformed: (ImeAction) -> Unit
+        onImeActionPerformed: (ImeAction) -> Unit,
     )
 
     /**
@@ -357,6 +357,6 @@ interface PlatformTextInputService {
         textLayoutResult: TextLayoutResult,
         textFieldToRootTransform: (Matrix) -> Unit,
         innerTextFieldBounds: Rect,
-        decorationBoxBounds: Rect
+        decorationBoxBounds: Rect,
     ) {}
 }

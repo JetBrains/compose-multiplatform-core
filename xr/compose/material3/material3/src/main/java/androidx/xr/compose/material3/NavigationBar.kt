@@ -43,10 +43,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrNavigationBarOverride.NavigationBar
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterDefaults
-import androidx.xr.compose.spatial.OrbiterEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /**
@@ -109,9 +108,9 @@ public fun NavigationBar(
     }
 }
 
-private object XrNavigationBarTokens {
-    /** The [EdgeOffset] for NavigationBar Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+internal object XrNavigationBarTokens {
+    /** The [OrbiterOffset] for NavigationBar Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 
     val HorizontalPadding = 8.dp
 
@@ -138,21 +137,17 @@ internal object XrNavigationBarOverride : NavigationBarOverride {
  * The default [HorizontalOrbiterProperties] used by [NavigationBar] if none is specified in
  * [LocalNavigationBarOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultNavigationBarOrbiterProperties: HorizontalOrbiterProperties =
     HorizontalOrbiterProperties(
-        position = OrbiterEdge.Horizontal.Bottom,
-        offset = XrNavigationBarTokens.OrbiterEdgeOffset,
+        position = ContentEdge.Horizontal.Bottom,
+        offset = XrNavigationBarTokens.OrbiterOffset,
+        offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterHorizontally,
-        settings = OrbiterDefaults.Settings,
         shape = SpatialRoundedCornerShape(CornerSize(50)),
     )
 
 /** The [HorizontalOrbiterProperties] used by [NavigationBar]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalNavigationBarOrbiterProperties:
     ProvidableCompositionLocal<HorizontalOrbiterProperties> =

@@ -178,7 +178,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
                 test("second")
@@ -311,7 +311,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
                 supportingPane("supportingPane")
@@ -381,7 +381,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
                 dialog("bottomDialog")
@@ -428,7 +428,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "start"
+                startDestination = "start",
             ) {
                 test("start")
                 supportingDialog("bottomDialog")
@@ -471,7 +471,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "firstNested"
+                startDestination = "firstNested",
             ) {
                 navigation(route = "firstNested", startDestination = "bottomDialog") {
                     dialog(route = "bottomDialog")
@@ -517,7 +517,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "firstNested"
+                startDestination = "firstNested",
             ) {
                 navigation(route = "firstNested", startDestination = "bottomDialog") {
                     dialog(route = "bottomDialog")
@@ -549,7 +549,7 @@ class NavBackStackEntryLifecycleTest {
                 firstNestedGraphEntryObserver,
                 bottomDialogObserver,
                 secondNestedGraphEntryObserver,
-                midDialogObserver
+                midDialogObserver,
             )
         inOrder.verify(bottomDialogObserver).onStateChanged(bottomDialog, Lifecycle.Event.ON_PAUSE)
         inOrder
@@ -589,7 +589,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "nested"
+                startDestination = "nested",
             ) {
                 navigation(route = "nested", startDestination = "bottomFrag") {
                     test("bottomFrag")
@@ -635,7 +635,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "graph",
-                startDestination = "nested"
+                startDestination = "nested",
             ) {
                 navigation(route = "nested", startDestination = "bottomFrag") {
                     test("bottomFrag")
@@ -700,7 +700,7 @@ class NavBackStackEntryLifecycleTest {
                 nestedGraphEntryObserver,
                 bottomFragObserver,
                 bottomDialogObserver,
-                topFragObserver
+                topFragObserver,
             )
         inOrder3.verify(bottomFragObserver).onStateChanged(bottomFrag, Lifecycle.Event.ON_CREATE)
         inOrder3.verify(bottomDialogObserver).onStateChanged(bottomDialog, Lifecycle.Event.ON_PAUSE)
@@ -803,7 +803,7 @@ class NavBackStackEntryLifecycleTest {
         navController.navigate(
             R.id.simple_child_start_test,
             null,
-            navOptions { launchSingleTop = true }
+            navOptions { launchSingleTop = true },
         )
 
         navController.popBackStack()
@@ -1101,7 +1101,7 @@ class NavBackStackEntryLifecycleTest {
         navController.navigate(
             R.id.nested_test,
             null,
-            navOptions { popUpTo(R.id.nested_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.nested_test) { inclusive = true } },
         )
 
         assertWithMessage("The parent graph should be resumed when its child is resumed")
@@ -1153,7 +1153,7 @@ class NavBackStackEntryLifecycleTest {
         navController.navigate(
             R.id.second_test,
             null,
-            navOptions { popUpTo(R.id.nested_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.nested_test) { inclusive = true } },
         )
 
         assertWithMessage("The parent graph should be resumed when its child is resumed")
@@ -1182,7 +1182,7 @@ class NavBackStackEntryLifecycleTest {
         val navGraph =
             navController.navigatorProvider.navigation(
                 route = "root",
-                startDestination = "first_nested"
+                startDestination = "first_nested",
             ) {
                 navigation(route = "first_nested", startDestination = "first_nested_test") {
                     test("first_nested_test")
@@ -1256,7 +1256,7 @@ class NavBackStackEntryLifecycleTest {
         navController.navigate(
             R.id.second_test,
             null,
-            navOptions { popUpTo(R.id.nested) { inclusive = true } }
+            navOptions { popUpTo(R.id.nested) { inclusive = true } },
         )
 
         assertWithMessage("The parent graph should be resumed when its child is resumed")
@@ -1440,7 +1440,7 @@ class NavBackStackEntryLifecycleTest {
         navController.navigate(
             navGraph.id,
             null,
-            navOptions { popUpTo(R.id.nested_test) { inclusive = true } }
+            navOptions { popUpTo(R.id.nested_test) { inclusive = true } },
         )
 
         assertWithMessage("The parent graph should be destroyed when its children are destroyed")

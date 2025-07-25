@@ -65,7 +65,7 @@ class ToolBoxViewTest {
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             )
 
         scenario.onFragment { fragment ->
@@ -92,7 +92,7 @@ class ToolBoxViewTest {
     private fun scenarioLoadDocument(
         filename: String,
         nextState: Lifecycle.State,
-        orientation: Int
+        orientation: Int,
     ): FragmentScenario<TestPdfViewerFragment> {
         val context = InstrumentationRegistry.getInstrumentation().context
         val inputStream = context.assets.open(filename)
@@ -114,7 +114,7 @@ class ToolBoxViewTest {
         scenarioLoadDocument(
             TEST_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
 
         // TODO(b/387444890): Remove this once IdlingResources is used
@@ -140,7 +140,7 @@ class ToolBoxViewTest {
         scenarioLoadDocument(
             TEST_DOCUMENT_FILE,
             Lifecycle.State.STARTED,
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
         )
 
         // TODO(b/387444890): Remove this once IdlingResources is used
@@ -165,7 +165,7 @@ class ToolBoxViewTest {
             allOf(
                 hasAction(AnnotationUtils.ACTION_ANNOTATE_PDF),
                 hasFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
-                hasExtra(EXTRA_STARTING_PAGE, pageNum)
+                hasExtra(EXTRA_STARTING_PAGE, pageNum),
             )
         intended(expectedIntent)
     }

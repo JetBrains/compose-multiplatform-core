@@ -72,7 +72,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowRow(
                         modifier = Modifier.onSizeChanged { height = it.height },
-                        itemCount = 6
+                        itemCount = 6,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -93,7 +93,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowRow(
                         modifier = Modifier.onSizeChanged { height = it.height },
-                        itemCount = 3
+                        itemCount = 3,
                     ) {
                         repeat(2) { Box(Modifier.size(20.toDp())) }
                     }
@@ -114,7 +114,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowRow(
                         modifier = Modifier.onSizeChanged { height = it.height },
-                        itemCount = 3
+                        itemCount = 3,
                     ) { index ->
                         if (index == 0) {
                             repeat(5) { Box(Modifier.size(20.toDp())) }
@@ -139,7 +139,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowColumn(
                         modifier = Modifier.onSizeChanged { width = it.width },
-                        itemCount = 6
+                        itemCount = 6,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -160,7 +160,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowRow(
                         modifier = Modifier.onSizeChanged { height = it.height },
-                        itemCount = 10
+                        itemCount = 10,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -181,7 +181,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(100.toDp())) {
                     ContextualFlowColumn(
                         modifier = Modifier.onSizeChanged { width = it.width },
-                        itemCount = 10
+                        itemCount = 10,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -202,7 +202,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(60.toDp())) {
                     ContextualFlowRow(
                         modifier = Modifier.onSizeChanged { height = it.height },
-                        itemCount = 6
+                        itemCount = 6,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -223,7 +223,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         modifier = Modifier.fillMaxWidth(1f).wrapContentHeight(),
                         horizontalArrangement = Arrangement.spacedBy(20.toDp()),
-                        itemCount = 10
+                        itemCount = 10,
                     ) {
                         if (it in 2..5 || it == 9) {} else {
                             Box(Modifier.size(20.toDp()).onPlaced { itemShown++ })
@@ -245,7 +245,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(60.toDp())) {
                     ContextualFlowColumn(
                         itemCount = 6,
-                        Modifier.onSizeChanged { width = it.width }
+                        Modifier.onSizeChanged { width = it.width },
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -267,7 +267,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         itemCount = 6,
                         Modifier.onSizeChanged { height = it.height },
-                        maxItemsInEachRow = 2
+                        maxItemsInEachRow = 2,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -289,7 +289,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowColumn(
                         itemCount = 6,
                         Modifier.onSizeChanged { width = it.width },
-                        maxItemsInEachColumn = 2
+                        maxItemsInEachColumn = 2,
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -311,7 +311,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         itemCount = 6,
                         Modifier.onSizeChanged { height = it.height },
-                        maxItemsInEachRow = 2
+                        maxItemsInEachRow = 2,
                     ) {
                         Box(Modifier.size(20.toDp()).weight(1f, true))
                     }
@@ -333,7 +333,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowColumn(
                         itemCount = 6,
                         Modifier.onSizeChanged { width = it.width },
-                        maxItemsInEachColumn = 2
+                        maxItemsInEachColumn = 2,
                     ) {
                         Box(Modifier.size(20.toDp()).weight(1f, true))
                     }
@@ -354,7 +354,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(50.toDp())) {
                     ContextualFlowRow(
                         itemCount = 2,
-                        Modifier.onSizeChanged { height = it.height }
+                        Modifier.onSizeChanged { height = it.height },
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -464,7 +464,7 @@ class ContextualFlowRowColumnTest {
                                                 seeMoreSize = it.size
                                             }
                                 ) {}
-                            }
+                            },
                     ) { index ->
                         Box(
                             Modifier.width(eachSize.dp).height(eachSize.dp).onPlaced {
@@ -762,7 +762,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(50.toDp())) {
                     ContextualFlowColumn(
                         itemCount = 2,
-                        Modifier.onSizeChanged { width = it.width }
+                        Modifier.onSizeChanged { width = it.width },
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -783,7 +783,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(50.toDp())) {
                     ContextualFlowRow(
                         itemCount = 3,
-                        Modifier.onSizeChanged { height = it.height }
+                        Modifier.onSizeChanged { height = it.height },
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -804,7 +804,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(50.toDp())) {
                     ContextualFlowColumn(
                         itemCount = 3,
-                        Modifier.onSizeChanged { width = it.width }
+                        Modifier.onSizeChanged { width = it.width },
                     ) {
                         Box(Modifier.size(20.toDp()))
                     }
@@ -828,7 +828,7 @@ class ContextualFlowRowColumnTest {
                     Modifier.onSizeChanged {
                         height = it.height
                         width = it.width
-                    }
+                    },
                 ) {}
             }
         }
@@ -850,7 +850,7 @@ class ContextualFlowRowColumnTest {
                     Modifier.onSizeChanged {
                         height = it.height
                         width = it.width
-                    }
+                    },
                 ) {}
             }
         }
@@ -902,7 +902,7 @@ class ContextualFlowRowColumnTest {
                                         shorterHeight.toDp()
                                     } else {
                                         totalRowHeight.toDp()
-                                    }
+                                    },
                                 )
                                 .onPlaced {
                                     if (index == 4) {
@@ -931,7 +931,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     ContextualFlowRow(
                         itemCount = 5,
-                        itemVerticalAlignment = Alignment.CenterVertically
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) { index ->
                         Box(
                             Modifier.size(
@@ -940,7 +940,7 @@ class ContextualFlowRowColumnTest {
                                         shorterHeight.toDp()
                                     } else {
                                         totalRowHeight.toDp()
-                                    }
+                                    },
                                 )
                                 .onPlaced {
                                     if (index == 4) {
@@ -1000,7 +1000,7 @@ class ContextualFlowRowColumnTest {
                                     } else {
                                         totalColumnWidth.toDp()
                                     },
-                                    20.toDp()
+                                    20.toDp(),
                                 )
                                 .onPlaced {
                                     if (index == 4) {
@@ -1029,7 +1029,7 @@ class ContextualFlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     ContextualFlowColumn(
                         itemCount = 5,
-                        itemHorizontalAlignment = Alignment.CenterHorizontally
+                        itemHorizontalAlignment = Alignment.CenterHorizontally,
                     ) { index ->
                         Box(
                             Modifier.size(
@@ -1038,7 +1038,7 @@ class ContextualFlowRowColumnTest {
                                     } else {
                                         totalColumnWidth.toDp()
                                     },
-                                    20.toDp()
+                                    20.toDp(),
                                 )
                                 .onPlaced {
                                     if (index == 4) {
@@ -1071,7 +1071,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         itemCount = 5,
                         Modifier.fillMaxWidth(1f),
-                        horizontalArrangement = Arrangement.SpaceAround
+                        horizontalArrangement = Arrangement.SpaceAround,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -1110,7 +1110,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.width(200.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = ContextualFlowRowOverflow.Visible
+                    overflow = ContextualFlowRowOverflow.Visible,
                 ) { index ->
                     Box(
                         modifier =
@@ -1138,7 +1138,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.height(200.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = ContextualFlowColumnOverflow.Visible
+                    overflow = ContextualFlowColumnOverflow.Visible,
                 ) { index ->
                     Box(
                         modifier =
@@ -1167,7 +1167,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.width(200.dp).height(maxHeight.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = ContextualFlowRowOverflow.Visible
+                    overflow = ContextualFlowRowOverflow.Visible,
                 ) { index ->
                     Box(
                         modifier =
@@ -1196,7 +1196,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.height(200.dp).width(maxWidth.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = ContextualFlowColumnOverflow.Visible
+                    overflow = ContextualFlowColumnOverflow.Visible,
                 ) { index ->
                     Box(
                         modifier =
@@ -1225,7 +1225,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.width(200.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = ContextualFlowRowOverflow.Clip
+                    overflow = ContextualFlowRowOverflow.Clip,
                 ) { index ->
                     Box(
                         modifier =
@@ -1254,7 +1254,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.height(200.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = ContextualFlowColumnOverflow.Clip
+                    overflow = ContextualFlowColumnOverflow.Clip,
                 ) { index ->
                     Box(
                         modifier =
@@ -1283,7 +1283,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.width(200.dp).height(maxHeight.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = ContextualFlowRowOverflow.Clip
+                    overflow = ContextualFlowRowOverflow.Clip,
                 ) { index ->
                     Box(
                         modifier =
@@ -1312,7 +1312,7 @@ class ContextualFlowRowColumnTest {
                     modifier = Modifier.height(200.dp).width(maxWidth.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = ContextualFlowColumnOverflow.Clip
+                    overflow = ContextualFlowColumnOverflow.Clip,
                 ) { index ->
                     Box(
                         modifier =
@@ -1359,7 +1359,7 @@ class ContextualFlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onPlaced { seeMoreShown = true }
                             )
-                        }
+                        },
                 ) { index ->
                     Box(
                         modifier =
@@ -1427,7 +1427,7 @@ class ContextualFlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onPlaced { seeMoreShown = true }
                             )
-                        }
+                        },
                 ) { index ->
                     Box(
                         modifier =
@@ -1495,7 +1495,7 @@ class ContextualFlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        }
+                        },
                 ) { index ->
                     Box(
                         modifier =
@@ -1567,7 +1567,7 @@ class ContextualFlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        }
+                        },
                 ) { index ->
                     Box(
                         modifier =
@@ -1639,8 +1639,8 @@ class ContextualFlowRowColumnTest {
                                             Modifier.clickable { maxLines += 2 }.size(itemSize.dp)
                                     )
                                 }
-                            }
-                        )
+                            },
+                        ),
                 ) {
                     Box(modifier = Modifier.size(itemSize.dp))
                 }
@@ -1681,8 +1681,8 @@ class ContextualFlowRowColumnTest {
                                             Modifier.clickable { maxLines += 2 }.size(itemSize.dp)
                                     )
                                 }
-                            }
-                        )
+                            },
+                        ),
                 ) {
                     Box(modifier = Modifier.size(itemSize.dp))
                 }
@@ -1749,8 +1749,8 @@ class ContextualFlowRowColumnTest {
                                             .onGloballyPositioned { collapseShown = true }
                                             .onPlaced { collapseShown = true }
                                 )
-                            }
-                        )
+                            },
+                        ),
                 ) { index ->
                     Box(
                         modifier =
@@ -1871,8 +1871,8 @@ class ContextualFlowRowColumnTest {
                                             .onGloballyPositioned { collapseShown = true }
                                             .onPlaced { collapseShown = true }
                                 )
-                            }
-                        )
+                            },
+                        ),
                 ) { index ->
                     Box(
                         modifier =
@@ -1993,9 +1993,9 @@ class ContextualFlowRowColumnTest {
                                             .testTag(collapseTag)
                                             .onPlaced { collapseShown = true }
                                 )
-                            }
+                            },
                         ),
-                    itemCount = totalItems
+                    itemCount = totalItems,
                 ) { index ->
                     Box(
                         modifier =
@@ -2117,9 +2117,9 @@ class ContextualFlowRowColumnTest {
                                             .testTag(collapseTag)
                                             .onPlaced { collapseShown = true }
                                 )
-                            }
+                            },
                         ),
-                    itemCount = totalItems
+                    itemCount = totalItems,
                 ) { index ->
                     Box(
                         modifier =
@@ -2204,7 +2204,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowColumn(
                         modifier = Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.SpaceAround,
-                        itemCount = 5
+                        itemCount = 5,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -2249,7 +2249,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxWidth(1f),
                         horizontalArrangement = Arrangement.SpaceAround,
                         maxItemsInEachRow = 5,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -2293,7 +2293,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.SpaceAround,
                         maxItemsInEachColumn = 5,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -2337,7 +2337,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxWidth(1f),
                         horizontalArrangement = Arrangement.End,
                         maxItemsInEachRow = 5,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -2378,7 +2378,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.Bottom,
                         maxItemsInEachColumn = 5,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -2416,7 +2416,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         horizontalArrangement = Arrangement.Start,
                         maxItemsInEachRow = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -2480,7 +2480,7 @@ class ContextualFlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse
+                        minHeightToShowCollapse,
                     )
                 Box(Modifier.size(200.dp)) {
                     ContextualFlowRow(
@@ -2488,7 +2488,7 @@ class ContextualFlowRowColumnTest {
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
                         overflow = overflow,
-                        itemCount = total
+                        itemCount = total,
                     ) {
                         Box(
                             Modifier.size(eachSize.dp).onGloballyPositioned {
@@ -2646,7 +2646,7 @@ class ContextualFlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse
+                        minHeightToShowCollapse,
                     )
                 Box(Modifier.size(200.dp)) {
                     ContextualFlowColumn(
@@ -2654,7 +2654,7 @@ class ContextualFlowRowColumnTest {
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
                         overflow = overflow,
-                        itemCount = total
+                        itemCount = total,
                     ) {
                         Box(
                             Modifier.size(eachSize.dp).onGloballyPositioned {
@@ -2814,14 +2814,14 @@ class ContextualFlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse
+                        minHeightToShowCollapse,
                     )
                 Box(Modifier.width(200.dp).height(maxHeight)) {
                     ContextualFlowRow(
                         horizontalArrangement = Arrangement.Start,
                         maxItemsInEachRow = maxItemsInMainAxis,
                         overflow = overflow,
-                        itemCount = total
+                        itemCount = total,
                     ) {
                         Box(
                             Modifier.size(eachSize.dp).onGloballyPositioned {
@@ -2954,7 +2954,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowRow(
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachRow = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3020,14 +3020,14 @@ class ContextualFlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse
+                        minHeightToShowCollapse,
                     )
                 Box(Modifier.height(200.dp).width(maxWidth)) {
                     ContextualFlowColumn(
                         verticalArrangement = Arrangement.Top,
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         overflow = overflow,
-                        itemCount = total
+                        itemCount = total,
                     ) {
                         Box(
                             Modifier.size(eachSize.dp).onGloballyPositioned {
@@ -3170,7 +3170,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.onSizeChanged { heightResult = it.height },
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachRow = 1,
-                        itemCount = noOfItems
+                        itemCount = noOfItems,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3212,7 +3212,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.onSizeChanged { widthResult = it.width },
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachColumn = 1,
-                        itemCount = noOfItems
+                        itemCount = noOfItems,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3251,7 +3251,7 @@ class ContextualFlowRowColumnTest {
                     ContextualFlowColumn(
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachColumn = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3296,7 +3296,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.onSizeChanged { width = it.width },
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachRow = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3342,7 +3342,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.onSizeChanged { height = it.height },
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
                         maxItemsInEachColumn = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(eachSize.toDp()).onPlaced {
@@ -3385,7 +3385,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.Top,
                         maxItemsInEachColumn = maxItemsInMainAxis,
-                        itemCount = 10
+                        itemCount = 10,
                     ) { index ->
                         Box(
                             Modifier.size(20.toDp()).onPlaced {
@@ -3428,7 +3428,7 @@ class ContextualFlowRowColumnTest {
                             modifier = Modifier.fillMaxWidth(1f),
                             horizontalArrangement = Arrangement.Start,
                             maxItemsInEachRow = maxItemsInMainAxis,
-                            itemCount = 6
+                            itemCount = 6,
                         ) { index ->
                             Box(
                                 Modifier.size(eachSize.toDp()).onPlaced {
@@ -3470,7 +3470,7 @@ class ContextualFlowRowColumnTest {
                             modifier = Modifier.fillMaxHeight(1f).fillMaxWidth(1f),
                             verticalArrangement = Arrangement.Top,
                             maxItemsInEachColumn = maxItemsInMainAxis,
-                            itemCount = 10
+                            itemCount = 10,
                         ) { index ->
                             Box(
                                 Modifier.size(20.toDp()).onPlaced {
@@ -3526,7 +3526,7 @@ class ContextualFlowRowColumnTest {
                                 },
                             verticalArrangement = Arrangement.Top,
                             maxItemsInEachColumn = maxItemsInMainAxis,
-                            itemCount = 10
+                            itemCount = 10,
                         ) { index ->
                             Box(
                                 Modifier.size(20.toDp()).onPlaced {
@@ -3579,7 +3579,7 @@ class ContextualFlowRowColumnTest {
                         ContextualFlowRow(
                             horizontalArrangement = Arrangement.Start,
                             maxItemsInEachRow = 5,
-                            itemCount = 6
+                            itemCount = 6,
                         ) { index ->
                             Box(
                                 Modifier.size(20.toDp()).onPlaced {
@@ -3616,7 +3616,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxWidth(1f).onSizeChanged { width = it.width },
                         verticalArrangement = Arrangement.spacedBy(20.dp),
                         itemCount = 2,
-                        overflow = ContextualFlowRowOverflow.Clip
+                        overflow = ContextualFlowRowOverflow.Clip,
                     ) { index ->
                         Layout(
                             modifier =
@@ -3646,7 +3646,7 @@ class ContextualFlowRowColumnTest {
                         modifier = Modifier.fillMaxHeight(1f).onSizeChanged { height = it.height },
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         itemCount = 2,
-                        overflow = ContextualFlowColumnOverflow.Clip
+                        overflow = ContextualFlowColumnOverflow.Clip,
                     ) { index ->
                         Layout(
                             modifier =
@@ -3696,7 +3696,7 @@ class ContextualFlowRowColumnTest {
                     verticalArrangement = Arrangement.spacedBy(crossAxisSpacing),
                     maxItemsInEachRow = maxItemsInMainAxisState,
                     itemCount = itemCount,
-                    overflow = ContextualFlowRowOverflow.Clip
+                    overflow = ContextualFlowRowOverflow.Clip,
                 ) {
                     Box(
                         Modifier.width(if (lineIndex == 0) lineOneItemSize else itemSize)
@@ -3735,7 +3735,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
 
@@ -3756,7 +3756,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
 
@@ -3778,7 +3778,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
     }
@@ -3814,7 +3814,7 @@ class ContextualFlowRowColumnTest {
                     horizontalArrangement = Arrangement.spacedBy(crossAxisSpacing),
                     maxItemsInEachColumn = maxItemsInMainAxisState,
                     itemCount = itemCount,
-                    overflow = ContextualFlowColumnOverflow.Clip
+                    overflow = ContextualFlowColumnOverflow.Clip,
                 ) {
                     Box(
                         Modifier.height(if (lineIndex == 0) lineOneItemSize else itemSize)
@@ -3858,7 +3858,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
         rule.runOnIdle {
@@ -3878,7 +3878,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
 
@@ -3900,7 +3900,7 @@ class ContextualFlowRowColumnTest {
                 itemSize,
                 spacing,
                 maxItemsInMainAxis.intValue,
-                crossAxisSpacing
+                crossAxisSpacing,
             )
         }
     }
@@ -3913,7 +3913,7 @@ class ContextualFlowRowColumnTest {
         itemSize: Dp,
         spacing: Dp,
         maxItemsInMainAxis: Int,
-        crossAxisSpacing: Dp
+        crossAxisSpacing: Dp,
     ) {
         var leftOver = mainAxisSize
         val lineInfo = FlowLineInfo(0, 0, leftOver, maxCrossAxis)
@@ -3938,7 +3938,7 @@ class ContextualFlowRowColumnTest {
                     positionInLine = 0,
                     maxMainAxisSize = leftOver,
                     maxCrossAxisSize = leftOverCrossAxis,
-                    lineIndex = lineInfo.lineIndex + 1
+                    lineIndex = lineInfo.lineIndex + 1,
                 )
             } else if (leftOver < 0.dp) {
                 leftOver = mainAxisSize - lineItemSize - spacing
@@ -3949,14 +3949,14 @@ class ContextualFlowRowColumnTest {
                     positionInLine = 1,
                     maxMainAxisSize = leftOver,
                     maxCrossAxisSize = leftOverCrossAxis,
-                    lineIndex = lineInfo.lineIndex + 1
+                    lineIndex = lineInfo.lineIndex + 1,
                 )
             } else {
                 lineInfo.update(
                     positionInLine = info.positionInLine + 1,
                     maxMainAxisSize = leftOver,
                     maxCrossAxisSize = leftOverCrossAxis,
-                    lineIndex = lineInfo.lineIndex
+                    lineIndex = lineInfo.lineIndex,
                 )
             }
         }

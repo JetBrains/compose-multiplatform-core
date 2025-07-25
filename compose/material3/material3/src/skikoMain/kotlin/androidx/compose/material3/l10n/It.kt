@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.it() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Comprimi il riquadro inferiore",
     Strings.BottomSheetDismissDescription to "Chiudi il riquadro inferiore",
     Strings.BottomSheetExpandDescription to "Espandi il riquadro inferiore",
+    Strings.FloatingToolbarCollapse to "Comprimi la barra degli strumenti",
+    Strings.FloatingToolbarExpand to "Espandi la barra degli strumenti",
     Strings.TooltipPaneDescription to "Descrizione comando",
     Strings.TooltipLongPressLabel to "Mostra descrizione comando",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.it() = mapOf(
     Strings.TimePickerHour to "Ora",
     Strings.TimePickerMinuteTextField to "per i minuti",
     Strings.TimePickerHourTextField to "per l\'ora",
+    Strings.TimePickerToggleKeyboard to "Passa alla modalità di immissione testo per inserire l\'ora",
+    Strings.TimePickerToggleTouch to "Passa alla modalità orologio per inserire l\'ora",
+    Strings.TimePickerDialogTitle to "Seleziona l\'ora",
+    Strings.TimeInputDialogTitle to "Inserisci l\'ora",
     Strings.CloseRail to "Chiudi modalità laterale",
     Strings.WideNavigationRailPaneTitle to "Modalità di navigazione laterale",
 )

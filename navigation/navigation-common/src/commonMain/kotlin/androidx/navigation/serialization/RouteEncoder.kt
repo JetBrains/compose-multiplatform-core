@@ -33,7 +33,7 @@ import kotlinx.serialization.modules.SerializersModule
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RouteEncoder<T : Any>(
     private val serializer: KSerializer<T>,
-    private val typeMap: Map<String, NavType<Any?>>
+    private val typeMap: Map<String, NavType<Any?>>,
 ) : AbstractEncoder() {
     override val serializersModule: SerializersModule = EmptySerializersModule()
     private val map: MutableMap<String, List<String>> = mutableMapOf()

@@ -94,7 +94,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                         BasicText("label")
                         it()
                     }
-                }
+                },
             )
         }
 
@@ -165,7 +165,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = InputTransformation.allCaps(Locale.current)
+                inputTransformation = InputTransformation.allCaps(Locale.current),
             )
         }
 
@@ -185,7 +185,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                outputTransformation = { append(" xyz") }
+                outputTransformation = { append(" xyz") },
             )
         }
 
@@ -206,7 +206,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 state = state,
                 modifier = Modifier.testTag(Tag),
                 inputTransformation = InputTransformation.allCaps(Locale.current),
-                outputTransformation = { append(" XYZ") }
+                outputTransformation = { append(" XYZ") },
             )
         }
 
@@ -245,7 +245,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                         val newText = asCharSequence().asSequence().joinToString("-")
                         replace(0, length, newText)
                     }
-                }
+                },
             )
         }
 
@@ -290,7 +290,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 inputTransformation = {
                     val newChange = asCharSequence().replace(Regex("a"), "")
                     replace(0, length, newChange)
-                }
+                },
             )
         }
 
@@ -321,7 +321,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             )
         }
 
@@ -399,7 +399,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = { revertAllChanges() }
+                inputTransformation = { revertAllChanges() },
             )
         }
 
@@ -437,7 +437,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
         rule.setContent {
             BasicTextField(
                 state = if (chosenState) state1 else state2,
-                modifier = Modifier.testTag(Tag)
+                modifier = Modifier.testTag(Tag),
             )
         }
 
@@ -464,7 +464,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 state = state,
                 modifier = Modifier.testTag(Tag),
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
 
@@ -520,7 +520,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                             replace(0, length, newChange)
                             placeCursorAtEnd()
                         }
-                    }
+                    },
                 )
             }
         }
@@ -573,7 +573,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                         if (selection != originalValue.selection) {
                             revertAllChanges()
                         }
-                    }
+                    },
                 )
             }
         }
@@ -610,7 +610,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 BasicTextField(
                     state = state,
                     modifier = Modifier.testTag(Tag),
-                    inputTransformation = { revertAllChanges() }
+                    inputTransformation = { revertAllChanges() },
                 )
             }
         }
@@ -633,7 +633,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 state = state,
                 modifier = Modifier.testTag(Tag),
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
 
@@ -664,7 +664,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 state = state,
                 modifier = Modifier.testTag(Tag),
                 enabled = enabled,
-                readOnly = readOnly
+                readOnly = readOnly,
             )
         }
         rule.onNodeWithTag(Tag).assert(isEditable())
@@ -703,7 +703,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = transformation
+                inputTransformation = transformation,
             )
         }
         rule.onNodeWithTag(Tag).assertKey(2, semanticsPropertyKey)
@@ -726,7 +726,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = transformation
+                inputTransformation = transformation,
             )
         }
         rule.onNodeWithTag(Tag).assertKey(1, semanticsPropertyKey)
@@ -742,7 +742,7 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
             BasicTextField(
                 state = state,
                 modifier = Modifier.testTag(Tag),
-                inputTransformation = InputTransformation.maxLength(10)
+                inputTransformation = InputTransformation.maxLength(10),
             )
         }
         rule.onNodeWithTag(Tag).assertKey(10, SemanticsProperties.MaxTextLength)
@@ -756,10 +756,10 @@ class BasicTextFieldSemanticsTest : FocusedWindowTest {
                 state =
                     rememberTextFieldState(
                         initialText = "Hello",
-                        initialSelection = TextRange(0, 2)
+                        initialSelection = TextRange(0, 2),
                     ),
                 modifier = Modifier.testTag(Tag),
-                isPassword = isPassword
+                isPassword = isPassword,
             )
         }
 

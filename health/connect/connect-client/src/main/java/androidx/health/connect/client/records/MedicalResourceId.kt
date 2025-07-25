@@ -48,7 +48,7 @@ import androidx.health.connect.client.records.FhirResource.Companion.FhirResourc
 class MedicalResourceId(
     val dataSourceId: String,
     @FhirResourceType val fhirResourceType: Int,
-    val fhirResourceId: String
+    val fhirResourceId: String,
 ) {
     @SuppressLint("NewApi") // already checked with a feature availability check
     internal val platformMedicalResourceId: PlatformMedicalResourceId =
@@ -56,7 +56,7 @@ class MedicalResourceId(
             PlatformMedicalResourceId(
                 dataSourceId,
                 fhirResourceType.toPlatformFhirResourceType(),
-                fhirResourceId
+                fhirResourceId,
             )
         }
 
@@ -84,8 +84,8 @@ class MedicalResourceId(
             mapOf(
                 "dataSourceId" to dataSourceId,
                 "fhirResourceType" to fhirResourceType,
-                "fhirResourceId" to fhirResourceId
-            )
+                "fhirResourceId" to fhirResourceId,
+            ),
         )
 
     companion object {

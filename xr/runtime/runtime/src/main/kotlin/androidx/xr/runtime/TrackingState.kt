@@ -20,20 +20,20 @@ package androidx.xr.runtime
 public class TrackingState private constructor(private val value: Int) {
     public companion object {
         /** The trackable is currently tracked and its pose is current. */
-        @JvmField public val Tracking: TrackingState = TrackingState(0)
+        @JvmField public val TRACKING: TrackingState = TrackingState(0)
 
         /** Tracking has been paused for this instance but may be resumed in the future. */
-        @JvmField public val Paused: TrackingState = TrackingState(1)
+        @JvmField public val PAUSED: TrackingState = TrackingState(1)
 
         /** Tracking has stopped for this instance and will never be resumed in the future. */
-        @JvmField public val Stopped: TrackingState = TrackingState(2)
+        @JvmField public val STOPPED: TrackingState = TrackingState(2)
     }
 
     public override fun toString(): String =
         when (this) {
-            Tracking -> "Tracking"
-            Paused -> "Paused"
-            Stopped -> "Stopped"
-            else -> "Unknown"
+            TRACKING -> "TRACKING"
+            PAUSED -> "PAUSED"
+            STOPPED -> "STOPPED"
+            else -> "UNKNOWN"
         }
 }

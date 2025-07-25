@@ -82,7 +82,7 @@ internal interface OwnedLayer {
      */
     fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
     )
 
     /**

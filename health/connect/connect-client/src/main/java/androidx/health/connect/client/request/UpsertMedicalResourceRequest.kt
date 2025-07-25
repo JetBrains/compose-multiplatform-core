@@ -53,7 +53,7 @@ import androidx.health.connect.client.records.toString
 class UpsertMedicalResourceRequest(
     val dataSourceId: String,
     val fhirVersion: FhirVersion,
-    val data: String
+    val data: String,
 ) {
     @SuppressLint("NewApi") // already checked with a feature availability check
     internal val platformUpsertMedicalResourceRequest: PlatformUpsertMedicalResourceRequest =
@@ -61,7 +61,7 @@ class UpsertMedicalResourceRequest(
             PlatformUpsertMedicalResourceRequestBuilder(
                     dataSourceId,
                     fhirVersion.platformFhirVersion,
-                    data
+                    data,
                 )
                 .build()
         }
@@ -69,11 +69,7 @@ class UpsertMedicalResourceRequest(
     override fun toString(): String =
         toString(
             this,
-            mapOf(
-                "dataSourceId" to dataSourceId,
-                "fhirVersion" to fhirVersion,
-                "data" to data,
-            )
+            mapOf("dataSourceId" to dataSourceId, "fhirVersion" to fhirVersion, "data" to data),
         )
 
     override fun equals(other: Any?): Boolean {

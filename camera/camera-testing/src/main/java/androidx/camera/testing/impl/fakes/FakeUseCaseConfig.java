@@ -18,6 +18,7 @@ package androidx.camera.testing.impl.fakes;
 
 import static androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE;
 
+import android.graphics.ImageFormat;
 import android.util.Pair;
 import android.util.Range;
 import android.util.Size;
@@ -32,6 +33,7 @@ import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.SessionConfig;
+import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
@@ -87,14 +89,20 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
         }
 
         public Builder(@NonNull CaptureType captureType, int inputFormat) {
-            this(MutableOptionsBundle.create(), captureType);
-            mOptionsBundle.insertOption(OPTION_INPUT_FORMAT, inputFormat);
+            this(MutableOptionsBundle.create(), captureType, inputFormat);
         }
 
         public Builder(@NonNull Config config, @NonNull CaptureType captureType) {
+            this(config, captureType, ImageFormat.UNKNOWN);
+        }
+
+        public Builder(@NonNull Config config, @NonNull CaptureType captureType, int inputFormat) {
             mOptionsBundle = MutableOptionsBundle.from(config);
             setTargetClass(FakeUseCase.class);
             mOptionsBundle.insertOption(OPTION_CAPTURE_TYPE, captureType);
+            if (inputFormat != ImageFormat.UNKNOWN) {
+                mOptionsBundle.insertOption(OPTION_INPUT_FORMAT, inputFormat);
+            }
         }
 
         @Override
@@ -256,21 +264,24 @@ public class FakeUseCaseConfig implements UseCaseConfig<FakeUseCase>, ImageOutpu
             return this;
         }
 
+        @Override
+        public @NonNull Builder setStreamUseCase(
+                @NonNull StreamUseCase streamUseCase) {
+            getMutableConfig().insertOption(OPTION_STREAM_USE_CASE, streamUseCase);
+            return this;
+        }
+
+        /** Sets the session type to the fake use case. */
+        public @NonNull Builder setSessionType(int sessionType) {
+            getMutableConfig().insertOption(OPTION_SESSION_TYPE, sessionType);
+            return this;
+        }
+
         /**
          * Sets specific target frame rate to the fake use case.
          */
         public @NonNull Builder setTargetFrameRate(@NonNull Range<Integer> targetFrameRate) {
             getMutableConfig().insertOption(OPTION_TARGET_FRAME_RATE, targetFrameRate);
-            return this;
-        }
-
-        /**
-         * Sets specific target high speed frame rate to the fake use case.
-         */
-        public @NonNull Builder setTargetHighSpeedFrameRate(
-                @NonNull Range<Integer> targetHighSPeedFrameRate) {
-            getMutableConfig().insertOption(OPTION_TARGET_HIGH_SPEED_FRAME_RATE,
-                    targetHighSPeedFrameRate);
             return this;
         }
     }

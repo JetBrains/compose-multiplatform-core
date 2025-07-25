@@ -31,7 +31,7 @@ public abstract class SliceTrack(
      * This ID must be unique within all [Track]s in a given trace produced by [TraceDriver] - it is
      * used to connect recorded trace events to the containing track.
      */
-    uuid: Long
+    uuid: Long,
 ) : Track(context = context, uuid = uuid) {
 
     /**
@@ -114,7 +114,7 @@ public abstract class SliceTrack(
     public suspend fun <T> traceFlow(
         name: String,
         flowId: Long = monotonicId(),
-        block: suspend () -> T
+        block: suspend () -> T,
     ): T {
         return if (!context.isEnabled) {
             block()
@@ -127,7 +127,7 @@ public abstract class SliceTrack(
     private suspend fun <T, R : Track> R.traceFlow(
         name: String,
         flowIds: List<Long>,
-        block: suspend () -> T
+        block: suspend () -> T,
     ): T {
         val element = obtainFlowContext()
         val newFlowIds =

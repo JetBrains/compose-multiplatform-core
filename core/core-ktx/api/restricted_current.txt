@@ -339,6 +339,10 @@ package androidx.core.os {
     method @RequiresApi(31) public static <R, E extends java.lang.Throwable> android.os.OutcomeReceiver<R,E> asOutcomeReceiver(kotlin.coroutines.Continuation<? super R>);
   }
 
+  public final class ParcelKt {
+    method public static inline <T> T use(android.os.Parcel, kotlin.jvm.functions.Function1<? super android.os.Parcel,? extends T> block);
+  }
+
   public final class PersistableBundleKt {
     method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf();
     method @RequiresApi(21) public static android.os.PersistableBundle persistableBundleOf(kotlin.Pair<java.lang.String,? extends java.lang.Object?>... pairs);

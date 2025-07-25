@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerInputEvent
+import androidx.compose.ui.input.rotary.RotaryScrollEvent
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.RootNodeOwner
 import androidx.compose.ui.platform.setContent
@@ -150,6 +151,11 @@ private class PlatformLayersComposeSceneImpl(
         mainOwner.invalidatePositionInWindow()
     }
 
+    override fun invalidatePositionOnScreen() {
+        check(!isClosed) { "invalidatePositionOnScreen called after ComposeScene is closed" }
+        mainOwner.invalidatePositionOnScreen()
+    }
+
     override fun createComposition(content: @Composable () -> Unit): Composition {
         return mainOwner.setContent(
             compositionContext,
@@ -171,6 +177,9 @@ private class PlatformLayersComposeSceneImpl(
 
     override fun processKeyEvent(keyEvent: KeyEvent): Boolean =
         mainOwner.onKeyEvent(keyEvent)
+
+    override fun processRotaryScrollEvent(event: RotaryScrollEvent): Boolean =
+        mainOwner.onRotaryEvent(event)
 
     override fun measureAndLayout() {
         mainOwner.measureAndLayout()

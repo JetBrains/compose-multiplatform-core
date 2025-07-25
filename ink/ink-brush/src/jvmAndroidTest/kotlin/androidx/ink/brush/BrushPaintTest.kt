@@ -43,6 +43,8 @@ class BrushPaintTest {
                             rotation = Angle.QUARTER_TURN_RADIANS,
                             opacity = 0.3f,
                             animationFrames = 1,
+                            animationRows = 1,
+                            animationColumns = 1,
                             BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                             BrushPaint.TextureOrigin.STROKE_SPACE_ORIGIN,
                             BrushPaint.TextureMapping.TILING,
@@ -58,6 +60,8 @@ class BrushPaintTest {
                             rotation = Angle.HALF_TURN_RADIANS,
                             opacity = 0.7f,
                             animationFrames = 1,
+                            animationRows = 1,
+                            animationColumns = 1,
                             BrushPaint.TextureSizeUnit.STROKE_COORDINATES,
                             BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                             BrushPaint.TextureMapping.TILING,
@@ -237,6 +241,33 @@ class BrushPaintTest {
     }
 
     @Test
+    @Suppress("Range") // Testing error cases.
+    fun textureLayerConstructor_withInvalidAnimationAtlasDimensions_throwsIllegalArgumentException() {
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationRows = -1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationRows = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationColumns = -1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(TEST_TEXTURE_ID, sizeX = 1f, sizeY = 1f, animationColumns = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            BrushPaint.TextureLayer(
+                TEST_TEXTURE_ID,
+                sizeX = 1f,
+                sizeY = 1f,
+                animationFrames = 7,
+                animationRows = 2,
+                animationColumns = 3,
+            )
+        }
+    }
+
+    @Test
     fun textureLayerHashCode_withIdenticalValues_matches() {
         assertThat(makeTestTextureLayer().hashCode()).isEqualTo(makeTestTextureLayer().hashCode())
     }
@@ -252,7 +283,9 @@ class BrushPaintTest {
                 offsetY = 0.2f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
                 opacity = 0.3f,
-                animationFrames = 1,
+                animationFrames = 2,
+                animationRows = 3,
+                animationColumns = 4,
                 BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                 BrushPaint.TextureOrigin.LAST_STROKE_INPUT,
                 BrushPaint.TextureMapping.WINDING,
@@ -272,7 +305,9 @@ class BrushPaintTest {
                     offsetY = 0.2f,
                     rotation = Angle.QUARTER_TURN_RADIANS,
                     opacity = 0.3f,
-                    animationFrames = 1,
+                    animationFrames = 2,
+                    animationRows = 3,
+                    animationColumns = 4,
                     BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                     BrushPaint.TextureOrigin.LAST_STROKE_INPUT,
                     BrushPaint.TextureMapping.WINDING,
@@ -292,7 +327,9 @@ class BrushPaintTest {
         assertThat(layer).isNotEqualTo(layer.copy(offsetY = 0.999F))
         assertThat(layer).isNotEqualTo(layer.copy(rotation = Angle.HALF_TURN_RADIANS))
         assertThat(layer).isNotEqualTo(layer.copy(opacity = 0.999f))
-        assertThat(layer).isNotEqualTo(layer.copy(animationFrames = 2))
+        assertThat(layer).isNotEqualTo(layer.copy(animationFrames = 5))
+        assertThat(layer).isNotEqualTo(layer.copy(animationRows = 6))
+        assertThat(layer).isNotEqualTo(layer.copy(animationColumns = 7))
         assertThat(layer)
             .isNotEqualTo(layer.copy(sizeUnit = BrushPaint.TextureSizeUnit.STROKE_COORDINATES))
         assertThat(layer)
@@ -323,7 +360,9 @@ class BrushPaintTest {
                 offsetY = 0.2f,
                 rotation = Angle.QUARTER_TURN_RADIANS,
                 opacity = 0.3f,
-                animationFrames = 1,
+                animationFrames = 2,
+                animationRows = 3,
+                animationColumns = 4,
                 BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                 BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                 BrushPaint.TextureMapping.WINDING,
@@ -347,7 +386,9 @@ class BrushPaintTest {
                     offsetY = 0.2f,
                     rotation = Angle.QUARTER_TURN_RADIANS,
                     opacity = 0.3f,
-                    animationFrames = 1,
+                    animationFrames = 2,
+                    animationRows = 3,
+                    animationColumns = 4,
                     BrushPaint.TextureSizeUnit.BRUSH_SIZE,
                     BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
                     BrushPaint.TextureMapping.WINDING,
@@ -580,7 +621,9 @@ class BrushPaintTest {
             offsetY = 0.2f,
             rotation = Angle.QUARTER_TURN_RADIANS,
             opacity = 0.3f,
-            animationFrames = 1,
+            animationFrames = 2,
+            animationRows = 3,
+            animationColumns = 4,
             BrushPaint.TextureSizeUnit.BRUSH_SIZE,
             BrushPaint.TextureOrigin.FIRST_STROKE_INPUT,
             BrushPaint.TextureMapping.WINDING,

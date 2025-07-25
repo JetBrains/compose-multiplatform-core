@@ -44,7 +44,7 @@ object TimeTextBenchmark : MacrobenchmarkScreen {
 
                 Button(
                     onClick = { showTimeText = !showTimeText },
-                    modifier = Modifier.semantics { contentDescription = TOGGLE_DISPLAY }
+                    modifier = Modifier.semantics { contentDescription = TOGGLE_DISPLAY },
                 ) {
                     Text("Toggle")
                 }

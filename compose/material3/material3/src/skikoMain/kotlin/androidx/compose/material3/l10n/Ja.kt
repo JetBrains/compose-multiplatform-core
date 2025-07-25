@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.ja() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "ボトムシートを折りたたみます",
     Strings.BottomSheetDismissDescription to "ボトムシートを閉じます",
     Strings.BottomSheetExpandDescription to "ボトムシートを開きます",
+    Strings.FloatingToolbarCollapse to "ツールバーを閉じます",
+    Strings.FloatingToolbarExpand to "ツールバーを開きます",
     Strings.TooltipPaneDescription to "ツールチップ",
     Strings.TooltipLongPressLabel to "ツールチップを表示",
     Strings.TimePickerPM to "PM",
@@ -86,6 +88,10 @@ internal fun Translations.ja() = mapOf(
     Strings.TimePickerHour to "時間",
     Strings.TimePickerMinuteTextField to "（分単位）",
     Strings.TimePickerHourTextField to "（時間単位）",
+    Strings.TimePickerToggleKeyboard to "時刻をテキストで入力するモードに切り替えます",
+    Strings.TimePickerToggleTouch to "時刻を時計で入力するモードに切り替えます",
+    Strings.TimePickerDialogTitle to "時刻の選択",
+    Strings.TimeInputDialogTitle to "時刻の入力",
     Strings.CloseRail to "レールを閉じる",
     Strings.WideNavigationRailPaneTitle to "ナビゲーション レール",
 )

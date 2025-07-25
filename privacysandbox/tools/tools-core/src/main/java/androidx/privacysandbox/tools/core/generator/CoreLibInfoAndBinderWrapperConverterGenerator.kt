@@ -27,7 +27,7 @@ object CoreLibInfoAndBinderWrapperConverterGenerator {
     fun generate(annotatedInterface: AnnotatedInterface) =
         FileSpec.builder(
                 annotatedInterface.type.packageName,
-                annotatedInterface.coreLibInfoConverterName()
+                annotatedInterface.coreLibInfoConverterName(),
             )
             .build {
                 addCommonSettings()
@@ -42,12 +42,12 @@ object CoreLibInfoAndBinderWrapperConverterGenerator {
                         addParameter(uiCoreLibInfoPropertyName, bundleClass)
                     addParameter(
                         "interface",
-                        annotatedInterface.aidlType().innerType.poetTypeName()
+                        annotatedInterface.aidlType().innerType.poetTypeName(),
                     )
                     returns(annotatedInterface.uiAdapterAidlWrapper().poetTypeName())
                     addStatement(
                         "val parcelable = %T()",
-                        annotatedInterface.uiAdapterAidlWrapper().poetTypeName()
+                        annotatedInterface.uiAdapterAidlWrapper().poetTypeName(),
                     )
                     if (annotatedInterface.inheritsUiAdapter)
                         addStatement(

@@ -63,7 +63,7 @@ class ValueClassConverterWrapperTest {
         WINTER,
         SUMMER,
         SPRING,
-        FALL
+        FALL,
     }
 
     @JvmInline value class UserWithEnum(val password: Season)
@@ -89,7 +89,7 @@ class ValueClassConverterWrapperTest {
         val userByteArrayPwd: UserWithByteArray,
         val schrodingerUser: Schrodinger,
         val duration: Duration,
-        val nullableDuration: Duration?
+        val nullableDuration: Duration?,
     ) {
         override fun equals(other: Any?): Boolean {
             val otherEntity = other as UserInfo
@@ -119,7 +119,7 @@ class ValueClassConverterWrapperTest {
         @PrimaryKey val pk: Int,
         val nullableUserIntPwd: UserWithInt?,
         val nullableData: NullableValue,
-        val doubleNullableData: NullableValue?
+        val doubleNullableData: NullableValue?,
     )
 
     @Dao
@@ -136,7 +136,7 @@ class ValueClassConverterWrapperTest {
     @Database(
         entities = [UserInfo::class, UserInfoNullable::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     abstract class ValueClassConverterWrapperDatabase : RoomDatabase() {
         abstract fun dao(): SampleDao
@@ -177,7 +177,7 @@ class ValueClassConverterWrapperTest {
                 pk = 1,
                 nullableUserIntPwd = null,
                 nullableData = NullableValue(1),
-                null
+                null,
             )
 
         db.dao().insertNullableEntity(data)
@@ -194,7 +194,7 @@ class ValueClassConverterWrapperTest {
                 pk = 1,
                 nullableUserIntPwd = null,
                 nullableData = NullableValue(null),
-                null
+                null,
             )
 
         assertThrows<IllegalStateException> { db.dao().insertNullableEntity(data) }

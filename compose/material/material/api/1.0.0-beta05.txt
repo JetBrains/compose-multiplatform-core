@@ -354,7 +354,7 @@ package androidx.compose.material {
     method public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.material.ElevationOverlay> getLocalElevationOverlay();
   }
 
-  @kotlin.RequiresOptIn(message="This material API is experimental and is likely to change or to be removed in" + " the future.") public @interface ExperimentalMaterialApi {
+  @kotlin.RequiresOptIn(message="This material API is experimental and is likely to change or to be removed in the future.") public @interface ExperimentalMaterialApi {
   }
 
   public enum FabPosition {

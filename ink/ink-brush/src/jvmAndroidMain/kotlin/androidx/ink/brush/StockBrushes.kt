@@ -25,6 +25,9 @@ import androidx.ink.brush.BrushBehavior.Source
 import androidx.ink.brush.BrushBehavior.SourceNode
 import androidx.ink.brush.BrushBehavior.Target
 import androidx.ink.brush.BrushBehavior.TargetNode
+import androidx.ink.brush.BrushPaint.TextureLayer
+import androidx.ink.brush.BrushPaint.TextureMapping
+import androidx.ink.brush.BrushPaint.TextureSizeUnit
 import androidx.ink.geometry.Angle
 import kotlin.jvm.JvmStatic
 
@@ -47,13 +50,8 @@ import kotlin.jvm.JvmStatic
 @OptIn(ExperimentalInkCustomBrushApi::class)
 public object StockBrushes {
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-
-    // Needed on both property and on getter for AndroidX build, but the Kotlin compiler doesn't
-    // like it on the getter so suppress its complaint.
-    @ExperimentalInkCustomBrushApi
-    @get:ExperimentalInkCustomBrushApi
-    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     @JvmStatic
     public val predictionFadeOutBehavior: BrushBehavior =
         BrushBehavior(
@@ -306,4 +304,42 @@ public object StockBrushes {
      * latest version of the pressure pen.
      */
     @JvmStatic public val dashedLineLatest: BrushFamily = dashedLineV1
+
+    /** The client texture ID for the background of the version-1 pencil brush. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @JvmStatic
+    public val pencilUnstableBackgroundTextureId: String =
+        "androidx.ink.brush.StockBrushes.pencil_background_unstable"
+
+    /**
+     * A development version of a brush that looks like pencil marks on subtly textured paper.
+     *
+     * In order to use this brush, the [TextureBitmapStore] provided to your renderer must map the
+     * [pencilUnstableBackgroundTextureId] to a bitmap; otherwise, no texture will be visible.
+     * Android callers may want to use [StockTextureBitmapStore] to provide this mapping.
+     *
+     * The behavior of this [BrushFamily] may change significantly in future releases. Once it has
+     * stabilized, it will be renamed to `pencilV1`.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+    @JvmStatic
+    public val pencilUnstable: BrushFamily =
+        BrushFamily(
+            tip = BrushTip(behaviors = listOf(predictionFadeOutBehavior)),
+            paint =
+                BrushPaint(
+                    listOf(
+                        TextureLayer(
+                            clientTextureId = pencilUnstableBackgroundTextureId,
+                            sizeX = 512F,
+                            sizeY = 512F,
+                            sizeUnit = TextureSizeUnit.STROKE_COORDINATES,
+                            mapping = TextureMapping.TILING,
+                        )
+                    )
+                ),
+            inputModel = BrushFamily.SPRING_MODEL,
+        )
 }

@@ -98,7 +98,7 @@ internal class Utils {
                 // API level 31+
                 ContextCompat.checkSelfPermission(
                     context,
-                    android.Manifest.permission.BLUETOOTH_CONNECT
+                    android.Manifest.permission.BLUETOOTH_CONNECT,
                 ) == PackageManager.PERMISSION_GRANTED
             } else {
                 // API levels 28-30
@@ -106,7 +106,7 @@ internal class Utils {
                     PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(
                         context,
-                        android.Manifest.permission.BLUETOOTH_ADMIN
+                        android.Manifest.permission.BLUETOOTH_ADMIN,
                     ) == PackageManager.PERMISSION_GRANTED
             }
         }
@@ -155,7 +155,7 @@ internal class Utils {
 
         fun getBundleWithPhoneAccountHandle(
             callAttributes: CallAttributesCompat,
-            handle: PhoneAccountHandle
+            handle: PhoneAccountHandle,
         ): Bundle {
             return if (VERSION.SDK_INT >= VERSION_CODES.M) {
                 Api23PlusImpl.createExtras(callAttributes, handle)
@@ -169,14 +169,14 @@ internal class Utils {
             @JvmStatic
             fun createExtras(
                 callAttributes: CallAttributesCompat,
-                handle: PhoneAccountHandle
+                handle: PhoneAccountHandle,
             ): Bundle {
                 val extras = Bundle()
                 extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)
                 if (!callAttributes.isOutgoingCall()) {
                     extras.putParcelable(
                         TelecomManager.EXTRA_INCOMING_CALL_ADDRESS,
-                        callAttributes.address
+                        callAttributes.address,
                     )
                 }
                 return extras

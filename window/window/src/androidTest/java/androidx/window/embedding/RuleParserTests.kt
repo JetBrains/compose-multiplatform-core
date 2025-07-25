@@ -130,7 +130,7 @@ class RuleParserTests {
         val rules =
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_split_pair_rule_horizontal_layout
+                R.xml.test_split_config_split_pair_rule_horizontal_layout,
             )
         assertEquals(1, rules.size)
         val rule: SplitPairRule = rules.first() as SplitPairRule
@@ -169,7 +169,7 @@ class RuleParserTests {
         val rules =
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_custom_split_pair_rule_with_divider
+                R.xml.test_split_config_custom_split_pair_rule_with_divider,
             )
         assertEquals(4, rules.size)
         val expectedDividerColor = 0xff112233
@@ -199,22 +199,22 @@ class RuleParserTests {
                 "rule1" ->
                     assertEquals(
                         expectedDividerAttributes1,
-                        rule.defaultSplitAttributes.dividerAttributes
+                        rule.defaultSplitAttributes.dividerAttributes,
                     )
                 "rule2" ->
                     assertEquals(
                         expectedDividerAttributes2,
-                        rule.defaultSplitAttributes.dividerAttributes
+                        rule.defaultSplitAttributes.dividerAttributes,
                     )
                 "rule3" ->
                     assertEquals(
                         expectedDividerAttributes3,
-                        rule.defaultSplitAttributes.dividerAttributes
+                        rule.defaultSplitAttributes.dividerAttributes,
                     )
                 "rule4" ->
                     assertEquals(
                         expectedDividerAttributes4,
-                        rule.defaultSplitAttributes.dividerAttributes
+                        rule.defaultSplitAttributes.dividerAttributes,
                     )
                 else -> throw IllegalStateException("Unexpected rule tag ${rule.tag}")
             }
@@ -231,7 +231,7 @@ class RuleParserTests {
         assertThrows(IllegalArgumentException::class.java) {
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_custom_split_pair_rule_with_divider_error
+                R.xml.test_split_config_custom_split_pair_rule_with_divider_error,
             )
         }
     }
@@ -245,7 +245,7 @@ class RuleParserTests {
         val rules =
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_default_split_placeholder_rule
+                R.xml.test_split_config_default_split_placeholder_rule,
             )
         assertEquals(1, rules.size)
         val rule: SplitPlaceholderRule = rules.first() as SplitPlaceholderRule
@@ -278,7 +278,7 @@ class RuleParserTests {
         val rules =
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_custom_split_placeholder_rule
+                R.xml.test_split_config_custom_split_placeholder_rule,
             )
         assertEquals(1, rules.size)
         val rule: SplitPlaceholderRule = rules.first() as SplitPlaceholderRule
@@ -309,7 +309,7 @@ class RuleParserTests {
         val rules =
             RuleController.parseRules(
                 application,
-                R.xml.test_split_config_split_placeholder_horizontal_layout
+                R.xml.test_split_config_split_placeholder_horizontal_layout,
             )
         assertEquals(1, rules.size)
         val rule: SplitPlaceholderRule = rules.first() as SplitPlaceholderRule

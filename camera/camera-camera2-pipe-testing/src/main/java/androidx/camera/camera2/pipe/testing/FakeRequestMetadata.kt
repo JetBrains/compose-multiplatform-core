@@ -40,7 +40,7 @@ public class FakeRequestMetadata(
     override val streams: Map<StreamId, Surface> = mapOf(),
     override val repeating: Boolean = false,
     override val request: Request = Request(listOf()),
-    override val requestNumber: RequestNumber = nextFakeRequestNumber()
+    override val requestNumber: RequestNumber = nextFakeRequestNumber(),
 ) : FakeMetadata(request.extras.plus(metadata)), RequestMetadata {
 
     @Suppress("UNCHECKED_CAST")
@@ -55,7 +55,7 @@ public class FakeRequestMetadata(
         public fun from(
             request: Request,
             streamToSurfaces: Map<StreamId, Surface>,
-            repeating: Boolean = false
+            repeating: Boolean = false,
         ): FakeRequestMetadata {
             check(streamToSurfaces.keys.containsAll(request.streams))
             return FakeRequestMetadata(
@@ -63,7 +63,7 @@ public class FakeRequestMetadata(
                 template = request.template ?: RequestTemplate(0),
                 streams = request.streams.associate { it to checkNotNull(streamToSurfaces[it]) },
                 repeating = repeating,
-                request = request
+                request = request,
             )
         }
     }

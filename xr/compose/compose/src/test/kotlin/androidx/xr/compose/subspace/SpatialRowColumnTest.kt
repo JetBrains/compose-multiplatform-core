@@ -404,7 +404,7 @@ class SpatialRowColumnTest {
                 Subspace {
                     SpatialCurvedRow(
                         SubspaceModifier.testTag("row1").width(500.dp),
-                        curveRadius = -100.dp
+                        curveRadius = -100.dp,
                     ) {
                         SpatialColumn(SubspaceModifier.testTag("column1").width(250.dp)) {
                             SpatialPanel { Text(text = "Column 1") }
@@ -438,7 +438,7 @@ class SpatialRowColumnTest {
                 Subspace {
                     SpatialCurvedRow(
                         SubspaceModifier.testTag("row1").width(500.dp),
-                        curveRadius = 0.dp
+                        curveRadius = 0.dp,
                     ) {
                         SpatialColumn(SubspaceModifier.testTag("column1").width(250.dp)) {
                             SpatialPanel { Text(text = "Column 1") }
@@ -473,7 +473,7 @@ class SpatialRowColumnTest {
                 Subspace {
                     SpatialCurvedRow(
                         SubspaceModifier.testTag("row1").width(500.dp),
-                        curveRadius = 100.dp
+                        curveRadius = 100.dp,
                     ) {
                         SpatialColumn(SubspaceModifier.testTag("column1").width(250.dp)) {
                             SpatialPanel { Text(text = "Column 1") }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.platform.setSubspaceContent
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialLayoutSpacer
 import androidx.xr.compose.subspace.SpatialPanel
@@ -63,43 +62,46 @@ class NestedSubspaceSetSubspaceContentActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-        setContent {}
-        setSubspaceContent {
-            SpatialPanel(SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()) {
-                Row(horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Spacer(Modifier.fillMaxWidth(0.25f).fillMaxHeight().background(Color.Cyan))
-                    Spacer(Modifier.background(Color.Magenta))
-                    Spacer(Modifier.background(Color.White))
-                    Box(Modifier.background(Color.Yellow).fillMaxHeight().weight(1.0f)) {
-                        // Here we have a nested Subspace that is capable of rendering a 3D layout
-                        // within the
-                        // scope of this 2D panel.
-                        Subspace {
-                            var count by remember { mutableIntStateOf(0) }
-                            SpatialRow(
-                                modifier = SubspaceModifier.fillMaxSize(),
-                                alignment = SpatialAlignment.Center,
-                            ) {
-                                SpatialPanel(
-                                    SubspaceModifier.fillMaxSize(0.5f).offset(z = 150.dp)
+        setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.height(400.dp).width(800.dp).movable().resizable()) {
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Spacer(Modifier.fillMaxWidth(0.25f).fillMaxHeight().background(Color.Cyan))
+                        Spacer(Modifier.background(Color.Magenta))
+                        Spacer(Modifier.background(Color.White))
+                        Box(Modifier.background(Color.Yellow).fillMaxHeight().weight(1.0f)) {
+                            // Here we have a nested Subspace that is capable of rendering a 3D
+                            // layout
+                            // within the
+                            // scope of this 2D panel.
+                            Subspace {
+                                var count by remember { mutableIntStateOf(0) }
+                                SpatialRow(
+                                    modifier = SubspaceModifier.fillMaxSize(),
+                                    alignment = SpatialAlignment.Center,
                                 ) {
-                                    Box(
-                                        modifier =
-                                            Modifier.background(Color.Green)
-                                                .fillMaxSize(0.9f)
-                                                .border(20.dp, Color.White),
-                                        contentAlignment = Alignment.Center,
+                                    SpatialPanel(
+                                        SubspaceModifier.fillMaxSize(0.5f).offset(z = 150.dp)
                                     ) {
-                                        Button(onClick = { count++ }) { Text("Increase") }
+                                        Box(
+                                            modifier =
+                                                Modifier.background(Color.Green)
+                                                    .fillMaxSize(0.9f)
+                                                    .border(20.dp, Color.White),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Button(onClick = { count++ }) { Text("Increase") }
+                                        }
                                     }
-                                }
-                                SpatialLayoutSpacer(SubspaceModifier.size(50.dp))
-                                SpatialPanel(SubspaceModifier.offset(z = 250.dp)) {
-                                    Box(
-                                        modifier = Modifier.background(Color.Blue).padding(20.dp),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(text = "$count", fontSize = 50.sp)
+                                    SpatialLayoutSpacer(SubspaceModifier.size(50.dp))
+                                    SpatialPanel(SubspaceModifier.offset(z = 250.dp)) {
+                                        Box(
+                                            modifier =
+                                                Modifier.background(Color.Blue).padding(20.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Text(text = "$count", fontSize = 50.sp)
+                                        }
                                     }
                                 }
                             }

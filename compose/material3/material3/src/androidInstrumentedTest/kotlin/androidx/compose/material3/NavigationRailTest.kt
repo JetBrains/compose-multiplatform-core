@@ -81,7 +81,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -110,7 +110,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -133,7 +133,7 @@ class NavigationRailTest {
                     label = { Text("Favorite") },
                     selected = true,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationRailItem(
                     modifier = Modifier.testTag("item2"),
@@ -141,13 +141,13 @@ class NavigationRailTest {
                     label = { Text("Favorite") },
                     selected = false,
                     alwaysShowLabel = false,
-                    onClick = {}
+                    onClick = {},
                 )
                 NavigationRailItem(
                     modifier = Modifier.testTag("item3"),
                     icon = { Icon(Icons.Filled.Favorite, "Favorite") },
                     selected = false,
-                    onClick = {}
+                    onClick = {},
                 )
             }
         }
@@ -176,7 +176,7 @@ class NavigationRailTest {
                             icon = { Icon(icons[index], contentDescription = item) },
                             label = { Text(item) },
                             selected = index == 0,
-                            onClick = { /* do something */ }
+                            onClick = { /* do something */ },
                         )
                     }
                 }
@@ -212,7 +212,7 @@ class NavigationRailTest {
                             modifier =
                                 Modifier.onGloballyPositioned { coords ->
                                     itemCoords[index] = coords
-                                }
+                                },
                         )
                     }
                 }
@@ -266,7 +266,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = { Text("ItemText", Modifier.testTag("label")) },
                         selected = true,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -307,7 +307,7 @@ class NavigationRailTest {
                         label = { Text("ItemText") },
                         selected = false,
                         onClick = {},
-                        alwaysShowLabel = false
+                        alwaysShowLabel = false,
                     )
                 }
             }
@@ -340,7 +340,7 @@ class NavigationRailTest {
                         icon = { Icon(Icons.Filled.Favorite, null, Modifier.testTag("icon")) },
                         label = null,
                         selected = false,
-                        onClick = {}
+                        onClick = {},
                     )
                 }
             }
@@ -372,7 +372,7 @@ class NavigationRailTest {
                         icon = { Icon(icons[index], contentDescription = item) },
                         label = { Text(item) },
                         selected = selectedItem == index,
-                        onClick = { selectedItem = index }
+                        onClick = { selectedItem = index },
                     )
                 }
             }
@@ -408,7 +408,7 @@ class NavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = { clicks++ }
+                    onClick = { clicks++ },
                 )
             }
         }

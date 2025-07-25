@@ -24,8 +24,6 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
     if (localDateTimeNullableData != null) {
       localDateTimeNullable = appFunctionLocalDateTimeFactory.fromAppFunctionData(localDateTimeNullableData)
     }
-    val androidUriData = checkNotNull(appFunctionData.getAppFunctionData("androidUri"))
-    val androidUri = appFunctionUriFactory.fromAppFunctionData(androidUriData)
     val androidUriListData = appFunctionData.getAppFunctionDataList("androidUriList") ?: emptyList()
     val androidUriList = androidUriListData.map { data ->
       appFunctionUriFactory.fromAppFunctionData(data)
@@ -35,7 +33,7 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
       appFunctionUriFactory.fromAppFunctionData(data)
     }
 
-    val resultSerializableWithProxyType = SerializableWithProxyType(localDateTime, localDateTimeList, localDateTimeNullable, androidUri, androidUriList, androidUriNullable)
+    val resultSerializableWithProxyType = SerializableWithProxyType(localDateTime, localDateTimeList, localDateTimeNullable, androidUriList, androidUriNullable)
     return resultSerializableWithProxyType
   }
 
@@ -55,8 +53,6 @@ public class `$SerializableWithProxyTypeFactory` : AppFunctionSerializableFactor
     if (localDateTimeNullable != null) {
       builder.setAppFunctionData("localDateTimeNullable", appFunctionLocalDateTimeFactory.toAppFunctionData(localDateTimeNullable))
     }
-    val androidUri = serializableWithProxyType_appFunctionSerializable.androidUri
-    builder.setAppFunctionData("androidUri", appFunctionUriFactory.toAppFunctionData(androidUri))
     val androidUriList = serializableWithProxyType_appFunctionSerializable.androidUriList
     builder.setAppFunctionDataList("androidUriList", androidUriList.map{ appFunctionUri ->
       appFunctionUriFactory.toAppFunctionData(appFunctionUri)

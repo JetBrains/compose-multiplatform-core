@@ -38,7 +38,7 @@ class UpsertMedicalResourceRequestTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
@@ -48,19 +48,19 @@ class UpsertMedicalResourceRequestTest {
             UpsertMedicalResourceRequest(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                DATA_JSON
+                DATA_JSON,
             )
         val request2 =
             UpsertMedicalResourceRequest(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                DATA_JSON
+                DATA_JSON,
             )
         val request3 =
             UpsertMedicalResourceRequest(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_3_0,
-                DATA_JSON
+                DATA_JSON,
             )
 
         assertThat(request1).isEqualTo(request2)
@@ -74,7 +74,7 @@ class UpsertMedicalResourceRequestTest {
             UpsertMedicalResourceRequest(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                DATA_JSON
+                DATA_JSON,
             )
 
         val toString = upsertMedicalResourceRequest.toString()
@@ -92,7 +92,7 @@ class UpsertMedicalResourceRequestTest {
             UpsertMedicalResourceRequest(
                 MEDICAL_DATA_SOURCE_ID_STRING,
                 FHIR_VERSION_4_0_1,
-                DATA_JSON
+                DATA_JSON,
             )
 
         assertThat(sdk.platformUpsertMedicalResourceRequest)
@@ -100,7 +100,7 @@ class UpsertMedicalResourceRequestTest {
                 PlatformUpsertMedicalResourceRequestBuilder(
                         MEDICAL_DATA_SOURCE_ID_STRING,
                         FHIR_VERSION_4_0_1.platformFhirVersion,
-                        DATA_JSON
+                        DATA_JSON,
                     )
                     .build()
             )

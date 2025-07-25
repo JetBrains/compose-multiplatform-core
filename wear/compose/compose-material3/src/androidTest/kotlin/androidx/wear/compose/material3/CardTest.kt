@@ -120,7 +120,7 @@ class CardTest {
             Card(
                 onClick = { clicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -139,7 +139,7 @@ class CardTest {
             Card(
                 onClick = { clicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -159,7 +159,7 @@ class CardTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -181,7 +181,7 @@ class CardTest {
                     onClick = { /* Do nothing */ },
                     onLongClick = {},
                     enabled = true,
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {}
             }
         }
@@ -202,7 +202,7 @@ class CardTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -224,7 +224,7 @@ class CardTest {
                 appName = {},
                 title = {},
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -248,7 +248,7 @@ class CardTest {
                     appName = {},
                     title = {},
                     enabled = true,
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {
                     TestImage()
                 }
@@ -273,7 +273,7 @@ class CardTest {
                 appName = {},
                 title = {},
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -294,7 +294,7 @@ class CardTest {
                 onLongClick = { longClicked = true },
                 title = {},
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -317,7 +317,7 @@ class CardTest {
                     onLongClick = {},
                     title = {},
                     enabled = true,
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {
                     TestImage()
                 }
@@ -341,7 +341,7 @@ class CardTest {
                 onLongClick = { longClicked = true },
                 title = {},
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -361,7 +361,7 @@ class CardTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -381,7 +381,7 @@ class CardTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -411,13 +411,7 @@ class CardTest {
 
     @Test
     fun gives_base_card_with_text_minimum_height(): Unit =
-        rule.verifyHeight(64.dp) {
-            Card(
-                onClick = {},
-            ) {
-                Text("Card")
-            }
-        }
+        rule.verifyHeight(64.dp) { Card(onClick = {}) { Text("Card") } }
 
     @Test
     fun gives_base_card_correct_default_max_height(): Unit =
@@ -426,24 +420,16 @@ class CardTest {
                 100.dp +
                     CardDefaults.ContentPadding.calculateBottomPadding() +
                     CardDefaults.ContentPadding.calculateTopPadding(),
-            imageModifier = Modifier.requiredHeight(100.dp)
+            imageModifier = Modifier.requiredHeight(100.dp),
         )
 
     @Test
     fun gives_enabled_default_colors(): Unit =
-        verifyColors(
-            CardStatus.Enabled,
-        ) {
-            MaterialTheme.colorScheme.onSurface
-        }
+        verifyColors(CardStatus.Enabled) { MaterialTheme.colorScheme.onSurface }
 
     @Test
     fun gives_disabled_default_colors(): Unit =
-        verifyColors(
-            CardStatus.Disabled,
-        ) {
-            MaterialTheme.colorScheme.onSurface
-        }
+        verifyColors(CardStatus.Disabled) { MaterialTheme.colorScheme.onSurface }
 
     @Test
     fun app_card_gives_default_colors() {
@@ -468,7 +454,7 @@ class CardTest {
                     appName = { actualAppColor = LocalContentColor.current },
                     time = { actualTimeColor = LocalContentColor.current },
                     title = { actualTitleColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {
                     actualContentColor = LocalContentColor.current
                 }
@@ -500,7 +486,7 @@ class CardTest {
                     onClick = {},
                     time = { actualTimeColor = LocalContentColor.current },
                     title = { actualTitleColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {
                     actualContentColor = LocalContentColor.current
                 }
@@ -532,7 +518,7 @@ class CardTest {
                     time = { actualTimeColor = LocalContentColor.current },
                     subtitle = { actualSubtitleColor = LocalContentColor.current },
                     title = { actualTitleColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 )
             }
         }
@@ -553,7 +539,7 @@ class CardTest {
                 OutlinedCard(
                     onClick = {},
                     border = CardDefaults.outlinedCardBorder(outlineColor),
-                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center)
+                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center),
                 ) {}
             }
         }
@@ -579,7 +565,7 @@ class CardTest {
                     title = {},
                     border = CardDefaults.outlinedCardBorder(outlineColor),
                     colors = CardDefaults.outlinedCardColors(),
-                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center)
+                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center),
                 ) {}
             }
         }
@@ -606,7 +592,7 @@ class CardTest {
                     title = {},
                     border = CardDefaults.outlinedCardBorder(outlineColor),
                     colors = CardDefaults.outlinedCardColors(),
-                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center)
+                    modifier = Modifier.testTag(TEST_TAG).size(100.dp).align(Alignment.Center),
                 ) {}
             }
         }
@@ -629,7 +615,7 @@ class CardTest {
                 onClick = {},
                 content = { actualTextStyle = LocalTextStyle.current },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         assertEquals(expectedTextStyle, actualTextStyle)
@@ -657,7 +643,7 @@ class CardTest {
                 appName = { actualAppTextStyle = LocalTextStyle.current },
                 time = { actualTimeTextStyle = LocalTextStyle.current },
                 title = { actualTitleTextStyle = LocalTextStyle.current },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 actuaContentTextStyle = LocalTextStyle.current
             }
@@ -686,7 +672,7 @@ class CardTest {
                 onClick = {},
                 time = { actualTimeTextStyle = LocalTextStyle.current },
                 title = { actualTitleTextStyle = LocalTextStyle.current },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 actuaContentTextStyle = LocalTextStyle.current
             }
@@ -719,7 +705,7 @@ class CardTest {
                 appName = { actualAppTextStyle = LocalTextStyle.current },
                 time = { actualTimeTextStyle = LocalTextStyle.current },
                 title = { actualTitleTextStyle = LocalTextStyle.current },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 actuaContentTextStyle = LocalTextStyle.current
             }
@@ -733,11 +719,7 @@ class CardTest {
 
     private fun verifyHeight(expectedHeight: Dp, imageModifier: Modifier = Modifier) {
         rule.verifyHeight(expectedHeight) {
-            Card(
-                onClick = {},
-            ) {
-                TestIcon(modifier = imageModifier)
-            }
+            Card(onClick = {}) { TestIcon(modifier = imageModifier) }
         }
     }
 
@@ -753,7 +735,7 @@ class CardTest {
                     onClick = {},
                     content = { actualContent = LocalContentColor.current },
                     enabled = status.enabled(),
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 )
             }
         }

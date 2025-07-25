@@ -29,6 +29,13 @@ public actual class BundledSQLiteConnection(private val connectionPointer: Long)
 
     @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
 
+    actual override fun inTransaction(): Boolean {
+        if (isClosed) {
+            throwSQLiteException(SQLITE_MISUSE, "connection is closed")
+        }
+        return nativeInTransaction(connectionPointer)
+    }
+
     actual override fun prepare(sql: String): SQLiteStatement {
         if (isClosed) {
             throwSQLiteException(SQLITE_MISUSE, "connection is closed")
@@ -44,6 +51,8 @@ public actual class BundledSQLiteConnection(private val connectionPointer: Long)
         isClosed = true
     }
 }
+
+private external fun nativeInTransaction(pointer: Long): Boolean
 
 private external fun nativePrepare(pointer: Long, sql: String): Long
 

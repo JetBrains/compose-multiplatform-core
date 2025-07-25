@@ -218,7 +218,7 @@ package androidx.compose.runtime {
   public final class ExpectKt {
   }
 
-  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level, message="This is an experimental API for Compose and is likely to change before becoming " + "stable.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface ExperimentalComposeApi {
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level, message="This is an experimental API for Compose and is likely to change before becoming stable.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface ExperimentalComposeApi {
   }
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface ExplicitGroupsComposable {
@@ -227,7 +227,7 @@ package androidx.compose.runtime {
   @androidx.compose.runtime.StableMarker @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget) public @interface Immutable {
   }
 
-  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level, message="This is internal API for Compose modules that may change frequently " + "and without warning.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface InternalComposeApi {
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level, message="This is internal API for Compose modules that may change frequently and without warning.") @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget, kotlin.annotation.AnnotationTarget}) public @interface InternalComposeApi {
   }
 
   public interface MonotonicFrameClock extends kotlin.coroutines.CoroutineContext.Element {

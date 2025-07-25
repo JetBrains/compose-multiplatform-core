@@ -38,23 +38,17 @@ class GetMedicalDataSourcesRequestTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 
     @Test
     fun validGetMedicalDataSourcesRequest_equalsAndHashCode() {
-        val request1 =
-            GetMedicalDataSourcesRequest(
-                packageNames = TEST_PACKAGE_NAMES,
-            )
-        val request2 =
-            GetMedicalDataSourcesRequest(
-                packageNames = TEST_PACKAGE_NAMES,
-            )
+        val request1 = GetMedicalDataSourcesRequest(packageNames = TEST_PACKAGE_NAMES)
+        val request2 = GetMedicalDataSourcesRequest(packageNames = TEST_PACKAGE_NAMES)
         val request3 =
             GetMedicalDataSourcesRequest(
-                packageNames = TEST_PACKAGE_NAMES + (TEST_PACKAGE_NAMES.first() + "two"),
+                packageNames = TEST_PACKAGE_NAMES + (TEST_PACKAGE_NAMES.first() + "two")
             )
 
         assertThat(request1).isEqualTo(request2)
@@ -67,9 +61,7 @@ class GetMedicalDataSourcesRequestTest {
     @Test
     fun toString_expectCorrectString() {
         val getMedicalDataSourcesRequest =
-            GetMedicalDataSourcesRequest(
-                packageNames = TEST_PACKAGE_NAMES,
-            )
+            GetMedicalDataSourcesRequest(packageNames = TEST_PACKAGE_NAMES)
 
         val toString = getMedicalDataSourcesRequest.toString()
 

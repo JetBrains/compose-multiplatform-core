@@ -55,9 +55,6 @@ android {
                 }
             }
         }
-        withPreKmpCompiler {
-            dimension "processorConfiguration"
-        }
     }
     compileOptions {
         // For testing Java records
@@ -88,10 +85,8 @@ dependencies {
     // Annotation processor / compiler dependencies:
     withoutExpandProjectionAnnotationProcessor(project(":room:room-compiler"))
     withNullAwareTypeConverterAnnotationProcessor(project(":room:room-compiler"))
-    withPreKmpCompilerAnnotationProcessor("androidx.room:room-compiler:2.6.1")
     androidTestWithoutExpandProjectionAnnotationProcessor(project(":room:room-compiler"))
     androidTestWithNullAwareTypeConverterAnnotationProcessor(project(":room:room-compiler"))
-    androidTestWithPreKmpCompilerAnnotationProcessor("androidx.room:room-compiler:2.6.1")
 
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
     androidTestImplementation("androidx.arch.core:core-common:2.2.0")

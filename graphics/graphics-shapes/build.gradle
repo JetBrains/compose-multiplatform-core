@@ -22,8 +22,9 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -32,21 +33,15 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.graphics.shapes"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
     desktop()
     linux()
-    ios()
-    watchos()
-    tvos()
     mac()
+    ios()
+    tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -54,20 +49,23 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(libs.kotlinStdlib)
-                implementation("androidx.collection:collection:1.4.5")
+                implementation("androidx.collection:collection:1.5.0")
                 implementation("androidx.annotation:annotation:1.9.1")
             }
         }
 
         commonTest {
             dependencies {
+                implementation(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-            dependencies {
-            }
+        }
+
+        jvmTest {
+            dependsOn(commonTest)
         }
 
         androidMain {
@@ -76,14 +74,6 @@ androidXMultiplatform {
                 implementation("androidx.core:core-ktx:1.10.0")
                 implementation("androidx.annotation:annotation-experimental:1.4.1")
             }
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-        }
-
-        nativeMain {
-            dependsOn(commonMain)
         }
 
         androidInstrumentedTest {
@@ -98,11 +88,29 @@ androidXMultiplatform {
             }
         }
 
+        desktopMain {
+            dependsOn(jvmMain)
+        }
+
+        desktopTest {
+            dependsOn(jvmTest)
+        }
+
+        nonJvmMain {
+            dependsOn(commonMain)
+        }
+
+        nonJvmTest {
+            dependsOn(commonTest)
+        }
+
         targets.configureEach { target ->
-            if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nativeMain)
-                }
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nonJvmTest)
             }
         }
     }

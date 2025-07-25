@@ -22,19 +22,16 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
+import androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat
 import androidx.privacysandbox.ui.core.DelegatingSandboxedUiAdapter
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.mediateesdkprovider.IMediateeSdkApiFactory
-import androidx.privacysandbox.ui.integration.sdkproviderutils.IAutomatedTestCallbackProxy
-import androidx.privacysandbox.ui.integration.sdkproviderutils.IMediationTestCallbackProxy
 import androidx.privacysandbox.ui.integration.sdkproviderutils.NativeAdGenerator
 import androidx.privacysandbox.ui.integration.sdkproviderutils.PlayerViewProvider
 import androidx.privacysandbox.ui.integration.sdkproviderutils.PlayerViewabilityHandler
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.BackNavigation
-import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MEDIATION_TEST_CALLBACK
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.ScreenOrientation
 import androidx.privacysandbox.ui.integration.sdkproviderutils.TestAdapters
@@ -59,7 +56,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
-        drawViewability: Boolean
+        drawViewability: Boolean,
     ): Bundle {
         return loadAdInternal(adFormat, adType, mediationOption, waitInsideOnDraw, drawViewability)
     }
@@ -70,7 +67,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallback: IAutomatedTestCallback
+        automatedTestCallbackBundle: Bundle,
     ): Bundle {
         return loadAdInternal(
             adFormat,
@@ -78,7 +75,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
             mediationOption,
             waitInsideOnDraw,
             drawViewability,
-            AutomatedTestCallbackProxy(automatedTestCallback)
+            automatedTestCallbackBundle,
         )
     }
 
@@ -92,7 +89,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         private var mediationOption: Int,
         private val drawViewability: Boolean,
         private val numberOfRefreshes: Int,
-        private val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        private val automatedTestCallbackBundle: Bundle,
     ) : Runnable {
 
         private var refreshCount = 0
@@ -107,7 +104,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                         mediationOption,
                         waitInsideOnDraw = false,
                         drawViewability,
-                        automatedTestCallbackProxy
+                        automatedTestCallbackBundle,
                     )
                 adapter.updateDelegate(adapterBundle)
                 mediationOption =
@@ -127,7 +124,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @AdType adType: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        automatedTestCallbackBundle: Bundle,
     ): Bundle {
         val adapter: AbstractSandboxedUiAdapter =
             when (adType) {
@@ -135,7 +132,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     loadNonWebViewBannerAd(
                         "Simple Ad",
                         waitInsideOnDraw,
-                        automatedTestCallbackProxy
+                        automatedTestCallbackBundle,
                     )
                 }
                 AdType.BASIC_WEBVIEW -> {
@@ -145,11 +142,14 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     loadWebViewBannerAdFromLocalAssets()
                 }
                 AdType.NON_WEBVIEW_VIDEO -> loadVideoAd()
+                AdType.SCROLL_VIEW -> loadScrollView(automatedTestCallbackBundle)
+                AdType.SCROLL_VIEW_APP_CAN_NOT_SCROLL ->
+                    loadScrollView(automatedTestCallbackBundle, /* appCanScroll */ false)
                 else -> {
                     loadNonWebViewBannerAd(
                         "Ad type not present",
                         waitInsideOnDraw,
-                        automatedTestCallbackProxy
+                        automatedTestCallbackBundle,
                     )
                 }
             }.also { ViewabilityHandler.addObserverFactoryToAdapter(it, drawViewability) }
@@ -163,7 +163,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     override fun launchFullscreenAd(
         launcherInfo: Bundle,
         @ScreenOrientation screenOrientation: Int,
-        @BackNavigation backButtonNavigation: Int
+        @BackNavigation backButtonNavigation: Int,
     ) {
         val coroutineScope = MainScope()
         coroutineScope.launch {
@@ -179,7 +179,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     private fun startDelegatingAdUpdateHandler(
         adapter: DelegatingSandboxedUiAdapter,
         drawViewability: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy?
+        automatedTestCallbackBundle: Bundle,
     ) {
         // This task will recursively post itself to the handler [numberOfRefreshes] times to allow
         // us to test several ad refreshes.
@@ -189,7 +189,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 MediationOption.SDK_RUNTIME_MEDIATEE,
                 drawViewability,
                 numberOfRefreshes = 5,
-                automatedTestCallbackProxy
+                automatedTestCallbackBundle,
             ),
             UPDATE_DELEGATE_INTERVAL,
         )
@@ -200,9 +200,9 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 MediationOption.IN_APP_MEDIATEE,
                 drawViewability,
                 numberOfRefreshes = 0,
-                automatedTestCallbackProxy
+                automatedTestCallbackBundle,
             ),
-            UPDATE_DELEGATE_INTERVAL
+            UPDATE_DELEGATE_INTERVAL,
         )
     }
 
@@ -217,7 +217,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        automatedTestCallbackBundle: Bundle = Bundle(),
     ): Bundle {
         when (mediationOption) {
             MediationOption.NON_MEDIATED -> {
@@ -227,7 +227,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                             adType,
                             waitInsideOnDraw,
                             drawViewability,
-                            automatedTestCallbackProxy
+                            automatedTestCallbackBundle,
                         )
                     AdFormat.NATIVE_AD -> loadNativeAd(adType)
                     else -> Bundle()
@@ -243,29 +243,14 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     mediationOption,
                     waitInsideOnDraw,
                     drawViewability,
-                    automatedTestCallbackProxy
+                    automatedTestCallbackBundle,
                 )
             else -> return Bundle()
         }
     }
 
-    private class AutomatedTestCallbackProxy(val automatedTestCallback: IAutomatedTestCallback) :
-        IAutomatedTestCallbackProxy {
-        override fun onResizeOccurred(width: Int, height: Int) {
-            automatedTestCallback.onResizeOccurred(width, height)
-        }
-    }
-
     private fun loadWebViewBannerAd(): AbstractSandboxedUiAdapter {
         return testAdapters.WebViewBannerAd()
-    }
-
-    private class MediateeSdkToClientCallbackProxy(
-        val automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
-    ) : IMediationTestCallbackProxy.Stub() {
-        override fun onResizeOccurred(width: Int, height: Int) {
-            automatedTestCallbackProxy?.onResizeOccurred(width, height)
-        }
     }
 
     private fun loadWebViewBannerAdFromLocalAssets(): AbstractSandboxedUiAdapter {
@@ -275,9 +260,9 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     private fun loadNonWebViewBannerAd(
         text: String,
         waitInsideOnDraw: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        automatedTestCallbackBundle: Bundle,
     ): AbstractSandboxedUiAdapter {
-        return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackProxy)
+        return testAdapters.TestBannerAd(text, waitInsideOnDraw, automatedTestCallbackBundle)
     }
 
     private fun loadVideoAd(): AbstractSandboxedUiAdapter {
@@ -287,6 +272,13 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         return adapter
     }
 
+    private fun loadScrollView(
+        automatedTestCallbackBundle: Bundle,
+        appCanScroll: Boolean = true,
+    ): AbstractSandboxedUiAdapter {
+        return testAdapters.ScrollViewAd(automatedTestCallbackBundle, appCanScroll)
+    }
+
     @OptIn(ExperimentalFeatures.DelegatingAdapterApi::class)
     private suspend fun loadMediatedTestAd(
         @AdFormat adFormat: Int,
@@ -294,7 +286,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        automatedTestCallbackBundle: Bundle,
     ): Bundle {
         val mediateeBundle =
             maybeGetMediateeBundle(
@@ -303,7 +295,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 mediationOption,
                 waitInsideOnDraw,
                 drawViewability,
-                automatedTestCallbackProxy
+                automatedTestCallbackBundle,
             )
 
         if (adFormat == AdFormat.BANNER_AD) {
@@ -316,7 +308,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                 startDelegatingAdUpdateHandler(
                     delegatingAdapter,
                     drawViewability,
-                    automatedTestCallbackProxy
+                    automatedTestCallbackBundle,
                 )
                 return delegatingAdapter.toCoreLibInfo(sdkContext)
             }
@@ -332,13 +324,8 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
         @MediationOption mediationOption: Int,
         waitInsideOnDraw: Boolean,
         drawViewability: Boolean,
-        automatedTestCallbackProxy: IAutomatedTestCallbackProxy? = null
+        automatedTestCallbackBundle: Bundle,
     ): Bundle {
-        val mediationTestCallbackBundle = Bundle()
-        mediationTestCallbackBundle.putBinder(
-            MEDIATION_TEST_CALLBACK,
-            MediateeSdkToClientCallbackProxy(automatedTestCallbackProxy)
-        )
         when (mediationOption) {
             MediationOption.SDK_RUNTIME_MEDIATEE,
             MediationOption.SDK_RUNTIME_MEDIATEE_WITH_OVERLAY,
@@ -351,7 +338,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     adType,
                     waitInsideOnDraw,
                     drawViewability,
-                    mediationTestCallbackBundle
+                    automatedTestCallbackBundle,
                 )
             }
             MediationOption.IN_APP_MEDIATEE -> {
@@ -360,7 +347,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
                     adType,
                     waitInsideOnDraw,
                     drawViewability,
-                    mediationTestCallbackBundle
+                    automatedTestCallbackBundle,
                 )
             }
             else -> return loadFallbackAd(adFormat, adType, waitInsideOnDraw)
@@ -370,7 +357,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
     private fun loadFallbackAd(
         @AdFormat adFormat: Int,
         @AdType adType: Int,
-        withSlowDraw: Boolean
+        withSlowDraw: Boolean,
     ): Bundle =
         when (adFormat) {
             AdFormat.BANNER_AD ->
@@ -380,7 +367,7 @@ class SdkApi(private val sdkContext: Context) : ISdkApi {
             AdFormat.NATIVE_AD ->
                 nativeAdGenerator.generateAdBundleWithAssets(
                     adType,
-                    MEDIATED_SDK_NOT_LOADED_MESSAGE
+                    MEDIATED_SDK_NOT_LOADED_MESSAGE,
                 )
             else -> Bundle()
         }

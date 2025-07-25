@@ -102,8 +102,6 @@ class VelocityTrackingListParityTest {
             rule.activity.findViewById<ComposeView>(R.id.compose_view).visibility = View.VISIBLE
         }
 
-        rule.waitForIdle()
-
         checkVisibility(composeView(), View.VISIBLE)
         checkVisibility(recyclerView(), View.GONE)
 
@@ -316,8 +314,6 @@ class VelocityTrackingListParityTest {
             rule.activity.findViewById<ComposeView>(R.id.compose_view).visibility = View.VISIBLE
         }
 
-        rule.waitForIdle()
-
         checkVisibility(composeView(), View.VISIBLE)
         checkVisibility(recyclerView(), View.GONE)
 
@@ -359,8 +355,6 @@ class VelocityTrackingListParityTest {
             rule.activity.findViewById<RecyclerView>(R.id.view_list).visibility = View.GONE
             rule.activity.findViewById<ComposeView>(R.id.compose_view).visibility = View.VISIBLE
         }
-
-        rule.waitForIdle()
 
         checkVisibility(composeView(), View.VISIBLE)
         checkVisibility(recyclerView(), View.GONE)
@@ -452,7 +446,7 @@ class VelocityTrackingListParityTest {
                     object : OnScrollListener() {
                         override fun onScrollStateChanged(
                             recyclerView: RecyclerView,
-                            newState: Int
+                            newState: Int,
                         ) {
                             latestRVState = newState
                         }

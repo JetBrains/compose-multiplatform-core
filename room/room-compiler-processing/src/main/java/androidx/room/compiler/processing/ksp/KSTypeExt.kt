@@ -89,19 +89,19 @@ private fun KSTypeArgument.replaceTypeAliases(resolver: Resolver): KSTypeArgumen
     val type = type?.resolve() ?: return this
     return resolver.getTypeArgument(
         type.replaceTypeAliases(resolver).createTypeReference(),
-        variance
+        variance,
     )
 }
 
 private fun KSType.replaceTypeArgs(
     resolver: Resolver,
-    typeArgsMap: Map<String, KSTypeArgument>
+    typeArgsMap: Map<String, KSTypeArgument>,
 ): KSType = replace(arguments.map { it.replaceTypeArgs(this, resolver, typeArgsMap) })
 
 private fun KSTypeArgument.replaceTypeArgs(
     enclosingType: KSType,
     resolver: Resolver,
-    typeArgsMap: Map<String, KSTypeArgument>
+    typeArgsMap: Map<String, KSTypeArgument>,
 ): KSTypeArgument {
     val type = type?.resolve() ?: return this
     if (type == enclosingType) return this
@@ -113,7 +113,7 @@ private fun KSTypeArgument.replaceTypeArgs(
     }
     return resolver.getTypeArgument(
         type.replaceTypeArgs(resolver, typeArgsMap).createTypeReference(),
-        variance
+        variance,
     )
 }
 

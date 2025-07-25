@@ -31,7 +31,7 @@ import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
 import androidx.compose.foundation.text.TextItem
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
-import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithResources
+import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
 import androidx.compose.foundation.text.textItem
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -42,13 +42,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
-internal actual val PointerEvent.isShiftPressed: Boolean
-    get() = false
+internal actual fun TextFieldSelectionManager.isSelectionHandleInVisibleBound(
+    isStartHandle: Boolean
+): Boolean = isSelectionHandleInVisibleBoundDefault(isStartHandle)
 
 // We use composed{} to read a local, but don't provide inspector info because the underlying
 // magnifier modifier provides more meaningful inspector info.
@@ -73,9 +75,9 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
                             }
                     },
                     useTextDefault = true,
-                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform()
+                    platformMagnifierFactory = PlatformMagnifierFactory.getForCurrentPlatform(),
                 )
-            }
+            },
         )
     }
 }
@@ -83,14 +85,14 @@ internal actual fun Modifier.textFieldMagnifier(manager: TextFieldSelectionManag
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     manager: TextFieldSelectionManager,
     coroutineScope: CoroutineScope,
-): Modifier = addTextContextMenuComponentsWithResources { resources ->
+): Modifier = addTextContextMenuComponentsWithContext { context ->
     fun TextContextMenuBuilderScope.textFieldItem(
         item: TextContextMenuItems,
         enabled: Boolean,
         closePredicate: (() -> Boolean)? = null,
-        onClick: () -> Unit
+        onClick: () -> Unit,
     ) {
-        textItem(resources, item, enabled) {
+        textItem(context.resources, item, enabled) {
             onClick()
             if (closePredicate?.invoke() ?: true) close()
         }
@@ -99,31 +101,52 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     fun TextContextMenuBuilderScope.textFieldSuspendItem(
         item: TextContextMenuItems,
         enabled: Boolean,
-        onClick: suspend () -> Unit
+        onClick: suspend () -> Unit,
     ) {
         textFieldItem(item, enabled) {
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) { onClick() }
         }
     }
 
-    with(manager) {
-        separator()
-        textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
-        textFieldSuspendItem(Copy, enabled = canCopy()) { copy(cancelSelection = textToolbarShown) }
-        textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
-        textFieldItem(SelectAll, enabled = canSelectAll(), closePredicate = { !textToolbarShown }) {
-            selectAll()
+    addPlatformTextContextMenuItems(
+        context = context,
+        editable = manager.editable,
+        text = manager.transformedText?.text,
+        selection =
+            manager.latestSelection?.let {
+                val offsetMapping = manager.offsetMapping
+                TextRange(
+                    offsetMapping.originalToTransformed(it.start),
+                    offsetMapping.originalToTransformed(it.end),
+                )
+            },
+        platformSelectionBehaviors = manager.platformSelectionBehaviors,
+    ) {
+        with(manager) {
+            separator()
+            textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
+            textFieldSuspendItem(Copy, enabled = canCopy()) {
+                copy(cancelSelection = textToolbarShown)
+            }
+            textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+            textFieldItem(
+                SelectAll,
+                enabled = canSelectAll(),
+                closePredicate = { !textToolbarShown },
+            ) {
+                selectAll()
+            }
+            if (Build.VERSION.SDK_INT >= 26) {
+                textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
+            }
+            separator()
         }
-        if (Build.VERSION.SDK_INT >= 26) {
-            textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
-        }
-        separator()
     }
 }
 
 internal fun TextFieldSelectionManager.contextMenuBuilder(
     contextMenuState: ContextMenuState,
-    itemsAvailability: State<MenuItemsAvailability>
+    itemsAvailability: State<MenuItemsAvailability>,
 ): ContextMenuScope.() -> Unit = {
     fun textFieldItem(label: TextContextMenuItems, enabled: Boolean, operation: () -> Unit) {
         TextItem(contextMenuState, label, enabled, operation)

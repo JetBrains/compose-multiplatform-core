@@ -64,7 +64,7 @@ object ProtoLayoutHelpers {
 
     fun linearGradient(
         vararg colorStops: ColorStop,
-        block: LinearGradient.Builder.() -> Unit = {}
+        block: LinearGradient.Builder.() -> Unit = {},
     ) = LinearGradient.newBuilder().addAllColorStops(colorStops.toList()).apply(block).build()
 
     fun sweepGradient(vararg colorStops: ColorStop, block: SweepGradient.Builder.() -> Unit = {}) =

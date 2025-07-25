@@ -330,10 +330,7 @@ private fun CurvedTextStyle.withDefaultFontFamily(default: FontFamily): CurvedTe
 private const val DefaultIncludeFontPadding = false
 
 internal val DefaultLineHeightStyle =
-    LineHeightStyle(
-        alignment = LineHeightStyle.Alignment.Center,
-        trim = LineHeightStyle.Trim.None,
-    )
+    LineHeightStyle(alignment = LineHeightStyle.Alignment.Center, trim = LineHeightStyle.Trim.None)
 
 /**
  * Returns theme default [TextStyle] with default [PlatformTextStyle]. Text styles are proportional

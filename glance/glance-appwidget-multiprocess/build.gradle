@@ -40,7 +40,6 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.kotlinTest)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testCore)
     testImplementation(libs.testRules)
     testImplementation(libs.testRunner)
@@ -74,4 +73,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2024"
     description = "Use Glance with multiprocess setups"
+    enableRobolectric()
 }

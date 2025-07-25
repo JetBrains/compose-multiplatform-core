@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import androidx.build.KotlinTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -22,6 +23,28 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.protobuf")
     id ("kotlin-parcelize")
+}
+
+configurations {
+    // TODO(b/418222072): Migrate MultiProcessDataStoreIpcTest to datastore-core as it is using
+    // internal implementations
+    // Configuration to access internal implementation of datastore-core library
+    // This removes need for suppressing INVISIBLE_REFERENCE and INVISIBLE_MEMBER in codebase
+    // IDE does not support this configuration yet, so you will still see references to internal
+    // members marked as an error. You can ignore them.
+    friends {
+        canBeResolved = true
+        canBeConsumed = false
+        transitive = false
+        attributes {
+            attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)
+            attribute(
+                    Attribute.of("artifactType", String), "android-classes-jar"
+            )
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
+        }
+    }
+    implementation.extendsFrom(friends)
 }
 
 android {
@@ -32,8 +55,8 @@ dependencies {
     implementation(libs.okio)
     implementation(libs.protobufLite)
     implementation("androidx.lifecycle:lifecycle-service:2.6.1")
-    implementation(project(":datastore:datastore-core"))
     implementation(project(":datastore:datastore-core-okio"))
+    friends(project(":datastore:datastore-core"))
 
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.kotlinTest)
@@ -45,7 +68,6 @@ dependencies {
     androidTestImplementation(project(":kruth:kruth"))
 }
 
-androidx {
-    //TODO(b/407740332): Target Kotlin 2. Fails MultiProcessDataStoreIpcTest test
-    kotlinTarget = KotlinTarget.KOTLIN_1_9
+tasks.withType(KotlinCompile).configureEach {
+    it.friendPaths.from(configurations.friends.incoming.artifactView { }.files)
 }

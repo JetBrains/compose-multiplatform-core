@@ -28,15 +28,25 @@ import androidx.annotation.RestrictTo
 import androidx.core.os.OutcomeReceiverCompat
 import androidx.credentials.CreateCredentialResponse
 import androidx.credentials.exceptions.CreateCredentialException
-import androidx.credentials.provider.CallingAppInfo
-import androidx.credentials.provider.ProviderCreateCredentialRequest
+import androidx.credentials.exceptions.publickeycredential.SignalCredentialStateException
 import androidx.credentials.providerevents.CredentialEventsProvider
+import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToGmsResponse
+import androidx.credentials.providerevents.playservices.ConversionUtils.Companion.convertToJetpackRequest
 import androidx.credentials.providerevents.service.CredentialProviderEventsService
-import com.google.android.gms.common.wrappers.Wrappers
+import com.google.android.gms.common.util.UidVerifier
 import com.google.android.gms.identitycredentials.CallingAppInfoParcelable
 import com.google.android.gms.identitycredentials.CreateCredentialRequest
+import com.google.android.gms.identitycredentials.ExportCredentialsToDeviceSetupRequest
+import com.google.android.gms.identitycredentials.GetCredentialTransferCapabilitiesRequest
+import com.google.android.gms.identitycredentials.ImportCredentialsForDeviceSetupRequest
+import com.google.android.gms.identitycredentials.SignalCredentialStateRequest
+import com.google.android.gms.identitycredentials.SignalCredentialStateResponse
 import com.google.android.gms.identitycredentials.provider.ICreateCredentialCallbacks
 import com.google.android.gms.identitycredentials.provider.ICredentialProviderService
+import com.google.android.gms.identitycredentials.provider.ICredentialTransferCapabilitiesCallbacks
+import com.google.android.gms.identitycredentials.provider.IExportCredentialsCallbacks
+import com.google.android.gms.identitycredentials.provider.IImportCredentialsCallbacks
+import com.google.android.gms.identitycredentials.provider.ISignalCredentialStateCallbacks
 import java.lang.ref.WeakReference
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -51,49 +61,6 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
     private class ServiceWrapper(service: CredentialProviderEventsService, val handler: Handler) :
         ICredentialProviderService.Stub() {
 
-        private fun constructCallingAppInfo(request: CreateCredentialRequest): CallingAppInfo? {
-            val callingAppInfoBundle =
-                request.candidateQueryData.getBundle(EXTRA_CREDENTIAL_CALLING_APP_INFO)
-            return callingAppInfoBundle?.let { CallingAppInfo.extractCallingAppInfo(it) }
-        }
-
-        private fun convertToJetpackRequest(
-            request: CreateCredentialRequest
-        ): ProviderCreateCredentialRequest? {
-            val callingAppInfo = constructCallingAppInfo(request)
-            if (callingAppInfo == null) {
-                return null
-            }
-            val providerRequest =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    ProviderCreateCredentialRequest(
-                        androidx.credentials.CreateCredentialRequest.createFrom(
-                            request.type,
-                            request.credentialData,
-                            request.candidateQueryData,
-                            false
-                        ),
-                        callingAppInfo = callingAppInfo
-                    )
-                } else {
-                    // Don't need to support this level as passkey support is 28+
-                    return null
-                }
-            return providerRequest
-        }
-
-        private fun convertToGmsResponse(
-            response: CreateCredentialResponse?
-        ): com.google.android.gms.identitycredentials.CreateCredentialResponse? {
-            if (response != null) {
-                return com.google.android.gms.identitycredentials.CreateCredentialResponse(
-                    response.type,
-                    response.data
-                )
-            }
-            return response
-        }
-
         private val context: Context = service.applicationContext
 
         var serviceRef: WeakReference<CredentialProviderEventsService> = WeakReference(service)
@@ -102,19 +69,24 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
         override fun onCreateCredentialRequest(
             request: CreateCredentialRequest,
             callingAppInfo: CallingAppInfoParcelable,
-            callback: ICreateCredentialCallbacks
+            callback: ICreateCredentialCallbacks,
         ) {
-            if (!isAuthorizedUid(getCallingUid())) {
+            if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
                 return
             }
             // TODO(b/385394695): Fix being able to create CallingAppInfo with GMS
             //  CallingAppInfoParcelable
-            val jetpackRequest = convertToJetpackRequest(request)
+            val jetpackRequest =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    convertToJetpackRequest(request)
+                } else {
+                    null
+                }
             if (jetpackRequest == null) {
                 callback.onFailure(
                     com.google.android.gms.identitycredentials.CreateCredentialException
                         .ERROR_TYPE_UNKNOWN,
-                    "Request could not be constructed"
+                    "Request could not be constructed",
                 )
                 return
             }
@@ -140,7 +112,7 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
                                         context,
                                         0,
                                         Intent(),
-                                        PendingIntent.FLAG_IMMUTABLE
+                                        PendingIntent.FLAG_IMMUTABLE,
                                     )
                                 callback.onSuccessV2(response, placeHolderPendingIntent)
                             } else {
@@ -148,7 +120,7 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
                                     com.google.android.gms.identitycredentials
                                         .CreateCredentialException
                                         .ERROR_TYPE_UNKNOWN,
-                                    "Response could not be constructed"
+                                    "Response could not be constructed",
                                 )
                             }
                         }
@@ -161,35 +133,91 @@ public class CredentialEventsProviderPlayServices() : CredentialEventsProvider {
             }
         }
 
-        private fun isAuthorizedUid(callingUid: Int): Boolean {
-            val packages = getPackageNameList(callingUid)
-            for (pkg in packages) {
-                if (pkg == GMS_PACKAGE_NAME) {
-                    return true
+        /** Called when the provider needs to ingest credentials */
+        override fun onExportCredentials(
+            request: ExportCredentialsToDeviceSetupRequest,
+            callingAppInfo: CallingAppInfoParcelable,
+            callback: IExportCredentialsCallbacks,
+        ) {}
+
+        override fun onGetCredentialTransferCapabilities(
+            request: GetCredentialTransferCapabilitiesRequest,
+            callingAppInfo: CallingAppInfoParcelable,
+            callback: ICredentialTransferCapabilitiesCallbacks,
+        ) {}
+
+        /** Called when the provider needs to return credentials */
+        override fun onImportCredentials(
+            request: ImportCredentialsForDeviceSetupRequest,
+            callingAppInfo: CallingAppInfoParcelable,
+            callback: IImportCredentialsCallbacks,
+        ) {}
+
+        override fun onSignalCredentialStateRequest(
+            request: SignalCredentialStateRequest,
+            callingAppInfo: CallingAppInfoParcelable,
+            callback: ISignalCredentialStateCallbacks,
+        ) {
+            if (!UidVerifier.isGooglePlayServicesUid(context, getCallingUid())) {
+                return
+            }
+
+            val jetpackRequest =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    convertToJetpackRequest(request)
+                } else {
+                    null
                 }
-            }
-            return false
-        }
-
-        fun getPackageNameList(callingUid: Int): List<String> {
-            val packageNameList = mutableListOf<String>()
-            val packageManager = Wrappers.packageManager(context)
-            val packagesForUid: Array<String>? = packageManager.getPackagesForUid(callingUid)
-            if (packagesForUid == null) {
-                return packageNameList.toList()
+            if (jetpackRequest == null) {
+                callback.onFailure(
+                    com.google.android.gms.identitycredentials.SignalCredentialStateException
+                        .ERROR_TYPE_UNKNOWN,
+                    "Request could not be constructed",
+                )
+                return
             }
 
-            for (i in packagesForUid.indices) {
-                val pkg = packagesForUid[i]
-                packageNameList.add(pkg)
-            }
-            return packageNameList
-        }
+            handler.post {
+                val service = serviceRef.get()
+                if (service == null) {
+                    return@post
+                }
 
-        companion object {
-            const val GMS_PACKAGE_NAME: String = "com.google.android.gms"
-            const val EXTRA_CREDENTIAL_CALLING_APP_INFO =
-                "androidx.credentials.providerevents.extra.CALLING_APP_INFO"
+                service.onSignalCredentialStateRequest(
+                    jetpackRequest,
+                    object :
+                        OutcomeReceiverCompat<
+                            androidx.credentials.SignalCredentialStateResponse,
+                            SignalCredentialStateException,
+                        > {
+                        override fun onResult(
+                            result: androidx.credentials.SignalCredentialStateResponse?
+                        ) {
+                            if (result != null) {
+                                callback.onSuccess(SignalCredentialStateResponse())
+                            } else {
+                                callback.onFailure(
+                                    com.google.android.gms.identitycredentials
+                                        .SignalCredentialStateException
+                                        .ERROR_TYPE_UNKNOWN,
+                                    "Response could not be constructed",
+                                )
+                            }
+                        }
+
+                        override fun onError(error: SignalCredentialStateException) {
+                            callback.onFailure(error.type, error.message.toString())
+                        }
+                    },
+                )
+            }
         }
+    }
+
+    private companion object {
+        const val GMS_PACKAGE_NAME: String = "com.google.android.gms"
+        const val TAG = "EventsPlayServices"
+        const val EXTRA_CREDENTIAL_CALLING_APP_INFO =
+            "androidx.credentials.providerevents.extra.CALLING_APP_INFO"
     }
 }

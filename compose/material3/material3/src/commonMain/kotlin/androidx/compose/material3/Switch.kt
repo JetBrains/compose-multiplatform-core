@@ -110,7 +110,7 @@ fun Switch(
                     enabled = enabled,
                     role = Role.Switch,
                     interactionSource = interactionSource,
-                    indication = null
+                    indication = null,
                 )
         } else {
             Modifier
@@ -159,22 +159,22 @@ private fun SwitchImpl(
                             interactionSource = interactionSource,
                             checked = checked,
                             // TODO Load the motionScheme tokens from the component tokens file
-                            animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
+                            animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
                         )
                     )
                     .indication(
                         interactionSource = interactionSource,
                         indication =
-                            ripple(bounded = false, radius = SwitchTokens.StateLayerSize / 2)
+                            ripple(bounded = false, radius = SwitchTokens.StateLayerSize / 2),
                     )
                     .background(resolvedThumbColor, thumbShape),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             if (thumbContent != null) {
                 val iconColor = colors.iconColor(enabled, checked)
                 CompositionLocalProvider(
                     LocalContentColor provides iconColor,
-                    content = thumbContent
+                    content = thumbContent,
                 )
             }
         }
@@ -241,7 +241,7 @@ private class ThumbNode(
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         val hasContent =
             measurable.maxIntrinsicHeight(constraints.maxWidth) != 0 &&
@@ -383,7 +383,7 @@ object SwitchDefaults {
             disabledUncheckedThumbColor = disabledUncheckedThumbColor,
             disabledUncheckedTrackColor = disabledUncheckedTrackColor,
             disabledUncheckedBorderColor = disabledUncheckedBorderColor,
-            disabledUncheckedIconColor = disabledUncheckedIconColor
+            disabledUncheckedIconColor = disabledUncheckedIconColor,
         )
 
     internal val ColorScheme.defaultSwitchColors: SwitchColors
@@ -476,7 +476,7 @@ constructor(
     val disabledUncheckedThumbColor: Color,
     val disabledUncheckedTrackColor: Color,
     val disabledUncheckedBorderColor: Color,
-    val disabledUncheckedIconColor: Color
+    val disabledUncheckedIconColor: Color,
 ) {
     /**
      * Returns a copy of this SwitchColors, optionally overriding some of the values. This uses the

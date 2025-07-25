@@ -201,7 +201,7 @@ class ViewOwnerDialog(context: Context) : ComponentDialog(context) {
             val onBackPressedDispatcherOwner = findViewTreeOnBackPressedDispatcherOwner()!!
             onBackPressedDispatcherOwner.onBackPressedDispatcher.addCallback(
                 onBackPressedDispatcherOwner,
-                onBackPressedCallback
+                onBackPressedCallback,
             )
         }
     }

@@ -80,7 +80,7 @@ class ExtensionsManagerTest(
     private val cameraXConfig: CameraXConfig,
     private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
-    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
+    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int,
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -274,10 +274,8 @@ class ExtensionsManagerTest(
     @Test
     fun getEstimatedCaptureLatencyRange_returnValueFromExtender() {
         extensionsManager =
-            ExtensionsManager.getInstanceAsync(
-                    context,
-                    cameraProvider,
-                )[10000, TimeUnit.MILLISECONDS]
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         assumeTrue(
             extensionsManager.extensionsAvailability ==
@@ -294,7 +292,7 @@ class ExtensionsManagerTest(
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -352,7 +350,7 @@ class ExtensionsManagerTest(
         assertThat(
                 extensionsManager.getEstimatedCaptureLatencyRange(
                     emptyCameraSelector,
-                    extensionMode
+                    extensionMode,
                 )
             )
             .isNull()
@@ -404,14 +402,14 @@ class ExtensionsManagerTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionCameraSelector,
-                FakeUseCase()
+                FakeUseCase(),
             )
 
             // Binds another use case with the same extension camera config.
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionCameraSelector,
-                FakeUseCase()
+                FakeUseCase(),
             )
         }
     }
@@ -427,7 +425,7 @@ class ExtensionsManagerTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionCameraSelector,
-                FakeUseCase()
+                FakeUseCase(),
             )
 
             // Unbinds all use cases
@@ -441,16 +439,14 @@ class ExtensionsManagerTest(
     @Test
     fun isImageAnalysisSupportedReturnsFalse_whenHasNoAnalysisSizes() {
         extensionsManager =
-            ExtensionsManager.getInstanceAsync(
-                    context,
-                    cameraProvider,
-                )[10000, TimeUnit.MILLISECONDS]
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         val fakeVendorExtender =
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -473,16 +469,14 @@ class ExtensionsManagerTest(
     @Test
     fun isImageAnalysisSupportedReturnsTrue_whenHasAnalysisSizes() {
         extensionsManager =
-            ExtensionsManager.getInstanceAsync(
-                    context,
-                    cameraProvider,
-                )[10000, TimeUnit.MILLISECONDS]
+            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
+                    10000, TimeUnit.MILLISECONDS]
 
         val fakeVendorExtender =
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -535,7 +529,7 @@ class ExtensionsManagerTest(
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -564,7 +558,7 @@ class ExtensionsManagerTest(
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -652,7 +646,7 @@ class ExtensionsManagerTest(
             object : VendorExtender {
                 override fun isExtensionAvailable(
                     cameraId: String,
-                    characteristicsMap: MutableMap<String, CameraCharacteristics>
+                    characteristicsMap: MutableMap<String, CameraCharacteristics>,
                 ): Boolean {
                     return true
                 }
@@ -667,7 +661,7 @@ class ExtensionsManagerTest(
                         Collections.emptyList(),
                         this,
                         context,
-                        extensionMode
+                        extensionMode,
                     )
                 }
             }
@@ -707,7 +701,7 @@ class ExtensionsManagerTest(
 
         return extensionsManager.getExtensionEnabledCameraSelector(
             baseCameraSelector,
-            extensionMode
+            extensionMode,
         )
     }
 
@@ -775,13 +769,13 @@ class ExtensionsManagerTest(
             ExtensionsTestUtil.createVendorExtender(
                 context,
                 extensionMode,
-                cameraProvider.configImplType
+                cameraProvider.configImplType,
             )
         val cameraId = (cameraInfo as CameraInfoInternal).cameraId
 
         return vendorExtender.isExtensionAvailable(
             cameraId,
-            ExtensionsUtils.getCameraCharacteristicsMap(cameraInfo)
+            ExtensionsUtils.getCameraCharacteristicsMap(cameraInfo),
         )
     }
 
@@ -790,7 +784,7 @@ class ExtensionsManagerTest(
             cameraId: String,
             cameraCharacteristicsMap: MutableMap<String, CameraCharacteristics>,
             context: Context,
-            surfaceConfigs: OutputSurfaceConfigurationImpl
+            surfaceConfigs: OutputSurfaceConfigurationImpl,
         ): Camera2SessionConfigImpl = FakeCamera2SessionConfigImpl()
 
         override fun initSession(
@@ -799,7 +793,7 @@ class ExtensionsManagerTest(
             context: Context,
             previewSurfaceConfig: OutputSurfaceImpl,
             imageCaptureSurfaceConfig: OutputSurfaceImpl,
-            imageAnalysisSurfaceConfig: OutputSurfaceImpl?
+            imageAnalysisSurfaceConfig: OutputSurfaceImpl?,
         ): Camera2SessionConfigImpl = FakeCamera2SessionConfigImpl()
 
         override fun deInitSession() {}
@@ -808,7 +802,7 @@ class ExtensionsManagerTest(
 
         override fun startTrigger(
             triggers: MutableMap<CaptureRequest.Key<*>, Any>,
-            callback: SessionProcessorImpl.CaptureCallback
+            callback: SessionProcessorImpl.CaptureCallback,
         ): Int = 0
 
         override fun onCaptureSessionStart(requestProcessor: RequestProcessorImpl) {}

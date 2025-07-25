@@ -57,7 +57,7 @@ fun drawAndAssertAgainstGolden(
     composeTestRule: ComposeContentTestRule,
     screenshotRule: AndroidXScreenshotTestRule,
     testParams: ViewfinderTestParams,
-    goldenIdentifier: String
+    goldenIdentifier: String,
 ) {
     val surfaceRequest =
         ViewfinderSurfaceRequest(
@@ -77,7 +77,7 @@ fun drawAndAssertAgainstGolden(
             transformationInfo = testParams.transformationInfo,
             coordinateTransformer = coordinateTransformer,
             alignment = testParams.alignment,
-            contentScale = testParams.contentScale
+            contentScale = testParams.contentScale,
         ) {
             onSurfaceSession {
                 // Fill Viewfinder buffer with content
@@ -87,7 +87,7 @@ fun drawAndAssertAgainstGolden(
                     painter = facePainter,
                     density = density,
                     coordinateTransformer = coordinateTransformer,
-                    touchCoordinates = touchCoordinates
+                    touchCoordinates = touchCoordinates,
                 )
             }
         }
@@ -103,7 +103,7 @@ fun drawAndAssertAgainstGolden(
             withTransform({
                 translate(
                     left = touchCoordinates.x - imageSize.width / 2f,
-                    top = touchCoordinates.y - imageSize.height / 2f
+                    top = touchCoordinates.y - imageSize.height / 2f,
                 )
             }) {
                 with(touchCoordPainter) {
@@ -122,7 +122,7 @@ fun drawAndAssertAgainstGolden(
             // Tuned to find a 1px difference in mapped touch coordinates.
             // May need to split out touch coordinate mapping into its own
             // screenshot test if this becomes flaky.
-            matcher = MSSIMMatcher(threshold = 0.9995)
+            matcher = MSSIMMatcher(threshold = 0.9995),
         )
 }
 
@@ -134,15 +134,15 @@ fun drawFaceToSurface(
     painter: VectorPainter,
     density: Density,
     coordinateTransformer: CoordinateTransformer,
-    touchCoordinates: Offset?
+    touchCoordinates: Offset?,
 ) {
     SurfaceUtil.setBuffersTransform(
         surface,
         toTransformEnum(
             sourceRotation = testParams.sourceRotation,
             horizontalMirror = testParams.isMirroredHorizontally,
-            verticalMirror = testParams.isMirroredVertically
-        )
+            verticalMirror = testParams.isMirroredVertically,
+        ),
     )
     val resolution = testParams.sourceResolution
     val canvas = ComposeCanvas(surface.lockHardwareCanvas())
@@ -151,7 +151,7 @@ fun drawFaceToSurface(
             density = density,
             layoutDirection = LayoutDirection.Ltr,
             canvas = canvas,
-            size = Size(resolution.width.toFloat(), resolution.height.toFloat())
+            size = Size(resolution.width.toFloat(), resolution.height.toFloat()),
         ) {
             val rotation = testParams.sourceRotation
             val iconSize = painter.calcFitSize(size, rotation)
@@ -176,7 +176,7 @@ fun drawFaceToSurface(
                 rotate(degrees = -rotation.toFloat())
                 translate(
                     left = (size.width - iconSize.width) / 2f,
-                    top = (size.height - iconSize.height) / 2f
+                    top = (size.height - iconSize.height) / 2f,
                 )
             }) {
                 with(painter) { draw(iconSize) }
@@ -189,7 +189,7 @@ fun drawFaceToSurface(
                     drawCircle(
                         radius = 25f,
                         color = Color.Red,
-                        center = touchCoordinates.transform()
+                        center = touchCoordinates.transform(),
                     )
                 }
             }
@@ -219,7 +219,7 @@ private fun Size.swapDimens(): Size = Size(height, width)
 private fun toTransformEnum(
     sourceRotation: Int,
     horizontalMirror: Boolean,
-    verticalMirror: Boolean
+    verticalMirror: Boolean,
 ): Int {
     val rotationTransform =
         when (sourceRotation) {

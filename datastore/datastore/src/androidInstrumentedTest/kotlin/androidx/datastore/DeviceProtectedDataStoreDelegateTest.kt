@@ -36,11 +36,7 @@ import org.junit.rules.TemporaryFolder
 class DeviceProtectedDataStoreDelegateTest {
     private val deviceEncryptedFileName = "deviceStorage"
     val Context.deviceEncryptedDs by
-        dataStore(
-            deviceEncryptedFileName,
-            TestingSerializer(),
-            createInDeviceProtectedStorage = true
-        )
+        deviceProtectedDataStore(deviceEncryptedFileName, TestingSerializer())
 
     @get:Rule val tmp = TemporaryFolder()
     private lateinit var context: Context

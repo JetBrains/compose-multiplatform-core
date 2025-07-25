@@ -100,7 +100,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()
@@ -157,7 +157,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()
@@ -270,7 +270,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()
@@ -323,7 +323,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()
@@ -415,7 +415,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()
@@ -462,7 +462,7 @@ class PrimaryLayoutResponsiveDetectorTest : LintDetectorTest() {
                         }
                     """
                     )
-                    .indented()
+                    .indented(),
             )
             .issues(ResponsiveLayoutDetector.PRIMARY_LAYOUT_ISSUE)
             .run()

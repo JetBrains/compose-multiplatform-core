@@ -62,7 +62,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.constraintLayout)
     implementation(libs.kotlinCoroutinesAndroid)
-    implementation("androidx.tracing:tracing:1.1.0")
+    implementation(project(":tracing:tracing"))
     implementation(libs.espressoIdlingResource)
 
     androidTestImplementation("androidx.activity:activity:1.10.1")
@@ -75,4 +75,5 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":tracing:tracing"))
 }

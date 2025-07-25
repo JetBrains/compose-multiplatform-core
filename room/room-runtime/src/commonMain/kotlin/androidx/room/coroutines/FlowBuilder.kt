@@ -28,11 +28,11 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.map
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-fun <R> createFlow(
+public fun <R> createFlow(
     db: RoomDatabase,
     inTransaction: Boolean,
     tableNames: Array<String>,
-    block: (SQLiteConnection) -> R
+    block: (SQLiteConnection) -> R,
 ): Flow<R> =
     db.invalidationTracker.createFlow(*tableNames, emitInitialState = true).conflate().map {
         performSuspending(db, true, inTransaction, block)

@@ -58,7 +58,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
         interpret(
             query =
                 ExpandableSqlParser.parse(query.original).also { it.resultInfo = query.resultInfo },
-            dataClass = dataClass
+            dataClass = dataClass,
         )
 
     override fun rewrite(query: ParsedQuery, resultAdapter: QueryResultAdapter): ParsedQuery {
@@ -73,7 +73,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
         return if (rowAdapter is DataClassRowAdapter) {
             interpret(
                     query = ExpandableSqlParser.parse(query.original),
-                    dataClass = rowAdapter.dataClass
+                    dataClass = rowAdapter.dataClass,
                 )
                 .let {
                     val reParsed = SqlParser.parse(it)
@@ -110,7 +110,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
         query: ExpandableParsedQuery,
         section: ExpandableSection.Projection,
         dataClass: DataClass,
-        queriedTableNames: List<String>
+        queriedTableNames: List<String>,
     ): String {
         val aliasToName = query.tables.map { (name, alias) -> alias to name }.toMap(IdentifierMap())
         val nameToAlias =
@@ -128,7 +128,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
                     // We should not prepend the prefix-dot to the columns.
                     shallow = findEntityOrView(dataClass)?.tableName in queriedTableNames,
                     nameToAlias = nameToAlias,
-                    resultInfo = query.resultInfo
+                    resultInfo = query.resultInfo,
                 )
             }
             is ExpandableSection.Projection.Table -> {
@@ -138,7 +138,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
                             embedded = embedded,
                             table = findEntityOrView(embedded.dataClass),
                             shallow = false,
-                            tableToAlias = nameToAlias
+                            tableToAlias = nameToAlias,
                         )
                         .joinToString(", ")
                 } else {
@@ -179,7 +179,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
         ignoredColumnNames: List<String>,
         shallow: Boolean,
         nameToAlias: Map<String, String>,
-        resultInfo: QueryResultInfo?
+        resultInfo: QueryResultInfo?,
     ): String {
         val table = findEntityOrView(dataClass)
         return (dataClass.embeddedProperties.flatMap {
@@ -213,7 +213,7 @@ class ProjectionExpander(private val tables: List<EntityOrView>) : QueryRewriter
         embedded: EmbeddedProperty,
         table: EntityOrView?,
         shallow: Boolean,
-        tableToAlias: Map<String, String>
+        tableToAlias: Map<String, String>,
     ): List<String> {
         val pojo = embedded.dataClass
         return if (table != null) {

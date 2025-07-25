@@ -104,15 +104,15 @@ class VolumeConstraintsTest {
     }
 
     @Test
-    fun volumeConstraints_unbounded_returnsCorrectVolumeConstraints() {
-        val unboundedVolumeConstraints = VolumeConstraints.Unbounded
+    fun volumeConstraints_default_returnsCorrectVolumeConstraints() {
+        val defaultVolumeConstraints = VolumeConstraints()
 
-        assertThat(unboundedVolumeConstraints.minWidth).isEqualTo(0)
-        assertThat(unboundedVolumeConstraints.maxWidth).isEqualTo(VolumeConstraints.INFINITY)
-        assertThat(unboundedVolumeConstraints.minHeight).isEqualTo(0)
-        assertThat(unboundedVolumeConstraints.maxHeight).isEqualTo(VolumeConstraints.INFINITY)
-        assertThat(unboundedVolumeConstraints.minDepth).isEqualTo(0)
-        assertThat(unboundedVolumeConstraints.maxDepth).isEqualTo(VolumeConstraints.INFINITY)
+        assertThat(defaultVolumeConstraints.minWidth).isEqualTo(0)
+        assertThat(defaultVolumeConstraints.maxWidth).isEqualTo(VolumeConstraints.INFINITY)
+        assertThat(defaultVolumeConstraints.minHeight).isEqualTo(0)
+        assertThat(defaultVolumeConstraints.maxHeight).isEqualTo(VolumeConstraints.INFINITY)
+        assertThat(defaultVolumeConstraints.minDepth).isEqualTo(0)
+        assertThat(defaultVolumeConstraints.maxDepth).isEqualTo(VolumeConstraints.INFINITY)
     }
 
     @Test

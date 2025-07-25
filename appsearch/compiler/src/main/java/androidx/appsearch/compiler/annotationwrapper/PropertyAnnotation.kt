@@ -29,7 +29,7 @@ import javax.lang.model.type.TypeMirror
 interface PropertyAnnotation {
     enum class Kind {
         METADATA_PROPERTY,
-        DATA_PROPERTY
+        DATA_PROPERTY,
     }
 
     /**

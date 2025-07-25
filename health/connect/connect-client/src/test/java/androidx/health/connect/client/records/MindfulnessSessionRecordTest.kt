@@ -46,7 +46,7 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 ),
                 MindfulnessSessionRecord(
                     startTime = Instant.ofEpochMilli(1234L),
@@ -57,8 +57,8 @@ class MindfulnessSessionRecordTest {
                     title = "title",
                     notes = "note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
-                )
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                ),
             )
             .addEqualityGroup(
                 MindfulnessSessionRecord(
@@ -70,7 +70,7 @@ class MindfulnessSessionRecordTest {
                     title = "different title",
                     notes = "different note",
                     mindfulnessSessionType =
-                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
+                        MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
                 )
             )
             .testEquals()
@@ -88,7 +88,7 @@ class MindfulnessSessionRecordTest {
                 title = "title",
                 notes = "note",
                 mindfulnessSessionType =
-                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION
+                    MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MEDITATION,
             )
         }
     }
@@ -105,7 +105,7 @@ class MindfulnessSessionRecordTest {
                         title = "title",
                         notes = "note",
                         mindfulnessSessionType =
-                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT
+                            MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_MOVEMENT,
                     )
                     .toString()
             )

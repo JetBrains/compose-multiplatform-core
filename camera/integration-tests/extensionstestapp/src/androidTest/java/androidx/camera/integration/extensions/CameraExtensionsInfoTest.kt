@@ -110,7 +110,7 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
         extensionCameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(
                 baseCameraSelector,
-                config.extensionMode
+                config.extensionMode,
             )
 
         instrumentation.runOnMainSync {
@@ -123,7 +123,7 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
                     fakeLifecycleOwner,
                     extensionCameraSelector,
                     preview,
-                    imageCapture
+                    imageCapture,
                 )
         }
 
@@ -184,14 +184,14 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
             return CameraXExtensionsTestUtil.createAdvancedExtenderImpl(
                     config.extensionMode,
                     config.cameraId,
-                    camera.cameraInfo
+                    camera.cameraInfo,
                 )
                 .apply {
                     init(
                         config.cameraId,
                         ExtensionsUtils.getCameraCharacteristicsMap(
                             camera.cameraInfo as CameraInfoInternal
-                        )
+                        ),
                     )
                 }
                 .availableCaptureRequestKeys
@@ -243,14 +243,14 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
             return CameraXExtensionsTestUtil.createAdvancedExtenderImpl(
                     config.extensionMode,
                     config.cameraId,
-                    camera.cameraInfo
+                    camera.cameraInfo,
                 )
                 .apply {
                     init(
                         config.cameraId,
                         ExtensionsUtils.getCameraCharacteristicsMap(
                             camera.cameraInfo as CameraInfoInternal
-                        )
+                        ),
                     )
                 }
                 .availableCaptureResultKeys

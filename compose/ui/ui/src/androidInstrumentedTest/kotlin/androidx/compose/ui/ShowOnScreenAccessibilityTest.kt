@@ -131,7 +131,7 @@ private class RecyclerViewViewHolder(context: Context) :
 
 private class ComposeRecyclerViewAdapter(
     val count: Int,
-    val itemContent: @Composable (Int) -> Unit
+    val itemContent: @Composable (Int) -> Unit,
 ) : RecyclerView.Adapter<RecyclerViewViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =

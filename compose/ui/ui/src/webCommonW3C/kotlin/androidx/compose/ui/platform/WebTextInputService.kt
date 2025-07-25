@@ -16,7 +16,6 @@
 
 package androidx.compose.ui.platform
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.text.input.EditCommand
@@ -24,10 +23,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.ImeOptions
 import androidx.compose.ui.text.input.PlatformTextInputService
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
+import org.w3c.dom.HTMLElement
 
 internal interface InputAwareInputService {
-    fun getOffset(rect: Rect): Offset
     fun processKeyboardEvent(keyboardEvent: KeyEvent): Boolean
+
+    /**
+     * @param rect is the rect in Compose coordinates
+     *
+     * @return a DpRect appropriate for positioning and laying out the HTML backing input
+     */
+    fun getNewGeometryForBackingInput(rect: Rect): DpRect
 }
 
 internal abstract class WebTextInputService : PlatformTextInputService, InputAwareInputService {
@@ -37,6 +46,11 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
             field?.dispose()
             field = value
         }
+
+    /**
+     * This container will host the actual hidden HTML input element.
+     */
+    abstract val backingDomInputContainer: HTMLElement
 
     override fun startInput(
         value: TextFieldValue,
@@ -55,11 +69,16 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
                     override fun sendEditCommand(commands: List<EditCommand>) {
                         onEditCommand(commands)
                     }
-                }
+                },
+                inputContainer = backingDomInputContainer,
             )
         backingDomInput?.register()
 
         showSoftwareKeyboard()
+    }
+
+    fun getBackingInput(): HTMLElement? {
+        return backingDomInput?.backingElement?.takeIf { it.isConnected }
     }
 
     override fun stopInput() {
@@ -79,8 +98,7 @@ internal abstract class WebTextInputService : PlatformTextInputService, InputAwa
     }
 
     override fun notifyFocusedRect(rect: Rect) {
-        super.notifyFocusedRect(rect)
-        backingDomInput?.updateHtmlInputPosition(getOffset(rect))
+        val newRect = getNewGeometryForBackingInput(rect)
+        backingDomInput?.updateHtmlInputBox(newRect.left.value, newRect.top.value, newRect.width.value, newRect.height.value)
     }
-
 }

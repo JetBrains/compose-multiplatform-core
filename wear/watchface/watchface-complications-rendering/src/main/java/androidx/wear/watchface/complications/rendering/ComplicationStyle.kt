@@ -365,7 +365,7 @@ public class ComplicationStyle {
                 Color.alpha(color).toFloat() / 255.0f,
                 Color.red(tint) * luminance / 255.0f,
                 Color.green(tint) * luminance / 255.0f,
-                Color.blue(tint) * luminance / 255.0f
+                Color.blue(tint) * luminance / 255.0f,
             )
         }
     }

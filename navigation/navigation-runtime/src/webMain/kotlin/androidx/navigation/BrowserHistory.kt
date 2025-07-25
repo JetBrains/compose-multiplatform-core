@@ -66,7 +66,7 @@ internal suspend fun BrowserWindow.bindToNavigation(
                 val restoredRoutes = state.lines()
                 val currentBackStack = navController.currentBackStack.value
                 val currentRoutes = currentBackStack.filter { it.destination !is NavGraph }
-                    .mapNotNull { it.getRouteWithArgs() }
+                    .mapNotNull { it.getRouteWithEncodedArgs() }
 
                 var commonTail = -1
                 restoredRoutes.forEachIndexed { index, restoredRoute ->
@@ -81,18 +81,23 @@ internal suspend fun BrowserWindow.bindToNavigation(
                 if (commonTail == -1) {
                     //clear full stack
                     currentRoutes.firstOrNull()?.let { root ->
-                        navController.popBackStack(root, true)
+                        val decodedRoute = decodeURIComponent(root)
+                        navController.popBackStack(decodedRoute, true)
                     }
                 } else {
                     currentRoutes[commonTail].let { lastCommon ->
-                        navController.popBackStack(lastCommon, false)
+                        val decodedRoute = decodeURIComponent(lastCommon)
+                        navController.popBackStack(decodedRoute, false)
                     }
                 }
 
                 //restore stack
                 if (commonTail < restoredRoutes.size - 1) {
                     val newRoutes = restoredRoutes.subList(commonTail + 1, restoredRoutes.size)
-                    newRoutes.forEach { route -> navController.navigate(route) }
+                    newRoutes.forEach { route ->
+                        val decodedRoute = decodeURIComponent(route)
+                        navController.navigate(decodedRoute)
+                    }
                 }
             }
         }
@@ -103,7 +108,7 @@ internal suspend fun BrowserWindow.bindToNavigation(
 
                 val entries = stack.filter { it.destination !is NavGraph }
                 if (entries.isEmpty()) return@collect
-                val routes = entries.map { it.getRouteWithArgs() ?: return@collect }
+                val routes = entries.map { it.getRouteWithEncodedArgs() ?: return@collect }
 
                 val currentDestination = entries.last()
                 val currentRoute = if (getBackStackEntryRoute != null) {
@@ -157,7 +162,7 @@ private fun BrowserWindow.popStateEvents(): Flow<BrowserPopStateEvent> = callbac
 }
 
 private val argPlaceholder = Regex("""\{.*?\}""")
-private fun NavBackStackEntry.getRouteWithArgs(): String? {
+private fun NavBackStackEntry.getRouteWithEncodedArgs(): String? {
     val entry = this
     val route = entry.destination.route ?: return null
     if (!route.contains(argPlaceholder)) return route
@@ -179,7 +184,7 @@ private fun NavBackStackEntry.getRouteWithArgs(): String? {
 }
 
 private fun NavBackStackEntry.getRouteAsUrlFragment() =
-    getRouteWithArgs()?.let { r -> "#$r" }.orEmpty()
+    getRouteWithEncodedArgs()?.let { r -> "#$r" }.orEmpty()
 
 private fun NavController.tryToNavigateToUrlFragment(localWindow: BrowserWindow) {
     val route = decodeURIComponent(localWindow.location.hash.substringAfter('#', ""))
@@ -187,7 +192,11 @@ private fun NavController.tryToNavigateToUrlFragment(localWindow: BrowserWindow)
         try {
             navigate(route)
         } catch (e: IllegalArgumentException) {
-            localWindow.console.warn("Can't navigate to '$route'")
+            localWindow.console.warn("""
+                Can't navigate to '$route'! Error: ${e.message}
+                Check that the NavGraph is set up already in the NavController.
+                A typical mistake is to call `bindToNavigation` before the NavHost function is called.
+            """.trimIndent())
         }
     }
 }
@@ -226,3 +235,37 @@ internal external interface BrowserConsole {
 
 external fun decodeURIComponent(str: String): String
 external fun encodeURIComponent(str: String): String
+
+
+/**
+ * Binds the browser window state to the given navigation controller.
+ *
+ * If `getBackStackEntryRoute` is null, then:
+ *  1) if a browser url contains a destination route on a start then navigates to destination
+ *  2) if a user puts a new destination route to the browser address field then navigates to the new destination
+ *
+ * If there is a custom `getBackStackEntryRoute` implementation,
+ * then we don't have knowledge how to parse urls to support direct navigation via browser address input.
+ * In that case, it should be done on the app's side:
+ * ```
+ * window.addEventListener("popstate") { event ->
+ *     event as PopStateEvent
+ *     if (event.state == null) { // empty state means manually entered address
+ *         val url = window.location.toString()
+ *         navController.navigate(...)
+ *     }
+ * }
+ * ```
+ *
+ * @param this The [NavController] instance to bind to browser window navigation.
+ * @param getBackStackEntryRoute An optional function that returns the route to show for a given [NavBackStackEntry].
+ */
+@ExperimentalBrowserHistoryApi
+suspend fun NavController.bindToBrowserNavigation(
+    getBackStackEntryRoute: ((entry: NavBackStackEntry) -> String)? = null
+) {
+    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
+    refBrowserWindow().bindToNavigation(this, getBackStackEntryRoute)
+}
+
+internal expect fun refBrowserWindow(): BrowserWindow

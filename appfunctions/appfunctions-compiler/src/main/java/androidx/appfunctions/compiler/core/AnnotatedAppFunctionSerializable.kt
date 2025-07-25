@@ -17,6 +17,7 @@
 package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
+import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_SINGULAR
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableAnnotation
@@ -33,13 +34,34 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 
+// TODO(b/410764334): Re-evaluate the abstraction layer.
 /** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializable]. */
 open class AnnotatedAppFunctionSerializable(
-    private val appFunctionSerializableClass: KSClassDeclaration,
+    private val appFunctionSerializableClass: KSClassDeclaration
 ) {
-    /** The qualified name of the class being annotated with AppFunctionSerializable. */
-    open val qualifiedName: String by lazy {
-        appFunctionSerializableClass.toClassName().canonicalName
+    /**
+     * The JVM qualified name of the class being annotated with AppFunctionSerializable. For
+     * example, `com.example.InnerClass$OuterClass`.
+     */
+    open val jvmQualifiedName: String by lazy { appFunctionSerializableClass.getJvmQualifiedName() }
+
+    /**
+     * Returns the JVM class name which takes into account multi-layer class declarations. For
+     * example, `InnerClass$OuterClass`.
+     */
+    open val jvmClassName: String by lazy { appFunctionSerializableClass.getJvmClassName() }
+
+    /** The generated factory ClassName. */
+    open val factoryClassName: ClassName by lazy {
+        ClassName(
+            originalClassName.packageName,
+            "\$${appFunctionSerializableClass.getJvmClassName()}Factory",
+        )
+    }
+
+    /** The name to be assigned to the serializable factory's instance. */
+    open val factoryVariableName: String by lazy {
+        "${ jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() } }Factory"
     }
 
     /** The super type of the class being annotated with AppFunctionSerializable */
@@ -62,12 +84,7 @@ open class AnnotatedAppFunctionSerializable(
     }
 
     /** The original [ClassName] of the AppFunctionSerializable. */
-    val originalClassName: ClassName by lazy {
-        ClassName(
-            appFunctionSerializableClass.packageName.asString(),
-            appFunctionSerializableClass.simpleName.asString()
-        )
-    }
+    val originalClassName: ClassName by lazy { appFunctionSerializableClass.toClassName() }
 
     /** The [TypeName] of the AppFunctionSerializable. */
     val typeName: TypeName by lazy {
@@ -79,6 +96,9 @@ open class AnnotatedAppFunctionSerializable(
             )
         }
     }
+
+    /** A description of the AppFunctionSerializable class and its intended use. */
+    val description: String by lazy { appFunctionSerializableClass.docString ?: "" }
 
     /** All the [KSDeclaration] from the AppFunctionSerializable. */
     val declarations: Sequence<KSDeclaration> by lazy { appFunctionSerializableClass.declarations }
@@ -95,7 +115,7 @@ open class AnnotatedAppFunctionSerializable(
         }
         return AnnotatedParameterizedAppFunctionSerializable(
             appFunctionSerializableClass,
-            arguments
+            arguments,
         )
     }
 
@@ -104,12 +124,17 @@ open class AnnotatedAppFunctionSerializable(
     /**
      * Validates that the class annotated with AppFunctionSerializable follows app function's spec.
      *
+     * @param allowSerializableInterfaceTypes Whether to allow the serializable to use serializable
+     *   interface types. The @AppFunctionSerializableInterface should only be considered as a
+     *   supported type when processing schema definitions.
      * @throws ProcessingException if the class does not adhere to the requirements
      */
-    open fun validate(): AnnotatedAppFunctionSerializable {
+    open fun validate(
+        allowSerializableInterfaceTypes: Boolean = false
+    ): AnnotatedAppFunctionSerializable {
         val validateHelper = AppFunctionSerializableValidateHelper(this)
         validateHelper.validatePrimaryConstructor()
-        validateHelper.validateParameters()
+        validateHelper.validateParameters(allowSerializableInterfaceTypes)
         return this
     }
 
@@ -235,7 +260,10 @@ open class AnnotatedAppFunctionSerializable(
         return getProperties()
             .filterNot { it.isGenericType }
             .map { it -> AppFunctionTypeReference(it.type) }
-            .filter { afType -> afType.isOfTypeCategory(SERIALIZABLE_PROXY_SINGULAR) }
+            .filter { afType ->
+                afType.isOfTypeCategory(SERIALIZABLE_PROXY_SINGULAR) ||
+                    afType.isOfTypeCategory(SERIALIZABLE_PROXY_LIST)
+            }
             .toSet()
     }
 
@@ -276,7 +304,7 @@ open class AnnotatedAppFunctionSerializable(
 
     private fun traverseSerializableClassSourceFiles(
         sourceFileSet: MutableSet<KSFile>,
-        visitedSerializableSet: MutableSet<ClassName>
+        visitedSerializableSet: MutableSet<ClassName>,
     ) {
         for (serializableAfType in getSerializablePropertyTypeReferences()) {
             val appFunctionSerializableDefinition =

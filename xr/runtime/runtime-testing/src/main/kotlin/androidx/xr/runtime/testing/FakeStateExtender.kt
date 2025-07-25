@@ -21,7 +21,7 @@ import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
 import androidx.xr.runtime.internal.Runtime
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FakeStateExtender() : StateExtender {
 
     /** Whether the [StateExtender] has been initialized or not. */
@@ -39,7 +39,7 @@ public class FakeStateExtender() : StateExtender {
     }
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnotherFakeStateExtender() : StateExtender {
 
     /** Whether the [StateExtender] has been initialized or not. */

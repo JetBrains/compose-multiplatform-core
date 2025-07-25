@@ -62,7 +62,7 @@ class ShellBehaviorTest {
             assertTrue(
                 // For some reason, `stdout.contains(regex)` doesn't work :shrug:
                 pgrepOutput.stdout.lines().any { it.matches(regex) },
-                "expected $regex to be contained in output:\n${pgrepOutput.stdout}"
+                "expected $regex to be contained in output:\n${pgrepOutput.stdout}",
             )
         } else {
             // command doesn't exist
@@ -82,7 +82,7 @@ class ShellBehaviorTest {
                 // command doesn't exist
                 assertTrue(
                     output.stdout.isBlank() && output.stderr.isNotBlank(),
-                    "saw output $output"
+                    "saw output $output",
                 )
             }
             Build.VERSION.SDK_INT == 23 -> {

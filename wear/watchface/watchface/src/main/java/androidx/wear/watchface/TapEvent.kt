@@ -81,7 +81,7 @@ public object TapType {
 public class TapEvent(
     @Px public val xPos: Int,
     @Px public val yPos: Int,
-    public val tapTime: Instant
+    public val tapTime: Instant,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

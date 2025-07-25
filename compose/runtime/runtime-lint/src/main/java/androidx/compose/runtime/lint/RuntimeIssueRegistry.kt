@@ -45,13 +45,13 @@ class RuntimeIssueRegistry : IssueRegistry() {
                 RememberDetector.RememberReturnType,
                 RememberInCompositionDetector.RememberInComposition,
                 OpaqueUnitKeyDetector.OpaqueUnitKey,
-                UnrememberedStateDetector.UnrememberedState
+                UnrememberedStateDetector.UnrememberedState,
             )
 
     override val vendor =
         Vendor(
             vendorName = "Jetpack Compose",
             identifier = "androidx.compose.runtime",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

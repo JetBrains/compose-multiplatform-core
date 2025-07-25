@@ -131,7 +131,7 @@ class MindfulnessSessionRecord(
                 "movement" to MINDFULNESS_SESSION_TYPE_MOVEMENT,
                 "music" to MINDFULNESS_SESSION_TYPE_MUSIC,
                 "unguided" to MINDFULNESS_SESSION_TYPE_UNGUIDED,
-                "unknown" to MINDFULNESS_SESSION_TYPE_UNKNOWN
+                "unknown" to MINDFULNESS_SESSION_TYPE_UNKNOWN,
             )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -151,7 +151,7 @@ class MindfulnessSessionRecord(
                 MINDFULNESS_SESSION_TYPE_MOVEMENT,
                 MINDFULNESS_SESSION_TYPE_MUSIC,
                 MINDFULNESS_SESSION_TYPE_UNGUIDED,
-                MINDFULNESS_SESSION_TYPE_UNKNOWN
+                MINDFULNESS_SESSION_TYPE_UNKNOWN,
             ]
     )
     annotation class MindfulnessSessionTypes

@@ -33,17 +33,15 @@ androidXMultiplatform {
     jvm()
     androidLibrary {
         namespace = "androidx.window.core"
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
     }
     mac()
     linux()
     ios()
     watchos()
     tvos()
+    mingwX64()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 

@@ -113,7 +113,7 @@ class BadgeTest {
                 shape = shape,
                 shapeColor = errorColor,
                 backgroundColor = Color.White,
-                antiAliasingGap = with(rule.density) { 1.dp.toPx() }
+                antiAliasingGap = with(rule.density) { 1.dp.toPx() },
             )
     }
 
@@ -128,7 +128,7 @@ class BadgeTest {
         val anchorBounds = rule.onNodeWithTag(TestAnchorTag).getUnclippedBoundsInRoot()
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right - BadgeOffset,
-            expectedTop = anchorBounds.top
+            expectedTop = anchorBounds.top,
         )
     }
 
@@ -148,7 +148,7 @@ class BadgeTest {
             -BadgeWithContentHorizontalOffset + BadgeWithContentHorizontalPadding
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right + totalBadgeHorizontalOffset,
-            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset
+            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset,
         )
     }
 
@@ -167,7 +167,7 @@ class BadgeTest {
             -BadgeWithContentHorizontalOffset + BadgeWithContentHorizontalPadding
         badge.assertPositionInRootIsEqualTo(
             expectedLeft = anchorBounds.right + totalBadgeHorizontalOffset,
-            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset
+            expectedTop = -badgeBounds.height + BadgeWithContentVerticalOffset,
         )
     }
 
@@ -179,11 +179,11 @@ class BadgeTest {
                 modifier =
                     Modifier.testTag(TestBadgeTag).semantics {
                         this.contentDescription = "more than 99 new email"
-                    }
+                    },
             ) {
                 Text(
                     "inbox",
-                    Modifier.semantics { this.contentDescription = "inbox" }.testTag(TestAnchorTag)
+                    Modifier.semantics { this.contentDescription = "inbox" }.testTag(TestAnchorTag),
                 )
             }
         }

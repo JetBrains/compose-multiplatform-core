@@ -117,7 +117,7 @@ public fun FadingExpandingLabel(
             fontFamily = fontFamily,
             textDecoration = textDecoration,
             fontStyle = fontStyle,
-            letterSpacing = letterSpacing
+            letterSpacing = letterSpacing,
         )
 
     val textMeasurer = rememberTextMeasurer()
@@ -130,7 +130,7 @@ public fun FadingExpandingLabel(
                 maxLines = maxLines,
                 // TODO(b/404793120): consider using BoxWithConstraints to get constraints once
                 // b/404793120 is fixed.
-                constraints = maxTextWidth?.let { Constraints(maxWidth = it) } ?: Constraints()
+                constraints = maxTextWidth?.let { Constraints(maxWidth = it) } ?: Constraints(),
             )
         }
     var currentTextMeasureResult by remember { mutableStateOf(textMeasureResult) }
@@ -187,7 +187,7 @@ public fun FadingExpandingLabel(
                                     Color(255, 255, 255, (alpha * 255).toInt().coerceIn(0, 255)),
                                     topLeft = Offset(0f, top),
                                     size = Size(size.width, bottom),
-                                    blendMode = BlendMode.Modulate
+                                    blendMode = BlendMode.Modulate,
                                 )
                             }
                         }

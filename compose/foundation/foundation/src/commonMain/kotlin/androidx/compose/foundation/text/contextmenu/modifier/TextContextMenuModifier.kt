@@ -27,7 +27,6 @@ import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.node.traverseAncestors
 import androidx.compose.ui.platform.InspectorInfo
 
-// TODO(grantapher-cm-api-publicize) add AddComponentsToTextContextMenu sample
 /**
  * Adds a [builder] to be run when the text context menu is shown within this hierarchy.
  *
@@ -37,36 +36,37 @@ import androidx.compose.ui.platform.InspectorInfo
  *
  * @param builder a snapshot-aware builder function for adding components to the context menu. In
  *   this function you can use member functions from the receiver [TextContextMenuBuilderScope],
- *   such as [item][TextContextMenuBuilderScope.item], to add components.
+ *   such as [separator()][TextContextMenuBuilderScope.separator], to add components. The `item`
+ *   function is not in the common source set, but is instead defined as an extension function in
+ *   the platform specific source sets.
+ * @sample androidx.compose.foundation.samples.AppendComponentsToTextContextMenu
  */
-// TODO(grantapher-cm-api-publicize) Make function public
-internal fun Modifier.addTextContextMenuComponents(
-    builder: TextContextMenuBuilderScope.() -> Unit,
+fun Modifier.appendTextContextMenuComponents(
+    builder: TextContextMenuBuilderScope.() -> Unit
 ): Modifier = this then AddTextContextMenuDataComponentsElement(builder)
 
-// TODO(grantapher-cm-api-publicize) add AddFilterToTextContextMenu sample
 /**
  * Adds a [filter] to be run when the text context menu is shown within this hierarchy.
  *
  * [filter] will not be passed [TextContextMenuSeparator], as they pass by default.
  *
  * [filter]s added via this modifier will always run after every `builder` added via
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents]. When there are multiple
- * instances of this modifier in a layout hierarchy, every [filter] must pass in order for a context
- * menu to be shown. They are always applied after all
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] have been applied, but the
- * order in which they run should not be depended on.
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents]. When there are
+ * multiple instances of this modifier in a layout hierarchy, every [filter] must pass in order for
+ * a context menu to be shown. They are always applied after all
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] have been applied,
+ * but the order in which they run should not be depended on.
  *
  * @param filter a snapshot-aware lambda that determines whether a [TextContextMenuComponent] should
  *   be included in the context menu.
+ * @sample androidx.compose.foundation.samples.AddFilterToTextContextMenu
  */
-// TODO(grantapher-cm-api-publicize) Make function public
-internal fun Modifier.filterTextContextMenuComponents(
-    filter: (TextContextMenuComponent) -> Boolean,
+fun Modifier.filterTextContextMenuComponents(
+    filter: (TextContextMenuComponent) -> Boolean
 ): Modifier = this then FilterTextContextMenuDataComponentsElement(filter)
 
 private class AddTextContextMenuDataComponentsElement(
-    private val builder: TextContextMenuBuilderScope.() -> Unit,
+    private val builder: TextContextMenuBuilderScope.() -> Unit
 ) : ModifierNodeElement<AddTextContextMenuDataComponentsNode>() {
     override fun create(): AddTextContextMenuDataComponentsNode =
         AddTextContextMenuDataComponentsNode(builder)
@@ -93,7 +93,7 @@ private class AddTextContextMenuDataComponentsElement(
 }
 
 private class FilterTextContextMenuDataComponentsElement(
-    private val filter: (TextContextMenuComponent) -> Boolean,
+    private val filter: (TextContextMenuComponent) -> Boolean
 ) : ModifierNodeElement<FilterTextContextMenuDataComponentsNode>() {
     override fun create(): FilterTextContextMenuDataComponentsNode =
         FilterTextContextMenuDataComponentsNode(filter)
@@ -122,14 +122,14 @@ private class FilterTextContextMenuDataComponentsElement(
 private data object TextContextMenuDataTraverseKey
 
 internal class AddTextContextMenuDataComponentsNode(
-    var builder: TextContextMenuBuilderScope.() -> Unit,
+    var builder: TextContextMenuBuilderScope.() -> Unit
 ) : Modifier.Node(), TraversableNode {
     override val traverseKey: Any
         get() = TextContextMenuDataTraverseKey
 }
 
 private class FilterTextContextMenuDataComponentsNode(
-    var filter: (TextContextMenuComponent) -> Boolean,
+    var filter: (TextContextMenuComponent) -> Boolean
 ) : Modifier.Node(), TraversableNode {
     override val traverseKey: Any
         get() = TextContextMenuDataTraverseKey
@@ -142,7 +142,7 @@ private const val wrongNodeTypeErrorMessage =
 
 /**
  * Traverses ancestors to find all
- * [Modifier.addTextContextMenuComponents][addTextContextMenuComponents] and
+ * [Modifier.appendTextContextMenuComponents][appendTextContextMenuComponents] and
  * [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents] modifiers and runs
  * [builderBlock] and [filterBlock] for each respectively. Each block allows the caller to make use
  * of the `filter` and `builder` parameters of each of the related modifiers.
@@ -166,7 +166,7 @@ internal fun DelegatableNode.collectTextContextMenuData(): TextContextMenuData =
         .apply {
             traverseTextContextMenuDataNodes(
                 filterBlock = ::addFilter,
-                builderBlock = { builder -> this.builder() }
+                builderBlock = { builder -> this.builder() },
             )
         }
         .build()

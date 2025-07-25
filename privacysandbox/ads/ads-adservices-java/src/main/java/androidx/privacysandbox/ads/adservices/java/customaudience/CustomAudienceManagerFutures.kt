@@ -40,7 +40,7 @@ import kotlinx.coroutines.async
  * This class provides APIs for app and ad-SDKs to join / leave custom audiences. This class can be
  * used by Java clients.
  */
-abstract class CustomAudienceManagerFutures internal constructor() {
+public abstract class CustomAudienceManagerFutures internal constructor() {
 
     /**
      * Adds the user to the given [CustomAudience].
@@ -72,7 +72,9 @@ abstract class CustomAudienceManagerFutures internal constructor() {
      * @param request The request to join custom audience.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract fun joinCustomAudienceAsync(request: JoinCustomAudienceRequest): ListenableFuture<Unit>
+    public abstract fun joinCustomAudienceAsync(
+        request: JoinCustomAudienceRequest
+    ): ListenableFuture<Unit>
 
     /**
      * Adds the user to the [CustomAudience] fetched from a {@code fetchUri}.
@@ -108,7 +110,7 @@ abstract class CustomAudienceManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext10OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract fun fetchAndJoinCustomAudienceAsync(
+    public abstract fun fetchAndJoinCustomAudienceAsync(
         request: FetchAndJoinCustomAudienceRequest
     ): ListenableFuture<Unit>
 
@@ -287,7 +289,7 @@ abstract class CustomAudienceManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext14OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract fun scheduleCustomAudienceUpdateAsync(
+    public abstract fun scheduleCustomAudienceUpdateAsync(
         request: ScheduleCustomAudienceUpdateRequest
     ): ListenableFuture<Unit>
 
@@ -311,7 +313,7 @@ abstract class CustomAudienceManagerFutures internal constructor() {
      * @param request The request to leave custom audience.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    abstract fun leaveCustomAudienceAsync(
+    public abstract fun leaveCustomAudienceAsync(
         request: LeaveCustomAudienceRequest
     ): ListenableFuture<Unit>
 
@@ -360,7 +362,7 @@ abstract class CustomAudienceManagerFutures internal constructor() {
         }
     }
 
-    companion object {
+    public companion object {
         /**
          * Creates [CustomAudienceManagerFutures].
          *
@@ -368,7 +370,7 @@ abstract class CustomAudienceManagerFutures internal constructor() {
          *   build, the value returned is null.
          */
         @JvmStatic
-        fun from(context: Context): CustomAudienceManagerFutures? {
+        public fun from(context: Context): CustomAudienceManagerFutures? {
             return obtain(context)?.let { Api33Ext4JavaImpl(it) }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.lt() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Sutraukti apatinį lapą",
     Strings.BottomSheetDismissDescription to "Atsisakyti apatinio lapo",
     Strings.BottomSheetExpandDescription to "Išskleisti apatinį lapą",
+    Strings.FloatingToolbarCollapse to "Sutraukti įrankių juostą",
+    Strings.FloatingToolbarExpand to "Išskleisti įrankių juostą",
     Strings.TooltipPaneDescription to "Patarimas",
     Strings.TooltipLongPressLabel to "Rodyti patarimą",
     Strings.TimePickerPM to "popiet",
@@ -86,6 +88,10 @@ internal fun Translations.lt() = mapOf(
     Strings.TimePickerHour to "Valanda",
     Strings.TimePickerMinuteTextField to "minutės",
     Strings.TimePickerHourTextField to "valandos",
+    Strings.TimePickerToggleKeyboard to "Laiko įvestį pateikti perjungus į teksto įvesties režimą",
+    Strings.TimePickerToggleTouch to "Laiko įvestį pateikti perjungus į laikrodžio režimą",
+    Strings.TimePickerDialogTitle to "Pasirinkite laiką",
+    Strings.TimeInputDialogTitle to "Įveskite laiką",
     Strings.CloseRail to "Uždaryti juostą",
     Strings.WideNavigationRailPaneTitle to "Naršymo juosta",
 )

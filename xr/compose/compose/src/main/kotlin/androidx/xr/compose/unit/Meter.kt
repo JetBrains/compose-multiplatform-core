@@ -190,11 +190,12 @@ public value class Meter(public val value: Float) : Comparable<Meter> {
 
         /**
          * DPs per meter. The system's API is in pixels, but we can get the value we want be
-         * specifying 1 dp == 1 pixel.
+         * specifying 1 dp == 1 pixel. This is a property with a getter, so it is re-evaluated on
+         * each call, allowing unit test environments to override the value.
          */
         @PublishedApi
-        internal val DP_PER_METER: Float =
-            getXrExtensions()?.config?.defaultPixelsPerMeter(1.0f) ?: DP_PER_METER_FALLBACK
+        internal val DP_PER_METER: Float
+            get() = getXrExtensions()?.config?.defaultPixelsPerMeter(1.0f) ?: DP_PER_METER_FALLBACK
 
         /** Represents an infinite distance in meters. */
         public val Infinity: Meter = Meter(Float.POSITIVE_INFINITY)

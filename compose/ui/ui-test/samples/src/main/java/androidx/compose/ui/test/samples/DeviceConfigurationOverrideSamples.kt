@@ -125,13 +125,13 @@ fun DeviceConfigurationOverrideWindowInsetsSample() {
                     WindowInsetsCompat.Type.captionBar(),
                     with(LocalDensity.current) { DpRect(0.dp, 64.dp, 0.dp, 0.dp).toRect() }
                         .roundToIntRect()
-                        .toAndroidXInsets()
+                        .toAndroidXInsets(),
                 )
                 .setInsets(
                     WindowInsetsCompat.Type.navigationBars(),
                     with(LocalDensity.current) { DpRect(24.dp, 0.dp, 48.dp, 24.dp).toRect() }
                         .roundToIntRect()
-                        .toAndroidXInsets()
+                        .toAndroidXInsets(),
                 )
                 .build()
         )

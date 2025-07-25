@@ -34,7 +34,7 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class UnnecessaryLambdaCreationDetectorTest(
     @Suppress("unused") private val parameterizedDebugString: String,
-    private val stub: TestFile
+    private val stub: TestFile,
 ) : LintDetectorTest() {
     companion object {
         private val stub =
@@ -90,7 +90,7 @@ class UnnecessaryLambdaCreationDetectorTest(
             jXZbKjHXVcyiJzxIb1mLnYrXFs7gbCxr/6WsncU40RL/JDtMsiOHZM93lT13
             SNbAndgWcZfGBfJeoCZcXEfCxSUXeRcTuOxiEgUXU5heB4twBVfX0RfBjHAt
             QjrC9QipCGMRxiM4EXp/AGJveMs/BgAA
-            """
+            """,
             )
 
         @JvmStatic

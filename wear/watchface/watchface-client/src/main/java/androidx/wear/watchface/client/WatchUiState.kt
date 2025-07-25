@@ -29,7 +29,7 @@ import androidx.annotation.RestrictTo
             NotificationManager.INTERRUPTION_FILTER_ALL,
             NotificationManager.INTERRUPTION_FILTER_NONE,
             NotificationManager.INTERRUPTION_FILTER_PRIORITY,
-            NotificationManager.INTERRUPTION_FILTER_UNKNOWN
+            NotificationManager.INTERRUPTION_FILTER_UNKNOWN,
         ]
 )
 public annotation class InterruptionFilter
@@ -52,7 +52,7 @@ public annotation class InterruptionFilter
 )
 public class WatchUiState(
     @get:JvmName("inAmbientMode") public val inAmbientMode: Boolean,
-    @InterruptionFilter public val interruptionFilter: Int
+    @InterruptionFilter public val interruptionFilter: Int,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -19,6 +19,9 @@ package androidx.compose.ui.scene
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.ui.ComposeFeatureFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.LayerType
@@ -29,15 +32,15 @@ import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.backhandler.DesktopBackGestureDispatcher
 import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
-import androidx.compose.ui.scene.skia.SwingSkiaLayerComponent
-import androidx.compose.ui.scene.skia.WindowSkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.window.Dialog
@@ -52,6 +55,12 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.enableSavedStateHandles
+import androidx.savedstate.SavedState
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 import java.awt.Component
 import java.awt.Window
 import java.awt.event.ComponentAdapter
@@ -76,13 +85,13 @@ import org.jetbrains.skiko.SkiaLayerAnalytics
  * It binds Skia canvas and [ComposeScene] to [container].
  *
  * @property container A container for the [ComposeScene].
- * @property skiaLayerAnalytics The analytics for the Skia layer.
- * @property window The window ancestor of the [container].
- * @property windowContainer A container used for additional layers and as reference
+ * @param skiaLayerAnalytics The analytics for the Skia layer.
+ * @param window The window ancestor of the [container].
+ * @param windowContainer A container used for additional layers and as a reference
  *  for window coordinate space.
- * @property useSwingGraphics Flag indicating if offscreen rendering to Swing graphics is used.
- * @property layerType The type of layer used for Popup/Dialog.
- * @property renderSettings The settings for rendering.
+ * @param savedState The saved state to restore the UI state from a previous instance.
+ * @param layerType The type of layer used for Popup/Dialog.
+ * @param renderSettings The settings for rendering.
  */
 internal class ComposeContainer(
     val container: JLayeredPane,
@@ -91,10 +100,15 @@ internal class ComposeContainer(
     window: Window? = null,
     windowContainer: JLayeredPane = container,
 
-    private val useSwingGraphics: Boolean = ComposeFeatureFlags.useSwingGraphics,
+    savedState: SavedState? = null,
+
     private val layerType: LayerType = ComposeFeatureFlags.layerType,
-    private val renderSettings: RenderSettings,
-) : WindowFocusListener, WindowListener, LifecycleOwner, ViewModelStoreOwner {
+    private val renderSettings: RenderSettings = RenderSettings.SkiaSurface(),
+) : WindowFocusListener,
+    WindowListener,
+    LifecycleOwner,
+    SavedStateRegistryOwner,
+    ViewModelStoreOwner {
     val windowContext = PlatformWindowContext()
     var window: Window? = null
         private set
@@ -154,13 +168,14 @@ internal class ComposeContainer(
     }
 
     /**
-     * The listener to [window] size changes.
+     * The listener to [window] size and position changes.
      */
-    private val windowSizeListener = object : ComponentAdapter() {
+    private val windowBoundsListener = object : ComponentAdapter() {
         // When the window is moved to a display with a different density, componentResized is
         // called on the window, but not on `windowContainer`, so we need to update the size
         // here too.
         override fun componentResized(e: ComponentEvent?) = onWindowContainerSizeChanged()
+        override fun componentMoved(e: ComponentEvent?) = onWindowPositionChanged()
     }
 
     val contentComponent by mediator::contentComponent
@@ -177,6 +192,10 @@ internal class ComposeContainer(
     val preferredSize by mediator::preferredSize
 
     override val lifecycle = LifecycleRegistry(this)
+
+    private val savedStateController = SavedStateRegistryController.create(this)
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateController.savedStateRegistry
     override val viewModelStore = ViewModelStore()
 
     private val backGestureDispatcher = DesktopBackGestureDispatcher()
@@ -187,12 +206,28 @@ internal class ComposeContainer(
     private var isFocused = false
 
     init {
+        savedStateController.performAttach()
+        savedStateController.performRestore(savedState)
+        enableSavedStateHandles()
+
         setWindow(window)
         this.windowContainer = windowContainer
 
-        if (layerType == LayerType.OnComponent && !useSwingGraphics) {
+        if (layerType == LayerType.OnComponent && renderSettings !is RenderSettings.SwingGraphics) {
             error("LayerType.OnComponent can only be used with rendering via Swing graphics")
         }
+    }
+
+    /**
+     * Saves the current UI state into a [SavedState] object. The returned state can be used
+     * to restore the UI state later by passing it to the constructor's [savedState] parameter.
+     *
+     * @return A [SavedState] object containing the current UI state.
+     */
+    fun saveState(): SavedState {
+        val state = androidx.savedstate.savedState()
+        savedStateController.performSave(state)
+        return state
     }
 
     fun dispose() {
@@ -208,24 +243,29 @@ internal class ComposeContainer(
     override fun windowGainedFocus(event: WindowEvent) = onWindowFocusChanged()
     override fun windowLostFocus(event: WindowEvent) = onWindowFocusChanged()
 
-    override fun windowOpened(e: WindowEvent) = Unit
+    override fun windowOpened(e: WindowEvent) {
+        onWindowPositionChanged()
+    }
     override fun windowClosing(e: WindowEvent) = Unit
     override fun windowClosed(e: WindowEvent) = Unit
     override fun windowIconified(e: WindowEvent) {
         isMinimized = true
         updateLifecycleState()
+        onWindowPositionChanged()
     }
     override fun windowDeiconified(e: WindowEvent) {
         isMinimized = false
         updateLifecycleState()
+        onWindowPositionChanged()
     }
     override fun windowActivated(e: WindowEvent) = Unit
     override fun windowDeactivated(e: WindowEvent) = Unit
 
     private fun onWindowFocusChanged() {
-        isFocused = window?.isFocused ?: false
-        windowContext.setWindowFocused(isFocused)
-        mediator.onChangeWindowFocus()
+        val isNowFocused = window?.isFocused ?: false
+        isFocused = isNowFocused
+        windowContext.setWindowFocused(isNowFocused)
+        mediator.onWindowFocusChanged()
         layers.fastForEach(DesktopComposeSceneLayer::onWindowFocusChanged)
         updateLifecycleState()
     }
@@ -248,6 +288,12 @@ internal class ComposeContainer(
         // so we need to force re-validate it.
         container.validate()
         container.repaint()
+    }
+
+    private fun onWindowPositionChanged() {
+        if (!isDisposed) {
+            mediator.onWindowPositionChanged()
+        }
     }
 
     /**
@@ -289,7 +335,6 @@ internal class ComposeContainer(
     fun removeNotify() {
         isDetached = true
         updateLifecycleState()
-
         setWindow(null)
     }
 
@@ -310,12 +355,12 @@ internal class ComposeContainer(
         this.window?.let {
             it.removeWindowFocusListener(this)
             it.removeWindowListener(this)
-            it.removeComponentListener(windowSizeListener)
+            it.removeComponentListener(windowBoundsListener)
         }
         window?.let {
             it.addWindowFocusListener(this)
             it.addWindowListener(this)
-            it.addComponentListener(windowSizeListener)
+            it.addComponentListener(windowBoundsListener)
         }
         this.window = window
 
@@ -348,17 +393,13 @@ internal class ComposeContainer(
             LayerType.OnWindow -> OverlayRenderDecorator(mediator, ::onRenderOverlay)
             else -> mediator
         }
-        return if (useSwingGraphics) {
-            SwingSkiaLayerComponent(mediator, renderDelegate, skiaLayerAnalytics)
-        } else {
-            WindowSkiaLayerComponent(
-                mediator,
-                windowContext,
-                renderDelegate,
-                skiaLayerAnalytics,
-                renderSettings
-            )
-        }
+        return SkiaLayerComponent(
+            mediator = mediator,
+            windowContext = windowContext,
+            renderDelegate = renderDelegate,
+            skiaLayerAnalytics = skiaLayerAnalytics,
+            renderSettings = renderSettings
+        )
     }
 
     private fun createComposeScene(mediator: ComposeSceneMediator): ComposeScene {
@@ -516,7 +557,7 @@ internal class ComposeContainer(
     }
 
     private inner class FocusableLayerEventFilter : AwtEventFilter() {
-        private val noFocusableLayers get() = layers.all { !it.focusable }
+        private val noFocusableLayers get() = layers.fastAll { !it.focusable }
 
         override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
         override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers
@@ -529,9 +570,18 @@ private fun ProvideContainerCompositionLocals(
     composeContainer: ComposeContainer,
     backGestureDispatcher: DesktopBackGestureDispatcher,
     content: @Composable () -> Unit,
-) = CompositionLocalProvider(
-    LocalLifecycleOwner provides composeContainer,
-    LocalInternalViewModelStoreOwner provides composeContainer,
-    LocalBackGestureDispatcher provides backGestureDispatcher,
-    content = content
-)
+) {
+    val saveableStateRegistry = remember {
+        DisposableSaveableStateRegistry("ComposeContainer", composeContainer)
+    }
+    DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
+
+    CompositionLocalProvider(
+        LocalLifecycleOwner provides composeContainer,
+        LocalSavedStateRegistryOwner provides composeContainer,
+        LocalSaveableStateRegistry provides saveableStateRegistry,
+        LocalInternalViewModelStoreOwner provides composeContainer,
+        LocalBackGestureDispatcher provides backGestureDispatcher,
+        content = content,
+    )
+}

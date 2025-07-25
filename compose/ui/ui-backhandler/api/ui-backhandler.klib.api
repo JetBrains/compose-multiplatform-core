@@ -6,57 +6,10 @@
 // - Show declarations: true
 
 // Library unique name: <org.jetbrains.compose.ui:ui-backhandler>
-abstract interface androidx.compose.ui.backhandler/BackGestureListener { // androidx.compose.ui.backhandler/BackGestureListener|null[0]
-    abstract var active // androidx.compose.ui.backhandler/BackGestureListener.active|{}active[0]
-        abstract fun <get-active>(): kotlin/Boolean // androidx.compose.ui.backhandler/BackGestureListener.active.<get-active>|<get-active>(){}[0]
-        abstract fun <set-active>(kotlin/Boolean) // androidx.compose.ui.backhandler/BackGestureListener.active.<set-active>|<set-active>(kotlin.Boolean){}[0]
-    abstract var enabled // androidx.compose.ui.backhandler/BackGestureListener.enabled|{}enabled[0]
-        abstract fun <get-enabled>(): kotlin/Boolean // androidx.compose.ui.backhandler/BackGestureListener.enabled.<get-enabled>|<get-enabled>(){}[0]
-        abstract fun <set-enabled>(kotlin/Boolean) // androidx.compose.ui.backhandler/BackGestureListener.enabled.<set-enabled>|<set-enabled>(kotlin.Boolean){}[0]
-
-    abstract fun onCancelled() // androidx.compose.ui.backhandler/BackGestureListener.onCancelled|onCancelled(){}[0]
-    abstract fun onCompleted() // androidx.compose.ui.backhandler/BackGestureListener.onCompleted|onCompleted(){}[0]
-    abstract fun onProgressed(androidx.compose.ui.backhandler/BackEventCompat) // androidx.compose.ui.backhandler/BackGestureListener.onProgressed|onProgressed(androidx.compose.ui.backhandler.BackEventCompat){}[0]
-    abstract fun onStarted() // androidx.compose.ui.backhandler/BackGestureListener.onStarted|onStarted(){}[0]
-}
-
-final class androidx.compose.ui.backhandler/BackEventCompat { // androidx.compose.ui.backhandler/BackEventCompat|null[0]
-    constructor <init>(kotlin/Float, kotlin/Float, kotlin/Float, kotlin/Int) // androidx.compose.ui.backhandler/BackEventCompat.<init>|<init>(kotlin.Float;kotlin.Float;kotlin.Float;kotlin.Int){}[0]
-
-    final val progress // androidx.compose.ui.backhandler/BackEventCompat.progress|{}progress[0]
-        final fun <get-progress>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.progress.<get-progress>|<get-progress>(){}[0]
-    final val swipeEdge // androidx.compose.ui.backhandler/BackEventCompat.swipeEdge|{}swipeEdge[0]
-        final fun <get-swipeEdge>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.swipeEdge.<get-swipeEdge>|<get-swipeEdge>(){}[0]
-    final val touchX // androidx.compose.ui.backhandler/BackEventCompat.touchX|{}touchX[0]
-        final fun <get-touchX>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.touchX.<get-touchX>|<get-touchX>(){}[0]
-    final val touchY // androidx.compose.ui.backhandler/BackEventCompat.touchY|{}touchY[0]
-        final fun <get-touchY>(): kotlin/Float // androidx.compose.ui.backhandler/BackEventCompat.touchY.<get-touchY>|<get-touchY>(){}[0]
-
-    final object Companion { // androidx.compose.ui.backhandler/BackEventCompat.Companion|null[0]
-        final const val EDGE_LEFT // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_LEFT|{}EDGE_LEFT[0]
-            final fun <get-EDGE_LEFT>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_LEFT.<get-EDGE_LEFT>|<get-EDGE_LEFT>(){}[0]
-        final const val EDGE_RIGHT // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_RIGHT|{}EDGE_RIGHT[0]
-            final fun <get-EDGE_RIGHT>(): kotlin/Int // androidx.compose.ui.backhandler/BackEventCompat.Companion.EDGE_RIGHT.<get-EDGE_RIGHT>|<get-EDGE_RIGHT>(){}[0]
-    }
-}
-
-open class androidx.compose.ui.backhandler/BackGestureDispatcher { // androidx.compose.ui.backhandler/BackGestureDispatcher|null[0]
-    constructor <init>() // androidx.compose.ui.backhandler/BackGestureDispatcher.<init>|<init>(){}[0]
-
-    final val activeListener // androidx.compose.ui.backhandler/BackGestureDispatcher.activeListener|{}activeListener[0]
-        final fun <get-activeListener>(): androidx.compose.ui.backhandler/BackGestureListener? // androidx.compose.ui.backhandler/BackGestureDispatcher.activeListener.<get-activeListener>|<get-activeListener>(){}[0]
-
-    open fun activeListenerChanged() // androidx.compose.ui.backhandler/BackGestureDispatcher.activeListenerChanged|activeListenerChanged(){}[0]
-}
-
-final val androidx.compose.ui.backhandler/LocalBackGestureDispatcher // androidx.compose.ui.backhandler/LocalBackGestureDispatcher|{}LocalBackGestureDispatcher[0]
-    final fun <get-LocalBackGestureDispatcher>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.compose.ui.backhandler/BackGestureDispatcher?> // androidx.compose.ui.backhandler/LocalBackGestureDispatcher.<get-LocalBackGestureDispatcher>|<get-LocalBackGestureDispatcher>(){}[0]
 final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop|#static{}androidx_compose_ui_backhandler_BackEventCompat$stableprop[0]
 final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop|#static{}androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop[0]
 final val androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop|#static{}androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop[0]
 
-final fun androidx.compose.ui.backhandler/BackHandler(kotlin/Boolean, kotlin/Function0<kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.backhandler/BackHandler|BackHandler(kotlin.Boolean;kotlin.Function0<kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
-final fun androidx.compose.ui.backhandler/PredictiveBackHandler(kotlin/Boolean, kotlin.coroutines/SuspendFunction1<kotlinx.coroutines.flow/Flow<androidx.compose.ui.backhandler/BackEventCompat>, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.ui.backhandler/PredictiveBackHandler|PredictiveBackHandler(kotlin.Boolean;kotlin.coroutines.SuspendFunction1<kotlinx.coroutines.flow.Flow<androidx.compose.ui.backhandler.BackEventCompat>,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]
 final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter|androidx_compose_ui_backhandler_BackEventCompat$stableprop_getter(){}[0]
 final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop_getter|androidx_compose_ui_backhandler_BackGestureDispatcher$stableprop_getter(){}[0]
 final fun androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop_getter(): kotlin/Int // androidx.compose.ui.backhandler/androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop_getter|androidx_compose_ui_backhandler_BackGestureListenerImpl$stableprop_getter(){}[0]

@@ -69,7 +69,7 @@ internal class SearchInteractionTest {
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED
+                initialState = Lifecycle.State.INITIALIZED,
             )
 
         scenario.onFragment { fragment ->
@@ -237,7 +237,7 @@ internal class SearchInteractionTest {
                     },
                     Press.THUMB,
                     InputDevice.SOURCE_UNKNOWN,
-                    MotionEvent.BUTTON_PRIMARY
+                    MotionEvent.BUTTON_PRIMARY,
                 )
             )
     }

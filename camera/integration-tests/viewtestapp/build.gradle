@@ -51,6 +51,8 @@ android {
 
 dependencies {
     api(libs.jspecify)
+    api(libs.constraintLayout)
+
     // Internal library
     implementation(project(":camera:camera-camera2"))
     implementation(project(":camera:camera-camera2-pipe-integration"))
@@ -70,7 +72,6 @@ dependencies {
     // Outside of androidx this is resolved via constraint added to lifecycle-common,
     // but it doesn't work in androidx.
     implementation("androidx.lifecycle:lifecycle-common-java8:2.5.1")
-    api(libs.constraintLayout)
 
     // Lifecycle and LiveData
     implementation("androidx.lifecycle:lifecycle-livedata:2.2.0")
@@ -90,7 +91,6 @@ dependencies {
     androidTestImplementation("androidx.annotation:annotation-experimental:1.4.1")
 
     // Testing framework
-    androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
@@ -99,7 +99,6 @@ dependencies {
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.3.1")
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime:2.3.1")
     androidTestImplementation("androidx.lifecycle:lifecycle-livedata-ktx:2.2.0")
-    androidTestImplementation(project(":concurrent:concurrent-futures"))
     androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
     androidTestImplementation(libs.truth)
     debugImplementation(libs.testCore)
@@ -109,6 +108,26 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
+
+    // Transitive dependencies
+    implementation 'androidx.arch.core:core-common:2.2.0'
+    implementation 'androidx.compose.foundation:foundation-layout:1.4.0'
+    implementation 'androidx.compose.ui:ui-graphics:1.4.0'
+    implementation 'androidx.compose.ui:ui-text:1.4.0'
+    implementation 'androidx.compose.ui:ui-unit:1.4.0'
+    implementation 'androidx.fragment:fragment:1.3.4'
+    implementation 'androidx.lifecycle:lifecycle-common:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-core:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.6.1'
+    implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.0.0'
+    implementation 'com.google.mlkit:barcode-scanning-common:17.0.0'
+    implementation 'com.google.mlkit:vision-interfaces:16.0.0'
+    implementation libs.androidx.annotation
+    implementation libs.androidx.core
+    implementation project(':camera:camera-core')
+    androidTestImplementation libs.hamcrestCore
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.testMonitor
 }
 
 // Publish the APK to dist/apk for testing.

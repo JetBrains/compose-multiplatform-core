@@ -104,7 +104,7 @@ public fun Stepper(
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float> = 0f..(steps + 1).toFloat(),
     colors: StepperColors = StepperDefaults.colors(),
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     StepperImpl(
         value = value,
@@ -116,7 +116,7 @@ public fun Stepper(
         modifier = modifier,
         colors = colors,
         enabled = enabled,
-        content = provideScopeContent(colors.contentColor(enabled = enabled), content)
+        content = provideScopeContent(colors.contentColor(enabled = enabled), content),
     )
 }
 
@@ -169,7 +169,7 @@ public fun Stepper(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: StepperColors = StepperDefaults.colors(),
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Stepper(
         value = value.toFloat(),
@@ -181,7 +181,7 @@ public fun Stepper(
         increaseIcon = increaseIcon,
         colors = colors,
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -339,7 +339,7 @@ private fun StepperImpl(
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float>,
     colors: StepperColors,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     require(steps >= 0) { "Number of steps should be non-negative." }
     val currentStep =
@@ -363,7 +363,7 @@ private fun StepperImpl(
 
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(VerticalSpacing)
+        verticalArrangement = Arrangement.spacedBy(VerticalSpacing),
     ) {
         val increaseButtonEnabled = enabled && (currentStep < steps + 1)
         val decreaseButtonEnabled = enabled && (currentStep > 0)
@@ -380,7 +380,7 @@ private fun StepperImpl(
         Box(
             modifier = Modifier.fillMaxWidth().weight(ContentWeight),
             contentAlignment = Alignment.Center,
-            content = content
+            content = content,
         )
 
         StepperButton(
@@ -403,7 +403,7 @@ private fun ColumnScope.StepperButton(
     colors: StepperColors,
     shape: Shape = StepperButtonShape,
     pressedShape: Shape = StepperButtonPressedShape,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val iconProviderValues = arrayOf(LocalContentColor provides colors.buttonIconColor(enabled))
@@ -414,14 +414,12 @@ private fun ColumnScope.StepperButton(
             pressedShape = pressedShape,
             onPressAnimationSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>().faster(200f),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-            interactionSource = interactionSource
+            interactionSource = interactionSource,
         )
 
     Box(
         modifier =
-            Modifier.align(Alignment.CenterHorizontally)
-                .weight(ButtonWeight)
-                .padding(paddingValues),
+            Modifier.align(Alignment.CenterHorizontally).weight(ButtonWeight).padding(paddingValues)
     ) {
         Box(
             modifier =
@@ -432,12 +430,12 @@ private fun ColumnScope.StepperButton(
                         enabled = enabled,
                         onClick = onClick,
                         interactionSource = finalInteractionSource,
-                        indication = null
+                        indication = null,
                     )
                     .size(width = ButtonWidth, height = ButtonHeight)
                     .background(color = colors.buttonContainerColor(enabled), shape = finalShape)
                     .indication(interactionSource, ripple()),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             CompositionLocalProvider(values = iconProviderValues, content = content)
         }

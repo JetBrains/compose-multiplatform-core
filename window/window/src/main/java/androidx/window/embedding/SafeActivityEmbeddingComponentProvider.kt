@@ -66,7 +66,7 @@ import java.util.concurrent.Executor
 internal class SafeActivityEmbeddingComponentProvider(
     private val loader: ClassLoader,
     private val consumerAdapter: ConsumerAdapter,
-    private val windowExtensions: WindowExtensions
+    private val windowExtensions: WindowExtensions,
 ) {
     private val safeWindowExtensionsProvider = SafeWindowExtensionsProvider(loader)
 
@@ -334,7 +334,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val isActivityEmbeddedMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "isActivityEmbedded",
-                    Activity::class.java
+                    Activity::class.java,
                 )
             isActivityEmbeddedMethod.isPublic &&
                 isActivityEmbeddedMethod.doesReturn(Boolean::class.java)
@@ -455,7 +455,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setFinishPrimaryWithSecondaryMethod =
                 splitPlaceholderRuleBuilderClass.getMethod(
                     "setFinishPrimaryWithSecondary",
-                    Int::class.java
+                    Int::class.java,
                 )
             setSplitRatioMethod.isPublic &&
                 setSplitRatioMethod.doesReturn(SplitPlaceholderRule.Builder::class.java) &&
@@ -475,7 +475,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setSplitInfoCallbackMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "setSplitInfoCallback",
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             setSplitInfoCallbackMethod.isPublic
         }
@@ -498,7 +498,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setSplitAttributesCalculatorMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "setSplitAttributesCalculator",
-                    Function::class.java
+                    Function::class.java,
                 )
             val clearSplitAttributesCalculatorMethod =
                 activityEmbeddingComponentClass.getMethod("clearSplitAttributesCalculator")
@@ -539,7 +539,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val activityRuleBuilderConstructor =
                 activityRuleBuilderClass.getDeclaredConstructor(
                     Predicate::class.java,
-                    Predicate::class.java
+                    Predicate::class.java,
                 )
             val setTagMethod = activityRuleBuilderClass.getMethod("setTag", String::class.java)
             activityRuleBuilderConstructor.isPublic &&
@@ -634,7 +634,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 splitPairRuleBuilderClass.getDeclaredConstructor(
                     Predicate::class.java,
                     Predicate::class.java,
-                    Predicate::class.java
+                    Predicate::class.java,
                 )
             val setDefaultSplitAttributesMethod =
                 splitPairRuleBuilderClass.getMethod(
@@ -657,7 +657,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                     Intent::class.java,
                     Predicate::class.java,
                     Predicate::class.java,
-                    Predicate::class.java
+                    Predicate::class.java,
                 )
             val setDefaultSplitAttributesMethod =
                 splitPlaceholderRuleBuilderClass.getMethod(
@@ -667,7 +667,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setFinishPrimaryWithPlaceholderMethod =
                 splitPlaceholderRuleBuilderClass.getMethod(
                     "setFinishPrimaryWithPlaceholder",
-                    Int::class.java
+                    Int::class.java,
                 )
             val setTagMethod =
                 splitPlaceholderRuleBuilderClass.getMethod("setTag", String::class.java)
@@ -698,7 +698,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 activityEmbeddingComponentClass.getMethod(
                     "updateSplitAttributes",
                     IBinder::class.java,
-                    SplitAttributes::class.java
+                    SplitAttributes::class.java,
                 )
             updateSplitAttributesMethod.isPublic
         }
@@ -726,7 +726,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 activityEmbeddingComponentClass.getMethod(
                     "registerActivityStackCallback",
                     Executor::class.java,
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             registerActivityStackCallbackMethod.isPublic
         }
@@ -736,7 +736,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val unregisterActivityStackCallbackMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "unregisterActivityStackCallback",
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             unregisterActivityStackCallbackMethod.isPublic
         }
@@ -749,7 +749,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 activityEmbeddingComponentClass.getMethod(
                     "pinTopActivityStack",
                     Int::class.java,
-                    SplitPinRule::class.java
+                    SplitPinRule::class.java,
                 )
             val unpinTopActivityStackMethod =
                 activityEmbeddingComponentClass.getMethod("unpinTopActivityStack", Int::class.java)
@@ -796,7 +796,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setAnimationBackgroundMethod =
                 splitAttributesBuilderClass.getMethod(
                     "setAnimationBackground",
-                    AnimationBackground::class.java
+                    AnimationBackground::class.java,
                 )
 
             createColorBackgroundMethod.isPublic &&
@@ -842,7 +842,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setWindowAttributesMethod =
                 splitAttributesBuilderClass.getMethod(
                     "setWindowAttributes",
-                    WindowAttributes::class.java
+                    WindowAttributes::class.java,
                 )
 
             getDimAreaBehaviorMethod.isPublic &&
@@ -868,7 +868,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setAutoSaveEmbeddingStateMethod =
                 EmbeddingConfigurationBuilderClass.getMethod(
                     "setDimAreaBehavior",
-                    DimAreaBehavior::class.java
+                    DimAreaBehavior::class.java,
                 )
             setAutoSaveEmbeddingStateMethod.isPublic &&
                 setAutoSaveEmbeddingStateMethod.doesReturn(
@@ -884,7 +884,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val getEmbeddedActivityWindowInfoMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "getEmbeddedActivityWindowInfo",
-                    Activity::class.java
+                    Activity::class.java,
                 )
             getEmbeddedActivityWindowInfoMethod.isPublic &&
                 getEmbeddedActivityWindowInfoMethod.doesReturn(
@@ -900,7 +900,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 activityEmbeddingComponentClass.getMethod(
                     "setEmbeddedActivityWindowInfoCallback",
                     Executor::class.java,
-                    Consumer::class.java
+                    Consumer::class.java,
                 )
             setEmbeddedActivityWindowInfoCallbackMethod.isPublic
         }
@@ -928,7 +928,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setDividerAttributesMethod =
                 splitAttributesBuilderClass.getMethod(
                     "setDividerAttributes",
-                    DividerAttributes::class.java
+                    DividerAttributes::class.java,
                 )
             setDividerAttributesMethod.isPublic &&
                 setDividerAttributesMethod.doesReturn(SplitAttributes.Builder::class.java)
@@ -1014,7 +1014,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setAnimationParamsMethod =
                 splitAttributesBuilderClass.getMethod(
                     "setAnimationParams",
-                    AnimationParams::class.java
+                    AnimationParams::class.java,
                 )
             setAnimationParamsMethod.isPublic &&
                 setAnimationParamsMethod.doesReturn(SplitAttributes.Builder::class.java)
@@ -1036,7 +1036,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setDividerColorMethod =
                 dividerAttributesBuilderClass.getMethod(
                     "setDraggingToFullscreenAllowed",
-                    Boolean::class.java
+                    Boolean::class.java,
                 )
             setDividerColorMethod.isPublic &&
                 setDividerColorMethod.doesReturn(DividerAttributes.Builder::class.java)
@@ -1072,7 +1072,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setAnimationBackgroundMethod =
                 animationParamsBuilderClass.getMethod(
                     "setAnimationBackground",
-                    AnimationBackground::class.java
+                    AnimationBackground::class.java,
                 )
             val setOpenAnimationResIdMethod =
                 animationParamsBuilderClass.getMethod("setOpenAnimationResId", Int::class.java)
@@ -1097,7 +1097,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setAutoSaveEmbeddingStateMethod =
                 EmbeddingConfigurationBuilderClass.getMethod(
                     "setAutoSaveEmbeddingState",
-                    Boolean::class.java
+                    Boolean::class.java,
                 )
             setAutoSaveEmbeddingStateMethod.isPublic &&
                 setAutoSaveEmbeddingStateMethod.doesReturn(
@@ -1119,7 +1119,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val getActivityStackTokenMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "getActivityStackToken",
-                    String::class.java
+                    String::class.java,
                 )
             getActivityStackTokenMethod.isPublic &&
                 getActivityStackTokenMethod.doesReturn(ActivityStack.Token::class.java)
@@ -1146,7 +1146,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val getParentContainerInfoMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "getParentContainerInfo",
-                    ActivityStack.Token::class.java
+                    ActivityStack.Token::class.java,
                 )
             getParentContainerInfoMethod.isPublic &&
                 getParentContainerInfoMethod.doesReturn(ParentContainerInfo::class.java)
@@ -1157,7 +1157,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setActivityStackAttributesCalculatorMethod =
                 activityEmbeddingComponentClass.getMethod(
                     "setActivityStackAttributesCalculator",
-                    Function::class.java
+                    Function::class.java,
                 )
             setActivityStackAttributesCalculatorMethod.isPublic
         }
@@ -1175,7 +1175,7 @@ internal class SafeActivityEmbeddingComponentProvider(
                 activityEmbeddingComponentClass.getMethod(
                     "updateActivityStackAttributes",
                     ActivityStack.Token::class.java,
-                    ActivityStackAttributes::class.java
+                    ActivityStackAttributes::class.java,
                 )
             updateActivityStackAttributesMethod.isPublic
         }
@@ -1203,7 +1203,7 @@ internal class SafeActivityEmbeddingComponentProvider(
             val setWindowAttributesMethod =
                 activityStackAttributesBuilderClass.getMethod(
                     "setWindowAttributes",
-                    WindowAttributes::class.java
+                    WindowAttributes::class.java,
                 )
             activityStackAttributesBuilderConstructor.isPublic &&
                 setRelativeBoundsMethod.isPublic &&

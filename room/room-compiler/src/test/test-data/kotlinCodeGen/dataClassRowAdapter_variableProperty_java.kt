@@ -62,7 +62,7 @@ public class MyDao_Impl(
           }
           _result.setNullableValue(_tmpMNullableValue)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
         }
         _result
       } finally {

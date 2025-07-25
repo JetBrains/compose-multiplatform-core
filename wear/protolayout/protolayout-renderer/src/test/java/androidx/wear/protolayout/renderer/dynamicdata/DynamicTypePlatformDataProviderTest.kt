@@ -36,7 +36,7 @@ class DynamicTypePlatformDataProviderTest {
     private val provider =
         DynamicTypePlatformDataProvider.forDynamicBool(
             PlatformDataKey<DynamicBuilders.DynamicBool>("key"),
-            false
+            false,
         )
     private val mockReceiver = mock<PlatformDataReceiver>()
     private val executor = directExecutor()

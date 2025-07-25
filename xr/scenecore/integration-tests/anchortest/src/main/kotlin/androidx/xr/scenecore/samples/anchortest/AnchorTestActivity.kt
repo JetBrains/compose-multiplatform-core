@@ -20,22 +20,17 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.PlaneTrackingMode
+import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.AnchorEntity
-import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
-import androidx.xr.scenecore.PlaneSemantic
-import androidx.xr.scenecore.PlaneType
-import androidx.xr.scenecore.scene
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.time.TimeSource
-import kotlinx.coroutines.delay
+import androidx.xr.scenecore.PlaneOrientation
+import androidx.xr.scenecore.PlaneSemanticType
+import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
 class AnchorTestActivity : AppCompatActivity() {
@@ -44,18 +39,13 @@ class AnchorTestActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.anchortest_activity)
-        session.resume()
-        session.configure(Config(planeTracking = PlaneTrackingMode.HorizontalAndVertical))
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
         // Create a transform widget model and assign it to an Anchor
-        val transformWidgetModelFuture = GltfModel.create(session, "models/xyzArrows.glb")
-        transformWidgetModelFuture.addListener(
-            {
-                val transformWidgetModel = transformWidgetModelFuture.get()
-                setupAnchorUi(transformWidgetModel)
-            },
-            // This will cause the listener to be run on the UI thread
-            Runnable::run,
-        )
+        lifecycleScope.launch {
+            val transformWidgetModel =
+                GltfModel.create(session, Paths.get("models", "xyzArrows.glb"))
+            setupAnchorUi(transformWidgetModel)
+        }
     }
 
     @Suppress("UNUSED_VARIABLE")
@@ -63,29 +53,13 @@ class AnchorTestActivity : AppCompatActivity() {
         val anchoredTransformWidgetEntity =
             GltfModelEntity.create(session, transformWidgetModel, Pose.Identity)
         val anchor =
-            AnchorEntity.create(session, Dimensions(0.1f, 0.1f), PlaneType.ANY, PlaneSemantic.ANY)
+            AnchorEntity.create(
+                session,
+                FloatSize2d(0.1f, 0.1f),
+                PlaneOrientation.ANY,
+                PlaneSemanticType.ANY,
+            )
         anchor.addChild(anchoredTransformWidgetEntity)
         anchoredTransformWidgetEntity.setPose(Pose.Identity)
-
-        // Create another that is not anchored to see it move with the scene
-        val unused = GltfModelEntity.create(session, transformWidgetModel, Pose.Identity)
-
-        lifecycleScope.launch {
-            val pi = 3.14159F
-            val timeSource = TimeSource.Monotonic
-            val startTime = timeSource.markNow()
-            val rotateTimeMs = 10000F
-
-            while (true) {
-                delay(16L)
-                val angle =
-                    (2 * pi) * ((timeSource.markNow() - startTime).inWholeMilliseconds) /
-                        rotateTimeMs
-
-                val pos = Vector3(sin(angle), cos(angle), 0F)
-                // Moving the activity space should not move the anchor.
-                session.scene.activitySpace.setPose(Pose(pos))
-            }
-        }
     }
 }

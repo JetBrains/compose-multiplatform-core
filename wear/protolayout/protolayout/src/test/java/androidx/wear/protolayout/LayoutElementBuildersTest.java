@@ -138,10 +138,13 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
-    public void arcLineSetLength_withoutLayoutConstraint_throws() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new LayoutElementBuilders.ArcLine.Builder().setLength(DEGREES_PROP).build());
+    public void arcLine_withoutLayoutConstraint_setsLength() {
+        LayoutElementBuilders.ArcLine arcLine =
+                new LayoutElementBuilders.ArcLine.Builder().setLength(DEGREES_PROP).build();
+
+        DimensionProto.DegreesProp lengthProto = arcLine.toProto().getLength();
+
+        assertThat(lengthProto.getValue()).isEqualTo(DEGREES_PROP.getValue());
     }
 
     @Test
@@ -176,10 +179,13 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
-    public void spacerSetWidth_withoutLayoutConstraint_throws() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new LayoutElementBuilders.Spacer.Builder().setWidth(DP_PROP).build());
+    public void spacer_withoutLayoutConstraint_setsWidth() {
+        LayoutElementBuilders.Spacer spacer =
+                new LayoutElementBuilders.Spacer.Builder().setWidth(DP_PROP).build();
+
+        DimensionProto.DpProp spacerWidth = spacer.toProto().getWidth().getLinearDimension();
+
+        assertThat(spacerWidth.getValue()).isEqualTo(DP_PROP.getValue());
     }
 
     @Test
@@ -202,10 +208,13 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
-    public void spacerSetHeight_withoutLayoutConstraint_throws() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new LayoutElementBuilders.Spacer.Builder().setHeight(DP_PROP).build());
+    public void spacer_withoutLayoutConstraint_setsHeight() {
+        LayoutElementBuilders.Spacer spacer =
+                new LayoutElementBuilders.Spacer.Builder().setHeight(DP_PROP).build();
+
+        DimensionProto.DpProp spacerHeight = spacer.toProto().getHeight().getLinearDimension();
+
+        assertThat(spacerHeight.getValue()).isEqualTo(DP_PROP.getValue());
     }
 
     @Test
@@ -433,10 +442,13 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
-    public void textSetText_useDynamicValue_withoutLayoutConstraint_throws() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new LayoutElementBuilders.Text.Builder().setText(STRING_PROP).build());
+    public void text_useDynamicValueWithoutLayoutConstraint_setsText() {
+        LayoutElementBuilders.Text text =
+                new LayoutElementBuilders.Text.Builder().setText(STRING_PROP).build();
+
+        TypesProto.StringProp textProto = text.toProto().getText();
+
+        assertThat(textProto.getValue()).isEqualTo(STRING_PROP.getValue());
     }
 
     @Test
@@ -733,10 +745,13 @@ public class LayoutElementBuildersTest {
     }
 
     @Test
-    public void dashedArcLine_length_withoutLayoutConstraint_throws() {
-        assertThrows(
-                IllegalStateException.class,
-                () -> new DashedArcLine.Builder().setLength(DEGREES_PROP).build());
+    public void dashedArcLine_withoutLayoutConstraint_setsLength() {
+        DashedArcLine dashedArcLine =
+                new DashedArcLine.Builder().setLength(DEGREES_PROP).build();
+
+        DimensionProto.DegreesProp lengthProto = dashedArcLine.toProto().getLength();
+
+        assertThat(lengthProto.getValue()).isEqualTo(DEGREES_PROP.getValue());
     }
 
     @Test

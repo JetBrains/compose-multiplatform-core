@@ -76,14 +76,14 @@ object Types {
     val sdkActivityLauncher =
         Type(
             packageName = "androidx.privacysandbox.activity.core",
-            simpleName = "SdkActivityLauncher"
+            simpleName = "SdkActivityLauncher",
         )
 
     fun list(elementType: Type) =
         Type(
             packageName = "kotlin.collections",
             simpleName = "List",
-            typeParameters = listOf(elementType)
+            typeParameters = listOf(elementType),
         )
 
     fun Type.asNullable(): Type {

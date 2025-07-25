@@ -14,17 +14,11 @@
  * limitations under the License.
  */
 
-
-import androidx.build.JetbrainsAndroidXPlugin
-import androidx.build.LibraryType
+// TODO: Correctly apply AndroidXPlugin to pass all verification checks.
 
 plugins {
-    id("AndroidXPlugin")
     id("kotlin-multiplatform")
-    id("JetbrainsAndroidXPlugin")
 }
-
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
 
 kotlin {
     iosX64("uikitX64") {
@@ -165,12 +159,4 @@ private def configure(target, isDevice, architecture, testTarget) {
             freeCompilerArgs += compilerArgs
         }
     }
-}
-
-androidx {
-    name = "Compose UIKit Utils"
-    type = LibraryType.PUBLISHED_LIBRARY
-    inceptionYear = "2023"
-    description = "Internal iOS UIKit utilities including Objective-C library."
-    legacyDisableKotlinStrictApiMode = true
 }

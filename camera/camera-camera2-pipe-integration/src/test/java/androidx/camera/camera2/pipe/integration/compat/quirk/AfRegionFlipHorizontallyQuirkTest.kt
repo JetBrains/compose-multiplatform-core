@@ -38,7 +38,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 class AfRegionFlipHorizontallyQuirkTest(
     private val brand: String,
     private val lensFacing: Int,
-    private val quirkEnablingExpected: Boolean
+    private val quirkEnablingExpected: Boolean,
 ) {
     companion object {
         @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
@@ -71,9 +71,9 @@ class AfRegionFlipHorizontallyQuirkTest(
                     StreamConfigurationMapBuilder.newBuilder().build(),
                     OutputSizesCorrector(
                         cameraMetadata,
-                        StreamConfigurationMapBuilder.newBuilder().build()
-                    )
-                )
+                        StreamConfigurationMapBuilder.newBuilder().build(),
+                    ),
+                ),
             )
             .quirks
     }

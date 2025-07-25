@@ -90,7 +90,7 @@ open class VoipAppWithExtensionsControl : Service() {
             override fun addCall(
                 requestId: Int,
                 capabilities: List<Capability>,
-                isOutgoing: Boolean
+                isOutgoing: Boolean,
             ) {
                 Log.i(TAG, "VoipAppWithExtensionsControl: addCall: request")
                 runBlocking {
@@ -101,12 +101,12 @@ open class VoipAppWithExtensionsControl : Service() {
                                 CallAttributesCompat(
                                     "displayName" /* TODO:: make helper */,
                                     Uri.parse("tel:123") /* TODO:: make helper */,
-                                    if (isOutgoing) DIRECTION_OUTGOING else DIRECTION_INCOMING
+                                    if (isOutgoing) DIRECTION_OUTGOING else DIRECTION_INCOMING,
                                 ),
                                 mOnAnswerLambda,
                                 mOnDisconnectLambda,
                                 mOnSetActiveLambda,
-                                mOnSetInActiveLambda
+                                mOnSetInActiveLambda,
                             ) {
                                 launch { setActive() }
                                 isMuted

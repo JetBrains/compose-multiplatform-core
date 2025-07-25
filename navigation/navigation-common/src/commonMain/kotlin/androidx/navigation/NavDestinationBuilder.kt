@@ -111,9 +111,7 @@ public expect open class NavDestinationBuilder<out D : NavDestination> {
      */
     @Suppress("BuilderSetStyle")
     @JvmName("deepLinkSafeArgs")
-    public inline fun <reified T : Any> deepLink(
-        basePath: String,
-    )
+    public inline fun <reified T : Any> deepLink(basePath: String)
 
     /**
      * Add a deep link to this destination.
@@ -153,7 +151,7 @@ public expect open class NavDestinationBuilder<out D : NavDestination> {
     @Suppress("BuilderSetStyle")
     public inline fun <reified T : Any> deepLink(
         basePath: String,
-        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        noinline navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     )
 
     /**
@@ -178,7 +176,7 @@ public expect open class NavDestinationBuilder<out D : NavDestination> {
     public fun <T : Any> deepLink(
         route: KClass<T>,
         basePath: String,
-        navDeepLink: NavDeepLinkDslBuilder.() -> Unit
+        navDeepLink: NavDeepLinkDslBuilder.() -> Unit,
     )
 
     /**

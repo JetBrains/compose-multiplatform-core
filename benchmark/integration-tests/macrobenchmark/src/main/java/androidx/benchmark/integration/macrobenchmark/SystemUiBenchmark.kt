@@ -41,7 +41,7 @@ class SystemUiBenchmark {
                 pressHome()
                 device.openQuickSettings()
                 pressHome()
-            }
+            },
         )
     }
 

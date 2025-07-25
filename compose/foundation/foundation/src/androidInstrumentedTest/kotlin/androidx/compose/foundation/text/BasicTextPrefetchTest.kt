@@ -248,7 +248,7 @@ class BasicTextPrefetchTest {
         private fun ProvidePrefetchScheduler(executor: Executor, content: @Composable () -> Unit) {
             CompositionLocalProvider(
                 LocalBackgroundTextMeasurementExecutor provides executor,
-                content
+                content,
             )
         }
     }

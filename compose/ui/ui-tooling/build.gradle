@@ -27,12 +27,17 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.tooling"
+        androidResources.enable = true
+        // TODO(b/345531033)
+        experimentalProperties["android.lint.useK2Uast"] = false
+    }
     jvmStubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -117,11 +122,4 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:animation:animation:animation-samples"))
     // samples(project(":compose:animation:animation-core:animation-core-samples")) TODO(b/318840087)
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.ui.tooling"
-    // TODO(b/345531033)
-    experimentalProperties["android.lint.useK2Uast"] = false
 }

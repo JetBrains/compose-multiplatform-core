@@ -20,8 +20,8 @@ package androidx.annotation.keep
  * Used to define an unspecified class value in the Keep annotations.
  *
  * For example, when a method return class isn't important to specify in
- * [GenerateKeepForMethod.returnClass], it defaults to `Unspecified::class`, which signifies that
- * any class is accepted.
+ * [UsesReflectionToAccessMethod.returnClass], it defaults to `Unspecified::class`, which signifies
+ * that any class is accepted.
  *
  * This is used as `null` cannot be used as a default in annotations.
  */

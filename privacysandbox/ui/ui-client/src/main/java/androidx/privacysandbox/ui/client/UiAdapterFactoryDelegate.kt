@@ -18,6 +18,8 @@ package androidx.privacysandbox.ui.client
 
 import android.os.Bundle
 import android.util.Log
+import androidx.privacysandbox.ui.core.ProtocolConstants
+import androidx.privacysandbox.ui.core.test.TestProtocolConstants
 
 internal abstract class UiAdapterFactoryDelegate {
     abstract val uiAdapterBinderKey: String
@@ -28,10 +30,16 @@ internal abstract class UiAdapterFactoryDelegate {
             "Invalid bundle, missing $uiAdapterBinderKey."
         }
 
+    fun requireNotNullUiProviderVersion(coreLibInfo: Bundle) =
+        requireNotNull(coreLibInfo.getInt(ProtocolConstants.uiProviderVersionKey)) {
+            "missing ${ProtocolConstants.uiProviderVersionKey}."
+        }
+
     fun shouldUseLocalAdapter(coreLibInfo: Bundle): Boolean {
         val uiAdapterBinder = requireNotNullAdapterBinder(coreLibInfo)
 
-        val forceUseRemoteAdapter = coreLibInfo.getBoolean(TEST_ONLY_USE_REMOTE_ADAPTER)
+        val forceUseRemoteAdapter =
+            coreLibInfo.getBoolean(TestProtocolConstants.testOnlyUseRemoteAdapterKey)
         val isLocalBinder = uiAdapterBinder.queryLocalInterface(adapterDescriptor) != null
         val useLocalAdapter = !forceUseRemoteAdapter && isLocalBinder
         Log.d(TAG, "useLocalAdapter=$useLocalAdapter")
@@ -40,6 +48,5 @@ internal abstract class UiAdapterFactoryDelegate {
 
     companion object {
         private const val TAG = "PrivacySandboxUiLib"
-        private const val TEST_ONLY_USE_REMOTE_ADAPTER = "testOnlyUseRemoteAdapter"
     }
 }

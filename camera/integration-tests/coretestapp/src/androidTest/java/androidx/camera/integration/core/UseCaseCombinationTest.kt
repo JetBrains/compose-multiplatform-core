@@ -17,19 +17,27 @@ package androidx.camera.integration.core
 
 import android.Manifest
 import android.content.Context
+import android.util.Rational
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.AspectRatio.Ratio
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraX
 import androidx.camera.core.CameraXConfig
+import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.impl.utils.AspectRatioUtil
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -40,7 +48,13 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.mocks.MockScreenFlash
 import androidx.camera.testing.impl.video.AudioChecker
 import androidx.camera.testing.impl.video.RecordingSession
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_STATUS_COUNT
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_STATUS_TIMEOUT_MS
+import androidx.camera.testing.impl.video.RecordingSession.Companion.DEFAULT_VERIFY_TIMEOUT_MS
 import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.Quality.ConstantQuality
+import androidx.camera.video.QualitySelector
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapabilities
 import androidx.camera.video.VideoCapture
@@ -57,6 +71,7 @@ import kotlinx.coroutines.asExecutor
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -67,16 +82,15 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 class UseCaseCombinationTest(
+    private val testName: String,
+    private val cameraSelector: CameraSelector,
     private val implName: String,
-    private var cameraSelector: CameraSelector,
     private val cameraConfig: CameraXConfig,
 ) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(
-            active = implName.contains(CameraPipeConfig::class.simpleName!!),
-        )
+        CameraPipeConfigTestRule(active = implName.contains(CameraPipeConfig::class.simpleName!!))
 
     @get:Rule
     val cameraRule =
@@ -99,28 +113,27 @@ class UseCaseCombinationTest(
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(
-                    "back+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + Camera2Config::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    Camera2Config.defaultConfig(),
-                ),
-                arrayOf(
-                    "back+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-                arrayOf(
-                    "front+" + CameraPipeConfig::class.simpleName,
-                    CameraSelector.DEFAULT_FRONT_CAMERA,
-                    CameraPipeConfig.defaultConfig(),
-                ),
-            )
+            mutableListOf<Array<Any?>>().apply {
+                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                    val lens = selector.lensFacing
+                    add(
+                        arrayOf(
+                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            Camera2Config::class.simpleName,
+                            Camera2Config.defaultConfig(),
+                        )
+                    )
+                    add(
+                        arrayOf(
+                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
+                            selector,
+                            CameraPipeConfig::class.simpleName,
+                            CameraPipeConfig.defaultConfig(),
+                        )
+                    )
+                }
+            }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -161,6 +174,8 @@ class UseCaseCombinationTest(
         imageCapture = initImageCapture()
         imageAnalysisMonitor = AnalysisMonitor()
         imageAnalysis = initImageAnalysis(imageAnalysisMonitor)
+
+        videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
     }
 
     @After
@@ -395,7 +410,7 @@ class UseCaseCombinationTest(
                 preview,
                 imageCapture,
                 imageAnalysis,
-                videoCapture
+                videoCapture,
             )
         )
 
@@ -480,40 +495,438 @@ class UseCaseCombinationTest(
         imageAnalysisMonitor.waitForImageAnalysis()
     }
 
-    private fun initPreview(monitor: PreviewMonitor, setSurfaceProvider: Boolean = true): Preview {
-        return Preview.Builder().setTargetName("Preview").build().apply {
-            if (setSurfaceProvider) {
-                instrumentation.runOnMainSync { surfaceProvider = monitor.getSurfaceProvider() }
+    @Test
+    fun canRecordVideoAfterImageCaptureCompletes_whenAllUseCasesCombined() {
+        // Arrange.
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher status count
+            verifyStatusTimeoutMs = 18000L,
+        )
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+
+        // Act & assert.
+        imageCapture.waitForCapturing()
+        recordingSession.createRecording().recordAndVerify()
+    }
+
+    @Test
+    fun canRecordVideoAfterTwoImageCapturesRequested_whenAllUseCasesCombined() {
+        // Arrange.
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 60, // records video for around 2s assuming 30 FPS,
+            verifyTimeoutMs = 10000L, // increased timeout for higher status count
+            verifyStatusTimeoutMs = 20000L,
+        )
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+
+        // Act & assert.
+        val callback1 = imageCapture.triggerCapturing()
+        val callback2 = imageCapture.triggerCapturing()
+        recordingSession.createRecording().recordAndVerify()
+        callback1.verifyCapture()
+        callback2.verifyCapture()
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenAllUseCasesCombinedWithExactly4x3SdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.SD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val qualitySize =
+            quality.getTypicalSizes().first {
+                AspectRatioUtil.hasMatchingAspectRatio(it, Rational(4, 3))
             }
-        }
+        assumeTrue("4:3 SD is not supported", qualitySize != null)
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+            aspectRatio = AspectRatio.RATIO_4_3,
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        checkNotNull(qualitySize),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
     }
 
-    private fun initImageAnalysis(analyzer: ImageAnalysis.Analyzer?): ImageAnalysis {
-        return ImageAnalysis.Builder().setTargetName("ImageAnalysis").build().apply {
-            analyzer?.let { analyzer -> setAnalyzer(Dispatchers.IO.asExecutor(), analyzer) }
-        }
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenAllUseCasesCombinedWithExactlyHdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.HD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
     }
 
-    private fun initImageCapture(): ImageCapture {
-        return ImageCapture.Builder().build()
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenAllUseCasesCombinedWithExactlyFhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.FHD as ConstantQuality
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenAllUseCasesCombinedWithExactlyUhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.UHD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureVideoCombinedWithExactly4x3SdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.SD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val qualitySize =
+            quality.getTypicalSizes().first {
+                AspectRatioUtil.hasMatchingAspectRatio(it, Rational(4, 3))
+            }
+        assumeTrue("4:3 SD is not supported", qualitySize != null)
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+            aspectRatio = AspectRatio.RATIO_4_3,
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        checkNotNull(qualitySize),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureVideoCombinedWithExactlyHdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.HD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureVideoCombinedWithExactlyFhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.FHD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Ignore("b/415195621")
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureVideoCombinedWithExactlyUhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.UHD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        checkAndPrepareVideoCaptureSources(
+            verifyStatusCount = 30, // records video for around 1s assuming 30 FPS,
+            verifyTimeoutMs = 8000L, // increased timeout for higher sftatus count
+            verifyStatusTimeoutMs = 18000L,
+            qualitySelector = QualitySelector.from(quality),
+        )
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        checkAndBindUseCases(preview, videoCapture, imageCapture)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureAnalysisCombinedWithExactly4x3SdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.SD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val qualitySize =
+            quality.getTypicalSizes().firstOrNull {
+                AspectRatioUtil.hasMatchingAspectRatio(it, Rational(4, 3))
+            }
+        assumeTrue("4:3 SD is not supported", qualitySize != null)
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        checkNotNull(qualitySize),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_4_3_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureAnalysisCombinedWithExactlyHdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.HD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureAnalysisCombinedWithExactlyFhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.FHD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    @Test
+    fun canCaptureImageIfSupported_whenPrevCaptureAnalysisCombinedWithExactlyUhdAndNoFallback() {
+        // Arrange.
+        val quality = Quality.UHD as ConstantQuality
+        assumeTrue(videoCapabilities.getSupportedQualities(DynamicRange.SDR).contains(quality))
+        val selector =
+            ResolutionSelector.Builder()
+                .setResolutionStrategy(
+                    ResolutionStrategy(
+                        quality.getTypicalSizes().first(),
+                        ResolutionStrategy.FALLBACK_RULE_NONE,
+                    )
+                )
+                .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
+                .build()
+        val preview = initPreview(previewMonitor, resolutionSelector = selector)
+        val imageCapture = initImageCapture(resolutionSelector = selector)
+        val imageAnalysis = initImageAnalysis(imageAnalysisMonitor, resolutionSelector = selector)
+        checkAndBindUseCases(preview, imageCapture, imageAnalysis)
+        // Act & assert.
+        imageCapture.waitForCapturing()
+    }
+
+    private fun initPreview(
+        monitor: PreviewMonitor,
+        setSurfaceProvider: Boolean = true,
+        resolutionSelector: ResolutionSelector? = null,
+    ): Preview {
+        return Preview.Builder()
+            .apply {
+                if (resolutionSelector != null) {
+                    setResolutionSelector(resolutionSelector)
+                }
+            }
+            .setTargetName("Preview")
+            .build()
+            .apply {
+                if (setSurfaceProvider) {
+                    instrumentation.runOnMainSync { surfaceProvider = monitor.getSurfaceProvider() }
+                }
+            }
+    }
+
+    private fun initImageAnalysis(
+        analyzer: ImageAnalysis.Analyzer?,
+        resolutionSelector: ResolutionSelector? = null,
+    ): ImageAnalysis {
+        return ImageAnalysis.Builder()
+            .apply {
+                if (resolutionSelector != null) {
+                    setResolutionSelector(resolutionSelector)
+                }
+            }
+            .setTargetName("ImageAnalysis")
+            .build()
+            .apply {
+                analyzer?.let { analyzer -> setAnalyzer(Dispatchers.IO.asExecutor(), analyzer) }
+            }
+    }
+
+    private fun initImageCapture(resolutionSelector: ResolutionSelector? = null): ImageCapture {
+        return ImageCapture.Builder()
+            .apply {
+                if (resolutionSelector != null) {
+                    setResolutionSelector(resolutionSelector)
+                }
+            }
+            .build()
     }
 
     private fun ImageCapture.waitForCapturing(timeMillis: Long = 10000, useFlash: Boolean = false) {
-        val callback =
-            object : ImageCapture.OnImageCapturedCallback() {
-                val latch = CountDownLatch(1)
-                val errors = mutableListOf<ImageCaptureException>()
+        val callback = triggerCapturing(useFlash = useFlash)
+        callback.verifyCapture(timeMillis = timeMillis)
+    }
 
-                override fun onCaptureSuccess(image: ImageProxy) {
-                    image.close()
-                    latch.countDown()
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    errors.add(exception)
-                    latch.countDown()
-                }
-            }
+    private fun ImageCapture.triggerCapturing(useFlash: Boolean = false): ImageCaptureCallback {
+        val callback = ImageCaptureCallback()
 
         if (useFlash) {
             if (cameraSelector.lensFacing == CameraSelector.LENS_FACING_FRONT) {
@@ -526,15 +939,21 @@ class UseCaseCombinationTest(
             flashMode = ImageCapture.FLASH_MODE_OFF
         }
 
-        takePicture(Dispatchers.Main.asExecutor(), callback)
+        takePicture(
+            Dispatchers.Main.asExecutor(),
+            callback.apply {
+                invokeOnComplete {
+                    // Just in case same imageCapture is bound to rear camera later
+                    screenFlash = null
+                }
+            },
+        )
 
-        assertThat(
-                callback.latch.await(timeMillis, TimeUnit.MILLISECONDS) && callback.errors.isEmpty()
-            )
-            .isTrue()
+        return callback
+    }
 
-        // Just in case same imageCapture is bound to rear camera later
-        screenFlash = null
+    private fun ImageCaptureCallback.verifyCapture(timeMillis: Long = 10000) {
+        assertThat(latch.await(timeMillis, TimeUnit.MILLISECONDS) && errors.isEmpty()).isTrue()
     }
 
     class PreviewMonitor {
@@ -619,10 +1038,21 @@ class UseCaseCombinationTest(
         instrumentation.runOnMainSync { cameraProvider.unbind(*useCases) }
     }
 
-    private fun checkAndPrepareVideoCaptureSources() {
+    private fun checkAndPrepareVideoCaptureSources(
+        verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
+        verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
+        verifyStatusTimeoutMs: Long = DEFAULT_VERIFY_STATUS_TIMEOUT_MS,
+        qualitySelector: QualitySelector = Recorder.DEFAULT_QUALITY_SELECTOR,
+        @Ratio aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
+    ) {
         skipVideoRecordingTestIfNotSupportedByEmulator()
-        videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
-        videoCapabilities = Recorder.getVideoCapabilities(cameraInfo)
+        videoCapture =
+            VideoCapture.withOutput(
+                Recorder.Builder()
+                    .setQualitySelector(qualitySelector)
+                    .setAspectRatio(aspectRatio)
+                    .build()
+            )
         recordingSession =
             RecordingSession(
                 RecordingSession.Defaults(
@@ -632,7 +1062,33 @@ class UseCaseCombinationTest(
                         FileOutputOptions.Builder(temporaryFolder.newFile()).build()
                     },
                     withAudio = audioStreamAvailable,
+                    verifyStatusCount = verifyStatusCount,
+                    verifyTimeoutMs = verifyTimeoutMs,
+                    verifyStatusTimeoutMs = verifyStatusTimeoutMs,
                 )
             )
+    }
+
+    class ImageCaptureCallback : ImageCapture.OnImageCapturedCallback() {
+        val latch = CountDownLatch(1)
+        val errors = mutableListOf<ImageCaptureException>()
+
+        private val onCompleteBlocks = mutableListOf<() -> Unit>()
+
+        override fun onCaptureSuccess(image: ImageProxy) {
+            image.close()
+            latch.countDown()
+            onCompleteBlocks.forEach { it.invoke() }
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            errors.add(exception)
+            latch.countDown()
+            onCompleteBlocks.forEach { it.invoke() }
+        }
+
+        fun invokeOnComplete(block: () -> Unit) {
+            onCompleteBlocks.add(block)
+        }
     }
 }

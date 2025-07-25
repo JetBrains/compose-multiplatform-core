@@ -195,7 +195,7 @@ public class InputEvent(
          */
         public class HitInfo(
             public val inputEntity: Entity,
-            public val hitPosition: Vector3,
+            public val hitPosition: Vector3?,
             public val transform: Matrix4,
         ) {}
     }

@@ -56,7 +56,7 @@ internal class Controller3AUnlock3ATest {
             mapOf(
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                     intArrayOf(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-            ),
+            )
         )
     private val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
 
@@ -93,8 +93,8 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -124,8 +124,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_STATE to
                                 CaptureResult.CONTROL_AE_STATE_SEARCHING
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -153,8 +153,8 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -169,7 +169,7 @@ internal class Controller3AUnlock3ATest {
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
 
         repeatingJob.cancel()
@@ -188,8 +188,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -217,8 +217,8 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AWB_STATE to
                                     CaptureResult.CONTROL_AWB_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -248,8 +248,8 @@ internal class Controller3AUnlock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_STATE to
                                 CaptureResult.CONTROL_AWB_STATE_SEARCHING
-                        )
-                )
+                        ),
+                ),
             )
         }
 
@@ -278,9 +278,9 @@ internal class Controller3AUnlock3ATest {
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED,
                                 CaptureResult.CONTROL_AF_STATE to
-                                    CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -295,7 +295,7 @@ internal class Controller3AUnlock3ATest {
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
         // Then request to unlock AE.
         val event2 = captureSequenceProcessor.nextEvent()
@@ -318,9 +318,9 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE to
-                                CaptureResult.CONTROL_AE_STATE_SEARCHING
-                        )
-                )
+                                CaptureResult.CONTROL_AE_STATE_SEARCHING,
+                        ),
+                ),
             )
         }
 
@@ -336,7 +336,7 @@ internal class Controller3AUnlock3ATest {
                 mapOf(
                     CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                         intArrayOf(CaptureRequest.CONTROL_AF_MODE_OFF)
-                ),
+                )
             )
         val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
         val result = controller3A.unlock3A(af = true).await()
@@ -363,8 +363,8 @@ internal class Controller3AUnlock3ATest {
                             mapOf(
                                 CaptureResult.CONTROL_AE_STATE to
                                     CaptureResult.CONTROL_AE_STATE_LOCKED
-                            )
-                    )
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -405,8 +405,8 @@ internal class Controller3AUnlock3ATest {
                                     CaptureResult.CONTROL_AF_STATE_INACTIVE,
                                 CaptureResult.CONTROL_AWB_STATE to
                                     CaptureResult.CONTROL_AWB_STATE_INACTIVE,
-                            )
-                    )
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -419,7 +419,7 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AE_STATE_INACTIVE,
                             CaptureResult.CONTROL_AE_STATE_SEARCHING,
                             CaptureResult.CONTROL_AE_STATE_CONVERGED,
-                            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED
+                            CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
                         )
                         .contains(it)
                 } ?: true
@@ -431,7 +431,7 @@ internal class Controller3AUnlock3ATest {
                             CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN,
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
-                            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED
+                            CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED,
                         )
                         .contains(it)
                 } ?: true
@@ -441,7 +441,7 @@ internal class Controller3AUnlock3ATest {
                     listOf(
                             CaptureResult.CONTROL_AWB_STATE_INACTIVE,
                             CaptureResult.CONTROL_AWB_STATE_SEARCHING,
-                            CaptureResult.CONTROL_AWB_STATE_CONVERGED
+                            CaptureResult.CONTROL_AWB_STATE_CONVERGED,
                         )
                         .contains(it)
                 } ?: true

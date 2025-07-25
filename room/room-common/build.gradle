@@ -22,6 +22,8 @@
  * modifying its settings.
  */
 
+
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -51,8 +53,7 @@ androidXMultiplatform {
         commonTest {
             dependencies {
                 implementation(project(":kruth:kruth"))
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
             }
         }
 
@@ -101,5 +102,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
-    legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

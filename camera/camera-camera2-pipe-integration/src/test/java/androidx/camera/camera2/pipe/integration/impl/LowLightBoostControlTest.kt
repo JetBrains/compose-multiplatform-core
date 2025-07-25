@@ -81,8 +81,8 @@ class LowLightBoostControlTest {
         FakeCameraMetadata(
             mapOf(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
-                    intArrayOf(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY),
-            ),
+                    intArrayOf(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+            )
         )
 
     private val fakeCameraProperties =
@@ -107,13 +107,11 @@ class LowLightBoostControlTest {
         lowLightBoostControl =
             LowLightBoostControl(
                 fakeCameraProperties.metadata,
-                State3AControl(
-                        fakeCameraProperties,
-                        NoOpAutoFlashAEModeDisabler,
-                    )
-                    .apply { requestControl = fakeUseCaseCameraRequestControl },
+                State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                    requestControl = fakeUseCaseCameraRequestControl
+                },
                 fakeUseCaseThreads,
-                comboRequestListener
+                comboRequestListener,
             )
     }
 
@@ -125,13 +123,11 @@ class LowLightBoostControlTest {
 
             LowLightBoostControl(
                     fakeCameraProperties.metadata,
-                    State3AControl(
-                            fakeCameraProperties,
-                            NoOpAutoFlashAEModeDisabler,
-                        )
-                        .apply { requestControl = fakeUseCaseCameraRequestControl },
+                    State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                        requestControl = fakeUseCaseCameraRequestControl
+                    },
                     fakeUseCaseThreads,
-                    comboRequestListener
+                    comboRequestListener,
                 )
                 .also { it.requestControl = fakeUseCaseCameraRequestControl }
                 .setLowLightBoostAsync(true)
@@ -147,13 +143,11 @@ class LowLightBoostControlTest {
         val lowLightBoostState =
             LowLightBoostControl(
                     fakeCameraProperties.metadata,
-                    State3AControl(
-                            fakeCameraProperties,
-                            NoOpAutoFlashAEModeDisabler,
-                        )
-                        .apply { requestControl = fakeUseCaseCameraRequestControl },
+                    State3AControl(fakeCameraProperties, NoOpAutoFlashAEModeDisabler).apply {
+                        requestControl = fakeUseCaseCameraRequestControl
+                    },
                     fakeUseCaseThreads,
-                    comboRequestListener
+                    comboRequestListener,
                 )
                 .also { it.requestControl = fakeUseCaseCameraRequestControl }
                 .lowLightBoostStateLiveData
@@ -214,7 +208,7 @@ class LowLightBoostControlTest {
                 FakeFrameMetadata(
                     state?.let { mapOf(CONTROL_LOW_LIGHT_BOOST_STATE to state) } ?: emptyMap()
                 )
-            )
+            ),
         )
 
     @Test
@@ -290,7 +284,7 @@ class LowLightBoostControlTest {
                         receivedStates.add(value)
                     }
                 }
-            }
+            },
         )
         lowLightBoostControl.setLowLightBoostAsync(true)
         lowLightBoostControl.setLowLightBoostAsync(false)
@@ -361,10 +355,10 @@ class LowLightBoostControlTest {
                 fakeCameraProperties.metadata,
                 FakeState3AControlCreator.createState3AControl(
                     fakeCameraProperties,
-                    neverCompleteLowLightBoostRequestControl
+                    neverCompleteLowLightBoostRequestControl,
                 ),
                 fakeUseCaseThreads,
-                comboRequestListener
+                comboRequestListener,
             )
     }
 }

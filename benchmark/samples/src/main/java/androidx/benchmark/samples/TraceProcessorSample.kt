@@ -59,7 +59,7 @@ fun traceProcessorStartServerSimple(): List<Long> {
 @Sampled
 fun TraceProcessor.packageFilteredQuery(
     packageName: String,
-    doFrameCallback: (String, Long, Long) -> Unit
+    doFrameCallback: (String, Long, Long) -> Unit,
 ) {
     loadTrace(PerfettoTrace("/path/to/trace.perfetto-trace")) {
         query(

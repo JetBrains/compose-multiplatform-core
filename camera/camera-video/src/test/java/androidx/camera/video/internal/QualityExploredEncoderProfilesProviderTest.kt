@@ -166,7 +166,7 @@ class QualityExploredEncoderProfilesProviderTest {
         val videoEncoderInfo =
             FakeVideoEncoderInfo(
                 supportedWidths = Range.create(0, RESOLUTION_1080P.width),
-                supportedHeights = Range.create(0, RESOLUTION_1080P.height)
+                supportedHeights = Range.create(0, RESOLUTION_1080P.height),
             )
 
         // Act.
@@ -215,7 +215,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 RESOLUTION_720P,
                 videoCodec = H263,
                 videoBitDepth = BIT_DEPTH_10,
-                videoHdrFormat = HDR_HDR10
+                videoHdrFormat = HDR_HDR10,
             )
         // Arrange: create SD HLG10 VideoProfile.
         val videoProfileSdHlg10 =
@@ -223,7 +223,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 RESOLUTION_480P,
                 videoCodec = MPEG_4_SP,
                 videoBitDepth = BIT_DEPTH_10,
-                videoHdrFormat = HDR_HLG
+                videoHdrFormat = HDR_HLG,
             )
         // Arrange: create FHD AudioProfile
         val audioProfileFhd = createFakeAudioProfileProxy()
@@ -233,7 +233,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 30,
                 THREE_GPP,
                 listOf(audioProfileFhd),
-                listOf(videoProfileFhdSdr)
+                listOf(videoProfileFhdSdr),
             )
         // Arrange: create HD AudioProfile
         val audioProfileHd = createFakeAudioProfileProxy()
@@ -243,7 +243,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 20,
                 WEBM,
                 listOf(audioProfileHd),
-                listOf(videoProfileHdHdr10)
+                listOf(videoProfileHdHdr10),
             )
         // Arrange: create SD AudioProfile
         val audioProfileSd = createFakeAudioProfileProxy()
@@ -253,7 +253,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 10,
                 MPEG_4,
                 listOf(audioProfileSd),
-                listOf(videoProfileSdHlg10)
+                listOf(videoProfileSdHlg10),
             )
         // Arrange: create EncoderProfileProvider with above EncoderProfiles.
         val baseProvider =
@@ -304,7 +304,7 @@ class QualityExploredEncoderProfilesProviderTest {
             createFakeVideoProfileProxy(
                 RESOLUTION_720P,
                 videoBitDepth = BIT_DEPTH_10,
-                videoHdrFormat = HDR_HDR10
+                videoHdrFormat = HDR_HDR10,
             )
         // Arrange: create FHD audio profile.
         val audioProfileFhd = createFakeAudioProfileProxy()
@@ -314,7 +314,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 30,
                 THREE_GPP,
                 listOf(audioProfileFhd),
-                listOf(videoProfileFhdSdr)
+                listOf(videoProfileFhdSdr),
             )
         // Arrange: create HD audio profile.
         val audioProfileHd = createFakeAudioProfileProxy()
@@ -324,7 +324,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 20,
                 WEBM,
                 listOf(audioProfileHd),
-                listOf(videoProfileHdHdr10)
+                listOf(videoProfileHdHdr10),
             )
         // Arrange: create EncoderProfileProvider with above EncoderProfiles.
         val baseProvider =
@@ -368,7 +368,7 @@ class QualityExploredEncoderProfilesProviderTest {
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(createFakeVideoProfileProxy(RESOLUTION_1080P, bitrate = baseBitrate))
+                listOf(createFakeVideoProfileProxy(RESOLUTION_1080P, bitrate = baseBitrate)),
             )
         val baseProvider =
             FakeEncoderProfilesProvider.Builder()
@@ -431,13 +431,13 @@ class QualityExploredEncoderProfilesProviderTest {
             QUALITY_2160P,
             QUALITY_1080P,
             QUALITY_720P,
-            QUALITY_480P
+            QUALITY_480P,
         )
 
     private fun verifyQualitiesAreSupported(
         provider: EncoderProfilesProvider,
         dynamicRange: DynamicRange,
-        vararg qualities: Int
+        vararg qualities: Int,
     ) {
         for (quality in qualities) {
             assertWithMessage("Verify supported for $quality and $dynamicRange")
@@ -456,13 +456,13 @@ class QualityExploredEncoderProfilesProviderTest {
             QUALITY_2160P,
             QUALITY_1080P,
             QUALITY_720P,
-            QUALITY_480P
+            QUALITY_480P,
         )
 
     private fun verifyQualitiesAreNotSupported(
         provider: EncoderProfilesProvider,
         dynamicRange: DynamicRange,
-        vararg qualities: Int
+        vararg qualities: Int,
     ) {
         for (quality in qualities) {
             assertWithMessage("Verify not supported for $quality and $dynamicRange")
@@ -473,7 +473,7 @@ class QualityExploredEncoderProfilesProviderTest {
 
     private fun EncoderProfilesProvider.getMatchedDynamicRangeProfileCount(
         quality: Int,
-        dynamicRange: DynamicRange
+        dynamicRange: DynamicRange,
     ): Int =
         getAll(quality)?.videoProfiles?.count { videoProfile ->
             isHdrSettingsMatched(videoProfile, dynamicRange)
@@ -481,6 +481,6 @@ class QualityExploredEncoderProfilesProviderTest {
 
     private fun EncoderProfilesProvider.hasMatchedDynamicRangeProfile(
         quality: Int,
-        dynamicRange: DynamicRange
+        dynamicRange: DynamicRange,
     ): Boolean = getMatchedDynamicRangeProfileCount(quality, dynamicRange) > 0
 }

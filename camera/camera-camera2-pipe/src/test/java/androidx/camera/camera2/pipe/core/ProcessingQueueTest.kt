@@ -62,7 +62,7 @@ class ProcessingQueueTest {
             val processingQueue =
                 ProcessingQueue<Int>(
                     capacity = 2,
-                    onUnprocessedElements = unprocessElementHandler
+                    onUnprocessedElements = unprocessElementHandler,
                 ) {}
 
             assertThat(processingQueue.tryEmit(1)).isTrue()
@@ -76,7 +76,7 @@ class ProcessingQueueTest {
             val processingQueue =
                 ProcessingQueue<Int>(
                         capacity = 2,
-                        onUnprocessedElements = unprocessElementHandler
+                        onUnprocessedElements = unprocessElementHandler,
                     ) {
                         processingCalls.add(it.toMutableList())
                         it.removeAt(0)
@@ -101,7 +101,7 @@ class ProcessingQueueTest {
             val processingQueue =
                 ProcessingQueue<Int>(
                         capacity = 2,
-                        onUnprocessedElements = unprocessElementHandler
+                        onUnprocessedElements = unprocessElementHandler,
                     ) {
                         processingCalls.add(it.toMutableList())
                         it.removeAt(0) // Mutation works
@@ -203,10 +203,7 @@ class ProcessingQueueTest {
             assertThat(processingQueue.tryEmit(8)).isFalse() // fails
 
             // Processing loop does not remove anything
-            assertThat(processingCalls)
-                .containsExactly(
-                    listOf(1, 2),
-                )
+            assertThat(processingCalls).containsExactly(listOf(1, 2))
             // Processing loop does not remove anything
             assertThat(unprocessedElements).containsExactly(listOf(3, 4, 5, 6))
         }
@@ -235,11 +232,7 @@ class ProcessingQueueTest {
             advanceUntilIdle() // Last update includes all previous updates.
 
             // Processing loop does not remove anything
-            assertThat(processingCalls)
-                .containsExactly(
-                    listOf(1, 2, 3),
-                    listOf(4, 5, 6),
-                )
+            assertThat(processingCalls).containsExactly(listOf(1, 2, 3), listOf(4, 5, 6))
             processingScope.cancel()
         }
 

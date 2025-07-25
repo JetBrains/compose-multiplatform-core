@@ -35,10 +35,10 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onParent
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -59,6 +59,8 @@ class NavHostScreenShotTest {
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation/navigation-compose")
 
+    private val navHostTag = "NavHostTag"
+
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
     @Test
     fun testNavHostAnimationsZIndex() {
@@ -70,7 +72,8 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { slideInHorizontally { it / 2 } },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
+                modifier = Modifier.testTag(navHostTag),
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -103,8 +106,7 @@ class NavHostScreenShotTest {
         composeTestRule.mainClock.advanceTimeByFrame()
 
         composeTestRule
-            .onNodeWithText(THIRD)
-            .onParent()
+            .onNodeWithTag(navHostTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavHostAnimationsZIndex")
     }
@@ -123,7 +125,8 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { EnterTransition.None },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
+                modifier = Modifier.testTag(navHostTag),
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -160,8 +163,7 @@ class NavHostScreenShotTest {
         composeTestRule.waitForIdle()
 
         composeTestRule
-            .onNodeWithText(SECOND)
-            .onParent()
+            .onNodeWithTag(navHostTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavHostAnimationsZIndexPredictiveBack")
     }
@@ -180,7 +182,8 @@ class NavHostScreenShotTest {
                 startDestination = FIRST,
                 route = "start",
                 enterTransition = { slideInHorizontally { it / 2 } },
-                exitTransition = { slideOutHorizontally { -it / 2 } }
+                exitTransition = { slideOutHorizontally { -it / 2 } },
+                modifier = Modifier.testTag(navHostTag),
             ) {
                 composable(FIRST) { BasicText(FIRST) }
                 composable(SECOND) {
@@ -217,8 +220,7 @@ class NavHostScreenShotTest {
         composeTestRule.waitForIdle()
 
         composeTestRule
-            .onNodeWithText(SECOND)
-            .onParent()
+            .onNodeWithTag(navHostTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavHostPredictiveBackAnimations")
     }
@@ -230,7 +232,11 @@ class NavHostScreenShotTest {
         composeTestRule.setContent {
             navController = rememberNavController()
             Box {
-                NavHost(navController, startDestination = FIRST) {
+                NavHost(
+                    navController,
+                    startDestination = FIRST,
+                    modifier = Modifier.testTag(navHostTag),
+                ) {
                     composable(
                         FIRST,
                         enterTransition = { EnterTransition.None },
@@ -241,11 +247,11 @@ class NavHostScreenShotTest {
                                     durationMillis = 500
                                     IntSize(
                                         initialSize.width,
-                                        (initialSize.height + targetSize.height) / 2
+                                        (initialSize.height + targetSize.height) / 2,
                                     ) at 150
                                 }
                             }
-                        }
+                        },
                     ) {
                         Box(Modifier.size(40.dp).background(Green)) { BasicText(FIRST) }
                     }
@@ -260,7 +266,7 @@ class NavHostScreenShotTest {
                                     IntSize(targetSize.width, initialSize.height + 400) at 150
                                 }
                             }
-                        }
+                        },
                     ) {
                         Box(Modifier.size(500.dp).background(Blue)) { BasicText(SECOND) }
                     }
@@ -280,8 +286,7 @@ class NavHostScreenShotTest {
         composeTestRule.mainClock.advanceTimeBy(75)
 
         composeTestRule
-            .onNodeWithText(SECOND)
-            .onParent()
+            .onNodeWithTag(navHostTag)
             .captureToImage()
             .assertAgainstGolden(screenshotRule, "testNavHostSizeTransform")
     }

@@ -183,7 +183,7 @@ interface HealthConnectClient {
      */
     suspend fun <T : Record> readRecord(
         recordType: KClass<T>,
-        recordId: String
+        recordId: String,
     ): ReadRecordResponse<T>
 
     /**
@@ -247,7 +247,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.AggregateIntoMinutes
      */
     suspend fun aggregateGroupByDuration(
-        request: AggregateGroupByDurationRequest,
+        request: AggregateGroupByDurationRequest
     ): List<AggregationResultGroupedByDuration>
 
     /**
@@ -274,7 +274,7 @@ interface HealthConnectClient {
      * @sample androidx.health.connect.client.samples.AggregateIntoMonths
      */
     suspend fun aggregateGroupByPeriod(
-        request: AggregateGroupByPeriodRequest,
+        request: AggregateGroupByPeriodRequest
     ): List<AggregationResultGroupedByPeriod>
 
     /**
@@ -391,7 +391,7 @@ interface HealthConnectClient {
     ): List<MedicalResource> =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#upsetMedicalResources()"
+            "HealthConnectClient#upsetMedicalResources()",
         )
 
     /**
@@ -438,7 +438,7 @@ interface HealthConnectClient {
     ): ReadMedicalResourcesResponse =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#readMedicalResources(request: ReadMedicalResourcesRequest)"
+            "HealthConnectClient#readMedicalResources(request: ReadMedicalResourcesRequest)",
         )
 
     /**
@@ -480,7 +480,7 @@ interface HealthConnectClient {
     suspend fun readMedicalResources(ids: List<MedicalResourceId>): List<MedicalResource> =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#readMedicalResources(ids: List<MedicalResourceId>)"
+            "HealthConnectClient#readMedicalResources(ids: List<MedicalResourceId>)",
         )
 
     /**
@@ -510,7 +510,7 @@ interface HealthConnectClient {
     suspend fun deleteMedicalResources(ids: List<MedicalResourceId>): Unit =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#deleteMedicalResources(ids: List<MedicalResourceId>)"
+            "HealthConnectClient#deleteMedicalResources(ids: List<MedicalResourceId>)",
         )
 
     /**
@@ -538,7 +538,7 @@ interface HealthConnectClient {
     suspend fun deleteMedicalResources(request: DeleteMedicalResourcesRequest): Unit =
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#deleteMedicalResources(request: DeleteMedicalResourcesRequest)"
+            "HealthConnectClient#deleteMedicalResources(request: DeleteMedicalResourcesRequest)",
         )
 
     /**
@@ -581,7 +581,7 @@ interface HealthConnectClient {
     ): MedicalDataSource {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#createMedicalDataSource()"
+            "HealthConnectClient#createMedicalDataSource()",
         )
     }
 
@@ -612,7 +612,7 @@ interface HealthConnectClient {
     suspend fun deleteMedicalDataSourceWithData(id: String) {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#deleteMedicalDataSourceWithData()"
+            "HealthConnectClient#deleteMedicalDataSourceWithData()",
         )
     }
 
@@ -664,7 +664,7 @@ interface HealthConnectClient {
     ): List<MedicalDataSource> {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#getMedicalDataSources()"
+            "HealthConnectClient#getMedicalDataSources()",
         )
     }
 
@@ -715,7 +715,7 @@ interface HealthConnectClient {
     suspend fun getMedicalDataSources(ids: List<String>): List<MedicalDataSource> {
         throw createExceptionDueToFeatureUnavailable(
             FEATURE_CONSTANT_NAME_PHR,
-            "HealthConnectClient#getMedicalDataSources()"
+            "HealthConnectClient#getMedicalDataSources()",
         )
     }
 
@@ -768,14 +768,7 @@ interface HealthConnectClient {
         /** Availability Status. */
         @Retention(AnnotationRetention.SOURCE)
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        @IntDef(
-            value =
-                [
-                    SDK_UNAVAILABLE,
-                    SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED,
-                    SDK_AVAILABLE,
-                ]
-        )
+        @IntDef(value = [SDK_UNAVAILABLE, SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED, SDK_AVAILABLE])
         annotation class AvailabilityStatus
 
         /**
@@ -871,7 +864,7 @@ interface HealthConnectClient {
         private fun isPackageInstalled(
             packageManager: PackageManager,
             packageName: String,
-            versionCode: Int = DEFAULT_PROVIDER_MIN_VERSION_CODE
+            versionCode: Int = DEFAULT_PROVIDER_MIN_VERSION_CODE,
         ): Boolean {
             val packageInfo: PackageInfo =
                 try {
@@ -888,7 +881,7 @@ interface HealthConnectClient {
 
         internal fun hasBindableService(
             packageManager: PackageManager,
-            packageName: String
+            packageName: String,
         ): Boolean {
             val bindIntent = Intent()
             bindIntent.setPackage(packageName)

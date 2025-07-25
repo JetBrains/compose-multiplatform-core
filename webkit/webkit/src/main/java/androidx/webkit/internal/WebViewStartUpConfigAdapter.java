@@ -16,10 +16,10 @@
 
 package androidx.webkit.internal;
 
-import androidx.annotation.NonNull;
 import androidx.webkit.WebViewStartUpConfig;
 
 import org.chromium.support_lib_boundary.WebViewStartUpConfigBoundaryInterface;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 

@@ -36,7 +36,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
         annotation class ExperimentalKotlinAnnotation
     """
                 )
-            )
+            ),
     ) {
     @Test
     fun `Test var properties annotated with all targets`() {
@@ -214,7 +214,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
 
                 annotation class NonExperimentalAnnotation
             """
-                )
+                ),
             )
 
         check(*input).expectClean()
@@ -268,7 +268,7 @@ class ExperimentalPropertyAnnotationDetectorTest :
                             }
                         }
                     """
-                )
+                ),
             )
 
         val expected =

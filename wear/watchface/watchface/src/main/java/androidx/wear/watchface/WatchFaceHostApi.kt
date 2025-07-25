@@ -131,7 +131,7 @@ public interface WatchFaceHostApi {
         complicationSlotId: Int,
         dataSources: List<ComponentName>?,
         @DataSourceId fallbackSystemProvider: Int,
-        type: Int
+        type: Int,
     )
 
     /** Schedules a call to [Renderer.renderInternal] to draw the next frame. */

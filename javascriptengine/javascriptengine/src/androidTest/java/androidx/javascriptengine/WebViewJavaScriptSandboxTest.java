@@ -18,6 +18,7 @@ package androidx.javascriptengine;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 
 import androidx.annotation.GuardedBy;
@@ -814,6 +815,7 @@ public class WebViewJavaScriptSandboxTest {
     @Test
     @MediumTest
     public void testHeapSizeAdjustment() throws Throwable {
+        Assume.assumeTrue("Disabled on SDK <= 26: b/414343436", Build.VERSION.SDK_INT > 26);
         final String code = "\"PASS\"";
         final String expected = "PASS";
         final long[] heapSizes = {

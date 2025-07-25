@@ -16,94 +16,150 @@
 
 package androidx.compose.ui.input
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material.TextField
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.OnCanvasTests
+import androidx.compose.ui.TestInputState
+import androidx.compose.ui.WebApplicationScope
 import androidx.compose.ui.events.InputEvent
 import androidx.compose.ui.events.InputEventInit
 import androidx.compose.ui.events.keyEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.sendFromScope
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.unit.Density
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import kotlin.math.absoluteValue
 import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.CompositionEventInit
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.MouseEvent
-import org.w3c.dom.events.MouseEventInit
 
-private class InputChannel(
-    private val channel: Channel<String> = Channel<String>(
-        1, onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-) {
-    lateinit  var htmlInput: HTMLTextAreaElement
-    suspend fun receive() = channel.receive()
-}
+abstract class TextInputTests : OnCanvasTests {
 
-class TextInputTests : OnCanvasTests  {
+    internal abstract suspend fun createTestInputState(): TestInputState
 
-    private fun InputChannel.sendToHtmlInput(vararg events: Event) {
-        dispatchEvents(htmlInput, *events)
-    }
+    internal fun currentHtmlInput() = getShadowRoot().querySelector("textarea") as HTMLTextAreaElement
 
-    private fun createTextFieldWithChannel(): InputChannel {
-        val textInputChannel = Channel<String>(
-            1, onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
-        val inputChannel = InputChannel(textInputChannel)
-
-        val (firstFocusRequester) = FocusRequester.createRefs()
+    internal suspend fun WebApplicationScope.createApplicationWithHolder(): TestInputState {
+        val focusRequester = FocusRequester()
+        val textFieldStateHolder = createTestInputState()
 
         createComposeWindow {
-            BasicTextField(
-                value = "",
-                onValueChange = { value ->
-                    textInputChannel.sendFromScope(value)
-                },
-                modifier = Modifier.focusRequester(firstFocusRequester)
-            )
-
-            LaunchedEffect(Unit) {
-                firstFocusRequester.requestFocus()
-                inputChannel.htmlInput = document.querySelector("textarea") as HTMLTextAreaElement
-            }
+            textFieldStateHolder.createBasicTextField(focusRequester)
         }
 
-        return inputChannel
+        focusRequester.requestFocus()
+        waitForHtmlInput()
+
+        return textFieldStateHolder
+    }
+
+
+    private fun sendToHtmlInput(vararg events: Event) {
+        dispatchEvents(currentHtmlInput(), *events)
+    }
+
+    // delay in web tests called directly will be completely ignored
+    private suspend fun waitFor(millis: Long) {
+        withContext(Dispatchers.Default) { delay(millis) }
+    }
+
+    internal suspend fun WebApplicationScope.waitForHtmlInput(): HTMLTextAreaElement {
+        while (true) {
+            val element = getShadowRoot().querySelector("textarea")
+            if (element is HTMLTextAreaElement) {
+                return element
+            }
+            yield()
+        }
+        awaitIdle()
     }
 
     @Test
-    fun regularInput() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
+    fun positionInput() = runApplicationTest {
+        val focusRequester = FocusRequester()
+        val inputHolder = createTestInputState()
 
-        yield()
+        var leftState by mutableStateOf(0.dp)
+        var topState by mutableStateOf(0.dp)
 
-        textInputChannel.sendToHtmlInput(
+        createComposeWindow {
+            Box(modifier = Modifier.padding(horizontal = leftState, vertical = topState)) {
+                inputHolder.createBasicTextField(focusRequester)
+            }
+        }
+
+        focusRequester.requestFocus()
+        waitForHtmlInput()
+
+        sendToHtmlInput(keyEvent("a"), keyEvent("b"), keyEvent("c"))
+
+        inputHolder.awaitAndAssertTextEquals("abc")
+
+        val clientRectInitial = currentHtmlInput().getBoundingClientRect()
+
+        leftState = 50.dp
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        val clientRectUpdated = currentHtmlInput().getBoundingClientRect()
+
+        assertEquals(50.0, clientRectUpdated.left - clientRectInitial.left, "left position updated")
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        // intentionally huge, will never grow over viewport nevertheless
+        topState = 10000000.dp
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        var clientRectSticky= currentHtmlInput().getBoundingClientRect()
+        val expectedTopValue = window.innerHeight - clientRectSticky.height
+
+        // TODO: In Firefox there's a 0.5 delta - may be this can be accounted precisely somehow
+        val topDelta = clientRectSticky.top - expectedTopValue
+        val deltaThreshold = 1.01
+        assertTrue(topDelta.absoluteValue < deltaThreshold, "top position sticky $topDelta")
+
+        // intentionally huge, will never grow over viewport nevertheless
+        leftState = 10000000.dp
+
+        focusRequester.requestFocus()
+        awaitIdle()
+
+        clientRectSticky= currentHtmlInput().getBoundingClientRect()
+        val expectedLeftValue = window.innerWidth - clientRectSticky.width
+        val leftDelta = clientRectSticky.left - expectedLeftValue
+        assertTrue(leftDelta.absoluteValue < deltaThreshold, "left position sticky $leftDelta")
+    }
+
+
+    @Test
+    fun regularInput() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
+
+        sendToHtmlInput(
             keyEvent("s"),
             keyEvent("t"),
             keyEvent("e"),
@@ -111,54 +167,57 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("1")
         )
 
-        assertEquals("step1", textInputChannel.receive())
+        textFieldValue.awaitAndAssertTextEquals("step1")
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("Backspace", code = "Backspace"),
             keyEvent("X"),
         )
 
-        assertEquals("stepX", textInputChannel.receive(), "Backspace should delete last symbol typed")
+        textFieldValue.awaitAndAssertTextEquals(
+            "stepX",
+            "Backspace should delete last symbol typed"
+        )
     }
 
     @Test
-    fun compositeInput() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun compositeInput() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        val backingTextField = document.querySelector("textarea")
+        val backingTextField = getShadowRoot().querySelector("textarea")
         assertIs<HTMLTextAreaElement>(backingTextField)
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             compositionStart(),
             beforeInput("insertCompositionText", "a"),
-            keyEvent("a", type = "keyup"),
+            keyEvent("a", type = "keyup", isComposing = true),
             keyEvent("1", code = "Digit1", isComposing = true),
             beforeInput("insertCompositionText", "啊"),
             compositionEnd("啊"),
             keyEvent("1", code = "Digit1", type = "keyup"),
         )
 
-        textInputChannel.sendToHtmlInput(
-            keyEvent("X"),
-            keyEvent("X", type = "keyup")
+        textFieldValue.awaitAndAssertTextEquals("啊")
+
+        sendToHtmlInput(
+            keyEvent("x"),
+            keyEvent("x", type = "keyup")
         )
 
-        assertEquals("啊X", textInputChannel.receive())
+        textFieldValue.awaitAndAssertTextEquals("啊x")
     }
 
-    @Ignore // TODO: https://youtrack.jetbrains.com/issue/CMP-7978
     @Test
-    fun compositeInputWebkit() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun compositeInputWebkit() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
         val keyEvent = keyEvent("1", code = "Digit1")
 
-        delay(50)
+        // We can not change timestamp for js events, so we just add some delay to enforce it
+        waitFor(50)
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             compositionStart(),
             keyEvent("a", isComposing = true),
             keyEvent("a", type = "keyup", isComposing = true),
@@ -166,25 +225,27 @@ class TextInputTests : OnCanvasTests  {
             beforeInput("insertFromComposition", "啊"),
             compositionEnd("啊"),
             keyEvent,
-            keyEvent("1", type="keyup", code = "Digit1"),
+            keyEvent("1", type = "keyup", code = "Digit1"),
         )
 
-        delay(50)
+        textFieldValue.awaitAndAssertTextEquals("啊")
 
-        textInputChannel.sendToHtmlInput(
+        // We can not change timestamp for js events, so we just add some delay to enforce it
+        waitFor(100)
+
+        sendToHtmlInput(
             keyEvent("b"),
             keyEvent("b", type = "keyup")
         )
 
-        assertEquals("啊b", textInputChannel.receive())
+        textFieldValue.awaitAndAssertTextEquals("啊b")
     }
 
     @Test
-    fun mobileInput() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun mobileInput() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             mobileKeyDown(),
             compositionStart(),
             beforeInput("insertCompositionText", "a"),
@@ -197,16 +258,15 @@ class TextInputTests : OnCanvasTests  {
             mobileKeyUp()
         )
 
-        assertEquals("abc", textInputChannel.receive())
+        textFieldValue.awaitAndAssertTextEquals("abc")
     }
 
     @Ignore
     @Test
-    fun repeatedAccent() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun repeatedAccent() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
@@ -223,9 +283,12 @@ class TextInputTests : OnCanvasTests  {
         )
 
         // TODO: this does not behave as desktop, ideally we should have "abc" here
-        assertEquals("bc", textInputChannel.receive(), "Repeat mode should be resolved as Accent Dialogue")
+        textFieldValue.awaitAndAssertTextEquals(
+            "bc",
+            "Repeat mode should be resolved as Accent Dialogue"
+        )
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
@@ -244,11 +307,10 @@ class TextInputTests : OnCanvasTests  {
     }
 
     @Test
-    fun repeatedDefault() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun repeatedDefault() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             keyEvent("a", repeat = true),
             beforeInput("insertText", "a"),
@@ -260,15 +322,15 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("c")
         )
 
-        assertTrue(Regex("a+bc").matches(textInputChannel.receive()), "Repeat mode should be resolved as Default")
+
+        textFieldValue.awaitAndAssertTextMatches( Regex("a+bc"), "Repeat mode should be resolved as Default")
     }
 
     @Test
-    fun repeatedAccentMenuPressed() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun repeatedAccentMenuPressed() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
@@ -281,15 +343,14 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("1", code = "Digit1", type = "keyup"),
         )
 
-        assertEquals("à", textInputChannel.receive(), "Choose symbol from Accent Menu")
+        textFieldValue.awaitAndAssertTextEquals("à", "Choose symbol from Accent Menu")
     }
 
     @Test
-    fun repeatedAccentMenuIgnoreNonTyped() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    fun repeatedAccentMenuIgnoreNonTyped() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("ArrowLeft", code = "ArrowLeft"),
             keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
             keyEvent("ArrowLeft", code = "ArrowLeft", repeat = true),
@@ -305,14 +366,14 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("c", type = "keyup"),
         )
 
-        assertEquals("abc", textInputChannel.receive(), "XXX")
+        textFieldValue.awaitAndAssertTextEquals("abc", "XXX")
     }
 
-    fun repeatedAccentMenuClicked() = runTest {
-        val textInputChannel = createTextFieldWithChannel()
-        yield()
+    @Test
+    fun repeatedAccentMenuClicked() = runApplicationTest {
+        val textFieldValue =  createApplicationWithHolder()
 
-        textInputChannel.sendToHtmlInput(
+        sendToHtmlInput(
             keyEvent("a"),
             keyEvent("a", repeat = true),
             keyEvent("a", repeat = true),
@@ -323,49 +384,27 @@ class TextInputTests : OnCanvasTests  {
             beforeInput(inputType = "insertText", data = "æ"),
         )
 
-        assertEquals("æ", textInputChannel.receive(), "Choose symbol from Accent Menu")
+        textFieldValue.awaitAndAssertTextEquals("æ", "Choose symbol from Accent Menu")
     }
 
 
-
     @Test
-    fun keyboardEventPassedToTextField() = runTest {
+    fun keyboardEventPassedToTextField() = runApplicationTest {
+        val focusRequester1 = FocusRequester()
+        val focusRequester2 = FocusRequester()
 
-        val textInputChannel = Channel<String>(
-            1, onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
-
-        val (firstFocusRequester, secondFocusRequester) = FocusRequester.createRefs()
+        val inputHolder1 = createTestInputState()
+        val inputHolder2 = createTestInputState()
 
         createComposeWindow {
-            TextField(
-                value = "",
-                onValueChange = { value ->
-                    textInputChannel.sendFromScope(value)
-                },
-                modifier = Modifier.focusRequester(firstFocusRequester)
-            )
-
-            TextField(
-                value = "",
-                onValueChange = { value ->
-                    textInputChannel.sendFromScope(value)
-                },
-                modifier = Modifier.focusRequester(secondFocusRequester)
-            )
-
-            SideEffect {
-                firstFocusRequester.requestFocus()
-            }
+            inputHolder1.createBasicTextField(focusRequester1)
+            inputHolder2.createBasicTextField(focusRequester2)
         }
 
-        yield()
+        focusRequester1.requestFocus()
+        waitForHtmlInput()
 
-        val backingTextField = document.querySelector("textarea")
-        assertIs<HTMLTextAreaElement>(backingTextField)
-
-        dispatchEvents(
-            backingTextField,
+        sendToHtmlInput(
             keyEvent("s"),
             keyEvent("t"),
             keyEvent("e"),
@@ -373,13 +412,12 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("1")
         )
 
+        inputHolder1.awaitAndAssertTextEquals("step1")
 
-        assertEquals("step1", textInputChannel.receive())
+        focusRequester2.requestFocus()
+        waitForHtmlInput()
 
-        secondFocusRequester.requestFocus()
-
-        dispatchEvents(
-            backingTextField,
+        sendToHtmlInput(
             keyEvent("s"),
             keyEvent("t"),
             keyEvent("e"),
@@ -387,92 +425,56 @@ class TextInputTests : OnCanvasTests  {
             keyEvent("2")
         )
 
-        assertEquals("step2", textInputChannel.receive())
-    }
-
-    @Test
-    fun canSelectUsingMouse() = runTest {
-        val syncChannel = Channel<TextRange?>(
-            1, onBufferOverflow = BufferOverflow.DROP_OLDEST
-        )
-
-        var textFieldWidth = 0
-
-        createComposeWindow {
-            val textState = remember { TextFieldState("qwerty 1234567") }
-            val focusRequester = remember { FocusRequester() }
-
-            CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                Column {
-                    TextField(state = textState, modifier = Modifier.focusRequester(focusRequester).onGloballyPositioned {
-                        textFieldWidth = it.size.width
-                    })
-
-                    LaunchedEffect(textState.selection) {
-                        focusRequester.requestFocus()
-                        syncChannel.send(textState.selection)
-                    }
-                }
-            }
-
-            SideEffect {
-                focusRequester.requestFocus()
-            }
-        }
-
-        yield()
-
-        var selection = syncChannel.receive()
-        assertEquals(TextRange(14, 14), selection)
-        assertTrue(textFieldWidth > 0, "TextField width should be positive")
-
-        val canvas = getCanvas()
-        canvas.dispatchEvent(MouseEvent("mouseenter"))
-        yield()
-        canvas.dispatchEvent(MouseEvent("mousedown", MouseEventInit(clientX = 8, clientY = 20, buttons = 1, button = 1)))
-        yield()
-        canvas.dispatchEvent(MouseEvent("mouseup", MouseEventInit(clientX = 8, clientY = 20, buttons = 0, button = 1)))
-
-        selection = syncChannel.receive()
-        assertEquals(TextRange(0, 0), selection)
-
-        val textArea = document.querySelector("textarea")
-        assertIs<HTMLTextAreaElement>(textArea)
-
-        val textAreaRect = textArea.getBoundingClientRect()
-        // Do a manual hit-test
-        val elementsAtPos = document.elementsFromPoint(
-            textAreaRect.left + textAreaRect.width / 2 ,
-            textAreaRect.top + textAreaRect.height / 2
-        )
-
-        // We expect the canvas to be on the top despite the coordinates match the textarea.
-        // So it will be the first to process all the point inputs
-        assertEquals(canvas, elementsAtPos[0], "First element under mouse supposed to be canvas")
-        assertTrue(elementsAtPos.toList().any { it == textArea }) // such a weird check to make the test common for js and wasm
-        withContext(Dispatchers.Default) {
-            delay(250) // to separate the mouse events
-        }
-
-
-        // Try to select the text using mouse:
-        val startX = textAreaRect.left.toInt() + 1
-        val startY = textAreaRect.top.toInt() + 8
-        val endX = startX + textFieldWidth
-        canvas.dispatchEvent(MouseEvent("mousemove", MouseEventInit(clientX = startX, clientY = startY, buttons = 1, button = 1)))
-        canvas.dispatchEvent(MouseEvent("mousedown", MouseEventInit(clientX = startX, clientY = startY, buttons = 1, button = 1)))
-        canvas.dispatchEvent(MouseEvent("mousemove", MouseEventInit(clientX = endX, clientY = startY, buttons = 1, button = 1)))
-        canvas.dispatchEvent(MouseEvent("mouseup", MouseEventInit(clientX = endX, clientY = startY, buttons = 0, button = 1)))
-
-        selection = syncChannel.receive()
-        assertEquals(TextRange(0, 14), selection)
+        inputHolder2.awaitAndAssertTextEquals("step2")
     }
 }
 
+private fun compositionStart(data: String = "") =
+    CompositionEvent("compositionstart", CompositionEventInit(data = data))
 
-private fun compositionStart(data: String = "")  = CompositionEvent("compositionstart", CompositionEventInit(data = data))
-private fun compositionEnd(data: String) = CompositionEvent("compositionend", CompositionEventInit(data = data))
-private fun beforeInput(inputType: String, data: String?) = InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data))
+private fun compositionEnd(data: String) =
+    CompositionEvent("compositionend", CompositionEventInit(data = data))
+
+private fun beforeInput(inputType: String, data: String?) =
+    InputEvent("beforeinput", InputEventInit(inputType = inputType, data = data))
 
 private fun mobileKeyDown() = keyEvent(type = "keydown", key = "Unidentified", code = "")
 private fun mobileKeyUp() = keyEvent(type = "keydown", key = "Unidentified", code = "")
+
+class BasicTextFieldTests : TextInputTests() {
+
+    private class TextFieldValueHolder(private val textFieldValue: MutableState<TextFieldValue>) : TestInputState {
+        override val text: String
+            get() = textFieldValue.value.text
+
+        @Composable
+        override fun createBasicTextField(focusRequester: FocusRequester) {
+            BasicTextField(
+                value = textFieldValue.value,
+                onValueChange = { value ->
+                    textFieldValue.value = value
+                },
+                modifier = Modifier.focusRequester(focusRequester)
+            )
+        }
+    }
+
+    override suspend fun createTestInputState(): TestInputState = TextFieldValueHolder(mutableStateOf(TextFieldValue()))
+}
+
+class BasicTextFieldTests2 : TextInputTests() {
+    private class TextFieldStateHolder(private val textFieldState: TextFieldState) : TestInputState {
+        override val text: CharSequence
+            get() = textFieldState.text
+
+        @Composable
+        override fun createBasicTextField(focusRequester: FocusRequester) {
+            BasicTextField(
+                state = textFieldState,
+                modifier = Modifier.focusRequester(focusRequester)
+            )
+        }
+    }
+
+    override suspend fun createTestInputState(): TestInputState = TextFieldStateHolder(TextFieldState())
+}

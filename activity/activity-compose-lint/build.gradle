@@ -43,7 +43,7 @@ dependencies {
     testImplementation(project(":compose:lint:common-test"))
     testImplementation(libs.kotlinStdlib)
     testRuntimeOnly(libs.kotlinReflect)
-    testImplementation(libs.kotlinStdlibJdk8)
+    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.androidLint)
     testImplementation(libs.androidLintTests)
     testImplementation(libs.junit)

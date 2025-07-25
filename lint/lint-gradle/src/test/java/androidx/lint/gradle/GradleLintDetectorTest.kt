@@ -26,7 +26,7 @@ import com.android.tools.lint.detector.api.Issue
 /** Base test setup for lint checks in this project, providing the defined Gradle [STUBS]. */
 abstract class GradleLintDetectorTest(
     private val detector: Detector,
-    private val issues: List<Issue>
+    private val issues: List<Issue>,
 ) : LintDetectorTest() {
     override fun getDetector(): Detector = detector
 
@@ -38,7 +38,7 @@ abstract class GradleLintDetectorTest(
      */
     fun check(
         vararg files: TestFile,
-        skipTestModes: Array<TestMode> = emptyArray()
+        skipTestModes: Array<TestMode> = emptyArray(),
     ): TestLintResult {
         return lint().files(*STUBS, *files).skipTestModes(*skipTestModes).run()
     }

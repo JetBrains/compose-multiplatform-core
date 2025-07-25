@@ -31,7 +31,7 @@ android {
 
 dependencies {
     implementation(libs.kotlinCoroutinesCore)
-    implementation("androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha16")
+    implementation("androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha17")
 }
 
 /*

@@ -32,13 +32,13 @@ class ActivityComposeIssueRegistry : IssueRegistry() {
             listOf(
                 ActivityResultLaunchDetector.LaunchDuringComposition,
                 CollectProgressDetector.NoCollectCallFound,
-                LocalContextCastIssueDetector.ContextCastToActivity
+                LocalContextCastIssueDetector.ContextCastToActivity,
             )
 
     override val vendor =
         Vendor(
             vendorName = "Jetpack Activity Compose",
             identifier = "androidx.activity.compose",
-            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128"
+            feedbackUrl = "https://issuetracker.google.com/issues/new?component=612128",
         )
 }

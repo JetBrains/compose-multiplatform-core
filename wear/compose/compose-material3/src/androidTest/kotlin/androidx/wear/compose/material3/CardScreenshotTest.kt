@@ -70,7 +70,7 @@ class CardScreenshotTest {
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
                 ),
-            sizeToIntrinsics = false
+            sizeToIntrinsics = false,
         )
     }
 
@@ -81,7 +81,7 @@ class CardScreenshotTest {
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
                 ),
-            sizeToIntrinsics = true
+            sizeToIntrinsics = true,
         )
     }
 
@@ -102,7 +102,7 @@ class CardScreenshotTest {
             OutlinedCard(
                 onClick = {},
                 modifier = Modifier.testTag(TEST_TAG).width(IntrinsicSize.Max),
-                enabled = false
+                enabled = false,
             ) {
                 Text("Outlined Card: Some body content")
             }
@@ -196,7 +196,7 @@ class CardScreenshotTest {
                 painterResource(
                     id = androidx.wear.compose.material3.test.R.drawable.backgroundimage1
                 ),
-            sizeToIntrinsics = false
+            sizeToIntrinsics = false,
         )
     }
 
@@ -204,7 +204,7 @@ class CardScreenshotTest {
     private fun TestCard(
         enabled: Boolean = true,
         colors: CardColors = CardDefaults.cardColors(),
-        contentPadding: PaddingValues = CardDefaults.ContentPadding
+        contentPadding: PaddingValues = CardDefaults.ContentPadding,
     ) {
         Card(
             enabled = enabled,
@@ -220,7 +220,7 @@ class CardScreenshotTest {
     @Composable
     private fun TestAppCard(
         enabled: Boolean = true,
-        colors: CardColors = CardDefaults.cardColors()
+        colors: CardColors = CardDefaults.cardColors(),
     ) {
         AppCard(
             enabled = enabled,
@@ -240,7 +240,7 @@ class CardScreenshotTest {
     private fun TestTitleCard(
         enabled: Boolean = true,
         contentPadding: PaddingValues = CardDefaults.ContentPadding,
-        colors: CardColors = CardDefaults.cardColors()
+        colors: CardColors = CardDefaults.cardColors(),
     ) {
         TitleCard(
             enabled = enabled,
@@ -261,7 +261,7 @@ class CardScreenshotTest {
         sizeToIntrinsics: Boolean,
         enabled: Boolean = true,
         contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
-        colors: CardColors = CardDefaults.cardWithContainerPainterColors()
+        colors: CardColors = CardDefaults.cardWithContainerPainterColors(),
     ) {
         Card(
             containerPainter =
@@ -284,7 +284,7 @@ class CardScreenshotTest {
         time: String = "now",
         enabled: Boolean = true,
         contentPadding: PaddingValues = CardDefaults.CardWithContainerPainterContentPadding,
-        colors: CardColors = CardDefaults.cardWithContainerPainterColors()
+        colors: CardColors = CardDefaults.cardWithContainerPainterColors(),
     ) {
         TitleCard(
             containerPainter =
@@ -329,7 +329,7 @@ class CardScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {

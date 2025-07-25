@@ -16,7 +16,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING"/>
+  <uses-permission android:name="android.permission.SCENE_UNDERSTANDING_COARSE" />
+  <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+  <uses-permission android:name="android.permission.INTERNET" />
 
   <application
       android:label="Spatial Compose App">
@@ -42,6 +45,27 @@
         android:name=".VideoPlayerActivity"
         android:enableOnBackInvokedCallback="true"
         android:exported="true">
+    </activity>
+    <activity
+        android:name=".WindowManagerJxrTestActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
+    </activity>
+    <activity
+        android:name=".NonCustomizableVideoPlayerActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
+    </activity>
+    <activity
+        android:name=".StateTestAppActivity"
+        android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+        android:enableOnBackInvokedCallback="true"
+        android:exported="true">
+      <intent-filter>
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
     </activity>
   </application>
 

@@ -37,7 +37,7 @@ class FhirVersionTest {
     fun setup() {
         Assume.assumeTrue(
             "FEATURE_PERSONAL_HEALTH_RECORD is not available on this device!",
-            isPersonalHealthRecordFeatureAvailableInPlatform()
+            isPersonalHealthRecordFeatureAvailableInPlatform(),
         )
     }
 

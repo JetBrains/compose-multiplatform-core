@@ -64,7 +64,7 @@ public class WireTraceSink(
     private val bufferedSink: BufferedSink,
 
     /** Coroutine context to execute the serialization on. */
-    private val coroutineContext: CoroutineContext = Dispatchers.IO
+    private val coroutineContext: CoroutineContext = Dispatchers.IO,
 ) : TraceSink() {
     private val wireTraceEventSerializer =
         WireTraceEventSerializer(sequenceId, ProtoWriter(bufferedSink))

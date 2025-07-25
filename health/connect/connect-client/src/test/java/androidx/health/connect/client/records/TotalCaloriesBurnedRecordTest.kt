@@ -77,7 +77,7 @@ class TotalCaloriesBurnedRecordTest {
                         endTime = Instant.ofEpochMilli(1236L),
                         endZoneOffset = null,
                         metadata = Metadata.manualEntry(),
-                        energy = 400.calories
+                        energy = 400.calories,
                     )
                     .toString()
             )

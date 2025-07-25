@@ -62,7 +62,7 @@ import kotlinx.coroutines.withContext
  * If you need to call compose concurrently, you can omit [id] so that a random fake ID will be
  * used. Otherwise, call compose sequentially when using the same [id].
  */
-suspend fun GlanceAppWidget.compose(
+public suspend fun GlanceAppWidget.compose(
     @Suppress("ContextFirst") context: Context,
     id: GlanceId = createFakeAppWidgetId(),
     options: Bundle? = null,
@@ -74,7 +74,7 @@ suspend fun GlanceAppWidget.compose(
             id = id,
             options = options ?: Bundle(),
             sizes = size?.let { listOf(size) },
-            state = state
+            state = state,
         )
         .first()
 
@@ -104,7 +104,7 @@ suspend fun GlanceAppWidget.compose(
  */
 @SuppressLint("PrimitiveInCollection")
 @ExperimentalGlanceApi
-fun GlanceAppWidget.runComposition(
+public fun GlanceAppWidget.runComposition(
     @Suppress("ContextFirst") context: Context,
     id: GlanceId = createFakeAppWidgetId(),
     options: Bundle = Bundle(),
@@ -178,7 +178,7 @@ fun GlanceAppWidget.runComposition(
  *   [AppWidgetProviderInfo]
  * @return the preview composition translated to a [RemoteViews]
  */
-suspend fun GlanceAppWidget.composeForPreview(
+public suspend fun GlanceAppWidget.composeForPreview(
     context: Context,
     widgetCategory: Int,
     info: AppWidgetProviderInfo? = null,
@@ -196,7 +196,7 @@ suspend fun GlanceAppWidget.composeForPreview(
             if (content.replayCache.isEmpty()) {
                 Log.w(
                     GlanceAppWidgetTag,
-                    "${this@composeForPreview::class} did not call provideContent in providePreview"
+                    "${this@composeForPreview::class} did not call provideContent in providePreview",
                 )
                 content.emit {}
             }
@@ -209,9 +209,7 @@ suspend fun GlanceAppWidget.composeForPreview(
     val recomposer = Recomposer(coroutineContext)
     val composition = Composition(applier, recomposer)
     composition.setContent {
-        CompositionLocalProvider(
-            LocalContext provides context,
-        ) {
+        CompositionLocalProvider(LocalContext provides context) {
             ForEachSize(previewSizeMode, minSize, content)
         }
     }

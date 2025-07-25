@@ -76,7 +76,7 @@ public fun NavigationSuiteScaffold(
                 NavigationSuite(
                     layoutType = layoutType,
                     colors = navigationSuiteColors,
-                    content = navigationSuiteItems
+                    content = navigationSuiteItems,
                 )
             }
             content()
@@ -108,7 +108,7 @@ internal object XrNavigationSuiteScaffoldOverride : NavigationSuiteScaffoldOverr
             layoutType = layoutType,
             navigationSuiteColors = navigationSuiteColors,
             state = state,
-            content = content
+            content = content,
         )
     }
 }

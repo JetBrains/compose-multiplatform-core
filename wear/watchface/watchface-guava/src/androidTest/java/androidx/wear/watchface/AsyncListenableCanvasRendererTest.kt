@@ -41,7 +41,7 @@ import org.junit.runner.RunWith
 internal class TestAsyncCanvasRenderInitWatchFaceService(
     testContext: Context,
     private var surfaceHolderOverride: SurfaceHolder,
-    private var initFuture: ListenableFuture<Unit>
+    private var initFuture: ListenableFuture<Unit>,
 ) : WatchFaceService() {
 
     val lock = Any()
@@ -58,7 +58,7 @@ internal class TestAsyncCanvasRenderInitWatchFaceService(
         surfaceHolder: SurfaceHolder,
         watchState: WatchState,
         complicationSlotsManager: ComplicationSlotsManager,
-        currentUserStyleRepository: CurrentUserStyleRepository
+        currentUserStyleRepository: CurrentUserStyleRepository,
     ) =
         WatchFace(
             WatchFaceType.DIGITAL,
@@ -69,7 +69,7 @@ internal class TestAsyncCanvasRenderInitWatchFaceService(
                     currentUserStyleRepository,
                     watchState,
                     CanvasType.HARDWARE,
-                    16
+                    16,
                 ) {
                 override fun initFuture(): ListenableFuture<Unit> {
                     initFutureLatch.countDown()
@@ -84,11 +84,11 @@ internal class TestAsyncCanvasRenderInitWatchFaceService(
                 override fun renderHighlightLayer(
                     canvas: Canvas,
                     bounds: Rect,
-                    zonedDateTime: ZonedDateTime
+                    zonedDateTime: ZonedDateTime,
                 ) {
                     // NOP
                 }
-            }
+            },
         )
 
     override fun getSystemTimeProvider() =
@@ -119,7 +119,7 @@ public class AsyncListenableCanvasRendererTest : WatchFaceControlClientServiceTe
                     DeviceConfig(false, false, 0, 0),
                     WatchUiState(false, 0),
                     null,
-                    emptyMap()
+                    emptyMap(),
                 )
             }
 

@@ -35,7 +35,7 @@ public class SizeFilteredEncoderProfilesProvider(
     private val provider: EncoderProfilesProvider,
 
     /** The list of supported sizes. */
-    private val supportedSizes: List<Size>
+    private val supportedSizes: List<Size>,
 ) : EncoderProfilesProvider {
 
     private val encoderProfilesCache = mutableMapOf<Int, EncoderProfilesProxy?>()

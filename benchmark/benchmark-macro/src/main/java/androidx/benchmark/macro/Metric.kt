@@ -48,7 +48,7 @@ sealed class Metric {
     /** After stopping, collect metrics */
     internal abstract fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement>
 
     /**
@@ -111,7 +111,7 @@ sealed class Metric {
                     targetPackageName = targetPackageName,
                     testPackageName =
                         InstrumentationRegistry.getInstrumentation().context.packageName,
-                    startupMode = startupMode
+                    startupMode = startupMode,
                 )
         }
     }
@@ -140,7 +140,7 @@ sealed class Metric {
          * True if the [data] param is a single value per measurement, false if it contains an
          * arbitrary number of samples.
          */
-        val requireSingleValue: Boolean
+        val requireSingleValue: Boolean,
     ) {
 
         /**
@@ -151,7 +151,7 @@ sealed class Metric {
          */
         constructor(
             name: String,
-            data: Double
+            data: Double,
         ) : this(name, listOf(data), requireSingleValue = true)
 
         /**
@@ -165,7 +165,7 @@ sealed class Metric {
          */
         constructor(
             name: String,
-            dataSamples: List<Double>
+            dataSamples: List<Double>,
         ) : this(name, dataSamples, requireSingleValue = false)
 
         init {
@@ -203,13 +203,13 @@ private fun Long.nsToDoubleMs(): Double = this / 1_000_000.0
 class FrameTimingMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val frameData =
             FrameTimingQuery.getFrameData(
                 session = traceSession,
                 captureApiLevel = captureInfo.apiLevel,
-                packageName = captureInfo.targetPackageName
+                packageName = captureInfo.targetPackageName,
             )
         return frameData
             .getFrameSubMetrics(captureInfo.apiLevel)
@@ -222,7 +222,7 @@ class FrameTimingMetric : Metric() {
                         } else {
                             "frameOverrunMs"
                         },
-                    dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() }
+                    dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() },
                 )
             } + listOf(Measurement("frameCount", frameData.size.toDouble()))
     }
@@ -305,7 +305,7 @@ class FrameTimingGfxInfoMetric : Metric() {
             "slow_issue_draw_cmds" to "slowIssueDrawCommandsFrameCount",
             "total_frames" to "gfxFrameTotalCount",
             "janky_frames_percent" to "gfxFrameJankPercent",
-            "janky_frames_legacy_percent" to "jankyFramePercentLegacy"
+            "janky_frames_legacy_percent" to "jankyFramePercentLegacy",
         )
 
     /** Filters output to only frameTimeXXthPercentileMs and totalFrameCount */
@@ -321,7 +321,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return metrics
             .map {
@@ -353,7 +353,7 @@ class FrameTimingGfxInfoMetric : Metric() {
 class StartupTimingMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return StartupTimingQuery.getFrameSubMetrics(
                 session = traceSession,
@@ -363,12 +363,12 @@ class StartupTimingMetric : Metric() {
                 // Pick an arbitrary startup mode if unspecified. In the future, consider throwing
                 // an
                 // error if startup mode not defined
-                startupMode = captureInfo.startupMode ?: StartupMode.COLD
+                startupMode = captureInfo.startupMode ?: StartupMode.COLD,
             )
             ?.run {
                 mapOf(
                         "timeToInitialDisplayMs" to timeToInitialDisplayNs.nsToDoubleMs(),
-                        "timeToFullDisplayMs" to timeToFullDisplayNs?.nsToDoubleMs()
+                        "timeToFullDisplayMs" to timeToFullDisplayNs?.nsToDoubleMs(),
                     )
                     .filterValues { it != null }
                     .map { Measurement(it.key, it.value!!) }
@@ -383,7 +383,7 @@ class StartupTimingMetric : Metric() {
 class StartupTimingLegacyMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         // Acquires perfetto metrics
         val traceMetrics = traceSession.getTraceMetrics("android_startup")
@@ -468,7 +468,7 @@ abstract class TraceMetric : Metric() {
      */
     public abstract override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement>
 }
 
@@ -515,7 +515,7 @@ constructor(
     /** Metric label, defaults to [sectionName]. */
     private val label: String = sectionName,
     /** Filter results to trace sections only from the target process, defaults to true. */
-    private val targetPackageOnly: Boolean = true
+    private val targetPackageOnly: Boolean = true,
 ) : Metric() {
     sealed class Mode(internal val name: String) {
         /**
@@ -578,12 +578,12 @@ constructor(
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val slices =
             traceSession.querySlices(
                 sectionName,
-                packageName = if (targetPackageOnly) captureInfo.targetPackageName else null
+                packageName = if (targetPackageOnly) captureInfo.targetPackageName else null,
             )
 
         return when (mode) {
@@ -598,9 +598,9 @@ constructor(
                     Measurement(
                         name = label + "SumMs",
                         // note, this duration assumes non-reentrant slices
-                        data = slices.sumOf { it.dur } / 1_000_000.0
+                        data = slices.sumOf { it.dur } / 1_000_000.0,
                     ),
-                    Measurement(name = label + "Count", data = slices.size.toDouble())
+                    Measurement(name = label + "Count", data = slices.size.toDouble()),
                 )
             }
             Mode.Min -> {
@@ -610,7 +610,7 @@ constructor(
                     listOf(
                         Measurement(
                             name = label + "MinMs",
-                            data = slices.minOf { it.dur } / 1_000_000.0
+                            data = slices.minOf { it.dur } / 1_000_000.0,
                         )
                     )
             }
@@ -621,7 +621,7 @@ constructor(
                     listOf(
                         Measurement(
                             name = label + "MaxMs",
-                            data = slices.maxOf { it.dur } / 1_000_000.0
+                            data = slices.maxOf { it.dur } / 1_000_000.0,
                         )
                     )
             }
@@ -632,7 +632,7 @@ constructor(
                 listOf(
                     Measurement(
                         name = label + "AverageMs",
-                        data = slices.sumOf { it.dur } / 1_000_000.0 / slices.size
+                        data = slices.sumOf { it.dur } / 1_000_000.0 / slices.size,
                     )
                 )
             }
@@ -720,7 +720,7 @@ constructor(
 class ArtMetric : Metric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         return traceSession
             .querySlices("JIT Compiling %", packageName = captureInfo.targetPackageName)
@@ -731,7 +731,7 @@ class ArtMetric : Metric() {
             if (
                 DeviceInfo.isClassLoadTracingAvailable(
                     sdkInt = captureInfo.apiLevel,
-                    artVersion = captureInfo.artMainlineVersion
+                    artVersion = captureInfo.artMainlineVersion,
                 )
             ) {
                 traceSession
@@ -746,9 +746,9 @@ class ArtMetric : Metric() {
                 name = label + "SumMs",
                 // note, this duration assumes non-reentrant slices,
                 // which is true for art trace sections
-                data = sumOf { it.dur } / 1_000_000.0
+                data = sumOf { it.dur } / 1_000_000.0,
             ),
-            Measurement(name = label + "Count", data = size.toDouble())
+            Measurement(name = label + "Count", data = size.toDouble()),
         )
 }
 
@@ -915,7 +915,7 @@ class PowerMetric(private val type: Type) : Metric() {
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         // collect metrics between trace point flags
         val slice =
@@ -931,7 +931,7 @@ class PowerMetric(private val type: Type) : Metric() {
 
     private fun getBatteryDischargeMetrics(
         session: TraceProcessor.Session,
-        slice: Slice
+        slice: Slice,
     ): List<Measurement> {
         val metrics = BatteryDischargeQuery.getBatteryDischargeMetrics(session, slice)
         return metrics.map { measurement ->
@@ -970,7 +970,7 @@ class PowerMetric(private val type: Type) : Metric() {
                     metrics
                         .filter { (category, _) -> !type.categories.containsKey(category) }
                         .values
-                        .fold(0.0) { total, next -> total + next.getValue(type) }
+                        .fold(0.0) { total, next -> total + next.getValue(type) },
             )
             .filter { (_, measurement) -> measurement != 0.0 }
     }
@@ -1022,12 +1022,7 @@ class PowerMetric(private val type: Type) : Metric() {
 class MemoryUsageMetric(
     private val mode: Mode,
     private val subMetrics: List<SubMetric> =
-        listOf(
-            SubMetric.HeapSize,
-            SubMetric.RssAnon,
-            SubMetric.RssFile,
-            SubMetric.Gpu,
-        )
+        listOf(SubMetric.HeapSize, SubMetric.RssAnon, SubMetric.RssFile, SubMetric.Gpu),
 ) : TraceMetric() {
     enum class Mode {
         /**
@@ -1042,7 +1037,7 @@ class MemoryUsageMetric(
          * Useful for inspecting the worst case state, e.g. finding worst heap size during a given
          * scenario.
          */
-        Max
+        Max,
     }
 
     enum class SubMetric(
@@ -1052,25 +1047,25 @@ class MemoryUsageMetric(
          * False if the metric is represented in the trace in bytes, and must be divided by 1024 to
          * be converted to KB.
          */
-        internal val alreadyInKb: Boolean
+        internal val alreadyInKb: Boolean,
     ) {
         HeapSize("Heap size (KB)", alreadyInKb = true),
         RssAnon("mem.rss.anon", alreadyInKb = false),
         RssFile("mem.rss.file", alreadyInKb = false),
         RssShmem("mem.rss.shmem", alreadyInKb = false),
-        Gpu("GPU Memory", alreadyInKb = false)
+        Gpu("GPU Memory", alreadyInKb = false),
     }
 
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
 
         val suffix = mode.toString()
         return MemoryUsageQuery.getMemoryUsageKb(
                 session = traceSession,
                 targetPackageName = captureInfo.targetPackageName,
-                mode = mode
+                mode = mode,
             )
             ?.mapNotNull {
                 if (it.key in subMetrics) {
@@ -1087,12 +1082,12 @@ class MemoryUsageMetric(
 class MemoryCountersMetric : TraceMetric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
-        traceSession: TraceProcessor.Session
+        traceSession: TraceProcessor.Session,
     ): List<Measurement> {
         val metrics =
             MemoryCountersQuery.getMemoryCounters(
                 session = traceSession,
-                targetPackageName = captureInfo.targetPackageName
+                targetPackageName = captureInfo.targetPackageName,
             ) ?: return listOf()
 
         return listOf(

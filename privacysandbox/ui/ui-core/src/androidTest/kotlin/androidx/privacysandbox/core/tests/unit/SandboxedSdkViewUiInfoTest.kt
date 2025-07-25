@@ -33,7 +33,7 @@ class SandboxedSdkViewUiInfoTest {
             200,
             Rect(0, 0, 100, 200),
             1.0f,
-            listOf(Rect(0, 0, 10, 10), Rect(10, 10, 20, 20))
+            listOf(Rect(0, 0, 10, 10), Rect(10, 10, 20, 20)),
         )
 
     @Test
@@ -47,7 +47,7 @@ class SandboxedSdkViewUiInfoTest {
         val infoBundle = SandboxedSdkViewUiInfo.toBundle(info)
         SandboxedSdkViewUiInfo.pruneBundle(
             infoBundle,
-            setOf(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            setOf(SandboxedUiAdapterSignalOptions.GEOMETRY),
         )
         val infoWithoutObstructions = SandboxedSdkViewUiInfo.fromBundle(infoBundle)
         assertThat(infoWithoutObstructions.obstructedGeometry).isEmpty()
@@ -60,8 +60,8 @@ class SandboxedSdkViewUiInfoTest {
             infoBundle,
             setOf(
                 SandboxedUiAdapterSignalOptions.GEOMETRY,
-                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
-            )
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
+            ),
         )
         val updatedInfo = SandboxedSdkViewUiInfo.fromBundle(infoBundle)
         assertThat(updatedInfo).isEqualTo(info)

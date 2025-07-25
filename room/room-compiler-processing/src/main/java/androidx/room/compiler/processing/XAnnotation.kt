@@ -189,5 +189,6 @@ fun <T> XAnnotation.get(methodName: String, clazz: Class<T>): T {
         error("Value of $methodName of type ${value?.javaClass} cannot be cast to $clazz")
     }
 
-    @Suppress("UNCHECKED_CAST") return value as T
+    @Suppress("UNCHECKED_CAST")
+    return value as T
 }

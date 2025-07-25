@@ -25,6 +25,12 @@ import android.media.CamcorderProfile.QUALITY_2160P
 import android.media.CamcorderProfile.QUALITY_480P
 import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_1080P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_2160P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_480P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_720P
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_HIGH
+import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_LOW
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.media.EncoderProfiles
 import android.media.MediaFormat.MIMETYPE_VIDEO_AV1
@@ -70,6 +76,7 @@ import androidx.camera.core.impl.SessionConfig.DEFAULT_SESSION_TYPE
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.Timebase
+import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE
 import androidx.camera.core.impl.utils.CameraOrientationUtil.surfaceRotationToDegrees
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.impl.utils.TransformUtils.rectToSize
@@ -90,6 +97,10 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_480P
 import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_720P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_1080P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_2160P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_480P
+import androidx.camera.testing.impl.EncoderProfilesUtil.PROFILES_HIGH_SPEED_720P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_1080P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_2160P
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_480P
@@ -99,6 +110,10 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QVGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_VGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeAudioProfileProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeVideoProfileProxy
+import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
+import androidx.camera.testing.impl.FrameRateUtil.FPS_240_240
+import androidx.camera.testing.impl.FrameRateUtil.FPS_30_120
+import androidx.camera.testing.impl.FrameRateUtil.FPS_30_240
 import androidx.camera.testing.impl.fakes.FakeCameraDeviceSurfaceManager
 import androidx.camera.testing.impl.fakes.FakeCameraFactory
 import androidx.camera.testing.impl.fakes.FakeEncoderProfilesProvider
@@ -111,6 +126,7 @@ import androidx.camera.video.Quality.HD
 import androidx.camera.video.Quality.HIGHEST
 import androidx.camera.video.Quality.LOWEST
 import androidx.camera.video.Quality.NONE
+import androidx.camera.video.Quality.QUALITY_SOURCE_HIGH_SPEED
 import androidx.camera.video.Quality.QUALITY_SOURCE_REGULAR
 import androidx.camera.video.Quality.SD
 import androidx.camera.video.Quality.UHD
@@ -124,6 +140,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.text.get
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -157,7 +174,7 @@ class VideoCaptureTest {
     private val testImplementationOption: androidx.camera.core.impl.Config.Option<Int> =
         androidx.camera.core.impl.Config.Option.create(
             "test.testOption",
-            Int::class.javaPrimitiveType!!
+            Int::class.javaPrimitiveType!!,
         )
 
     @Before
@@ -210,7 +227,7 @@ class VideoCaptureTest {
             camera,
             null,
             null,
-            videoCapture.getDefaultConfig(true, FakeUseCaseConfigFactory())
+            videoCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
         )
         videoCapture.updateSuggestedStreamSpec(StreamSpec.builder(Size(640, 480)).build(), null)
         videoCapture.onStateAttached()
@@ -343,7 +360,7 @@ class VideoCaptureTest {
 
     private fun testSetRotationWillSendCorrectResolution(
         sensorRotation: Int = 0,
-        effect: CameraEffect? = null
+        effect: CameraEffect? = null,
     ) {
         setupCamera(sensorRotation = sensorRotation)
         createCameraUseCaseAdapter()
@@ -363,7 +380,7 @@ class VideoCaptureTest {
                                     it.setQualitySelector(QualitySelector.from(quality))
                                 }
                                 .build(),
-                        surfaceRequestListener = { request, _ -> surfaceRequest = request }
+                        surfaceRequestListener = { request, _ -> surfaceRequest = request },
                     )
                 val videoCapture = createVideoCapture(videoOutput)
                 videoCapture.targetRotation = targetRotation
@@ -402,7 +419,7 @@ class VideoCaptureTest {
         testTimebase(
             cameraTimebase = Timebase.REALTIME,
             expectedTimebase = Timebase.REALTIME,
-            hasTransform = false
+            hasTransform = false,
         )
     }
 
@@ -411,7 +428,7 @@ class VideoCaptureTest {
         testTimebase(
             effect = createFakeEffect(),
             cameraTimebase = Timebase.UPTIME,
-            expectedTimebase = Timebase.UPTIME
+            expectedTimebase = Timebase.UPTIME,
         )
     }
 
@@ -420,7 +437,7 @@ class VideoCaptureTest {
         testTimebase(
             effect = createFakeEffect(),
             cameraTimebase = Timebase.REALTIME,
-            expectedTimebase = Timebase.REALTIME
+            expectedTimebase = Timebase.REALTIME,
         )
     }
 
@@ -511,13 +528,13 @@ class VideoCaptureTest {
                                         UHD, // 2160P
                                         SD, // 480P
                                         HD, // 720P
-                                        FHD // 1080P
+                                        FHD, // 1080P
                                     )
                                 )
                             )
                         }
                         .build(),
-                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES
+                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES,
             )
         val videoCapture = createVideoCapture(videoOutput)
 
@@ -530,7 +547,7 @@ class VideoCaptureTest {
             RESOLUTION_2160P,
             RESOLUTION_480P,
             RESOLUTION_720P,
-            RESOLUTION_1080P
+            RESOLUTION_1080P,
         )
         assertThat(videoCapture.attachedSurfaceResolution).isEqualTo(RESOLUTION_480P)
     }
@@ -552,7 +569,7 @@ class VideoCaptureTest {
                             it.setAspectRatio(RATIO_4_3)
                         }
                         .build(),
-                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES
+                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES,
             )
         val videoCapture = createVideoCapture(videoOutput)
 
@@ -592,9 +609,89 @@ class VideoCaptureTest {
                             it.setAspectRatio(RATIO_16_9)
                         }
                         .build(),
-                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES
+                videoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES,
             )
         val videoCapture = createVideoCapture(videoOutput)
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        assertCustomOrderedResolutions(
+            videoCapture,
+            // UHD
+            RESOLUTION_2160P,
+            // FHD
+            RESOLUTION_1080P,
+            // HD
+            RESOLUTION_720P,
+            // SD
+            Size(736, 412),
+            Size(864, 480),
+            Size(640, 360),
+        )
+    }
+
+    @Test
+    fun setAspectRatio_highSpeed4by3() {
+        // Arrange.
+        setupCamera(profiles = HIGH_SPEED_FULL_QUALITY_PROFILES_MAP)
+        createCameraUseCaseAdapter()
+
+        val videoOutput =
+            createVideoOutput(
+                mediaSpec =
+                    MediaSpec.builder()
+                        .configureVideo {
+                            it.setQualitySelector(
+                                QualitySelector.fromOrderedList(listOf(UHD, FHD, HD, SD))
+                            )
+                            it.setAspectRatio(RATIO_4_3)
+                        }
+                        .build(),
+                videoCapabilities = HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES,
+            )
+        val videoCapture = createVideoCapture(videoOutput, sessionType = SESSION_TYPE_HIGH_SPEED)
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        assertCustomOrderedResolutions(
+            videoCapture,
+            // UHD
+            Size(3120, 2340),
+            Size(4000, 3000),
+            // FHD
+            Size(1440, 1080),
+            // HD
+            Size(960, 720),
+            Size(1280, 960),
+            // SD
+            RESOLUTION_VGA,
+        )
+    }
+
+    @Test
+    fun setAspectRatio_highSpeed16by9() {
+        // Arrange.
+        setupCamera(profiles = HIGH_SPEED_FULL_QUALITY_PROFILES_MAP)
+        createCameraUseCaseAdapter()
+
+        val videoOutput =
+            createVideoOutput(
+                mediaSpec =
+                    MediaSpec.builder()
+                        .configureVideo {
+                            it.setQualitySelector(
+                                QualitySelector.fromOrderedList(listOf(UHD, FHD, HD, SD))
+                            )
+                            it.setAspectRatio(RATIO_16_9)
+                        }
+                        .build(),
+                videoCapabilities = HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES,
+            )
+        val videoCapture = createVideoCapture(videoOutput, sessionType = SESSION_TYPE_HIGH_SPEED)
 
         // Act.
         addAndAttachUseCases(videoCapture)
@@ -637,7 +734,7 @@ class VideoCaptureTest {
                             Size(960, 720),
                             /*HD:16:9*/ Size(1280, 720),
                         )
-                )
+                ),
         )
         createCameraUseCaseAdapter()
 
@@ -653,7 +750,7 @@ class VideoCaptureTest {
                         }
                         .build(),
                 videoCapabilities =
-                    createFakeVideoCapabilities(mapOf(DynamicRange.SDR to profileMap))
+                    createFakeVideoCapabilities(mapOf(DynamicRange.SDR to profileMap)),
             )
         // Arrange: encoder max supported size is 1280x720.
         val videoCapture =
@@ -663,9 +760,9 @@ class VideoCaptureTest {
                 videoEncoderInfoFinder = { _ ->
                     FakeVideoEncoderInfo(
                         supportedWidths = Range.create(2, 1280),
-                        supportedHeights = Range.create(2, 720)
+                        supportedHeights = Range.create(2, 720),
                     )
-                }
+                },
             )
 
         // Act.
@@ -674,10 +771,7 @@ class VideoCaptureTest {
         // Assert: the largest encoder supported size is 1280x720.
         // 960x720, 1280x960, 1360x1020 are candidates of custom resolutions.
         // 1280x960 and 1360x1020 should be filtered out.
-        assertCustomOrderedResolutions(
-            videoCapture,
-            Size(960, 720),
-        )
+        assertCustomOrderedResolutions(videoCapture, Size(960, 720))
     }
 
     @Test
@@ -688,7 +782,7 @@ class VideoCaptureTest {
                 RESOLUTION_720P,
                 videoMediaType = MIMETYPE_VIDEO_AVC,
                 videoBitDepth = EncoderProfilesProxy.VideoProfileProxy.BIT_DEPTH_8,
-                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_NONE
+                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_NONE,
             )
         // Arrange: create HD HLG10 VideoProfile.
         val videoProfileHdHlg10 =
@@ -696,7 +790,7 @@ class VideoCaptureTest {
                 RESOLUTION_720P,
                 videoMediaType = MIMETYPE_VIDEO_HEVC,
                 videoBitDepth = EncoderProfilesProxy.VideoProfileProxy.BIT_DEPTH_10,
-                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HLG
+                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HLG,
             )
         // Arrange: create HD HDR10 VideoProfile.
         val videoProfileHdHdr10 =
@@ -704,7 +798,7 @@ class VideoCaptureTest {
                 RESOLUTION_720P,
                 videoMediaType = MIMETYPE_VIDEO_AV1,
                 videoBitDepth = EncoderProfilesProxy.VideoProfileProxy.BIT_DEPTH_10,
-                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HDR10
+                videoHdrFormat = EncoderProfiles.VideoProfile.HDR_HDR10,
             )
         // Arrange: create HD EncoderProfiles.
         val audioProfile = createFakeAudioProfileProxy()
@@ -715,15 +809,11 @@ class VideoCaptureTest {
                 durationSeconds,
                 outputFormat,
                 listOf(audioProfile),
-                listOf(videoProfileHdSdr, videoProfileHdHlg10, videoProfileHdHdr10)
+                listOf(videoProfileHdSdr, videoProfileHdHlg10, videoProfileHdHdr10),
             )
         // Arrange: create profile map.
         val profileMap =
-            mapOf(
-                QUALITY_HIGH to profilesHd,
-                QUALITY_720P to profilesHd,
-                QUALITY_LOW to profilesHd,
-            )
+            mapOf(QUALITY_HIGH to profilesHd, QUALITY_720P to profilesHd, QUALITY_LOW to profilesHd)
         // Arrange: camera supported resolutions are
         // 1360x1020(4:3), 1280x960(4:3), 1280x720(16:9), 960x720(4:3).
         setupCamera(
@@ -737,7 +827,7 @@ class VideoCaptureTest {
                             Size(960, 720),
                             /*HD:16:9*/ Size(1280, 720),
                         )
-                )
+                ),
         )
         createCameraUseCaseAdapter()
 
@@ -762,11 +852,11 @@ class VideoCaptureTest {
                                             durationSeconds,
                                             outputFormat,
                                             listOf(audioProfile),
-                                            listOf(videoProfileHdHlg10, videoProfileHdHdr10)
+                                            listOf(videoProfileHdHlg10, videoProfileHdHdr10),
                                         )
                                 )
                         )
-                    )
+                    ),
             )
         // Arrange: set HDR_UNSPECIFIED_10_BIT and HDR encoder max supported size 1280x960
         val videoCapture =
@@ -778,26 +868,26 @@ class VideoCaptureTest {
                         MIMETYPE_VIDEO_AVC -> { // SDR: H263
                             FakeVideoEncoderInfo(
                                 supportedWidths = Range.create(2, 1920),
-                                supportedHeights = Range.create(2, 1080)
+                                supportedHeights = Range.create(2, 1080),
                             )
                         }
                         MIMETYPE_VIDEO_HEVC -> { // HLG10: H264
                             FakeVideoEncoderInfo(
                                 supportedWidths = Range.create(2, 1280),
-                                supportedHeights = Range.create(2, 720)
+                                supportedHeights = Range.create(2, 720),
                             )
                         }
                         MIMETYPE_VIDEO_AV1 -> { // HDR10: HEVC
                             FakeVideoEncoderInfo(
                                 supportedWidths = Range.create(2, 1280),
-                                supportedHeights = Range.create(2, 960)
+                                supportedHeights = Range.create(2, 960),
                             )
                         }
                         else -> {
                             throw AssertionError("Unknown mimeType: $mimeType")
                         }
                     }
-                }
+                },
             )
 
         // Act.
@@ -806,11 +896,7 @@ class VideoCaptureTest {
         // Assert: the largest encoder supported size is 1280x960.
         // 960x720, 1280x960, 1360x1020 are candidates of custom resolutions.
         // 1360x1020 should be filtered out.
-        assertCustomOrderedResolutions(
-            videoCapture,
-            Size(960, 720),
-            Size(1280, 960),
-        )
+        assertCustomOrderedResolutions(videoCapture, Size(960, 720), Size(1280, 960))
     }
 
     @Test
@@ -826,7 +912,7 @@ class VideoCaptureTest {
                 videoOutput,
                 videoEncoderInfoFinder = {
                     createVideoEncoderInfo(widthAlignment = 16, heightAlignment = 16)
-                }
+                },
             )
         cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
 
@@ -882,7 +968,7 @@ class VideoCaptureTest {
         val supportedResolutionPairs =
             videoCapture.currentConfig.retrieveOption(
                 ImageOutputConfig.OPTION_SUPPORTED_RESOLUTIONS,
-                null
+                null,
             )
         assertThat(supportedResolutionPairs).isNull()
     }
@@ -1173,7 +1259,7 @@ class VideoCaptureTest {
             lensFacing = LENS_FACING_BACK,
             sensorRotationDegrees = 90,
             initialTargetRotation = Surface.ROTATION_0,
-            mirrorMode = MIRROR_MODE_ON
+            mirrorMode = MIRROR_MODE_ON,
         )
     }
 
@@ -1222,7 +1308,7 @@ class VideoCaptureTest {
             lensFacing = LENS_FACING_FRONT,
             sensorRotationDegrees = 270,
             initialTargetRotation = Surface.ROTATION_0,
-            mirrorMode = MIRROR_MODE_ON
+            mirrorMode = MIRROR_MODE_ON,
         )
     }
 
@@ -1282,7 +1368,7 @@ class VideoCaptureTest {
         // than just from the target.
         testSurfaceRequestContainsExpected(
             targetFrameRate = FRAME_RATE_RANGE_FIXED_30,
-            expectedFrameRate = FRAME_RATE_RANGE_FIXED_24
+            expectedFrameRate = FRAME_RATE_RANGE_FIXED_24,
         )
     }
 
@@ -1300,7 +1386,7 @@ class VideoCaptureTest {
         // propagated to the SurfaceRequest. It should come from the StreamSpec.
         testSurfaceRequestContainsExpected(
             requestedDynamicRange = DynamicRange.HDR_UNSPECIFIED_10_BIT,
-            expectedDynamicRange = DynamicRange.HLG_10_BIT
+            expectedDynamicRange = DynamicRange.HLG_10_BIT,
         )
     }
 
@@ -1308,7 +1394,7 @@ class VideoCaptureTest {
     fun suggestedStreamSpecSessionType_isPropagatedToSurfaceRequest() {
         testSurfaceRequestContainsExpected(
             sessionType = SESSION_TYPE_HIGH_SPEED,
-            expectedSessionType = SESSION_TYPE_HIGH_SPEED
+            expectedSessionType = SESSION_TYPE_HIGH_SPEED,
         )
     }
 
@@ -1340,7 +1426,7 @@ class VideoCaptureTest {
             createVideoCapture(
                 videoOutput,
                 targetRotation = initialTargetRotation,
-                mirrorMode = mirrorMode
+                mirrorMode = mirrorMode,
             )
         val requireMirroring = videoCapture.isMirroringRequired(camera)
 
@@ -1370,7 +1456,7 @@ class VideoCaptureTest {
                 Surface.ROTATION_0,
                 Surface.ROTATION_90,
                 Surface.ROTATION_180,
-                Surface.ROTATION_270
+                Surface.ROTATION_270,
             )) {
             videoCapture.targetRotation = targetRotation
             shadowOf(Looper.getMainLooper()).idle()
@@ -1416,7 +1502,7 @@ class VideoCaptureTest {
                 surfaceRequestListener = { surfaceRequest, _ ->
                     surfaceRequest.provideSurface(
                         Surface(SurfaceTexture(0)),
-                        mainThreadExecutor()
+                        mainThreadExecutor(),
                     ) {
                         appSurfaceReadyToRelease = true
                     }
@@ -1594,7 +1680,7 @@ class VideoCaptureTest {
                 transformationInfo =
                     createTransformationInfo(
                         cropRect = targetCropRect,
-                        rotationDegrees = targetRotationDegrees
+                        rotationDegrees = targetRotationDegrees,
                     )
             )
         )
@@ -1615,13 +1701,13 @@ class VideoCaptureTest {
         resolution: Size = RESOLUTION_720P,
         videoEncoderInfo: VideoEncoderInfo = createVideoEncoderInfo(),
         cropRect: Rect? = null,
-        expectedCropRect: Rect? = null
+        expectedCropRect: Rect? = null,
     ) {
         testSurfaceRequestContainsExpected(
             resolution = resolution,
             videoEncoderInfo = videoEncoderInfo,
             cropRect = cropRect,
-            expectedCropRect = expectedCropRect
+            expectedCropRect = expectedCropRect,
         )
     }
 
@@ -1634,7 +1720,7 @@ class VideoCaptureTest {
         setSuggestedStreamSpec(
             resolution = ANY_SIZE,
             sessionType = SESSION_TYPE_HIGH_SPEED,
-            expectedFrameRate = FRAME_RATE_RANGE_FIXED_30
+            expectedFrameRate = FRAME_RATE_RANGE_FIXED_30,
         )
 
         // Act.
@@ -1837,7 +1923,7 @@ class VideoCaptureTest {
                         StreamInfo.of(
                             StreamInfo.STREAM_ID_ANY,
                             StreamState.ACTIVE,
-                            createTransformationInfo(cropRect = cropRect, rotationDegrees = 90)
+                            createTransformationInfo(cropRect = cropRect, rotationDegrees = 90),
                         )
                 ),
             expectedResolution = resolution,
@@ -1863,7 +1949,7 @@ class VideoCaptureTest {
                                 createTransformationInfo(
                                     cropRect = cropRect,
                                     rotationDegrees = 90,
-                                    mirroring = false
+                                    mirroring = false,
                                 )
                         )
                 ),
@@ -1910,20 +1996,65 @@ class VideoCaptureTest {
         )
     }
 
+    @Test
+    fun customOrderedResolutionsIsSetAndQualitySelectorIsNotSet_notOverwrite() {
+        // Arrange.
+        val anySize1 = Size(640, 360)
+        val anySize2 = Size(500, 500)
+        val customOrderedResolutions = listOf(anySize1, anySize2)
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture =
+            createVideoCapture(
+                videoOutput = createVideoOutput(),
+                customOrderedResolutions = customOrderedResolutions,
+            )
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert: custom ordered resolutions is not overwritten.
+        assertCustomOrderedResolutions(videoCapture, anySize1, anySize2)
+    }
+
+    @Test
+    fun customOrderedResolutionsAndQualitySelectorAreSet_throwException() {
+        // Arrange.
+        val customOrderedResolutions = listOf(RESOLUTION_VGA, RESOLUTION_QHD)
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture =
+            createVideoCapture(
+                videoOutput =
+                    createVideoOutput(
+                        mediaSpec =
+                            MediaSpec.builder()
+                                .configureVideo { it.setQualitySelector(QualitySelector.from(FHD)) }
+                                .build()
+                    ),
+                customOrderedResolutions = customOrderedResolutions,
+            )
+
+        // Act.
+        assertThrows(CameraUseCaseAdapter.CameraException::class.java) {
+            addAndAttachUseCases(videoCapture)
+        }
+    }
+
     private fun testSelectedQualityIsExpected(
         streamSpecConfiguredResolution: Size,
         streamSpecResolution: Size = streamSpecConfiguredResolution,
         qualitySelector: QualitySelector,
         profiles: Map<Int, EncoderProfilesProxy> = FULL_QUALITY_PROFILES_MAP,
         videoCapabilities: VideoCapabilities = FULL_QUALITY_VIDEO_CAPABILITIES,
-        expectedQuality: Quality?
+        expectedQuality: Quality?,
     ) {
         // Arrange.
         setupCamera(profiles = profiles)
         createCameraUseCaseAdapter()
         setSuggestedStreamSpec(
             resolution = streamSpecResolution,
-            originalConfiguredResolution = streamSpecConfiguredResolution
+            originalConfiguredResolution = streamSpecConfiguredResolution,
         )
         val videoOutput =
             createVideoOutput(
@@ -1931,7 +2062,7 @@ class VideoCaptureTest {
                 mediaSpec =
                     MediaSpec.builder()
                         .configureVideo { it.setQualitySelector(qualitySelector) }
-                        .build()
+                        .build(),
             )
         val videoCapture = createVideoCapture(videoOutput = videoOutput)
 
@@ -1960,7 +2091,7 @@ class VideoCaptureTest {
         setupCamera(
             sensorRotation = sensorRotationDegrees,
             lensFacing = lensFacing,
-            hasTransform = hasCameraTransform
+            hasTransform = hasCameraTransform,
         )
         createCameraUseCaseAdapter(lensFacing = lensFacing)
         setSuggestedStreamSpec(resolution = resolution)
@@ -1969,7 +2100,7 @@ class VideoCaptureTest {
                 videoOutput = videoOutput,
                 targetRotation = targetRotation,
                 mirrorMode = mirrorMode,
-                videoEncoderInfoFinder = videoEncoderInfoFinder
+                videoEncoderInfoFinder = videoEncoderInfoFinder,
             )
         cropRect?.let { videoCapture.setViewPortCropRect(it) }
 
@@ -1993,7 +2124,7 @@ class VideoCaptureTest {
         targetFrameRate: Range<Int>? = null,
         expectedFrameRate: Range<Int> = SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
         requestedDynamicRange: DynamicRange? = null,
-        expectedDynamicRange: DynamicRange? = null
+        expectedDynamicRange: DynamicRange? = null,
     ) {
         // Arrange.
         setupCamera()
@@ -2002,19 +2133,17 @@ class VideoCaptureTest {
             resolution = resolution,
             sessionType = sessionType,
             expectedFrameRate = expectedFrameRate,
-            dynamicRange = expectedDynamicRange
+            dynamicRange = expectedDynamicRange,
         )
         var surfaceRequest: SurfaceRequest? = null
         val videoOutput =
-            createVideoOutput(
-                surfaceRequestListener = { request, _ -> surfaceRequest = request },
-            )
+            createVideoOutput(surfaceRequestListener = { request, _ -> surfaceRequest = request })
         val videoCapture =
             createVideoCapture(
                 videoOutput,
                 videoEncoderInfoFinder = { videoEncoderInfo },
                 targetFrameRate = targetFrameRate,
-                dynamicRange = requestedDynamicRange
+                dynamicRange = requestedDynamicRange,
             )
 
         cropRect?.let {
@@ -2047,9 +2176,9 @@ class VideoCaptureTest {
 
     private fun assertCustomOrderedResolutions(
         videoCapture: VideoCapture<out VideoOutput>,
-        vararg expectedResolutions: Size
+        vararg expectedResolutions: Size,
     ) {
-        val resolutions = (videoCapture.currentConfig as ImageOutputConfig).customOrderedResolutions
+        val resolutions = videoCapture.customOrderedResolutions
         assertThat(resolutions).containsExactlyElementsIn(expectedResolutions).inOrder()
     }
 
@@ -2059,7 +2188,7 @@ class VideoCaptureTest {
         targetRotation: Int = Surface.ROTATION_0,
         hasCameraTransform: Boolean = true,
         sensorToBufferTransform: Matrix = Matrix(),
-        mirroring: Boolean = false
+        mirroring: Boolean = false,
     ): TransformationInfo =
         TransformationInfo.of(
             cropRect,
@@ -2067,7 +2196,7 @@ class VideoCaptureTest {
             targetRotation,
             hasCameraTransform,
             sensorToBufferTransform,
-            mirroring
+            mirroring,
         )
 
     private fun createStreamInfo(
@@ -2109,7 +2238,7 @@ class VideoCaptureTest {
         streamInfo: StreamInfo,
         mediaSpec: MediaSpec?,
         val videoCapabilities: VideoCapabilities = CAMERA_0_VIDEO_CAPABILITIES,
-        val surfaceRequestCallback: (SurfaceRequest, Timebase) -> Unit
+        val surfaceRequestCallback: (SurfaceRequest, Timebase) -> Unit,
     ) : VideoOutput {
 
         private val streamInfoObservable: MutableStateObservable<StreamInfo> =
@@ -2125,7 +2254,7 @@ class VideoCaptureTest {
         override fun onSurfaceRequested(
             surfaceRequest: SurfaceRequest,
             timebase: Timebase,
-            hasGlProcessing: Boolean
+            hasGlProcessing: Boolean,
         ) {
             surfaceRequestCallback.invoke(surfaceRequest, timebase)
         }
@@ -2136,7 +2265,7 @@ class VideoCaptureTest {
 
         override fun getMediaCapabilities(
             cameraInfo: CameraInfo,
-            sessionType: Int
+            sessionType: Int,
         ): VideoCapabilities {
             return videoCapabilities
         }
@@ -2169,9 +2298,11 @@ class VideoCaptureTest {
         targetRotation: Int? = null,
         mirrorMode: Int? = null,
         targetResolution: Size? = null,
+        sessionType: Int? = null,
         targetFrameRate: Range<Int>? = null,
         dynamicRange: DynamicRange? = null,
         videoEncoderInfoFinder: VideoEncoderInfo.Finder? = null,
+        customOrderedResolutions: List<Size>? = null,
     ): VideoCapture<VideoOutput> =
         VideoCapture.Builder(videoOutput ?: createVideoOutput())
             .setSessionOptionUnpacker { _, _, _ -> }
@@ -2179,12 +2310,14 @@ class VideoCaptureTest {
                 targetRotation?.let { setTargetRotation(it) }
                 mirrorMode?.let { setMirrorMode(it) }
                 targetResolution?.let { setTargetResolution(it) }
+                sessionType?.let { mutableConfig.insertOption(OPTION_SESSION_TYPE, it) }
                 targetFrameRate?.let { setTargetFrameRate(it) }
                 dynamicRange?.let { setDynamicRange(it) }
                 setVideoEncoderInfoFinder(
                     videoEncoderInfoFinder
                         ?: VideoEncoderInfo.Finder { _ -> createVideoEncoderInfo() }
                 )
+                customOrderedResolutions?.let { setCustomOrderedResolutions(it) }
             }
             .build()
 
@@ -2194,7 +2327,7 @@ class VideoCaptureTest {
 
     private fun createFakeSurfaceProcessor(
         executor: Executor = mainThreadExecutor(),
-        autoCloseSurfaceOutput: Boolean = true
+        autoCloseSurfaceOutput: Boolean = true,
     ) = FakeSurfaceProcessorInternal(executor, autoCloseSurfaceOutput)
 
     private fun createBackgroundHandler(): Handler {
@@ -2214,7 +2347,7 @@ class VideoCaptureTest {
         originalConfiguredResolution: Size? = null,
         sessionType: Int? = DEFAULT_SESSION_TYPE,
         expectedFrameRate: Range<Int> = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
-        dynamicRange: DynamicRange? = null
+        dynamicRange: DynamicRange? = null,
     ) {
         setSuggestedStreamSpec(
             StreamSpec.builder(resolution)
@@ -2234,7 +2367,7 @@ class VideoCaptureTest {
         surfaceManager.setSuggestedStreamSpec(
             CAMERA_ID_0,
             VideoCaptureConfig::class.java,
-            streamSpec
+            streamSpec,
         )
     }
 
@@ -2244,6 +2377,9 @@ class VideoCaptureTest {
         sensorRotation: Int = 0,
         hasTransform: Boolean = true,
         supportedResolutions: Map<Int, List<Size>> = SUPPORTED_RESOLUTION_MAP,
+        isHighSpeedSupported: Boolean = true,
+        supportedHighSpeedResolutions: Map<Range<Int>, List<Size>> =
+            HIGH_SPEED_SUPPORTED_RESOLUTION_MAP,
         profiles: Map<Int, EncoderProfilesProxy> = CAMERA_0_PROFILES,
         timebase: Timebase = Timebase.UPTIME,
         cameraQuirks: List<Quirk>? = null,
@@ -2252,6 +2388,10 @@ class VideoCaptureTest {
             FakeCameraInfoInternal(cameraId, sensorRotation, lensFacing).apply {
                 supportedResolutions.forEach { (format, resolutions) ->
                     setSupportedResolutions(format, resolutions)
+                }
+                this.isHighSpeedSupported = isHighSpeedSupported
+                supportedHighSpeedResolutions.forEach {
+                    setSupportedHighSpeedResolutions(it.key, it.value)
                 }
                 encoderProfilesProvider =
                     FakeEncoderProfilesProvider.Builder().addAll(profiles).build()
@@ -2271,7 +2411,7 @@ class VideoCaptureTest {
 
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(FakeAppConfig.create())
-                .setCameraFactoryProvider { _, _, _, _ -> cameraFactory }
+                .setCameraFactoryProvider { _, _, _, _, _ -> cameraFactory }
                 .setDeviceSurfaceManagerProvider { _, _, _ -> surfaceManager }
                 .build()
         CameraXUtil.initialize(context, cameraXConfig).get()
@@ -2279,7 +2419,7 @@ class VideoCaptureTest {
 
     private fun CameraInfoInternal.getRelativeRotation(
         targetRotation: Int,
-        requireMirroring: Boolean
+        requireMirroring: Boolean,
     ) =
         getSensorRotationDegrees(targetRotation).let {
             if (requireMirroring) {
@@ -2288,6 +2428,9 @@ class VideoCaptureTest {
         }
 
     private fun VideoCapture<*>.isSurfaceProcessingEnabled() = node != null
+
+    private val VideoCapture<*>.customOrderedResolutions: List<Size>
+        get() = (currentConfig as ImageOutputConfig).customOrderedResolutions
 
     companion object {
         private val CAMERA_0_QUALITY_SIZE: Map<Quality, Size> =
@@ -2334,13 +2477,23 @@ class VideoCaptureTest {
                             // Other rations
                             RESOLUTION_480P,
                             RESOLUTION_QHD,
-                            RESOLUTION_QVGA
+                            RESOLUTION_QVGA,
                         )
                         .apply {
                             // Sort from large to small as default.
                             Collections.sort(this, CompareSizesByArea(true))
                         }
             )
+
+        private val HIGH_SPEED_SUPPORTED_RESOLUTION_MAP = run {
+            val resolutions = SUPPORTED_RESOLUTION_MAP[INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE]!!
+            mapOf(
+                FPS_30_120 to resolutions,
+                FPS_120_120 to resolutions,
+                FPS_30_240 to resolutions,
+                FPS_240_240 to resolutions,
+            )
+        }
 
         private val FULL_QUALITY_PROFILES_MAP =
             mapOf(
@@ -2349,8 +2502,19 @@ class VideoCaptureTest {
                 QUALITY_1080P to PROFILES_1080P,
                 QUALITY_720P to PROFILES_720P,
                 QUALITY_480P to PROFILES_480P,
-                QUALITY_LOW to PROFILES_480P
+                QUALITY_LOW to PROFILES_480P,
             )
+
+        private val HIGH_SPEED_FULL_QUALITY_PROFILES_MAP: Map<Int, EncoderProfilesProxy>
+            get() =
+                mapOf(
+                    QUALITY_HIGH_SPEED_HIGH to PROFILES_HIGH_SPEED_2160P,
+                    QUALITY_HIGH_SPEED_2160P to PROFILES_HIGH_SPEED_2160P,
+                    QUALITY_HIGH_SPEED_1080P to PROFILES_HIGH_SPEED_1080P,
+                    QUALITY_HIGH_SPEED_720P to PROFILES_HIGH_SPEED_720P,
+                    QUALITY_HIGH_SPEED_480P to PROFILES_HIGH_SPEED_480P,
+                    QUALITY_HIGH_SPEED_LOW to PROFILES_HIGH_SPEED_480P,
+                )
 
         private val CAMERA_0_PROFILES =
             mapOf(
@@ -2363,17 +2527,24 @@ class VideoCaptureTest {
         private val FULL_QUALITY_VIDEO_CAPABILITIES =
             createFakeVideoCapabilities(mapOf(DynamicRange.SDR to FULL_QUALITY_PROFILES_MAP))
 
+        private val HIGH_SPEED_FULL_QUALITY_VIDEO_CAPABILITIES =
+            createFakeVideoCapabilities(
+                mapOf(DynamicRange.SDR to HIGH_SPEED_FULL_QUALITY_PROFILES_MAP),
+                qualitySource = QUALITY_SOURCE_HIGH_SPEED,
+            )
+
         private val CAMERA_0_VIDEO_CAPABILITIES =
             createFakeVideoCapabilities(mapOf(DynamicRange.SDR to CAMERA_0_PROFILES))
 
         /** Create a fake VideoCapabilities. */
         private fun createFakeVideoCapabilities(
-            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>
+            profilesMap: Map<DynamicRange, Map<Int, EncoderProfilesProxy>>,
+            qualitySource: Int = QUALITY_SOURCE_REGULAR,
         ): VideoCapabilities {
             val videoCapabilitiesMap =
                 profilesMap.mapValues {
                     val provider = FakeEncoderProfilesProvider.Builder().addAll(it.value).build()
-                    CapabilitiesByQuality(provider, QUALITY_SOURCE_REGULAR)
+                    CapabilitiesByQuality(provider, qualitySource)
                 }
 
             return object : VideoCapabilities {
@@ -2390,16 +2561,9 @@ class VideoCaptureTest {
 
                 override fun isQualitySupported(
                     quality: Quality,
-                    dynamicRange: DynamicRange
+                    dynamicRange: DynamicRange,
                 ): Boolean {
                     return videoCapabilitiesMap[dynamicRange]?.isQualitySupported(quality) == true
-                }
-
-                override fun getSupportedFrameRateRanges(
-                    quality: Quality,
-                    dynamicRange: DynamicRange
-                ): Set<Range<Int>> {
-                    return emptySet()
                 }
 
                 override fun isStabilizationSupported(): Boolean {
@@ -2408,14 +2572,14 @@ class VideoCaptureTest {
 
                 override fun getProfiles(
                     quality: Quality,
-                    dynamicRange: DynamicRange
+                    dynamicRange: DynamicRange,
                 ): VideoValidatedEncoderProfilesProxy? {
                     return videoCapabilitiesMap[dynamicRange]?.getProfiles(quality)
                 }
 
                 override fun findNearestHigherSupportedEncoderProfilesFor(
                     size: Size,
-                    dynamicRange: DynamicRange
+                    dynamicRange: DynamicRange,
                 ): VideoValidatedEncoderProfilesProxy? {
                     return videoCapabilitiesMap[dynamicRange]
                         ?.findNearestHigherSupportedEncoderProfilesFor(size)
@@ -2423,7 +2587,7 @@ class VideoCaptureTest {
 
                 override fun findNearestHigherSupportedQualityFor(
                     size: Size,
-                    dynamicRange: DynamicRange
+                    dynamicRange: DynamicRange,
                 ): Quality {
                     return videoCapabilitiesMap[dynamicRange]?.findNearestHigherSupportedQualityFor(
                         size

@@ -67,11 +67,7 @@ constructor(
     val cameraIds: Flow<List<CameraId>> =
         createCameraIdListFlow()
             .distinctUntilChanged()
-            .shareIn(
-                scope,
-                SharingStarted.WhileSubscribed(),
-                replay = 1,
-            )
+            .shareIn(scope, SharingStarted.WhileSubscribed(), replay = 1)
 
     suspend fun getCameraIds(): List<CameraId> {
         val cachedCameras = synchronized(lock) { openableCameras }
@@ -135,7 +131,7 @@ constructor(
 
     private fun ProducerScope<List<CameraId>>.onCameraAvailabilityChanged(
         cameraId: String,
-        isAvailable: Boolean
+        isAvailable: Boolean,
     ) {
         val cachedCameraIds = synchronized(lock) { openableCameras }
         val cameraIdsRead =
@@ -161,7 +157,7 @@ constructor(
 
     private fun getUpdatedCameraIds(
         cachedCameraIds: List<CameraId>?,
-        cameraIdsRead: List<CameraId>?
+        cameraIdsRead: List<CameraId>?,
     ): List<CameraId>? {
         if (cameraIdsRead != null) {
             if (isValidCameraIds(cameraIdsRead)) {

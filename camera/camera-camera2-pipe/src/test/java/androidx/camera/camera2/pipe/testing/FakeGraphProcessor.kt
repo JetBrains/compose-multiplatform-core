@@ -37,7 +37,7 @@ import kotlinx.coroutines.runBlocking
 internal class FakeGraphProcessor(
     val graphListener3A: Listener3A = Listener3A(),
     val defaultParameters: Map<*, Any?> = emptyMap<Any, Any?>(),
-    val defaultListeners: List<Request.Listener> = emptyList()
+    val defaultListeners: List<Request.Listener> = emptyList(),
 ) : GraphProcessor, GraphListener {
     var active = true
         private set
@@ -93,7 +93,7 @@ internal class FakeGraphProcessor(
                 defaultParameters = defaultParameters,
                 graphParameters = graphParameters,
                 requiredParameters = requiredParameters,
-                listeners = defaultListeners
+                listeners = defaultListeners,
             )
         }
         return true
@@ -202,7 +202,7 @@ internal class FakeGraphProcessor(
             defaultParameters = defaultParameters,
             graphParameters = graphParameters,
             requiredParameters = graph3AParameters,
-            listeners = defaultListeners
+            listeners = defaultListeners,
         )
     }
 }

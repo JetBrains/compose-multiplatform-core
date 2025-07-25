@@ -142,7 +142,7 @@ class ProvidedTypeConverterTest {
         entities = [Pet::class, Toy::class, PetUser::class, Robot::class, Hivemind::class],
         views = [PetWithUser::class],
         version = 1,
-        exportSchema = false
+        exportSchema = false,
     )
     @TypeConverters(TimeStampConverter::class, UUIDConverter::class)
     internal abstract class TestDatabaseWithConverterOne : RoomDatabase() {

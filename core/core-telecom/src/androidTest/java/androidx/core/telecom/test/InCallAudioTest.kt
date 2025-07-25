@@ -123,7 +123,7 @@ class InCallAudioTest : BaseTelecomTest() {
                     Log.i(
                         LOG_TAG,
                         "runBlocking_addCall_assertAudioModeInCommunication: " +
-                            "initial AudioManager mode = ${getAudioModeName(mAudioManager.mode)}"
+                            "initial AudioManager mode = ${getAudioModeName(mAudioManager.mode)}",
                     )
                     while (
                         isActive /* aka  within timeout window */ &&
@@ -132,14 +132,14 @@ class InCallAudioTest : BaseTelecomTest() {
                         Log.d(
                             LOG_TAG,
                             "runBlocking_addCall_assertAudioModeInCommunication: " +
-                                "current AudioManager mode = ${getAudioModeName(mAudioManager.mode)}"
+                                "current AudioManager mode = ${getAudioModeName(mAudioManager.mode)}",
                         )
                         yield() // mechanism to stop the while loop if the coroutine is dead
                         delay(1) // sleep x millisecond(s) instead of spamming check
                     }
                     Assert.assertEquals(
                         CallControlResult.Success(),
-                        disconnect(DisconnectCause(DisconnectCause.LOCAL))
+                        disconnect(DisconnectCause(DisconnectCause.LOCAL)),
                     )
                 }
             }

@@ -195,7 +195,7 @@ class SlidingPaneLayoutTest {
     fun testSingleLayoutPassLpWidthAndWeight() {
         testSingleLayoutPass(
             SlidingPaneLayout.LayoutParams(100, MATCH_PARENT),
-            SlidingPaneLayout.LayoutParams(0, MATCH_PARENT).apply { weight = 1f }
+            SlidingPaneLayout.LayoutParams(0, MATCH_PARENT).apply { weight = 1f },
         )
     }
 
@@ -203,7 +203,7 @@ class SlidingPaneLayoutTest {
     fun testSingleLayoutPassLpWidthAndMatch() {
         testSingleLayoutPass(
             SlidingPaneLayout.LayoutParams(100, MATCH_PARENT),
-            SlidingPaneLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            SlidingPaneLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT),
         )
     }
 
@@ -211,7 +211,7 @@ class SlidingPaneLayoutTest {
     fun testSingleLayoutPassMinWidthAndMatch() {
         testSingleLayoutPass(
             SlidingPaneLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT),
-            SlidingPaneLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            SlidingPaneLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT),
         ) {
             minimumWidth = 100
         }
@@ -221,7 +221,7 @@ class SlidingPaneLayoutTest {
     fun testSingleLayoutPassMinWidthAndWeight() {
         testSingleLayoutPass(
             SlidingPaneLayout.LayoutParams(WRAP_CONTENT, MATCH_PARENT),
-            SlidingPaneLayout.LayoutParams(0, MATCH_PARENT).apply { weight = 1f }
+            SlidingPaneLayout.LayoutParams(0, MATCH_PARENT).apply { weight = 1f },
         ) {
             minimumWidth = 100
         }
@@ -337,7 +337,7 @@ class SlidingPaneLayoutTest {
 private fun View.measureAndLayout(width: Int, height: Int) {
     measure(
         MeasureSpec.makeMeasureSpec(width, EXACTLY),
-        MeasureSpec.makeMeasureSpec(height, EXACTLY)
+        MeasureSpec.makeMeasureSpec(height, EXACTLY),
     )
     layout(0, 0, measuredWidth, measuredHeight)
 }
@@ -345,7 +345,7 @@ private fun View.measureAndLayout(width: Int, height: Int) {
 private fun testSingleLayoutPass(
     firstLayoutParams: SlidingPaneLayout.LayoutParams,
     secondLayoutParams: SlidingPaneLayout.LayoutParams,
-    configFirst: MeasureCountingView.() -> Unit = {}
+    configFirst: MeasureCountingView.() -> Unit = {},
 ) {
     val context = InstrumentationRegistry.getInstrumentation().context
     val firstChild = MeasureCountingView(context).apply(configFirst)

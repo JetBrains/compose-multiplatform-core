@@ -85,9 +85,7 @@ class TestWidget : MultiProcessGlanceAppWidget() {
     companion object {
         private val currentLayout = MutableStateFlow<@Composable (() -> Unit)> {}
 
-        internal fun setContent(
-            content: @Composable () -> Unit,
-        ) {
+        internal fun setContent(content: @Composable () -> Unit) {
             currentLayout.value = content
         }
     }

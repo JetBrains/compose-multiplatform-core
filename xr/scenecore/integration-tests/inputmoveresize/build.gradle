@@ -56,8 +56,6 @@ androidx {
     type = SoftwareType.TEST_APPLICATION
     inceptionYear = "2024"
     description = "Test app that exercises the SceneCore Sizing API."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }
 
 dependencies {

@@ -17,7 +17,7 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.AnchorPersistenceMode
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
@@ -39,10 +39,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * location in physical space, the numerical description of this position may update as ARCore for
  * XR updates its understanding of the physical world.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Anchor
 internal constructor(
-    public val runtimeAnchor: RuntimeAnchor,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val runtimeAnchor: RuntimeAnchor,
     private val xrResourceManager: XrResourcesManager,
 ) : Updatable {
     public companion object {
@@ -51,9 +50,9 @@ internal constructor(
          *
          * @param session the [Session] that is used to create the anchor.
          * @param pose the [Pose] that describes the location and orientation of the anchor.
-         * @return the result of the operation. Can be [AnchorCreateSuccess] that contains the
-         *   created [Anchor], or [AnchorCreateResourcesExhausted] if the resources allocated for
-         *   anchors have been exhausted.
+         * @return a subtype of [AnchorCreateResult] based on the result of the operation. If the
+         *   operation is successful, the result will be of type [AnchorCreateSuccess] with the
+         *   created [Anchor] as its property.
          */
         @JvmStatic
         public fun create(session: Session, pose: Pose): AnchorCreateResult {
@@ -64,7 +63,7 @@ internal constructor(
             } catch (e: AnchorResourcesExhaustedException) {
                 return AnchorCreateResourcesExhausted()
             } catch (e: AnchorNotTrackingException) {
-                return AnchorCreateNotTracking()
+                return AnchorCreateTrackingUnavailable()
             }
             return generateCreateResult(runtimeAnchor, perceptionStateExtender.xrResourcesManager)
         }
@@ -73,12 +72,13 @@ internal constructor(
          * Retrieves all the [UUID] instances from [Anchor] objects that have been persisted by
          * [persist] that are still present in the local storage.
          *
-         * @throws [IllegalStateException] if [AnchorPersistenceMode] is set to Disabled.
+         * @throws [IllegalStateException] if [Session.config] is set to
+         *   [Config.AnchorPersistenceMode.DISABLED].
          */
         @JvmStatic
         public fun getPersistedAnchorUuids(session: Session): List<UUID> {
-            check(session.config.anchorPersistence != AnchorPersistenceMode.Disabled) {
-                "Config.AnchorPersistenceMode is set to Disabled."
+            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+                "Config.AnchorPersistenceMode is set to DISABLED."
             }
             return session.runtime.perceptionManager.getPersistedAnchorUuids()
         }
@@ -88,12 +88,13 @@ internal constructor(
          * be attached in the same physical location as the anchor that was previously persisted.
          * The [uuid] should be the return value of a previous call to [persist].
          *
-         * @throws [IllegalStateException] if [AnchorPersistenceMode] is set to Disabled.
+         * @throws [IllegalStateException] if [Session.config] is set to
+         *   [Config.AnchorPersistenceMode.DISABLED].
          */
         @JvmStatic
         public fun load(session: Session, uuid: UUID): AnchorCreateResult {
-            check(session.config.anchorPersistence != AnchorPersistenceMode.Disabled) {
-                "Config.AnchorPersistenceMode is set to Disabled."
+            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+                "Config.AnchorPersistenceMode is set to DISABLED."
             }
 
             val perceptionStateExtender = getPerceptionStateExtender(session)
@@ -111,6 +112,7 @@ internal constructor(
         /** Loads an [Anchor] of the given native pointer. */
         // TODO(b/373711152) : Remove this method once the Jetpack XR Runtime API migration is done.
         @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public fun loadFromNativePointer(session: Session, nativePointer: Long): Anchor {
             val perceptionStateExtender = getPerceptionStateExtender(session)
             val runtimeAnchor =
@@ -121,12 +123,13 @@ internal constructor(
         /**
          * Deletes a persisted Anchor denoted by [uuid] from local storage.
          *
-         * @throws [IllegalStateException] if [AnchorPersistenceMode] is set to Disabled.
+         * @throws [IllegalStateException] if [Session.config] is set to
+         *   [Config.AnchorPersistenceMode.DISABLED] or the provided [uuid] is invalid.
          */
         @JvmStatic
         public fun unpersist(session: Session, uuid: UUID) {
-            check(session.config.anchorPersistence != AnchorPersistenceMode.Disabled) {
-                "Config.AnchorPersistenceMode is set to Disabled."
+            check(session.config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+                "Config.AnchorPersistenceMode is set to DISABLED."
             }
             session.runtime.perceptionManager.unpersistAnchor(uuid)
         }
@@ -150,6 +153,7 @@ internal constructor(
 
     // TODO(b/372049781): This constructor is only used for testing. Remove it once cl/683360061 is
     // submitted.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public constructor(runtimeAnchor: RuntimeAnchor) : this(runtimeAnchor, XrResourcesManager())
 
     /**
@@ -158,7 +162,8 @@ internal constructor(
      * @property trackingState the current [TrackingState] of the anchor.
      * @property pose the location of the anchor in the world coordinate space.
      */
-    public class State(public val trackingState: TrackingState, public val pose: Pose) {
+    public class State
+    internal constructor(public val trackingState: TrackingState, public val pose: Pose) {
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -185,12 +190,14 @@ internal constructor(
      * sessions.
      *
      * @return the [UUID] that uniquely identifies this anchor.
-     * @throws [IllegalStateException] if [AnchorPersistenceMode] is set to Disabled.
+     * @throws [IllegalStateException] if [Session.config] is set to
+     *   [Config.AnchorPersistenceMode.DISABLED], or if there was an unexpected error persisting the
+     *   anchor (e.g. ran out of memory).
      */
     public suspend fun persist(): UUID {
         val config = xrResourceManager.lifecycleManager.config
-        check(config.anchorPersistence != AnchorPersistenceMode.Disabled) {
-            "Config.AnchorPersistenceMode is set to Disabled."
+        check(config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
+            "Config.AnchorPersistenceMode is set to DISABLED."
         }
         runtimeAnchor.persist()
         // Suspend the coroutine until the anchor is persisted.
@@ -211,20 +218,21 @@ internal constructor(
 
     override fun hashCode(): Int = runtimeAnchor.hashCode()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override suspend fun update() {
         _state.emit(State(runtimeAnchor.trackingState, runtimeAnchor.pose))
         if (persistContinuation == null) {
             return
         }
         when (runtimeAnchor.persistenceState) {
-            RuntimeAnchor.PersistenceState.Pending -> {
+            RuntimeAnchor.PersistenceState.PENDING -> {
                 // Do nothing while we wait for the anchor to be persisted.
             }
-            RuntimeAnchor.PersistenceState.Persisted -> {
+            RuntimeAnchor.PersistenceState.PERSISTED -> {
                 persistContinuation?.resume(runtimeAnchor.uuid!!)
                 persistContinuation = null
             }
-            RuntimeAnchor.PersistenceState.NotPersisted -> {
+            RuntimeAnchor.PersistenceState.NOT_PERSISTED -> {
                 persistContinuation?.resumeWithException(
                     RuntimeException("Anchor was not persisted.")
                 )

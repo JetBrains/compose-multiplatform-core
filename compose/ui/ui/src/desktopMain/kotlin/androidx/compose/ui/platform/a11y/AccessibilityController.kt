@@ -119,7 +119,7 @@ internal class AccessibilityController(
                     SemanticsProperties.TextSelectionRange -> {
                         component.composeAccessibleContext.firePropertyChange(
                             ACCESSIBLE_CARET_PROPERTY,
-                            prev, (entry.value as TextRange).start
+                            (prev as? TextRange)?.start, (entry.value as TextRange).start
                         )
                     }
 
@@ -157,7 +157,7 @@ internal class AccessibilityController(
                         val value = entry.value as ProgressBarRangeInfo
                         component.composeAccessibleContext.firePropertyChange(
                             ACCESSIBLE_VALUE_PROPERTY,
-                            prev,
+                            (prev as? ProgressBarRangeInfo)?.current,
                             value.current
                         )
                     }
@@ -227,6 +227,11 @@ internal class AccessibilityController(
      */
     private fun syncNodes() {
         fun SemanticsNode.isValid() = layoutNode.let { it.isPlaced && it.isAttached }
+        fun SemanticsNode.isInvisibleToA11y() = config.let {
+            @Suppress("DEPRECATION")
+            it.contains(SemanticsProperties.InvisibleToUser) ||
+                it.contains(SemanticsProperties.HideFromAccessibility)
+        }
 
         // Build new mapping of ComposeAccessible by node id
         val previous = accessibleByNodeId
@@ -235,6 +240,7 @@ internal class AccessibilityController(
             bfsDeque.add(rootSemanticNode)
         while (bfsDeque.isNotEmpty()) {
             val node = bfsDeque.removeFirst()
+            if (node.isInvisibleToA11y()) continue
 
             val existingAccessible = previous[node.id]
             updated[node.id] = if (existingAccessible != null) {

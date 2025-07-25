@@ -20,6 +20,7 @@ package androidx.health.connect.client.impl.converters.datatype
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -66,6 +67,7 @@ import kotlin.reflect.KClass
 val RECORDS_TYPE_NAME_MAP: Map<String, KClass<out Record>> =
     mapOf(
         "ActiveCaloriesBurned" to ActiveCaloriesBurnedRecord::class,
+        "ActivityIntensity" to ActivityIntensityRecord::class,
         "ActivitySession" to ExerciseSessionRecord::class, // Keep legacy Activity name
         "BasalBodyTemperature" to BasalBodyTemperatureRecord::class,
         "BasalMetabolicRate" to BasalMetabolicRateRecord::class,

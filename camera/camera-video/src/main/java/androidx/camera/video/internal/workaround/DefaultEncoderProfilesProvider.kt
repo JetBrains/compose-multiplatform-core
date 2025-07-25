@@ -49,7 +49,7 @@ import androidx.camera.video.internal.encoder.VideoEncoderInfo
 public class DefaultEncoderProfilesProvider(
     private val cameraInfo: CameraInfoInternal,
     private val targetQualities: List<Quality>,
-    private val videoEncoderInfoFinder: VideoEncoderInfo.Finder
+    private val videoEncoderInfoFinder: VideoEncoderInfo.Finder,
 ) : EncoderProfilesProvider {
 
     private val supportedSizes by lazy {
@@ -75,7 +75,7 @@ public class DefaultEncoderProfilesProvider(
 
         return createDefaultEncoderProfiles(
             videoProfile = videoProfile,
-            audioProfile = createDefaultAudioProfile()
+            audioProfile = createDefaultAudioProfile(),
         )
     }
 
@@ -89,7 +89,7 @@ public class DefaultEncoderProfilesProvider(
                 resolveVideoProfile(
                     width = size.width,
                     height = size.height,
-                    bitrate = qualityObj.getTypicalBitrate()
+                    bitrate = qualityObj.getTypicalBitrate(),
                 )
 
             if (videoProfile != null) {
@@ -129,13 +129,13 @@ public class DefaultEncoderProfilesProvider(
         defaultDurationSeconds: Int = DEFAULT_DURATION_SECONDS,
         recommendedFileFormat: Int = DEFAULT_OUTPUT_FORMAT,
         videoProfile: VideoProfileProxy,
-        audioProfile: AudioProfileProxy
+        audioProfile: AudioProfileProxy,
     ): EncoderProfilesProxy {
         return EncoderProfilesProxy.ImmutableEncoderProfilesProxy.create(
             defaultDurationSeconds,
             recommendedFileFormat,
             listOf(audioProfile),
-            listOf(videoProfile)
+            listOf(videoProfile),
         )
     }
 
@@ -155,7 +155,7 @@ public class DefaultEncoderProfilesProvider(
         profile: Int = DEFAULT_VIDEO_PROFILE,
         bitDepth: Int = DEFAULT_VIDEO_BIT_DEPTH,
         chromaSubsampling: Int = DEFAULT_VIDEO_CHROMA_SUBSAMPLING,
-        hdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT
+        hdrFormat: Int = DEFAULT_VIDEO_HDR_FORMAT,
     ): VideoProfileProxy {
         return VideoProfileProxy.create(
             codec,
@@ -167,7 +167,7 @@ public class DefaultEncoderProfilesProvider(
             profile,
             bitDepth,
             chromaSubsampling,
-            hdrFormat
+            hdrFormat,
         )
     }
 
@@ -183,7 +183,7 @@ public class DefaultEncoderProfilesProvider(
         bitRate: Int = DEFAULT_AUDIO_BITRATE,
         sampleRate: Int = DEFAULT_AUDIO_SAMPLE_RATE,
         channels: Int = DEFAULT_AUDIO_CHANNELS,
-        profile: Int = DEFAULT_AUDIO_PROFILE
+        profile: Int = DEFAULT_AUDIO_PROFILE,
     ): AudioProfileProxy {
         return AudioProfileProxy.create(codec, mimeType, bitRate, sampleRate, channels, profile)
     }

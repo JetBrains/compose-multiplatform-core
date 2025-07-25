@@ -95,7 +95,7 @@ fun interface MeasurePolicy {
      */
     fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val mapped =
             measurables.fastMap {
@@ -115,7 +115,7 @@ fun interface MeasurePolicy {
      */
     fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val mapped =
             measurables.fastMap {
@@ -134,7 +134,7 @@ fun interface MeasurePolicy {
      */
     fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int
+        height: Int,
     ): Int {
         val mapped =
             measurables.fastMap {
@@ -153,7 +153,7 @@ fun interface MeasurePolicy {
      */
     fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int
+        width: Int,
     ): Int {
         val mapped =
             measurables.fastMap {

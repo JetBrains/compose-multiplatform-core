@@ -167,7 +167,7 @@ class CapabilitiesByQualityTest(private val qualitySource: Int) {
         assertThat(
                 CapabilitiesByQuality.containsSupportedQuality(
                     encoderProfilesProvider,
-                    qualitySource
+                    qualitySource,
                 )
             )
             .isTrue()
@@ -175,7 +175,7 @@ class CapabilitiesByQualityTest(private val qualitySource: Int) {
         assertThat(
                 CapabilitiesByQuality.containsSupportedQuality(
                     EncoderProfilesProvider.EMPTY,
-                    qualitySource
+                    qualitySource,
                 )
             )
             .isFalse()

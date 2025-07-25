@@ -65,7 +65,7 @@ fun clickable(
     minClickableWidth: Float = Float.NaN,
     @RequiresSchemaVersion(major = 1, minor = 300)
     @Dimension(DP)
-    minClickableHeight: Float = Float.NaN
+    minClickableHeight: Float = Float.NaN,
 ): Clickable =
     Clickable.Builder()
         .setOnClick(action)
@@ -89,7 +89,7 @@ fun LayoutModifier.clickable(clickable: Clickable): LayoutModifier =
                 },
             id = clickable.id,
             minClickableWidth = clickable.minimumClickableWidth.value,
-            minClickableHeight = clickable.minimumClickableHeight.value
+            minClickableHeight = clickable.minimumClickableHeight.value,
         )
 
 /**
@@ -117,7 +117,7 @@ fun loadAction(
 @RequiresSchemaVersion(major = 1, minor = 300)
 fun LayoutModifier.minimumTouchTargetSize(
     @Dimension(DP) minWidth: Float,
-    @Dimension(DP) minHeight: Float
+    @Dimension(DP) minHeight: Float,
 ): LayoutModifier =
     this then BaseClickableElement(minClickableWidth = minWidth, minClickableHeight = minHeight)
 

@@ -94,7 +94,7 @@ class TimeTextScreenshotTest {
                 Icon(
                     imageVector = Icons.Filled.Favorite,
                     contentDescription = "Favorite",
-                    modifier = Modifier.size(13.dp)
+                    modifier = Modifier.size(13.dp),
                 )
             }
         }
@@ -128,7 +128,7 @@ class TimeTextScreenshotTest {
                 "Long status that should be ellipsized.",
                 CurvedModifier.weight(1f),
                 overflow = TextOverflow.Ellipsis,
-                style = greenStyle
+                style = greenStyle,
             )
             curvedComposable { Spacer(modifier = Modifier.size(4.dp)) }
             curvedText(time, style = greenStyle)
@@ -150,7 +150,7 @@ class TimeTextScreenshotTest {
                 CurvedModifier.weight(1f),
                 overflow = TextOverflow.Ellipsis,
                 maxSweepAngle = 180f,
-                style = customStyle
+                style = customStyle,
             )
             timeTextSeparator(separatorStyle)
             curvedText(time, style = timeTextStyle)
@@ -171,7 +171,7 @@ class TimeTextScreenshotTest {
                 "Very long text to ensure we are respecting the maxSweep parameter",
                 CurvedModifier.weight(1f),
                 overflow = TextOverflow.Ellipsis,
-                style = customStyle
+                style = customStyle,
             )
             timeTextSeparator(separatorStyle)
             curvedText(time, style = timeTextStyle)
@@ -190,7 +190,7 @@ class TimeTextScreenshotTest {
                 "Very long text to ensure we are respecting the weight parameter",
                 CurvedModifier.weight(1f),
                 overflow = TextOverflow.Ellipsis,
-                style = style
+                style = style,
             )
             timeTextSeparator(style)
             timeTextCurvedText(time)
@@ -215,7 +215,7 @@ class TimeTextScreenshotTest {
                 "Very long text to ensure we are respecting the weight parameter",
                 CurvedModifier.weight(1f),
                 overflow = TextOverflow.Ellipsis,
-                style = style
+                style = style,
             )
         }
     }
@@ -231,7 +231,7 @@ class TimeTextScreenshotTest {
                 ) {
                     content()
                 }
-            }
+            },
         )
     }
 }

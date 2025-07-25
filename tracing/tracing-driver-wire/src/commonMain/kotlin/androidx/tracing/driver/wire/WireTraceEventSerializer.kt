@@ -56,7 +56,7 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
             event,
             scratchTracePacket,
             scratchTrackDescriptor,
-            scratchTrackEvent
+            scratchTrackEvent,
         )
         MutableTracePacket.Companion.ADAPTER.encodeWithTag(protoWriter, 1, scratchTracePacket)
     }

@@ -22,7 +22,6 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Spacer
@@ -127,7 +126,7 @@ public fun CircularProgressIndicator(
             colors,
             strokeWidth,
             gapSize,
-            enabled
+            enabled,
         )
     } else {
         AnimatedCircularProgressIndicatorImpl(
@@ -138,7 +137,7 @@ public fun CircularProgressIndicator(
             colors,
             strokeWidth,
             gapSize,
-            enabled
+            enabled,
         )
     }
 }
@@ -170,29 +169,29 @@ public fun CircularProgressIndicator(
         with(LocalDensity.current) { Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round) }
 
     val infiniteTransition = rememberInfiniteTransition()
-    // A global rotation that does a 360 degrees rotation in 6 seconds.
+    // A global rotation that does a 1440 degrees rotation in 5 seconds.
     val globalRotation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = CircularGlobalRotationDegreesTarget,
-            animationSpec = circularIndeterminateGlobalRotationAnimationSpec
+            animationSpec = circularIndeterminateGlobalRotationAnimationSpec,
         )
 
-    // An additional rotation that moves by 90 degrees in 500ms and then rest for 1 second.
+    // An additional rotation that moves by 360 degrees in 1250ms and then rest for 1250ms.
     val additionalRotation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = CircularAdditionalRotationDegreesTarget,
-            animationSpec = circularIndeterminateRotationAnimationSpec
+            targetValue = 720f,
+            animationSpec = circularIndeterminateRotationAnimationSpec,
         )
 
     // Indicator progress animation that will be changing the progress up and down as the indicator
     // rotates.
     val progressAnimation =
         infiniteTransition.animateFloat(
-            initialValue = CircularIndeterminateMinProgress,
-            targetValue = CircularIndeterminateMaxProgress,
-            animationSpec = circularIndeterminateProgressAnimationSpec
+            initialValue = 0f,
+            targetValue = 0f,
+            animationSpec = circularIndeterminateProgressAnimationSpec,
         )
 
     Canvas(
@@ -200,18 +199,24 @@ public fun CircularProgressIndicator(
     ) {
         val sweep = progressAnimation.value * 360f
         val adjustedGapSize = gapSize + strokeWidth
-
         val minSize = min(size.height, size.width)
         val gapSizeSweep = (adjustedGapSize.value / (PI * minSize.toDp().value).toFloat()) * 360f
 
-        rotate(globalRotation.value + additionalRotation.value) {
-            drawCircularIndicator(
-                sweep + min(sweep, gapSizeSweep),
-                360f - sweep - min(sweep, gapSizeSweep) * 2,
-                colors.trackBrush,
-                stroke
+        rotate(CircularRotationStartAngle + globalRotation.value + additionalRotation.value) {
+            drawIndicatorSegment(
+                startAngle = sweep,
+                sweep = 360f - sweep,
+                brush = colors.trackBrush,
+                strokeWidth = strokeWidth.toPx(),
+                gapSweep = min(sweep, gapSizeSweep),
             )
-            drawCircularIndicator(startAngle = 0f, sweep, colors.indicatorBrush, stroke)
+            drawIndicatorSegment(
+                startAngle = 0f,
+                sweep = sweep,
+                brush = colors.indicatorBrush,
+                strokeWidth = strokeWidth.toPx(),
+                gapSweep = gapSizeSweep,
+            )
         }
     }
 }
@@ -376,7 +381,7 @@ private fun AnimatedCircularProgressIndicatorImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue
+                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }
@@ -431,7 +436,7 @@ private fun AnimatedCircularProgressIndicatorWithOverflowImpl(
                         async {
                             animatedProgress.animateTo(newProgress, actualProgressAnimationSpec)
                         },
-                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) }
+                        async { animatedOverflowColor.animateTo(0f, colorAnimationSpec) },
                     )
                 }
             }
@@ -460,7 +465,7 @@ private fun AnimatedCircularProgressIndicatorWithOverflowImpl(
                         strokeWidth = strokeWidth,
                         gapSize = gapSize,
                         enabled = enabled,
-                        targetProgress = animatedProgress.targetValue
+                        targetProgress = animatedProgress.targetValue,
                     )
                 }
             }
@@ -513,47 +518,32 @@ private fun coercedProgressWithGap(progress: Float, isFullCircle: Boolean): Floa
 
 // The indeterminate circular indicator easing constants for its motion
 internal val CircularProgressEasing = MotionTokens.EasingStandard
-internal const val CircularIndeterminateMinProgress = 0.1f
-internal const val CircularIndeterminateMaxProgress = 0.87f
-
-internal const val CircularAnimationProgressDuration = 6000
-internal const val CircularAnimationAdditionalRotationDelay = 1500
-internal const val CircularAnimationAdditionalRotationDuration = 300
-internal const val CircularAdditionalRotationDegreesTarget = 360f
-internal const val CircularGlobalRotationDegreesTarget = 1080f
+internal const val CircularGlobalRotationDegreesTarget = 1440f // 1440 degrees (4 * 360)
+internal const val CircularRotationStartAngle = 270f // 270 degrees
 
 /** A global animation spec for indeterminate circular progress indicator. */
 internal val circularIndeterminateGlobalRotationAnimationSpec =
     infiniteRepeatable<Float>(
-        animation = tween(CircularAnimationProgressDuration, easing = LinearEasing)
+        animation =
+            keyframes {
+                durationMillis = 5000
+                CircularGlobalRotationDegreesTarget at 5000 using LinearEasing
+            }
     )
 
 /**
- * An animation spec for indeterminate circular progress indicators that infinitely rotates a 360
- * degrees.
+ * An animation spec for indeterminate circular progress indicator rotation that rotates 360 degrees
+ * in 1250ms, then waits for 1250ms.
  */
 internal val circularIndeterminateRotationAnimationSpec =
     infiniteRepeatable(
         animation =
             keyframes {
-                durationMillis = CircularAnimationProgressDuration // 6000ms
-                90f at
-                    CircularAnimationAdditionalRotationDuration using
-                    MotionTokens
-                        .EasingEmphasizedDecelerate // MotionTokens.EasingEmphasizedDecelerateCubicBezier // 300ms
-                90f at CircularAnimationAdditionalRotationDelay // hold till 1500ms
-                180f at
-                    CircularAnimationAdditionalRotationDuration +
-                        CircularAnimationAdditionalRotationDelay // 1800ms
-                180f at CircularAnimationAdditionalRotationDelay * 2 // hold till 3000ms
-                270f at
-                    CircularAnimationAdditionalRotationDuration +
-                        CircularAnimationAdditionalRotationDelay * 2 // 3300ms
-                270f at CircularAnimationAdditionalRotationDelay * 3 // hold till 4500ms
-                360f at
-                    CircularAnimationAdditionalRotationDuration +
-                        CircularAnimationAdditionalRotationDelay * 3 // 4800ms
-                360f at CircularAnimationProgressDuration // hold till 6000ms
+                durationMillis = 5000
+                0f at 1250 using CircularProgressEasing // hold for 1250ms
+                360f at 2500 using CircularProgressEasing // animate to 360 degrees for 1250ms
+                360f at 3750 using CircularProgressEasing // hold for 1250ms
+                720f at 5000 using CircularProgressEasing // animate to 720 degrees for 1250ms
             }
     )
 
@@ -562,11 +552,11 @@ internal val circularIndeterminateProgressAnimationSpec =
     infiniteRepeatable(
         animation =
             keyframes {
-                durationMillis = CircularAnimationProgressDuration // 6000ms
-                CircularIndeterminateMaxProgress at
-                    CircularAnimationProgressDuration / 2 using
-                    CircularProgressEasing // 3000ms
-                CircularIndeterminateMinProgress at CircularAnimationProgressDuration
+                durationMillis = 5000
+                0.8f at 1250 using CircularProgressEasing // animate from 0% to 80%
+                0.2f at 2500 using CircularProgressEasing // animate from 80% to 20%
+                0.8f at 3750 using CircularProgressEasing // animate from 20% to 80%
+                0.0f at 5000 using CircularProgressEasing // animate to 0%
             }
     )
 

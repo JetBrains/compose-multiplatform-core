@@ -35,8 +35,8 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "androidx.compose.material.catalog"
-        versionCode 2600
-        versionName "2.6.0"
+        versionCode 2500
+        versionName "2.5.0"
     }
     buildTypes {
         release {

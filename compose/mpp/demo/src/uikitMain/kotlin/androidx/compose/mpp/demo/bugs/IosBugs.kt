@@ -39,5 +39,6 @@ val IosBugs = Screen.Selection(
     ModalMemoryLeak,
     ModalCrash,
     PopupStretching,
+    SwipeBackScrollCrash,
     TransformGesturesBug
 )

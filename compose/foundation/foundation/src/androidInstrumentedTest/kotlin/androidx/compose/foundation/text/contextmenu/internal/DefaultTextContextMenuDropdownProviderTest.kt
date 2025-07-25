@@ -70,6 +70,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -220,7 +221,7 @@ class DefaultTextContextMenuDropdownProviderTest {
                                 minHeight = smallerSizeDp,
                                 maxWidth = largerSizeDp,
                                 maxHeight = largerSizeDp,
-                            )
+                            ),
                 ) {
                     it()
                 }
@@ -234,13 +235,14 @@ class DefaultTextContextMenuDropdownProviderTest {
                         }
                         .testTag(innerContentTestTag)
                 )
-            }
+            },
         ) {
             assertThat(actualConstraints).isEqualTo(expectedConstraints)
             rule.onNodeWithTag(innerContentTestTag).assertIsDisplayed()
         }
     }
 
+    @Ignore // b/414664796
     @Test
     fun whenAnchorLayoutMoves_popupDoesNotMove() {
         var length by mutableIntStateOf(0)
@@ -275,6 +277,7 @@ class DefaultTextContextMenuDropdownProviderTest {
     }
 
     @Test
+    @Ignore // b/414664796
     fun whenAnchorLayoutScrolled_popupDoesNotMove() {
         val scrollState = ScrollState(0)
         runTest(
@@ -310,6 +313,7 @@ class DefaultTextContextMenuDropdownProviderTest {
     }
 
     @Test
+    @Ignore // b/414664796
     fun whenDataProviderPositionUpdates_popupDoesNotMove() {
         var offset by mutableStateOf(Offset.Zero)
         runTest {
@@ -364,7 +368,7 @@ class DefaultTextContextMenuDropdownProviderTest {
             val dataProvider =
                 testDataProvider(
                     positioner = { offset },
-                    data = { numbersToData(*itemNumbers.toIntArray()) }
+                    data = { numbersToData(*itemNumbers.toIntArray()) },
                 )
             val contextMenuCoroutine = showTextContextMenu(dataProvider)
             assertContextMenuExistsWithNumbers(1)
@@ -421,7 +425,7 @@ class DefaultTextContextMenuDropdownProviderTest {
         coroutineScope: CoroutineScope,
     ) : CoroutineScope by coroutineScope {
         fun showTextContextMenu(
-            dataProvider: TextContextMenuDataProvider = testDataProvider(),
+            dataProvider: TextContextMenuDataProvider = testDataProvider()
         ): Job =
             launch(start = CoroutineStart.UNDISPATCHED) {
                     provider.showTextContextMenu(dataProvider)

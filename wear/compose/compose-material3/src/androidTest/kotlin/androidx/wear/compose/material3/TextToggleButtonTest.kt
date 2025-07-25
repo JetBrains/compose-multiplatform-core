@@ -77,7 +77,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -93,7 +93,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -109,7 +109,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -125,7 +125,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -141,7 +141,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -157,7 +157,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -172,7 +172,7 @@ class TextToggleButtonTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -187,7 +187,7 @@ class TextToggleButtonTest {
                 checked = false,
                 onCheckedChange = {},
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -203,7 +203,7 @@ class TextToggleButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -219,7 +219,7 @@ class TextToggleButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -236,7 +236,7 @@ class TextToggleButtonTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
         rule.waitForIdle()
@@ -250,14 +250,14 @@ class TextToggleButtonTest {
         rule.isShape(
             shape = CircleShape,
             layoutDirection = LayoutDirection.Ltr,
-            shapeColorComposable = { shapeColor() }
+            shapeColorComposable = { shapeColor() },
         ) {
             TextToggleButton(
                 enabled = true,
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -267,14 +267,14 @@ class TextToggleButtonTest {
         rule.isShape(
             shape = CircleShape,
             layoutDirection = LayoutDirection.Rtl,
-            shapeColorComposable = { shapeColor() }
+            shapeColorComposable = { shapeColor() },
         ) {
             TextToggleButton(
                 enabled = true,
                 checked = true,
                 onCheckedChange = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -284,7 +284,7 @@ class TextToggleButtonTest {
         rule.isShape(
             shape = RectangleShape,
             layoutDirection = LayoutDirection.Ltr,
-            shapeColorComposable = { shapeColor() }
+            shapeColorComposable = { shapeColor() },
         ) {
             TextToggleButton(
                 enabled = true,
@@ -292,7 +292,7 @@ class TextToggleButtonTest {
                 shapes = TextToggleButtonDefaults.shapes(RectangleShape),
                 onCheckedChange = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -305,7 +305,7 @@ class TextToggleButtonTest {
                 onCheckedChange = {},
                 content = {},
                 modifier =
-                    Modifier.testTag(TEST_TAG).touchTargetAwareSize(TextToggleButtonDefaults.Size)
+                    Modifier.testTag(TEST_TAG).touchTargetAwareSize(TextToggleButtonDefaults.Size),
             )
         }
 
@@ -319,7 +319,7 @@ class TextToggleButtonTest {
                 content = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
-                        .touchTargetAwareSize(TextToggleButtonDefaults.LargeSize)
+                        .touchTargetAwareSize(TextToggleButtonDefaults.LargeSize),
             )
         }
 
@@ -333,7 +333,7 @@ class TextToggleButtonTest {
                 content = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
-                        .touchTargetAwareSize(TextToggleButtonDefaults.ExtraLargeSize)
+                        .touchTargetAwareSize(TextToggleButtonDefaults.ExtraLargeSize),
             )
         }
 
@@ -346,7 +346,7 @@ class TextToggleButtonTest {
                 onCheckedChange = {},
                 content = {},
                 modifier =
-                    Modifier.testTag(TEST_TAG).touchTargetAwareSize(TextToggleButtonDefaults.Size)
+                    Modifier.testTag(TEST_TAG).touchTargetAwareSize(TextToggleButtonDefaults.Size),
             )
         }
 
@@ -360,7 +360,7 @@ class TextToggleButtonTest {
                 content = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
-                        .touchTargetAwareSize(TextToggleButtonDefaults.LargeSize)
+                        .touchTargetAwareSize(TextToggleButtonDefaults.LargeSize),
             )
         }
 
@@ -374,7 +374,7 @@ class TextToggleButtonTest {
                 content = {},
                 modifier =
                     Modifier.testTag(TEST_TAG)
-                        .touchTargetAwareSize(TextToggleButtonDefaults.ExtraLargeSize)
+                        .touchTargetAwareSize(TextToggleButtonDefaults.ExtraLargeSize),
             )
         }
 
@@ -386,7 +386,7 @@ class TextToggleButtonTest {
             checked = true,
             colors = { TextToggleButtonDefaults.colors() },
             containerColor = { MaterialTheme.colorScheme.primary },
-            contentColor = { MaterialTheme.colorScheme.onPrimary }
+            contentColor = { MaterialTheme.colorScheme.onPrimary },
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -397,7 +397,7 @@ class TextToggleButtonTest {
             checked = false,
             colors = { TextToggleButtonDefaults.colors() },
             containerColor = { MaterialTheme.colorScheme.surfaceContainer },
-            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant }
+            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant },
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -410,7 +410,7 @@ class TextToggleButtonTest {
             containerColor = {
                 MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
             },
-            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() },
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -436,7 +436,7 @@ class TextToggleButtonTest {
             checked = true,
             colors = { TextToggleButtonDefaults.colors(checkedContainerColor = override) },
             containerColor = { override },
-            contentColor = { MaterialTheme.colorScheme.onPrimary }
+            contentColor = { MaterialTheme.colorScheme.onPrimary },
         )
     }
 
@@ -450,7 +450,7 @@ class TextToggleButtonTest {
             checked = true,
             colors = { TextToggleButtonDefaults.colors(checkedContentColor = override) },
             containerColor = { MaterialTheme.colorScheme.primary },
-            contentColor = { override }
+            contentColor = { override },
         )
     }
 
@@ -464,7 +464,7 @@ class TextToggleButtonTest {
             checked = false,
             colors = { TextToggleButtonDefaults.colors(uncheckedContainerColor = override) },
             containerColor = { override },
-            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant }
+            contentColor = { MaterialTheme.colorScheme.onSurfaceVariant },
         )
     }
 
@@ -478,7 +478,7 @@ class TextToggleButtonTest {
             checked = false,
             colors = { TextToggleButtonDefaults.colors(uncheckedContentColor = override) },
             containerColor = { MaterialTheme.colorScheme.surfaceContainer },
-            contentColor = { override }
+            contentColor = { override },
         )
     }
 
@@ -492,7 +492,7 @@ class TextToggleButtonTest {
             checked = true,
             colors = { TextToggleButtonDefaults.colors(disabledCheckedContainerColor = override) },
             containerColor = { override },
-            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() },
         )
     }
 
@@ -513,7 +513,7 @@ class TextToggleButtonTest {
             containerColor = {
                 MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
             },
-            contentColor = { override }
+            contentColor = { override },
         )
     }
 
@@ -532,7 +532,7 @@ class TextToggleButtonTest {
                 )
             },
             containerColor = { override },
-            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() }
+            contentColor = { MaterialTheme.colorScheme.onSurface.toDisabledColor() },
         )
     }
 
@@ -553,7 +553,7 @@ class TextToggleButtonTest {
             contentColor = { override },
             containerColor = {
                 MaterialTheme.colorScheme.onSurface.toDisabledColor(DisabledContainerAlpha)
-            }
+            },
         )
     }
 
@@ -566,7 +566,7 @@ class TextToggleButtonTest {
                 onCheckedChange = {},
                 enabled = false,
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -585,7 +585,7 @@ class TextToggleButtonTest {
                 onCheckedChange = {},
                 enabled = true,
                 content = { Text("ABC") },
-                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole }
+                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole },
             )
         }
 
@@ -610,7 +610,7 @@ class TextToggleButtonTest {
                 Color.Black,
                 Color.Black,
                 Color.Black,
-                Color.Black
+                Color.Black,
             )
 
         rule.verifyRoundedButtonTapAnimationEnd(
@@ -618,14 +618,14 @@ class TextToggleButtonTest {
             pressedShape,
             0.75f,
             8,
-            color = { colors.checkedContainerColor }
+            color = { colors.checkedContainerColor },
         ) { modifier ->
             TextToggleButton(
                 checked = false,
                 onCheckedChange = {},
                 modifier = modifier,
                 shapes = TextToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
-                colors = colors
+                colors = colors,
             ) {}
         }
     }
@@ -649,7 +649,7 @@ class TextToggleButtonTest {
                 checked = checked,
                 onCheckedChange = { checked = !checked },
                 modifier = modifier,
-                shapes = TextToggleButtonShapes(uncheckedShape, checkedShape, pressedShape)
+                shapes = TextToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
             ) {}
         }
     }
@@ -673,7 +673,7 @@ class TextToggleButtonTest {
                 checked = checked,
                 onCheckedChange = { checked = !checked },
                 modifier = modifier,
-                shapes = TextToggleButtonShapes(uncheckedShape, checkedShape, pressedShape)
+                shapes = TextToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
             ) {}
         }
     }
@@ -704,7 +704,7 @@ class TextToggleButtonTest {
                             uncheckedShape,
                             checkedShape,
                             uncheckedPressedShape,
-                            checkedPressedShape
+                            checkedPressedShape,
                         ),
                 ) {}
             }
@@ -737,7 +737,7 @@ class TextToggleButtonTest {
                             uncheckedShape,
                             checkedShape,
                             uncheckedPressedShape,
-                            checkedPressedShape
+                            checkedPressedShape,
                         ),
                 ) {}
             }
@@ -765,7 +765,7 @@ class TextToggleButtonTest {
                     shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
                     modifier = Modifier.testTag(TEST_TAG),
                 ) {}
-            }
+            },
         )
     }
 
@@ -790,7 +790,7 @@ class TextToggleButtonTest {
                     shapes = IconToggleButtonShapes(uncheckedShape, checkedShape, pressedShape),
                     modifier = Modifier.testTag(TEST_TAG),
                 ) {}
-            }
+            },
         )
     }
 
@@ -824,7 +824,7 @@ class TextToggleButtonTest {
                     actualContentColor = LocalContentColor.current
                 }
                 return@verifyColors actualContentColor
-            }
+            },
         )
     }
 
@@ -835,7 +835,7 @@ class TextToggleButtonTest {
         padding: Dp = 0.dp,
         backgroundColor: Color = Color.Red,
         shapeColorComposable: @Composable () -> Color,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         var shapeColor = Color.Transparent
         setContentWithTheme {
@@ -855,7 +855,7 @@ class TextToggleButtonTest {
                 verticalPadding = padding,
                 backgroundColor = backgroundColor,
                 antiAliasingGap = 2.0f,
-                shapeColor = shapeColor
+                shapeColor = shapeColor,
             )
     }
 
@@ -863,7 +863,7 @@ class TextToggleButtonTest {
     private fun ComposeContentTestRule.verifyColors(
         expectedContainerColor: @Composable () -> Color,
         expectedContentColor: @Composable () -> Color,
-        content: @Composable () -> Color
+        content: @Composable () -> Color,
     ) {
         val testBackgroundColor = Color.White
         var finalExpectedContainerColor = Color.Transparent
@@ -883,7 +883,7 @@ class TextToggleButtonTest {
 
     private fun ComposeContentTestRule.verifyActualSize(
         expectedSize: Dp,
-        content: @Composable (modifier: Modifier) -> Unit
+        content: @Composable (modifier: Modifier) -> Unit,
     ) {
         setContentWithTheme { content(Modifier.testTag(TEST_TAG)) }
         waitForIdle()
@@ -903,7 +903,7 @@ class TextToggleButtonTest {
         antiAliasingGap: Float = 2f,
         uncheckedColorComposable: @Composable () -> Color,
         checkedColorComposable: @Composable () -> Color,
-        content: @Composable (Modifier) -> Unit
+        content: @Composable (Modifier) -> Unit,
     ) {
         var uncheckedColor = Color.Transparent
         var checkedColor = Color.Transparent

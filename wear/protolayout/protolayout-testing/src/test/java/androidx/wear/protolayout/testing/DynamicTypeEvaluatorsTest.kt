@@ -94,7 +94,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicString.evaluate(
                     dynamicDataMapOf(
                         Keys.DAILY_STEPS mapTo testValue1,
-                        Keys.HEART_RATE_BPM mapTo testValue2
+                        Keys.HEART_RATE_BPM mapTo testValue2,
                     )
                 )
             )
@@ -114,7 +114,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicString.evaluate(
                     dynamicDataMapOf(
                         Keys.HEART_RATE_BPM mapTo testValue1,
-                        stateKey mapTo testValue2
+                        stateKey mapTo testValue2,
                     )
                 )
             )
@@ -135,7 +135,7 @@ class DynamicTypeEvaluatorsTest {
                 testDynamicFloat.evaluate(
                     dynamicDataMapOf(
                         Keys.HEART_RATE_BPM mapTo testValue1,
-                        stateKey mapTo testValue2
+                        stateKey mapTo testValue2,
                     )
                 )
             )

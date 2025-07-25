@@ -78,7 +78,7 @@ class PointerCaptureComponentTest {
         whenever(mockRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockRuntime.mainPanelEntity).thenReturn(mock())
         whenever(mockRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockRuntime.createEntity(any(), any(), any())).thenReturn(mockRtEntity)
+        whenever(mockRuntime.createGroupEntity(any(), any(), any())).thenReturn(mockRtEntity)
         whenever(mockRtEntity.addComponent(any())).thenReturn(true)
         whenever(mockRuntime.createPointerCaptureComponent(any(), any(), any()))
             .thenReturn(mockRtComponent)
@@ -88,7 +88,7 @@ class PointerCaptureComponentTest {
 
     @Test
     fun addComponent_addsRuntimeComponent() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =
@@ -101,7 +101,7 @@ class PointerCaptureComponentTest {
 
     @Test
     fun addComponent_failsIfAlreadyAttached() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =
@@ -112,7 +112,7 @@ class PointerCaptureComponentTest {
 
     @Test
     fun stateListener_propagatesCorrectlyFromRuntime() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
         val stateListenerCaptor = argumentCaptor<RtPointerCaptureComponent.StateListener>()
@@ -145,7 +145,7 @@ class PointerCaptureComponentTest {
 
     @Test
     fun inputEventListener_propagatesFromRuntime() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         val pointerCaptureComponent =
             PointerCaptureComponent.create(session, directExecutor(), stateListener, inputListener)
         val inputListenerCaptor = argumentCaptor<RtInputEventListener>()
@@ -182,7 +182,7 @@ class PointerCaptureComponentTest {
 
     @Test
     fun removeComponent_removesRuntimeComponent() {
-        val entity = ContentlessEntity.create(session, "test")
+        val entity = GroupEntity.create(session, "test")
         assertThat(entity).isNotNull()
 
         val pointerCaptureComponent =

@@ -95,7 +95,7 @@ class SuspiciousModifierThenDetector : Detector(), SourceCodeScanner {
                         SuspiciousModifierThen,
                         node,
                         context.getNameLocation(node),
-                        "Using Modifier.then with a Modifier factory function with an implicit receiver"
+                        "Using Modifier.then with a Modifier factory function with an implicit receiver",
                     )
 
                     // Keep on searching for more errors
@@ -127,8 +127,8 @@ class SuspiciousModifierThenDetector : Detector(), SourceCodeScanner {
                 Severity.ERROR,
                 Implementation(
                     SuspiciousModifierThenDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

@@ -104,10 +104,9 @@ androidXMultiplatform {
         webTest {
             dependsOn(nonJvmTest)
             dependencies {
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinTestForWasmTests)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+                implementation(libs.kotlinTest)
+                implementation(libs.kotlinCoroutinesCore)
+                implementation(libs.kotlinCoroutinesTest)
             }
         }
 
@@ -147,12 +146,6 @@ androidXMultiplatform {
                     dependsOn(nativeTest)
                 }
             }
-        }
-
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
         }
     }
 }

@@ -169,7 +169,7 @@ internal constructor(
         return sb.toString()
     }
 
-    public actual class Builder {
+    public actual class Builder actual constructor() {
         private var singleTop = false
         private var restoreState = false
 
@@ -222,7 +222,7 @@ internal constructor(
         public actual fun setPopUpTo(
             route: String?,
             inclusive: Boolean,
-            saveState: Boolean
+            saveState: Boolean,
         ): Builder {
             popUpToRoute = route
             popUpToId = -1
@@ -235,7 +235,7 @@ internal constructor(
         @Suppress("MissingGetterMatchingBuilder") // no need for getter
         public actual inline fun <reified T : Any> setPopUpTo(
             inclusive: Boolean,
-            saveState: Boolean
+            saveState: Boolean,
         ): Builder {
             setPopUpTo(T::class, inclusive, saveState)
             return this
@@ -245,7 +245,7 @@ internal constructor(
         public actual fun <T : Any> setPopUpTo(
             route: KClass<T>,
             inclusive: Boolean,
-            saveState: Boolean
+            saveState: Boolean,
         ): Builder {
             popUpToRouteClass = route
             popUpToId = -1
@@ -260,7 +260,7 @@ internal constructor(
         public actual fun <T : Any> setPopUpTo(
             route: T,
             inclusive: Boolean,
-            saveState: Boolean
+            saveState: Boolean,
         ): Builder {
             popUpToRouteObject = route
             setPopUpTo(route::class.serializer().generateHashCode(), inclusive, saveState)

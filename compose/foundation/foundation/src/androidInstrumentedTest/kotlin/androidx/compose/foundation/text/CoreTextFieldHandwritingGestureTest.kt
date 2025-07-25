@@ -104,7 +104,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -131,7 +131,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertSelectionPreviewHighlight(textLayoutResult, text.rangeOf("abc"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -150,7 +150,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -177,7 +177,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertSelectionPreviewHighlight(textLayoutResult, text.rangeOf("bc"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -198,7 +198,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -219,7 +219,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionArea(RectF(0f, 0f, 1f, 1f))
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -244,7 +244,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertNoHighlight(textLayoutResult)
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -267,7 +267,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -292,7 +292,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -319,7 +319,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertNoHighlight(textLayoutResult)
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -338,7 +338,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // The space after "def" is removed.
@@ -367,7 +367,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertDeletionPreviewHighlight(textLayoutResult, text.rangeOf("ghi"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -386,7 +386,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // The space before "def" is removed the space after "def" is not removed.
@@ -410,7 +410,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // The space before "def" is also removed
@@ -433,7 +433,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // The space before "!" is removed
@@ -456,7 +456,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // "def" is removed and cursor is placed before 'g'
@@ -485,7 +485,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertDeletionPreviewHighlight(textLayoutResult, text.rangeOf("def"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -504,7 +504,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(screenBoundingBox)
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             // "def" is removed and cursor is placed before ' ', when the delete is character level
@@ -530,7 +530,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -554,7 +554,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionArea(RectF(-1f, -1f, 0f, 0f))
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -579,7 +579,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertNoHighlight(textLayoutResult)
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -602,7 +602,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionEndArea(endArea)
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -634,7 +634,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertSelectionPreviewHighlight(textLayoutResult, text.rangeOf("c\nd"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -658,7 +658,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionEndArea(endArea)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -691,9 +691,9 @@ open class CoreTextFieldHandwritingGestureTest {
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertSelectionPreviewHighlight(
                     textLayoutResult,
-                    text.rangeOf("abc\ndef")
+                    text.rangeOf("abc\ndef"),
                 )
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -719,7 +719,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -749,7 +749,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -781,7 +781,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertNoHighlight(textLayoutResult)
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -799,7 +799,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setSelectionEndArea(RectF(0f, 0f, 1f, 1f))
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -824,7 +824,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionEndArea(endArea)
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abef"
@@ -857,7 +857,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertDeletionPreviewHighlight(textLayoutResult, text.rangeOf("c\nd"))
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -880,7 +880,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionEndArea(endArea)
                     .setGranularity(HandwritingGesture.GRANULARITY_WORD)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abc lmn"
@@ -913,9 +913,9 @@ open class CoreTextFieldHandwritingGestureTest {
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertDeletionPreviewHighlight(
                     textLayoutResult,
-                    text.rangeOf("def\n jhi")
+                    text.rangeOf("def\n jhi"),
                 )
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -941,7 +941,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -971,7 +971,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -1003,7 +1003,7 @@ open class CoreTextFieldHandwritingGestureTest {
             preview = true,
             imageAssertion = { imageBitmap, textLayoutResult ->
                 imageBitmap.assertNoHighlight(textLayoutResult)
-            }
+            },
         ) { textFieldValue, _ ->
             assertThat(textFieldValue.text).isEqualTo(text)
             assertThat(textFieldValue.selection).isEqualTo(TextRange(initialCursor))
@@ -1021,7 +1021,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setDeletionEndArea(RectF(0f, 0f, 1f, 1f))
                     .setGranularity(HandwritingGesture.GRANULARITY_CHARACTER)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1040,7 +1040,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("d").centerLeft
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abc def"
@@ -1066,7 +1066,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setJoinOrSplitPoint(screenPoint)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
 
@@ -1089,7 +1089,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("c").centerRight
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1108,7 +1108,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("d").centerLeft
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef"
@@ -1128,7 +1128,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("c").centerRight
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef"
@@ -1148,7 +1148,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("d").centerLeft
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef"
@@ -1168,7 +1168,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("c").centerRight
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef"
@@ -1188,7 +1188,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 val point = textLayoutResult.boundingBoxOf("   ").center
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef"
@@ -1217,7 +1217,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setJoinOrSplitPoint(screenPoint)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
 
@@ -1242,7 +1242,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
                 val screenPoint = localToScreen(point).toPointF()
                 JoinOrSplitGesture.Builder().setJoinOrSplitPoint(screenPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1265,7 +1265,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setInsertionPoint(screenPoint)
                     .setTextToInsert(textToInsert)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "axxxbcdef"
@@ -1296,7 +1296,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setTextToInsert("")
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
 
@@ -1321,7 +1321,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
                 val screenPoint = localToScreen(point).toPointF()
                 InsertGesture.Builder().setInsertionPoint(screenPoint).setTextToInsert("").build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1347,7 +1347,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "ab cdef gh"
@@ -1378,7 +1378,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcdef\ngh ij kl"
@@ -1407,7 +1407,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "abcd ef"
@@ -1442,7 +1442,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setPoints(startPoint, endPoint)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -1471,7 +1471,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1501,7 +1501,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "ab cd ef\nghijkl"
@@ -1533,7 +1533,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_SUCCESS)
             val expectedText = "ab cd ef\nghijkl"
@@ -1570,7 +1570,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     .setPoints(startPoint, endPoint)
                     .setFallbackText(fallback)
                     .build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FALLBACK)
             val expectedText = text.insert(initialCursor, fallback)
@@ -1601,7 +1601,7 @@ open class CoreTextFieldHandwritingGestureTest {
                     }
 
                 RemoveSpaceGesture.Builder().setPoints(startPoint, endPoint).build()
-            }
+            },
         ) { textFieldValue, resultCode ->
             assertThat(resultCode).isEqualTo(InputConnection.HANDWRITING_GESTURE_RESULT_FAILED)
             assertThat(textFieldValue.text).isEqualTo(text)
@@ -1616,7 +1616,7 @@ open class CoreTextFieldHandwritingGestureTest {
         gestureFactory: LayoutCoordinates.(TextLayoutResult) -> HandwritingGesture,
         preview: Boolean = false,
         imageAssertion: ((ImageBitmap, TextLayoutResult) -> Unit)? = null,
-        assertion: TestScope.(TextFieldValue, resultCode: Int) -> Unit
+        assertion: TestScope.(TextFieldValue, resultCode: Int) -> Unit,
     ) {
         var textFieldValue by mutableStateOf(TextFieldValue(text, initialSelection))
         lateinit var textLayoutResult: TextLayoutResult
@@ -1647,7 +1647,7 @@ open class CoreTextFieldHandwritingGestureTest {
                                 .background(backgroundColor)
                                 .testTag(Tag)
                                 .onGloballyPositioned { layoutCoordinates = it },
-                        onTextLayout = { textLayoutResult = it }
+                        onTextLayout = { textLayoutResult = it },
                     )
                 }
             }
@@ -1677,7 +1677,7 @@ open class CoreTextFieldHandwritingGestureTest {
 
     private fun setContent(
         extraItemForInitialFocus: Boolean = true,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setFocusableContent(extraItemForInitialFocus) {
             inputMethodInterceptor.Content { content() }
@@ -1722,14 +1722,14 @@ open class CoreTextFieldHandwritingGestureTest {
 
     private fun ImageBitmap.assertSelectionPreviewHighlight(
         textLayoutResult: TextLayoutResult,
-        range: TextRange
+        range: TextRange,
     ) {
         assertHighlight(textLayoutResult, range, selectionColor)
     }
 
     private fun ImageBitmap.assertDeletionPreviewHighlight(
         textLayoutResult: TextLayoutResult,
-        range: TextRange
+        range: TextRange,
     ) {
         val deletionPreviewColor = textColor.copy(alpha = textColor.alpha * 0.2f)
         val compositeColor =
@@ -1746,7 +1746,7 @@ open class CoreTextFieldHandwritingGestureTest {
     private fun ImageBitmap.assertHighlight(
         textLayoutResult: TextLayoutResult,
         range: TextRange,
-        highlightColor: Color
+        highlightColor: Color,
     ) {
         val pixelMap =
             toPixelMap(width = textLayoutResult.size.width, height = textLayoutResult.size.height)
@@ -1778,7 +1778,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 onPasteRequested: (() -> Unit)?,
                 onCutRequested: (() -> Unit)?,
                 onSelectAllRequested: (() -> Unit)?,
-                onAutofillRequested: (() -> Unit)?
+                onAutofillRequested: (() -> Unit)?,
             ) {
                 _status = TextToolbarStatus.Shown
             }
@@ -1788,7 +1788,7 @@ open class CoreTextFieldHandwritingGestureTest {
                 onCopyRequested: (() -> Unit)?,
                 onPasteRequested: (() -> Unit)?,
                 onCutRequested: (() -> Unit)?,
-                onSelectAllRequested: (() -> Unit)?
+                onSelectAllRequested: (() -> Unit)?,
             ) {
                 _status = TextToolbarStatus.Shown
             }

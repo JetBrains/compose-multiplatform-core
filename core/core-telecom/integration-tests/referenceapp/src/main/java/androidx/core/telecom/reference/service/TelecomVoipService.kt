@@ -16,8 +16,11 @@
 
 package androidx.core.telecom.reference.service
 
+import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.media.AudioManager
 import android.os.Binder
 import android.os.Build
@@ -25,18 +28,44 @@ import android.os.IBinder
 import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import androidx.core.telecom.CallAttributesCompat
+import androidx.core.telecom.CallAttributesCompat.Companion.DIRECTION_INCOMING
+import androidx.core.telecom.CallAttributesCompat.Companion.DIRECTION_OUTGOING
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallException
 import androidx.core.telecom.CallsManager
 import androidx.core.telecom.CallsManager.Companion.CAPABILITY_SUPPORTS_VIDEO_CALLING
+import androidx.core.telecom.extensions.CallIconExtension
+import androidx.core.telecom.extensions.ExtensionInitializationScope
+import androidx.core.telecom.extensions.LocalCallSilenceExtension
+import androidx.core.telecom.extensions.ParticipantExtension
+import androidx.core.telecom.extensions.RaiseHandState
+import androidx.core.telecom.reference.CallIconGenerator
+import androidx.core.telecom.reference.CallNotificationManager
+import androidx.core.telecom.reference.Constants.ACTION_ANSWER_CALL
+import androidx.core.telecom.reference.Constants.ACTION_DECLINE_CALL
+import androidx.core.telecom.reference.Constants.ACTION_HANGUP_CALL
+import androidx.core.telecom.reference.Constants.EXTRA_REMOTE_USER_NAME
+import androidx.core.telecom.reference.Constants.EXTRA_SIMULATED_NUMBER
+import androidx.core.telecom.reference.FileProvider
+import androidx.core.telecom.reference.ParticipantsExtensionManager
 import androidx.core.telecom.reference.model.CallData
 import androidx.core.telecom.reference.model.CallState
+import androidx.core.telecom.reference.model.IconData
+import androidx.core.telecom.reference.model.InitializedExtensionsHolder
+import androidx.core.telecom.reference.model.ParticipantControl
+import androidx.core.telecom.reference.model.toParticipant
+import androidx.core.telecom.reference.view.ExtensionSettings
+import androidx.core.telecom.reference.view.loadAllExtensionSettings
+import androidx.core.telecom.reference.view.loadPhoneNumberPrefix
+import androidx.core.telecom.util.ExperimentalAppActions
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.collections.firstOrNull
+import kotlin.collections.map
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Job
@@ -47,28 +76,28 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 
 /**
- * A [LifecycleService] implementing [VoipService] to manage VoIP calls using the Android Telecom
- * framework.
+ * A [LifecycleService] implementing [LocalServiceBinder] to manage VoIP calls using the Android
+ * Telecom framework.
  *
  * This service handles registering the app with Telecom, adding new calls, managing the lifecycle
  * and state of each active call using coroutines, and providing updates to observers (like a
  * repository or ViewModel) via a [StateFlow]. It requires API level S (31) or higher.
  */
 @RequiresApi(Build.VERSION_CODES.S)
-class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
+@OptIn(ExperimentalAppActions::class)
+class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     private val localBinder =
-        object : LocalIcsBinder.Connector, Binder() {
-            override fun getService(): LocalIcsBinder {
+        object : LocalServiceBinder.Connector, Binder() {
+            override fun getService(): LocalServiceBinder {
                 return this@TelecomVoipService
             }
         }
-
+    private lateinit var mCallNotificationManager: CallNotificationManager
     var mContext: Context? = null
-    private val callsManager: CallsManager by lazy { CallsManager(mContext!!) }
-    private val audioManager: AudioManager by lazy {
+    private val mCallsManager: CallsManager by lazy { CallsManager(mContext!!) }
+    private val mAudioManager: AudioManager by lazy {
         mContext!!.getSystemService(AUDIO_SERVICE) as AudioManager
     }
-    private val nextCallId = AtomicInteger(0)
     // Private MutableStateFlow to hold the current state (list of calls).
     // StateFlow is often better for representing *state* that UI observes.
     // It always holds the latest value and emits it to new collectors.
@@ -80,10 +109,11 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
     // when the user requests a call action for a particular call, the correct call control scope
     // is used to transition the call state. Also, the job for the call is stored so that it can
     // be canceled and cleaned up when the call is ended.
-    private val activeCalls = mutableMapOf<String, CallController>()
+    private val mActiveCalls = mutableMapOf<String, CallController>()
     // Map to hold jobs that delay the removal of call data from the UI.  2 second delay was
     // added to show calls are disconnected before removal.
-    private val delayedRemovalJobs = mutableMapOf<String, Job>()
+    private val mDelayedRemovalJobs = mutableMapOf<String, Job>()
+    private var mIsCurrentlyInForeground = false // Flag to track foreground state
 
     companion object {
         private const val TAG = "TelecomVoipService"
@@ -96,36 +126,41 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
         val setActiveChannel: Channel<Unit> = Channel(Channel.CONFLATED),
         val setInactiveChannel: Channel<Unit> = Channel(Channel.CONFLATED),
         val disconnectChannel: Channel<Unit> = Channel(Channel.CONFLATED),
-        val switchAudioChannel: Channel<CallEndpointCompat> = Channel(Channel.CONFLATED)
+        val switchAudioChannel: Channel<CallEndpointCompat> = Channel(Channel.CONFLATED),
     )
 
     // Encapsulates channels and the handling coroutine Job for a single call
     private class CallController(
         val job: Job, // The main job handling this call's lifecycle and actions
-        val actions: CallActions
+        val actions: CallActions,
     )
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "onCreate service started")
         mContext = application.applicationContext
-        callsManager.registerAppWithTelecom(CAPABILITY_SUPPORTS_VIDEO_CALLING)
+        mCallsManager.registerAppWithTelecom(CAPABILITY_SUPPORTS_VIDEO_CALLING)
+        mCallNotificationManager = CallNotificationManager(applicationContext)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "onDestroy service destroyed")
-        activeCalls.values.forEach { it.job.cancel() }
-        activeCalls.clear()
-        delayedRemovalJobs.values.forEach { it.cancel() }
-        delayedRemovalJobs.clear()
+        mActiveCalls.values.forEach { it.job.cancel() }
+        mActiveCalls.clear()
+        mDelayedRemovalJobs.values.forEach { it.cancel() }
+        mDelayedRemovalJobs.clear()
         // Reset state
         _callDataList.value = emptyList()
     }
 
-    override fun addCall(callAttributes: CallAttributesCompat) {
+    @OptIn(ExperimentalAppActions::class)
+    override fun addCall(callAttributes: CallAttributesCompat, notificationId: Int) {
+        val callId = notificationId.toString()
+        Log.d(TAG, "[$callId] addCall")
         val callActions = CallActions()
-        val callId: String = nextCallId.getAndIncrement().toString()
+        var initializedExtensionsHolder: InitializedExtensionsHolder?
+
         // Launch a *supervisorJob* for this specific call within the service's lifecycleScope.
         // This ensures failure/cancellation of one call doesn't affect the service or other calls.
         val callJob =
@@ -136,11 +171,15 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                 )
                 .launch {
                     try {
-                        callsManager.addCall(
+                        mCallsManager.addCallWithExtensions(
                             callAttributes,
                             { /* onAnswer */
                                 updateCallDataInternal(callId) {
-                                    it.copy(callState = CallState.ACTIVE)
+                                    val updatedData = it.copy(callState = CallState.ACTIVE)
+                                    mCallNotificationManager.showOrUpdateCallNotification(
+                                        updatedData
+                                    )
+                                    updatedData
                                 }
                             },
                             { /* onDisconnect */
@@ -148,27 +187,51 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                             },
                             { /* onSetActive */
                                 updateCallDataInternal(callId) {
-                                    it.copy(callState = CallState.ACTIVE)
+                                    val updatedData = it.copy(callState = CallState.ACTIVE)
+                                    mCallNotificationManager.showOrUpdateCallNotification(
+                                        updatedData
+                                    )
+                                    updatedData
                                 }
                             },
                             { /* onSetInactive */
                                 updateCallDataInternal(callId) {
-                                    it.copy(callState = CallState.INACTIVE)
+                                    val updatedData = it.copy(callState = CallState.INACTIVE)
+                                    mCallNotificationManager.showOrUpdateCallNotification(
+                                        updatedData
+                                    )
+                                    updatedData
                                 }
                             },
                         ) {
-                            Log.d(TAG, "[$callId] CallControlScope active")
-                            val callControlScope: CallControlScope = this
-                            launch {
-                                initializeAndMonitorCall(callId, callAttributes)
-                                // Keep this coroutine alive by handling actions until cancelled
-                                handleCallActions(callId, callActions, callControlScope)
-                            }
-                            launch {
-                                // For outgoing or incoming calls, simulate the remote user
-                                // connecting or the local user answering the call.
-                                delay(CALL_CONNECTS_DELAY)
-                                setCallActive(callId)
+                            initializedExtensionsHolder =
+                                initializeExtensions(
+                                    callId = callId,
+                                    settings = loadAllExtensionSettings(applicationContext),
+                                    scope = this,
+                                )
+
+                            onCall {
+                                Log.d(TAG, "[$callId] CallControlScope active")
+                                val callControlScope: CallControlScope = this
+                                launch {
+                                    initializeAndMonitorCall(
+                                        callId = callId,
+                                        callAttributes = callAttributes,
+                                        initializedExtensions = initializedExtensionsHolder,
+                                    )
+                                }
+                                launch {
+                                    // Keep this coroutine alive by handling actions until cancelled
+                                    handleCallActions(callId, callActions, callControlScope)
+                                }
+                                launch {
+                                    if (callAttributes.direction == DIRECTION_OUTGOING) {
+                                        // For outgoing calls, simulate the remote user connecting
+                                        delay(CALL_CONNECTS_DELAY)
+                                        setCallActive(callId)
+                                    }
+                                }
                             }
                         }
                     } catch (_: CancellationException) {
@@ -179,7 +242,7 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                         updateCallDataInternal(callId) {
                             it.copy(
                                 callState = CallState.UNKNOWN,
-                                callException = CallException(CallException.ERROR_UNKNOWN)
+                                callException = CallException(CallException.ERROR_UNKNOWN),
                             )
                         }
                     } finally {
@@ -188,7 +251,82 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                         ensureActiveCallRemoved(callId) // ensure cleanup
                     }
                 }
-        activeCalls[callId] = CallController(callJob, callActions)
+        mActiveCalls[callId] = CallController(callJob, callActions)
+    }
+
+    private fun initializeExtensions(
+        callId: String,
+        settings: ExtensionSettings,
+        scope: ExtensionInitializationScope,
+    ): InitializedExtensionsHolder {
+        var localCallSilenceExt: LocalCallSilenceExtension? = null
+        var callIconExt: CallIconExtension? = null
+        var iconData: IconData? = null
+        var participantsExt: ParticipantExtension? = null
+        var raiseHandExt: RaiseHandState? = null
+        var participantsMgr: ParticipantsExtensionManager? = null
+        // --- Local Call Silence Extension ---
+        if (settings.localCallSilenceEnabled) {
+            localCallSilenceExt =
+                scope.addLocalCallSilenceExtension(false) { isSilenced ->
+                    Log.i(
+                        TAG,
+                        "[$callId] Local Silence Update Received" + " via Callback: $isSilenced",
+                    )
+                    updateCallDataInternal(callId) { it.copy(isLocallyMuted = isSilenced) }
+                }
+        }
+
+        // --- Call Icon Extension ---
+        if (settings.callIconEnabled) {
+            val iconBitmap: Bitmap = CallIconGenerator.generateNextBitmap()
+            iconData = FileProvider.writeCallIconBitMapToFile(mContext!!, iconBitmap, callId)
+            val iconUri = iconData?.uri
+            if (iconUri != null) {
+                callIconExt = scope.addCallIconExtension(iconUri)
+            }
+        }
+
+        // --- Participant Extension ---
+        if (settings.participantEnabled) {
+            participantsMgr = ParticipantsExtensionManager()
+
+            participantsExt =
+                scope.addParticipantExtension(
+                    initialParticipants =
+                        participantsMgr.participants.value.map { it.toParticipant() }
+                )
+
+            raiseHandExt =
+                participantsExt.addRaiseHandSupport { participantsWithHandsRaised ->
+                    Log.i(TAG, "[$callId] Raise Hand Update Received via Callback" + " hands up")
+                    participantsMgr.onRaisedHandStateChanged(participantsWithHandsRaised)
+                    updateCallDataInternal(callId) {
+                        it.copy(participants = participantsMgr.participants.value)
+                    }
+                }
+
+            participantsExt.addKickParticipantSupport { participantToKick ->
+                Log.i(
+                    TAG,
+                    "[$callId] Kick Participant Request Received" +
+                        " via Callback: ${participantToKick.id}",
+                )
+                participantsMgr.handleRemoteKickRequest(participantToKick)
+                updateCallDataInternal(callId) {
+                    it.copy(participants = participantsMgr.participants.value)
+                }
+            }
+        }
+
+        return InitializedExtensionsHolder(
+            localCallSilence = localCallSilenceExt,
+            callIcon = callIconExt,
+            iconData = iconData,
+            participants = participantsExt,
+            raiseHand = raiseHandExt,
+            participantsManager = participantsMgr,
+        )
     }
 
     /**
@@ -198,32 +336,39 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
     private suspend fun CallControlScope.initializeAndMonitorCall(
         callId: String,
         callAttributes: CallAttributesCompat,
+        initializedExtensions: InitializedExtensionsHolder,
     ) {
-        // 1. Get Initial State (Safely)
-        val initialEndpoint = currentCallEndpoint.take(1).singleOrNull()
-        val initialEndpoints = availableEndpoints.take(1).singleOrNull() ?: emptyList()
-        val initialMuted = isMuted.take(1).singleOrNull() ?: false
+        // Set the initial call state
         val initialState =
             when (callAttributes.direction) {
-                CallAttributesCompat.DIRECTION_OUTGOING -> CallState.DIALING
+                DIRECTION_OUTGOING -> CallState.DIALING
                 else -> CallState.RINGING
             }
 
-        // 2. Add Initial CallData to the StateFlow
+        //  Add Initial CallData to the StateFlow
         val initialCallData =
-            createInitialCallData(callId, callAttributes, initialState)
-                .copy(
-                    currentEndpoint = initialEndpoint,
-                    availableEndpoints = initialEndpoints,
-                    isMuted = initialMuted
-                )
+            createInitialCallData(callId, callAttributes, initialState, initializedExtensions)
+        Log.d(TAG, "initAndMonCall: initialCallData=[$initialCallData]")
+
         _callDataList.update { currentList ->
             // Avoid duplicates if somehow added already
             if (currentList.any { it.callId == callId }) currentList
             else currentList + initialCallData
         }
 
-        // 3. Launch Collectors for subsequent state changes within the CallControlScope
+        // If this is an outgoing call, start the foreground service
+        if (callAttributes.direction == DIRECTION_OUTGOING) {
+            val notificationId = callId.toInt()
+            startForegroundWithNotification(
+                notificationId,
+                mCallNotificationManager.buildOutgoingCallNotification(
+                    notificationId,
+                    callAttributes,
+                ),
+            )
+        }
+
+        // Launch Collectors for subsequent state changes within the CallControlScope
         // These will be automatically cancelled when the CallControlScope ends (e.g., on
         // disconnect)
         launch {
@@ -236,7 +381,7 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
             availableEndpoints.collect { endpoints ->
                 Log.i(
                     TAG,
-                    "[$callId] Available Endpoints updated: ${endpoints.joinToString { it.name }}"
+                    "[$callId] Available Endpoints updated: ${endpoints.joinToString { it.name }}",
                 )
                 updateCallDataInternal(callId) { it.copy(availableEndpoints = endpoints) }
             }
@@ -244,9 +389,74 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
         launch {
             isMuted.collect { muted ->
                 Log.i(TAG, "[$callId] Mute state updated: $muted")
-                updateCallDataInternal(callId) { it.copy(isMuted = muted) }
+                updateCallDataInternal(callId) { it.copy(isGloballyMuted = muted) }
             }
         }
+
+        // --- Setup Collectors and Controls for Extensions ---
+
+        // Local Call Silence
+        Log.d(TAG, "[$callId] Local Call Silence monitoring setup (if applicable)")
+        initializedExtensions.localCallSilence?.let { callSilenceExt ->
+            updateCallDataInternal(callId) { it.copy(localCallSilenceExtension = callSilenceExt) }
+        }
+
+        // Call Icon
+        updateCallDataInternal(callId) { it.copy(iconData = initializedExtensions.iconData) }
+        initializedExtensions.callIcon?.let { iconExtension ->
+            updateCallDataInternal(callId) { it.copy(callIconExtension = iconExtension) }
+        }
+
+        initializedExtensions.participantsManager?.let { manager ->
+            Log.d(TAG, "[$callId] Setting up Participant collection and controls")
+            // Collect from Manager's Flow
+            launch { // Launch within CallControlScope
+                manager.participants
+                    .onEach { participantList ->
+                        val newParticipants = participantList.map { p -> p.toParticipant() }
+                        val activeParticipant =
+                            participantList.firstOrNull { p -> p.isActive }?.toParticipant()
+                        val raisedHands =
+                            participantList
+                                .filter { p -> p.isHandRaised }
+                                .map { p -> p.toParticipant() }
+                        // update the remote surface
+                        initializedExtensions.participants?.updateParticipants(newParticipants)
+                        initializedExtensions.participants?.updateActiveParticipant(
+                            activeParticipant
+                        )
+                        initializedExtensions.raiseHand?.updateRaisedHands(raisedHands)
+                        updateCallDataInternal(callId) { it.copy(participants = participantList) }
+                    }
+                    .launchIn(this) // Use CallControlScope
+            }
+
+            // Start manager simulation loop (Unchanged concept)
+            launch { manager.startSimulationLoop(this) }
+
+            // Provide Control using manager from holder
+            val participantControl =
+                ParticipantControl(
+                    onParticipantAdded = manager::addParticipant,
+                    onParticipantRemoved = manager::removeParticipant,
+                )
+
+            updateCallDataInternal(callId) { it.copy(participantExtension = participantControl) }
+
+            Log.d(TAG, "[$callId] Participant controls provided.")
+        }
+            ?: Log.d(
+                TAG,
+                "[$callId] Participant collection/controls skipped" + " (extension disabled)",
+            )
+    }
+
+    fun getCallDataById(callId: String): CallData? {
+        // Access the current list from the StateFlow using the 'value' property
+        val currentCallList = callDataUpdates.value
+
+        // Use the find extension function to find the CallData with the matching callId
+        return currentCallList.find { callData -> callData.callId == callId }
     }
 
     /** Creates the initial CallData object. */
@@ -254,24 +464,31 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
         callId: String,
         attributes: CallAttributesCompat,
         state: CallState,
-        exception: CallException? = null
+        initializedExtensions: InitializedExtensionsHolder,
+        exception: CallException? = null,
     ): CallData {
         return CallData(
             callId = callId,
             attributes = attributes,
             callState = state,
-            isMuted = false,
+            isGloballyMuted = false,
             callException = exception,
             currentEndpoint = null,
-            availableEndpoints = emptyList()
+            availableEndpoints = emptyList(),
+            isParticipantExtensionEnabled = initializedExtensions.participants != null,
+            isLocalCallSilenceEnabled = initializedExtensions.localCallSilence != null,
+            isCallIconExtensionEnabled = initializedExtensions.callIcon != null,
         )
     }
 
-    private fun updateCallDataInternal(callId: String, update: (CallData) -> CallData) {
+    private fun updateCallDataInternal(callId: String, update: (CallData) -> CallData): CallData? {
+        var updatedData: CallData? = null
+
         _callDataList.update { currentList ->
             currentList.map { callData ->
                 if (callData.callId == callId) {
-                    val updated = update(callData)
+                    val updated = update(callData) // Perform update
+                    updatedData = updated
                     Log.v(TAG, "[$callId] Updating CallData: $updated")
                     updated
                 } else {
@@ -279,18 +496,25 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                 }
             }
         }
+
+        if (updatedData == null) {
+            Log.w(TAG, "[$callId] CallData not found during internal update.")
+        }
+
+        // Return the result (which is null if not found, or the updated CallData if found)
+        return updatedData
     }
 
     private suspend fun handleCallActions(
         callId: String,
         callActions: CallActions,
-        callControlScope: CallControlScope
+        callControlScope: CallControlScope,
     ) {
         Log.d(TAG, "[$callId] Starting action handler loop.")
         // Helper function to wrap control actions
         suspend fun executeControlAction(
             action: suspend () -> CallControlResult,
-            successState: CallState? = null
+            successState: CallState? = null,
         ) {
             handleControlResult(callId, action(), successState)
         }
@@ -331,25 +555,32 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
     private fun handleControlResult(
         callId: String,
         result: CallControlResult,
-        successState: CallState? = null // Optional state to set on success
+        successState: CallState? = null,
     ) {
         when (result) {
             is CallControlResult.Success -> {
                 Log.i(TAG, "[$callId] Control action success.")
+                var dataToNotify: CallData? = null
                 if (successState != null) {
-                    updateCallDataInternal(callId) {
-                        it.copy(callState = successState, callException = null)
-                    }
+                    dataToNotify =
+                        updateCallDataInternal(callId) {
+                            it.copy(callState = successState, callException = null)
+                        }
                 } else {
                     // Clear previous errors if any
-                    updateCallDataInternal(callId) { it.copy(callException = null) }
+                    dataToNotify = updateCallDataInternal(callId) { it.copy(callException = null) }
                 }
+                // *** Delegate notification update if state changed ***
+                dataToNotify?.let { mCallNotificationManager.showOrUpdateCallNotification(it) }
             }
             is CallControlResult.Error -> {
                 Log.e(TAG, "[$callId] Control action failed: ${result.errorCode}")
-                updateCallDataInternal(callId) {
-                    it.copy(callException = CallException(result.errorCode))
-                }
+                val errorData =
+                    updateCallDataInternal(callId) {
+                        it.copy(callException = CallException(result.errorCode))
+                    }
+                // *** Delegate notification update for error state ***
+                errorData?.let { mCallNotificationManager.showOrUpdateCallNotification(it) }
             }
         }
     }
@@ -358,42 +589,83 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
         Log.d(TAG, "[$callId] Requesting setCallActive")
         // Use trySend which is non-suspending, good for calls from non-coroutines
         // Or launch if the caller needs confirmation/error handling back
-        activeCalls[callId]?.actions?.setActiveChannel?.trySend(Unit)
+        mActiveCalls[callId]?.actions?.setActiveChannel?.trySend(Unit)
             ?: Log.w(TAG, "[$callId] setCallActive: No active call found")
     }
 
     override fun setCallInactive(callId: String) {
         Log.d(TAG, "[$callId] Requesting setCallInactive")
-        activeCalls[callId]?.actions?.setInactiveChannel?.trySend(Unit)
+        mActiveCalls[callId]?.actions?.setInactiveChannel?.trySend(Unit)
             ?: Log.w(TAG, "[$callId] setCallInactive: No active call found")
     }
 
     override fun toggleGlobalMute(isMuted: Boolean) {
-        audioManager.isMicrophoneMute = isMuted
+        mAudioManager.isMicrophoneMute = isMuted
+    }
+
+    override fun toggleLocalCallSilence(callId: String, isMuted: Boolean) {
+        val callData = getCallDataById(callId)
+        lifecycleScope.launch {
+            callData?.localCallSilenceExtension?.updateIsLocallySilenced(isMuted)
+            updateCallDataInternal(callId) { it.copy(isLocallyMuted = isMuted) }
+        }
+    }
+
+    override fun addParticipant(callId: String) {
+        val callData = getCallDataById(callId)
+        callData?.participantExtension?.onParticipantAdded?.invoke()
+    }
+
+    override fun removeParticipant(callId: String) {
+        val callData = getCallDataById(callId)
+        callData?.participantExtension?.onParticipantRemoved?.invoke()
+    }
+
+    override fun changeCallIcon(callId: String) {
+        val callData = getCallDataById(callId)
+        val nextBitmap = CallIconGenerator.generateNextBitmap()
+        val callIconData = FileProvider.writeCallIconBitMapToFile(mContext!!, nextBitmap, callId)
+        if (callIconData != null) {
+            // update the remote surfaces
+            lifecycleScope.launch {
+                callData?.callIconExtension?.updateCallIconUri(callIconData.uri)
+            }
+            // update the voip app UI
+            updateCallDataInternal(callId) { it.copy(iconData = callIconData) }
+        }
     }
 
     override fun endCall(callId: String) {
         Log.d(TAG, "[$callId] Requesting endCall")
-        activeCalls[callId]?.actions?.disconnectChannel?.trySend(Unit)
-            ?: Log.w(TAG, "[$callId] endCall: No active call found, attempting direct cleanup")
+        mActiveCalls[callId]?.actions?.disconnectChannel?.trySend(Unit)
+            ?: {
+                Log.w(
+                    TAG,
+                    "[$callId] endCall: No active call found, attempting" + " direct cleanup",
+                )
+                ensureActiveCallRemoved(callId)
+            }
     }
 
     override fun switchCallEndpoint(callId: String, endpoint: CallEndpointCompat) {
         Log.d(TAG, "[$callId] Requesting switchCallEndpoint to ${endpoint.name}")
-        activeCalls[callId]?.actions?.switchAudioChannel?.trySend(endpoint)
+        mActiveCalls[callId]?.actions?.switchAudioChannel?.trySend(endpoint)
             ?: Log.w(TAG, "[$callId] switchCallEndpoint: No active call found")
     }
 
     private fun handleCallDisconnectedInternal(callId: String, cause: DisconnectCause?) {
         Log.i(TAG, "[$callId] Handling disconnection (cause: ${cause})")
+        // Update State to DISCONNECTED
+        val callData =
+            updateCallDataInternal(callId) { it.copy(callState = CallState.DISCONNECTED) }
 
-        // 1. Update State to DISCONNECTED
-        updateCallDataInternal(callId) { it.copy(callState = CallState.DISCONNECTED) }
+        // show call is disconnecting on notification temporarily that will be removed shortly
+        callData?.let { mCallNotificationManager.showOrUpdateCallNotification(it) }
 
-        // 2. Cancel any previous removal job for this call
-        delayedRemovalJobs.remove(callId)?.cancel()
+        // Cancel any previous removal job for this call
+        mDelayedRemovalJobs.remove(callId)?.cancel()
 
-        // 3. Schedule removal job (if the call exists in the list)
+        // Schedule removal job (if the call exists in the list)
         if (_callDataList.value.any { it.callId == callId }) {
             Log.i(TAG, "[$callId] scheduling delayed removal from the call data list.")
             val removalJob =
@@ -401,29 +673,31 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
                     delay(CALL_REMOVE_DELAY)
                     Log.i(TAG, "[$callId] Removing CallData after delay.")
                     _callDataList.update { list -> list.filterNot { it.callId == callId } }
-                    // 4. Cancel the main call handling job associated with this callId
+                    // Cancel the main call handling job associated with this callId
                     // This stops the handleCallActions loop and collectors for this specific call.
                     // It's safe to cancel even if already completing.
-                    activeCalls[callId]
+                    mActiveCalls[callId]
                         ?.job
                         ?.cancel("Call disconnected, cleaning up controller job")
-                    activeCalls.remove(callId) // Clean up controller map
-                    delayedRemovalJobs.remove(callId) // Clean up self
+                    mActiveCalls.remove(callId) // Clean up controller map
+                    mDelayedRemovalJobs.remove(callId) // Clean up self
                 }
-            delayedRemovalJobs[callId] = removalJob
+            mDelayedRemovalJobs[callId] = removalJob
         } else {
             Log.i(
                 TAG,
-                "[$callId] CallData not found in list during disconnect, removing controller."
+                "[$callId] CallData not found in list during disconnect, removing controller.",
             )
         }
     }
 
     /** Ensures active call resources are removed if a call fails unexpectedly. */
     private fun ensureActiveCallRemoved(callId: String) {
-        activeCalls.remove(callId)?.job?.cancel("Ensuring removal after failure")
-        delayedRemovalJobs.remove(callId)?.cancel()
+        mActiveCalls.remove(callId)?.job?.cancel("Ensuring removal after failure")
+        mDelayedRemovalJobs.remove(callId)?.cancel()
         _callDataList.update { list -> list.filterNot { it.callId == callId } }
+        checkAndStopForegroundIfNeeded()
+        mCallNotificationManager.cancelCallNotification(callId)
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -434,11 +708,170 @@ class TelecomVoipService() : LocalIcsBinder, LifecycleService(), VoipService {
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "onUnbind: Received unbind request from $intent")
-        // work around a stupid bug where InCallService assumes that the unbind request can only
-        // come from telecom
-        if (intent?.action != null) {
-            return super.onUnbind(intent)
-        }
+        super.onUnbind(intent)
+        // Return 'false' to indicate that onRebind should NOT be used.
+        // If new clients bind later, their onServiceConnected method will be called.
         return false
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        Log.d(TAG, "onStartCommand received action: ${intent?.action}")
+        val callId = intent?.getStringExtra("EXTRA_CALL_ID")
+        if (callId != null) {
+            when (intent.action) {
+                ACTION_ANSWER_CALL -> {
+                    Log.i(TAG, "[$callId] Notification Action: Answer")
+                    val number = intent.getStringExtra(EXTRA_SIMULATED_NUMBER)
+                    val name = intent.getStringExtra(EXTRA_REMOTE_USER_NAME)
+                    if (number != null && name != null) {
+                        val attributes =
+                            CallAttributesCompat(
+                                name,
+                                (loadPhoneNumberPrefix(mContext!!) + number).toUri(),
+                                DIRECTION_INCOMING,
+                            )
+                        val notificationId = callId.toInt()
+                        val notification =
+                            mCallNotificationManager.buildIncomingCallNotification(
+                                notificationId,
+                                attributes,
+                            )
+                        startForegroundWithNotification(notificationId, notification)
+                        setCallActive(callId)
+                    } else {
+                        Log.w(
+                            TAG,
+                            "addNewIncomingCall received " + "without $EXTRA_SIMULATED_NUMBER",
+                        )
+                        stopSelf(startId) // Stop this specific start request if data is missing
+                    }
+                }
+                ACTION_DECLINE_CALL -> {
+                    Log.i(TAG, "[$callId] Notification Action: Decline")
+                    endCall(callId)
+                    checkAndStopForegroundIfNeeded()
+                }
+                ACTION_HANGUP_CALL -> {
+                    Log.i(TAG, "[$callId] Notification Action: Hangup")
+                    endCall(callId)
+                    checkAndStopForegroundIfNeeded()
+                }
+            }
+        } else {
+            Log.w(TAG, "onStartCommand received w/out callId: ${intent?.action}")
+        }
+        return START_STICKY
+    }
+
+    private fun startForegroundWithNotification(notificationId: Int, notification: Notification?) {
+        if (notification == null) {
+            Log.w(TAG, "[$notificationId] Attempted to show null notification.")
+            return
+        }
+
+        Log.i(TAG, "[$notificationId] isCurrentlyInForeground=[$mIsCurrentlyInForeground].")
+        try {
+            // Use the *first* notification that triggers this to establish the foreground state
+            startForeground(
+                notificationId,
+                notification,
+                /* foregroundServiceType */ (ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL),
+            )
+            mIsCurrentlyInForeground = true // Set flag AFTER successful call
+            Log.i(TAG, "[$notificationId] Called startForeground successfully.")
+
+            // It's generally good practice to still ensure the notification is posted via the
+            // manager, especially if startForeground behavior across APIs varies slightly or
+            // if you want a single code path for posting.
+            mCallNotificationManager.immediatelyPostNotification(notificationId, notification)
+
+            Log.w(TAG, "[$notificationId] Re-posting notifications for other active" + " calls.")
+            repostExistingCallNotifications(notificationId)
+        } catch (e: SecurityException) {
+            Log.e(
+                TAG,
+                "[$notificationId] Permission error calling" + " startForeground:${e.message}",
+                e,
+            )
+            mIsCurrentlyInForeground = false // Ensure flag is false on error
+            // Handle lack of permission
+            stopSelf()
+        } catch (e: Exception) {
+            Log.e(
+                TAG,
+                "[$notificationId] Generic error calling startForeground:" + " ${e.message}",
+                e,
+            )
+            mIsCurrentlyInForeground = false // Ensure flag is false on error
+            // Handle other unexpected errors
+            stopSelf()
+        }
+    }
+
+    /**
+     * This function is *ONLY* called when a new call is started and becomes the new foreground
+     * call. When this happens, the previous call-style notifications are cleared from the
+     * notification tray so they need to be reposted manually!
+     */
+    private fun repostExistingCallNotifications(currentForegroundNotification: Int) {
+        val currentCalls = _callDataList.value
+        for (callData in currentCalls) {
+            val otherCallIdInt = callData.callId.toIntOrNull()
+            // Check if it's an "active" call (not disconnected/unknown)
+            // AND it's NOT the call that just triggered startForeground
+            val isActiveState =
+                callData.callState != CallState.DISCONNECTED &&
+                    callData.callState != CallState.UNKNOWN
+            if (
+                otherCallIdInt != null &&
+                    otherCallIdInt != currentForegroundNotification &&
+                    isActiveState
+            ) {
+                mCallNotificationManager.showOrUpdateCallNotification(callData)
+            }
+        }
+    }
+
+    /**
+     * Checks if the service should remain in the foreground state. If there are no active calls
+     * (list is empty or all calls are disconnected), it stops the foreground state and removes the
+     * associated notification.
+     */
+    private fun checkAndStopForegroundIfNeeded() {
+        val currentCalls = _callDataList.value // Get the current state
+
+        // Condition: No calls OR all existing calls are in the DISCONNECTED state
+        val shouldStopForeground =
+            currentCalls.isEmpty() || currentCalls.all { it.callState == CallState.DISCONNECTED }
+
+        if (shouldStopForeground) {
+            Log.i(
+                TAG,
+                "checkAndStopForegroundIfNeeded: No active calls remaining." +
+                    " Stopping foreground state.",
+            )
+            // Stop foreground state and remove the *last* associated notification.
+            // Note: The specific notification removed depends on the last ID used with
+            // startForeground,  but stopping foreground state removes *any* notification tied to
+            // it.  We are already cancelling individual notifications in disconnect handlers.
+            stopForeground(STOP_FOREGROUND_REMOVE)
+
+            mIsCurrentlyInForeground = false // *** Reset flag only on successful stop ***
+
+            // The service has truly no more work to do so call StopSelf() as well
+            stopSelf()
+        } else {
+            Log.v(
+                TAG,
+                "checkAndStopForegroundIfNeeded: Active calls still present." +
+                    " Maintaining foreground state.",
+            )
+            // You might want to ensure the foreground notification reflects the current primary
+            // call if you have multiple active calls and one disconnects, but that logic
+            // would likely reside within your notification update flow.
+        }
     }
 }

@@ -42,7 +42,7 @@ enum class WideNavigationRailValue {
     Collapsed,
 
     /** The state of the rail when it is expanded. */
-    Expanded
+    Expanded,
 }
 
 /**
@@ -91,10 +91,7 @@ fun rememberWideNavigationRailState(
     // TODO: Load the motionScheme tokens from the component tokens file.
     val animationSpec = MotionSchemeKeyTokens.DefaultSpatial.value<Float>()
     return rememberSaveable(saver = WideNavigationRailStateImpl.Saver(animationSpec)) {
-        WideNavigationRailStateImpl(
-            initialValue = initialValue,
-            animationSpec = animationSpec,
-        )
+        WideNavigationRailStateImpl(initialValue = initialValue, animationSpec = animationSpec)
     }
 }
 
@@ -152,7 +149,7 @@ internal class WideNavigationRailStateImpl(
     override suspend fun toggle() {
         internalState.animateTo(
             targetValue = if (targetValue.isExpanded) Collapsed else Expanded,
-            animationSpec = animationSpec
+            animationSpec = animationSpec,
         )
     }
 
@@ -166,12 +163,10 @@ internal class WideNavigationRailStateImpl(
         private const val Expanded = 1f
 
         /** The default [Saver] implementation for [WideNavigationRailState]. */
-        fun Saver(
-            animationSpec: AnimationSpec<Float>,
-        ) =
+        fun Saver(animationSpec: AnimationSpec<Float>) =
             Saver<WideNavigationRailState, WideNavigationRailValue>(
                 save = { it.targetValue },
-                restore = { WideNavigationRailStateImpl(it, animationSpec) }
+                restore = { WideNavigationRailStateImpl(it, animationSpec) },
             )
     }
 }
@@ -243,7 +238,7 @@ internal class ModalWideNavigationRailState(
     private suspend fun animateTo(
         targetValue: WideNavigationRailValue,
         animationSpec: AnimationSpec<Float> = this.animationSpec,
-        velocity: Float = anchoredDraggableState.lastVelocity
+        velocity: Float = anchoredDraggableState.lastVelocity,
     ) {
         anchoredDraggableState.anchoredDrag(targetValue = targetValue) { anchors, latestTarget ->
             val targetOffset = anchors.positionOf(latestTarget)
@@ -266,10 +261,7 @@ internal class ModalWideNavigationRailState(
 internal class RailPredictiveBackState {
     var swipeEdgeMatchesRail by mutableStateOf(true)
 
-    fun update(
-        isSwipeEdgeLeft: Boolean,
-        isRtl: Boolean,
-    ) {
+    fun update(isSwipeEdgeLeft: Boolean, isRtl: Boolean) {
         swipeEdgeMatchesRail = (isSwipeEdgeLeft && !isRtl) || (!isSwipeEdgeLeft && isRtl)
     }
 }

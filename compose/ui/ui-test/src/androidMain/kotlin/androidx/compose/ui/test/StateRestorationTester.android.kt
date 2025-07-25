@@ -36,7 +36,7 @@ import androidx.annotation.VisibleForTesting
 
 @OptIn(ExperimentalTestApi::class)
 internal actual fun platformEncodeDecode(
-    savedState: Map<String, List<Any?>>,
+    savedState: Map<String, List<Any?>>
 ): Map<String, List<Any?>> {
     // If platform encoding/decoding is disabled, return the state as-is.
     if (!IS_PLATFORM_ENCODING_AND_DECODING_ENABLED) return savedState

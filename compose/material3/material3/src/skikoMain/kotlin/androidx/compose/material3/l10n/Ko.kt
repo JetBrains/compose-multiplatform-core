@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.ko() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "하단 시트 접기",
     Strings.BottomSheetDismissDescription to "하단 시트 닫기",
     Strings.BottomSheetExpandDescription to "하단 시트 펼치기",
+    Strings.FloatingToolbarCollapse to "툴바 접기",
+    Strings.FloatingToolbarExpand to "툴바 펼치기",
     Strings.TooltipPaneDescription to "도움말",
     Strings.TooltipLongPressLabel to "도움말 표시",
     Strings.TimePickerPM to "오후",
@@ -86,6 +88,10 @@ internal fun Translations.ko() = mapOf(
     Strings.TimePickerHour to "시간",
     Strings.TimePickerMinuteTextField to "기간(분)",
     Strings.TimePickerHourTextField to "기간(시간)",
+    Strings.TimePickerToggleKeyboard to "시간 입력을 위해 텍스트 입력 모드로 전환합니다.",
+    Strings.TimePickerToggleTouch to "시간 입력을 위해 시계 모드로 전환합니다.",
+    Strings.TimePickerDialogTitle to "시간 선택",
+    Strings.TimeInputDialogTitle to "시간 입력",
     Strings.CloseRail to "레일 닫기",
     Strings.WideNavigationRailPaneTitle to "탐색 레일",
 )

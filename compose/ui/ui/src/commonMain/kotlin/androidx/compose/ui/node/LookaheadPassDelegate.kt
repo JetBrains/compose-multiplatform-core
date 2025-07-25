@@ -42,7 +42,7 @@ internal class LookaheadPassDelegate(
     private enum class PlacedState {
         IsPlacedInLookahead,
         IsPlacedInApproach,
-        IsNotPlaced
+        IsNotPlaced,
     }
 
     /**
@@ -501,7 +501,7 @@ internal class LookaheadPassDelegate(
     override fun placeAt(
         position: IntOffset,
         zIndex: Float,
-        layerBlock: (GraphicsLayerScope.() -> Unit)?
+        layerBlock: (GraphicsLayerScope.() -> Unit)?,
     ) {
         placeSelf(position, zIndex, layerBlock, null)
     }
@@ -525,7 +525,7 @@ internal class LookaheadPassDelegate(
         position: IntOffset,
         zIndex: Float,
         layerBlock: (GraphicsLayerScope.() -> Unit)?,
-        layer: GraphicsLayer?
+        layer: GraphicsLayer?,
     ) {
         withComposeStackTrace(layoutNode) {
             if (layoutNode.parent?.layoutState == LayoutState.LookaheadLayingOut) {

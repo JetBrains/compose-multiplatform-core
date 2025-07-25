@@ -29,7 +29,7 @@ class DatabaseView(
     type: XType,
     fields: List<Property>,
     embeddedProperties: List<EmbeddedProperty>,
-    constructor: Constructor?
+    constructor: Constructor?,
 ) :
     DataClass(element, type, fields, embeddedProperties, emptyList(), constructor),
     HasSchemaIdentity,

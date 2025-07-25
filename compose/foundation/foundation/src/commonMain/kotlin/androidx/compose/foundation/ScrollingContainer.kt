@@ -51,7 +51,7 @@ internal fun Modifier.scrollingContainer(
     interactionSource: MutableInteractionSource?,
     useLocalOverscrollFactory: Boolean,
     overscrollEffect: OverscrollEffect?,
-    bringIntoViewSpec: BringIntoViewSpec? = null
+    bringIntoViewSpec: BringIntoViewSpec? = null,
 ): Modifier {
     return clipScrollableContainer(orientation)
         .then(
@@ -64,7 +64,7 @@ internal fun Modifier.scrollingContainer(
                 interactionSource = interactionSource,
                 bringIntoViewSpec = bringIntoViewSpec,
                 useLocalOverscrollFactory = useLocalOverscrollFactory,
-                overscrollEffect = overscrollEffect
+                overscrollEffect = overscrollEffect,
             )
         )
 }
@@ -83,7 +83,7 @@ private class ScrollingContainerElement(
     private val interactionSource: MutableInteractionSource?,
     private val bringIntoViewSpec: BringIntoViewSpec?,
     private val useLocalOverscrollFactory: Boolean,
-    private val overscrollEffect: OverscrollEffect?
+    private val overscrollEffect: OverscrollEffect?,
 ) : ModifierNodeElement<ScrollingContainerNode>() {
     override fun create(): ScrollingContainerNode {
         return ScrollingContainerNode(
@@ -95,7 +95,7 @@ private class ScrollingContainerElement(
             interactionSource = interactionSource,
             bringIntoViewSpec = bringIntoViewSpec,
             useLocalOverscrollFactory = useLocalOverscrollFactory,
-            userProvidedOverscrollEffect = overscrollEffect
+            userProvidedOverscrollEffect = overscrollEffect,
         )
     }
 
@@ -109,7 +109,7 @@ private class ScrollingContainerElement(
             reverseScrolling = reverseScrolling,
             flingBehavior = flingBehavior,
             interactionSource = interactionSource,
-            bringIntoViewSpec = bringIntoViewSpec
+            bringIntoViewSpec = bringIntoViewSpec,
         )
     }
 
@@ -168,7 +168,7 @@ private class ScrollingContainerNode(
     private var interactionSource: MutableInteractionSource?,
     private var bringIntoViewSpec: BringIntoViewSpec?,
     private var useLocalOverscrollFactory: Boolean,
-    private var userProvidedOverscrollEffect: OverscrollEffect?
+    private var userProvidedOverscrollEffect: OverscrollEffect?,
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode, ObserverModifierNode {
     override val shouldAutoInvalidate = false
     private var scrollableNode: ScrollableNode? = null
@@ -198,7 +198,7 @@ private class ScrollingContainerNode(
                         enabled,
                         shouldReverseDirection,
                         interactionSource,
-                        bringIntoViewSpec
+                        bringIntoViewSpec,
                     )
                 )
         }
@@ -221,7 +221,7 @@ private class ScrollingContainerNode(
                 reverseScrolling,
                 flingBehavior,
                 interactionSource,
-                bringIntoViewSpec
+                bringIntoViewSpec,
             )
         }
     }
@@ -235,7 +235,7 @@ private class ScrollingContainerNode(
         reverseScrolling: Boolean,
         flingBehavior: FlingBehavior?,
         interactionSource: MutableInteractionSource?,
-        bringIntoViewSpec: BringIntoViewSpec?
+        bringIntoViewSpec: BringIntoViewSpec?,
     ) {
         this.state = state
         this.orientation = orientation
@@ -274,7 +274,7 @@ private class ScrollingContainerNode(
             shouldReverseDirection,
             flingBehavior,
             interactionSource,
-            bringIntoViewSpec
+            bringIntoViewSpec,
         )
     }
 
@@ -330,7 +330,7 @@ private class ScrollingContainerNode(
                 shouldReverseDirection,
                 flingBehavior,
                 interactionSource,
-                bringIntoViewSpec
+                bringIntoViewSpec,
             )
         }
     }

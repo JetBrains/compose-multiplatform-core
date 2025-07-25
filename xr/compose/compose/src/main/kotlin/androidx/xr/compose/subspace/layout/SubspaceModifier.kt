@@ -16,7 +16,6 @@
 
 package androidx.xr.compose.subspace.layout
 
-import androidx.annotation.RestrictTo
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNodeCoordinator
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
@@ -28,7 +27,6 @@ import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
  *
  * Based on [androidx.compose.ui.Modifier]
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SubspaceModifier {
 
     /**
@@ -59,7 +57,7 @@ public interface SubspaceModifier {
 
     /**
      * Returns `true` if [predicate] returns true for all [SubspaceModifierNodeElement]s in this
-     * [SubspaceModifier] or if this [SubspaceModifier] contains no [Element]s.
+     * [SubspaceModifier] or if this [SubspaceModifier] contains no Elements.
      */
     public fun all(
         predicate: (SubspaceModifierNodeElement<SubspaceModifier.Node>) -> Boolean
@@ -138,8 +136,7 @@ public interface SubspaceModifier {
  * A node in a [SubspaceModifier] chain. A CombinedSubspaceModifier always contains at least two
  * elements; a SubspaceModifier [outer] that wraps around the SubspaceModifier [inner].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class CombinedSubspaceModifier(
+internal class CombinedSubspaceModifier(
     internal val outer: SubspaceModifier,
     internal val inner: SubspaceModifier,
 ) : SubspaceModifier {
@@ -179,14 +176,12 @@ public class CombinedSubspaceModifier(
  *
  * If this node is the root, an empty sequence is returned.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceModifier.Node.traverseAncestors(): Sequence<SubspaceModifier.Node> {
+internal fun SubspaceModifier.Node.traverseAncestors(): Sequence<SubspaceModifier.Node> {
     return generateSequence(seed = parent) { it.parent }
 }
 
 /** Generates a sequence with self and elements up the node tree to the root. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceModifier.Node.traverseSelfThenAncestors(): Sequence<SubspaceModifier.Node> =
+internal fun SubspaceModifier.Node.traverseSelfThenAncestors(): Sequence<SubspaceModifier.Node> =
     sequenceOf(this) + traverseAncestors()
 
 /**
@@ -194,14 +189,12 @@ public fun SubspaceModifier.Node.traverseSelfThenAncestors(): Sequence<SubspaceM
  *
  * If this node is a leaf node, an empty sequence is returned.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceModifier.Node.traverseDescendants(): Sequence<SubspaceModifier.Node> {
+internal fun SubspaceModifier.Node.traverseDescendants(): Sequence<SubspaceModifier.Node> {
     return generateSequence(seed = child) { it.child }
 }
 
 /** Generates a sequence with self and elements down the node tree. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun SubspaceModifier.Node.traverseSelfThenDescendants(): Sequence<SubspaceModifier.Node> =
+internal fun SubspaceModifier.Node.traverseSelfThenDescendants(): Sequence<SubspaceModifier.Node> =
     sequenceOf(this) + traverseDescendants()
 
 /** Returns the first element of type [T] in the sequence, or `null` if none match. */

@@ -16,12 +16,12 @@
 
 package androidx.appfunctions.compiler.core
 
-import androidx.appfunctions.metadata.AppFunctionComponentsMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionNamedDataTypeMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionParameterMetadataDocument
-import androidx.appfunctions.metadata.AppFunctionResponseMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadataDocument
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 
@@ -35,6 +35,10 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
         appendChild(
             doc.createElementWithTextNode("enabledByDefault", isEnabledByDefault.toString())
         )
+
+        if (!description.isEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
 
         parameters?.let {
             for (param in it) {
@@ -55,7 +59,7 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
 
 internal fun AppFunctionComponentsMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         for (dataType in dataTypes) {
@@ -66,7 +70,7 @@ internal fun AppFunctionComponentsMetadataDocument.toXmlElement(
 
 private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         for (property in allOf) {
@@ -86,6 +90,10 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
             appendChild(doc.createElementWithTextNode("objectQualifiedName", it))
         }
 
+        if (!description.isEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
+
         for (property in properties) {
             appendChild(property.toXmlElement(doc, "properties"))
         }
@@ -99,7 +107,7 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
 
 private fun AppFunctionNamedDataTypeMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(dataTypeMetadata.toXmlElement(doc, "dataTypeMetadata"))
@@ -109,7 +117,7 @@ private fun AppFunctionNamedDataTypeMetadataDocument.toXmlElement(
 
 private fun AppFunctionResponseMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(doc.createElementWithTextNode("id", id))
@@ -118,7 +126,7 @@ private fun AppFunctionResponseMetadataDocument.toXmlElement(
 
 private fun AppFunctionParameterMetadataDocument.toXmlElement(
     doc: Document,
-    elementName: String
+    elementName: String,
 ): Element =
     doc.createElement(elementName).apply {
         appendChild(dataTypeMetadata.toXmlElement(doc, "dataTypeMetadata"))

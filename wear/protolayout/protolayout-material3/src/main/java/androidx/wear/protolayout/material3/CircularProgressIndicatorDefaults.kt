@@ -33,7 +33,7 @@ import androidx.wear.protolayout.types.LayoutColor
 public class ProgressIndicatorColors(
     public val indicatorColor: LayoutColor,
     public val trackColor: LayoutColor,
-    public val trackOverflowColor: LayoutColor = trackColor
+    public val trackOverflowColor: LayoutColor = trackColor,
 ) {
     /**
      * Returns a copy of this [ProgressIndicatorColors], optionally overriding some of the values.
@@ -45,12 +45,12 @@ public class ProgressIndicatorColors(
     public fun copy(
         indicatorColor: LayoutColor = this.indicatorColor,
         trackColor: LayoutColor = this.trackColor,
-        trackOverflowColor: LayoutColor = this.trackOverflowColor
+        trackOverflowColor: LayoutColor = this.trackOverflowColor,
     ): ProgressIndicatorColors =
         ProgressIndicatorColors(
             indicatorColor = indicatorColor,
             trackColor = trackColor,
-            trackOverflowColor = trackOverflowColor
+            trackOverflowColor = trackOverflowColor,
         )
 }
 
@@ -64,7 +64,7 @@ public object CircularProgressIndicatorDefaults {
         ProgressIndicatorColors(
             theme.colorScheme.onPrimary,
             theme.colorScheme.onPrimary.withOpacity(0.2F),
-            theme.colorScheme.onPrimary.withOpacity(0.6F)
+            theme.colorScheme.onPrimary.withOpacity(0.6F),
         )
 
     /**
@@ -76,7 +76,7 @@ public object CircularProgressIndicatorDefaults {
         ProgressIndicatorColors(
             theme.colorScheme.primary,
             theme.colorScheme.primary.withOpacity(0.2F),
-            theme.colorScheme.primary.withOpacity(0.6F)
+            theme.colorScheme.primary.withOpacity(0.6F),
         )
 
     /**

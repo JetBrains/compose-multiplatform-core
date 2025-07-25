@@ -129,12 +129,12 @@ class SidecarWindowBackendTest : WindowTestBase() {
             backend.registerLayoutChangeCallback(
                 activity,
                 { obj: Runnable -> obj.run() },
-                firstConsumer
+                firstConsumer,
             )
             backend.registerLayoutChangeCallback(
                 activity,
                 { obj: Runnable -> obj.run() },
-                secondConsumer
+                secondConsumer,
             )
 
             // Check unregistering the layout change callback

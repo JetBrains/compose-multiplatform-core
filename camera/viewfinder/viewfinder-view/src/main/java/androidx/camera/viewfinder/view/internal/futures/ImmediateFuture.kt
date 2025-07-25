@@ -46,7 +46,7 @@ internal abstract class ImmediateFuture<V> : ListenableFuture<V> {
                     listener +
                     " on Executor " +
                     executor,
-                e
+                e,
             )
         }
     }

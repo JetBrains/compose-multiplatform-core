@@ -30,6 +30,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlinx.test.IgnoreJsTarget
 
 class SnapshotObserverTests {
     @Test
@@ -45,7 +46,7 @@ class SnapshotObserverTests {
                 override fun onCreated(
                     snapshot: Snapshot,
                     parent: Snapshot?,
-                    observers: SnapshotInstanceObservers?
+                    observers: SnapshotInstanceObservers?,
                 ) {
                     observed.add(snapshot)
                 }
@@ -65,7 +66,7 @@ class SnapshotObserverTests {
                 override fun onCreated(
                     snapshot: Snapshot,
                     parent: Snapshot?,
-                    observers: SnapshotInstanceObservers?
+                    observers: SnapshotInstanceObservers?,
                 ) {
                     observed.add(snapshot)
                 }
@@ -184,7 +185,7 @@ class SnapshotObserverTests {
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     return SnapshotInstanceObservers(readObserver = { read.add(it to true) })
                 }
@@ -210,7 +211,7 @@ class SnapshotObserverTests {
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     return SnapshotInstanceObservers(readObserver = { read.add(it to true) })
                 }
@@ -235,7 +236,7 @@ class SnapshotObserverTests {
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     return SnapshotInstanceObservers(writeObserver = { writes.add(it to true) })
                 }
@@ -251,7 +252,7 @@ class SnapshotObserverTests {
                 assertEquals(20, result)
                 assertEquals(
                     expected = mutableListOf<Pair<Any, Boolean>>(state to true, state to false),
-                    actual = writes
+                    actual = writes,
                 )
             } finally {
                 snapshot.dispose()
@@ -260,25 +261,26 @@ class SnapshotObserverTests {
     }
 
     @Test
+    @IgnoreJsTarget // b/409727050
     fun canHaveMultipleObservers() {
         val events = mutableListOf<Pair<Any?, String>>()
         fun observer(prefix: String) =
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     record(parent, "creating, readonly = $readonly")
                     return SnapshotInstanceObservers(
                         readObserver = { record(it, "reading") },
-                        writeObserver = { record(it, "writing") }
+                        writeObserver = { record(it, "writing") },
                     )
                 }
 
                 override fun onCreated(
                     snapshot: Snapshot,
                     parent: Snapshot?,
-                    observers: SnapshotInstanceObservers?
+                    observers: SnapshotInstanceObservers?,
                 ) {
                     record(snapshot to parent, "created")
                 }
@@ -338,9 +340,9 @@ class SnapshotObserverTests {
                         (ms1 to setOf(state1)) to "Outer: applied",
                         (ms1 to setOf(state1)) to "Inner: applied",
                         ms1 to "Outer: disposing",
-                        ms1 to "Inner: disposing"
+                        ms1 to "Inner: disposing",
                     ),
-                    events as List<*>
+                    events as List<*>,
                 )
             }
         }
@@ -353,19 +355,19 @@ class SnapshotObserverTests {
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     record(parent, "creating, readonly = $readonly")
                     return SnapshotInstanceObservers(
                         readObserver = { record(it, "reading") },
-                        writeObserver = { record(it, "writing") }
+                        writeObserver = { record(it, "writing") },
                     )
                 }
 
                 override fun onCreated(
                     snapshot: Snapshot,
                     parent: Snapshot?,
-                    observers: SnapshotInstanceObservers?
+                    observers: SnapshotInstanceObservers?,
                 ) {
                     record(snapshot to parent, "created")
                 }
@@ -409,7 +411,7 @@ class SnapshotObserverTests {
                     ms1 to "disposing",
                     ms2 to "disposing",
                 ),
-                events
+                events,
             )
         }
     }
@@ -421,7 +423,7 @@ class SnapshotObserverTests {
             object : SnapshotObserver {
                 override fun onPreCreate(
                     parent: Snapshot?,
-                    readonly: Boolean
+                    readonly: Boolean,
                 ): SnapshotInstanceObservers {
                     val result = SnapshotInstanceObservers()
                     key = result
@@ -431,7 +433,7 @@ class SnapshotObserverTests {
                 override fun onCreated(
                     snapshot: Snapshot,
                     parent: Snapshot?,
-                    observers: SnapshotInstanceObservers?
+                    observers: SnapshotInstanceObservers?,
                 ) {
                     assertEquals(observers, key)
                 }

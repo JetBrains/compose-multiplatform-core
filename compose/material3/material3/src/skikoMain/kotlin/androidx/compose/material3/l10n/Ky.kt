@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,8 @@ internal fun Translations.ky() = mapOf(
     Strings.BottomSheetPartialExpandDescription to "Ылдыйкы экранды жыйыштыруу",
     Strings.BottomSheetDismissDescription to "Ылдыйкы экранды жабуу",
     Strings.BottomSheetExpandDescription to "Ылдыйкы экранды жайып көрсөтүү",
+    Strings.FloatingToolbarCollapse to "Куралдар тилкесин жыйыштыруу",
+    Strings.FloatingToolbarExpand to "Куралдар тилкесин жайып көрсөтүү",
     Strings.TooltipPaneDescription to "Калкып чыгуучу кеңеш",
     Strings.TooltipLongPressLabel to "Калкып чыгуучу кеңешти көрсөтүү",
     Strings.TimePickerPM to "түштөн кийин",
@@ -86,6 +88,10 @@ internal fun Translations.ky() = mapOf(
     Strings.TimePickerHour to "Саат",
     Strings.TimePickerMinuteTextField to "мүнөткө",
     Strings.TimePickerHourTextField to "саатка",
+    Strings.TimePickerToggleKeyboard to "Убакытты текст киргизүү режиминде киргизүү",
+    Strings.TimePickerToggleTouch to "Убакытты дубал саатынын режиминде киргизүү",
+    Strings.TimePickerDialogTitle to "Убакыт тандаңыз",
+    Strings.TimeInputDialogTitle to "Убакытты киргизиңиз",
     Strings.CloseRail to "Капталдагы тилкени жабуу",
     Strings.WideNavigationRailPaneTitle to "Капталдагы өтүү тилкеси",
 )

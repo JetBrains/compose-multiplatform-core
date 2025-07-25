@@ -75,7 +75,7 @@ class CallControlScopeFlowsTest : BaseTelecomTest() {
                 TestUtils.OUTGOING_NAME,
                 TestUtils.TEST_ADDRESS,
                 CallAttributesCompat.DIRECTION_OUTGOING,
-                CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                CallAttributesCompat.CALL_TYPE_VIDEO_CALL,
             )
         ) {
             launch {
@@ -108,7 +108,7 @@ class CallControlScopeFlowsTest : BaseTelecomTest() {
                 awaitAll(
                     waitUntilCurrentEndpointJob,
                     waitUntilAvailableEndpointJob,
-                    waitUntilMuteStateJob
+                    waitUntilMuteStateJob,
                 )
                 Log.i(TAG, "after awaitAll")
 

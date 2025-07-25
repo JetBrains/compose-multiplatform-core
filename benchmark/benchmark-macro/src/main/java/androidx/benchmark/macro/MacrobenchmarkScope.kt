@@ -48,7 +48,7 @@ public class MacrobenchmarkScope(
      * Default to true, so Activity launches go through full creation lifecycle stages, instead of
      * just resume.
      */
-    private val launchWithClearTask: Boolean
+    private val launchWithClearTask: Boolean,
 ) {
 
     internal val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -103,7 +103,7 @@ public class MacrobenchmarkScope(
     internal inline fun <T> withKillMode(
         current: KillMode,
         override: KillMode,
-        block: MacrobenchmarkScope.() -> T
+        block: MacrobenchmarkScope.() -> T,
     ): T {
         check(killMode == current) { "Expected KFM = $current, was $killMode" }
         killMode = override
@@ -348,7 +348,7 @@ public class MacrobenchmarkScope(
      */
     @Deprecated(
         "Use the parameter-less killProcess() API instead",
-        replaceWith = ReplaceWith("killProcess()")
+        replaceWith = ReplaceWith("killProcess()"),
     )
     @Suppress("UNUSED_PARAMETER")
     fun killProcess(useKillAll: Boolean = false) {
@@ -476,7 +476,7 @@ public class MacrobenchmarkScope(
                 val processCount = Shell.getRunningPidsAndProcessesForPackage(packageName).size
                 ProfileInstallBroadcast.SaveProfileResult(
                     processCount = processCount,
-                    error = if (processCount == 0) null else "skipped"
+                    error = if (processCount == 0) null else "skipped",
                 )
             }
         if (saveResult.processCount > 0) {
@@ -484,7 +484,7 @@ public class MacrobenchmarkScope(
                 if (Shell.isSessionRooted()) {
                     Log.d(
                         TAG,
-                        "Unable to saveProfile with profileinstaller ($saveResult), trying kill"
+                        "Unable to saveProfile with profileinstaller ($saveResult), trying kill",
                     )
                     val response =
                         Shell.executeScriptCaptureStdoutStderr("killall -s SIGUSR1 $packageName")
@@ -638,7 +638,7 @@ public class MacrobenchmarkScope(
                 maxInitialFlushWaitIterations = 50, // up to 2.5 sec of waiting on flush to start
                 maxStableFlushWaitIterations = 50, // up to 2.5 sec of waiting on flush to complete
                 stableIterations = 8, // 400ms of stability after flush starts
-                pollDurationMs = 50L
+                pollDurationMs = 50L,
             ) {
                 Shell.executeScriptSilent("am profile stop $packageName")
             }

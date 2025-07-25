@@ -81,7 +81,7 @@ internal class TextAnnotatedStringNode(
     private var selectionController: SelectionController? = null,
     private var overrideColor: ColorProducer? = null,
     private var autoSize: TextAutoSize? = null,
-    private var onShowTranslation: ((TextSubstitutionValue) -> Unit)? = null
+    private var onShowTranslation: ((TextSubstitutionValue) -> Unit)? = null,
 ) : Modifier.Node(), LayoutModifierNode, DrawModifierNode, SemanticsModifierNode {
     override val shouldAutoInvalidate: Boolean
         get() = false
@@ -103,7 +103,7 @@ internal class TextAnnotatedStringNode(
                         maxLines,
                         minLines,
                         placeholders,
-                        autoSize
+                        autoSize,
                     )
             }
             return _layoutCache!!
@@ -161,7 +161,7 @@ internal class TextAnnotatedStringNode(
         softWrap: Boolean,
         fontFamilyResolver: FontFamily.Resolver,
         overflow: TextOverflow,
-        autoSize: TextAutoSize?
+        autoSize: TextAutoSize?,
     ): Boolean {
         var changed: Boolean
 
@@ -211,7 +211,7 @@ internal class TextAnnotatedStringNode(
         onTextLayout: ((TextLayoutResult) -> Unit)?,
         onPlaceholderLayout: ((List<Rect?>) -> Unit)?,
         selectionController: SelectionController?,
-        onShowTranslation: ((TextSubstitutionValue) -> Unit)?
+        onShowTranslation: ((TextSubstitutionValue) -> Unit)?,
     ): Boolean {
         var changed = false
 
@@ -242,7 +242,7 @@ internal class TextAnnotatedStringNode(
         drawChanged: Boolean,
         textChanged: Boolean,
         layoutChanged: Boolean,
-        callbacksChanged: Boolean
+        callbacksChanged: Boolean,
     ) {
         // bring caches up to date even if the node is detached in case it is used again later
         if (textChanged || layoutChanged || callbacksChanged) {
@@ -255,7 +255,7 @@ internal class TextAnnotatedStringNode(
                 maxLines = maxLines,
                 minLines = minLines,
                 placeholders = placeholders,
-                autoSize = autoSize
+                autoSize = autoSize,
             )
         }
 
@@ -307,7 +307,7 @@ internal class TextAnnotatedStringNode(
                 maxLines,
                 minLines,
                 placeholders = emptyList(),
-                autoSize
+                autoSize,
             ) ?: return false
         } else {
             val newTextSubstitution = TextSubstitutionValue(text, updatedText)
@@ -321,7 +321,7 @@ internal class TextAnnotatedStringNode(
                     maxLines,
                     minLines,
                     placeholders = emptyList(),
-                    autoSize
+                    autoSize,
                 )
             substitutionLayoutCache.density = layoutCache.density
             newTextSubstitution.layoutCache = substitutionLayoutCache
@@ -363,7 +363,7 @@ internal class TextAnnotatedStringNode(
                                     density = inputLayout.layoutInput.density,
                                     layoutDirection = inputLayout.layoutInput.layoutDirection,
                                     fontFamilyResolver = inputLayout.layoutInput.fontFamilyResolver,
-                                    constraints = inputLayout.layoutInput.constraints
+                                    constraints = inputLayout.layoutInput.constraints,
                                 )
                         )
                         ?.also { textLayoutResult.add(it) }
@@ -411,7 +411,7 @@ internal class TextAnnotatedStringNode(
     fun measureNonExtension(
         measureScope: MeasureScope,
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         return measureScope.measure(measurable, constraints)
     }
@@ -419,7 +419,7 @@ internal class TextAnnotatedStringNode(
     /** Text layout is performed here. */
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints
+        constraints: Constraints,
     ): MeasureResult {
         trace("TextAnnotatedStringNode:measure") {
             val layoutCache = getLayoutCache(this)
@@ -451,14 +451,14 @@ internal class TextAnnotatedStringNode(
                         minWidth = textLayoutResult.size.width,
                         maxWidth = textLayoutResult.size.width,
                         minHeight = textLayoutResult.size.height,
-                        maxHeight = textLayoutResult.size.height
+                        maxHeight = textLayoutResult.size.height,
                     )
                 )
 
             return layout(
                 textLayoutResult.size.width,
                 textLayoutResult.size.height,
-                baselineCache!!
+                baselineCache!!,
             ) {
                 placeable.place(0, 0)
             }
@@ -468,14 +468,14 @@ internal class TextAnnotatedStringNode(
     fun minIntrinsicWidthNonExtension(
         intrinsicMeasureScope: IntrinsicMeasureScope,
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return intrinsicMeasureScope.minIntrinsicWidth(measurable, height)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int {
         return getLayoutCache(this).minIntrinsicWidth(layoutDirection)
     }
@@ -483,36 +483,36 @@ internal class TextAnnotatedStringNode(
     fun minIntrinsicHeightNonExtension(
         intrinsicMeasureScope: IntrinsicMeasureScope,
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int {
         return intrinsicMeasureScope.minIntrinsicHeight(measurable, width)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCache(this).intrinsicHeight(width, layoutDirection)
 
     fun maxIntrinsicWidthNonExtension(
         intrinsicMeasureScope: IntrinsicMeasureScope,
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = intrinsicMeasureScope.maxIntrinsicWidth(measurable, height)
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurable: IntrinsicMeasurable,
-        height: Int
+        height: Int,
     ): Int = getLayoutCache(this).maxIntrinsicWidth(layoutDirection)
 
     fun maxIntrinsicHeightNonExtension(
         intrinsicMeasureScope: IntrinsicMeasureScope,
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = intrinsicMeasureScope.maxIntrinsicHeight(measurable, width)
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurable: IntrinsicMeasurable,
-        width: Int
+        width: Int,
     ): Int = getLayoutCache(this).intrinsicHeight(width, layoutDirection)
 
     fun drawNonExtension(contentDrawScope: ContentDrawScope) {
@@ -551,7 +551,7 @@ internal class TextAnnotatedStringNode(
                         alpha = alpha,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        decoration = textDecoration
+                        decoration = textDecoration,
                     )
                 } else {
                     val overrideColorVal = overrideColor?.invoke() ?: Color.Unspecified
@@ -568,7 +568,7 @@ internal class TextAnnotatedStringNode(
                         color = color,
                         shadow = shadow,
                         drawStyle = drawStyle,
-                        decoration = textDecoration
+                        decoration = textDecoration,
                     )
                 }
             } finally {

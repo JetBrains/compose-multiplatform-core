@@ -47,7 +47,7 @@ public object TitleCardDefaults {
         content: LayoutElement?,
         time: LayoutElement?,
         @HorizontalAlignment horizontalAlignment: Int,
-        style: TitleCardStyle
+        style: TitleCardStyle,
     ): LayoutElement {
         val verticalElementBuilder: Column.Builder =
             Column.Builder().setWidth(expand()).setHorizontalAlignment(horizontalAlignment)
@@ -68,13 +68,13 @@ public object TitleCardDefaults {
                                 .setWidth(expand())
                                 .build()
                         }
-                        .getOrNull()
+                        .getOrNull(),
                 )
                 .addElement(time, verticalSpacer(style.titleToTimeSpaceDp))
 
         ContainerWithSpacersBuilder<LayoutElement>(
                 { element: LayoutElement? -> verticalElementBuilder.addContent(element!!) },
-                if (headerBuilder.isEmpty) null else headerSlot.build()
+                if (headerBuilder.isEmpty) null else headerSlot.build(),
             )
             .addElement(content, horizontalSpacer(style.titleToContentSpaceDp))
 
@@ -90,7 +90,7 @@ internal constructor(
     @Dimension(unit = DP) internal val titleToContentSpaceDp: Int,
     @TypographyToken internal val titleTypography: Int,
     @TypographyToken internal val contentTypography: Int,
-    @TypographyToken internal val timeTypography: Int
+    @TypographyToken internal val timeTypography: Int,
 ) {
     public companion object {
         /** The small spacer width or height that should be between different elements. */

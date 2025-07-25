@@ -194,7 +194,7 @@ internal class WindowComposeSceneLayer(
                 it.onRenderOverlay(canvas, width, height, transparent)
             }
         }
-        return WindowSkiaLayerComponent(
+        return SkiaLayerComponent(
             mediator = mediator,
             windowContext = windowContext,
             renderDelegate = renderDelegate,

@@ -47,7 +47,6 @@ dependencies {
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore)
     testImplementation(libs.dexmakerMockito)
-    testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 }
 
@@ -66,14 +65,12 @@ androidx {
     description = "Guava wrappers for the Androidx Wear Watchface library"
     legacyDisableKotlinStrictApiMode = true
     failOnDeprecationWarnings = false
+    enableRobolectric()
 }
 
 android {
     defaultConfig {
         minSdk = 26
     }
-
-    // Use Robolectric 4.+
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear.watchface.guava"
 }

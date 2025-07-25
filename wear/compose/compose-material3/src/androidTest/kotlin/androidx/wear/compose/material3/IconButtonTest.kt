@@ -130,7 +130,7 @@ class IconButtonTest {
             IconButton(
                 onClick = { clicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -150,7 +150,7 @@ class IconButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -172,7 +172,7 @@ class IconButtonTest {
                     onClick = { /* Do nothing */ },
                     onLongClick = {},
                     enabled = true,
-                    modifier = Modifier.testTag(TEST_TAG)
+                    modifier = Modifier.testTag(TEST_TAG),
                 ) {}
             }
         }
@@ -193,7 +193,7 @@ class IconButtonTest {
                 modifier = Modifier.testTag(TEST_TAG),
                 onClick = {},
                 onLongClick = {},
-                onLongClickLabel = testLabel
+                onLongClickLabel = testLabel,
             ) {
                 Text("Button")
             }
@@ -210,7 +210,7 @@ class IconButtonTest {
             IconButton(
                 onClick = { clicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -230,7 +230,7 @@ class IconButtonTest {
                 onClick = { /* Do nothing */ },
                 onLongClick = { longClicked = true },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             ) {
                 TestImage()
             }
@@ -259,7 +259,7 @@ class IconButtonTest {
         rule.setContentWithTheme {
             IconButton(
                 onClick = {},
-                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole }
+                modifier = Modifier.testTag(TEST_TAG).semantics { role = overrideRole },
             ) {
                 TestImage()
             }
@@ -302,7 +302,7 @@ class IconButtonTest {
         rule.verifyTapSize(expectedSize = MinimumButtonTapSize) { modifier ->
             IconButton(
                 onClick = {},
-                modifier = modifier.touchTargetAwareSize(ExtraSmallButtonSize)
+                modifier = modifier.touchTargetAwareSize(ExtraSmallButtonSize),
             ) {
                 TestImage()
             }
@@ -352,12 +352,12 @@ class IconButtonTest {
             pressedShape,
             0.75f,
             8,
-            color = { IconButtonDefaults.filledIconButtonColors().containerColor }
+            color = { IconButtonDefaults.filledIconButtonColors().containerColor },
         ) { modifier ->
             FilledIconButton(
                 onClick = {},
                 shapes = IconButtonShapes(baseShape, pressedShape),
-                modifier = modifier
+                modifier = modifier,
             ) {}
         }
     }
@@ -367,7 +367,7 @@ class IconButtonTest {
     fun default_shape_is_circular() {
         rule.isShape(
             expectedShape = CircleShape,
-            colors = { IconButtonDefaults.iconButtonColors() }
+            colors = { IconButtonDefaults.iconButtonColors() },
         ) { modifier ->
             IconButton(onClick = {}, modifier = modifier) {
                 // omit content to allow us to validate the shape by pixel checking.
@@ -385,7 +385,7 @@ class IconButtonTest {
             IconButton(
                 onClick = {},
                 modifier = modifier,
-                shapes = IconButtonDefaults.shapes(shape)
+                shapes = IconButtonDefaults.shapes(shape),
             ) {
                 // omit content to allow us to validate the shape by pixel checking.
             }
@@ -399,7 +399,7 @@ class IconButtonTest {
             status = Status.Enabled,
             colors = { IconButtonDefaults.iconButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
@@ -412,7 +412,7 @@ class IconButtonTest {
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
@@ -423,7 +423,7 @@ class IconButtonTest {
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.primary },
-            expectedContentColor = { MaterialTheme.colorScheme.onPrimary }
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimary },
         )
     }
 
@@ -438,7 +438,7 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
@@ -449,7 +449,7 @@ class IconButtonTest {
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledVariantIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
-            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer }
+            expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
         )
     }
 
@@ -464,7 +464,7 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
@@ -475,7 +475,7 @@ class IconButtonTest {
             status = Status.Enabled,
             colors = { IconButtonDefaults.filledTonalIconButtonColors() },
             expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
@@ -490,7 +490,7 @@ class IconButtonTest {
             },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
@@ -501,7 +501,7 @@ class IconButtonTest {
             status = Status.Enabled,
             colors = { IconButtonDefaults.outlinedIconButtonColors() },
             expectedContainerColor = { Color.Transparent },
-            expectedContentColor = { MaterialTheme.colorScheme.primary }
+            expectedContentColor = { MaterialTheme.colorScheme.primary },
         )
     }
 
@@ -514,7 +514,7 @@ class IconButtonTest {
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
-            }
+            },
         )
     }
 
@@ -526,7 +526,7 @@ class IconButtonTest {
             expectedBorderColor = { MaterialTheme.colorScheme.outline },
             content = { modifier: Modifier ->
                 OutlinedIconButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
-            }
+            },
         )
     }
 
@@ -540,7 +540,7 @@ class IconButtonTest {
             },
             content = { modifier: Modifier ->
                 OutlinedIconButton(onClick = {}, modifier = modifier, enabled = status.enabled()) {}
-            }
+            },
         )
     }
 
@@ -559,10 +559,10 @@ class IconButtonTest {
                         ButtonDefaults.outlinedButtonBorder(
                             enabled = status.enabled(),
                             borderColor = Color.Green,
-                            disabledBorderColor = Color.Red
-                        )
+                            disabledBorderColor = Color.Red,
+                        ),
                 ) {}
-            }
+            },
         )
     }
 
@@ -577,7 +577,7 @@ class IconButtonTest {
                     onClick = {},
                     colors =
                         IconButtonDefaults.filledIconButtonColors(containerColor = Color.Green),
-                    modifier = Modifier.size(27.dp, 20.dp)
+                    modifier = Modifier.size(27.dp, 20.dp),
                 ) {}
             }
         }
@@ -629,7 +629,7 @@ class IconButtonTest {
                     actualContentColor = LocalContentColor.current
                 }
                 return@verifyColors actualContentColor
-            }
+            },
         )
     }
 }
@@ -638,7 +638,7 @@ class IconButtonTest {
 private fun ComposeContentTestRule.isShape(
     expectedShape: Shape,
     colors: @Composable () -> IconButtonColors,
-    content: @Composable (Modifier) -> Unit
+    content: @Composable (Modifier) -> Unit,
 ) {
     var background = Color.Transparent
     var buttonColor = Color.Transparent

@@ -35,14 +35,14 @@ val ANY_TRANSFORMATION_INFO =
         cropRectRight = ANY_WIDTH.toFloat(),
         cropRectBottom = ANY_HEIGHT.toFloat(),
         isSourceMirroredHorizontally = false,
-        isSourceMirroredVertically = false
+        isSourceMirroredVertically = false,
     )
 
 val REQUEST_TIMEOUT = 2.seconds
 
 inline fun runViewfinderTest(
     viewfinderInitiallyAttached: Boolean = true,
-    crossinline block: suspend ViewfinderTestScope.() -> Unit
+    crossinline block: suspend ViewfinderTestScope.() -> Unit,
 ) {
     runBlocking {
         ActivityScenario.launch(FakeActivity::class.java).use { scenario ->
@@ -57,7 +57,7 @@ inline fun runViewfinderTest(
                         viewfinder = viewfinderView,
                         activityScenario = scenario,
                         coroutineContext = coroutineContext,
-                        viewfinderInitiallyAttached
+                        viewfinderInitiallyAttached,
                     )
             }
             val testScope =
@@ -72,7 +72,7 @@ data class ViewfinderTestScope(
     val viewfinder: ViewfinderView,
     private val activityScenario: ActivityScenario<FakeActivity>,
     override val coroutineContext: CoroutineContext,
-    private var attached: Boolean = false
+    private var attached: Boolean = false,
 ) : CoroutineScope {
     fun detachViewfinder() {
         if (attached) {

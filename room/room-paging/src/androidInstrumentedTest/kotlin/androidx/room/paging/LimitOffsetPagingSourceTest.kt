@@ -110,7 +110,7 @@ class LimitOffsetPagingSourceTest {
                     PagingSource.LoadParams.Refresh(
                         key = null,
                         loadSize = 1,
-                        placeholdersEnabled = true
+                        placeholdersEnabled = true,
                     )
                 )
         }
@@ -684,8 +684,8 @@ class LimitOffsetPagingSourceTest {
         config: PagingConfig = CONFIG,
         block:
             suspend (
-                pager: TestPager<Int, TestItem>, pagingSource: LimitOffsetPagingSourceImpl
-            ) -> Unit
+                pager: TestPager<Int, TestItem>, pagingSource: LimitOffsetPagingSourceImpl,
+            ) -> Unit,
     ) {
         runBlocking { block(TestPager(config, pagingSource), pagingSource) }
     }
@@ -712,7 +712,7 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
         db =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    LimitOffsetTestDb::class.java
+                    LimitOffsetTestDb::class.java,
                 )
                 .setQueryCallback(
                     object : RoomDatabase.QueryCallback {
@@ -804,11 +804,11 @@ class LimitOffsetPagingSourceImpl(
     LimitOffsetPagingSource<TestItem>(
         sourceQuery = RoomRawQuery(sql = queryString),
         db = db,
-        tables = arrayOf(tableName)
+        tables = arrayOf(tableName),
     ) {
     override suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
-        itemCount: Int
+        itemCount: Int,
     ): List<TestItem> {
         return performSuspending(db, isReadOnly = true, inTransaction = false) { connection ->
             connection.prepare(limitOffsetQuery.sql).use { statement ->
@@ -846,9 +846,5 @@ private val CONFIG = PagingConfig(pageSize = 5, enablePlaceholders = true, initi
 private val ITEMS_LIST = createItemsForDb(0, 100)
 
 private fun createItemsForDb(startId: Int, count: Int): List<TestItem> {
-    return List(count) {
-        TestItem(
-            id = it + startId,
-        )
-    }
+    return List(count) { TestItem(id = it + startId) }
 }

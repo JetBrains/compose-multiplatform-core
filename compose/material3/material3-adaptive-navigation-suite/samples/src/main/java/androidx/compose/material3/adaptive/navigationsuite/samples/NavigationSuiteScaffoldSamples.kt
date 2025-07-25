@@ -72,27 +72,27 @@ fun NavigationSuiteScaffoldSample() {
                         Icon(
                             if (selectedItem == index) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(navItem) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
-        }
+        },
     ) {
         // Screen content.
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
                     "Current NavigationSuiteType: $navSuiteType\n" +
                         "Visibility: ${state.currentValue}",
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Button(onClick = { scope.launch { state.toggle() } }) {
                 Text("Hide/show navigation component")
@@ -142,27 +142,27 @@ fun NavigationSuiteScaffoldCustomConfigSample() {
                         Icon(
                             if (selectedItem == index) Icons.Filled.Favorite
                             else Icons.Outlined.FavoriteBorder,
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     },
                     label = { Text(navItem) },
                     selected = selectedItem == index,
-                    onClick = { selectedItem = index }
+                    onClick = { selectedItem = index },
                 )
             }
-        }
+        },
     ) {
         // Screen content.
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 modifier = Modifier.padding(16.dp),
                 text =
                     "Current NavigationSuiteType: $navSuiteType\n" +
                         "Visibility: ${state.currentValue}",
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
             Button(onClick = { scope.launch { state.toggle() } }) {
                 Text("Hide/show navigation component")

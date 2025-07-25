@@ -28,7 +28,7 @@ public class NoOpNavigator() : Navigator<NavDestination>("NoOp") {
         destination: NavDestination,
         args: SavedState?,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?
+        navigatorExtras: Extras?,
     ): NavDestination = destination
 
     override fun popBackStack(): Boolean = true

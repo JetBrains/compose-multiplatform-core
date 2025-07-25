@@ -57,9 +57,9 @@ class ManagedCallsTest : BaseTelecomTest() {
         PhoneAccountHandle(
             ComponentName(
                 "androidx.core.telecom.test",
-                "androidx.core.telecom.test.utils.ManagedConnectionService"
+                "androidx.core.telecom.test.utils.ManagedConnectionService",
             ),
-            "2"
+            "2",
         )
     private val mPhoneAccount =
         PhoneAccount.builder(mPhoneAccountHandle, "ManagedJetpackAcct")
@@ -83,7 +83,7 @@ class ManagedCallsTest : BaseTelecomTest() {
             Uri.parse("tel:" + TestUtils.TEST_PHONE_NUMBER),
             CallAttributesCompat.DIRECTION_OUTGOING,
             CallAttributesCompat.CALL_TYPE_AUDIO_CALL,
-            ALL_CALL_CAPABILITIES
+            ALL_CALL_CAPABILITIES,
         )
 
     @Before
@@ -118,14 +118,14 @@ class ManagedCallsTest : BaseTelecomTest() {
      */
     private suspend fun addManagedCall(
         callAttributes: CallAttributesCompat,
-        deferredConnection: CompletableDeferred<ManagedConnection>
+        deferredConnection: CompletableDeferred<ManagedConnection>,
     ): ManagedConnection {
         val request =
             ManagedConnectionService.PendingConnectionRequest(callAttributes, deferredConnection)
         mManagedConnectionService.createConnectionRequest(
             mTelecomManager,
             mPhoneAccountHandle,
-            request
+            request,
         )
         deferredConnection.await()
         val connection = deferredConnection.getCompleted()

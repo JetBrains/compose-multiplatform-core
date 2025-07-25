@@ -218,21 +218,6 @@ public final class androidx/compose/animation/core/AnimationVectorsKt {
 	public static final fun AnimationVector (FFFF)Landroidx/compose/animation/core/AnimationVector4D;
 }
 
-public final class androidx/compose/animation/core/ArcAnimationSpec : androidx/compose/animation/core/DurationBasedAnimationSpec {
-	public static final field $stable I
-	public synthetic fun <init> (IIILandroidx/compose/animation/core/Easing;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (IIILandroidx/compose/animation/core/Easing;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getDelayMillis ()I
-	public final fun getDurationMillis ()I
-	public final fun getEasing ()Landroidx/compose/animation/core/Easing;
-	public final fun getMode--9T-Mq4 ()I
-	public fun hashCode ()I
-	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedAnimationSpec;
-	public fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedDurationBasedAnimationSpec;
-	public synthetic fun vectorize (Landroidx/compose/animation/core/TwoWayConverter;)Landroidx/compose/animation/core/VectorizedFiniteAnimationSpec;
-}
-
 public final class androidx/compose/animation/core/ArcMode {
 	public static final field Companion Landroidx/compose/animation/core/ArcMode$Companion;
 	public static final synthetic fun box-impl (I)Landroidx/compose/animation/core/ArcMode;
@@ -286,15 +271,6 @@ public final class androidx/compose/animation/core/DecayAnimationSpecKt {
 	public static final fun exponentialDecay (FF)Landroidx/compose/animation/core/DecayAnimationSpec;
 	public static synthetic fun exponentialDecay$default (FFILjava/lang/Object;)Landroidx/compose/animation/core/DecayAnimationSpec;
 	public static final fun generateDecayAnimationSpec (Landroidx/compose/animation/core/FloatDecayAnimationSpec;)Landroidx/compose/animation/core/DecayAnimationSpec;
-}
-
-public final class androidx/compose/animation/core/DeferredTargetAnimation {
-	public static final field $stable I
-	public fun <init> (Landroidx/compose/animation/core/TwoWayConverter;)V
-	public final fun getPendingTarget ()Ljava/lang/Object;
-	public final fun isIdle ()Z
-	public final fun updateTarget (Ljava/lang/Object;Lkotlinx/coroutines/CoroutineScope;Landroidx/compose/animation/core/FiniteAnimationSpec;)Ljava/lang/Object;
-	public static synthetic fun updateTarget$default (Landroidx/compose/animation/core/DeferredTargetAnimation;Ljava/lang/Object;Lkotlinx/coroutines/CoroutineScope;Landroidx/compose/animation/core/FiniteAnimationSpec;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class androidx/compose/animation/core/DurationBasedAnimationSpec : androidx/compose/animation/core/FiniteAnimationSpec {
@@ -697,7 +673,6 @@ public final class androidx/compose/animation/core/Transition {
 	public synthetic fun <init> (Landroidx/compose/animation/core/TransitionState;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAnimations ()Ljava/util/List;
 	public final fun getCurrentState ()Ljava/lang/Object;
-	public final fun getHasInitialValueAnimations ()Z
 	public final fun getLabel ()Ljava/lang/String;
 	public final fun getParentTransition ()Landroidx/compose/animation/core/Transition;
 	public final fun getPlayTimeNanos ()J
@@ -747,7 +722,6 @@ public final class androidx/compose/animation/core/TransitionKt {
 	public static final fun animateRect (Landroidx/compose/animation/core/Transition;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
 	public static final fun animateSize (Landroidx/compose/animation/core/Transition;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
 	public static final fun animateValue (Landroidx/compose/animation/core/Transition;Landroidx/compose/animation/core/TwoWayConverter;Lkotlin/jvm/functions/Function3;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/runtime/State;
-	public static final fun createChildTransition (Landroidx/compose/animation/core/Transition;Ljava/lang/String;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition;
 	public static final fun createChildTransitionInternal (Landroidx/compose/animation/core/Transition;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/String;Landroidx/compose/runtime/Composer;I)Landroidx/compose/animation/core/Transition;
 	public static final fun createDeferredAnimation (Landroidx/compose/animation/core/Transition;Landroidx/compose/animation/core/TwoWayConverter;Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Landroidx/compose/animation/core/Transition$DeferredAnimation;
 	public static final fun createTransitionAnimation (Landroidx/compose/animation/core/Transition;Ljava/lang/Object;Ljava/lang/Object;Landroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/animation/core/TwoWayConverter;Ljava/lang/String;Landroidx/compose/runtime/Composer;I)Landroidx/compose/runtime/State;

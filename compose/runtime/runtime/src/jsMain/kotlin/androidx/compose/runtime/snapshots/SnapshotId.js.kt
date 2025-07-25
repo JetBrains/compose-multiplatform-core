@@ -20,18 +20,18 @@ package androidx.compose.runtime.snapshots
 
 import androidx.collection.mutableDoubleListOf
 
-// TODO https://youtrack.jetbrains.com/issue/CMP-7149/Adopt-non-long-SnapshotId
-
-actual typealias SnapshotId = Double
+public actual typealias SnapshotId = Double
 
 internal actual const val SnapshotIdZero: SnapshotId = 0.0
 internal actual const val SnapshotIdMax: SnapshotId = Double.MAX_VALUE
 internal actual const val SnapshotIdSize: Int = Double.SIZE_BITS
 internal actual const val SnapshotIdInvalidValue: SnapshotId = -1.0
 
-internal actual inline operator fun SnapshotId.compareTo(other: SnapshotId): Int = this.compareTo(other)
+internal actual inline operator fun SnapshotId.compareTo(other: SnapshotId): Int =
+    this.compareTo(other)
 
-internal actual inline operator fun SnapshotId.compareTo(other: Int): Int = this.compareTo(other.toLong())
+internal actual inline operator fun SnapshotId.compareTo(other: Int): Int =
+    this.compareTo(other.toLong())
 
 internal actual inline operator fun SnapshotId.plus(other: Int): SnapshotId = this + other.toLong()
 
@@ -43,11 +43,11 @@ internal actual inline operator fun SnapshotId.div(other: Int): SnapshotId = thi
 
 internal actual inline operator fun SnapshotId.times(other: Int): SnapshotId = this * other.toLong()
 
-actual inline fun SnapshotId.toInt(): Int = this.toInt()
+public actual inline fun SnapshotId.toInt(): Int = this.toInt()
 
-actual inline fun SnapshotId.toLong(): Long = this.toLong()
+public actual inline fun SnapshotId.toLong(): Long = this.toLong()
 
-actual typealias SnapshotIdArray = DoubleArray
+public actual typealias SnapshotIdArray = DoubleArray
 
 internal actual fun snapshotIdArrayWithCapacity(capacity: Int): SnapshotIdArray =
     DoubleArray(capacity)
@@ -93,7 +93,7 @@ internal actual fun SnapshotIdArray.withIdInsertedAt(index: Int, id: SnapshotId)
         destination = newArray,
         destinationOffset = index + 1,
         startIndex = index,
-        endIndex = newSize - 1
+        endIndex = newSize - 1,
     )
     newArray[index] = id
     return newArray
@@ -110,7 +110,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = 0,
             startIndex = 0,
-            endIndex = index
+            endIndex = index,
         )
     }
     if (index < newSize) {
@@ -118,7 +118,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = index,
             startIndex = index + 1,
-            endIndex = newSize + 1
+            endIndex = newSize + 1,
         )
     }
     return newArray

@@ -74,7 +74,7 @@ class LowLightBoostControlDeviceTest {
                     InstrumentationRegistry.getInstrumentation().runOnMainSync {
                         surfaceProvider = SurfaceTextureProvider.createSurfaceTextureProvider()
                     }
-                }
+                },
             )
     }
 

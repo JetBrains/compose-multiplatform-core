@@ -391,7 +391,7 @@ class LazyListSlotsReuseTest {
                 item(contentType = "reuse") { content("1") }
                 items(
                     List(100) { it + 2 },
-                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" }
+                    contentType = { if (it == 10) "reuse" else "not-to-reuse-$it" },
                 ) {
                     content("$it")
                 }

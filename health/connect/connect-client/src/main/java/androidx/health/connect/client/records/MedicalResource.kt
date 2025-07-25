@@ -71,7 +71,7 @@ class MedicalResource(
                     type.toPlatformMedicalResourceType(),
                     dataSourceId,
                     fhirVersion.platformFhirVersion,
-                    fhirResource.platformFhirResource
+                    fhirResource.platformFhirResource,
                 )
                 .build()
         }
@@ -84,7 +84,7 @@ class MedicalResource(
                 "dataSourceId" to dataSourceId,
                 "fhirVersion" to fhirVersion,
                 "fhirResource" to fhirResource,
-            )
+            ),
         )
 
     override fun equals(other: Any?): Boolean {
@@ -176,7 +176,7 @@ class MedicalResource(
             MEDICAL_RESOURCE_TYPE_SOCIAL_HISTORY,
             MEDICAL_RESOURCE_TYPE_VACCINES,
             MEDICAL_RESOURCE_TYPE_VISITS,
-            MEDICAL_RESOURCE_TYPE_VITAL_SIGNS
+            MEDICAL_RESOURCE_TYPE_VITAL_SIGNS,
         )
         @Retention(AnnotationRetention.SOURCE)
         annotation class MedicalResourceType

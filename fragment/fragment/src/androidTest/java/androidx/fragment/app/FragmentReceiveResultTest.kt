@@ -68,7 +68,7 @@ class FragmentReceiveResultTest {
         activityRule.activity.onRequestPermissionsResult(
             0xffff + 2,
             arrayOf("permission"),
-            intArrayOf(1)
+            intArrayOf(1),
         )
     }
 
@@ -164,7 +164,7 @@ class FragmentReceiveResultTest {
         fragment: TestFragment,
         requestCode: Int,
         resultCode: Int,
-        content: String
+        content: String,
     ) {
         val activity = activityRule.activity
         activityRule.runOnUiThread {
@@ -177,7 +177,7 @@ class FragmentReceiveResultTest {
         assertThat(
                 fragment.resultReceiveLatch[fragment.onActivityResultCount].await(
                     1,
-                    TimeUnit.SECONDS
+                    TimeUnit.SECONDS,
                 )
             )
             .isTrue()
@@ -190,7 +190,7 @@ class FragmentReceiveResultTest {
         requestCode: Int,
         resultCode: Int,
         content: String,
-        options: Bundle? = null
+        options: Bundle? = null,
     ) {
         val activity = activityRule.activity
         activityRule.runOnUiThread {
@@ -203,7 +203,7 @@ class FragmentReceiveResultTest {
                     activity,
                     requestCode,
                     intent,
-                    PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_IMMUTABLE,
                 )
 
             try {
@@ -214,7 +214,7 @@ class FragmentReceiveResultTest {
                     0,
                     0,
                     0,
-                    options
+                    options,
                 )
             } catch (e: IntentSender.SendIntentException) {
                 fail("IntentSender failed")

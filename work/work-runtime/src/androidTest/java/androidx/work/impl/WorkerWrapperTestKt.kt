@@ -227,7 +227,7 @@ class WorkerWrapperTestKt {
                 NoOpForegroundProcessor,
                 testEnv.db,
                 spec,
-                emptyList()
+                emptyList(),
             )
             .build()
 

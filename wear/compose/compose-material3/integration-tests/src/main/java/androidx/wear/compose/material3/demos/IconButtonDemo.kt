@@ -85,7 +85,7 @@ fun IconButtonDemo() {
                 FilledIconButton(
                     onClick = {},
                     enabled = false,
-                    colors = IconButtonDefaults.filledVariantIconButtonColors()
+                    colors = IconButtonDefaults.filledVariantIconButtonColors(),
                 ) {
                     FavoriteIcon(ButtonDefaults.IconSize)
                 }
@@ -152,10 +152,7 @@ fun IconButtonDemo() {
 @Composable
 fun IconButtonWithImageDemo() {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButtonWithImageSample(
-            painterResource(R.drawable.card_background),
-            enabled = true,
-        )
+        IconButtonWithImageSample(painterResource(R.drawable.card_background), enabled = true)
         Spacer(modifier = Modifier.width(5.dp))
         IconButtonWithImageSample(painterResource(R.drawable.card_background), enabled = false)
     }
@@ -167,13 +164,10 @@ fun IconButtonWithAnimatedImageDemo() {
         IconButtonWithImageSample(
             painterResource(R.drawable.card_background),
             enabled = true,
-            shapes = IconButtonDefaults.animatedShapes()
+            shapes = IconButtonDefaults.animatedShapes(),
         )
         Spacer(modifier = Modifier.width(5.dp))
-        IconButtonWithImageSample(
-            painterResource(R.drawable.card_background),
-            enabled = false,
-        )
+        IconButtonWithImageSample(painterResource(R.drawable.card_background), enabled = false)
     }
 }
 
@@ -181,7 +175,7 @@ fun IconButtonWithAnimatedImageDemo() {
 private fun IconButtonWithSize(size: Dp) {
     FilledTonalIconButton(
         modifier = Modifier.touchTargetAwareSize(size),
-        onClick = { /* Do something */ }
+        onClick = { /* Do something */ },
     ) {
         FavoriteIcon(IconButtonDefaults.iconSizeFor(size))
     }

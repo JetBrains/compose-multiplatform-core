@@ -35,7 +35,7 @@ internal class ProtoPool(internal val isDebug: Boolean) {
             PooledTracePacketArray(
                 owner = pool,
                 packets = Array(TRACE_PACKET_BUFFER_SIZE) { TraceEvent() },
-                fillCount = 0
+                fillCount = 0,
             )
         }
 

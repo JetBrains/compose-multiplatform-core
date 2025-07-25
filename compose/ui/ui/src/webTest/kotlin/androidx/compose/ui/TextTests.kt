@@ -19,13 +19,12 @@ package androidx.compose.ui
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import kotlin.math.abs
 import kotlin.test.Test
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.test.runTest
 
 class TextTests : OnCanvasTests {
 
@@ -43,9 +42,9 @@ class TextTests : OnCanvasTests {
 
     @Test
     // https://github.com/JetBrains/compose-multiplatform/issues/4078
-    fun baselineShouldBeNotZero() = runTest {
-        val headingOnPositioned = Channel<Float>(10)
-        val subtitleOnPositioned = Channel<Float>(10)
+    fun baselineShouldBeNotZero() = runApplicationTest {
+        val headingOnPositioned = mutableStateOf(10f)
+        val subtitleOnPositioned = mutableStateOf(10f)
 
         createComposeWindow {
             val density = LocalDensity.current.density
@@ -54,7 +53,7 @@ class TextTests : OnCanvasTests {
                     "Heading",
                     modifier = Modifier.alignByBaseline()
                         .onGloballyPositioned {
-                            headingOnPositioned.sendFromScope(it[FirstBaseline] / density)
+                            headingOnPositioned.value = it[FirstBaseline] / density
                         },
                     style = MaterialTheme.typography.h4
                 )
@@ -62,17 +61,16 @@ class TextTests : OnCanvasTests {
                     " — Subtitle",
                     modifier = Modifier.alignByBaseline()
                         .onGloballyPositioned {
-                            subtitleOnPositioned.sendFromScope(it[FirstBaseline] / density)
+                            subtitleOnPositioned.value = it[FirstBaseline] / density
                         },
                     style = MaterialTheme.typography.subtitle1
                 )
             }
         }
 
-        val headingAlignment = headingOnPositioned.receive()
-        val subtitleAlignment = subtitleOnPositioned.receive()
+        awaitIdle()
 
-        assertApproximatelyEqual(29f, headingAlignment)
-        assertApproximatelyEqual(17.5f, subtitleAlignment)
+        assertApproximatelyEqual(29f, headingOnPositioned.value)
+        assertApproximatelyEqual(17.5f, subtitleOnPositioned.value)
     }
 }

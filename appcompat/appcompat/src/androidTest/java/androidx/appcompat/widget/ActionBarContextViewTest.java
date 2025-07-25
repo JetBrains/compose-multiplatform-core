@@ -16,6 +16,9 @@
 
 package androidx.appcompat.widget;
 
+import static android.view.View.LAYOUT_DIRECTION_LTR;
+import static android.view.View.LAYOUT_DIRECTION_RTL;
+
 import static org.junit.Assert.assertEquals;
 
 import android.view.View;
@@ -52,7 +55,7 @@ public class ActionBarContextViewTest {
     }
 
     @Test
-    public void testOnMeasure_externalVerticalPadding() {
+    public void testOnMeasure_setPaddingForInsets() {
         mActivityTestRule.getScenario().onActivity(activity -> {
             final ActionBarContextView view = new ActionBarContextView(activity);
 
@@ -62,14 +65,127 @@ public class ActionBarContextViewTest {
             assertEquals(30, view.getPaddingRight());
             assertEquals(40, view.getPaddingBottom());
 
-            view.setPadding(15, 25, 35, 45);
+            view.setPaddingForInsets(1, 2, 3, 4);
 
             view.measure(
                     View.MeasureSpec.makeMeasureSpec(1000, View.MeasureSpec.EXACTLY),
                     View.MeasureSpec.makeMeasureSpec(2000, View.MeasureSpec.AT_MOST));
 
-            // 210 = 200 (content height) + 5 (external top padding) + 5 (external bottom padding)
-            assertEquals(210, view.getMeasuredHeight());
+            // 206 = 200 (content height) + 2 (insets padding top) + 4 (insets padding bottom)
+            assertEquals(206, view.getMeasuredHeight());
+        });
+    }
+
+    @Test
+    public void testSetPadding() {
+        mActivityTestRule.getScenario().onActivity(activity -> {
+            final ActionBarContextView view = new ActionBarContextView(activity);
+
+            // The values are specified in actionModeStyle
+            assertEquals(10, view.getPaddingLeft());
+            assertEquals(20, view.getPaddingTop());
+            assertEquals(30, view.getPaddingRight());
+            assertEquals(40, view.getPaddingBottom());
+
+            view.setPaddingForInsets(1, 2, 3, 4);
+
+            // setPaddingForInsets must not overwrite the padding specified in actionModeStyle.
+            assertEquals(11, view.getPaddingLeft());
+            assertEquals(22, view.getPaddingTop());
+            assertEquals(33, view.getPaddingRight());
+            assertEquals(44, view.getPaddingBottom());
+
+            view.setPadding(50, 60, 70, 80);
+
+            // setPadding must not overwrite the padding set by setPaddingForInsets.
+            assertEquals(51, view.getPaddingLeft());
+            assertEquals(62, view.getPaddingTop());
+            assertEquals(73, view.getPaddingRight());
+            assertEquals(84, view.getPaddingBottom());
+
+            view.setPaddingForInsets(5, 6, 7, 8);
+
+            // setPaddingForInsets must not overwrite the padding set by setPadding.
+            assertEquals(55, view.getPaddingLeft());
+            assertEquals(66, view.getPaddingTop());
+            assertEquals(77, view.getPaddingRight());
+            assertEquals(88, view.getPaddingBottom());
+        });
+    }
+
+    @Test
+    public void setPaddingRelative_ltr() {
+        mActivityTestRule.getScenario().onActivity(activity -> {
+            final ActionBarContextView view = new ActionBarContextView(activity);
+            view.setLayoutDirection(LAYOUT_DIRECTION_LTR);
+
+            // The values are specified in actionModeStyle
+            assertEquals(10, view.getPaddingLeft());
+            assertEquals(20, view.getPaddingTop());
+            assertEquals(30, view.getPaddingRight());
+            assertEquals(40, view.getPaddingBottom());
+
+            view.setPaddingForInsets(1, 2, 3, 4);
+
+            // setPaddingForInsets must not overwrite the padding specified in actionModeStyle.
+            assertEquals(11, view.getPaddingLeft());
+            assertEquals(22, view.getPaddingTop());
+            assertEquals(33, view.getPaddingRight());
+            assertEquals(44, view.getPaddingBottom());
+
+            view.setPaddingRelative(50, 60, 70, 80);
+
+            // setPaddingRelative must not overwrite the padding set by setPaddingForInsets.
+            assertEquals(51, view.getPaddingLeft());
+            assertEquals(62, view.getPaddingTop());
+            assertEquals(73, view.getPaddingRight());
+            assertEquals(84, view.getPaddingBottom());
+
+            view.setPaddingForInsets(5, 6, 7, 8);
+
+            // setPaddingForInsets must not overwrite the padding set by setPaddingRelative.
+            assertEquals(55, view.getPaddingLeft());
+            assertEquals(66, view.getPaddingTop());
+            assertEquals(77, view.getPaddingRight());
+            assertEquals(88, view.getPaddingBottom());
+        });
+    }
+
+    @Test
+    public void setPaddingRelative_rtl() {
+        mActivityTestRule.getScenario().onActivity(activity -> {
+            final ActionBarContextView view = new ActionBarContextView(activity);
+            view.setLayoutDirection(LAYOUT_DIRECTION_RTL);
+
+            // The values are specified in actionModeStyle
+            assertEquals(10, view.getPaddingLeft());
+            assertEquals(20, view.getPaddingTop());
+            assertEquals(30, view.getPaddingRight());
+            assertEquals(40, view.getPaddingBottom());
+
+            view.setPaddingForInsets(1, 2, 3, 4);
+
+            // setPaddingForInsets must not overwrite the padding specified in actionModeStyle.
+            assertEquals(11, view.getPaddingLeft());
+            assertEquals(22, view.getPaddingTop());
+            assertEquals(33, view.getPaddingRight());
+            assertEquals(44, view.getPaddingBottom());
+
+            view.setPaddingRelative(50, 60, 70, 80);
+
+            // setPaddingRelative must not overwrite the padding set by setPaddingForInsets.
+            assertEquals(71, view.getPaddingLeft());
+            assertEquals(62, view.getPaddingTop());
+            assertEquals(53, view.getPaddingRight());
+            assertEquals(84, view.getPaddingBottom());
+
+            view.setPaddingForInsets(5, 6, 7, 8);
+
+            // setPaddingForInsets must not overwrite the padding set by setPaddingRelative.
+            assertEquals(75, view.getPaddingLeft());
+            assertEquals(66, view.getPaddingTop());
+            assertEquals(57, view.getPaddingRight());
+            assertEquals(88, view.getPaddingBottom());
         });
     }
 }

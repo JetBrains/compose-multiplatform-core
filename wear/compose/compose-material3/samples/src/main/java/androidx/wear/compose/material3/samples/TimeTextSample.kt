@@ -56,7 +56,7 @@ fun TimeTextWithStatusEllipsized() {
         curvedText(
             "Long status that should be ellipsized.",
             CurvedModifier.weight(1f),
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
         )
         timeTextSeparator(style)
         timeTextCurvedText(time)

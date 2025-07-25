@@ -56,7 +56,7 @@ internal class SdkCodeGenerator(
     private val api: ParsedApi,
     private val aidlCompilerPath: Path,
     private val frameworkAidlPath: Path?,
-    private val sandboxApiVersion: SandboxApiVersion
+    private val sandboxApiVersion: SandboxApiVersion,
 ) {
     private val binderCodeConverter = ServerBinderCodeConverter(api)
     private val target = GenerationTarget.SERVER
@@ -82,7 +82,7 @@ internal class SdkCodeGenerator(
             AidlGenerator.generate(
                     AidlCompiler(aidlCompilerPath, frameworkAidlPath),
                     api,
-                    workingDir
+                    workingDir,
                 )
                 .forEach { source ->
                     // Sources created by the AIDL compiler have to be copied to files created
@@ -92,7 +92,7 @@ internal class SdkCodeGenerator(
                             Dependencies.ALL_FILES,
                             source.packageName,
                             source.interfaceName,
-                            extensionName = "java"
+                            extensionName = "java",
                         )
                     kspGeneratedFile.use { outputStream ->
                         source.file.inputStream().use { inputStream ->

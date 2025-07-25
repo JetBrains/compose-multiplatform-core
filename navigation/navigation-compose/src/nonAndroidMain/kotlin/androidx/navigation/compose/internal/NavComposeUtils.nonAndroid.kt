@@ -66,7 +66,7 @@ internal actual class BackEventCompat(
 @Composable
 internal actual fun PredictiveBackHandler(
     enabled: Boolean,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
+    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
 ) {
     androidx.compose.ui.backhandler.PredictiveBackHandler(enabled) { progress ->
         onBack(progress.map { BackEventCompat(it.touchX, it.touchY, it.progress, it.swipeEdge) })
