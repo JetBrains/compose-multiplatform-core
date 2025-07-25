@@ -19,8 +19,6 @@ package androidx.compose.ui.platform
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 
 internal class UIKitWindowInsets: PlatformWindowInsets {
