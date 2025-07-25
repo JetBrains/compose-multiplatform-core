@@ -17,7 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.InternalComposeUiApi
 
 @InternalComposeUiApi
