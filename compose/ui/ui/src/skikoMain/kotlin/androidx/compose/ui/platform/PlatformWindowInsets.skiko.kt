@@ -36,28 +36,28 @@ interface PlatformWindowInsets {
 }
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeDrawing: PlatformInsets get() = InnermostPlatformInsets(
-    arrayOf(statusBars, navigationBars, captionBar, displayCutout, ime, systemBars, tappableElement)
+val PlatformWindowInsets.safeDrawing: PlatformInsets get() = PlatformInsets(
+    left = maxOf(statusBars.left, navigationBars.left, captionBar.left, displayCutout.left, ime.left, systemBars.left, tappableElement.left),
+    top = maxOf(statusBars.top, navigationBars.top, captionBar.top, displayCutout.top, ime.top, systemBars.top, tappableElement.top),
+    right = maxOf(statusBars.right, navigationBars.right, captionBar.right, displayCutout.right, ime.right, systemBars.right, tappableElement.right),
+    bottom = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, displayCutout.bottom, ime.bottom, systemBars.bottom, tappableElement.bottom)
 )
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeGestures: PlatformInsets get() = InnermostPlatformInsets(
-    arrayOf(mandatorySystemGestures, systemGestures, tappableElement, waterfall)
+val PlatformWindowInsets.safeGestures: PlatformInsets get() = PlatformInsets(
+    left = maxOf(mandatorySystemGestures.left, systemGestures.left, tappableElement.left, waterfall.left),
+    top = maxOf(mandatorySystemGestures.top, systemGestures.top, tappableElement.top, waterfall.top),
+    right = maxOf(mandatorySystemGestures.right, systemGestures.right, tappableElement.right, waterfall.right),
+    bottom = maxOf(mandatorySystemGestures.bottom, systemGestures.bottom, tappableElement.bottom, waterfall.bottom)
 )
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeContent: PlatformInsets get() = InnermostPlatformInsets(
-    arrayOf(statusBars, navigationBars, captionBar, ime, systemGestures, mandatorySystemGestures, tappableElement, displayCutout, waterfall)
+val PlatformWindowInsets.safeContent: PlatformInsets get() = PlatformInsets(
+    left = maxOf(statusBars.left, navigationBars.left, captionBar.left, ime.left, systemGestures.left, mandatorySystemGestures.left, tappableElement.left, displayCutout.left, waterfall.left),
+    top = maxOf(statusBars.top, navigationBars.top, captionBar.top, ime.top, systemGestures.top, mandatorySystemGestures.top, tappableElement.top, displayCutout.top, waterfall.top),
+    right = maxOf(statusBars.right, navigationBars.right, captionBar.right, ime.right, systemGestures.right, mandatorySystemGestures.right, tappableElement.right, displayCutout.right, waterfall.right),
+    bottom = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, ime.bottom, systemGestures.bottom, mandatorySystemGestures.bottom, tappableElement.bottom, displayCutout.bottom, waterfall.bottom)
 )
-
-private class InnermostPlatformInsets(
-    val insets: Array<out PlatformInsets>
-): PlatformInsets {
-    override val left: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.left }
-    override val top: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.top }
-    override val right: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.right }
-    override val bottom: Int get() = if (insets.isEmpty()) 0 else insets.maxOf { it.bottom }
-}
 
 /**
  * This class represents platform insets.
