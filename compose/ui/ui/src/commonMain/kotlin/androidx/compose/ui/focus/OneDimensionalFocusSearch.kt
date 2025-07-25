@@ -18,6 +18,8 @@ package androidx.compose.ui.focus
 
 import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusDirection.Companion.Next
 import androidx.compose.ui.focus.FocusDirection.Companion.Previous
 import androidx.compose.ui.focus.FocusStateImpl.Active
@@ -40,7 +42,7 @@ private const val NoActiveChild = "ActiveParent must have a focusedChild"
 
 internal fun FocusTargetNode.oneDimensionalFocusSearch(
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean,
+    onFound: (FocusTargetNode) -> Boolean
 ): Boolean =
     when (direction) {
         Next -> forwardFocusSearch(onFound)
@@ -105,17 +107,23 @@ private fun FocusTargetNode.backwardFocusSearch(onFound: (FocusTargetNode) -> Bo
 private fun FocusTargetNode.generateAndSearchChildren(
     focusedItem: FocusTargetNode,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean,
+    onFound: (FocusTargetNode) -> Boolean
 ): Boolean {
     // Search among the currently available children.
     if (searchChildren(focusedItem, direction, onFound)) {
         return true
     }
 
+    val focusTransactionManager = requireTransactionManager()
+    val generationBeforeSearch = focusTransactionManager.generation
     val activeNodeBeforeSearch = requireOwner().focusOwner.activeFocusTargetNode
     // Generate more items until searchChildren() finds a result.
     return searchBeyondBounds(direction) {
-        if (activeNodeBeforeSearch !== requireOwner().focusOwner.activeFocusTargetNode) {
+        if (
+            generationBeforeSearch != focusTransactionManager.generation ||
+                (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled &&
+                    activeNodeBeforeSearch !== requireOwner().focusOwner.activeFocusTargetNode)
+        ) {
             // A new focus change was triggered during searchBeyondBounds.
             true
         } else {
@@ -132,7 +140,7 @@ private fun FocusTargetNode.generateAndSearchChildren(
 private fun FocusTargetNode.searchChildren(
     focusedItem: FocusTargetNode,
     direction: FocusDirection,
-    onFound: (FocusTargetNode) -> Boolean,
+    onFound: (FocusTargetNode) -> Boolean
 ): Boolean {
     check(focusState == ActiveParent) {
         "This function should only be used within a parent that has focus."

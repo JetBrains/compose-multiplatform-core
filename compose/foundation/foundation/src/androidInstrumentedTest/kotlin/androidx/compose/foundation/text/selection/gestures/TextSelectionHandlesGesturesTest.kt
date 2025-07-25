@@ -86,11 +86,15 @@ internal class TextSelectionHandlesGesturesTest : AbstractSelectionGesturesTest(
         SelectionContainer(
             selection = currentSelection.value,
             onSelectionChange = { currentSelection.value = it },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth()
         ) {
             BasicText(
                 text = textContent.value,
-                style = TextStyle(fontFamily = fontFamily, fontSize = fontSize),
+                style =
+                    TextStyle(
+                        fontFamily = fontFamily,
+                        fontSize = fontSize,
+                    ),
                 modifier = Modifier.fillMaxWidth().wrapContentHeight().testTag(pointerAreaTag),
             )
         }

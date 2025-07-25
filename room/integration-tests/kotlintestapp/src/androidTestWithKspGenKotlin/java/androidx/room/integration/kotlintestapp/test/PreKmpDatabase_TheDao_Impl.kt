@@ -26,7 +26,9 @@ import kotlin.jvm.JvmStatic
 @Suppress(
     names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "RestrictedApiAndroidX"]
 )
-public class PreKmpDatabase_TheDao_Impl(__db: RoomDatabase) : PreKmpDatabase.TheDao {
+public class PreKmpDatabase_TheDao_Impl(
+    __db: RoomDatabase,
+) : PreKmpDatabase.TheDao {
     private val __db: RoomDatabase
 
     private val __insertionAdapterOfTheEntity: EntityInsertionAdapter<PreKmpDatabase.TheEntity>
@@ -44,7 +46,7 @@ public class PreKmpDatabase_TheDao_Impl(__db: RoomDatabase) : PreKmpDatabase.The
 
                 protected override fun bind(
                     statement: SupportSQLiteStatement,
-                    entity: PreKmpDatabase.TheEntity,
+                    entity: PreKmpDatabase.TheEntity
                 ) {
                     statement.bindLong(1, entity.id)
                     statement.bindString(2, entity.text)

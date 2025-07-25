@@ -56,7 +56,12 @@ fun ToggleChipWithSwitch() {
             ToggleChipDefaults.toggleChipColors(
                 uncheckedToggleControlColor = ToggleChipDefaults.SwitchUncheckedIconColor
             ),
-        toggleControl = { Switch(checked = checked, enabled = true) },
+        toggleControl = {
+            Switch(
+                checked = checked,
+                enabled = true,
+            )
+        },
         onCheckedChange = { checked = it },
         appIcon = {
             Icon(
@@ -78,7 +83,12 @@ fun SplitToggleChipWithCheckbox() {
     SplitToggleChip(
         label = { Text("Split with CheckboxIcon", maxLines = 3, overflow = TextOverflow.Ellipsis) },
         checked = checked,
-        toggleControl = { Checkbox(checked = checked, enabled = true) },
+        toggleControl = {
+            Checkbox(
+                checked = checked,
+                enabled = true,
+            )
+        },
         onCheckedChange = { checked = it },
         onClick = {
             /* Do something */

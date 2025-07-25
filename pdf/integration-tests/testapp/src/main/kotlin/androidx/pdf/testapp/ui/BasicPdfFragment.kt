@@ -52,14 +52,17 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        pdfViewerFragment =
-            childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG) as PdfViewerFragmentV1?
+        if (pdfViewerFragment == null) {
+            pdfViewerFragment =
+                childFragmentManager.findFragmentByTag(PDF_VIEWER_FRAGMENT_TAG)
+                    as PdfViewerFragmentV1?
+        }
     }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?,
+        savedInstanceState: Bundle?
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
 
@@ -94,7 +97,7 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
                 BundleCompat.getSerializable<FragmentType>(
                     it,
                     FRAGMENT_TYPE_KEY,
-                    FragmentType::class.java,
+                    FragmentType::class.java
                 )
             }
 
@@ -154,7 +157,7 @@ class BasicPdfFragment : Fragment(), OpCancellationHandler {
 
         enum class FragmentType {
             BASIC_FRAGMENT,
-            STYLED_FRAGMENT,
+            STYLED_FRAGMENT
         }
 
         fun newInstance(

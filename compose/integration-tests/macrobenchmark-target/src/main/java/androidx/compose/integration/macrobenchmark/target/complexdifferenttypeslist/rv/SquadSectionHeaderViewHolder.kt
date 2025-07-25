@@ -22,7 +22,9 @@ import androidx.compose.integration.macrobenchmark.target.complexdifferenttypesl
 import androidx.compose.integration.macrobenchmark.target.complexdifferenttypeslist.model.ui.SectionHeaderUiModel
 import androidx.compose.integration.macrobenchmark.target.databinding.ItemSquadSectionHeaderBinding
 
-class SquadSectionHeaderViewHolder(parent: ViewGroup) :
+class SquadSectionHeaderViewHolder(
+    parent: ViewGroup,
+) :
     BaseViewBindingHolder<ItemSquadSectionHeaderBinding, SectionHeaderUiModel>(
         parent.inflateBinding(ItemSquadSectionHeaderBinding::inflate)
     ) {

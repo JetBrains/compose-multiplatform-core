@@ -38,8 +38,8 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
@@ -49,7 +49,6 @@ import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.height
-import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.subspace.layout.width
@@ -65,7 +64,6 @@ class AnimationExplorationApp : ComponentActivity() {
             val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp
             val desiredHeight = 150.dp
-            val zOffset = -30.dp
 
             // Main Panel content.
             Box(
@@ -100,8 +98,6 @@ class AnimationExplorationApp : ComponentActivity() {
                         modifier =
                             SubspaceModifier.width(desiredWidth)
                                 .height(desiredHeight)
-                                // Middle panel is also the far back panel.
-                                .offset(z = zOffset * 2)
                                 .alpha(animatedAlpha.value)
                                 .testTag("FadeInPanel")
                     ) {
@@ -109,7 +105,7 @@ class AnimationExplorationApp : ComponentActivity() {
                             "Faded in content",
                             "Show side Panel",
                             !showSidePanel,
-                            toggleSidePanel,
+                            toggleSidePanel
                         )
                     }
 
@@ -131,15 +127,13 @@ class AnimationExplorationApp : ComponentActivity() {
                             modifier =
                                 SubspaceModifier.width(desiredWidth)
                                     .height(desiredHeight)
-                                    // Right panel is in the middle along z.
-                                    .offset(z = zOffset)
                                     .scale(sidePanelAnimatedScale.value)
                         ) {
                             PanelContent(
                                 "Grown content",
                                 "Hide side panel",
                                 showSidePanel,
-                                toggleSidePanel,
+                                toggleSidePanel
                             )
                         }
                     }
@@ -164,7 +158,7 @@ class AnimationExplorationApp : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
-                Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                Orbiter(position = OrbiterEdge.Top, offset = 5.dp) {
                     Text(
                         text = text,
                         fontSize = 20.sp,
@@ -174,7 +168,7 @@ class AnimationExplorationApp : ComponentActivity() {
                     )
                 }
                 if (showButton) {
-                    SpatialElevation(elevation = SpatialElevationLevel.Level3) {
+                    SpatialElevation(spatialElevationLevel = SpatialElevationLevel.Level3) {
                         Button(onClick = buttonOnClick) { Text(text = buttonText) }
                     }
                 }

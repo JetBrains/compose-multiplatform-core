@@ -24,10 +24,10 @@ import androidx.appfunctions.compiler.core.AppFunctionTypeReference.Companion.is
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
-import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
-import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
-import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
@@ -54,7 +54,6 @@ data class AnnotatedAppFunctions(
         }
     }
 
-    // TODO(b/410746104): Re-evaluate the validation pipeline.
     /**
      * Validates if the AppFunction implementation is valid.
      *
@@ -133,9 +132,10 @@ data class AnnotatedAppFunctions(
      * The format of the identifier is `packageName.className#methodName`.
      */
     fun getAppFunctionIdentifier(functionDeclaration: KSFunctionDeclaration): String {
-        val fullClassName = classDeclaration.toClassName()
+        val packageName = classDeclaration.packageName.asString()
+        val className = classDeclaration.simpleName.asString()
         val methodName = functionDeclaration.simpleName.asString()
-        return "$fullClassName#${methodName}"
+        return "${packageName}.${className}#${methodName}"
     }
 
     /**
@@ -188,7 +188,10 @@ data class AnnotatedAppFunctions(
 
     /** Gets the [classDeclaration]'s [ClassName]. */
     fun getEnclosingClassName(): ClassName {
-        return classDeclaration.toClassName()
+        return ClassName(
+            classDeclaration.packageName.asString(),
+            classDeclaration.simpleName.asString(),
+        )
     }
 
     /**
@@ -231,12 +234,6 @@ data class AnnotatedAppFunctions(
                 parameters = parameterTypeMetadataList,
                 response = AppFunctionResponseMetadata(valueType = responseTypeMetadata),
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
-                description =
-                    if (appFunctionAnnotationProperties.isDescribedByKdoc == true) {
-                        functionDeclaration.docString.orEmpty()
-                    } else {
-                        ""
-                    },
             )
         }
     }
@@ -258,7 +255,7 @@ data class AnnotatedAppFunctions(
                 ?.findAnnotation(AppFunctionSchemaDefinitionAnnotation.CLASS_NAME)
         return computeAppFunctionAnnotationProperties(
             appFunctionAnnotation = appFunctionAnnotation,
-            schemaDefinitionAnnotation = schemaDefinitionAnnotation,
+            schemaDefinitionAnnotation = schemaDefinitionAnnotation
         )
     }
 
@@ -286,7 +283,9 @@ data class AnnotatedAppFunctions(
         val appFunctionSerializableClassDeclaration =
             appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
                 as KSClassDeclaration
-        return AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
+        return AnnotatedAppFunctionSerializable(
+                appFunctionSerializableClassDeclaration,
+            )
             .parameterizedBy(appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments)
             .validate()
     }

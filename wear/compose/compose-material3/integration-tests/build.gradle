@@ -58,8 +58,5 @@ android {
     defaultConfig {
         minSdk = 25
     }
-    aaptOptions {
-        noCompress "ttf"
-    }
     namespace = "androidx.wear.compose.material3.demos"
 }

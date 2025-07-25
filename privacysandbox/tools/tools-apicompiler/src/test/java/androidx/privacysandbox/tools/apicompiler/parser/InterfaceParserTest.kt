@@ -68,11 +68,14 @@ class InterfaceParserTest {
                                             name = "doStuff",
                                             parameters =
                                                 listOf(
-                                                    Parameter(name = "x", type = Types.int),
+                                                    Parameter(
+                                                        name = "x",
+                                                        type = Types.int,
+                                                    ),
                                                     Parameter(
                                                         name = "y",
                                                         type = Types.int.asNullable(),
-                                                    ),
+                                                    )
                                                 ),
                                             returnType = Types.string,
                                             isSuspend = true,
@@ -94,8 +97,8 @@ class InterfaceParserTest {
                                             parameters = listOf(),
                                             returnType = Types.unit,
                                             isSuspend = false,
-                                        ),
-                                    ),
+                                        )
+                                    )
                             )
                         )
                 )
@@ -114,7 +117,7 @@ class InterfaceParserTest {
                     interface MySdk {
                         suspend fun doStuff(): MyUiInterface
                     }
-                """,
+                """
             )
         val interfaceSource =
             Source.kotlin(
@@ -133,7 +136,7 @@ class InterfaceParserTest {
                     |interface MySharedUiInterface : ShUiAdapter {
                     |}
                 """
-                    .trimMargin(),
+                    .trimMargin()
             )
         assertThat(parseSources(serviceSource, interfaceSource))
             .isEqualTo(
@@ -150,11 +153,11 @@ class InterfaceParserTest {
                                             returnType =
                                                 Type(
                                                     packageName = "com.mysdk",
-                                                    simpleName = "MyUiInterface",
+                                                    simpleName = "MyUiInterface"
                                                 ),
                                             isSuspend = true,
-                                        )
-                                    ),
+                                        ),
+                                    )
                             )
                         ),
                     interfaces =
@@ -163,18 +166,18 @@ class InterfaceParserTest {
                                 type =
                                     Type(packageName = "com.mysdk", simpleName = "MyUiInterface"),
                                 superTypes = listOf(Types.sandboxedUiAdapter),
-                                methods = listOf(),
+                                methods = listOf()
                             ),
                             AnnotatedInterface(
                                 type =
                                     Type(
                                         packageName = "com.mysdk",
-                                        simpleName = "MySharedUiInterface",
+                                        simpleName = "MySharedUiInterface"
                                     ),
                                 superTypes = listOf(Types.sharedUiAdapter),
-                                methods = listOf(),
-                            ),
-                        ),
+                                methods = listOf()
+                            )
+                        )
                 )
             )
     }
@@ -191,7 +194,7 @@ class InterfaceParserTest {
                     abstract class MySdk {  // Fails because it's a class, not an interface.
                         abstract fun doStuff(x: Int, y: Int): String
                     }
-                """,
+                """
             )
 
         checkSourceFails(source)
@@ -208,7 +211,7 @@ class InterfaceParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk
-                """,
+                """
             )
         val source2 =
             Source.kotlin(
@@ -218,7 +221,7 @@ class InterfaceParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk2
-                """,
+                """
             )
 
         checkSourceFails(source, source2)
@@ -269,7 +272,7 @@ class InterfaceParserTest {
             .containsExactlyErrors(
                 "Error in com.mysdk.MySdk: companion object cannot declare non-const values (nonConstVal).",
                 "Error in com.mysdk.MySdk: companion object cannot declare methods (method).",
-                "Error in com.mysdk.MySdk: companion object cannot declare classes (InnerClass).",
+                "Error in com.mysdk.MySdk: companion object cannot declare classes (InnerClass)."
             )
     }
 
@@ -389,7 +392,7 @@ class InterfaceParserTest {
                     @PrivacySandboxInterface
                     interface MyInterface : FooInterface {
                         suspend fun foo(): Int
-                    }""",
+                    }"""
             )
         checkSourceFails(source)
             .containsExactlyErrors(
@@ -419,7 +422,7 @@ class InterfaceParserTest {
                     @PrivacySandboxInterface
                     interface MyInterface : B, C, D, A {
                         suspend fun foo(): Int
-                    }""",
+                    }"""
             )
         checkSourceFails(source)
             .containsExactlyErrors(
@@ -445,7 +448,7 @@ class InterfaceParserTest {
 
                     @PrivacySandboxInterface
                     interface MyInterface : SUiAdapter, ShUiAdapter {
-                    }""",
+                    }"""
             )
         checkSourceFails(source)
             .containsExactlyErrors(
@@ -470,7 +473,7 @@ class InterfaceParserTest {
 
                     @PrivacySandboxCallback
                     interface MyCallback : FooInterface {}
-            """,
+            """
             )
         checkSourceFails(source)
             .containsExactlyErrors(
@@ -517,7 +520,7 @@ class InterfaceParserTest {
             .containsExactlyErrors(
                 "Error in com.mysdk.MySdk.foo: only primitives, lists, data/enum classes " +
                     "annotated with @PrivacySandboxValue, interfaces annotated with " +
-                    "@PrivacySandboxCallback or @PrivacySandboxInterface, SandboxedUiAdapters and " +
+                    "@PrivacySandboxCallback or @PrivacySandboxInterface, and " +
                     "SdkActivityLaunchers are supported as parameter types."
             )
     }
@@ -537,7 +540,7 @@ class InterfaceParserTest {
                 "Error in com.mysdk.MySdk.foo: only primitives, lists, data/enum classes " +
                     "annotated with @PrivacySandboxValue, interfaces annotated with " +
                     "@PrivacySandboxCallback " +
-                    "or @PrivacySandboxInterface, SandboxedUiAdapters and " +
+                    "or @PrivacySandboxInterface, and " +
                     "SdkActivityLaunchers are supported as parameter types."
             )
     }
@@ -556,12 +559,12 @@ class InterfaceParserTest {
                     }
 
                     class CustomClass
-                """,
+                """
             )
         checkSourceFails(source)
             .containsExactlyErrors(
                 "Error in com.mysdk.MySdk.foo: only primitives, lists, data/enum classes annotated " +
-                    "with @PrivacySandboxValue, interfaces annotated with @PrivacySandboxInterface, SandboxedUiAdapters " +
+                    "with @PrivacySandboxValue, interfaces annotated with @PrivacySandboxInterface, " +
                     "and SdkActivityLaunchers are supported as return types."
             )
     }
@@ -576,7 +579,7 @@ class InterfaceParserTest {
                     import androidx.privacysandbox.tools.PrivacySandboxService
                     @PrivacySandboxService
                     interface MySdk
-                """,
+                """
             )
         val callbackSource =
             Source.kotlin(
@@ -588,7 +591,7 @@ class InterfaceParserTest {
                     interface MyCallback {
                         fun onComplete(x: Int, y: Int)
                     }
-                """,
+                """
             )
         assertThat(parseSources(serviceSource, callbackSource))
             .isEqualTo(
@@ -596,7 +599,7 @@ class InterfaceParserTest {
                     services =
                         setOf(
                             AnnotatedInterface(
-                                type = Type(packageName = "com.mysdk", simpleName = "MySdk")
+                                type = Type(packageName = "com.mysdk", simpleName = "MySdk"),
                             )
                         ),
                     callbacks =
@@ -609,15 +612,21 @@ class InterfaceParserTest {
                                             name = "onComplete",
                                             parameters =
                                                 listOf(
-                                                    Parameter(name = "x", type = Types.int),
-                                                    Parameter(name = "y", type = Types.int),
+                                                    Parameter(
+                                                        name = "x",
+                                                        type = Types.int,
+                                                    ),
+                                                    Parameter(
+                                                        name = "y",
+                                                        type = Types.int,
+                                                    )
                                                 ),
                                             returnType = Types.unit,
                                             isSuspend = false,
-                                        )
-                                    ),
+                                        ),
+                                    )
                             )
-                        ),
+                        )
                 )
             )
     }
@@ -634,7 +643,7 @@ class InterfaceParserTest {
                     interface MySdk {
                         suspend fun doStuff(request: MyInterface): MyInterface
                     }
-                """,
+                """
             )
         val interfaceSource =
             Source.kotlin(
@@ -646,7 +655,7 @@ class InterfaceParserTest {
                     interface MyInterface {
                         suspend fun doMoreStuff(x: Int, y: Int): String
                     }
-                """,
+                """
             )
         assertThat(parseSources(serviceSource, interfaceSource))
             .isEqualTo(
@@ -666,18 +675,18 @@ class InterfaceParserTest {
                                                         type =
                                                             Type(
                                                                 packageName = "com.mysdk",
-                                                                simpleName = "MyInterface",
+                                                                simpleName = "MyInterface"
                                                             ),
                                                     )
                                                 ),
                                             returnType =
                                                 Type(
                                                     packageName = "com.mysdk",
-                                                    simpleName = "MyInterface",
+                                                    simpleName = "MyInterface"
                                                 ),
                                             isSuspend = true,
-                                        )
-                                    ),
+                                        ),
+                                    )
                             )
                         ),
                     interfaces =
@@ -690,15 +699,21 @@ class InterfaceParserTest {
                                             name = "doMoreStuff",
                                             parameters =
                                                 listOf(
-                                                    Parameter(name = "x", type = Types.int),
-                                                    Parameter(name = "y", type = Types.int),
+                                                    Parameter(
+                                                        name = "x",
+                                                        type = Types.int,
+                                                    ),
+                                                    Parameter(
+                                                        name = "y",
+                                                        type = Types.int,
+                                                    )
                                                 ),
                                             returnType = Types.string,
                                             isSuspend = true,
-                                        )
-                                    ),
+                                        ),
+                                    )
                             )
-                        ),
+                        )
                 )
             )
     }
@@ -711,7 +726,7 @@ class InterfaceParserTest {
             import androidx.privacysandbox.tools.PrivacySandboxService
             @PrivacySandboxService
             $declaration
-        """,
+        """
         )
 
     private fun serviceMethod(declaration: String) =

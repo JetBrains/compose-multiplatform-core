@@ -24,10 +24,8 @@ import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
@@ -35,15 +33,9 @@ import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
-import androidx.xr.scenecore.SpatialPointerComponent
-import androidx.xr.scenecore.SpatialPointerIcon
+import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.scene
-import java.nio.file.Paths
-import kotlinx.coroutines.launch
 
-@Suppress("Deprecation")
-// TODO - b/421386891: is/setHidden is deprecated; this activity needs to be updated to use
-// is/setEnabled.
 class VisibilityTestActivity : AppCompatActivity() {
 
     private val session by lazy { (Session.create(this) as SessionCreateSuccess).session }
@@ -56,8 +48,6 @@ class VisibilityTestActivity : AppCompatActivity() {
     private var childPanelEntity1: PanelEntity? = null
     private var childPanelEntity2: PanelEntity? = null
 
-    private lateinit var childPanel1PointerComponent: SpatialPointerComponent
-
     private var isFsm = true // launch in FSM
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,27 +56,27 @@ class VisibilityTestActivity : AppCompatActivity() {
 
         parentPanelEntity = createPanelEntity(session, "Parent Panel", session.scene.activitySpace)
         childPanelEntity1 = createPanelEntity(session, "Child Panel 1", parentPanelEntity)
-        childPanel1PointerComponent = SpatialPointerComponent.create(session)
-        if (!childPanelEntity1!!.addComponent(childPanel1PointerComponent)) {
-            throw RuntimeException("Failed to add spatial pointer component to child panel 1")
-        }
-
         childPanelEntity2 = createPanelEntity(session, "Child Panel 2", childPanelEntity1)
-        lifecycleScope.launch {
-            val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
-            setUpScene(dragonModel)
-        }
+        val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
+        sharkModelFuture.addListener(
+            {
+                val sharkModel = sharkModelFuture.get()
+                setUpScene(sharkModel)
+            },
+            // This will cause the listener to be run on the UI thread
+            Runnable::run,
+        )
     }
 
-    private fun setUpScene(dragonModel: GltfModel) {
-        createGltfEntities(session, dragonModel)
+    private fun setUpScene(sharkModel: GltfModel) {
+        createGltfEntities(session, sharkModel)
 
         findViewById<Button>(R.id.toggle_fsm_hsm).setOnClickListener { _ ->
             if (isFsm) {
-                session.scene.requestHomeSpaceMode()
+                session.scene.spatialEnvironment.requestHomeSpaceMode()
                 isFsm = false
             } else {
-                session.scene.requestFullSpaceMode()
+                session.scene.spatialEnvironment.requestFullSpaceMode()
                 isFsm = true
             }
         }
@@ -126,12 +116,6 @@ class VisibilityTestActivity : AppCompatActivity() {
         }
         findViewById<Switch>(R.id.hide_panel1).setOnCheckedChangeListener { _, isChecked: Boolean ->
             childPanelEntity1?.setHidden(isChecked)
-        }
-        findViewById<Switch>(R.id.hide_panel1_pointer).setOnCheckedChangeListener {
-            _,
-            isChecked: Boolean ->
-            childPanel1PointerComponent.spatialPointerIcon =
-                if (isChecked) SpatialPointerIcon.NONE else SpatialPointerIcon.DEFAULT
         }
         findViewById<Switch>(R.id.hide_panel2).setOnCheckedChangeListener { _, isChecked: Boolean ->
             childPanelEntity2?.setHidden(isChecked)
@@ -173,11 +157,11 @@ class VisibilityTestActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panelContentView,
-                IntSize2d(640, 480),
+                PixelDimensions(640, 480),
                 name,
                 Pose(Vector3(-0.5f, -0.1f, 0f)),
             )
-        panelEntity.parent = parent
+        panelEntity.setParent(parent)
         if (!panelEntity.addComponent(MovableComponent.create(session, false, false, emptySet()))) {
             throw RuntimeException("Failed to add movable component to panel")
         }
@@ -187,12 +171,12 @@ class VisibilityTestActivity : AppCompatActivity() {
 
     private fun createGltfEntities(session: Session, model: GltfModel) {
         parentGltfEntity = GltfModelEntity.create(session, model, Pose(Vector3(1.5f, 0f, -2f)))
-        parentGltfEntity?.parent = session.scene.activitySpace
+        parentGltfEntity?.setParent(session.scene.activitySpace)
 
         childGltfEntity1 = GltfModelEntity.create(session, model, Pose(Vector3(0.5f, -0.5f, 0f)))
-        childGltfEntity1?.parent = parentGltfEntity
+        childGltfEntity1?.setParent(parentGltfEntity)
 
         childGltfEntity2 = GltfModelEntity.create(session, model, Pose(Vector3(0.5f, -0.5f, 0f)))
-        childGltfEntity2?.parent = childGltfEntity1
+        childGltfEntity2?.setParent(childGltfEntity1)
     }
 }

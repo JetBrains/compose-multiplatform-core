@@ -24,29 +24,20 @@ import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraBackends
 import androidx.camera.camera2.pipe.CameraContext
 import androidx.camera.camera2.pipe.config.CameraPipeContext
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Threads
 import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.runBlocking
 
 /** Provides an implementation for interacting with CameraBackends. */
 internal class CameraBackendsImpl(
     private val defaultBackendId: CameraBackendId,
     private val cameraBackends: Map<CameraBackendId, CameraBackendFactory>,
     @CameraPipeContext private val cameraPipeContext: Context,
-    private val threads: Threads,
-    cameraPipeLifetime: CameraPipeLifetime,
+    private val threads: Threads
 ) : CameraBackends {
     private val lock = Any()
 
     @GuardedBy("lock")
     private val activeCameraBackends = mutableMapOf<CameraBackendId, CameraBackend>()
-
-    init {
-        cameraPipeLifetime.addShutdownAction(CameraPipeLifetime.ShutdownType.CAMERA) {
-            runBlocking { shutdown() }
-        }
-    }
 
     override val default: CameraBackend =
         checkNotNull(get(defaultBackendId)) {
@@ -61,7 +52,6 @@ internal class CameraBackendsImpl(
         get() = synchronized(lock) { activeCameraBackends.keys }
 
     override suspend fun shutdown() {
-        Log.debug { "CameraBackends#shutdown" }
         val shutdownJobs = activeCameraBackends.map { it.value.shutdownAsync() }
         shutdownJobs.joinAll()
     }
@@ -88,6 +78,6 @@ internal class CameraBackendsImpl(
     internal class CameraBackendContext(
         override val appContext: Context,
         override val threads: Threads,
-        override val cameraBackends: CameraBackends,
+        override val cameraBackends: CameraBackends
     ) : CameraContext
 }

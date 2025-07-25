@@ -34,7 +34,12 @@ class EdgeButtonTest {
     @Test
     fun supports_testtag() {
         rule.setContentWithTheme {
-            EdgeButton(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("Test") }
+            EdgeButton(
+                onClick = {},
+                modifier = Modifier.testTag(TEST_TAG),
+            ) {
+                Text("Test")
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -92,7 +97,7 @@ class EdgeButtonTest {
             EdgeButton(
                 onClick = { clicked = true },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             ) {
                 Text("Test")
             }

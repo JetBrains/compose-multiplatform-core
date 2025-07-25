@@ -69,7 +69,10 @@ public expect class ViewModelProvider {
          * @param extras an additional information for this creation request
          * @return a newly created [ViewModel]
          */
-        public open fun <T : ViewModel> create(modelClass: KClass<T>, extras: CreationExtras): T
+        public open fun <T : ViewModel> create(
+            modelClass: KClass<T>,
+            extras: CreationExtras,
+        ): T
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

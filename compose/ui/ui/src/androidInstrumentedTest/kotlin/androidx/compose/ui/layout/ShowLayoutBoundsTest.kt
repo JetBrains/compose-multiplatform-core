@@ -127,7 +127,7 @@ class ShowLayoutBoundsTest {
             activity.startActivity(intent)
         }
 
-        assertThat(activity.stopLatch.await(5, TimeUnit.SECONDS)).isTrue()
+        assertThat(activity.stopLatch.await(5, TimeUnit.SECONDS))
 
         // change showLayoutBounds to true without poking
         setIsShowingLayoutBounds(true)

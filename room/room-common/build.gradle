@@ -22,8 +22,6 @@
  * modifying its settings.
  */
 
-
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -102,5 +100,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room-Common"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    legacyDisableKotlinStrictApiMode = true
 }

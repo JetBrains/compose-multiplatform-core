@@ -70,6 +70,7 @@ public class PageSelectionValueObserverTest {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         displayMetrics.density = 1f;
         mContext.getResources().getDisplayMetrics().setTo(displayMetrics);
+        PdfViewer.setScreenForTest(mContext);
 
         PageSelectionValueObserver pageSelectionValueObserver =
                 new PageSelectionValueObserver(mMockPaginatedView,

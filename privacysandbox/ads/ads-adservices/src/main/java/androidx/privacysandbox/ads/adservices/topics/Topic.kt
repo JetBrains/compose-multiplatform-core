@@ -24,12 +24,8 @@ package androidx.privacysandbox.ads.adservices.topics
  * @param topicId the unique id of a topic. See
  *   https://developer.android.com/design-for-safety/privacy-sandbox/guides/topics for details.
  */
-public class Topic
-public constructor(
-    public val taxonomyVersion: Long,
-    public val modelVersion: Long,
-    public val topicId: Int,
-) {
+class Topic
+public constructor(val taxonomyVersion: Long, val modelVersion: Long, val topicId: Int) {
     override fun toString(): String {
         val taxonomyVersionString =
             "TaxonomyVersion=$taxonomyVersion" +

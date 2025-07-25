@@ -25,7 +25,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 12)
-public class OnDevicePersonalizationManagerAPI33Ext12Impl(context: Context) :
+class OnDevicePersonalizationManagerAPI33Ext12Impl(context: Context) :
     OnDevicePersonalizationManagerImplCommon(
         context.getSystemService(
             android.adservices.ondevicepersonalization.OnDevicePersonalizationManager::class.java

@@ -30,7 +30,6 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.espressoCore)
 }
 
 android {

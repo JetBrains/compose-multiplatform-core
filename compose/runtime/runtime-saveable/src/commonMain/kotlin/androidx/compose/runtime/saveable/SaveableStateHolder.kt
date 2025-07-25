@@ -22,7 +22,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.remember
-import androidx.savedstate.compose.LocalSavedStateRegistryOwner
 
 /**
  * Allows to save the state defined with [rememberSaveable] for the subtree before disposing it to
@@ -36,7 +35,7 @@ import androidx.savedstate.compose.LocalSavedStateRegistryOwner
  * this content. Next time [SaveableStateProvider] will be used with the same key its state will be
  * restored.
  */
-public interface SaveableStateHolder {
+interface SaveableStateHolder {
     /**
      * Put your content associated with a [key] inside the [content]. This will automatically save
      * all the states defined with [rememberSaveable] before disposing the content and will restore
@@ -46,15 +45,15 @@ public interface SaveableStateHolder {
      *   Android you can only use types which can be stored inside the Bundle.
      * @param content the content for which [key] is associated.
      */
-    @Composable public fun SaveableStateProvider(key: Any, content: @Composable () -> Unit)
+    @Composable fun SaveableStateProvider(key: Any, content: @Composable () -> Unit)
 
     /** Removes the saved state associated with the passed [key]. */
-    public fun removeState(key: Any)
+    fun removeState(key: Any)
 }
 
 /** Creates and remembers the instance of [SaveableStateHolder]. */
 @Composable
-public fun rememberSaveableStateHolder(): SaveableStateHolder =
+fun rememberSaveableStateHolder(): SaveableStateHolder =
     rememberSaveable(saver = SaveableStateHolderImpl.Saver) { SaveableStateHolderImpl() }
         .apply { parentSaveableStateRegistry = LocalSaveableStateRegistry.current }
 
@@ -75,14 +74,11 @@ private class SaveableStateHolderImpl(
                     "Type of the key $key is not supported. On Android you can only use types " +
                         "which can be stored inside the Bundle."
                 }
-                SaveableStateRegistryWrapper(
-                    base = SaveableStateRegistry(restoredValues = savedStates[key], canBeSaved)
-                )
+                SaveableStateRegistry(savedStates[key], canBeSaved)
             }
             CompositionLocalProvider(
                 LocalSaveableStateRegistry provides registry,
-                LocalSavedStateRegistryOwner provides registry,
-                content = content,
+                content = content
             )
             DisposableEffect(Unit) {
                 require(key !in registries) { "Key $key was used multiple times " }
@@ -111,7 +107,7 @@ private class SaveableStateHolderImpl(
 
     private fun SaveableStateRegistry.saveTo(
         map: MutableMap<Any, Map<String, List<Any?>>>,
-        key: Any,
+        key: Any
     ) {
         val savedData = performSave()
         if (savedData.isEmpty()) {

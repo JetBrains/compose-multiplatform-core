@@ -56,7 +56,7 @@ class InvalidationTrackerFlowTest {
         database =
             Room.inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext(),
-                    TestDatabase::class.java,
+                    TestDatabase::class.java
                 )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .build()
@@ -328,7 +328,6 @@ class InvalidationTrackerFlowTest {
     private fun runTest(testBody: suspend TestScope.() -> Unit) =
         testCoroutineScope.runTest(timeout = 10.minutes) {
             testBody.invoke(this)
-            testScheduler.advanceUntilIdle()
             database.close()
         }
 }

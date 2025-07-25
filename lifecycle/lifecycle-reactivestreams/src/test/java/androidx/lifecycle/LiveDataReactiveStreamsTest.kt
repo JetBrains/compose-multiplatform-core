@@ -67,7 +67,7 @@ class LiveDataReactiveStreamsTest {
     @Test
     fun convertsFromPublisherSubscribeWithDelay() {
         val processor = create<String>()
-        val delaySubscription = processor.delaySubscription(100, SECONDS, backgroundScheduler)
+        processor.delaySubscription(100, SECONDS, backgroundScheduler)
         val liveData = processor.toLiveData()
         liveData.observe(lifecycleOwner, observer)
         processor.onNext("foo")

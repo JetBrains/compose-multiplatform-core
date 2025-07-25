@@ -121,7 +121,7 @@ public fun MaterialScope.titleCard(
     style: TitleCardStyle = defaultTitleCardStyle(),
     contentPadding: Padding = style.innerPadding,
     @HorizontalAlignment
-    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START,
+    horizontalAlignment: Int = if (time == null) HORIZONTAL_ALIGN_CENTER else HORIZONTAL_ALIGN_START
 ): LayoutElement =
     card(
         onClick = onClick,
@@ -129,49 +129,46 @@ public fun MaterialScope.titleCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding,
+        contentPadding = contentPadding
     ) {
         buildContentForTitleCard(
             title =
                 withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.titleTypography,
-                            color = colors.titleColor,
-                            maxLines = 2,
-                            alignment = horizontalAlignment.horizontalAlignToTextAlign(),
-                        )
-                ) {
-                    title()
-                },
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.titleTypography,
+                                color = colors.titleColor,
+                                maxLines = 2,
+                                alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                            )
+                    )
+                    .title(),
             content =
                 content?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.contentTypography,
-                                color = colors.contentColor,
-                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.contentTypography,
+                                    color = colors.contentColor,
+                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                                )
+                        )
+                        .it()
                 },
             time =
                 time?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.timeTypography,
-                                color = colors.timeColor,
-                                alignment = horizontalAlignment.horizontalAlignToTextAlign(),
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.timeTypography,
+                                    color = colors.timeColor,
+                                    alignment = horizontalAlignment.horizontalAlignToTextAlign()
+                                )
+                        )
+                        .it()
                 },
             horizontalAlignment = horizontalAlignment,
-            style = style,
+            style = style
         )
     }
 
@@ -261,73 +258,68 @@ public fun MaterialScope.appCard(
         width = expand(),
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding,
+        contentPadding = contentPadding
     ) {
         buildContentForAppCard(
             title =
                 withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.titleTypography,
-                            color = colors.titleColor,
-                            alignment = TEXT_ALIGN_START,
-                            maxLines = 2,
-                        )
-                ) {
-                    title()
-                },
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.titleTypography,
+                                color = colors.titleColor,
+                                alignment = TEXT_ALIGN_START,
+                                maxLines = 2,
+                            )
+                    )
+                    .title(),
             content =
                 content?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.contentTypography,
-                                color = colors.contentColor,
-                                alignment = TEXT_ALIGN_START,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.contentTypography,
+                                    color = colors.contentColor,
+                                    alignment = TEXT_ALIGN_START
+                                )
+                        )
+                        .it()
                 },
             time =
                 time?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.timeTypography,
-                                color = colors.timeColor,
-                                alignment = TEXT_ALIGN_END,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.timeTypography,
+                                    color = colors.timeColor,
+                                    alignment = TEXT_ALIGN_END
+                                )
+                        )
+                        .it()
                 },
             label =
                 label?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.labelTypography,
-                                color = colors.labelColor,
-                                alignment = TEXT_ALIGN_START,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.labelTypography,
+                                    color = colors.labelColor,
+                                    alignment = TEXT_ALIGN_START
+                                )
+                        )
+                        .it()
                 },
             avatar =
                 avatar?.let {
                     withStyle(
-                        defaultAvatarImageStyle =
-                            AvatarImageStyle(
-                                width = style.avatarSize.toDp(),
-                                height = style.avatarSize.toDp(),
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultAvatarImageStyle =
+                                AvatarImageStyle(
+                                    width = style.avatarSize.toDp(),
+                                    height = style.avatarSize.toDp(),
+                                )
+                        )
+                        .it()
                 },
-            style = style,
+            style = style
         )
     }
 
@@ -411,42 +403,39 @@ public fun MaterialScope.textDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding,
+        contentPadding = contentPadding
     ) {
         buildContentForDataCard(
             title =
                 withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.titleTypography,
-                            color = colors.titleColor,
-                        )
-                ) {
-                    title()
-                },
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.titleTypography,
+                                color = colors.titleColor
+                            )
+                    )
+                    .title(),
             content =
                 content?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.contentTypography,
-                                color = colors.contentColor,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.contentTypography,
+                                    color = colors.contentColor
+                                )
+                        )
+                        .it()
                 },
             secondaryText =
                 secondaryText?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.secondaryLabelTypography,
-                                color = colors.secondaryTextColor,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.secondaryLabelTypography,
+                                    color = colors.secondaryTextColor
+                                )
+                        )
+                        .it()
                 },
             style = style,
         )
@@ -542,46 +531,43 @@ public fun MaterialScope.iconDataCard(
         width = width,
         height = height,
         backgroundContent = backgroundContent,
-        contentPadding = contentPadding,
+        contentPadding = contentPadding
     ) {
         buildContentForDataCard(
             title =
                 withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.titleTypography,
-                            color = colors.titleColor,
-                        )
-                ) {
-                    title()
-                },
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.titleTypography,
+                                color = colors.titleColor
+                            )
+                    )
+                    .title(),
             content =
                 content?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.contentTypography,
-                                color = colors.contentColor,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.contentTypography,
+                                    color = colors.contentColor
+                                )
+                        )
+                        .it()
                 },
             secondaryIcon =
                 secondaryIcon?.let {
                     withStyle(
-                        defaultIconStyle =
-                            IconStyle(
-                                width = style.iconSize.toDp(),
-                                height = style.iconSize.toDp(),
-                                tintColor = colors.secondaryIconColor,
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultIconStyle =
+                                IconStyle(
+                                    width = style.iconSize.toDp(),
+                                    height = style.iconSize.toDp(),
+                                    tintColor = colors.secondaryIconColor
+                                )
+                        )
+                        .it()
                 },
             style = style,
-            titleContentPlacement = titleContentPlacement,
+            titleContentPlacement = titleContentPlacement
         )
     }
 
@@ -655,42 +641,41 @@ public fun MaterialScope.graphicDataCard(
         modifier = modifier.background(colors.backgroundColor).clip(shape),
         width = expand(),
         height = height,
-        contentPadding = contentPadding,
+        contentPadding = contentPadding
     ) {
         buildContentForGraphicDataCard(
             title =
                 withStyle(
-                    defaultTextElementStyle =
-                        TextElementStyle(
-                            typography = style.titleTypography,
-                            color = colors.titleColor,
-                            alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
-                        )
-                ) {
-                    title()
-                },
+                        defaultTextElementStyle =
+                            TextElementStyle(
+                                typography = style.titleTypography,
+                                color = colors.titleColor,
+                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                            )
+                    )
+                    .title(),
             content =
                 content?.let {
                     withStyle(
-                        defaultTextElementStyle =
-                            TextElementStyle(
-                                typography = style.contentTypography,
-                                color = colors.contentColor,
-                                alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign(),
-                            )
-                    ) {
-                        it()
-                    }
+                            defaultTextElementStyle =
+                                TextElementStyle(
+                                    typography = style.contentTypography,
+                                    color = colors.contentColor,
+                                    alignment = HORIZONTAL_ALIGN_START.horizontalAlignToTextAlign()
+                                )
+                        )
+                        .it()
                 },
             graphic =
                 withStyle(
-                    defaultProgressIndicatorStyle =
-                        ProgressIndicatorStyle(color = colors.graphicProgressIndicatorColors),
-                    defaultIconStyle =
-                        IconStyle(tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor),
-                ) {
-                    graphic()
-                },
+                        defaultProgressIndicatorStyle =
+                            ProgressIndicatorStyle(color = colors.graphicProgressIndicatorColors),
+                        defaultIconStyle =
+                            IconStyle(
+                                tintColor = colors.graphicIconColor ?: defaultIconStyle.tintColor
+                            )
+                    )
+                    .graphic(),
             style = style,
             height = height,
             // Only support start and end align.
@@ -702,7 +687,7 @@ public fun MaterialScope.graphicDataCard(
                     HORIZONTAL_ALIGN_START
                 } else {
                     horizontalAlignment
-                },
+                }
         )
     }
 
@@ -751,7 +736,7 @@ public fun MaterialScope.card(
     height: ContainerDimension = wrapWithMinTapTargetDimension(),
     backgroundContent: (MaterialScope.() -> LayoutElement)? = null,
     contentPadding: Padding = padding(DEFAULT_CONTENT_PADDING),
-    content: (MaterialScope.() -> LayoutElement),
+    content: (MaterialScope.() -> LayoutElement)
 ): LayoutElement =
     componentContainer(
         onClick = onClick,
@@ -761,5 +746,5 @@ public fun MaterialScope.card(
         backgroundContent = backgroundContent,
         contentPadding = contentPadding,
         metadataTag = METADATA_TAG,
-        content = content,
+        content = content
     )

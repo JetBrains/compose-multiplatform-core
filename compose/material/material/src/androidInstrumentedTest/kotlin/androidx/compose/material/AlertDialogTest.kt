@@ -26,7 +26,7 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -69,7 +69,7 @@ class AlertDialogTest {
                 },
                 confirmButton = {},
                 backgroundColor = Color.Yellow,
-                contentColor = Color.Red,
+                contentColor = Color.Red
             )
         }
 
@@ -93,8 +93,9 @@ class AlertDialogTest {
         val dialogWidthCh = Channel<Int>(Channel.CONFLATED)
         var screenWidth by mutableStateOf(0)
         rule.setContent {
+            val context = LocalContext.current
             val density = LocalDensity.current
-            val resScreenWidth = LocalConfiguration.current.screenWidthDp
+            val resScreenWidth = context.resources.configuration.screenWidthDp
             with(density) { screenWidth = resScreenWidth.dp.roundToPx() }
 
             AlertDialog(
@@ -129,7 +130,7 @@ class AlertDialogTest {
                 confirmButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(ConfirmButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(ConfirmButtonTestTag).semantics(mergeDescendants = true) {}
                     ) {
                         Text("Confirm with a long text")
                     }
@@ -137,11 +138,11 @@ class AlertDialogTest {
                 dismissButton = {
                     TextButton(
                         onClick = { /* doSomething() */ },
-                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {},
+                        Modifier.testTag(DismissButtonTestTag).semantics(mergeDescendants = true) {}
                     ) {
                         Text("Dismiss with a long text")
                     }
-                },
+                }
             )
         }
 

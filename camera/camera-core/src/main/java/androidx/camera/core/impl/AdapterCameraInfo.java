@@ -26,7 +26,6 @@ import androidx.annotation.IntDef;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.TorchState;
-import androidx.camera.core.UseCase;
 import androidx.camera.core.ZoomState;
 import androidx.camera.core.impl.utils.LiveDataUtil;
 import androidx.camera.core.impl.utils.SessionProcessorUtil;
@@ -40,7 +39,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.List;
 
 /**
  * A {@link CameraInfoInternal} that returns disabled state if the corresponding operation in the
@@ -299,12 +297,5 @@ public class AdapterCameraInfo extends ForwardingCameraInfo {
             }
         }
         return super.isPreviewStabilizationSupported();
-    }
-
-    @Override
-    public boolean isUseCaseCombinationSupported(@NonNull List<@NonNull UseCase> useCases,
-            int cameraMode, boolean isFeatureComboInvocation) {
-        return mCameraInfo.isUseCaseCombinationSupported(useCases, cameraMode,
-                isFeatureComboInvocation, mCameraConfig);
     }
 }

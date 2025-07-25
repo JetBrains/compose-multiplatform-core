@@ -71,9 +71,11 @@ internal constructor(
             PagingDataPresenter<T>(
                 mainContext = mainDispatcher,
                 cachedPagingData =
-                    if (flow is SharedFlow<PagingData<T>>) flow.replayCache.firstOrNull() else null,
+                    if (flow is SharedFlow<PagingData<T>>) flow.replayCache.firstOrNull() else null
             ) {
-            override suspend fun presentPagingDataEvent(event: PagingDataEvent<T>) {
+            override suspend fun presentPagingDataEvent(
+                event: PagingDataEvent<T>,
+            ) {
                 updateItemSnapshotList()
             }
         }
@@ -157,7 +159,7 @@ internal constructor(
                     refresh = InitialLoadStates.refresh,
                     prepend = InitialLoadStates.prepend,
                     append = InitialLoadStates.append,
-                    source = InitialLoadStates,
+                    source = InitialLoadStates
                 )
         )
         private set

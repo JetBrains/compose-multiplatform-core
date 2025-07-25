@@ -47,7 +47,7 @@ import java.lang.reflect.Method
  *
  * For information see [Overview of system tracing]({@docRoot}studio/profile/systrace/).
  */
-public actual object Trace {
+object Trace {
     private const val TAG: String = "Trace"
     internal const val MAX_TRACE_LABEL_LENGTH: Int = 127
 
@@ -69,7 +69,7 @@ public actual object Trace {
      * @return `true` if tracing is currently enabled, `false` otherwise.
      */
     @JvmStatic // A function (not a property) for source compatibility with Kotlin callers
-    public fun isEnabled(): Boolean =
+    fun isEnabled(): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.isEnabled
         } else {
@@ -91,7 +91,7 @@ public actual object Trace {
      * API 31.
      */
     @JvmStatic
-    public fun forceEnableAppTracing() {
+    fun forceEnableAppTracing() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             try {
                 if (!hasAppTracingEnabled) {
@@ -99,7 +99,10 @@ public actual object Trace {
                     val setAppTracingAllowed =
                         Trace::class
                             .java
-                            .getMethod("setAppTracingAllowed", Boolean::class.javaPrimitiveType)
+                            .getMethod(
+                                "setAppTracingAllowed",
+                                Boolean::class.javaPrimitiveType,
+                            )
                     setAppTracingAllowed.invoke(null, true)
                 }
             } catch (exception: Exception) {
@@ -120,7 +123,7 @@ public actual object Trace {
      * @param label The name of the code section to appear in the trace.
      */
     @JvmStatic
-    public actual fun beginSection(label: String) {
+    fun beginSection(label: String) {
         Trace.beginSection(label.truncatedTraceSectionLabel())
     }
 
@@ -132,7 +135,7 @@ public actual object Trace {
      * that beginSection / endSection pairs are properly nested and called from the same thread.
      */
     @JvmStatic
-    public actual fun endSection() {
+    fun endSection() {
         Trace.endSection()
     }
 
@@ -166,7 +169,7 @@ public actual object Trace {
      * @see endAsyncSection
      */
     @JvmStatic
-    public fun beginAsyncSection(methodName: String, cookie: Int) {
+    fun beginAsyncSection(methodName: String, cookie: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.beginAsyncSection(methodName.truncatedTraceSectionLabel(), cookie)
         } else {
@@ -186,7 +189,7 @@ public actual object Trace {
      * @see beginAsyncSection
      */
     @JvmStatic
-    public fun endAsyncSection(methodName: String, cookie: Int) {
+    fun endAsyncSection(methodName: String, cookie: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.endAsyncSection(methodName.truncatedTraceSectionLabel(), cookie)
         } else {
@@ -201,7 +204,7 @@ public actual object Trace {
      * @param counterValue The counter value.
      */
     @JvmStatic
-    public fun setCounter(counterName: String, counterValue: Int) {
+    fun setCounter(counterName: String, counterValue: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             TraceApi29Impl.setCounter(counterName.truncatedTraceSectionLabel(), counterValue)
         } else {
@@ -355,7 +358,7 @@ public inline fun <T> trace(lazyLabel: () -> String, block: () -> T): T {
 public suspend inline fun <T> traceAsync(
     methodName: String,
     cookie: Int,
-    crossinline block: suspend () -> T,
+    crossinline block: suspend () -> T
 ): T {
     androidx.tracing.Trace.beginAsyncSection(methodName, cookie)
     try {
@@ -379,7 +382,7 @@ public suspend inline fun <T> traceAsync(
 public inline fun <T> traceAsync(
     lazyMethodName: () -> String,
     lazyCookie: () -> Int,
-    block: () -> T,
+    block: () -> T
 ): T {
     var methodName: String? = null
     var cookie = 0

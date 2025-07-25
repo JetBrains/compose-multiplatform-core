@@ -27,7 +27,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Card(modifier: Modifier = Modifier, backgroundColor: Color = Color.Transparent) {
+fun Card(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.Transparent,
+) {
     Box(
         modifier =
             modifier

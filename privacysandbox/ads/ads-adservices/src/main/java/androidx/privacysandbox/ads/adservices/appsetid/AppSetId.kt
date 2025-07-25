@@ -29,7 +29,7 @@ package androidx.privacysandbox.ads.adservices.appsetid
  * @param id The appSetID.
  * @param scope The scope of the ID. Can be AppSetId.SCOPE_APP or AppSetId.SCOPE_DEVELOPER.
  */
-public class AppSetId public constructor(public val id: String, public val scope: Int) {
+class AppSetId public constructor(val id: String, val scope: Int) {
     init {
         require(scope == SCOPE_APP || scope == SCOPE_DEVELOPER) { "Scope undefined." }
     }
@@ -51,16 +51,16 @@ public class AppSetId public constructor(public val id: String, public val scope
         return "AppSetId: id=$id, scope=$scopeStr"
     }
 
-    public companion object {
+    companion object {
         /**
          * The appSetId is scoped to an app. All apps on a device will have a different appSetId.
          */
-        public const val SCOPE_APP: Int = 1
+        public const val SCOPE_APP = 1
 
         /**
          * The appSetId is scoped to a developer account on an app store. All apps from the same
          * developer on a device will have the same developer scoped appSetId.
          */
-        public const val SCOPE_DEVELOPER: Int = 2
+        public const val SCOPE_DEVELOPER = 2
     }
 }

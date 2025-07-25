@@ -30,8 +30,7 @@ import androidx.annotation.RequiresExtension
  * @param debugKeyAllowed Used by the browser to indicate whether the debug key obtained from the
  *   registration URI is allowed to be used.
  */
-public class WebSourceParams
-public constructor(public val registrationUri: Uri, public val debugKeyAllowed: Boolean) {
+class WebSourceParams public constructor(val registrationUri: Uri, val debugKeyAllowed: Boolean) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

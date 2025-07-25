@@ -33,12 +33,8 @@ import java.time.Duration
  * @param interval The interval, as a [Duration] over which the frequency cap is calculated
  */
 @ExperimentalFeatures.Ext8OptIn
-public class KeyedFrequencyCap
-public constructor(
-    public val adCounterKey: Int,
-    public val maxCount: Int,
-    public val interval: Duration,
-) {
+class KeyedFrequencyCap
+public constructor(val adCounterKey: Int, val maxCount: Int, val interval: Duration) {
     /** Checks whether two [KeyedFrequencyCap] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

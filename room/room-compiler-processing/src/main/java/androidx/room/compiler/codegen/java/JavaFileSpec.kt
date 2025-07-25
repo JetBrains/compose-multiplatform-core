@@ -24,13 +24,11 @@ import androidx.room.compiler.codegen.XFileSpec
 import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import androidx.room.compiler.processing.XFiler
 
-internal class JavaFileSpec(override val actual: JFileSpec) : JavaSpec<JFileSpec>(), XFileSpec {
+internal class JavaFileSpec(internal val actual: JFileSpec) : XFileSpec {
 
     override fun writeTo(language: CodeLanguage, generator: XFiler, mode: XFiler.Mode) {
         generator.write(actual, mode)
     }
-
-    override fun toBuilder() = Builder(actual.toBuilder())
 
     internal class Builder(internal val actual: JFileSpecBuilder) : XFileSpec.Builder {
 

@@ -76,7 +76,7 @@ class NestedScrollerTestCase : LayeredComposeTestCase(), ToggleableTestCase {
                             Text(
                                 "3.5 ★",
                                 fontSize = 40.toSp(),
-                                modifier = Modifier.align(Alignment.CenterVertically),
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
                             Box(
                                 Modifier.align(Alignment.CenterVertically)

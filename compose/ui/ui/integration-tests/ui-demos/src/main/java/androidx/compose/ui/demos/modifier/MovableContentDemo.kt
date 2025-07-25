@@ -50,7 +50,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.preferredFrameRate
+import androidx.compose.ui.ui.requestedFrameRate
 import androidx.compose.ui.unit.dp
 
 internal val isArrEnabled =
@@ -92,7 +92,7 @@ fun MovableContentDemo() {
 
     Column(
         Modifier.height(300.dp).padding(20.dp).background(Color.Gray).fillMaxWidth().padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(onClick = { isRow = !isRow }) { Text("toggle") }
 
@@ -114,7 +114,7 @@ private fun AlphaButton(frameRate: Float) {
         Text(
             text = "Click Me for $frameRate",
             color = LocalContentColor.current.copy(alpha = alpha), // Adjust text alpha
-            modifier = Modifier.preferredFrameRate(frameRate),
+            modifier = Modifier.requestedFrameRate(frameRate)
         )
     }
 }

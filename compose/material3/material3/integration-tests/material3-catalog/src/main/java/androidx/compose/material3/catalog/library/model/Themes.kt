@@ -26,8 +26,6 @@ data class Theme(
     val fontScale: Float = 1.0f,
     val fontScaleMode: FontScaleMode = FontScaleMode.System,
     val textDirection: TextDirection = TextDirection.System,
-    val showOnlyExpressiveComponents: Boolean = false,
-    val markExpressiveComponents: Boolean = true,
 ) {
     constructor(
         map: Map<String, Float>
@@ -39,8 +37,6 @@ data class Theme(
         fontScale = map.getValue(FontScaleKey).toFloat(),
         fontScaleMode = FontScaleMode.values()[map.getValue(FontScaleModeKey).toInt()],
         textDirection = TextDirection.values()[map.getValue(TextDirectionKey).toInt()],
-        showOnlyExpressiveComponents = map.getValue(ShowOnlyExpressiveComponents).toInt() != 0,
-        markExpressiveComponents = map.getValue(MarkExpressiveComponents).toInt() != 0,
     )
 
     fun toMap() =
@@ -51,8 +47,6 @@ data class Theme(
             FontScaleKey to fontScale,
             FontScaleModeKey to fontScaleMode.ordinal.toFloat(),
             TextDirectionKey to textDirection.ordinal.toFloat(),
-            ShowOnlyExpressiveComponents to if (showOnlyExpressiveComponents) 1 else 0,
-            MarkExpressiveComponents to if (markExpressiveComponents) 1 else 0,
         )
 }
 
@@ -137,5 +131,3 @@ private const val ExpressiveThemeModeKey = "expressiveThemeMode"
 private const val FontScaleKey = "fontScale"
 private const val FontScaleModeKey = "fontScaleMode"
 private const val TextDirectionKey = "textDirection"
-private const val MarkExpressiveComponents = "markExpressiveComponents"
-private const val ShowOnlyExpressiveComponents = "showOnlyExpressiveComponents"

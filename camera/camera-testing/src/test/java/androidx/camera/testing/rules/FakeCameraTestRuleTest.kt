@@ -32,7 +32,9 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
 @Config(minSdk = 21)
-class FakeCameraTestRuleTest(@CameraSelector.LensFacing private val lensFacing: Int) {
+class FakeCameraTestRuleTest(
+    @CameraSelector.LensFacing private val lensFacing: Int,
+) {
     private val fakeCameraRule = FakeCameraTestRule(ApplicationProvider.getApplicationContext())
 
     @Test
@@ -106,7 +108,7 @@ class FakeCameraTestRuleTest(@CameraSelector.LensFacing private val lensFacing: 
                         testBody()
                     }
                 },
-                null,
+                null
             )
             .evaluate()
     }
@@ -114,6 +116,10 @@ class FakeCameraTestRuleTest(@CameraSelector.LensFacing private val lensFacing: 
     companion object {
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "LensFacing = {0}")
-        fun data() = listOf(arrayOf(LENS_FACING_BACK), arrayOf(LENS_FACING_FRONT))
+        fun data() =
+            listOf(
+                arrayOf(LENS_FACING_BACK),
+                arrayOf(LENS_FACING_FRONT),
+            )
     }
 }

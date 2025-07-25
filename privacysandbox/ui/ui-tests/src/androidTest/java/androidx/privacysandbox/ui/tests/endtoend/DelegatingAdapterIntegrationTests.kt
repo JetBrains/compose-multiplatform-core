@@ -47,7 +47,11 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
 
         @JvmStatic
         @Parameterized.Parameters(name = "invokeBackwardsCompatFlow={0}")
-        fun data(): Array<Any> = arrayOf(arrayOf(true), arrayOf(false))
+        fun data(): Array<Any> =
+            arrayOf(
+                arrayOf(true),
+                arrayOf(false),
+            )
     }
 
     private lateinit var context: Context
@@ -94,7 +98,7 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
                 adapterWithData =
                     createAndUpdateDelegate(
                         testDelegatingAdapterWrapper.delegatingAdapter,
-                        failSessionCreation = true,
+                        failSessionCreation = true
                     )
             } catch (e: IllegalStateException) {
                 hasThrown = true
@@ -104,7 +108,7 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
                 adapterWithData =
                     createAndUpdateDelegate(
                         testDelegatingAdapterWrapper.delegatingAdapter,
-                        failSessionCreation = false,
+                        failSessionCreation = false
                     )
                 // a new session with the new delegate is established
                 assertThat(adapterWithData!!.delegate.session).isNotNull()
@@ -125,7 +129,7 @@ class DelegatingAdapterIntegrationTests(invokeBackwardsCompatFlow: Boolean) {
             delegate =
                 TestSandboxedUiAdapter(false, placeViewInsideFrameLayout, failSessionCreation)
         }
-        val delegateBundle = sessionManager.getCoreLibInfoFromSharedUiAdapter(delegate)
+        val delegateBundle = sessionManager.getCoreLibInfoFromAdapter(delegate)
         delegatingAdapter.updateDelegate(delegateBundle)
         return TestDelegatingAdapterWithDelegate(delegatingAdapter, delegate)
     }

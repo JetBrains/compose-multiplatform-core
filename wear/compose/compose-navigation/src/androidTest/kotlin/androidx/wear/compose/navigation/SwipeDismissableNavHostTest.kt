@@ -41,7 +41,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -57,7 +56,6 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
 import androidx.test.filters.SdkSuppress
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Text
@@ -170,8 +168,6 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
-        // Assert that the foreground screen still holds the focus
-        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
     }
 
     @Test
@@ -209,8 +205,6 @@ class SwipeDismissableNavHostTest {
 
         // As the finger is still 'down', the background should be visible.
         rule.onNodeWithText(START).assertExists()
-        // Assert that the foreground screen still holds the focus
-        rule.onNodeWithTag(TEST_TAG_NEXT).assertIsFocused()
     }
 
     @Test
@@ -230,7 +224,7 @@ class SwipeDismissableNavHostTest {
                         var toggle by rememberSaveable { mutableStateOf(false) }
                         Box(
                             modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
+                            contentAlignment = Alignment.Center
                         ) {
                             Column {
                                 ToggleButton(
@@ -239,7 +233,11 @@ class SwipeDismissableNavHostTest {
                                     content = { Text(text = if (toggle) "On" else "Off") },
                                     modifier = Modifier.testTag("ToggleButton"),
                                 )
-                                Button(onClick = { navController.navigate(NEXT) }) { Text("Go") }
+                                Button(
+                                    onClick = { navController.navigate(NEXT) },
+                                ) {
+                                    Text("Go")
+                                }
                             }
                         }
                     }
@@ -275,7 +273,7 @@ class SwipeDismissableNavHostTest {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             ToggleButton(
                                 checked = toggle,
@@ -283,7 +281,11 @@ class SwipeDismissableNavHostTest {
                                 content = { Text(text = if (toggle) "On" else "Off") },
                                 modifier = Modifier.testTag("ToggleButton"),
                             )
-                            Button(onClick = { navController.navigate(NEXT) }) { Text("Go") }
+                            Button(
+                                onClick = { navController.navigate(NEXT) },
+                            ) {
+                                Text("Go")
+                            }
                         }
                     }
                 }
@@ -294,12 +296,16 @@ class SwipeDismissableNavHostTest {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                             verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Button(onClick = { ++counter }, modifier = Modifier.testTag(COUNTER)) {
                                 Text("$counter")
                             }
-                            Button(onClick = { navController.navigate(START) }) { Text("Jump") }
+                            Button(
+                                onClick = { navController.navigate(START) },
+                            ) {
+                                Text("Jump")
+                            }
                         }
                     }
                 }
@@ -448,31 +454,25 @@ class SwipeDismissableNavHostTest {
     @Composable
     fun SwipeDismissWithNavigation(
         navController: NavHostController = rememberSwipeDismissableNavController(),
-        userSwipeEnabled: Boolean = true,
+        userSwipeEnabled: Boolean = true
     ) {
         SwipeDismissableNavHost(
             navController = navController,
             startDestination = START,
             modifier = Modifier.testTag(TEST_TAG),
-            userSwipeEnabled = userSwipeEnabled,
+            userSwipeEnabled = userSwipeEnabled
         ) {
             composable(START) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    ScalingLazyColumn(modifier = Modifier.testTag(TEST_TAG_START)) {
-                        item {
-                            CompactChip(
-                                onClick = { navController.navigate(NEXT) },
-                                label = { Text(text = START) },
-                            )
-                        }
-                    }
+                    CompactChip(
+                        onClick = { navController.navigate(NEXT) },
+                        label = { Text(text = START) }
+                    )
                 }
             }
-            composable(NEXT) {
+            composable("next") {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    ScalingLazyColumn(modifier = Modifier.testTag(TEST_TAG_NEXT)) {
-                        item { Text(NEXT) }
-                    }
+                    Text(NEXT)
                 }
             }
         }
@@ -509,5 +509,3 @@ private const val NEXT = "next"
 private const val START = "start"
 private const val COUNTER = "counter"
 private const val TEST_TAG = "test-item"
-private const val TEST_TAG_NEXT = "test-tag-next"
-private const val TEST_TAG_START = "test-tag-start"

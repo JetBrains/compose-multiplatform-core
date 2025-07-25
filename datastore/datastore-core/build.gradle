@@ -39,9 +39,6 @@ android {
         }
     }
     namespace = "androidx.datastore.core"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
 }
 
 androidXMultiplatform {
@@ -104,11 +101,6 @@ androidXMultiplatform {
                 implementation(libs.kotlinTestJunit)
             }
         }
-        // tests that are run on AndroidUnit and instrumented targets.
-        // similar to jvmAndroidTest, except, they don't run on JVM outside Robolectric.
-        androidUnitAndInstrumentedTest {
-            dependsOn(jvmAndroidTest)
-        }
 
         jvmTest {
             dependsOn(jvmAndroidTest)
@@ -116,26 +108,19 @@ androidXMultiplatform {
 
         androidUnitTest {
             dependsOn(jvmAndroidTest)
-            dependsOn(androidUnitAndInstrumentedTest)
             dependencies {
                 implementation(libs.protobufLite)
-                implementation(libs.testRules)
-                implementation(libs.testRunner)
-                implementation(libs.robolectric)
-                implementation(libs.testExtJunit)
             }
         }
 
         androidInstrumentedTest {
             dependsOn(jvmAndroidTest)
-            dependsOn(androidUnitAndInstrumentedTest)
             dependencies {
                 implementation(libs.truth)
                 implementation(project(":internal-testutils-truth"))
                 implementation(libs.testRunner)
                 implementation(libs.testCore)
                 implementation("androidx.lifecycle:lifecycle-service:2.6.1")
-                implementation(libs.testExtJunit)
 
                 // Workaround bug in 1.8.0, was supposed be fixed in RC2/final, but apparently not.
                 implementation(libs.kotlinTestJunit)
@@ -171,4 +156,5 @@ androidx {
     inceptionYear = "2020"
     description = "Android DataStore Core - contains the underlying store used by each serialization method"
     legacyDisableKotlinStrictApiMode = true
+    metalavaK2UastEnabled = false
 }

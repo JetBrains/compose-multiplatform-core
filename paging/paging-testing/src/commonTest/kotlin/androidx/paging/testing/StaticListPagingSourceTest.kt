@@ -26,7 +26,11 @@ import kotlinx.coroutines.test.runTest
 class StaticListPagingSourceTest {
 
     private val DATA = List(100) { it }
-    private val CONFIG = PagingConfig(pageSize = 3, initialLoadSize = 5)
+    private val CONFIG =
+        PagingConfig(
+            pageSize = 3,
+            initialLoadSize = 5,
+        )
 
     @Test
     fun refresh() = runPagingSourceTest { _, pager ->
@@ -38,7 +42,7 @@ class StaticListPagingSourceTest {
                     prevKey = null,
                     nextKey = 5,
                     itemsBefore = 0,
-                    itemsAfter = 95,
+                    itemsAfter = 95
                 )
             )
     }
@@ -54,7 +58,7 @@ class StaticListPagingSourceTest {
                         prevKey = null,
                         nextKey = null,
                         itemsBefore = 0,
-                        itemsAfter = 0,
+                        itemsAfter = 0
                     )
                 )
         }
@@ -69,7 +73,7 @@ class StaticListPagingSourceTest {
                     prevKey = 19,
                     nextKey = 25,
                     itemsBefore = 20,
-                    itemsAfter = 75,
+                    itemsAfter = 75
                 )
             )
     }
@@ -85,7 +89,7 @@ class StaticListPagingSourceTest {
                         prevKey = null,
                         nextKey = null,
                         itemsBefore = 0,
-                        itemsAfter = 0,
+                        itemsAfter = 0
                     )
                 )
         }
@@ -118,15 +122,15 @@ class StaticListPagingSourceTest {
                         prevKey = null,
                         nextKey = 5,
                         itemsBefore = 0,
-                        itemsAfter = 95,
+                        itemsAfter = 95
                     ),
                     LoadResult.Page(
                         data = listOf(5, 6, 7),
                         prevKey = 4,
                         nextKey = 8,
                         itemsBefore = 5,
-                        itemsAfter = 92,
-                    ),
+                        itemsAfter = 92
+                    )
                 )
             )
             .inOrder()
@@ -166,7 +170,7 @@ class StaticListPagingSourceTest {
                     prevKey = 98,
                     nextKey = null,
                     itemsBefore = 99,
-                    itemsAfter = 0,
+                    itemsAfter = 0
                 )
             )
     }
@@ -185,14 +189,14 @@ class StaticListPagingSourceTest {
                         prevKey = 16,
                         nextKey = 20,
                         itemsBefore = 17,
-                        itemsAfter = 80,
+                        itemsAfter = 80
                     ),
                     LoadResult.Page(
                         data = listOf(20, 21, 22, 23, 24),
                         prevKey = 19,
                         nextKey = 25,
                         itemsBefore = 20,
-                        itemsAfter = 75,
+                        itemsAfter = 75
                     ),
                 )
             )
@@ -233,7 +237,7 @@ class StaticListPagingSourceTest {
                     prevKey = null,
                     nextKey = 2,
                     itemsBefore = 0,
-                    itemsAfter = 98,
+                    itemsAfter = 98
                 )
             )
     }
@@ -277,7 +281,7 @@ class StaticListPagingSourceTest {
     private fun runPagingSourceTest(
         source: PagingSource<Int, Int> = StaticListPagingSource(DATA),
         pager: TestPager<Int, Int> = TestPager(CONFIG, source),
-        block: suspend (pagingSource: PagingSource<Int, Int>, pager: TestPager<Int, Int>) -> Unit,
+        block: suspend (pagingSource: PagingSource<Int, Int>, pager: TestPager<Int, Int>) -> Unit
     ) {
         runTest { block(source, pager) }
     }
@@ -294,7 +298,7 @@ class StaticListPagingSourceTest {
                     if (indexEnd >= DATA.lastIndex || isEmpty()) null else indexEnd + 1
                 },
             itemsBefore = indexStart ?: -1,
-            itemsAfter = if (indexEnd == null) -1 else DATA.lastIndex - indexEnd,
+            itemsAfter = if (indexEnd == null) -1 else DATA.lastIndex - indexEnd
         )
     }
 }

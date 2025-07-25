@@ -37,11 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.arcore.apps.whitebox.depthmaps.DepthMapActivity
-import androidx.xr.arcore.apps.whitebox.facetracking.FaceTrackingActivity
 import androidx.xr.arcore.apps.whitebox.handtracking.HandTrackingActivity
-import androidx.xr.arcore.apps.whitebox.helloar.HelloArObjectActivity
-import androidx.xr.arcore.apps.whitebox.helloar.HelloArPlaneActivity
+import androidx.xr.arcore.apps.whitebox.helloar.HelloArActivity
 import androidx.xr.arcore.apps.whitebox.persistentanchors.PersistentAnchorsActivity
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -99,14 +96,9 @@ fun WhiteboxSessionMenu() {
         )
         HorizontalDivider()
         TextButton(
-            onClick = { context.startActivity(Intent(context, HelloArPlaneActivity::class.java)) }
+            onClick = { context.startActivity(Intent(context, HelloArActivity::class.java)) }
         ) {
-            Text("Hello AR (Planes)")
-        }
-        TextButton(
-            onClick = { context.startActivity(Intent(context, HelloArObjectActivity::class.java)) }
-        ) {
-            Text("Hello AR (Objects)")
+            Text("Hello AR")
         }
         TextButton(
             onClick = {
@@ -119,16 +111,6 @@ fun WhiteboxSessionMenu() {
             onClick = { context.startActivity(Intent(context, HandTrackingActivity::class.java)) }
         ) {
             Text("Hand Tracking")
-        }
-        TextButton(
-            onClick = { context.startActivity(Intent(context, DepthMapActivity::class.java)) }
-        ) {
-            Text("Depth Maps")
-        }
-        TextButton(
-            onClick = { context.startActivity(Intent(context, FaceTrackingActivity::class.java)) }
-        ) {
-            Text("Face Tracking")
         }
     }
 }

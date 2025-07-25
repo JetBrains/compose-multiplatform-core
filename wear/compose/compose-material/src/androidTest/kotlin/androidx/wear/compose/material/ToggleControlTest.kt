@@ -96,7 +96,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -110,7 +110,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -134,7 +134,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = false,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -169,7 +169,7 @@ class ToggleControlTest {
             Checkbox(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -184,7 +184,7 @@ class ToggleControlTest {
             Checkbox(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -202,9 +202,9 @@ class ToggleControlTest {
                 colors =
                     CheckboxDefaults.colors(
                         checkedBoxColor = boxColor,
-                        checkedCheckmarkColor = checkmarkColor,
+                        checkedCheckmarkColor = checkmarkColor
                     ),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -222,8 +222,11 @@ class ToggleControlTest {
         rule.setContentWithTheme {
             Checkbox(
                 checked = false,
-                colors = CheckboxDefaults.colors(uncheckedBoxColor = boxColor),
-                modifier = Modifier.testTag(TEST_TAG),
+                colors =
+                    CheckboxDefaults.colors(
+                        uncheckedBoxColor = boxColor,
+                    ),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -275,7 +278,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -289,7 +292,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -312,7 +315,7 @@ class ToggleControlTest {
                 checked = true,
                 enabled = false,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -347,7 +350,7 @@ class ToggleControlTest {
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -362,7 +365,7 @@ class ToggleControlTest {
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -380,9 +383,9 @@ class ToggleControlTest {
                 colors =
                     SwitchDefaults.colors(
                         checkedThumbColor = thumbColor,
-                        checkedTrackColor = trackColor,
+                        checkedTrackColor = trackColor
                     ),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -402,9 +405,9 @@ class ToggleControlTest {
                 colors =
                     SwitchDefaults.colors(
                         uncheckedThumbColor = thumbColor,
-                        uncheckedTrackColor = trackColor,
+                        uncheckedTrackColor = trackColor
                     ),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -459,7 +462,7 @@ class ToggleControlTest {
                 selected = true,
                 enabled = true,
                 onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -473,7 +476,7 @@ class ToggleControlTest {
                 selected = true,
                 enabled = true,
                 onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -497,7 +500,7 @@ class ToggleControlTest {
                 selected = true,
                 enabled = false,
                 onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -532,7 +535,7 @@ class ToggleControlTest {
             RadioButton(
                 selected = selected,
                 onClick = { selected = !selected },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -547,7 +550,7 @@ class ToggleControlTest {
             RadioButton(
                 selected = selected,
                 onClick = { selected = !selected },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -565,9 +568,9 @@ class ToggleControlTest {
                 colors =
                     RadioButtonDefaults.colors(
                         selectedRingColor = ringColor,
-                        selectedDotColor = dotColor,
+                        selectedDotColor = dotColor
                     ),
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -585,8 +588,11 @@ class ToggleControlTest {
         rule.setContentWithTheme {
             RadioButton(
                 selected = false,
-                colors = RadioButtonDefaults.colors(unselectedRingColor = ringColor),
-                modifier = Modifier.testTag(TEST_TAG),
+                colors =
+                    RadioButtonDefaults.colors(
+                        unselectedRingColor = ringColor,
+                    ),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 

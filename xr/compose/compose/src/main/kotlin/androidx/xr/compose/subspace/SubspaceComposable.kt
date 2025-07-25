@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.subspace
 
+import androidx.annotation.RestrictTo
 import androidx.compose.runtime.ComposableTargetMarker
 
 /**
@@ -31,4 +32,5 @@ import androidx.compose.runtime.ComposableTargetMarker
     AnnotationTarget.TYPE,
     AnnotationTarget.TYPE_PARAMETER,
 )
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public annotation class SubspaceComposable

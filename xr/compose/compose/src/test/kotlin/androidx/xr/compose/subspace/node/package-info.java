@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+@RequiresApi(34)
 package androidx.xr.compose.subspace.node;
+
+import androidx.annotation.RequiresApi;

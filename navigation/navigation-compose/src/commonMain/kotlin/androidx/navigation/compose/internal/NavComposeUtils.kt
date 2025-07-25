@@ -42,7 +42,7 @@ internal expect class BackEventCompat {
 @Composable
 internal expect fun PredictiveBackHandler(
     enabled: Boolean = true,
-    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit,
+    onBack: suspend (progress: Flow<BackEventCompat>) -> Unit
 )
 
 internal expect fun randomUUID(): String

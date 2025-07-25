@@ -10,7 +10,6 @@ import javax.`annotation`.processing.Generated
     "com.testdata.FakeAllPrimitiveParams",
     "com.testdata.FakeAllPrimitiveReturns",
     "com.testdata.FakeNoArg",
-    "com.testdata.ShowNoteFunction",
     "com.testdata.UpdateNoteFunction",
     "com.testdata.diffPackageSchemas.DiffPackageInputSchemas",
     "com.testdata.diffPackageSchemas.DiffPackageOutputSchemas",

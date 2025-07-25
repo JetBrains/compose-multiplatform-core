@@ -17,8 +17,11 @@
 package androidx.pdf
 
 import android.net.Uri
+import androidx.annotation.RestrictTo
+import androidx.pdf.exceptions.PdfPasswordException
 import java.io.IOException
 
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 /**
  * Provides an abstraction for asynchronously opening PDF documents from a Uri. Implementations of
  * this interface are responsible for handling the retrieval, decryption (if necessary), and
@@ -35,6 +38,6 @@ public interface PdfLoader {
      * @throws PdfPasswordException If the provided password is incorrect.
      * @throws IOException If an error occurs while opening the document.
      */
-    @Throws(IOException::class)
+    @Throws(PdfPasswordException::class, IOException::class)
     public suspend fun openDocument(uri: Uri, password: String? = null): PdfDocument
 }

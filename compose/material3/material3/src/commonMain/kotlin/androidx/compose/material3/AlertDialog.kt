@@ -106,7 +106,7 @@ expect fun AlertDialog(
     titleContentColor: Color = AlertDialogDefaults.titleContentColor,
     textContentColor: Color = AlertDialogDefaults.textContentColor,
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
-    properties: DialogProperties = DialogProperties(),
+    properties: DialogProperties = DialogProperties()
 )
 
 /**
@@ -141,14 +141,14 @@ fun BasicAlertDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     with(LocalBasicAlertDialogOverride.current) {
         BasicAlertDialogOverrideScope(
                 onDismissRequest = onDismissRequest,
                 modifier = modifier,
                 properties = properties,
-                content = content,
+                content = content
             )
             .BasicAlertDialog()
     }
@@ -164,14 +164,17 @@ fun BasicAlertDialog(
 object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
     @Composable
     override fun BasicAlertDialogOverrideScope.BasicAlertDialog() {
-        Dialog(onDismissRequest = onDismissRequest, properties = properties) {
+        Dialog(
+            onDismissRequest = onDismissRequest,
+            properties = properties,
+        ) {
             val dialogPaneDescription = getString(Strings.Dialog)
             Box(
                 modifier =
                     modifier
                         .sizeIn(minWidth = DialogMinWidth, maxWidth = DialogMaxWidth)
                         .then(Modifier.semantics { paneTitle = dialogPaneDescription }),
-                propagateMinConstraints = true,
+                propagateMinConstraints = true
             ) {
                 content()
             }
@@ -206,7 +209,7 @@ object DefaultBasicAlertDialogOverride : BasicAlertDialogOverride {
  */
 @Deprecated(
     "Use BasicAlertDialog instead",
-    replaceWith = ReplaceWith("BasicAlertDialog(onDismissRequest, modifier, properties, content)"),
+    replaceWith = ReplaceWith("BasicAlertDialog(onDismissRequest, modifier, properties, content)")
 )
 @ExperimentalMaterial3Api
 @Composable
@@ -214,7 +217,7 @@ fun AlertDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) = BasicAlertDialog(onDismissRequest, modifier, properties, content)
 
 /** Contains default values used for [AlertDialog] and [BasicAlertDialog]. */
@@ -259,18 +262,18 @@ internal fun AlertDialogImpl(
     titleContentColor: Color,
     textContentColor: Color,
     tonalElevation: Dp,
-    properties: DialogProperties,
+    properties: DialogProperties
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        properties = properties,
+        properties = properties
     ) {
         AlertDialogContent(
             buttons = {
                 AlertDialogFlowRow(
                     mainAxisSpacing = ButtonsMainAxisSpacing,
-                    crossAxisSpacing = ButtonsCrossAxisSpacing,
+                    crossAxisSpacing = ButtonsCrossAxisSpacing
                 ) {
                     dismissButton?.invoke()
                     confirmButton()
@@ -326,7 +329,7 @@ internal fun AlertDialogContent(
             title?.let {
                 ProvideContentColorTextStyle(
                     contentColor = titleContentColor,
-                    textStyle = DialogTokens.HeadlineFont.value,
+                    textStyle = DialogTokens.HeadlineFont.value
                 ) {
                     Box(
                         // Align the title to the center when an icon is present.
@@ -347,7 +350,7 @@ internal fun AlertDialogContent(
                 val textStyle = DialogTokens.SupportingTextFont.value
                 ProvideContentColorTextStyle(
                     contentColor = textContentColor,
-                    textStyle = textStyle,
+                    textStyle = textStyle
                 ) {
                     Box(
                         Modifier.weight(weight = 1f, fill = false)
@@ -363,7 +366,7 @@ internal fun AlertDialogContent(
                 ProvideContentColorTextStyle(
                     contentColor = buttonContentColor,
                     textStyle = textStyle,
-                    content = buttons,
+                    content = buttons
                 )
             }
         }
@@ -378,7 +381,7 @@ internal fun AlertDialogContent(
 internal fun AlertDialogFlowRow(
     mainAxisSpacing: Dp,
     crossAxisSpacing: Dp,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     Layout(content) { measurables, constraints ->
         val sequences = mutableListOf<List<Placeable>>()
@@ -456,7 +459,7 @@ internal fun AlertDialogFlowRow(
                         mainAxisLayoutSize,
                         childrenMainAxisSizes,
                         layoutDirection,
-                        mainAxisPositions,
+                        mainAxisPositions
                     )
                 }
                 placeables.fastForEachIndexed { j, placeable ->
@@ -506,10 +509,12 @@ internal constructor(
     val onDismissRequest: () -> Unit,
     val modifier: Modifier = Modifier,
     val properties: DialogProperties = DialogProperties(),
-    val content: @Composable () -> Unit,
+    val content: @Composable () -> Unit
 )
 
 /** CompositionLocal containing the currently-selected [BasicAlertDialogOverride]. */
+@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
+@get:ExperimentalMaterial3ComponentOverrideApi
 @ExperimentalMaterial3ComponentOverrideApi
 val LocalBasicAlertDialogOverride: ProvidableCompositionLocal<BasicAlertDialogOverride> =
     compositionLocalOf {

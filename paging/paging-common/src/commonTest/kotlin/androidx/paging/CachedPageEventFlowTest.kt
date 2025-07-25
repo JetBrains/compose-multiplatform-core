@@ -52,13 +52,19 @@ class CachedPageEventFlowTest {
             fastCollector.collectIn(testScope)
             val slowCollector = PageCollector(subject.downstreamFlow.onEach { delay(1_000) })
             slowCollector.collectIn(testScope)
-            val refreshEvent = localRefresh(listOf(TransformablePage(listOf("a", "b", "c"))))
+            val refreshEvent =
+                localRefresh(
+                    listOf(TransformablePage(listOf("a", "b", "c"))),
+                )
             upstream.send(refreshEvent)
             runCurrent()
             assertThat(fastCollector.items()).containsExactly(refreshEvent)
             assertThat(slowCollector.items()).isEmpty()
 
-            val appendEvent = localAppend(listOf(TransformablePage(listOf("d", "e"))))
+            val appendEvent =
+                localAppend(
+                    listOf(TransformablePage(listOf("d", "e"))),
+                )
             upstream.send(appendEvent)
             runCurrent()
             assertThat(fastCollector.items()).containsExactly(refreshEvent, appendEvent)
@@ -66,11 +72,18 @@ class CachedPageEventFlowTest {
             advanceTimeBy(3_000)
             assertThat(slowCollector.items()).containsExactly(refreshEvent, appendEvent)
             val manyNewAppendEvents =
-                (0 until 100).map { localAppend(listOf(TransformablePage(listOf("f", "g")))) }
+                (0 until 100).map {
+                    localAppend(
+                        listOf(TransformablePage(listOf("f", "g"))),
+                    )
+                }
             manyNewAppendEvents.forEach { upstream.send(it) }
             val lateSlowCollector = PageCollector(subject.downstreamFlow.onEach { delay(1_000) })
             lateSlowCollector.collectIn(testScope)
-            val finalAppendEvent = localAppend(listOf(TransformablePage(listOf("d", "e"))))
+            val finalAppendEvent =
+                localAppend(
+                    listOf(TransformablePage(listOf("d", "e"))),
+                )
             upstream.send(finalAppendEvent)
             when (terminationType) {
                 TerminationType.CloseUpstream -> upstream.close()
@@ -92,7 +105,7 @@ class CachedPageEventFlowTest {
                     pages =
                         (listOf(refreshEvent, appendEvent) + manyNewAppendEvents).flatMap {
                             it.pages
-                        }
+                        },
                 )
             assertThat(lateSlowCollector.items())
                 .containsExactly(lateCollectorState, finalAppendEvent)
@@ -109,8 +122,14 @@ class CachedPageEventFlowTest {
 
     private fun ensureSharing(terminationType: TerminationType) =
         testScope.runTest {
-            val refreshEvent = localRefresh(listOf(TransformablePage(listOf("a", "b", "c"))))
-            val appendEvent = localAppend(listOf(TransformablePage(listOf("d", "e"))))
+            val refreshEvent =
+                localRefresh(
+                    listOf(TransformablePage(listOf("a", "b", "c"))),
+                )
+            val appendEvent =
+                localAppend(
+                    listOf(TransformablePage(listOf("d", "e"))),
+                )
             val upstream = Channel<PageEvent<String>>(Channel.UNLIMITED)
             val subject = CachedPageEventFlow(src = upstream.consumeAsFlow(), scope = testScope)
 
@@ -127,16 +146,16 @@ class CachedPageEventFlowTest {
                 localRefresh(
                     listOf(
                         TransformablePage(listOf("a", "b", "c")),
-                        TransformablePage(listOf("d", "e")),
-                    )
+                        TransformablePage(listOf("d", "e"))
+                    ),
                 )
             assertThat(collector2.items()).containsExactly(firstSnapshotRefreshEvent)
             val prependEvent =
                 localPrepend(
                     listOf(
                         TransformablePage(listOf("a0", "a1")),
-                        TransformablePage(listOf("a2", "a3")),
-                    )
+                        TransformablePage(listOf("a2", "a3"))
+                    ),
                 )
             upstream.send(prependEvent)
             assertThat(collector1.items())
@@ -151,8 +170,8 @@ class CachedPageEventFlowTest {
                         TransformablePage(listOf("a0", "a1")),
                         TransformablePage(listOf("a2", "a3")),
                         TransformablePage(listOf("a", "b", "c")),
-                        TransformablePage(listOf("d", "e")),
-                    )
+                        TransformablePage(listOf("d", "e"))
+                    ),
                 )
             assertThat(collector3.items()).containsExactly(finalState)
             assertThat(collector1.isActive()).isTrue()
@@ -193,7 +212,10 @@ class CachedPageEventFlowTest {
             assertThat(collector2.items()).isEmpty()
 
             // now send refresh event
-            val refreshEvent = localRefresh(listOf(TransformablePage(listOf("a", "b", "c"))))
+            val refreshEvent =
+                localRefresh(
+                    listOf(TransformablePage(listOf("a", "b", "c"))),
+                )
             upstream.send(refreshEvent)
             runCurrent()
 
@@ -210,7 +232,10 @@ class CachedPageEventFlowTest {
             val upstream = Channel<PageEvent<String>>(Channel.UNLIMITED)
             val subject = CachedPageEventFlow(src = upstream.consumeAsFlow(), scope = testScope)
 
-            val refreshEvent = localRefresh(listOf(TransformablePage(listOf("a", "b", "c"))))
+            val refreshEvent =
+                localRefresh(
+                    listOf(TransformablePage(listOf("a", "b", "c"))),
+                )
             upstream.send(refreshEvent)
             runCurrent()
 

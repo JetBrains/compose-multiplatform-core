@@ -18,6 +18,8 @@ package androidx.camera.core.impl;
 
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 
+import android.graphics.Rect;
+
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.FocusMeteringAction;
@@ -165,6 +167,11 @@ public interface CameraControlInternal extends CameraControl {
     @NonNull SessionConfig getSessionConfig();
 
     /**
+     * Gets the full sensor rect.
+     */
+    @NonNull Rect getSensorRect();
+
+    /**
      * Adds the Interop configuration.
      */
     void addInteropConfig(@NonNull Config config);
@@ -250,6 +257,11 @@ public interface CameraControlInternal extends CameraControl {
         @Override
         public @NonNull SessionConfig getSessionConfig() {
             return SessionConfig.defaultEmptySessionConfig();
+        }
+
+        @Override
+        public @NonNull Rect getSensorRect() {
+            return new Rect();
         }
 
         @Override

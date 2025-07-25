@@ -26,16 +26,15 @@ import androidx.room.compiler.codegen.kotlin.KotlinParameterSpec
 internal class XParameterSpecImpl(
     override val name: String,
     override val type: XTypeName,
-    override val java: JavaParameterSpec,
-    override val kotlin: KotlinParameterSpec,
-) : ImplSpec<JavaParameterSpec, KotlinParameterSpec>(), XParameterSpec {
-    override fun toBuilder() = Builder(name, type, java.toBuilder(), kotlin.toBuilder())
+    internal val java: JavaParameterSpec,
+    internal val kotlin: KotlinParameterSpec,
+) : XSpec(), XParameterSpec {
 
     internal class Builder(
         private val name: String,
         private val type: XTypeName,
         internal val java: JavaParameterSpec.Builder,
-        internal val kotlin: KotlinParameterSpec.Builder,
+        internal val kotlin: KotlinParameterSpec.Builder
     ) : XSpec.Builder(), XParameterSpec.Builder {
         private val delegates: List<XParameterSpec.Builder> = listOf(java, kotlin)
 

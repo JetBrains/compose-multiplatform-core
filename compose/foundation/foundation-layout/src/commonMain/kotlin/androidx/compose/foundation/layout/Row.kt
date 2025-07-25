@@ -95,26 +95,29 @@ inline fun Row(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit,
+    content: @Composable RowScope.() -> Unit
 ) {
     val measurePolicy = rowMeasurePolicy(horizontalArrangement, verticalAlignment)
     Layout(
         content = { RowScopeInstance.content() },
         measurePolicy = measurePolicy,
-        modifier = modifier,
+        modifier = modifier
     )
 }
 
 /** MeasureBlocks to use when horizontalArrangement and verticalAlignment are not provided. */
 @PublishedApi
 internal val DefaultRowMeasurePolicy: MeasurePolicy =
-    RowMeasurePolicy(horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.Top)
+    RowMeasurePolicy(
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Top,
+    )
 
 @PublishedApi
 @Composable
 internal fun rowMeasurePolicy(
     horizontalArrangement: Arrangement.Horizontal,
-    verticalAlignment: Alignment.Vertical,
+    verticalAlignment: Alignment.Vertical
 ): MeasurePolicy =
     if (horizontalArrangement == Arrangement.Start && verticalAlignment == Alignment.Top) {
         DefaultRowMeasurePolicy
@@ -129,7 +132,7 @@ internal fun rowMeasurePolicy(
 
 internal data class RowMeasurePolicy(
     private val horizontalArrangement: Arrangement.Horizontal,
-    private val verticalAlignment: Alignment.Vertical,
+    private val verticalAlignment: Alignment.Vertical
 ) : MeasurePolicy, RowColumnMeasurePolicy {
     override fun Placeable.mainAxisSize() = width
 
@@ -137,7 +140,7 @@ internal data class RowMeasurePolicy(
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         return measure(
             constraints.minWidth,
@@ -149,7 +152,7 @@ internal data class RowMeasurePolicy(
             measurables,
             arrayOfNulls(measurables.size),
             0,
-            measurables.size,
+            measurables.size
         )
     }
 
@@ -157,14 +160,14 @@ internal data class RowMeasurePolicy(
         mainAxisLayoutSize: Int,
         childrenMainAxisSize: IntArray,
         mainAxisPositions: IntArray,
-        measureScope: MeasureScope,
+        measureScope: MeasureScope
     ) {
         with(horizontalArrangement) {
             measureScope.arrange(
                 mainAxisLayoutSize,
                 childrenMainAxisSize,
                 measureScope.layoutDirection,
-                mainAxisPositions,
+                mainAxisPositions
             )
         }
     }
@@ -179,7 +182,7 @@ internal data class RowMeasurePolicy(
         crossAxisOffset: IntArray?,
         currentLineIndex: Int,
         startIndex: Int,
-        endIndex: Int,
+        endIndex: Int
     ): MeasureResult {
         return with(measureScope) {
             layout(mainAxisLayoutSize, crossAxisLayoutSize) {
@@ -189,7 +192,7 @@ internal data class RowMeasurePolicy(
                             placeable!!,
                             placeable.rowColumnParentData,
                             crossAxisLayoutSize,
-                            beforeCrossAxisAlignmentLine,
+                            beforeCrossAxisAlignmentLine
                         )
                     placeable.place(mainAxisPositions[i], crossAxisPosition)
                 }
@@ -202,14 +205,14 @@ internal data class RowMeasurePolicy(
         crossAxisMin: Int,
         mainAxisMax: Int,
         crossAxisMax: Int,
-        isPrioritizing: Boolean,
+        isPrioritizing: Boolean
     ): Constraints {
         return createRowConstraints(
             isPrioritizing,
             mainAxisMin,
             crossAxisMin,
             mainAxisMax,
-            crossAxisMax,
+            crossAxisMax
         )
     }
 
@@ -217,20 +220,20 @@ internal data class RowMeasurePolicy(
         placeable: Placeable,
         parentData: RowColumnParentData?,
         crossAxisLayoutSize: Int,
-        beforeCrossAxisAlignmentLine: Int,
+        beforeCrossAxisAlignmentLine: Int
     ): Int {
         val childCrossAlignment = parentData?.crossAxisAlignment
         return childCrossAlignment?.align(
             size = crossAxisLayoutSize - placeable.height,
             layoutDirection = LayoutDirection.Ltr,
             placeable = placeable,
-            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine,
+            beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine
         ) ?: verticalAlignment.align(0, crossAxisLayoutSize - placeable.height)
     }
 
     override fun IntrinsicMeasureScope.minIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int,
+        height: Int
     ) =
         IntrinsicMeasureBlocks.HorizontalMinWidth(
             measurables,
@@ -240,7 +243,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.minIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int,
+        width: Int
     ) =
         IntrinsicMeasureBlocks.HorizontalMinHeight(
             measurables,
@@ -250,7 +253,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicWidth(
         measurables: List<IntrinsicMeasurable>,
-        height: Int,
+        height: Int
     ) =
         IntrinsicMeasureBlocks.HorizontalMaxWidth(
             measurables,
@@ -260,7 +263,7 @@ internal data class RowMeasurePolicy(
 
     override fun IntrinsicMeasureScope.maxIntrinsicHeight(
         measurables: List<IntrinsicMeasurable>,
-        width: Int,
+        width: Int
     ) =
         IntrinsicMeasureBlocks.HorizontalMaxHeight(
             measurables,
@@ -274,21 +277,21 @@ internal fun createRowConstraints(
     mainAxisMin: Int,
     crossAxisMin: Int,
     mainAxisMax: Int,
-    crossAxisMax: Int,
+    crossAxisMax: Int
 ): Constraints {
     return if (!isPrioritizing) {
         Constraints(
             maxWidth = mainAxisMax,
             maxHeight = crossAxisMax,
             minWidth = mainAxisMin,
-            minHeight = crossAxisMin,
+            minHeight = crossAxisMin
         )
     } else {
         Constraints.fitPrioritizingWidth(
             maxWidth = mainAxisMax,
             maxHeight = crossAxisMax,
             minWidth = mainAxisMin,
-            minHeight = crossAxisMin,
+            minHeight = crossAxisMin
         )
     }
 }
@@ -313,7 +316,7 @@ interface RowScope {
     @Stable
     fun Modifier.weight(
         @FloatRange(from = 0.0, fromInclusive = false) weight: Float,
-        fill: Boolean = true,
+        fill: Boolean = true
     ): Modifier
 
     /**
@@ -384,7 +387,7 @@ internal object RowScopeInstance : RowScope {
             LayoutWeightElement(
                 // Coerce Float.POSITIVE_INFINITY to Float.MAX_VALUE to avoid errors
                 weight = weight.coerceAtMost(Float.MAX_VALUE),
-                fill = fill,
+                fill = fill
             )
         )
     }

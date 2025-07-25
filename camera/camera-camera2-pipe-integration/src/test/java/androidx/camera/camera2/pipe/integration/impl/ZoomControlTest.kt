@@ -54,7 +54,11 @@ class ZoomControlTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val cameraScope = CoroutineScope(Job() + dispatcher)
 
-        UseCaseThreads(cameraScope, executor, dispatcher)
+        UseCaseThreads(
+            cameraScope,
+            executor,
+            dispatcher,
+        )
     }
 
     private val zoomCompat = FakeZoomCompat(1.0f, 5.0f)

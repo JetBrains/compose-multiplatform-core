@@ -51,7 +51,7 @@ constructor(
     private val threads: UseCaseThreads,
     private val cameraPipe: CameraPipe,
     private val inactiveSurfaceCloser: InactiveSurfaceCloser,
-    private val sessionConfigAdapter: SessionConfigAdapter,
+    private val sessionConfigAdapter: SessionConfigAdapter
 ) : CameraSurfaceManager.SurfaceListener {
 
     private val lock = Any()
@@ -177,6 +177,13 @@ constructor(
      * setup was terminated.
      */
     public open suspend fun awaitSetupCompletion(): Boolean {
+        if (sessionConfigAdapter.isSessionProcessorEnabled) {
+            // The SessionProcessor flow does not use the setupAsync flow of this class and the
+            // whole UseCaseCamera layer is created only after SessionProcessor setup is completed
+            // successfully.
+            return true
+        }
+
         val setupDeferred =
             synchronized(lock) {
                 val setupDeferredSnapshot = setupDeferred

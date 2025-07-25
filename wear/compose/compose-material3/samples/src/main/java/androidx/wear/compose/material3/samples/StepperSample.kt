@@ -44,7 +44,7 @@ import androidx.wear.compose.material3.samples.icons.VolumeUpIcon
 @Composable
 fun StepperSample() {
     var value by remember { mutableFloatStateOf(2f) }
-    val valueRange = remember { 0f..4f }
+    val valueRange = 0f..4f
     Box(modifier = Modifier.fillMaxSize()) {
         Stepper(
             value = value,
@@ -59,7 +59,7 @@ fun StepperSample() {
         StepperLevelIndicator(
             value = { value },
             valueRange = valueRange,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier.align(Alignment.CenterStart)
         )
     }
 }
@@ -68,7 +68,7 @@ fun StepperSample() {
 @Composable
 fun StepperWithIntegerSample() {
     var value by remember { mutableIntStateOf(3) }
-    val valueProgression = remember { 0..10 }
+    val valueProgression = 0..10
     Box(modifier = Modifier.fillMaxSize()) {
         Stepper(
             value = value,
@@ -82,7 +82,7 @@ fun StepperWithIntegerSample() {
         StepperLevelIndicator(
             value = { value },
             valueProgression = valueProgression,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier.align(Alignment.CenterStart)
         )
     }
 }
@@ -91,7 +91,7 @@ fun StepperWithIntegerSample() {
 @Composable
 fun StepperWithRangeSemanticsSample() {
     var value by remember { mutableFloatStateOf(2f) }
-    val valueRange = remember { 0f..4f }
+    val valueRange = 0f..4f
     val onValueChange = { i: Float -> value = i }
     val steps = 7
     Box(modifier = Modifier.fillMaxSize()) {
@@ -109,7 +109,7 @@ fun StepperWithRangeSemanticsSample() {
         StepperLevelIndicator(
             value = { value },
             valueRange = valueRange,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier.align(Alignment.CenterStart)
         )
     }
 }
@@ -118,7 +118,7 @@ fun StepperWithRangeSemanticsSample() {
 @Composable
 fun StepperWithButtonSample() {
     var value by remember { mutableFloatStateOf(2f) }
-    val valueRange = remember { 0f..4f }
+    val valueRange = 0f..4f
     Box(modifier = Modifier.fillMaxSize()) {
         Stepper(
             value = value,
@@ -126,7 +126,7 @@ fun StepperWithButtonSample() {
             valueRange = valueRange,
             increaseIcon = { VolumeUpIcon(StepperDefaults.IconSize) },
             decreaseIcon = { VolumeDownIcon(StepperDefaults.IconSize) },
-            steps = 7,
+            steps = 7
         ) {
             Text(String.format("Value: %.1f".format(value)))
             Button(
@@ -140,7 +140,7 @@ fun StepperWithButtonSample() {
         StepperLevelIndicator(
             value = { value },
             valueRange = valueRange,
-            modifier = Modifier.align(Alignment.CenterStart),
+            modifier = Modifier.align(Alignment.CenterStart)
         )
     }
 }

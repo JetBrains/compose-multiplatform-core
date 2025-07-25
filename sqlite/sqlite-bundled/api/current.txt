@@ -26,7 +26,6 @@ package androidx.sqlite.driver.bundled {
     ctor public BundledSQLiteDriver();
     method public androidx.sqlite.SQLiteConnection open(String fileName);
     method public androidx.sqlite.SQLiteConnection open(String fileName, int flags);
-    property public boolean hasConnectionPool;
   }
 
 }

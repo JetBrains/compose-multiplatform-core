@@ -25,13 +25,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
-public class RecordingSession(private val defaults: Defaults) {
-    public companion object {
-        public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
-        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 5000
-        public const val DEFAULT_VERIFY_STATUS_TIMEOUT_MS: Long = 15000
-    }
-
+public class RecordingSession(
+    private val defaults: Defaults,
+) {
     public data class Defaults(
         val context: Context,
         val recorder: Recorder? = null,
@@ -42,9 +38,9 @@ public class RecordingSession(private val defaults: Defaults) {
                 recording.stop()
             },
         val callbackExecutor: Executor = mainThreadExecutor(),
-        val verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
-        val verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
-        val verifyStatusTimeoutMs: Long = DEFAULT_VERIFY_STATUS_TIMEOUT_MS,
+        val verifyStatusCount: Int = 5,
+        val verifyTimeoutMs: Long = 5000L,
+        val verifyStatusTimeoutMs: Long = 15000L,
     )
 
     private val recordingsToStop = mutableListOf<Recording>()

@@ -60,7 +60,7 @@ class NavControllerWithFragmentTest {
         navController.navigate(
             R.id.empty_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
 
         fm?.executePendingTransactions()
@@ -91,7 +91,10 @@ class NavControllerWithFragmentTest {
         val navigator = navController.navigatorProvider.getNavigator(FragmentNavigator::class.java)
         assertThat(navigator.backStack.value.size).isEqualTo(1)
 
-        navController.navigate(R.id.empty_fragment, null)
+        navController.navigate(
+            R.id.empty_fragment,
+            null,
+        )
         fm?.executePendingTransactions()
 
         assertThat(navigator.backStack.value.size).isEqualTo(2)
@@ -120,7 +123,7 @@ class NavControllerWithFragmentTest {
                     inclusive = true
                     saveState = true
                 }
-            },
+            }
         )
         fm.executePendingTransactions()
 
@@ -198,7 +201,7 @@ class NavControllerWithFragmentTest {
         navController.graph =
             navController.createGraph(
                 route = TestGraph::class,
-                startDestination = TestClass::class,
+                startDestination = TestClass::class
             ) {
                 fragment<EmptyFragment, TestClass>()
             }
@@ -317,7 +320,7 @@ class NavControllerWithFragmentTest {
         navController.graph =
             navController.createGraph(
                 route = TestGraph::class,
-                startDestination = TestClass::class,
+                startDestination = TestClass::class
             ) {
                 dialog<BuilderTestDialogFragment, TestClass>()
             }
@@ -402,7 +405,7 @@ class NavControllerWithFragmentTest {
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
         assertThat(navController.currentBackStackEntry?.destination?.id)
             .isEqualTo(R.id.testDialog_fragment)
@@ -437,7 +440,7 @@ class NavControllerWithFragmentTest {
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
         assertThat(navController.currentBackStackEntry?.destination?.id)
             .isEqualTo(R.id.testDialog_fragment)
@@ -470,14 +473,14 @@ class NavControllerWithFragmentTest {
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
 
         // immediate third navigation with singleTop without executing previous transactions
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
 
         assertThat(navController.currentBackStackEntry?.destination?.id)
@@ -513,14 +516,14 @@ class NavControllerWithFragmentTest {
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
 
         // immediate third navigation with singleTop without executing previous singleTop
         navController.navigate(
             R.id.testDialog_fragment,
             null,
-            NavOptions.Builder().setLaunchSingleTop(true).build(),
+            NavOptions.Builder().setLaunchSingleTop(true).build()
         )
 
         fm?.executePendingTransactions()

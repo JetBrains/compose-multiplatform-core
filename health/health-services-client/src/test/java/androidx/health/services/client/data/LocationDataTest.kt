@@ -43,7 +43,11 @@ class LocationDataTest {
     @Test
     fun protoRoundTripWithDefaultAltitudeAndBearing() {
         val valueProtoBuilder = DataProto.Value.newBuilder()
-        LocationData(latitude = 1.4, longitude = 2.3).addToValueProtoBuilder(valueProtoBuilder)
+        LocationData(
+                latitude = 1.4,
+                longitude = 2.3,
+            )
+            .addToValueProtoBuilder(valueProtoBuilder)
 
         val location = LocationData.fromDataProtoValue(valueProtoBuilder.build())
 

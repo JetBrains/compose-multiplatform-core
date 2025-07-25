@@ -139,7 +139,7 @@ public class SearchSpecToProtoConverterTest {
                                 prefix2 + "typeB", configProto))),
                 mLocalStorageIcingOptionsConfig);
         // Convert SearchSpec to proto.
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getQuery()).isEqualTo("query");
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
@@ -190,7 +190,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
 
         // Convert SearchSpec to proto.
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getQuery()).isEqualTo("query");
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
@@ -274,7 +274,7 @@ public class SearchSpecToProtoConverterTest {
                                 prefix2 + "typeB")));
 
         // Convert SearchSpec to proto.
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getQuery()).isEqualTo("query");
         assertThat(searchSpecProto.getSchemaTypeFiltersList())
@@ -415,8 +415,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = convert.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getNumPerPage()).isEqualTo(123);
         assertThat(resultSpecProto.getSnippetSpec().getNumToSnippet()).isEqualTo(234);
@@ -444,7 +443,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = convert.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(), /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getNumPerPage()).isEqualTo(123);
         assertThat(resultSpecProto.getSnippetSpec().getNumToSnippet()).isEqualTo(234);
@@ -484,8 +483,7 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getNumPerPage()).isEqualTo(123);
         assertThat(resultSpecProto.getSnippetSpec().getNumToSnippet()).isEqualTo(234);
@@ -533,15 +531,13 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 namespaceCache,
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(1);
         assertThat(resultSpecProto.getResultGroupings(0).getEntryGroupings(0).getNamespace())
                 .isEqualTo("contacts$database/namespaceA");
         ResultSpecProto nestedResultSpecProto =
-                converter.toSearchSpecProto(/*isVMEnabled=*/
-                        false).getJoinSpec().getNestedSpec().getResultSpec();
+                converter.toSearchSpecProto().getJoinSpec().getNestedSpec().getResultSpec();
         assertThat(nestedResultSpecProto.getResultGroupingsCount()).isEqualTo(1);
         assertThat(nestedResultSpecProto.getResultGroupings(0).getEntryGroupings(0).getNamespace())
                 .isEqualTo("aiai$database/namespaceA");
@@ -586,8 +582,7 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 namespaceCache,
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         assertThat(resultSpecProto.getTypePropertyMasksCount()).isEqualTo(1);
         assertThat(resultSpecProto.getTypePropertyMasks(0).getSchemaType()).isEqualTo(
@@ -595,8 +590,7 @@ public class SearchSpecToProtoConverterTest {
         assertThat(resultSpecProto.getTypePropertyMasks(0).getPaths(0)).isEqualTo("name");
 
         ResultSpecProto nestedResultSpecProto =
-                converter.toSearchSpecProto(/*isVMEnabled=*/
-                        false).getJoinSpec().getNestedSpec().getResultSpec();
+                converter.toSearchSpecProto().getJoinSpec().getNestedSpec().getResultSpec();
         assertThat(nestedResultSpecProto.getTypePropertyMasksCount()).isEqualTo(1);
         assertThat(nestedResultSpecProto.getTypePropertyMasks(0).getSchemaType()).isEqualTo(
                 "aiai$database/ContactAction");
@@ -624,8 +618,7 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getTypePropertyMasksCount()).isEqualTo(1);
         assertThat(resultSpecProto.getTypePropertyMasks(0).getSchemaType()).isEqualTo(
@@ -652,8 +645,7 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getTypePropertyMasksCount()).isEqualTo(1);
         assertThat(resultSpecProto.getTypePropertyMasks(0).getSchemaType()).isEqualTo(
@@ -702,8 +694,7 @@ public class SearchSpecToProtoConverterTest {
 
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 namespaceCache,
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         // The "name" property specified in Artist's projection should remain in the result,
         // since even though Artist doesn't exist in the original schema filters directly, we have
@@ -714,169 +705,6 @@ public class SearchSpecToProtoConverterTest {
                 "package$database/Artist");
         assertThat(resultSpecProto.getTypePropertyMasks(0).getPathsCount()).isEqualTo(1);
         assertThat(resultSpecProto.getTypePropertyMasks(0).getPaths(0)).isEqualTo("name");
-    }
-
-    @Test
-    public void testToResultSpecProto_isVMEnabledFalse_normalNumTotalBytesPerPageThresholdSet()
-            throws Exception {
-        IcingOptionsConfig customConfig = new LocalStorageIcingOptionsConfig() {
-            @Override
-            public int getMaxPageBytesLimit() {
-                return 12345;
-            }
-
-            @Override
-            public int getMaxPageBytesLimitForVm() {
-                return 98765;
-            }
-        };
-        NamespaceCache namespaceCache = new NamespaceCache(ImmutableMap.of());
-        SchemaCache schemaCache = new SchemaCache();
-        SearchSpecToProtoConverter converter =
-                new SearchSpecToProtoConverter(
-                        /* queryExpression= */ "",
-                        new SearchSpec.Builder().build(),
-                        /* prefixes= */ ImmutableSet.of(),
-                        namespaceCache,
-                        schemaCache,
-                        customConfig);
-        ResultSpecProto resultSpecProto =
-                converter.toResultSpecProto(namespaceCache, schemaCache, /*isVMEnabled=*/false);
-        assertThat(resultSpecProto.getNumTotalBytesPerPageThreshold()).isEqualTo(12345);
-    }
-
-    @Test
-    public void testToResultSpecProto_isVMEnabledTrue_vmNumTotalBytesPerPageThresholdSet()
-            throws Exception {
-        IcingOptionsConfig customConfig = new LocalStorageIcingOptionsConfig() {
-            @Override
-            public int getMaxPageBytesLimit() {
-                return 12345;
-            }
-
-            @Override
-            public int getMaxPageBytesLimitForVm() {
-                return 98765;
-            }
-        };
-        NamespaceCache namespaceCache = new NamespaceCache(ImmutableMap.of());
-        SchemaCache schemaCache = new SchemaCache();
-        SearchSpecToProtoConverter converter =
-                new SearchSpecToProtoConverter(
-                        /* queryExpression= */ "",
-                        new SearchSpec.Builder().build(),
-                        /* prefixes= */ ImmutableSet.of(),
-                        namespaceCache,
-                        schemaCache,
-                        customConfig);
-        ResultSpecProto resultSpecProto =
-                converter.toResultSpecProto(namespaceCache, schemaCache, /*isVMEnabled=*/true);
-        assertThat(resultSpecProto.getNumTotalBytesPerPageThreshold()).isEqualTo(98765);
-    }
-
-
-    @Test
-    public void testToSearchSpecProto_isVMEnabledFalse_normalNumTotalBytesPerPageThresholdSet()
-            throws Exception {
-        IcingOptionsConfig customConfig = new LocalStorageIcingOptionsConfig() {
-            @Override
-            public int getMaxPageBytesLimit() {
-                return 12345;
-            }
-
-            @Override
-            public int getMaxPageBytesLimitForVm() {
-                return 98765;
-            }
-        };
-
-        // Create a JoinSpec object and set it in the converter
-        JoinSpec joinSpec =
-                new JoinSpec.Builder("childPropertyExpression")
-                        .setNestedSearch("", new SearchSpec.Builder().build())
-                        .build();
-
-        SearchSpec searchSpec =
-                new SearchSpec.Builder()
-                        .setJoinSpec(joinSpec)
-                        .build();
-
-        String personPrefix = PrefixUtil.createPrefix("contacts", "database");
-        NamespaceCache namespaceCache =
-                new NamespaceCache(
-                        ImmutableMap.of(
-                                personPrefix, ImmutableSet.of(personPrefix + "namespaceA")));
-
-        SchemaTypeConfigProto configProto = SchemaTypeConfigProto.getDefaultInstance();
-        Map<String, Map<String, SchemaTypeConfigProto>> schemaMap =
-                ImmutableMap.of(
-                        personPrefix, ImmutableMap.of(personPrefix + "Person", configProto));
-        SchemaCache schemaCache = new SchemaCache(schemaMap);
-        SearchSpecToProtoConverter converter =
-                new SearchSpecToProtoConverter(
-                        /* queryExpression= */ "",
-                        searchSpec,
-                        /* prefixes= */ ImmutableSet.of(personPrefix),
-                        namespaceCache,
-                        schemaCache,
-                        customConfig);
-
-        ResultSpecProto nestedResultSpecProto =
-                converter.toSearchSpecProto(/*isVMEnabled=*/false)
-                        .getJoinSpec().getNestedSpec().getResultSpec();
-        assertThat(nestedResultSpecProto.getNumTotalBytesPerPageThreshold()).isEqualTo(12345);
-    }
-
-    @Test
-    public void testToSearchSpecProto_isVMEnabledTrue_vmNumTotalBytesPerPageThresholdSet()
-            throws Exception {
-        IcingOptionsConfig customConfig = new LocalStorageIcingOptionsConfig() {
-            @Override
-            public int getMaxPageBytesLimit() {
-                return 12345;
-            }
-
-            @Override
-            public int getMaxPageBytesLimitForVm() {
-                return 98765;
-            }
-        };
-
-        // Create a JoinSpec object and set it in the converter
-        JoinSpec joinSpec =
-                new JoinSpec.Builder("childPropertyExpression")
-                        .setNestedSearch("", new SearchSpec.Builder().build())
-                        .build();
-
-        SearchSpec searchSpec =
-                new SearchSpec.Builder()
-                        .setJoinSpec(joinSpec)
-                        .build();
-
-        String personPrefix = PrefixUtil.createPrefix("contacts", "database");
-        NamespaceCache namespaceCache =
-                new NamespaceCache(
-                        ImmutableMap.of(
-                                personPrefix, ImmutableSet.of(personPrefix + "namespaceA")));
-
-        SchemaTypeConfigProto configProto = SchemaTypeConfigProto.getDefaultInstance();
-        Map<String, Map<String, SchemaTypeConfigProto>> schemaMap =
-                ImmutableMap.of(
-                        personPrefix, ImmutableMap.of(personPrefix + "Person", configProto));
-        SchemaCache schemaCache = new SchemaCache(schemaMap);
-        SearchSpecToProtoConverter converter =
-                new SearchSpecToProtoConverter(
-                        /* queryExpression= */ "",
-                        searchSpec,
-                        /* prefixes= */ ImmutableSet.of(personPrefix),
-                        namespaceCache,
-                        schemaCache,
-                        customConfig);
-
-        ResultSpecProto nestedResultSpecProto =
-                converter.toSearchSpecProto(/*isVMEnabled=*/true)
-                        .getJoinSpec().getNestedSpec().getResultSpec();
-        assertThat(nestedResultSpecProto.getNumTotalBytesPerPageThreshold()).isEqualTo(98765);
     }
 
     @Test
@@ -916,7 +744,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getTypePropertyFiltersCount()).isEqualTo(1);
         assertThat(searchSpecProto.getTypePropertyFilters(0).getSchemaType()).isEqualTo(
@@ -948,7 +776,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(),
                 mLocalStorageIcingOptionsConfig);
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getTypePropertyFiltersCount()).isEqualTo(1);
         assertThat(searchSpecProto.getTypePropertyFilters(0).getSchemaType()).isEqualTo(
@@ -995,7 +823,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         // The "name" property specified in Artist's property filters should remain in the result,
         // since even though Artist doesn't exist in the original schema filters directly, we have
@@ -1057,8 +885,7 @@ public class SearchSpecToProtoConverterTest {
                 .getPropertyWeights(0).getPath()).isEqualTo("name");
 
         ScoringSpecProto nestedScoringSpecProto =
-                converter.toSearchSpecProto(/*isVMEnabled=*/
-                        false).getJoinSpec().getNestedSpec().getScoringSpec();
+                converter.toSearchSpecProto().getJoinSpec().getNestedSpec().getScoringSpec();
         assertThat(nestedScoringSpecProto.getTypePropertyWeightsCount()).isEqualTo(1);
         assertThat(nestedScoringSpecProto.getTypePropertyWeights(0).getSchemaType()).isEqualTo(
                 "aiai$database/ContactAction");
@@ -1092,8 +919,7 @@ public class SearchSpecToProtoConverterTest {
                         prefix2, ImmutableSet.of(
                                 prefix2 + "namespaceA",
                                 prefix2 + "namespaceB"))),
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(2);
         // First grouping should have same package name.
@@ -1140,8 +966,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 namespaceCache,
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(2);
         // First grouping should have same namespace.
@@ -1188,8 +1013,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(2);
         // First grouping should have the same schema type.
@@ -1235,8 +1059,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 namespaceCache,
-                new SchemaCache(),
-                /*isVMEnabled=*/false);
+                new SchemaCache());
 
         // All namespace should be separated.
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(4);
@@ -1273,8 +1096,7 @@ public class SearchSpecToProtoConverterTest {
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(
                 new NamespaceCache(ImmutableMap.of()),
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         // All schema should be separated.
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(4);
@@ -1317,8 +1139,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(namespaceCache,
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(4);
         ResultSpecProto.ResultGrouping grouping1 = resultSpecProto.getResultGroupings(0);
@@ -1411,8 +1232,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
         ResultSpecProto resultSpecProto = converter.toResultSpecProto(namespaceCache,
-                new SchemaCache(schemaMap),
-                /*isVMEnabled=*/false);
+                new SchemaCache(schemaMap));
 
         assertThat(resultSpecProto.getResultGroupingsCount()).isEqualTo(8);
         ResultSpecProto.ResultGrouping grouping1 = resultSpecProto.getResultGroupings(0);
@@ -1508,7 +1328,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(),
                 mLocalStorageIcingOptionsConfig);
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
 
         assertThat(searchSpecProto.getNamespaceFiltersList()).containsExactly(
                 "package$database1/namespace1", "package$database1/namespace2",
@@ -1534,7 +1354,7 @@ public class SearchSpecToProtoConverterTest {
                 new SchemaCache(),
                 mLocalStorageIcingOptionsConfig);
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // Only search prefix1 will return namespace 1 and 2.
         assertThat(searchSpecProto.getNamespaceFiltersList()).containsExactly(
                 "package$database1/namespace1", "package$database1/namespace2");
@@ -1556,7 +1376,7 @@ public class SearchSpecToProtoConverterTest {
                                 "package$database1/namespace2"))),
                 new SchemaCache(),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // If the searching namespace filter is not empty, the target namespace filter will be the
         // intersection of the searching namespace filters that users want to search over and
         // those candidates which are stored in AppSearch.
@@ -1580,7 +1400,7 @@ public class SearchSpecToProtoConverterTest {
                         "package$database1/namespace2"))),
                 new SchemaCache(),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // If the searching namespace filter is not empty, the target namespace filter will be the
         // intersection of the searching namespace filters that users want to search over and
         // those candidates which are stored in AppSearch.
@@ -1608,7 +1428,7 @@ public class SearchSpecToProtoConverterTest {
                                 "package$database2/typeC", schemaTypeConfigProto,
                                 "package$database2/typeD", schemaTypeConfigProto))),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // Empty searching filter will get all types for target filter
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
                 "package$database1/typeA", "package$database1/typeB",
@@ -1637,7 +1457,7 @@ public class SearchSpecToProtoConverterTest {
                                 "package$database2/typeC", schemaTypeConfigProto,
                                 "package$database2/typeD", schemaTypeConfigProto))),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // Only search prefix1 will return typeA and B.
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
                 "package$database1/typeA", "package$database1/typeB");
@@ -1662,7 +1482,7 @@ public class SearchSpecToProtoConverterTest {
                                 "package$database1/typeA", schemaTypeConfigProto,
                                 "package$database1/typeB", schemaTypeConfigProto))),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // If the searching schema filter is not empty, the target schema filter will be the
         // intersection of the schema filters that users want to search over and those candidates
         // which are stored in AppSearch.
@@ -1702,7 +1522,7 @@ public class SearchSpecToProtoConverterTest {
                         prefix, ImmutableSet.of("package$database/namespace"))),
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // The schema filter of "Person" specified in searchSpec will be expanded to "Artist" via
         // polymorphism.
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
@@ -1754,7 +1574,7 @@ public class SearchSpecToProtoConverterTest {
                         prefix, ImmutableSet.of("package$database/namespace"))),
                 new SchemaCache(schemaMap),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
                 "package$database/A", "package$database/B", "package$database/C",
                 "package$database/D", "package$database/E");
@@ -1779,7 +1599,7 @@ public class SearchSpecToProtoConverterTest {
                                 "package$database1/typeA", schemaTypeConfigProto,
                                 "package$database1/typeB", schemaTypeConfigProto))),
                 mLocalStorageIcingOptionsConfig);
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // If there is no intersection of the schema filters that user want to search over and
         // those filters which are stored in AppSearch, return empty.
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).isEmpty();
@@ -1818,7 +1638,7 @@ public class SearchSpecToProtoConverterTest {
                         /*visiblePrefixedSchemas=*/ ImmutableSet.of(
                                 prefix + "schema1", prefix + "schema3")));
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         // schema 2 is filtered out since it is not searchable for user.
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(
                 prefix + "schema1", prefix + "schema3");
@@ -1883,8 +1703,7 @@ public class SearchSpecToProtoConverterTest {
                 /*visibilityChecker=*/null);
         assertThat(nonEmptyConverter.hasNothingToSearch()).isTrue();
         // As the JoinSpec has nothing to search, it should not be part of the SearchSpec
-        assertThat(
-                nonEmptyConverter.toSearchSpecProto(/*isVMEnabled=*/false).hasJoinSpec()).isFalse();
+        assertThat(nonEmptyConverter.toSearchSpecProto().hasJoinSpec()).isFalse();
     }
 
     @Test
@@ -1921,7 +1740,7 @@ public class SearchSpecToProtoConverterTest {
                 AppSearchTestUtils.createMockVisibilityChecker(
                         /*visiblePrefixedSchemas=*/ ImmutableSet.of(prefix + "schema3")));
 
-        SearchSpecProto searchSpecProto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto searchSpecProto = converter.toSearchSpecProto();
         assertThat(searchSpecProto.getSchemaTypeFiltersList()).containsExactly(prefix + "schema3");
 
         // Schema 1 and 2 are filtered out of the nested spec. As the JoinSpec has nothing to
@@ -2040,7 +1859,7 @@ public class SearchSpecToProtoConverterTest {
                         namespaceCache,
                         new SchemaCache(),
                         mLocalStorageIcingOptionsConfig);
-        SearchSpecProto proto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto proto = converter.toSearchSpecProto();
         assertThat(proto.getDocumentUriFiltersList()).containsExactly(
                 NamespaceDocumentUriGroup.newBuilder()
                         .setNamespace("package1$database1/namespace_common")
@@ -2090,7 +1909,7 @@ public class SearchSpecToProtoConverterTest {
                         namespaceCache,
                         new SchemaCache(),
                         mLocalStorageIcingOptionsConfig);
-        SearchSpecProto proto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto proto = converter.toSearchSpecProto();
         assertThat(proto.getDocumentUriFiltersList()).containsExactly(
                 NamespaceDocumentUriGroup.newBuilder()
                         .setNamespace("package1$database1/namespace1")
@@ -2122,7 +1941,7 @@ public class SearchSpecToProtoConverterTest {
                         namespaceCache,
                         new SchemaCache(),
                         mLocalStorageIcingOptionsConfig);
-        SearchSpecProto proto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto proto = converter.toSearchSpecProto();
         assertThat(proto.getDocumentUriFiltersList()).containsExactly(
                 NamespaceDocumentUriGroup.newBuilder()
                         .setNamespace("package1$database1/namespace_common")
@@ -2161,7 +1980,7 @@ public class SearchSpecToProtoConverterTest {
                         namespaceCache,
                         new SchemaCache(),
                         mLocalStorageIcingOptionsConfig);
-        SearchSpecProto proto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto proto = converter.toSearchSpecProto();
         assertThat(proto.getDocumentUriFiltersList()).containsExactly(
                 NamespaceDocumentUriGroup.newBuilder()
                         .setNamespace("package1$database1/namespace_common")
@@ -2188,7 +2007,7 @@ public class SearchSpecToProtoConverterTest {
                         namespaceCache,
                         new SchemaCache(),
                         mLocalStorageIcingOptionsConfig);
-        SearchSpecProto proto = converter.toSearchSpecProto(/*isVMEnabled=*/false);
+        SearchSpecProto proto = converter.toSearchSpecProto();
         assertThat(proto.getDocumentUriFiltersList()).isEmpty();
     }
 }

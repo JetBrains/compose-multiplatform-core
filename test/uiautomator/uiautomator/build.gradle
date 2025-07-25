@@ -43,8 +43,6 @@ dependencies {
     androidTestImplementation(libs.testRunner)
 
     androidTestRuntimeOnly(libs.dexmakerMockitoInline)
-
-    lintPublish(project(":test:uiautomator:uiautomator-lint"))
 }
 
 android {

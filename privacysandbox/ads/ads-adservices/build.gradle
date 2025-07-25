@@ -51,7 +51,8 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 35
+    compileSdkExtension = 14
     namespace = "androidx.privacysandbox.ads.adservices"
 }
 
@@ -60,4 +61,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "This library enables integration with Privacy Preserving APIs, which are part of Privacy Sandbox on Android."
+    legacyDisableKotlinStrictApiMode = true
 }

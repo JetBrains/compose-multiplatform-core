@@ -21,7 +21,7 @@ import android.content.ContextWrapper
 import android.inputmethodservice.InputMethodService
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.window.layout.util.ContextCompatHelper.unwrapContext
+import androidx.window.layout.util.ContextCompatHelper.unwrapUiContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,20 +33,20 @@ import org.mockito.Mockito.mock
 class ContextCompatHelperTest {
 
     @Test
-    fun testUnwrapContext_noContextWrapper_activity() {
+    fun testUnwrapUiContext_noContextWrapper_activity() {
         val context = mock(Activity::class.java)
-        assertEquals(context, unwrapContext(context))
+        assertEquals(context, unwrapUiContext(context))
     }
 
     @Test
-    fun testUnwrapContext_noContextWrapper_inputMethodService() {
+    fun testUnwrapUiContext_noContextWrapper_inputMethodService() {
         val context = mock(InputMethodService::class.java)
-        assertEquals(context, unwrapContext(context))
+        assertEquals(context, unwrapUiContext(context))
     }
 
     @Test
-    fun testUnwrapContext_contextWrapper_null() {
+    fun testUnwrapUiContext_contextWrapper_null() {
         val contextWrapper = ContextWrapper(null)
-        assertEquals(contextWrapper, unwrapContext(contextWrapper))
+        assertEquals(contextWrapper, unwrapUiContext(contextWrapper))
     }
 }

@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 import androidx.build.SoftwareType
-import androidx.build.KotlinTarget
 
 plugins {
     id("AndroidXPlugin")
@@ -48,11 +47,7 @@ dependencies {
     compileOnly("com.android.tools:common:31.8.0-alpha06")
     compileOnly("com.android.tools:sdk-common:31.8.0-alpha06")
     compileOnly("com.android.tools:repository:31.8.0-alpha06")
-    compileOnly(libs.kotlinGradlePlugin)
 
-    api(libs.androidGradlePluginApi)
-    api(libs.androidToolsCommon)
-    api(libs.androidToolsSdkCommon)
     api(libs.guava)
 
     implementation(libs.apacheCommonIo)
@@ -91,5 +86,4 @@ androidx {
     type = SoftwareType.GRADLE_PLUGIN
     inceptionYear = "2022"
     description = "Stable AIDL Gradle Plugin"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

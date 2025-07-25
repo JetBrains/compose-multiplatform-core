@@ -22,7 +22,6 @@ import androidx.camera.camera2.pipe.core.Threads
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -49,8 +48,6 @@ public object FakeThreads {
         dispatcher: CoroutineDispatcher,
         blockingDispatcher: CoroutineDispatcher?,
     ): Threads {
-        val cameraPipeDispatchScope =
-            CoroutineScope(SupervisorJob() + CoroutineName("CXCP-Dispatch"))
         val executor = dispatcher.asExecutor()
 
         @Suppress("deprecation")
@@ -60,8 +57,7 @@ public object FakeThreads {
         }
 
         return Threads(
-            cameraPipeScope = scope,
-            cameraPipeDispatchScope = cameraPipeDispatchScope,
+            scope,
             blockingExecutor = blockingDispatcher?.asExecutor() ?: executor,
             blockingDispatcher = blockingDispatcher ?: dispatcher,
             backgroundExecutor = executor,
@@ -69,7 +65,7 @@ public object FakeThreads {
             lightweightExecutor = executor,
             lightweightDispatcher = dispatcher,
             camera2Handler = fakeHandler,
-            camera2Executor = { executor },
+            camera2Executor = { executor }
         )
     }
 }

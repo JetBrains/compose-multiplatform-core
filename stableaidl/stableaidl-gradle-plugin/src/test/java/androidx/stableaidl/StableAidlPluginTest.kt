@@ -62,17 +62,24 @@ class StableAidlPluginTest {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
         )
 
         // Tasks should contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
         assertTrue { output.output.contains("compileDebugAidlApi - ") }
         assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
     }
 
     @Test
-    fun applyPluginAndroidLibProject_withSdk34() {
+    fun applyPluginAndroidLibProject() {
         projectSetup.writeDefaultBuildGradle(
             prefix =
                 """
@@ -85,7 +92,6 @@ class StableAidlPluginTest {
             suffix =
                 """
             android {
-                compileSdk = 36
                 namespace 'androidx.stableaidl.testapp'
                 buildFeatures {
                   aidl = true
@@ -97,46 +103,18 @@ class StableAidlPluginTest {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
         )
 
         // Tasks should contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
-        assertTrue { output.output.contains("compileDebugAidlApi - ") }
-        assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
-    }
-
-    @Test
-    fun applyPluginAndroidLibProject_withSdk36() {
-        projectSetup.writeDefaultBuildGradle(
-            prefix =
-                """
-                plugins {
-                    id('com.android.library')
-                    id('androidx.stableaidl')
-                }
-            """
-                    .trimIndent(),
-            suffix =
-                """
-            android {
-                compileSdk = 34
-                namespace 'androidx.stableaidl.testapp'
-                buildFeatures {
-                  aidl = true
-                }
-                buildTypes.all {
-                  stableAidl {
-                    version 1
-                  }
-                }
-            }
-            """
-                    .trimIndent(),
-        )
-
-        // Tasks should contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
         assertTrue { output.output.contains("compileDebugAidlApi - ") }
         assertTrue { output.output.contains("checkDebugAidlApiRelease - ") }
     }
@@ -158,7 +136,14 @@ class StableAidlPluginTest {
         )
 
         // Tasks should not contain those defined in StableAidlTasks.
-        val output = gradleRunner.withArguments("tasks", "--stacktrace").build()
+        val output =
+            gradleRunner
+                .withArguments(
+                    "tasks",
+                    "--stacktrace",
+                    "-Pstableaidl.compilesdk=36",
+                )
+                .build()
         assertFalse { output.output.contains("compileDebugAidlApi - ") }
         assertFalse { output.output.contains("checkDebugAidlApiRelease - ") }
     }

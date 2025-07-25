@@ -82,8 +82,7 @@ public class Accessibility {
     }
 
     /** @return The accessibility manager for the provided {@code context}. */
-    @NonNull
-    public static AccessibilityManager getAccessibilityManager(@NonNull Context context) {
+    private static AccessibilityManager getAccessibilityManager(Context context) {
         return context.getSystemService(AccessibilityManager.class);
     }
 

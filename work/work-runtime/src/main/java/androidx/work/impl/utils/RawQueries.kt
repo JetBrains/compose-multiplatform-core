@@ -27,7 +27,7 @@ import androidx.work.impl.model.WorkTypeConverters.stateToInt
  *
  * @return a [SupportSQLiteQuery] instance
  */
-public fun WorkQuery.toRawQuery(): SupportSQLiteQuery {
+fun WorkQuery.toRawQuery(): SupportSQLiteQuery {
     val arguments = mutableListOf<Any>()
     val builder = StringBuilder("SELECT * FROM workspec")
     var conjunction = " WHERE"

@@ -14,4 +14,7 @@
  * limitations under the License.
  */
 
+@RequiresApi(34)
 package androidx.xr.scenecore.impl;
+
+import androidx.annotation.RequiresApi;

@@ -16,7 +16,6 @@
 
 package androidx.privacysandbox.ui.core;
 
-// Any api change in this interface should also be made to [androidx.privacysandbox.ui.client.IRemoteSharedUiSessionController]
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 oneway interface IRemoteSharedUiSessionController {
     void close();

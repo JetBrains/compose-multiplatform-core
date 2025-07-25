@@ -126,7 +126,10 @@ class TextTranslatorTest {
         fakeCoroutineScope.runTest {
             val rv =
                 context.runAndTranslate {
-                    Text("test", style = TextStyle(fontFamily = FontFamily.Monospace))
+                    Text(
+                        "test",
+                        style = TextStyle(fontFamily = FontFamily.Monospace),
+                    )
                 }
             val view = context.applyRemoteViews(rv)
 
@@ -143,7 +146,10 @@ class TextTranslatorTest {
         fakeCoroutineScope.runTest {
             val rv =
                 context.runAndTranslate {
-                    Text("test", style = TextStyle(fontFamily = FontFamily.Serif))
+                    Text(
+                        "test",
+                        style = TextStyle(fontFamily = FontFamily.Serif),
+                    )
                 }
             val view = context.applyRemoteViews(rv)
 
@@ -160,7 +166,10 @@ class TextTranslatorTest {
         fakeCoroutineScope.runTest {
             val rv =
                 context.runAndTranslate {
-                    Text("test", style = TextStyle(fontFamily = FontFamily.SansSerif))
+                    Text(
+                        "test",
+                        style = TextStyle(fontFamily = FontFamily.SansSerif),
+                    )
                 }
             val view = context.applyRemoteViews(rv)
 
@@ -177,7 +186,10 @@ class TextTranslatorTest {
         fakeCoroutineScope.runTest {
             val rv =
                 context.runAndTranslate {
-                    Text("test", style = TextStyle(fontFamily = FontFamily.Cursive))
+                    Text(
+                        "test",
+                        style = TextStyle(fontFamily = FontFamily.Cursive),
+                    )
                 }
             val view = context.applyRemoteViews(rv)
 
@@ -194,7 +206,10 @@ class TextTranslatorTest {
         fakeCoroutineScope.runTest {
             val rv =
                 context.runAndTranslate {
-                    Text("test", style = TextStyle(fontFamily = FontFamily("casual")))
+                    Text(
+                        "test",
+                        style = TextStyle(fontFamily = FontFamily("casual")),
+                    )
                 }
             val view = context.applyRemoteViews(rv)
 
@@ -449,7 +464,7 @@ class TextTranslatorTest {
                         style =
                             TextStyle(
                                 color = ColorProvider(day = Color.Green, night = Color.Magenta)
-                            ),
+                            )
                     )
                 }
             val view = lightContext.applyRemoteViews(rv)
@@ -469,7 +484,7 @@ class TextTranslatorTest {
                         style =
                             TextStyle(
                                 color = ColorProvider(day = Color.Green, night = Color.Magenta)
-                            ),
+                            )
                     )
                 }
             val view = darkContext.applyRemoteViews(rv)

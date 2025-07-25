@@ -32,11 +32,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.preferredFrameRate
+import androidx.compose.ui.ui.FrameRateCategory
+import androidx.compose.ui.ui.requestedFrameRate
 import androidx.compose.ui.unit.dp
 
 @Sampled
@@ -58,12 +58,12 @@ fun SetFrameRateCategorySample() {
             onClick = { targetAlpha = if (targetAlpha == 1f) 0.2f else 1f },
             modifier =
                 Modifier.testTag("frameRateTag")
-                    .background(LocalContentColor.current.copy(alpha = alpha)),
+                    .background(LocalContentColor.current.copy(alpha = alpha))
         ) {
             Text(
                 text = "Click Me for alpha change with frame rate category High",
                 color = LocalContentColor.current.copy(alpha = alpha),
-                modifier = Modifier.preferredFrameRate(FrameRateCategory.High),
+                modifier = Modifier.requestedFrameRate(FrameRateCategory.High)
             )
         }
     }

@@ -55,9 +55,6 @@ interface HealthConnectFeatures {
         /** Feature constant for Personal Health Records APIs. */
         @ExperimentalPersonalHealthRecordApi const val FEATURE_PERSONAL_HEALTH_RECORD = 6
 
-        /** Feature constant for Activity Intensity APIs. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) const val FEATURE_ACTIVITY_INTENSITY = 7
-
         @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
@@ -68,8 +65,7 @@ interface HealthConnectFeatures {
                     FEATURE_PLANNED_EXERCISE,
                     FEATURE_READ_HEALTH_DATA_HISTORY,
                     FEATURE_PERSONAL_HEALTH_RECORD,
-                    FEATURE_MINDFULNESS_SESSION,
-                    FEATURE_ACTIVITY_INTENSITY,
+                    FEATURE_MINDFULNESS_SESSION
                 ]
         )
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -104,28 +100,20 @@ interface HealthConnectFeatures {
                 FEATURE_READ_HEALTH_DATA_IN_BACKGROUND to
                     HealthConnectVersionInfo(
                         apkVersionCode = 171302,
-                        platformVersion = SDK_EXT_13_PLATFORM_VERSION,
+                        platformVersion = SDK_EXT_13_PLATFORM_VERSION
                     ),
                 FEATURE_SKIN_TEMPERATURE to
-                    HealthConnectVersionInfo(
-                        apkVersionCode = 187759,
-                        platformVersion = SDK_EXT_13_PLATFORM_VERSION,
-                    ),
+                    HealthConnectVersionInfo(platformVersion = SDK_EXT_13_PLATFORM_VERSION),
                 FEATURE_READ_HEALTH_DATA_HISTORY to
                     HealthConnectVersionInfo(
                         apkVersionCode = 171302,
-                        platformVersion = SDK_EXT_13_PLATFORM_VERSION,
+                        platformVersion = SDK_EXT_13_PLATFORM_VERSION
                     ),
                 FEATURE_PLANNED_EXERCISE to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_13_PLATFORM_VERSION),
                 FEATURE_MINDFULNESS_SESSION to
-                    HealthConnectVersionInfo(
-                        apkVersionCode = 194767,
-                        platformVersion = SDK_EXT_15_PLATFORM_VERSION,
-                    ),
+                    HealthConnectVersionInfo(platformVersion = SDK_EXT_15_PLATFORM_VERSION),
                 FEATURE_PERSONAL_HEALTH_RECORD to
-                    HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
-                FEATURE_ACTIVITY_INTENSITY to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
             )
     }

@@ -1,0 +1,3 @@
+// Baseline format: 1.0
+AddedMethod: androidx.camera.featurecombinationquery.SessionConfigurationCompat.Builder#addOutputConfigurations(java.util.Collection<android.hardware.camera2.params.OutputConfiguration>):
+    Added method androidx.camera.featurecombinationquery.SessionConfigurationCompat.Builder.addOutputConfigurations(java.util.Collection<android.hardware.camera2.params.OutputConfiguration>)

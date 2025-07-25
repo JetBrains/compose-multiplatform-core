@@ -44,12 +44,12 @@ class FakeRuntimeAnchorTest {
     fun persist_setsUuidToRandomValueAndPersistenceStateToPersisted() {
         val underTest = FakeRuntimeAnchor(Pose())
         check(underTest.uuid == null)
-        check(underTest.persistenceState == Anchor.PersistenceState.NOT_PERSISTED)
+        check(underTest.persistenceState == Anchor.PersistenceState.NotPersisted)
 
         underTest.persist()
 
         assertThat(underTest.uuid).isNotNull()
-        assertThat(underTest.persistenceState).isEqualTo(Anchor.PersistenceState.PERSISTED)
+        assertThat(underTest.persistenceState).isEqualTo(Anchor.PersistenceState.Persisted)
     }
 
     @Test

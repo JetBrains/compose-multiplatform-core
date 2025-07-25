@@ -16,13 +16,39 @@
 
 package androidx.navigation
 
-import androidx.kruth.assertThat
-import androidx.kruth.assertWithMessage
+import android.os.Bundle
 import androidx.navigation.testing.TestNavigatorState
-import kotlin.test.Test
-import kotlin.test.fail
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.fail
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class NavigatorProviderTest {
+    @Test
+    fun addWithMissingAnnotationName() {
+        val provider = NavigatorProvider()
+        val navigator = NoNameNavigator()
+        try {
+            provider.addNavigator(navigator)
+            fail(
+                "Adding a provider with no @Navigator.Name should cause an " +
+                    "IllegalArgumentException"
+            )
+        } catch (e: IllegalArgumentException) {
+            // Expected
+        }
+    }
+
+    @Test
+    fun addWithMissingAnnotationNameGetWithExplicitName() {
+        val provider = NavigatorProvider()
+        val navigator = NoNameNavigator()
+        provider.addNavigator("name", navigator)
+        assertThat(provider.getNavigator<NoNameNavigator>("name")).isEqualTo(navigator)
+    }
 
     @Test
     fun addWithExplicitNameGetWithExplicitName() {
@@ -32,11 +58,35 @@ class NavigatorProviderTest {
 
         assertThat(provider.getNavigator<EmptyNavigator>("name")).isEqualTo(navigator)
         try {
-            provider.getNavigator<EmptyNavigator>(EmptyNavigator.NAME)
+            provider.getNavigator(EmptyNavigator::class.java)
             fail("getNavigator(Class) with an invalid name should cause an IllegalStateException")
         } catch (e: IllegalStateException) {
             // Expected
         }
+    }
+
+    @Test
+    fun addWithExplicitNameGetWithMissingAnnotationName() {
+        val provider = NavigatorProvider()
+        val navigator = NoNameNavigator()
+        provider.addNavigator("name", navigator)
+        try {
+            provider.getNavigator(NoNameNavigator::class.java)
+            fail(
+                "getNavigator(Class) with no @Navigator.Name should cause an " +
+                    "IllegalArgumentException"
+            )
+        } catch (e: IllegalArgumentException) {
+            // Expected
+        }
+    }
+
+    @Test
+    fun addWithAnnotationNameGetWithAnnotationName() {
+        val provider = NavigatorProvider()
+        val navigator = EmptyNavigator()
+        provider.addNavigator(navigator)
+        assertThat(provider.getNavigator(EmptyNavigator::class.java)).isEqualTo(navigator)
     }
 
     @Test
@@ -88,23 +138,6 @@ class NavigatorProviderTest {
         assertThat(provider.getNavigator<EmptyNavigator>(EmptyNavigator.NAME)).isEqualTo(navigatorB)
     }
 
-    @Test
-    fun replaceNavigatorOfCommonTypeWhenGetByType() {
-        val provider = NavigatorProvider()
-        val navigatorA = EmptyNavigator()
-
-        class EmptyNavigator2 : EmptyNavigator()
-        val navigatorB = EmptyNavigator2()
-
-        assertThat(navigatorA).isNotEqualTo(navigatorB)
-
-        provider.addNavigator(navigatorA)
-        assertThat(provider[EmptyNavigator::class]).isEqualTo(navigatorA)
-
-        provider.addNavigator(navigatorB)
-        assertThat(provider[EmptyNavigator::class]).isEqualTo(navigatorB)
-    }
-
     private val provider = NavigatorProvider()
 
     @Test
@@ -127,36 +160,49 @@ class NavigatorProviderTest {
     }
 }
 
-internal expect class NoNameNavigator() : Navigator<NavDestination> {
-    override fun createDestination(): NavDestination
+class NoNameNavigator : Navigator<NavDestination>() {
+    override fun createDestination(): NavDestination {
+        throw IllegalStateException("createDestination is not supported")
+    }
 
     override fun navigate(
         destination: NavDestination,
         args: Bundle?,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?,
-    ): NavDestination?
+        navigatorExtras: Extras?
+    ): NavDestination? {
+        throw IllegalStateException("navigate is not supported")
+    }
 
-    override fun popBackStack(): Boolean
+    override fun popBackStack(): Boolean {
+        throw IllegalStateException("popBackStack is not supported")
+    }
 }
 
 /** An empty [Navigator] used to test [NavigatorProvider]. */
-internal expect open class EmptyNavigator() : Navigator<NavDestination> {
+@Navigator.Name(EmptyNavigator.NAME)
+internal open class EmptyNavigator : Navigator<NavDestination>() {
 
     companion object {
-        val NAME: String
+        const val NAME = "empty"
     }
 
-    override fun createDestination(): NavDestination
+    override fun createDestination(): NavDestination {
+        throw IllegalStateException("createDestination is not supported")
+    }
 
     override fun navigate(
         destination: NavDestination,
         args: Bundle?,
         navOptions: NavOptions?,
-        navigatorExtras: Extras?,
-    ): NavDestination?
+        navigatorExtras: Extras?
+    ): NavDestination? {
+        throw IllegalStateException("navigate is not supported")
+    }
 
-    override fun popBackStack(): Boolean
+    override fun popBackStack(): Boolean {
+        throw IllegalStateException("popBackStack is not supported")
+    }
 }
 
 private const val NAME = "TEST"

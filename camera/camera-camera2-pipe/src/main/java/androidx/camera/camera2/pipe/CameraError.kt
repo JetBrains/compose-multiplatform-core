@@ -149,8 +149,9 @@ public value class CameraError private constructor(public val value: Int) {
                 CAMERA_IN_USE -> ERROR_CAMERA_IN_USE
                 MAX_CAMERAS_IN_USE -> ERROR_CAMERA_LIMIT_EXCEEDED
                 else -> {
-                    Log.warn { "Unexpected CameraAccessException: $exception" }
-                    ERROR_UNKNOWN_EXCEPTION
+                    throw IllegalArgumentException(
+                        "Unexpected CameraAccessException reason:" + "${exception.reason}"
+                    )
                 }
             }
 

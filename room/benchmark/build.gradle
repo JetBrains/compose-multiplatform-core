@@ -22,8 +22,6 @@
  * modifying its settings.
  */
 
-
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -58,6 +56,5 @@ android {
 
 androidx {
     type = SoftwareType.BENCHMARK
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 

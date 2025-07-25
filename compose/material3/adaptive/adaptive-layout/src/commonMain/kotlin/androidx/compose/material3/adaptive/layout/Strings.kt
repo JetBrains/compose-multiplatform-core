@@ -19,7 +19,6 @@ package androidx.compose.material3.adaptive.layout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import kotlin.jvm.JvmInline
 
 @Immutable
@@ -40,10 +39,3 @@ internal expect value class Strings(val value: Int) {
 @Composable
 @ReadOnlyComposable
 internal expect fun getString(string: Strings, vararg formatArgs: Any): String
-
-internal expect fun CompositionLocalConsumerModifierNode.getString(string: Strings): String
-
-internal expect fun CompositionLocalConsumerModifierNode.getString(
-    string: Strings,
-    vararg formatArgs: Any,
-): String

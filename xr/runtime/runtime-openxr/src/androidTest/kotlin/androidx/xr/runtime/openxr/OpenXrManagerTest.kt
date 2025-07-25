@@ -16,22 +16,21 @@
 
 package androidx.xr.runtime.openxr
 
-import androidx.activity.ComponentActivity
+import android.app.Activity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.AugmentedObjectCategory
-import androidx.xr.runtime.Config
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
-import androidx.xr.runtime.internal.FaceTrackingNotCalibratedException
+import androidx.xr.runtime.internal.Config
+import androidx.xr.runtime.internal.Config.AnchorPersistenceMode
+import androidx.xr.runtime.internal.Config.DepthEstimationMode
+import androidx.xr.runtime.internal.Config.HandTrackingMode
+import androidx.xr.runtime.internal.Config.PlaneTrackingMode
 import androidx.xr.runtime.internal.PermissionNotGrantedException
 import com.google.common.truth.Truth.assertThat
-import kotlin.check
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,7 +49,7 @@ class OpenXrManagerTest {
         }
     }
 
-    @get:Rule val activityRule = ActivityScenarioRule(ComponentActivity::class.java)
+    @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
 
     private lateinit var underTest: OpenXrManager
     private lateinit var perceptionManager: OpenXrPerceptionManager
@@ -83,162 +82,50 @@ class OpenXrManagerTest {
     }
 
     @Test
-    fun configure_faceTrackingEnabled_addsFaceToUpdatables() = initOpenXrManagerAndRunTest {
-        underTest.create()
-        check(underTest.config.faceTracking == Config.FaceTrackingMode.DISABLED)
+    fun configure_handTrackingEnabled_addsHandToUpdatables() = initOpenXrManagerAndRunTest {
+        check(underTest.config.handTracking == HandTrackingMode.Disabled)
         check(perceptionManager.xrResources.updatables.isEmpty())
 
-        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
+        underTest.configure(Config(handTracking = Config.HandTrackingMode.Enabled))
 
         assertThat(perceptionManager.xrResources.updatables)
-            .containsExactly(perceptionManager.xrResources.userFace)
-    }
-
-    @Test
-    fun configure_faceTrackingDisabled_removesFaceFromUpdatables() = initOpenXrManagerAndRunTest {
-        underTest.create()
-        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
-        check(
-            perceptionManager.xrResources.updatables.contains(
-                perceptionManager.xrResources.userFace
+            .containsExactly(
+                perceptionManager.xrResources.leftHand,
+                perceptionManager.xrResources.rightHand,
             )
-        )
-
-        underTest.configure(Config(faceTracking = Config.FaceTrackingMode.DISABLED))
-
-        assertThat(perceptionManager.xrResources.updatables)
-            .doesNotContain(perceptionManager.xrResources.userFace)
-    }
-
-    @Ignore("b/427434474 test behavior is unpredictable until stub is fixed")
-    @Test
-    fun configure_faceTrackingEnabled_notCalibrated_throwsNotCalibratedException() =
-        initOpenXrManagerAndRunTest(isFaceTrackingCalibrated = false) {
-            underTest.create()
-
-            assertThrows(FaceTrackingNotCalibratedException::class.java) {
-                underTest.configure(Config(faceTracking = Config.FaceTrackingMode.USER))
-            }
-        }
-
-    @Test
-    fun configure_deviceTrackingEnabled_addsDeviceToUpdatables() = initOpenXrManagerAndRunTest {
-        underTest.create()
-        check(underTest.config.deviceTracking == Config.DeviceTrackingMode.DISABLED)
-        check(perceptionManager.xrResources.updatables.isEmpty())
-
-        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
-
-        assertThat(perceptionManager.xrResources.updatables)
-            .containsExactly(perceptionManager.xrResources.arDevice)
-    }
-
-    @Test
-    fun configure_deviceTrackingDisabled_removesDeviceToUpdatables() = initOpenXrManagerAndRunTest {
-        underTest.create()
-        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN))
-        check(
-            perceptionManager.xrResources.updatables.contains(
-                perceptionManager.xrResources.arDevice
-            )
-        )
-
-        underTest.configure(Config(deviceTracking = Config.DeviceTrackingMode.DISABLED))
-
-        assertThat(perceptionManager.xrResources.updatables)
-            .doesNotContain(perceptionManager.xrResources.arDevice)
     }
 
     // TODO(b/392660855): Add a test for all APIs gated by a feature that needs to be configured.
     @Test
     fun configure_withSufficientPermissions_doesNotThrowException() = initOpenXrManagerAndRunTest {
-        underTest.create()
-
         underTest.configure(
             Config(
-                planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                headTracking = Config.HeadTrackingMode.DISABLED,
-                depthEstimation = Config.DepthEstimationMode.DISABLED,
-                anchorPersistence = Config.AnchorPersistenceMode.LOCAL,
+                Config.PlaneTrackingMode.HorizontalAndVertical,
+                Config.HandTrackingMode.Enabled,
+                Config.DepthEstimationMode.Disabled,
+                Config.AnchorPersistenceMode.Enabled,
             )
         )
     }
 
     @Test
-    @Ignore("b/346615429 This test is currently broken")
     // TODO - b/346615429: Control the values returned by the OpenXR stub instead of relying on the
     // stub's current implementation.
     fun configure_insufficientPermissions_throwsPermissionNotGrantedException() =
         initOpenXrManagerAndRunTest {
-            underTest.create()
-
             // The OpenXR stub returns `XR_ERROR_PERMISSION_INSUFFICIENT` when calling
             // `xrEnumerateDepthResolutionsANDROID` which is triggered by attempting to enable the
             // DepthEstimation feature.
             assertThrows(PermissionNotGrantedException::class.java) {
                 underTest.configure(
                     Config(
-                        Config.PlaneTrackingMode.DISABLED,
-                        Config.HandTrackingMode.DISABLED,
-                        Config.HeadTrackingMode.DISABLED,
-                        Config.DepthEstimationMode.SMOOTH_AND_RAW,
-                        Config.AnchorPersistenceMode.DISABLED,
+                        Config.PlaneTrackingMode.Disabled,
+                        Config.HandTrackingMode.Disabled,
+                        Config.DepthEstimationMode.Enabled,
+                        Config.AnchorPersistenceMode.Disabled,
                     )
                 )
             }
-        }
-
-    @Test
-    fun configure_withoutCreate_throwsIllegalStateException() = initOpenXrManagerAndRunTest {
-        // The OpenXR stub returns `XR_ERROR_HANDLE_INVALID` if the `xrSession` has not been
-        // initialized by `OpenXrManager.create()`.
-        assertThrows(IllegalStateException::class.java) {
-            underTest.configure(
-                Config(
-                    Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                    Config.HandTrackingMode.DISABLED,
-                    Config.HeadTrackingMode.DISABLED,
-                    Config.DepthEstimationMode.DISABLED,
-                    Config.AnchorPersistenceMode.DISABLED,
-                )
-            )
-        }
-    }
-
-    @Test
-    fun configure_smoothAndRawDepth_throwsConfigurationNotSupportedException() =
-        initOpenXrManagerAndRunTest {
-            underTest.create()
-
-            assertThrows(ConfigurationNotSupportedException::class.java) {
-                underTest.configure(
-                    Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
-                )
-            }
-        }
-
-    @Test
-    fun configure_updatesDepthEstimationForPerceptionManagerAndDepthMaps() =
-        initOpenXrManagerAndRunTest {
-            underTest.create()
-            check(perceptionManager.depthEstimationMode == Config.DepthEstimationMode.DISABLED)
-            check(
-                perceptionManager.xrResources.leftDepthMap.depthEstimationMode ==
-                    Config.DepthEstimationMode.DISABLED
-            )
-            check(
-                perceptionManager.xrResources.rightDepthMap.depthEstimationMode ==
-                    Config.DepthEstimationMode.DISABLED
-            )
-
-            underTest.configure(Config(depthEstimation = Config.DepthEstimationMode.RAW_ONLY))
-
-            assertThat(perceptionManager.depthEstimationMode)
-                .isEqualTo(Config.DepthEstimationMode.RAW_ONLY)
-            assertThat(perceptionManager.xrResources.leftDepthMap.depthEstimationMode)
-                .isEqualTo(Config.DepthEstimationMode.RAW_ONLY)
-            assertThat(perceptionManager.xrResources.rightDepthMap.depthEstimationMode)
-                .isEqualTo(Config.DepthEstimationMode.RAW_ONLY)
         }
 
     // TODO: b/344962771 - Add a more meaningful test once we can use the update() method.
@@ -266,7 +153,7 @@ class OpenXrManagerTest {
             underTest.create()
             underTest.resume()
             check(perceptionManager.trackables.isEmpty())
-            check(underTest.config.planeTracking == Config.PlaneTrackingMode.DISABLED)
+            check(underTest.config.planeTracking == PlaneTrackingMode.Disabled)
 
             underTest.update()
 
@@ -281,39 +168,9 @@ class OpenXrManagerTest {
             underTest.resume()
             check(perceptionManager.xrResources.updatables.isEmpty())
             underTest.configure(
-                Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+                Config(planeTracking = Config.PlaneTrackingMode.HorizontalAndVertical)
             )
 
-            underTest.update()
-
-            assertThat(perceptionManager.trackables).isNotEmpty()
-        }
-    }
-
-    @Test
-    fun update_objectTrackingDisabled_doesNotUpdateTrackables() = initOpenXrManagerAndRunTest {
-        runTest {
-            underTest.create()
-            underTest.resume()
-            check(perceptionManager.trackables.isEmpty())
-            underTest.configure(Config())
-
-            underTest.update()
-
-            assertThat(perceptionManager.trackables).isEmpty()
-        }
-    }
-
-    @Test
-    fun update_objectTrackingEnabled_addsObjectToUpdatables() = initOpenXrManagerAndRunTest {
-        runTest {
-            underTest.create()
-            underTest.resume()
-            check(perceptionManager.xrResources.updatables.isEmpty())
-
-            underTest.configure(
-                Config(augmentedObjectCategories = listOf(AugmentedObjectCategory.KEYBOARD))
-            )
             underTest.update()
 
             assertThat(perceptionManager.trackables).isNotEmpty()
@@ -376,18 +233,9 @@ class OpenXrManagerTest {
         assertThat(underTest.nativePointer).isEqualTo(0L)
     }
 
-    private fun initOpenXrManagerAndRunTest(
-        isFaceTrackingCalibrated: Boolean = true,
-        testBody: () -> Unit,
-    ) {
+    private fun initOpenXrManagerAndRunTest(testBody: () -> Unit) {
         activityRule.scenario.onActivity {
-            underTest =
-                OpenXrManager(
-                    it,
-                    perceptionManager,
-                    timeSource,
-                    faceTrackingCalibrated = isFaceTrackingCalibrated,
-                )
+            underTest = OpenXrManager(it, perceptionManager, timeSource)
 
             testBody()
 

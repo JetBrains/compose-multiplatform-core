@@ -19,8 +19,4 @@ package androidx.compose.runtime
 // TODO: It's not required anymore, but was declared as public previously.
 //  `metalava` won't detect removing this API because typealias doesn't
 //  introduce a new type in runtime.
-@Deprecated(
-    message = "It was never intended to be public",
-    replaceWith = ReplaceWith("androidx.annotation.CheckResult"),
-)
-public typealias CheckResult = androidx.annotation.CheckResult
+typealias CheckResult = androidx.annotation.CheckResult

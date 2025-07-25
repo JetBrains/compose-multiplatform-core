@@ -78,7 +78,9 @@ class BottomAppBarBenchmark {
 internal class BottomAppBarTestCase : LayeredComposeTestCase() {
     @Composable
     override fun MeasuredContent() {
-        BottomAppBar(modifier = Modifier.fillMaxWidth()) {
+        BottomAppBar(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             IconButton(onClick = { /* doSomething() */ }) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,

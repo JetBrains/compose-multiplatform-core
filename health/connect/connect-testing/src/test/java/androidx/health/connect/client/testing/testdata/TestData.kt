@@ -41,7 +41,10 @@ val runRecord1 =
         exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
         title = "My Run #1",
         exerciseRoute = null,
-        metadata = Metadata.manualEntry(clientRecordId = "FakeHealthConnectData1"),
+        metadata =
+            Metadata.manualEntry(
+                clientRecordId = "FakeHealthConnectData1",
+            )
     )
 
 val hydrationRecord1 =
@@ -51,7 +54,7 @@ val hydrationRecord1 =
         endTime = startTime.plusMinutes(4).toInstant(),
         endZoneOffset = startTime.offset,
         metadata = Metadata.manualEntry(),
-        volume = Volume.liters(1.0),
+        volume = Volume.liters(1.0)
     )
 
 /** Same as [runRecord1] but updated with a new end time. */
@@ -64,7 +67,10 @@ val runRecord1Updated =
         exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
         title = "My Run #1 - Updated",
         exerciseRoute = null,
-        metadata = Metadata.manualEntry(clientRecordId = "FakeHealthConnectData1"),
+        metadata =
+            Metadata.manualEntry(
+                clientRecordId = "FakeHealthConnectData1",
+            )
     )
 
 /**
@@ -87,7 +93,7 @@ fun generateRunningRecords(
             exerciseType = exerciseType,
             title = "My Run #$index",
             exerciseRoute = null,
-            metadata = Metadata.manualEntry(clientRecordId = "FakeHealthConnectDataRunning$index"),
+            metadata = Metadata.manualEntry(clientRecordId = "FakeHealthConnectDataRunning$index")
         )
     }
 }
@@ -98,21 +104,21 @@ val dummyAggregateRequest =
     AggregateRequest(
         metrics = emptySet(),
         timeRangeFilter =
-            TimeRangeFilter(startTime = runRecord1.startTime, endTime = runRecord1.endTime),
+            TimeRangeFilter(startTime = runRecord1.startTime, endTime = runRecord1.endTime)
     )
 
 val dummyReadRecordsRequest =
     ReadRecordsRequest(
         timeRangeFilter =
             TimeRangeFilter(startTime = runRecord1.startTime, endTime = runRecord1.endTime),
-        recordType = runRecord1::class,
+        recordType = runRecord1::class
     )
 
 val dummyAggregateGbpRequest =
     AggregateGroupByPeriodRequest(
         metrics = emptySet(),
         timeRangeFilter = TimeRangeFilter(),
-        timeRangeSlicer = Period.ofDays(1),
+        timeRangeSlicer = Period.ofDays(1)
     )
 
 val dummyAggregateGbdRequest =

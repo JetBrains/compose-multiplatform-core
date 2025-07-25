@@ -23,42 +23,42 @@ import kotlinx.serialization.Serializable
 /** Base class that holds common schema information about an entity. */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public sealed class BaseEntityBundle {
-    @SerialName("tableName") public abstract val tableName: String
-    @SerialName("createSql") public abstract val createSql: String
-    @SerialName("fields") public abstract val fields: List<FieldBundle>
-    @SerialName("primaryKey") public abstract val primaryKey: PrimaryKeyBundle
-    @SerialName("indices") public abstract val indices: List<IndexBundle>
-    @SerialName("foreignKeys") public abstract val foreignKeys: List<ForeignKeyBundle>
+sealed class BaseEntityBundle {
+    @SerialName("tableName") abstract val tableName: String
+    @SerialName("createSql") abstract val createSql: String
+    @SerialName("fields") abstract val fields: List<FieldBundle>
+    @SerialName("primaryKey") abstract val primaryKey: PrimaryKeyBundle
+    @SerialName("indices") abstract val indices: List<IndexBundle>
+    @SerialName("foreignKeys") abstract val foreignKeys: List<ForeignKeyBundle>
 
-    public companion object {
-        public const val NEW_TABLE_PREFIX: String = "_new_"
+    companion object {
+        const val NEW_TABLE_PREFIX: String = "_new_"
     }
 
-    public val newTableName: String
+    val newTableName: String
         get() {
             return NEW_TABLE_PREFIX + tableName
         }
 
-    public val fieldsByColumnName: Map<String, FieldBundle> by lazy {
+    val fieldsByColumnName: Map<String, FieldBundle> by lazy {
         fields.associateBy { it.columnName }
     }
 
     /** CREATE TABLE SQL query that uses the actual table name. */
-    public fun createTable(): String {
+    fun createTable(): String {
         return replaceTableName(createSql, tableName)
     }
 
     /** CREATE TABLE SQL query that uses the table name with "new" prefix. */
-    public fun createNewTable(): String {
+    fun createNewTable(): String {
         return replaceTableName(createSql, newTableName)
     }
 
     /** Renames the table with [newTableName] to [tableName]. */
-    public fun renameToOriginal(): String {
+    fun renameToOriginal(): String {
         return "ALTER TABLE $newTableName RENAME TO $tableName"
     }
 
     /** Creates the list of SQL queries that are necessary to create this entity. */
-    public abstract fun buildCreateQueries(): List<String>
+    abstract fun buildCreateQueries(): List<String>
 }

@@ -77,15 +77,8 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-7757/Adopt-new-context-menu-API
-    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
-
-    /**
-     * Whether to use the new smart selection feature in
-     * [androidx.compose.foundation.text.selection.SelectionContainer] and all
-     * [androidx.compose.foundation.text.BasicTextField]s.
-     */
-    @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
+    // TODO(grantapher-cm-api-publicize) Make field public
+    @Suppress("MutableBareField") @JvmField internal var isNewContextMenuEnabled = false
 
     /**
      * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
@@ -125,40 +118,4 @@ object ComposeFoundationFlags {
      * events.
      */
     @Suppress("MutableBareField") @JvmField var isOnScrollChangedCallbackEnabled: Boolean = true
-
-    /**
-     * With this flag on, any dragging movement is offset by the container position offset before it
-     * is added to the [androidx.compose.ui.input.pointer.util.VelocityTracker]. Pointer Input
-     * positions are relative to a container's position. If the container changes positions with the
-     * movement this can cause problems because the VT doesn't know about changes in the container
-     * position. We should correct the Pointer Input position by offsetting it by the container
-     * position offset before sending the events to the VT. We will use the new
-     * [androidx.compose.ui.input.pointer.PointerInputChange] API.
-     */
-    @Suppress("MutableBareField")
-    @JvmField
-    var isAdjustPointerInputChangeOffsetForVelocityTrackerEnabled: Boolean = true
-
-    /**
-     * With this flag on a new fling cancellation behavior will be implemented. Previously, when the
-     * list hit the bounds we would cancel the fling since the list couldn't consume anything
-     * anymore. Now we only cancel the fling if the scrollable node is detatched.
-     */
-    @Suppress("MutableBareField") @JvmField var isFlingContinuationAtBoundsEnabled = true
-
-    /**
-     * With this flag on we don't use suspend pointer input as part of Modifier.clickable
-     * implementation as an optimization.
-     */
-    @Suppress("MutableBareField") @JvmField var isNonSuspendingPointerInputInClickableEnabled = true
-
-    /**
-     * With this flag on, the new BasicTextField and the other new TextFields that accept
-     * [androidx.compose.foundation.text.input.TextFieldState] changes their behavior of how they
-     * process arrow/Dpad keys received from input devices such as hardware keyboards, gamepads, or
-     * TV remotes. The new behavior is to always move the cursor first until it reaches the start or
-     * the end of the text. Then the TextField allows to move the focus to the next focusable
-     * element on the screen.
-     */
-    @Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
 }

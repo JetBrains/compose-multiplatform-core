@@ -23,7 +23,10 @@ import androidx.compose.integration.macrobenchmark.target.complexdifferenttypesl
 
 class SquadAdapter : BaseListAdapter<SquadViewType>(SquadViewType.values()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: SquadViewType): BaseViewHolder<*> =
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: SquadViewType,
+    ): BaseViewHolder<*> =
         when (viewType) {
             SquadViewType.VIEW_TOP_PLAYERS -> SquadViewTopPlayersViewHolder(parent)
             SquadViewType.POSITION_SECTION_HEADER -> SquadSectionHeaderViewHolder(parent)

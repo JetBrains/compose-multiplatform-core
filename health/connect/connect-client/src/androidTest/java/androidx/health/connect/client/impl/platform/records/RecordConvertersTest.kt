@@ -22,7 +22,6 @@ import android.os.Build
 import androidx.health.connect.client.RECORD_CLASSES
 import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
-import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
@@ -79,7 +78,6 @@ import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.WheelchairPushesRecord
 import androidx.health.connect.client.records.isAtLeastSdkExtension13
 import androidx.health.connect.client.records.isAtLeastSdkExtension15
-import androidx.health.connect.client.records.isAtLeastSdkExtension16
 import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
@@ -158,7 +156,7 @@ class RecordConvertersTest {
                     metadata = METADATA,
                     temperature = Temperature.celsius(37.0),
                     measurementLocation =
-                        BodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_FINGER,
+                        BodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_FINGER
                 )
                 .toPlatformRecord() as PlatformBasalBodyTemperatureRecord
 
@@ -334,7 +332,7 @@ class RecordConvertersTest {
                     samples =
                         listOf(
                             CyclingPedalingCadenceRecord.Sample(START_TIME, 3.0),
-                            CyclingPedalingCadenceRecord.Sample(END_TIME, 9.0),
+                            CyclingPedalingCadenceRecord.Sample(END_TIME, 9.0)
                         ),
                 )
                 .toPlatformRecord() as PlatformCyclingPedalingCadenceRecord
@@ -344,18 +342,18 @@ class RecordConvertersTest {
                 .comparingElementsUsing(
                     Correspondence.from<
                         PlatformCyclingPedalingCadenceSample,
-                        PlatformCyclingPedalingCadenceSample,
+                        PlatformCyclingPedalingCadenceSample
                     >(
                         { actual, expected ->
                             actual!!.revolutionsPerMinute == expected!!.revolutionsPerMinute &&
                                 actual.time == expected.time
                         },
-                        "has same RPM and same time as",
+                        "has same RPM and same time as"
                     )
                 )
                 .containsExactly(
                     PlatformCyclingPedalingCadenceSample(3.0, START_TIME),
-                    PlatformCyclingPedalingCadenceSample(9.0, END_TIME),
+                    PlatformCyclingPedalingCadenceSample(9.0, END_TIME)
                 )
         }
     }
@@ -414,13 +412,13 @@ class RecordConvertersTest {
                             ExerciseLap(
                                 START_TIME.plusMillis(6),
                                 START_TIME.plusMillis(10),
-                                Length.meters(1.0),
+                                Length.meters(1.0)
                             ),
                             ExerciseLap(
                                 START_TIME.plusMillis(11),
                                 START_TIME.plusMillis(15),
-                                Length.meters(1.5),
-                            ),
+                                Length.meters(1.5)
+                            )
                         ),
                     segments =
                         listOf(
@@ -428,7 +426,7 @@ class RecordConvertersTest {
                                 START_TIME.plusMillis(1),
                                 START_TIME.plusMillis(10),
                                 ExerciseSegment.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
-                                10,
+                                10
                             )
                         ),
                     exerciseRoute =
@@ -440,10 +438,10 @@ class RecordConvertersTest {
                                     longitude = -23.6,
                                     altitude = Length.meters(20.0),
                                     horizontalAccuracy = Length.meters(2.0),
-                                    verticalAccuracy = Length.meters(3.0),
+                                    verticalAccuracy = Length.meters(3.0)
                                 )
                             )
-                        ),
+                        )
                 )
                 .toPlatformRecord() as PlatformExerciseSessionRecord
 
@@ -462,14 +460,14 @@ class RecordConvertersTest {
                         .build(),
                     PlatformExerciseLapBuilder(START_TIME.plusMillis(11), START_TIME.plusMillis(15))
                         .setLength(PlatformLength.fromMeters(1.5))
-                        .build(),
+                        .build()
                 )
             assertThat(segments)
                 .containsExactly(
                     PlatformExerciseSegmentBuilder(
                             START_TIME.plusMillis(1),
                             START_TIME.plusMillis(10),
-                            PlatformExerciseSegmentType.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
+                            PlatformExerciseSegmentType.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS
                         )
                         .setRepetitionsCount(10)
                         .build()
@@ -517,8 +515,8 @@ class RecordConvertersTest {
                 samples =
                     listOf(
                         HeartRateRecord.Sample(Instant.ofEpochMilli(1234L), 55L),
-                        HeartRateRecord.Sample(Instant.ofEpochMilli(5678L), 57L),
-                    ),
+                        HeartRateRecord.Sample(Instant.ofEpochMilli(5678L), 57L)
+                    )
             )
 
         val platformHeartRate = heartRate.toPlatformRecord() as PlatformHeartRateRecord
@@ -531,12 +529,12 @@ class RecordConvertersTest {
                             actual!!.beatsPerMinute == expected!!.beatsPerMinute &&
                                 actual.time == expected.time
                         },
-                        "has same BPM and same time as",
+                        "has same BPM and same time as"
                     )
                 )
                 .containsExactly(
                     PlatformHeartRateSample(55L, Instant.ofEpochMilli(1234L)),
-                    PlatformHeartRateSample(57L, Instant.ofEpochMilli(5678L)),
+                    PlatformHeartRateSample(57L, Instant.ofEpochMilli(5678L))
                 )
         }
     }
@@ -594,7 +592,11 @@ class RecordConvertersTest {
     @Test
     fun intermenstrualBleedingRecord_convertToPlatform() {
         val platformIntermenstrualBleeding =
-            IntermenstrualBleedingRecord(time = TIME, zoneOffset = ZONE_OFFSET, metadata = METADATA)
+            IntermenstrualBleedingRecord(
+                    time = TIME,
+                    zoneOffset = ZONE_OFFSET,
+                    metadata = METADATA,
+                )
                 .toPlatformRecord() as PlatformIntermenstrualBleedingRecord
 
         assertPlatformRecord(platformIntermenstrualBleeding)
@@ -640,7 +642,7 @@ class RecordConvertersTest {
                     startZoneOffset = START_ZONE_OFFSET,
                     endTime = END_TIME,
                     endZoneOffset = END_ZONE_OFFSET,
-                    metadata = METADATA,
+                    metadata = METADATA
                 )
                 .toPlatformRecord() as PlatformMenstruationPeriodRecord
 
@@ -659,7 +661,7 @@ class RecordConvertersTest {
                     endTime = END_TIME,
                     endZoneOffset = END_ZONE_OFFSET,
                     metadata = METADATA,
-                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_MEDITATION,
+                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_MEDITATION
                 )
                 .toPlatformRecord() as PlatformMindfulnessSessionRecord
 
@@ -681,57 +683,13 @@ class RecordConvertersTest {
                     endTime = END_TIME,
                     endZoneOffset = END_ZONE_OFFSET,
                     metadata = METADATA,
-                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_UNKNOWN,
+                    mindfulnessSessionType = MINDFULNESS_SESSION_TYPE_UNKNOWN
                 )
                 .toPlatformRecord() as PlatformMindfulnessSessionRecord
 
         assertPlatformRecord(platformMindfulnessSessionRecord) {
             assertThat(mindfulnessSessionType)
                 .isEqualTo(PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN)
-        }
-    }
-
-    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
-    @Test
-    fun activityIntensityRecord_vigorousType_convertToPlatform() {
-        assumeTrue(isAtLeastSdkExtension16())
-        val platformActivityIntensityRecord =
-            ActivityIntensityRecord(
-                    startTime = START_TIME,
-                    startZoneOffset = START_ZONE_OFFSET,
-                    endTime = END_TIME,
-                    endZoneOffset = END_ZONE_OFFSET,
-                    metadata = METADATA,
-                    activityIntensityType =
-                        ActivityIntensityRecord.Companion.ACTIVITY_INTENSITY_TYPE_VIGOROUS,
-                )
-                .toPlatformRecord() as PlatformActivityIntensityRecord
-
-        assertPlatformRecord(platformActivityIntensityRecord) {
-            assertThat(activityIntensityType)
-                .isEqualTo(PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_VIGOROUS)
-        }
-    }
-
-    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
-    @Test
-    fun activityIntensityRecord_moderateType_convertToPlatform() {
-        assumeTrue(isAtLeastSdkExtension16())
-        val platformActivityIntensityRecord =
-            ActivityIntensityRecord(
-                    startTime = START_TIME,
-                    startZoneOffset = START_ZONE_OFFSET,
-                    endTime = END_TIME,
-                    endZoneOffset = END_ZONE_OFFSET,
-                    metadata = METADATA,
-                    activityIntensityType =
-                        ActivityIntensityRecord.Companion.ACTIVITY_INTENSITY_TYPE_MODERATE,
-                )
-                .toPlatformRecord() as PlatformActivityIntensityRecord
-
-        assertPlatformRecord(platformActivityIntensityRecord) {
-            assertThat(activityIntensityType)
-                .isEqualTo(PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE)
         }
     }
 
@@ -752,7 +710,7 @@ class RecordConvertersTest {
                 copper = Mass.grams(40.0),
                 molybdenum = Mass.grams(45.0),
                 monounsaturatedFat = Mass.grams(50.0),
-                energy = Energy.calories(300.0),
+                energy = Energy.calories(300.0)
             )
 
         val platformNutrition = nutrition.toPlatformRecord() as PlatformNutritionRecord
@@ -845,11 +803,11 @@ class RecordConvertersTest {
                                     listOf(
                                         ExercisePerformanceTarget.SpeedTarget(
                                             minSpeed = Velocity.metersPerSecond(2.0),
-                                            maxSpeed = Velocity.metersPerSecond(3.0),
+                                            maxSpeed = Velocity.metersPerSecond(3.0)
                                         )
-                                    ),
+                                    )
                             )
-                        ),
+                        )
                 )
             )
 
@@ -956,15 +914,15 @@ class RecordConvertersTest {
                                     listOf(
                                         ExercisePerformanceTarget.SpeedTarget(
                                             minSpeed = Velocity.metersPerSecond(2.0),
-                                            maxSpeed = Velocity.metersPerSecond(3.0),
+                                            maxSpeed = Velocity.metersPerSecond(3.0)
                                         ),
                                         ExercisePerformanceTarget.CadenceTarget(
                                             minCadence = 60.0,
-                                            maxCadence = 65.0,
-                                        ),
-                                    ),
+                                            maxCadence = 65.0
+                                        )
+                                    )
                             )
-                        ),
+                        )
                 ),
                 PlannedExerciseBlock(
                     description = "Brick workout",
@@ -982,7 +940,7 @@ class RecordConvertersTest {
                                             minPower = Power.watts(200.0),
                                             maxPower = Power.watts(240.0),
                                         )
-                                    ),
+                                    )
                             ),
                             PlannedExerciseStep(
                                 description = "Fast run",
@@ -994,12 +952,12 @@ class RecordConvertersTest {
                                     listOf(
                                         ExercisePerformanceTarget.SpeedTarget(
                                             minSpeed = Velocity.metersPerSecond(2.0),
-                                            maxSpeed = Velocity.metersPerSecond(3.0),
+                                            maxSpeed = Velocity.metersPerSecond(3.0)
                                         )
-                                    ),
-                            ),
-                        ),
-                ),
+                                    )
+                            )
+                        )
+                )
             )
 
         val plannedExerciseSessionRecord =
@@ -1062,7 +1020,7 @@ class RecordConvertersTest {
         val goal =
             ExerciseCompletionGoal.DistanceAndDurationGoal(
                 distance = Length.meters(1000.0),
-                duration = Duration.ofMinutes(5),
+                duration = Duration.ofMinutes(5)
             )
         val platformGoal =
             goal.toPlatformExerciseCompletionGoal() as PlatformDistanceAndDurationGoal
@@ -1167,7 +1125,7 @@ class RecordConvertersTest {
         val target =
             ExercisePerformanceTarget.PowerTarget(
                 minPower = Power.watts(1.0),
-                maxPower = Power.watts(10.0),
+                maxPower = Power.watts(10.0)
             )
         val platformTarget = target.toPlatformExercisePerformanceTarget() as PlatformPowerTarget
         assertThat(platformTarget.minPower).isEqualTo(target.minPower.toPlatformPower())
@@ -1185,7 +1143,7 @@ class RecordConvertersTest {
         val target =
             ExercisePerformanceTarget.SpeedTarget(
                 minSpeed = Velocity.metersPerSecond(2.0),
-                maxSpeed = Velocity.metersPerSecond(3.0),
+                maxSpeed = Velocity.metersPerSecond(3.0)
             )
         val platformTarget = target.toPlatformExercisePerformanceTarget() as PlatformSpeedTarget
         assertThat(platformTarget.minSpeed).isEqualTo(target.minSpeed.toPlatformVelocity())
@@ -1338,9 +1296,9 @@ class RecordConvertersTest {
                         listOf(
                             SkinTemperatureRecord.Delta(
                                 time = START_TIME.plusMillis(10),
-                                delta = TemperatureDelta.celsius(0.5),
+                                delta = TemperatureDelta.celsius(0.5)
                             )
-                        ),
+                        )
                 )
                 .toPlatformRecord() as PlatformSkinTemperatureRecord
 
@@ -1374,9 +1332,9 @@ class RecordConvertersTest {
                             SleepSessionRecord.Stage(
                                 START_TIME,
                                 START_TIME.plusMillis(40),
-                                SleepSessionRecord.STAGE_TYPE_DEEP,
+                                SleepSessionRecord.STAGE_TYPE_DEEP
                             )
-                        ),
+                        )
                 )
                 .toPlatformRecord() as PlatformSleepSessionRecord
 
@@ -1388,7 +1346,7 @@ class RecordConvertersTest {
                     PlatformSleepSessionStage(
                         START_TIME,
                         START_TIME.plusMillis(40),
-                        PlatformSleepStageType.STAGE_TYPE_SLEEPING_DEEP,
+                        PlatformSleepStageType.STAGE_TYPE_SLEEPING_DEEP
                     )
                 )
         }
@@ -1415,7 +1373,7 @@ class RecordConvertersTest {
                             actual!!.speed.inMetersPerSecond ==
                                 expected!!.speed.inMetersPerSecond && actual.time == expected.time
                         },
-                        "has same speed and same time as",
+                        "has same speed and same time as"
                     )
                 )
                 .containsExactly(
@@ -1460,7 +1418,7 @@ class RecordConvertersTest {
                         { actual, expected ->
                             actual!!.rate == expected!!.rate && actual.time == expected.time
                         },
-                        "has same rate and same time as",
+                        "has same rate and same time as"
                     )
                 )
                 .containsExactly(PlatformStepsCadenceSample(99.0, END_TIME))
@@ -1493,7 +1451,7 @@ class RecordConvertersTest {
                     zoneOffset = ZONE_OFFSET,
                     metadata = METADATA,
                     vo2MillilitersPerMinuteKilogram = 5.0,
-                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_MULTISTAGE_FITNESS_TEST,
+                    measurementMethod = Vo2MaxRecord.MEASUREMENT_METHOD_MULTISTAGE_FITNESS_TEST
                 )
                 .toPlatformRecord() as PlatformVo2MaxRecord
 
@@ -1545,7 +1503,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformEnergy.fromCalories(300.0),
+                    PlatformEnergy.fromCalories(300.0)
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1564,7 +1522,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     TIME,
                     PlatformBodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_RECTUM,
-                    PlatformTemperature.fromCelsius(37.0),
+                    PlatformTemperature.fromCelsius(37.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1583,7 +1541,7 @@ class RecordConvertersTest {
             PlatformBasalMetabolicRateRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformPower.fromWatts(100.0),
+                    PlatformPower.fromWatts(100.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1603,7 +1561,7 @@ class RecordConvertersTest {
                     PlatformBloodGlucoseSpecimenSource.SPECIMEN_SOURCE_TEARS,
                     PlatformBloodGlucose.fromMillimolesPerLiter(10.2),
                     PlatformBloodGlucoseRelationToMealType.RELATION_TO_MEAL_FASTING,
-                    PlatformMealType.MEAL_TYPE_SNACK,
+                    PlatformMealType.MEAL_TYPE_SNACK
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1627,7 +1585,7 @@ class RecordConvertersTest {
                         .BLOOD_PRESSURE_MEASUREMENT_LOCATION_LEFT_WRIST,
                     PlatformPressure.fromMillimetersOfMercury(20.0),
                     PlatformPressure.fromMillimetersOfMercury(15.0),
-                    PlatformBloodPressureBodyPosition.BODY_POSITION_STANDING_UP,
+                    PlatformBloodPressureBodyPosition.BODY_POSITION_STANDING_UP
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1648,7 +1606,7 @@ class RecordConvertersTest {
             PlatformBodyFatRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformPercentage.fromValue(18.0),
+                    PlatformPercentage.fromValue(18.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1664,7 +1622,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     TIME,
                     PlatformBodyTemperatureMeasurementLocation.MEASUREMENT_LOCATION_WRIST,
-                    PlatformTemperature.fromCelsius(27.0),
+                    PlatformTemperature.fromCelsius(27.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1683,7 +1641,7 @@ class RecordConvertersTest {
             PlatformBodyWaterMassRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformMass.fromGrams(12.0),
+                    PlatformMass.fromGrams(12.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1710,7 +1668,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     TIME,
                     PlatformCervicalMucusSensation.SENSATION_HEAVY,
-                    PlatformCervicalMucusAppearance.APPEARANCE_DRY,
+                    PlatformCervicalMucusAppearance.APPEARANCE_DRY
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -1729,7 +1687,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    listOf(PlatformCyclingPedalingCadenceSample(23.0, END_TIME)),
+                    listOf(PlatformCyclingPedalingCadenceSample(23.0, END_TIME))
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1748,7 +1706,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformLength.fromMeters(500.0),
+                    PlatformLength.fromMeters(500.0)
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1765,7 +1723,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformLength.fromMeters(10.0),
+                    PlatformLength.fromMeters(10.0)
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1783,7 +1741,7 @@ class RecordConvertersTest {
                     START_TIME,
                     END_TIME,
                     PlatformExerciseSessionType
-                        .EXERCISE_SESSION_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING,
+                        .EXERCISE_SESSION_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING
                 )
                 .setTitle("Training")
                 .setNotes("Improve jump serve")
@@ -1793,16 +1751,16 @@ class RecordConvertersTest {
                     listOf(
                         PlatformExerciseLapBuilder(
                                 START_TIME.plusMillis(6),
-                                START_TIME.plusMillis(10),
+                                START_TIME.plusMillis(10)
                             )
                             .setLength(PlatformLength.fromMeters(1.0))
                             .build(),
                         PlatformExerciseLapBuilder(
                                 START_TIME.plusMillis(11),
-                                START_TIME.plusMillis(15),
+                                START_TIME.plusMillis(15)
                             )
                             .setLength(PlatformLength.fromMeters(1.5))
-                            .build(),
+                            .build()
                     )
                 )
                 .setSegments(
@@ -1811,7 +1769,7 @@ class RecordConvertersTest {
                                 START_TIME.plusMillis(1),
                                 START_TIME.plusMillis(10),
                                 PlatformExerciseSegmentType
-                                    .EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
+                                    .EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS
                             )
                             .setRepetitionsCount(10)
                             .build()
@@ -1842,13 +1800,13 @@ class RecordConvertersTest {
                     ExerciseLap(
                         START_TIME.plusMillis(6),
                         START_TIME.plusMillis(10),
-                        Length.meters(1.0),
+                        Length.meters(1.0)
                     ),
                     ExerciseLap(
                         START_TIME.plusMillis(11),
                         START_TIME.plusMillis(15),
-                        Length.meters(1.5),
-                    ),
+                        Length.meters(1.5)
+                    )
                 )
             assertThat(segments)
                 .containsExactly(
@@ -1856,7 +1814,7 @@ class RecordConvertersTest {
                         START_TIME.plusMillis(1),
                         START_TIME.plusMillis(10),
                         ExerciseSegment.EXERCISE_SEGMENT_TYPE_BARBELL_SHOULDER_PRESS,
-                        10,
+                        10
                     )
                 )
             assertThat(exerciseRouteResult as ExerciseRouteResult.Data)
@@ -1870,7 +1828,7 @@ class RecordConvertersTest {
                                     longitude = -23.4,
                                     altitude = Length.meters(10.0),
                                     horizontalAccuracy = Length.meters(2.0),
-                                    verticalAccuracy = Length.meters(3.0),
+                                    verticalAccuracy = Length.meters(3.0)
                                 )
                             )
                         )
@@ -1931,7 +1889,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    listOf(PlatformHeartRateSample(83, START_TIME)),
+                    listOf(PlatformHeartRateSample(83, START_TIME))
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1974,7 +1932,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformVolume.fromLiters(90.0),
+                    PlatformVolume.fromLiters(90.0)
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -1987,7 +1945,10 @@ class RecordConvertersTest {
     @Test
     fun intermenstrualBleedingRecord_convertToSdk() {
         val sdkIntermenstrualBleeding =
-            PlatformIntermenstrualBleedingRecordBuilder(PLATFORM_METADATA, TIME)
+            PlatformIntermenstrualBleedingRecordBuilder(
+                    PLATFORM_METADATA,
+                    TIME,
+                )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
                 .toSdkRecord() as IntermenstrualBleedingRecord
@@ -2012,7 +1973,7 @@ class RecordConvertersTest {
             PlatformMenstruationFlowRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformMenstruationFlowType.FLOW_MEDIUM,
+                    PlatformMenstruationFlowType.FLOW_MEDIUM
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -2045,7 +2006,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING,
+                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_BREATHING
                 )
                 .setTitle("Breathing Mindfulness Session")
                 .setNotes("Improve breathing")
@@ -2073,7 +2034,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_OTHER,
+                    PlatformMindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_OTHER
                 )
                 .setTitle("Breathing Mindfulness Session")
                 .setNotes("Improve breathing")
@@ -2088,52 +2049,6 @@ class RecordConvertersTest {
             assertThat(notes).isEqualTo("Improve breathing")
             assertThat(mindfulnessSessionType)
                 .isEqualTo(MindfulnessSessionRecord.MINDFULNESS_SESSION_TYPE_UNKNOWN)
-        }
-    }
-
-    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
-    @Test
-    fun activityIntensityRecord_vigorousType_convertToSdk() {
-        assumeTrue(isAtLeastSdkExtension16())
-        val platformActivityIntensityRecordBuilder =
-            PlatformActivityIntensityRecordBuilder(
-                    PLATFORM_METADATA,
-                    START_TIME,
-                    END_TIME,
-                    PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_VIGOROUS,
-                )
-                .setStartZoneOffset(START_ZONE_OFFSET)
-                .setEndZoneOffset(END_ZONE_OFFSET)
-
-        var sdkActivityIntensityRecord =
-            platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
-
-        assertSdkRecord(sdkActivityIntensityRecord) {
-            assertThat(activityIntensityType)
-                .isEqualTo(ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_VIGOROUS)
-        }
-    }
-
-    @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
-    @Test
-    fun activityIntensityRecord_moderateType_convertToSdk() {
-        assumeTrue(isAtLeastSdkExtension16())
-        val platformActivityIntensityRecordBuilder =
-            PlatformActivityIntensityRecordBuilder(
-                    PLATFORM_METADATA,
-                    START_TIME,
-                    END_TIME,
-                    PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE,
-                )
-                .setStartZoneOffset(START_ZONE_OFFSET)
-                .setEndZoneOffset(END_ZONE_OFFSET)
-
-        var sdkActivityIntensityRecord =
-            platformActivityIntensityRecordBuilder.build().toSdkRecord() as ActivityIntensityRecord
-
-        assertSdkRecord(sdkActivityIntensityRecord) {
-            assertThat(activityIntensityType)
-                .isEqualTo(ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE)
         }
     }
 
@@ -2162,7 +2077,7 @@ class RecordConvertersTest {
             PlatformOvulationTestRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformOvulationTestResult.RESULT_NEGATIVE,
+                    PlatformOvulationTestResult.RESULT_NEGATIVE
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -2179,7 +2094,7 @@ class RecordConvertersTest {
             PlatformOxygenSaturationRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformPercentage.fromValue(21.0),
+                    PlatformPercentage.fromValue(21.0)
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -2195,7 +2110,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    listOf(PlatformPowerRecordSample(PlatformPower.fromWatts(300.0), START_TIME)),
+                    listOf(PlatformPowerRecordSample(PlatformPower.fromWatts(300.0), START_TIME))
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -2235,7 +2150,7 @@ class RecordConvertersTest {
             PlatformSexualActivityRecordBuilder(
                     PLATFORM_METADATA,
                     TIME,
-                    PlatformSexualActivityProtectionUsed.PROTECTION_USED_PROTECTED,
+                    PlatformSexualActivityProtectionUsed.PROTECTION_USED_PROTECTED
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -2260,7 +2175,7 @@ class RecordConvertersTest {
                     listOf(
                         PlatformSkinTemperatureDelta(
                             PlatformTemperatureDelta.fromCelsius(0.2),
-                            START_TIME.plusMillis(20),
+                            START_TIME.plusMillis(20)
                         )
                     )
                 )
@@ -2274,7 +2189,7 @@ class RecordConvertersTest {
                 .containsExactly(
                     SkinTemperatureRecord.Delta(
                         START_TIME.plusMillis(20),
-                        TemperatureDelta.celsius(0.2),
+                        TemperatureDelta.celsius(0.2)
                     )
                 )
             assertThat(measurementLocation)
@@ -2295,13 +2210,13 @@ class RecordConvertersTest {
                         PlatformSleepSessionStage(
                             START_TIME,
                             START_TIME.plusMillis(1),
-                            PlatformSleepStageType.STAGE_TYPE_AWAKE,
+                            PlatformSleepStageType.STAGE_TYPE_AWAKE
                         ),
                         PlatformSleepSessionStage(
                             END_TIME.minusMillis(1),
                             END_TIME,
-                            PlatformSleepStageType.STAGE_TYPE_SLEEPING,
-                        ),
+                            PlatformSleepStageType.STAGE_TYPE_SLEEPING
+                        )
                     )
                 )
                 .build()
@@ -2315,13 +2230,13 @@ class RecordConvertersTest {
                     SleepSessionRecord.Stage(
                         START_TIME,
                         START_TIME.plusMillis(1),
-                        SleepSessionRecord.STAGE_TYPE_AWAKE,
+                        SleepSessionRecord.STAGE_TYPE_AWAKE
                     ),
                     SleepSessionRecord.Stage(
                         END_TIME.minusMillis(1),
                         END_TIME,
-                        SleepSessionRecord.STAGE_TYPE_SLEEPING,
-                    ),
+                        SleepSessionRecord.STAGE_TYPE_SLEEPING
+                    )
                 )
         }
     }
@@ -2335,7 +2250,7 @@ class RecordConvertersTest {
                     END_TIME,
                     listOf(
                         PlatformSpeedSample(PlatformVelocity.fromMetersPerSecond(99.0), END_TIME)
-                    ),
+                    )
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -2355,7 +2270,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    listOf(PlatformStepsCadenceSample(10.0, END_TIME)),
+                    listOf(PlatformStepsCadenceSample(10.0, END_TIME))
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -2386,7 +2301,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     START_TIME,
                     END_TIME,
-                    PlatformEnergy.fromCalories(333.0),
+                    PlatformEnergy.fromCalories(333.0)
                 )
                 .setStartZoneOffset(START_ZONE_OFFSET)
                 .setEndZoneOffset(END_ZONE_OFFSET)
@@ -2405,7 +2320,7 @@ class RecordConvertersTest {
                     PLATFORM_METADATA,
                     TIME,
                     PlatformVo2MaxMeasurementMethod.MEASUREMENT_METHOD_MULTISTAGE_FITNESS_TEST,
-                    13.0,
+                    13.0
                 )
                 .setZoneOffset(ZONE_OFFSET)
                 .build()
@@ -2447,7 +2362,7 @@ class RecordConvertersTest {
 
     private fun <T : PlatformIntervalRecord> assertPlatformRecord(
         platformRecord: T,
-        typeSpecificAssertions: T.() -> Unit,
+        typeSpecificAssertions: T.() -> Unit
     ) {
         assertThat(platformRecord.startTime).isEqualTo(START_TIME)
         assertThat(platformRecord.startZoneOffset).isEqualTo(START_ZONE_OFFSET)
@@ -2462,7 +2377,7 @@ class RecordConvertersTest {
 
     private fun <T : PlatformInstantRecord> assertPlatformRecord(
         platformRecord: T,
-        typeSpecificAssertions: T.() -> Unit,
+        typeSpecificAssertions: T.() -> Unit
     ) {
         assertThat(platformRecord.time).isEqualTo(TIME)
         assertThat(platformRecord.zoneOffset).isEqualTo(ZONE_OFFSET)
@@ -2474,7 +2389,7 @@ class RecordConvertersTest {
 
     private fun <T : IntervalRecord> assertSdkRecord(
         sdkRecord: T,
-        typeSpecificAssertions: T.() -> Unit,
+        typeSpecificAssertions: T.() -> Unit
     ) {
         assertThat(sdkRecord.startTime).isEqualTo(START_TIME)
         assertThat(sdkRecord.startZoneOffset).isEqualTo(START_ZONE_OFFSET)
@@ -2491,7 +2406,7 @@ class RecordConvertersTest {
 
     private fun <T : InstantaneousRecord> assertSdkRecord(
         sdkRecord: T,
-        typeSpecificAssertions: T.() -> Unit,
+        typeSpecificAssertions: T.() -> Unit
     ) {
         assertThat(sdkRecord.time).isEqualTo(TIME)
         assertThat(sdkRecord.zoneOffset).isEqualTo(ZONE_OFFSET)
@@ -2518,8 +2433,8 @@ class RecordConvertersTest {
                     Device(
                         manufacturer = "ACME Corp",
                         model = "Smartphone",
-                        type = Device.TYPE_PHONE,
-                    ),
+                        type = Device.TYPE_PHONE
+                    )
             )
 
         val PLATFORM_METADATA =

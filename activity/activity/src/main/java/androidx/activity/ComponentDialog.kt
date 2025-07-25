@@ -28,9 +28,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
@@ -43,7 +40,6 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
     Dialog(context, themeResId),
     LifecycleOwner,
     OnBackPressedDispatcherOwner,
-    NavigationEventDispatcherOwner,
     SavedStateRegistryOwner {
 
     private var _lifecycleRegistry: LifecycleRegistry? = null
@@ -88,30 +84,13 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
         super.onStop()
     }
 
-    /**
-     * Retrieve the [OnBackPressedDispatcher] that will be triggered when [onBackPressed] is called.
-     *
-     * @return The [OnBackPressedDispatcher] associated with this ComponentDialog.
-     */
     @Suppress("DEPRECATION")
-    final override val onBackPressedDispatcher: OnBackPressedDispatcher by lazy {
-        OnBackPressedDispatcher { @Suppress("DEPRECATION") super.onBackPressed() }
-    }
-
-    /**
-     * Lazily provides a [NavigationEventDispatcher] for back navigation handling, including support
-     * for predictive back gestures introduced in Android 13 (API 33+).
-     *
-     * This dispatcher acts as the central point for back navigation events. When a navigation event
-     * occurs (e.g., a back gesture), it safely invokes [ComponentDialog.onBackPressed].
-     */
-    override val navigationEventDispatcher: NavigationEventDispatcher
-        get() = onBackPressedDispatcher.eventDispatcher
+    final override val onBackPressedDispatcher = OnBackPressedDispatcher { super.onBackPressed() }
 
     @Suppress("OVERRIDE_DEPRECATION") // b/407493719
     @CallSuper
     override fun onBackPressed() {
-        navigationEventDispatcher.dispatchOnCompleted()
+        onBackPressedDispatcher.onBackPressed()
     }
 
     override fun setContentView(layoutResID: Int) {
@@ -143,6 +122,5 @@ constructor(context: Context, @StyleRes themeResId: Int = 0) :
         window!!.decorView.setViewTreeLifecycleOwner(this)
         window!!.decorView.setViewTreeOnBackPressedDispatcherOwner(this)
         window!!.decorView.setViewTreeSavedStateRegistryOwner(this)
-        window!!.decorView.setViewTreeNavigationEventDispatcherOwner(this)
     }
 }

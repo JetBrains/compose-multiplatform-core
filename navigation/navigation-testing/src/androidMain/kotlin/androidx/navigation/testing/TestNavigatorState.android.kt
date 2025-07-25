@@ -48,7 +48,7 @@ public actual class TestNavigatorState
 // TODO: @JvmOverloads conflicts with "actual" constructor
 public constructor(
     private val context: Context? = null,
-    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : NavigatorState() {
     public actual constructor() : this(
         context = null,
@@ -70,14 +70,14 @@ public constructor(
 
     public actual override fun createBackStackEntry(
         destination: NavDestination,
-        arguments: SavedState?,
+        arguments: SavedState?
     ): NavBackStackEntry =
         NavBackStackEntry.create(
             navContext,
             destination,
             arguments,
             Lifecycle.State.RESUMED,
-            viewModelStoreProvider,
+            viewModelStoreProvider
         )
 
     public actual fun restoreBackStackEntry(previouslySavedEntry: NavBackStackEntry): NavBackStackEntry {
@@ -93,7 +93,7 @@ public constructor(
             Lifecycle.State.RESUMED,
             viewModelStoreProvider,
             previouslySavedEntry.id,
-            savedState,
+            savedState
         )
     }
 
@@ -137,7 +137,7 @@ public constructor(
 
     private fun updateMaxLifecycle(
         poppedList: List<NavBackStackEntry> = emptyList(),
-        saveState: Boolean = false,
+        saveState: Boolean = false
     ) {
         runBlocking(coroutineDispatcher) {
             // NavBackStackEntry Lifecycles must be updated on the main thread

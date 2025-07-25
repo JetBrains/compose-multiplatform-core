@@ -65,19 +65,19 @@ fun CheckboxWithTextSample() {
             .toggleable(
                 value = checkedState,
                 onValueChange = { onStateChange(!checkedState) },
-                role = Role.Checkbox,
+                role = Role.Checkbox
             )
             .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = checkedState,
-            onCheckedChange = null, // null recommended for accessibility with screenreaders
+            onCheckedChange = null // null recommended for accessibility with screenreaders
         )
         Text(
             text = "Option selection",
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(start = 16.dp),
+            modifier = Modifier.padding(start = 16.dp)
         )
     }
 }
@@ -89,7 +89,11 @@ fun CheckboxRoundedStrokesSample() {
     val strokeWidthPx = with(LocalDensity.current) { floor(CheckboxDefaults.StrokeWidth.toPx()) }
     val checkmarkStroke =
         remember(strokeWidthPx) {
-            Stroke(width = strokeWidthPx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            Stroke(
+                width = strokeWidthPx,
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+            )
         }
     val outlineStroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx) }
     val checkedState = remember { mutableStateOf(true) }
@@ -97,7 +101,7 @@ fun CheckboxRoundedStrokesSample() {
         checked = checkedState.value,
         onCheckedChange = { checkedState.value = it },
         checkmarkStroke = checkmarkStroke,
-        outlineStroke = outlineStroke,
+        outlineStroke = outlineStroke
     )
 }
 
@@ -132,10 +136,13 @@ fun TriStateCheckboxSample() {
                 Modifier.triStateToggleable(
                     state = parentState,
                     onClick = onParentClick,
-                    role = Role.Checkbox,
-                ),
+                    role = Role.Checkbox
+                )
         ) {
-            TriStateCheckbox(state = parentState, onClick = null)
+            TriStateCheckbox(
+                state = parentState,
+                onClick = null,
+            )
             Text("Receive Emails")
         }
         Spacer(Modifier.size(25.dp))
@@ -146,8 +153,8 @@ fun TriStateCheckboxSample() {
                     Modifier.toggleable(
                         value = state,
                         onValueChange = onStateChange,
-                        role = Role.Checkbox,
-                    ),
+                        role = Role.Checkbox
+                    )
             ) {
                 Checkbox(state, null)
                 Text("Daily")
@@ -159,8 +166,8 @@ fun TriStateCheckboxSample() {
                     Modifier.toggleable(
                         value = state2,
                         onValueChange = onStateChange2,
-                        role = Role.Checkbox,
-                    ),
+                        role = Role.Checkbox
+                    )
             ) {
                 Checkbox(state2, null)
                 Text("Weekly")
@@ -176,7 +183,11 @@ fun TriStateCheckboxRoundedStrokesSample() {
     val strokeWidthPx = with(LocalDensity.current) { floor(CheckboxDefaults.StrokeWidth.toPx()) }
     val checkmarkStroke =
         remember(strokeWidthPx) {
-            Stroke(width = strokeWidthPx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            Stroke(
+                width = strokeWidthPx,
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+            )
         }
     val outlineStroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx) }
     Column {
@@ -206,14 +217,14 @@ fun TriStateCheckboxRoundedStrokesSample() {
                 Modifier.triStateToggleable(
                     state = parentState,
                     onClick = onParentClick,
-                    role = Role.Checkbox,
-                ),
+                    role = Role.Checkbox
+                )
         ) {
             TriStateCheckbox(
                 state = parentState,
                 onClick = null,
                 checkmarkStroke = checkmarkStroke,
-                outlineStroke = outlineStroke,
+                outlineStroke = outlineStroke
             )
             Text("Receive Emails")
         }
@@ -225,14 +236,14 @@ fun TriStateCheckboxRoundedStrokesSample() {
                     Modifier.toggleable(
                         value = state,
                         onValueChange = onStateChange,
-                        role = Role.Checkbox,
-                    ),
+                        role = Role.Checkbox
+                    )
             ) {
                 Checkbox(
                     checked = state,
                     onCheckedChange = null,
                     checkmarkStroke = checkmarkStroke,
-                    outlineStroke = outlineStroke,
+                    outlineStroke = outlineStroke
                 )
                 Text("Daily")
             }
@@ -243,14 +254,14 @@ fun TriStateCheckboxRoundedStrokesSample() {
                     Modifier.toggleable(
                         value = state2,
                         onValueChange = onStateChange2,
-                        role = Role.Checkbox,
-                    ),
+                        role = Role.Checkbox
+                    )
             ) {
                 Checkbox(
                     checked = state2,
                     onCheckedChange = null,
                     checkmarkStroke = checkmarkStroke,
-                    outlineStroke = outlineStroke,
+                    outlineStroke = outlineStroke
                 )
                 Text("Weekly")
             }

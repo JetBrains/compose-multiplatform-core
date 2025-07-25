@@ -25,13 +25,18 @@ import androidx.paging.LoadState.NotLoading
 fun localLoadStatesOf(
     refreshLocal: LoadState = NotLoading(endOfPaginationReached = false),
     prependLocal: LoadState = NotLoading(endOfPaginationReached = false),
-    appendLocal: LoadState = NotLoading(endOfPaginationReached = false),
+    appendLocal: LoadState = NotLoading(endOfPaginationReached = false)
 ) =
     CombinedLoadStates(
         refresh = refreshLocal,
         prepend = prependLocal,
         append = appendLocal,
-        source = LoadStates(refresh = refreshLocal, prepend = prependLocal, append = appendLocal),
+        source =
+            LoadStates(
+                refresh = refreshLocal,
+                prepend = prependLocal,
+                append = appendLocal,
+            ),
     )
 
 /**
@@ -47,15 +52,24 @@ fun remoteLoadStatesOf(
     appendLocal: LoadState = NotLoading(endOfPaginationReached = false),
     refreshRemote: LoadState = NotLoading(endOfPaginationReached = false),
     prependRemote: LoadState = NotLoading(endOfPaginationReached = false),
-    appendRemote: LoadState = NotLoading(endOfPaginationReached = false),
+    appendRemote: LoadState = NotLoading(endOfPaginationReached = false)
 ) =
     CombinedLoadStates(
         refresh = refresh,
         prepend = prepend,
         append = append,
-        source = LoadStates(refresh = refreshLocal, prepend = prependLocal, append = appendLocal),
+        source =
+            LoadStates(
+                refresh = refreshLocal,
+                prepend = prependLocal,
+                append = appendLocal,
+            ),
         mediator =
-            LoadStates(refresh = refreshRemote, prepend = prependRemote, append = appendRemote),
+            LoadStates(
+                refresh = refreshRemote,
+                prepend = prependRemote,
+                append = appendRemote,
+            ),
     )
 
 /**
@@ -66,4 +80,9 @@ fun loadStates(
     refresh: LoadState = NotLoading(endOfPaginationReached = false),
     prepend: LoadState = NotLoading(endOfPaginationReached = false),
     append: LoadState = NotLoading(endOfPaginationReached = false),
-) = LoadStates(refresh = refresh, prepend = prepend, append = append)
+) =
+    LoadStates(
+        refresh = refresh,
+        prepend = prepend,
+        append = append,
+    )

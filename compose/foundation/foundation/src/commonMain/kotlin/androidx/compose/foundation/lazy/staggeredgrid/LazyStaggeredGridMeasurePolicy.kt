@@ -22,11 +22,12 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.foundation.lazy.layout.LazyLayoutMeasurePolicy
+import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.foundation.lazy.layout.calculateLazyLayoutPinnedIndices
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.GraphicsContext
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -46,8 +47,8 @@ internal fun rememberStaggeredGridMeasurePolicy(
     crossAxisSpacing: Dp,
     coroutineScope: CoroutineScope,
     slots: LazyGridStaggeredGridSlotsProvider,
-    graphicsContext: GraphicsContext,
-): LazyLayoutMeasurePolicy =
+    graphicsContext: GraphicsContext
+): LazyLayoutMeasureScope.(Constraints) -> LazyStaggeredGridMeasureResult =
     remember(
         state,
         itemProviderLambda,
@@ -57,9 +58,9 @@ internal fun rememberStaggeredGridMeasurePolicy(
         mainAxisSpacing,
         crossAxisSpacing,
         slots,
-        graphicsContext,
+        graphicsContext
     ) {
-        LazyLayoutMeasurePolicy { constraints ->
+        { constraints ->
             state.measurementScopeInvalidator.attachToScope()
             // Tracks if the lookahead pass has occurred
             val isInLookaheadScope = state.hasLookaheadOccurred || isLookingAhead
@@ -100,7 +101,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
             val pinnedItems =
                 itemProvider.calculateLazyLayoutPinnedIndices(
                     state.pinnedItems,
-                    state.beyondBoundsInfo,
+                    state.beyondBoundsInfo
                 )
 
             // todo: wrap with snapshot when b/341782245 is resolved
@@ -113,7 +114,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
                     constraints =
                         constraints.copy(
                             minWidth = constraints.constrainWidth(horizontalPadding),
-                            minHeight = constraints.constrainHeight(verticalPadding),
+                            minHeight = constraints.constrainHeight(verticalPadding)
                         ),
                     mainAxisSpacing = mainAxisSpacing.roundToPx(),
                     contentOffset = contentOffset,
@@ -126,7 +127,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
                     isInLookaheadScope = isInLookaheadScope,
                     isLookingAhead = isLookingAhead,
                     approachLayoutInfo = state.approachLayoutInfo,
-                    graphicsContext = graphicsContext,
+                    graphicsContext = graphicsContext
                 )
             state.applyMeasureResult(measureResult, isLookingAhead = isLookingAhead)
             measureResult
@@ -135,7 +136,7 @@ internal fun rememberStaggeredGridMeasurePolicy(
 
 private fun PaddingValues.startPadding(
     orientation: Orientation,
-    layoutDirection: LayoutDirection,
+    layoutDirection: LayoutDirection
 ): Dp =
     when (orientation) {
         Orientation.Vertical -> calculateStartPadding(layoutDirection)
@@ -145,7 +146,7 @@ private fun PaddingValues.startPadding(
 private fun PaddingValues.beforePadding(
     orientation: Orientation,
     reverseLayout: Boolean,
-    layoutDirection: LayoutDirection,
+    layoutDirection: LayoutDirection
 ): Dp =
     when (orientation) {
         Orientation.Vertical ->
@@ -161,7 +162,7 @@ private fun PaddingValues.beforePadding(
 private fun PaddingValues.afterPadding(
     orientation: Orientation,
     reverseLayout: Boolean,
-    layoutDirection: LayoutDirection,
+    layoutDirection: LayoutDirection
 ): Dp =
     when (orientation) {
         Orientation.Vertical ->

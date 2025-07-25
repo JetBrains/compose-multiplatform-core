@@ -34,7 +34,7 @@ import androidx.compose.ui.geometry.Offset
  */
 suspend fun ScrollableState.animateScrollBy(
     value: Float,
-    animationSpec: AnimationSpec<Float> = spring(),
+    animationSpec: AnimationSpec<Float> = spring()
 ): Float {
     var previousValue = 0f
     scroll {
@@ -54,9 +54,9 @@ suspend fun ScrollableState.animateScrollBy(
  * @param animationSpec [AnimationSpec] to be used for this scrolling
  * @return the amount of scroll consumed
  */
-suspend fun Scrollable2DState.animateScrollBy(
+internal suspend fun Scrollable2DState.animateScrollBy(
     value: Offset,
-    animationSpec: AnimationSpec<Offset> = spring(),
+    animationSpec: AnimationSpec<Offset> = spring()
 ): Offset {
     var previousValue = Offset.Zero
     scroll {
@@ -93,7 +93,7 @@ suspend fun ScrollableState.scrollBy(value: Float): Float {
  * @return the amount of scroll consumed
  * @see animateScrollBy for an animated version
  */
-suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
+internal suspend fun Scrollable2DState.scrollBy(value: Offset): Offset {
     var consumed = Offset.Zero
     scroll { consumed = scrollBy(value) }
     return consumed
@@ -117,7 +117,9 @@ suspend fun ScrollableState.stopScroll(scrollPriority: MutatePriority = MutatePr
  *
  * @param scrollPriority scrolls that run with this priority or lower will be stopped
  */
-suspend fun Scrollable2DState.stopScroll(scrollPriority: MutatePriority = MutatePriority.Default) {
+internal suspend fun Scrollable2DState.stopScroll(
+    scrollPriority: MutatePriority = MutatePriority.Default
+) {
     scroll(scrollPriority) {
         // do nothing, just lock the mutex so other scroll actors are cancelled
     }

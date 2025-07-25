@@ -139,7 +139,10 @@ class CustomAccessibilityActionsTest {
         rule.setContent {
             Box(
                 Modifier.testTag(tag).semantics {
-                    customActions = listOf(CustomAccessibilityAction("action") { false })
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("action") { false },
+                        )
                 }
             )
         }
@@ -255,7 +258,10 @@ class CustomAccessibilityActionsTest {
         rule.setContent {
             Box(
                 Modifier.testTag(tag).semantics {
-                    customActions = listOf(CustomAccessibilityAction("action") { false })
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("action") { false },
+                        )
                 }
             )
         }

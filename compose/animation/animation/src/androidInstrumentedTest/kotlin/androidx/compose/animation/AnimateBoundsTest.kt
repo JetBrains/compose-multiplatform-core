@@ -103,7 +103,7 @@ class AnimateBoundsTest {
                                         lookaheadScope = this@LookaheadScope,
                                         boundsTransform = { _, _ ->
                                             tween(durationMillis, easing = LinearEasing)
-                                        },
+                                        }
                                     )
                                     .drawBehind { drawRect(Color.LightGray) }
                                     .onGloballyPositioned {
@@ -170,9 +170,9 @@ class AnimateBoundsTest {
                                     boundsTransform = { _, _ ->
                                         tween(
                                             durationMillis = durationMillis,
-                                            easing = LinearEasing,
+                                            easing = LinearEasing
                                         )
-                                    },
+                                    }
                                 )
                                 .drawBehind { drawRect(Color.LightGray) }
                                 .onGloballyPositioned { boxSize = it.size }
@@ -243,9 +243,9 @@ class AnimateBoundsTest {
                                     boundsTransform = { _, _ ->
                                         tween(
                                             durationMillis = durationMillis,
-                                            easing = LinearEasing,
+                                            easing = LinearEasing
                                         )
-                                    },
+                                    }
                                 )
                                 .drawBehind { drawRect(Color.Yellow) }
                                 .onGloballyPositioned { boxBounds = it.boundsInParent() }
@@ -281,7 +281,7 @@ class AnimateBoundsTest {
 
             assertEquals(
                 Rect(Offset(expectedFinalPos, expectedFinalPos), expectedLargeSize),
-                boxBounds,
+                boxBounds
             )
         }
 
@@ -319,9 +319,10 @@ class AnimateBoundsTest {
                                 Modifier.animateBounds(
                                     lookaheadScope = this@LookaheadScope,
                                     modifier = Modifier.applyPadding(),
-                                    boundsTransform = { _, _ ->
+                                    boundsTransform = { _, _,
+                                        ->
                                         tween(durationMillis, easing = LinearEasing)
-                                    },
+                                    }
                                 )
                             ) {
                                 Box(
@@ -335,9 +336,10 @@ class AnimateBoundsTest {
                             Box(
                                 Modifier.animateBounds(
                                         lookaheadScope = this@LookaheadScope,
-                                        boundsTransform = { _, _ ->
+                                        boundsTransform = { _, _,
+                                            ->
                                             tween(durationMillis, easing = LinearEasing)
-                                        },
+                                        }
                                     )
                                     .applyPadding()
                             ) {
@@ -400,9 +402,9 @@ class AnimateBoundsTest {
                                         boundsTransform = { _, _ ->
                                             tween(
                                                 durationMillis = durationMillis,
-                                                easing = LinearEasing,
+                                                easing = LinearEasing
                                             )
-                                        },
+                                        }
                                     )
                                     .onGloballyPositioned {
                                         boxPosition = it.positionInRoot().round()
@@ -526,13 +528,13 @@ class AnimateBoundsTest {
                                                     it.findRootCoordinates()
                                                         .localPositionOf(
                                                             it,
-                                                            includeMotionFrameOfReference = true,
+                                                            includeMotionFrameOfReference = true
                                                         ) -
                                                         it.findRootCoordinates()
                                                             .localPositionOf(
                                                                 it,
                                                                 includeMotionFrameOfReference =
-                                                                    false,
+                                                                    false
                                                             )
                                                 MFRs.add(MFR)
                                                 size = it.size
@@ -594,7 +596,7 @@ class AnimateBoundsTest {
                                                         .using(LinearEasing)
                                                 }
                                             },
-                                            animateMotionFrameOfReference = isAnimateScroll,
+                                            animateMotionFrameOfReference = isAnimateScroll
                                         )
                                         .onGloballyPositioned {
                                             if (index == 0) {
@@ -646,10 +648,10 @@ class AnimateBoundsTest {
                         // Center position at x = 0
                         x = 0f,
                         // keyframeOffset - (previousScrollOffset) + itemCenterY
-                        y = keyFrameOffset,
+                        y = keyFrameOffset
                     )
                     .round(),
-                item0Position,
+                item0Position
             )
         }
 

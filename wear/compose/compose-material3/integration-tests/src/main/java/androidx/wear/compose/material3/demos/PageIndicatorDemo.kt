@@ -52,12 +52,14 @@ fun HorizontalPageIndicatorWhiteBackgroundDemo() {
     val pagerState = rememberPagerState { pageCount }
 
     Box(modifier = Modifier.background(Color.White)) {
-        HorizontalPager(state = pagerState) { page ->
+        HorizontalPager(
+            state = pagerState,
+        ) { page ->
             Box(modifier = Modifier.fillMaxSize()) {
                 Text(
                     modifier = Modifier.align(Alignment.Center),
                     text = "Page #$page",
-                    color = Color.Black,
+                    color = Color.Black
                 )
             }
         }
@@ -72,7 +74,9 @@ fun VerticalPageIndicatorWithPagerOnLeftSample() {
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box {
-            VerticalPager(state = pagerState) { page ->
+            VerticalPager(
+                state = pagerState,
+            ) { page ->
                 Box(modifier = Modifier.fillMaxSize()) {
                     Text(modifier = Modifier.align(Alignment.Center), text = "Page #$page")
                 }

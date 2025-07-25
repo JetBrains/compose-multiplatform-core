@@ -54,11 +54,13 @@ import org.junit.runners.Parameterized
 @LargeTest
 class PreviewViewFragmentTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig,
+    private val cameraConfig: CameraXConfig
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     var useCamera =
@@ -232,7 +234,7 @@ class PreviewViewFragmentTest(
             PreviewViewFragment::class.java,
             null,
             R.style.AppTheme,
-            FragmentFactory(),
+            FragmentFactory()
         )
     }
 
@@ -250,7 +252,7 @@ class PreviewViewFragmentTest(
      */
     private fun assertPreviewUpdateState(
         scenario: FragmentScenario<PreviewViewFragment>,
-        shouldPreviewUpdate: Boolean,
+        shouldPreviewUpdate: Boolean
     ) {
         val fragment = AtomicReference<PreviewViewFragment>()
         scenario.onFragment { newValue: PreviewViewFragment -> fragment.set(newValue) }
@@ -289,7 +291,7 @@ class PreviewViewFragmentTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 }

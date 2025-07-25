@@ -17,7 +17,7 @@
 package androidx.pdf.view
 
 import android.graphics.Point
-import android.graphics.RectF
+import android.graphics.Rect
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Range
@@ -38,9 +38,9 @@ import kotlin.math.max
 @Suppress("BanParcelableUsage")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 internal class PaginationModel(
-    val pageSpacingPx: Float,
+    val pageSpacingPx: Int,
     val numPages: Int,
-    topPageMarginPx: Float = 0f,
+    val topPageMarginPx: Int = 0
 ) : Parcelable {
 
     init {
@@ -49,11 +49,11 @@ internal class PaginationModel(
     }
 
     /** The estimated total height of this PDF */
-    val totalEstimatedHeight: Float
+    val totalEstimatedHeight: Int
         get() = computeEstimatedHeight()
 
     /** The maximum width of any page known to this model */
-    var maxWidth: Float = 0f
+    var maxWidth: Int = 0
 
     private var _reach: Int = -1
 
@@ -65,7 +65,7 @@ internal class PaginationModel(
     private val pages = Array(numPages) { UNKNOWN_SIZE }
 
     /** The top position of each page known to this model */
-    private val pagePositions = FloatArray(numPages) { -1f }.apply { this[0] = topPageMarginPx }
+    private val pagePositions = IntArray(numPages) { -1 }.apply { this[0] = topPageMarginPx }
 
     /**
      * The estimated height of any page not known to this model, i.e. the average height of all
@@ -80,12 +80,12 @@ internal class PaginationModel(
      * The top position of each page known to this model, as a synthetic [List] to conveniently use
      * with APIs like [Collections.binarySearch]
      */
-    private val pageTops: List<Float> =
-        object : AbstractList<Float>() {
+    private val pageTops: List<Int> =
+        object : AbstractList<Int>() {
             override val size: Int
                 get() = reach + 1
 
-            override fun get(index: Int): Float {
+            override fun get(index: Int): Int {
                 return pagePositions[index]
             }
         }
@@ -94,33 +94,33 @@ internal class PaginationModel(
      * The bottom position of each page known to this model, as a synthetic [List] to conveniently
      * use with APIs like [Collections.binarySearch]
      */
-    private val pageBottoms: List<Float> =
-        object : AbstractList<Float>() {
+    private val pageBottoms: List<Int> =
+        object : AbstractList<Int>() {
             override val size: Int
                 get() = reach + 1
 
-            override fun get(index: Int): Float {
+            override fun get(index: Int): Int {
                 return pagePositions[index] + pages[index].y
             }
         }
 
-    constructor(parcel: Parcel) : this(parcel.readFloat(), parcel.readInt()) {
+    constructor(parcel: Parcel) : this(parcel.readInt(), parcel.readInt()) {
         _reach = parcel.readInt()
         averagePageHeight = parcel.readInt()
         accumulatedPageHeight = parcel.readInt()
-        maxWidth = parcel.readFloat()
-        parcel.readFloatArray(pagePositions)
+        maxWidth = parcel.readInt()
+        parcel.readIntArray(pagePositions)
         parcel.readTypedArray(pages, Point.CREATOR)
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
-        parcel.writeFloat(pageSpacingPx)
+        parcel.writeInt(pageSpacingPx)
         parcel.writeInt(numPages)
         parcel.writeInt(_reach)
         parcel.writeInt(averagePageHeight)
         parcel.writeInt(accumulatedPageHeight)
-        parcel.writeFloat(maxWidth)
-        parcel.writeFloatArray(pagePositions)
+        parcel.writeInt(maxWidth)
+        parcel.writeIntArray(pagePositions)
         parcel.writeTypedArray(pages, flags)
     }
 
@@ -132,16 +132,10 @@ internal class PaginationModel(
         for (i in maxOf(_reach, 0) until pageNum) {
             if (pages[i] == UNKNOWN_SIZE) {
                 pages[i] = pageSize
-
-                // Use prior values as an approximation.
-                accumulatedPageHeight += pageSize.y
-                if (i > 0) {
-                    pagePositions[i] = pagePositions[i - 1] + pages[i - 1].y + pageSpacingPx
-                }
             }
         }
         if (pageSize.x > maxWidth) {
-            maxWidth = pageSize.x.toFloat()
+            maxWidth = pageSize.x
         }
         pages[pageNum] = pageSize
         // Defensive: never set _reach to a smaller value, if pages are loaded out of order
@@ -167,9 +161,9 @@ internal class PaginationModel(
      * coordinates of the viewport.
      */
     fun getPagesInViewport(
-        viewportTop: Float,
-        viewportBottom: Float,
-        includePartial: Boolean = true,
+        viewportTop: Int,
+        viewportBottom: Int,
+        includePartial: Boolean = true
     ): PagesInViewport {
         // If the top of the viewport exceeds the bottom of the last page whose dimensions are
         // known, return an empty range at the bottom of this model, and indicate that layout is
@@ -196,16 +190,16 @@ internal class PaginationModel(
     }
 
     /** Returns the location of the page in content coordinates */
-    fun getPageLocation(pageNum: Int, viewport: RectF): RectF {
+    fun getPageLocation(pageNum: Int, viewport: Rect): Rect {
         val page = pages[pageNum]
-        var left = 0f
-        var right: Float = maxWidth
+        var left = 0
+        var right: Int = maxWidth
         val top = pagePositions[pageNum]
         val bottom = top + page.y
         // this page is smaller than the view's width, it may slide left or right.
         if (page.x < viewport.width()) {
             // page is smaller than the view: center
-            left = Math.max(left, viewport.left + (viewport.width() - page.x) / 2f)
+            left = Math.max(left, viewport.left + (viewport.width() - page.x) / 2)
         } else {
             // page is larger than view: scroll proportionally
             if (viewport.right > right) {
@@ -216,12 +210,13 @@ internal class PaginationModel(
         }
         right = left + page.x
 
-        return RectF(left, top, right, bottom)
+        val ret = Rect(left, top, right, bottom)
+        return ret
     }
 
-    private fun computeEstimatedHeight(): Float {
+    private fun computeEstimatedHeight(): Int {
         return if (_reach < 0) {
-            0f
+            0
         } else if (_reach == numPages - 1) {
             val lastPageHeight = pages[_reach].y
             pagePositions[_reach] + lastPageHeight + (pageSpacingPx)

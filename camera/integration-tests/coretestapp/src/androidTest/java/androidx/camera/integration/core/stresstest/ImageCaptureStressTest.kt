@@ -63,13 +63,15 @@ import org.junit.runners.Parameterized
 class ImageCaptureStressTest(
     val implName: String,
     val cameraConfig: CameraXConfig,
-    val cameraId: String,
+    val cameraId: String
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     val useCamera =
@@ -79,7 +81,9 @@ class ImageCaptureStressTest(
 
     @get:Rule
     val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        GrantPermissionRule.grant(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 

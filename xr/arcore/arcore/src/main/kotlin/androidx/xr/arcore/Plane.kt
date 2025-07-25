@@ -17,7 +17,7 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.Config
+import androidx.xr.runtime.PlaneTrackingMode
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transform
 
 /** Describes the system's current best knowledge of a real-world planar surface. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class Plane
 internal constructor(
     internal val runtimePlane: RuntimePlane,
@@ -43,17 +44,12 @@ internal constructor(
         /**
          * Emits the planes that are currently being tracked in the [session].
          *
-         * Only [Plane]s that are [TrackingState.TRACKING] will be emitted in the [Collection].
-         * Instances of the same [Plane] will remain between subsequent emits to the [StateFlow] as
-         * long as they remain tracking.
-         *
-         * @throws [IllegalStateException] if [Session.config] is set to
-         *   [Config.PlaneTrackingMode.DISABLED]
+         * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Plane>> {
-            check(session.config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
-                "Config.PlaneTrackingMode is set to DISABLED."
+            check(session.config.planeTracking != PlaneTrackingMode.Disabled) {
+                "Config.PlaneTrackingMode is set to Disabled."
             }
 
             return session.state
@@ -72,29 +68,24 @@ internal constructor(
     }
 
     /**
-     * The representation of the current state of a [Plane]. A [Plane] is represented as a finite
-     * polygon with an arbitrary amount of [vertices] around a [centerPose].
+     * The representation of the current state of a [Plane].
      *
      * @property trackingState whether this plane is being tracked or not.
      * @property label The [Label] associated with the plane.
-     * @property centerPose The [Pose] of the center of the detected plane's bounding box in the
-     *   world coordinate space. The +Y axis relative to the [centerPose] is equivalent to the
-     *   normal of the [Plane].
-     * @property extents The dimensions of the bounding box of the detected plane.
-     * @property vertices The 2D vertices of a convex polygon approximating the detected plane,
-     *   relative to its [centerPose] in the X and Z axes.
+     * @property centerPose The pose of the center of the detected plane.
+     * @property extents The dimensions of the detected plane.
      * @property subsumedBy If this plane has been subsumed, returns the plane this plane was merged
      *   into. If the subsuming plane is also subsumed by another plane, this plane will continue to
      *   be subsumed by the former.
+     * @property vertices The 2D vertices of a convex polygon approximating the detected plane.
      */
-    public class State
-    internal constructor(
+    public class State(
         public override val trackingState: TrackingState,
         public val label: Label,
         public val centerPose: Pose,
         public val extents: Vector2,
-        public val vertices: List<Vector2>,
         public val subsumedBy: Plane?,
+        public val vertices: List<Vector2>,
     ) : Trackable.State {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -122,21 +113,21 @@ internal constructor(
     public class Type private constructor(private val value: Int) {
         public companion object {
             /** A horizontal plane facing upward (e.g. floor or tabletop). */
-            @JvmField public val HORIZONTAL_UPWARD_FACING: Type = Type(0)
+            @JvmField public val HorizontalUpwardFacing: Type = Type(0)
 
             /** A horizontal plane facing downward (e.g. a ceiling). */
-            @JvmField public val HORIZONTAL_DOWNWARD_FACING: Type = Type(1)
+            @JvmField public val HorizontalDownwardFacing: Type = Type(1)
 
             /** A vertical plane (e.g. a wall). */
-            @JvmField public val VERTICAL: Type = Type(2)
+            @JvmField public val Vertical: Type = Type(2)
         }
 
         public override fun toString(): String =
             when (this) {
-                HORIZONTAL_UPWARD_FACING -> "HORIZONTAL_UPWARD_FACING"
-                HORIZONTAL_DOWNWARD_FACING -> "HORIZONTAL_DOWNWARD_FACING"
-                VERTICAL -> "VERTICAL"
-                else -> "UNKNOWN"
+                HorizontalUpwardFacing -> "HorizontalUpwardFacing"
+                HorizontalDownwardFacing -> "HorizontalDownwardFacing"
+                Vertical -> "Vertical"
+                else -> "Unknown"
             }
     }
 
@@ -144,28 +135,28 @@ internal constructor(
     public class Label private constructor(private val value: Int) {
         public companion object {
             /** The plane represents an unknown type. */
-            @JvmField public val UNKNOWN: Label = Label(0)
+            @JvmField public val Unknown: Label = Label(0)
 
             /** The plane represents a wall. */
-            @JvmField public val WALL: Label = Label(1)
+            @JvmField public val Wall: Label = Label(1)
 
             /** The plane represents a floor. */
-            @JvmField public val FLOOR: Label = Label(2)
+            @JvmField public val Floor: Label = Label(2)
 
             /** The plane represents a ceiling. */
-            @JvmField public val CEILING: Label = Label(3)
+            @JvmField public val Ceiling: Label = Label(3)
 
             /** The plane represents a table. */
-            @JvmField public val TABLE: Label = Label(4)
+            @JvmField public val Table: Label = Label(4)
         }
 
         public override fun toString(): String =
             when (this) {
-                WALL -> "WALL"
-                FLOOR -> "FLOOR"
-                CEILING -> "CEILING"
-                TABLE -> "TABLE"
-                else -> "UNKNOWN"
+                Wall -> "Wall"
+                Floor -> "Floor"
+                Ceiling -> "Ceiling"
+                Table -> "Table"
+                else -> "Unknown"
             }
     }
 
@@ -176,8 +167,8 @@ internal constructor(
                 labelFromRuntimeType(),
                 runtimePlane.centerPose,
                 runtimePlane.extents,
-                runtimePlane.vertices,
                 subsumedByFromRuntimePlane(),
+                runtimePlane.vertices,
             )
         )
     /** The current state of the [Plane]. */
@@ -191,15 +182,13 @@ internal constructor(
      * Creates an [Anchor] that is attached to this trackable, using the given initial [pose] in the
      * world coordinate space.
      *
-     * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.PlaneTrackingMode.DISABLED].
+     * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
      */
     override fun createAnchor(pose: Pose): AnchorCreateResult {
         check(
-            xrResourceManager.lifecycleManager.config.planeTracking !=
-                Config.PlaneTrackingMode.DISABLED
+            xrResourceManager.lifecycleManager.config.planeTracking != PlaneTrackingMode.Disabled
         ) {
-            "Config.PlaneTrackingMode is set to DISABLED."
+            "Config.PlaneTrackingMode is set to Disabled."
         }
 
         val runtimeAnchor: RuntimeAnchor
@@ -213,7 +202,6 @@ internal constructor(
         return AnchorCreateSuccess(anchor)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override suspend fun update() {
         _state.emit(
             State(
@@ -221,28 +209,28 @@ internal constructor(
                 label = labelFromRuntimeType(),
                 centerPose = runtimePlane.centerPose,
                 extents = runtimePlane.extents,
-                vertices = runtimePlane.vertices,
                 subsumedBy = subsumedByFromRuntimePlane(),
+                vertices = runtimePlane.vertices,
             )
         )
     }
 
     private fun typeFromRuntimeType(): Type =
         when (runtimePlane.type) {
-            RuntimePlane.Type.HORIZONTAL_UPWARD_FACING -> Type.HORIZONTAL_UPWARD_FACING
-            RuntimePlane.Type.HORIZONTAL_DOWNWARD_FACING -> Type.HORIZONTAL_DOWNWARD_FACING
-            RuntimePlane.Type.VERTICAL -> Type.VERTICAL
-            else -> Type.HORIZONTAL_UPWARD_FACING
+            RuntimePlane.Type.HorizontalUpwardFacing -> Type.HorizontalUpwardFacing
+            RuntimePlane.Type.HorizontalDownwardFacing -> Type.HorizontalDownwardFacing
+            RuntimePlane.Type.Vertical -> Type.Vertical
+            else -> Type.HorizontalUpwardFacing
         }
 
     private fun labelFromRuntimeType(): Label =
         when (runtimePlane.label) {
-            RuntimePlane.Label.UNKNOWN -> Label.UNKNOWN
-            RuntimePlane.Label.WALL -> Label.WALL
-            RuntimePlane.Label.FLOOR -> Label.FLOOR
-            RuntimePlane.Label.CEILING -> Label.CEILING
-            RuntimePlane.Label.TABLE -> Label.TABLE
-            else -> Label.UNKNOWN
+            RuntimePlane.Label.Unknown -> Label.Unknown
+            RuntimePlane.Label.Wall -> Label.Wall
+            RuntimePlane.Label.Floor -> Label.Floor
+            RuntimePlane.Label.Ceiling -> Label.Ceiling
+            RuntimePlane.Label.Table -> Label.Table
+            else -> Label.Unknown
         }
 
     private fun subsumedByFromRuntimePlane(): Plane? =

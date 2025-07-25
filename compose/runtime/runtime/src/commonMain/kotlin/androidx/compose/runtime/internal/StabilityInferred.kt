@@ -31,4 +31,4 @@ import androidx.compose.runtime.ComposeCompilerApi
 @ComposeCompilerApi
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
-public annotation class StabilityInferred(val parameters: Int)
+annotation class StabilityInferred(val parameters: Int)

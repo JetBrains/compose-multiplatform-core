@@ -73,12 +73,12 @@ class HealthConnectClientImpl
 @VisibleForTesting
 internal constructor(
     private val delegate: HealthDataAsyncClient,
-    override val features: HealthConnectFeatures,
+    override val features: HealthConnectFeatures
 ) : HealthConnectClient, PermissionController {
 
     internal constructor(
         context: Context,
-        providerPackageName: String,
+        providerPackageName: String
     ) : this(
         delegate = HealthDataService.getClient(context, providerPackageName),
         features =
@@ -86,7 +86,7 @@ internal constructor(
                 HealthConnectFeaturesApkImpl(context, providerPackageName)
             } else {
                 HealthConnectFeaturesUnavailableImpl
-            },
+            }
     )
 
     override suspend fun getGrantedPermissions(): Set<String> {
@@ -104,7 +104,7 @@ internal constructor(
         }
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Granted ${grantedPermissions.size} out of ${ALL_PERMISSIONS.size} permissions.",
+            "Granted ${grantedPermissions.size} out of ${ALL_PERMISSIONS.size} permissions."
         )
         return grantedPermissions
     }
@@ -139,13 +139,13 @@ internal constructor(
             delegate
                 .deleteData(
                     toDataTypeIdPairProtoList(recordType, recordIdsList),
-                    toDataTypeIdPairProtoList(recordType, clientRecordIdsList),
+                    toDataTypeIdPairProtoList(recordType, clientRecordIdsList)
                 )
                 .await()
         }
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "${recordIdsList.size + clientRecordIdsList.size} records deleted.",
+            "${recordIdsList.size + clientRecordIdsList.size} records deleted."
         )
     }
 
@@ -192,6 +192,7 @@ internal constructor(
                 .await()
         }
         val changeToken = proto.changesToken
+        Logger.debug(HEALTH_CONNECT_CLIENT_TAG, "Retrieved change token $changeToken.")
         return changeToken
     }
 
@@ -205,12 +206,17 @@ internal constructor(
                 )
                 .await()
         }
+        val nextToken = proto.nextChangesToken
+        Logger.debug(
+            HEALTH_CONNECT_CLIENT_TAG,
+            "Retrieved changes successful with $changesToken, next token $nextToken."
+        )
         return toChangesResponse(proto)
     }
 
     @OptIn(ExperimentalDeduplicationApi::class)
     override suspend fun <T : Record> readRecords(
-        request: ReadRecordsRequest<T>
+        request: ReadRecordsRequest<T>,
     ): ReadRecordsResponse<T> {
         if (request.deduplicateStrategy != DEDUPLICATION_STRATEGY_DISABLED) {
             TODO("Not yet implemented")
@@ -232,13 +238,13 @@ internal constructor(
     }
 
     override suspend fun aggregateGroupByDuration(
-        request: AggregateGroupByDurationRequest
+        request: AggregateGroupByDurationRequest,
     ): List<AggregationResultGroupedByDuration> {
         val responseProto = wrapRemoteException { delegate.aggregate(request.toProto()).await() }
         val result = responseProto.rowsList.map { it.toAggregateDataRowGroupByDuration() }.toList()
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved ${result.size} duration aggregation buckets.",
+            "Retrieved ${result.size} duration aggregation buckets."
         )
         return result
     }
@@ -250,7 +256,7 @@ internal constructor(
         val result = responseProto.rowsList.map { it.toAggregateDataRowGroupByPeriod() }.toList()
         Logger.debug(
             HEALTH_CONNECT_CLIENT_TAG,
-            "Retrieved ${result.size} period aggregation buckets.",
+            "Retrieved ${result.size} period aggregation buckets."
         )
         return result
     }

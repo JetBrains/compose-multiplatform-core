@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -39,11 +40,13 @@ androidXMultiplatform {
     ios()
     watchos()
     tvos()
-    js()
-    wasmJs()
-    mingwX64()
     androidLibrary {
         namespace = "androidx.paging.common"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
     }
 
     defaultPlatform(PlatformIdentifier.JVM)
@@ -57,19 +60,28 @@ androidXMultiplatform {
             }
         }
 
-        commonTest {
+        commonJvmAndroidMain {
+            dependsOn(commonMain)
+
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-                implementation(project(":kruth:kruth"))
-                implementation(project(":internal-testutils-paging"))
-                implementation(libs.kotlinTest)
+                api("androidx.arch.core:core-common:2.2.0")
             }
         }
 
-        commonJvmAndroidMain {
-            dependsOn(commonMain)
+        jvmMain {
+            dependsOn(commonJvmAndroidMain)
+        }
+
+        androidMain {
+            dependsOn(commonJvmAndroidMain)
+        }
+
+        commonTest {
             dependencies {
-                api("androidx.arch.core:core-common:2.2.0")
+                implementation(libs.kotlinCoroutinesTest)
+                implementation(libs.kotlinTest)
+                implementation(project(":kruth:kruth"))
+                implementation(project(":internal-testutils-paging"))
             }
         }
 
@@ -81,72 +93,6 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin)
                 implementation(project(":internal-testutils-common"))
                 implementation(project(":internal-testutils-ktx"))
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(commonMain)
-            dependencies {
-                implementation(libs.atomicFu)
-            }
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        unixMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinMain {
-            dependsOn(unixMain)
-        }
-
-        linuxMain {
-            dependsOn(unixMain)
-        }
-
-        mingwMain {
-            dependsOn(nativeMain)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(commonTest)
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same (2.1):
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
             }
         }
 
@@ -162,20 +108,41 @@ androidXMultiplatform {
             }
         }
 
+        nativeMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.atomicFu)
+            }
+        }
+        nativeTest {
+            dependsOn(commonTest)
+        }
+
+        darwinMain {
+            dependsOn(nativeMain)
+        }
+
+        linuxMain {
+            dependsOn(nativeMain)
+        }
+
         targets.configureEach { target ->
-            if (target.platformType in [KotlinPlatformType.jvm, KotlinPlatformType.androidJvm] ) {
-                target.compilations["main"].defaultSourceSet.dependsOn(commonJvmAndroidMain)
-            } else if (target.platformType == KotlinPlatformType.native) {
+            if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
-                    if (target.konanTarget.family.appleFamily) {
+                    def konanTargetFamily = target.konanTarget.family
+                    if (konanTargetFamily == Family.OSX ||
+                            konanTargetFamily == Family.IOS ||
+                            konanTargetFamily == Family.WATCHOS ||
+                            konanTargetFamily == Family.TVOS) {
                         dependsOn(darwinMain)
-                    } else if (target.konanTarget.family == Family.LINUX) {
+                    } else if (konanTargetFamily == Family.LINUX) {
                         dependsOn(linuxMain)
-                    } else if (target.konanTarget.family == Family.MINGW) {
-                        dependsOn(mingwMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")
                     }
+                }
+                target.compilations["test"].defaultSourceSet {
+                    dependsOn(nativeTest)
                 }
             }
         }
@@ -190,4 +157,3 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":paging:paging-samples"))
 }
-

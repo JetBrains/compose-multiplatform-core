@@ -18,7 +18,6 @@ package androidx.compose.foundation.text.contextmenu.modifier
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.text.contextmenu.builder.item
 import androidx.compose.foundation.text.contextmenu.test.TestTextContextMenuDataInvoker
 import androidx.compose.foundation.text.contextmenu.test.testTextContextMenuDataReader
 import androidx.compose.runtime.Composable
@@ -43,7 +42,7 @@ class TextContextMenuModifierTraversalTest {
     fun whenOneModifier_nodeTraversed() {
         val invocations = mutableListOf<String>()
         setContentAndInvokeContextMenuData { dataReadingContent ->
-            Box(Modifier.appendTextContextMenuComponents { invocations += "node" }) {
+            Box(Modifier.addTextContextMenuComponents { invocations += "node" }) {
                 dataReadingContent()
             }
         }
@@ -56,8 +55,8 @@ class TextContextMenuModifierTraversalTest {
         val invocations = mutableListOf<String>()
         setContentAndInvokeContextMenuData { dataReadingContent ->
             Box(
-                Modifier.appendTextContextMenuComponents { invocations += "outer" }
-                    .appendTextContextMenuComponents { invocations += "inner" }
+                Modifier.addTextContextMenuComponents { invocations += "outer" }
+                    .addTextContextMenuComponents { invocations += "inner" }
             ) {
                 dataReadingContent()
             }
@@ -70,8 +69,8 @@ class TextContextMenuModifierTraversalTest {
     fun whenNestedModifier_nodesTraversedBottomToTop() {
         val invocations = mutableListOf<String>()
         setContentAndInvokeContextMenuData { dataReadingContent ->
-            Box(Modifier.appendTextContextMenuComponents { invocations += "outer" }) {
-                Box(Modifier.appendTextContextMenuComponents { invocations += "inner" }) {
+            Box(Modifier.addTextContextMenuComponents { invocations += "outer" }) {
+                Box(Modifier.addTextContextMenuComponents { invocations += "inner" }) {
                     dataReadingContent()
                 }
             }
@@ -84,11 +83,11 @@ class TextContextMenuModifierTraversalTest {
     fun whenMultipleNodes_doesNotTraverseNodesNotInAncestry() {
         val invocations = mutableListOf<String>()
         setContentAndInvokeContextMenuData { dataReadingContent ->
-            Column(Modifier.appendTextContextMenuComponents { invocations += "outer" }) {
-                Box(Modifier.appendTextContextMenuComponents { invocations += "inner1" }) {
+            Column(Modifier.addTextContextMenuComponents { invocations += "outer" }) {
+                Box(Modifier.addTextContextMenuComponents { invocations += "inner1" }) {
                     dataReadingContent()
                 }
-                Box(Modifier.appendTextContextMenuComponents { invocations += "inner2" })
+                Box(Modifier.addTextContextMenuComponents { invocations += "inner2" })
             }
         }
 
@@ -99,10 +98,10 @@ class TextContextMenuModifierTraversalTest {
     fun whenDeeperChildNodes_doesNotTraverseNodesNotInAncestry() {
         val invocations = mutableListOf<String>()
         setContentAndInvokeContextMenuData { dataReadingContent ->
-            Column(Modifier.appendTextContextMenuComponents { invocations += "outer" }) {
+            Column(Modifier.addTextContextMenuComponents { invocations += "outer" }) {
                 dataReadingContent()
-                Box(Modifier.appendTextContextMenuComponents { invocations += "inner1" })
-                Box(Modifier.appendTextContextMenuComponents { invocations += "inner2" })
+                Box(Modifier.addTextContextMenuComponents { invocations += "inner1" })
+                Box(Modifier.addTextContextMenuComponents { invocations += "inner2" })
             }
         }
 
@@ -115,10 +114,10 @@ class TextContextMenuModifierTraversalTest {
         setContentAndInvokeContextMenuData { dataReadingContent ->
             Box(
                 Modifier.fakeFilterTextContextMenuComponents { invocations += "outer filter" }
-                    .appendTextContextMenuComponents { invocations += "outer builder" }
-                    .appendTextContextMenuComponents { invocations += "inner builder" }
+                    .addTextContextMenuComponents { invocations += "outer builder" }
+                    .addTextContextMenuComponents { invocations += "inner builder" }
                     .fakeFilterTextContextMenuComponents { invocations += "inner filter" }
-                    .appendTextContextMenuComponents {
+                    .addTextContextMenuComponents {
                         // Add an item otherwise the filters won't have anything to run on.
                         item("key", "label") { /* No action */ }
                     }
@@ -137,7 +136,7 @@ class TextContextMenuModifierTraversalTest {
     }
 
     private fun setContentAndInvokeContextMenuData(
-        outerContent: @Composable (dataReadingContent: @Composable () -> Unit) -> Unit
+        outerContent: @Composable (dataReadingContent: @Composable () -> Unit) -> Unit,
     ) {
         val reader = TestTextContextMenuDataInvoker()
         rule.setContent { outerContent { Box(Modifier.testTextContextMenuDataReader(reader)) } }

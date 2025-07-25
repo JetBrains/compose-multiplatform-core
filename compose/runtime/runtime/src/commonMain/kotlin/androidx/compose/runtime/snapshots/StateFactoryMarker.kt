@@ -26,4 +26,4 @@ package androidx.compose.runtime.snapshots
 @MustBeDocumented
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.BINARY)
-public annotation class StateFactoryMarker
+annotation class StateFactoryMarker

@@ -39,13 +39,13 @@ import androidx.annotation.RestrictTo
  *   correlate to a click as interpreted by an adtech.
  */
 @ExperimentalFeatures.Ext8OptIn
-public class FrequencyCapFilters
+class FrequencyCapFilters
 @JvmOverloads
 public constructor(
-    public val keyedFrequencyCapsForWinEvents: List<KeyedFrequencyCap> = listOf(),
-    public val keyedFrequencyCapsForImpressionEvents: List<KeyedFrequencyCap> = listOf(),
-    public val keyedFrequencyCapsForViewEvents: List<KeyedFrequencyCap> = listOf(),
-    public val keyedFrequencyCapsForClickEvents: List<KeyedFrequencyCap> = listOf(),
+    val keyedFrequencyCapsForWinEvents: List<KeyedFrequencyCap> = listOf(),
+    val keyedFrequencyCapsForImpressionEvents: List<KeyedFrequencyCap> = listOf(),
+    val keyedFrequencyCapsForViewEvents: List<KeyedFrequencyCap> = listOf(),
+    val keyedFrequencyCapsForClickEvents: List<KeyedFrequencyCap> = listOf()
 ) {
     /** Checks whether two [FrequencyCapFilters] objects contain the same information. */
     override fun equals(other: Any?): Boolean {
@@ -82,11 +82,11 @@ public constructor(
         Companion.AD_EVENT_TYPE_WIN,
         Companion.AD_EVENT_TYPE_VIEW,
         Companion.AD_EVENT_TYPE_CLICK,
-        Companion.AD_EVENT_TYPE_IMPRESSION,
+        Companion.AD_EVENT_TYPE_IMPRESSION
     )
-    public annotation class AdEventType
+    annotation class AdEventType
 
-    public companion object {
+    companion object {
         /**
          * Represents the Win event for ads that were selected as winners in ad selection.
          *

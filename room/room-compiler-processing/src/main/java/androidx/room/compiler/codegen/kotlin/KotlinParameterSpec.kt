@@ -27,14 +27,13 @@ import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
 internal class KotlinParameterSpec(
     override val name: String,
     override val type: XTypeName,
-    override val actual: KParameterSpec,
-) : KotlinSpec<KParameterSpec>(), XParameterSpec {
-    override fun toBuilder() = Builder(name, type, actual.toBuilder())
+    internal val actual: KParameterSpec
+) : XSpec(), XParameterSpec {
 
     internal class Builder(
         private val name: String,
         private val type: XTypeName,
-        internal val actual: KParameterSpecBuilder,
+        internal val actual: KParameterSpecBuilder
     ) : XSpec.Builder(), XParameterSpec.Builder {
 
         override fun addAnnotation(annotation: XAnnotationSpec) = apply {

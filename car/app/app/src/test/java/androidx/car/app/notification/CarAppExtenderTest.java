@@ -25,7 +25,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.car.app.TestUtils;
@@ -33,7 +32,6 @@ import androidx.car.app.model.CarColor;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.filters.SdkSuppress;
 
 import org.jspecify.annotations.NonNull;
 import org.junit.Test;
@@ -185,7 +183,6 @@ public final class CarAppExtenderTest {
 
     @Test
     @SuppressWarnings("deprecation") // Action.icon
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
     public void notification_extended_addActions() {
         int icon1 = TestUtils.getTestDrawableResId(mContext, "ic_test_1");
         CharSequence title1 = "FirstAction";
@@ -198,15 +195,13 @@ public final class CarAppExtenderTest {
         Intent intent2 = new Intent(INTENT_SECONDARY_ACTION);
         PendingIntent actionIntent2 = PendingIntent.getBroadcast(mContext, 0, intent2,
                 PendingIntent.FLAG_IMMUTABLE);
-        Action action2 = new Action.Builder(icon2, title2, actionIntent2).setSemanticAction(
-                Action.SEMANTIC_ACTION_CALL).build();
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
                         .extend(
                                 new CarAppExtender.Builder()
                                         .addAction(icon1, title1, actionIntent1)
-                                        .addAction(action2)
+                                        .addAction(icon2, title2, actionIntent2)
                                         .build());
 
         List<Action> actions = new CarAppExtender(builder.build()).getActions();

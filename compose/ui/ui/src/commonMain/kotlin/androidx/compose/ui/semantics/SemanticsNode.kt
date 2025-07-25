@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LayoutInfo
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
@@ -46,7 +45,7 @@ internal fun SemanticsNode(layoutNode: LayoutNode, mergingEnabled: Boolean) =
         layoutNode.nodes.head(Nodes.Semantics)!!.node,
         mergingEnabled,
         layoutNode,
-        layoutNode.semanticsConfiguration ?: SemanticsConfiguration(),
+        layoutNode.semanticsConfiguration ?: SemanticsConfiguration()
     )
 
 internal fun SemanticsNode(
@@ -65,13 +64,13 @@ internal fun SemanticsNode(
      */
     mergingEnabled: Boolean,
     /** The [LayoutNode] that this is associated with. */
-    layoutNode: LayoutNode = outerSemanticsNode.requireLayoutNode(),
+    layoutNode: LayoutNode = outerSemanticsNode.requireLayoutNode()
 ) =
     SemanticsNode(
         outerSemanticsNode.node,
         mergingEnabled,
         layoutNode,
-        layoutNode.semanticsConfiguration ?: SemanticsConfiguration(),
+        layoutNode.semanticsConfiguration ?: SemanticsConfiguration()
     )
 
 /**
@@ -127,15 +126,13 @@ internal constructor(
      */
     val touchBoundsInRoot: Rect
         get() {
-            val semanticsModifierNode = findSemanticsModifierNodeToGetBounds()
-            if (semanticsModifierNode == null) {
-                // If no node is found that has isImportantForBounds == true, then we fallback to
-                // the inner coordinator to get the bounds.
-                return layoutNode.innerCoordinator.touchBoundsInRoot()
-            }
-            return semanticsModifierNode.node.touchBoundsInRoot(
-                unmergedConfig.useMinimumTouchTarget
-            )
+            val entity =
+                if (unmergedConfig.isMergingSemanticsOfDescendants) {
+                    (layoutNode.outerMergingSemantics ?: outerSemanticsNode)
+                } else {
+                    outerSemanticsNode
+                }
+            return entity.node.touchBoundsInRoot(unmergedConfig.useMinimumTouchTarget)
         }
 
     /** The size of the bounding box for this node, with no clipping applied */
@@ -183,29 +180,14 @@ internal constructor(
      */
     internal val boundsInParent: Rect
         get() {
+            val parent = this.parent ?: return Rect.Zero
             val currentCoordinates =
                 findCoordinatorToGetBounds()?.takeIf { it.isAttached }?.coordinates
                     ?: return Rect.Zero
-            return boundsInImportantForBoundsAncestor(currentCoordinates)
+            return parent.outerSemanticsNode
+                .requireCoordinator(Nodes.Semantics)
+                .localBoundingBoxOf(currentCoordinates)
         }
-
-    /**
-     * Calculates the bounds relative to the nearest ancestor that has any semantics modifier nodes
-     * with isImportantForBounds == true. If no such ancestor is found, returns [Rect.Zero].
-     */
-    private fun boundsInImportantForBoundsAncestor(nodeCoordinates: LayoutCoordinates): Rect {
-        val parent = this.parent ?: return Rect.Zero
-        val parentCoordinatorForBounds =
-            parent.layoutNode.nodes
-                .firstFromHead(Nodes.Semantics) { it.isImportantForBounds }
-                ?.requireCoordinator(Nodes.Semantics)
-        if (parentCoordinatorForBounds == null) {
-            // If the parent has no semantics modifier nodes that are important for bounds, continue
-            // searching upwards in the tree until we find the nearest ancestor that does.
-            return parent.boundsInImportantForBoundsAncestor(nodeCoordinates)
-        }
-        return parentCoordinatorForBounds.localBoundingBoxOf(nodeCoordinates)
-    }
 
     /** Whether this node is transparent. */
     internal val isTransparent: Boolean
@@ -237,7 +219,7 @@ internal constructor(
                 mergeConfig(
                     // TODO(b/384549982): Pass in the unmerged children instead of an empty list.
                     mutableListOf(),
-                    mergedConfig,
+                    mergedConfig
                 )
                 return mergedConfig
             } else {
@@ -247,7 +229,7 @@ internal constructor(
 
     private fun mergeConfig(
         unmergedChildren: MutableList<SemanticsNode>,
-        mergedConfig: SemanticsConfiguration,
+        mergedConfig: SemanticsConfiguration
     ) {
         if (!unmergedConfig.isClearingSemantics) {
             unmergedChildren.forEachUnmergedChild { child ->
@@ -267,7 +249,7 @@ internal constructor(
     internal fun unmergedChildren(
         unmergedChildren: MutableList<SemanticsNode> = mutableListOf(),
         includeFakeNodes: Boolean = false,
-        includeDeactivatedNodes: Boolean = false,
+        includeDeactivatedNodes: Boolean = false
     ): List<SemanticsNode> {
         // TODO(lmr): we should be able to do this more efficiently using visitSubtree
         if (isFake) return emptyList()
@@ -283,7 +265,7 @@ internal constructor(
 
     private fun LayoutNode.fillOneLayerOfSemanticsWrappers(
         list: MutableList<SemanticsNode>,
-        includeDeactivatedNodes: Boolean,
+        includeDeactivatedNodes: Boolean
     ) {
         // TODO(lmr): visitChildren would be great for this but we would lose the zSorted bit...
         //  i wonder if we can optimize this for the common case of no z-sortedness going on.
@@ -337,7 +319,7 @@ internal constructor(
     internal fun getChildren(
         includeReplacedSemantics: Boolean = !mergingEnabled,
         includeFakeNodes: Boolean = false,
-        includeDeactivatedNodes: Boolean = false,
+        includeDeactivatedNodes: Boolean = false
     ): List<SemanticsNode> {
         if (!includeReplacedSemantics && unmergedConfig.isClearingSemantics) {
             return emptyList()
@@ -382,7 +364,7 @@ internal constructor(
 
     private fun findOneLayerOfMergingSemanticsNodes(
         unmergedChildren: MutableList<SemanticsNode>,
-        list: MutableList<SemanticsNode> = mutableListOf(),
+        list: MutableList<SemanticsNode> = mutableListOf()
     ): List<SemanticsNode> {
         unmergedChildren.forEachUnmergedChild { child ->
             if (child.isMergingSemanticsOfDescendants) {
@@ -416,34 +398,12 @@ internal constructor(
      * If the node is merging the descendants, we'll use the outermost semantics modifier that has
      * mergeDescendants == true to report the bounds, size and position of the node. For majority of
      * use cases it means that accessibility bounds will be equal to the clickable area. Otherwise
-     * the outermost semantics will be used to report bounds, size and position. In both cases, only
-     * nodes that have isImportantForBounds == true are taken into account.
+     * the outermost semantics will be used to report bounds, size and position.
      */
     internal fun findCoordinatorToGetBounds(): NodeCoordinator? {
         if (isFake) return parent?.findCoordinatorToGetBounds()
-        return findSemanticsModifierNodeToGetBounds()?.requireCoordinator(Nodes.Semantics)
-            ?: layoutNode.innerCoordinator
-    }
-
-    /**
-     * Look for an outermost [SemanticsModifierNode] that has isImportantForBounds == true, while
-     * prioritizing nodes with shouldMergeDescendantSemantics == true. If no such node found (i.e.,
-     * there are no nodes with isImportantForBounds == true), this method returns null.
-     */
-    private fun findSemanticsModifierNodeToGetBounds(): SemanticsModifierNode? {
-        var nodeForBounds: SemanticsModifierNode? = null
-        if (unmergedConfig.isMergingSemanticsOfDescendants) {
-            layoutNode.nodes.headToTail(Nodes.Semantics) {
-                if (it.isImportantForBounds) {
-                    if (it.shouldMergeDescendantSemantics) return it
-                    if (nodeForBounds == null) nodeForBounds = it
-                }
-            }
-        } else {
-            nodeForBounds =
-                layoutNode.nodes.firstFromHead(Nodes.Semantics) { it.isImportantForBounds }
-        }
-        return nodeForBounds
+        val semanticsModifierNode = layoutNode.outerMergingSemantics ?: outerSemanticsNode
+        return semanticsModifierNode.requireCoordinator(Nodes.Semantics)
     }
 
     // Fake nodes
@@ -476,7 +436,7 @@ internal constructor(
 
     private fun fakeSemanticsNode(
         role: Role?,
-        properties: SemanticsPropertyReceiver.() -> Unit,
+        properties: SemanticsPropertyReceiver.() -> Unit
     ): SemanticsNode {
         val configuration =
             SemanticsConfiguration().also {
@@ -497,9 +457,9 @@ internal constructor(
                     LayoutNode(
                         isVirtual = true,
                         semanticsId =
-                            if (role != null) roleFakeNodeId() else contentDescriptionFakeNodeId(),
+                            if (role != null) roleFakeNodeId() else contentDescriptionFakeNodeId()
                     ),
-                unmergedConfig = configuration,
+                unmergedConfig = configuration
             )
         fakeNode.isFake = true
         fakeNode.fakeNodeParent = this
@@ -510,6 +470,9 @@ internal constructor(
         return SemanticsNode(outerSemanticsNode, true, layoutNode, unmergedConfig)
     }
 }
+
+internal val LayoutNode.outerMergingSemantics: SemanticsModifierNode?
+    get() = nodes.firstFromHead(Nodes.Semantics) { it.shouldMergeDescendantSemantics }
 
 /**
  * Executes [selector] on every parent of this [LayoutNode] and returns the closest [LayoutNode] to

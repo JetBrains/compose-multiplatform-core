@@ -21,4 +21,4 @@ package androidx.work.impl.utils
 import android.net.ConnectivityManager
 import androidx.annotation.RequiresApi
 
-public fun ConnectivityManager.getActiveNetworkCompat() = activeNetwork
+fun ConnectivityManager.getActiveNetworkCompat() = activeNetwork

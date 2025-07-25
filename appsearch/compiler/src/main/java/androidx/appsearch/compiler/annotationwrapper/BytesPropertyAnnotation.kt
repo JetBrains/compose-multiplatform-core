@@ -20,7 +20,10 @@ import com.squareup.javapoet.ClassName
 import javax.lang.model.type.TypeMirror
 
 /** An instance of the `@Document.BytesProperty` annotation. */
-data class BytesPropertyAnnotation(override val name: String, override val isRequired: Boolean) :
+data class BytesPropertyAnnotation(
+    override val name: String,
+    override val isRequired: Boolean,
+) :
     DataPropertyAnnotation(
         className = CLASS_NAME,
         configClassName = CONFIG_CLASS,
@@ -41,12 +44,12 @@ data class BytesPropertyAnnotation(override val name: String, override val isReq
          */
         fun parse(
             annotationParams: Map<String, Any?>,
-            defaultName: String,
+            defaultName: String
         ): BytesPropertyAnnotation {
             val name = annotationParams["name"] as? String
             return BytesPropertyAnnotation(
                 name = if (name.isNullOrEmpty()) defaultName else name,
-                isRequired = annotationParams["required"] as Boolean,
+                isRequired = annotationParams["required"] as Boolean
             )
         }
     }

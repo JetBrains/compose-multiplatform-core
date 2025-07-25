@@ -17,7 +17,8 @@
 package androidx.compose.ui.node
 
 import androidx.collection.mutableObjectIntMapOf
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.classKeyForObject
 import androidx.compose.ui.draw.DrawModifier
@@ -27,6 +28,7 @@ import androidx.compose.ui.focus.FocusPropertiesModifierNode
 import androidx.compose.ui.focus.FocusTargetNode
 import androidx.compose.ui.focus.invalidateFocusEvent
 import androidx.compose.ui.focus.invalidateFocusProperties
+import androidx.compose.ui.focus.invalidateFocusTarget
 import androidx.compose.ui.input.indirect.IndirectTouchInputModifierNode
 import androidx.compose.ui.input.key.KeyInputModifierNode
 import androidx.compose.ui.input.key.SoftKeyboardInterceptionModifierNode
@@ -154,7 +156,7 @@ internal object Nodes {
         get() = NodeKind<OnUnplacedModifierNode>(0b1 shl 20)
 
     @JvmStatic
-    @OptIn(ExperimentalIndirectTouchTypeApi::class)
+    @OptIn(ExperimentalComposeUiApi::class)
     inline val IndirectTouchInput
         get() = NodeKind<IndirectTouchInputModifierNode>(0b1 shl 21)
     // ...
@@ -266,7 +268,7 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
         if (node is OnUnplacedModifierNode) {
             mask = mask or Nodes.Unplaced
         }
-        @OptIn(ExperimentalIndirectTouchTypeApi::class)
+        @OptIn(ExperimentalComposeUiApi::class)
         if (node is IndirectTouchInputModifierNode) {
             mask = mask or Nodes.IndirectTouchInput
         }
@@ -329,11 +331,6 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
         }
     }
     if (Nodes.GlobalPositionAware in selfKindSet && node is GlobalPositionAwareModifierNode) {
-        if (phase == Inserted) {
-            node.requireLayoutNode().globallyPositionedObservers++
-        } else if (phase == Removed) {
-            node.requireLayoutNode().globallyPositionedObservers--
-        }
         // No need to invalidate when removing a GlobalPositionAwareModifierNode, as these won't be
         // invoked anyway
         if (phase != Removed) {
@@ -354,10 +351,25 @@ private fun autoInvalidateNodeSelf(node: Modifier.Node, selfKindSet: Int, phase:
             node is FocusPropertiesModifierNode &&
             node.specifiesCanFocusProperty()
     ) {
-        node.invalidateFocusProperties()
+        if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isTrackFocusEnabled)
+            node.scheduleInvalidationOfAssociatedFocusTargets()
+        else {
+            when (phase) {
+                Removed -> node.scheduleInvalidationOfAssociatedFocusTargets()
+                else -> node.invalidateFocusProperties()
+            }
+        }
     }
     if (Nodes.FocusEvent in selfKindSet && node is FocusEventModifierNode) {
         node.invalidateFocusEvent()
+    }
+}
+
+private fun FocusPropertiesModifierNode.scheduleInvalidationOfAssociatedFocusTargets() {
+    visitChildren(Nodes.FocusTarget) {
+        // Schedule invalidation for the focus target,
+        // which will cause it to recalculate focus properties.
+        it.invalidateFocusTarget()
     }
 }
 

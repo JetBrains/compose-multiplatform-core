@@ -29,11 +29,14 @@ class WallpaperInteractiveWatchFaceInstanceParamsTest {
             WallpaperInteractiveWatchFaceInstanceParams(
                 "instanceId",
                 DeviceConfig(false, false, 10, 10),
-                WatchUiState(false, 0),
+                WatchUiState(
+                    false,
+                    0,
+                ),
                 UserStyle(emptyMap()).toWireFormat(),
                 null,
                 null,
-                null,
+                null
             )
 
         val dummyOutputStream = ByteArrayOutputStream()

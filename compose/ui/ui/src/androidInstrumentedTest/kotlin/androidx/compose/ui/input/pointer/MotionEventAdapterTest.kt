@@ -75,8 +75,12 @@ class MotionEventAdapterTest {
                     ACTION_DOWN,
                     1,
                     0,
-                    arrayOf(PointerProperties(1000, toolType)),
-                    arrayOf(PointerCoords(2967f, 5928f)),
+                    arrayOf(
+                        PointerProperties(1000, toolType),
+                    ),
+                    arrayOf(
+                        PointerCoords(2967f, 5928f),
+                    )
                 )
             val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)!!
             assertPointerInputEventData(
@@ -85,7 +89,7 @@ class MotionEventAdapterTest {
                 true,
                 2967f,
                 5928f,
-                pointerType,
+                pointerType
             )
         }
     }
@@ -100,7 +104,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_MOUSE)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
         val hoverEnterEvent = motionEventAdapter.convertToPointerInputEvent(hoverEnter)!!
         assertThat(hoverEnterEvent.pointers).hasSize(1)
@@ -113,7 +117,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_MOUSE)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
 
         val hoverExitEvent = motionEventAdapter.convertToPointerInputEvent(hoverExit)!!
@@ -127,7 +131,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_MOUSE)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
 
         val downEvent = motionEventAdapter.convertToPointerInputEvent(down)!!
@@ -141,7 +145,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_MOUSE)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
 
         val upEvent = motionEventAdapter.convertToPointerInputEvent(up)!!
@@ -160,7 +164,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_FINGER)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
         val touchDownEvent = motionEventAdapter.convertToPointerInputEvent(touchDown)!!
         assertThat(touchDownEvent.pointers).hasSize(1)
@@ -174,7 +178,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_FINGER)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
         val touchUpEvent = motionEventAdapter.convertToPointerInputEvent(touchUp)!!
         assertThat(touchUpEvent.pointers).hasSize(1)
@@ -196,7 +200,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(1, TOOL_TYPE_MOUSE)),
-                arrayOf(PointerCoords(10f, 10f)),
+                arrayOf(PointerCoords(10f, 10f))
             )
         val event = motionEventAdapter.convertToPointerInputEvent(hoverExit)!!
         assertThat(event.pointers).hasSize(1)
@@ -211,7 +215,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(8290)),
-                arrayOf(PointerCoords(2967f, 5928f)),
+                arrayOf(PointerCoords(2967f, 5928f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -235,7 +239,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -245,7 +249,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(6f, 7f)),
+                arrayOf(PointerCoords(6f, 7f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -267,7 +271,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -277,7 +281,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -300,7 +304,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -310,7 +314,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -333,7 +337,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -343,7 +347,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -366,7 +370,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -376,7 +380,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         val motionEvent =
@@ -386,7 +390,7 @@ class MotionEventAdapterTest {
                 3,
                 0,
                 arrayOf(PointerProperties(9), PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -410,7 +414,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -420,7 +424,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         val motionEvent =
@@ -430,7 +434,7 @@ class MotionEventAdapterTest {
                 3,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(9), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(10f, 11f), PointerCoords(7f, 8f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -454,7 +458,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -464,7 +468,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         val motionEvent =
@@ -474,7 +478,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -498,7 +502,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -508,7 +512,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         val motionEvent =
@@ -518,7 +522,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(11f, 12f), PointerCoords(13f, 15f)),
+                arrayOf(PointerCoords(11f, 12f), PointerCoords(13f, 15f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -541,7 +545,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -551,7 +555,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
 
@@ -562,7 +566,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
         assertThat(pointerInputEvent).isNotNull()
@@ -584,7 +588,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -594,7 +598,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
 
@@ -605,7 +609,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
         assertThat(pointerInputEvent).isNotNull()
@@ -627,7 +631,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -637,7 +641,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -647,7 +651,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
         )
 
@@ -658,7 +662,7 @@ class MotionEventAdapterTest {
                 3,
                 0,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -682,7 +686,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -692,7 +696,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -702,7 +706,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
         )
 
@@ -713,7 +717,7 @@ class MotionEventAdapterTest {
                 3,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -737,7 +741,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -747,7 +751,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(2), PointerProperties(5)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f))
             )
         )
         motionEventAdapter.convertToPointerInputEvent(
@@ -757,7 +761,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
         )
 
@@ -768,7 +772,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(2), PointerProperties(5), PointerProperties(9)),
-                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(3f, 4f), PointerCoords(7f, 8f), PointerCoords(10f, 11f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -792,7 +796,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(10f, 11f))
             )
 
         val up1 =
@@ -802,7 +806,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(10f, 11f))
             )
 
         val down2 =
@@ -812,7 +816,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(20f, 21f)),
+                arrayOf(PointerCoords(20f, 21f))
             )
 
         val up2 =
@@ -822,7 +826,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(20f, 21f)),
+                arrayOf(PointerCoords(20f, 21f))
             )
 
         val down3 =
@@ -832,7 +836,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(30f, 31f)),
+                arrayOf(PointerCoords(30f, 31f))
             )
 
         val up3 =
@@ -842,7 +846,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(30f, 31f)),
+                arrayOf(PointerCoords(30f, 31f))
             )
 
         // Test the different events sequentially, since the returned event contains a list that
@@ -883,7 +887,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(9276)),
-                arrayOf(PointerCoords(10f, 11f)),
+                arrayOf(PointerCoords(10f, 11f))
             )
 
         val down2 =
@@ -893,7 +897,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(9276), PointerProperties(1759)),
-                arrayOf(PointerCoords(10f, 11f), PointerCoords(20f, 21f)),
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(20f, 21f))
             )
 
         val down3 =
@@ -903,7 +907,7 @@ class MotionEventAdapterTest {
                 3,
                 2,
                 arrayOf(PointerProperties(9276), PointerProperties(1759), PointerProperties(5043)),
-                arrayOf(PointerCoords(10f, 11f), PointerCoords(20f, 21f), PointerCoords(30f, 31f)),
+                arrayOf(PointerCoords(10f, 11f), PointerCoords(20f, 21f), PointerCoords(30f, 31f))
             )
 
         // Test the different events sequentially, since the returned event contains a list that
@@ -941,7 +945,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(1f, 2f)),
+                arrayOf(PointerCoords(1f, 2f))
             )
 
         motionEvent.offsetLocation(10f, 20f)
@@ -960,7 +964,7 @@ class MotionEventAdapterTest {
             1f,
             2f,
             originalX = 11f,
-            originalY = 22f,
+            originalY = 22f
         )
     }
 
@@ -973,7 +977,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(0)),
-                arrayOf(PointerCoords(1f, 2f)),
+                arrayOf(PointerCoords(1f, 2f))
             )
 
         motionEvent.offsetLocation(10f, 20f)
@@ -991,7 +995,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(8290)),
-                arrayOf(PointerCoords(2967f, 5928f)),
+                arrayOf(PointerCoords(2967f, 5928f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1000,7 +1004,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(8290)),
-                arrayOf(PointerCoords(2967f, 5928f)),
+                arrayOf(PointerCoords(2967f, 5928f))
             )
 
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
@@ -1018,7 +1022,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1027,7 +1031,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
 
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
@@ -1046,7 +1050,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1055,7 +1059,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         val motionEvent3 =
             MotionEvent(
@@ -1064,7 +1068,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
 
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
@@ -1084,7 +1088,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1093,7 +1097,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         val motionEvent3 =
             MotionEvent(
@@ -1102,7 +1106,7 @@ class MotionEventAdapterTest {
                 2,
                 1,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
 
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
@@ -1122,7 +1126,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1131,7 +1135,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         val motionEvent3 =
             MotionEvent(
@@ -1140,7 +1144,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         val motionEvent4 =
             MotionEvent(
@@ -1149,7 +1153,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
 
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
@@ -1169,7 +1173,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         val motionEvent2 =
             MotionEvent(
@@ -1178,7 +1182,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         val motionEvent3 =
             MotionEvent(
@@ -1187,7 +1191,7 @@ class MotionEventAdapterTest {
                 2,
                 0,
                 arrayOf(PointerProperties(5), PointerProperties(2)),
-                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(7f, 8f), PointerCoords(3f, 4f))
             )
         motionEventAdapter.convertToPointerInputEvent(motionEvent1)
         motionEventAdapter.convertToPointerInputEvent(motionEvent2)
@@ -1205,7 +1209,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         motionEvent.offsetLocation(10f, 100f)
 
@@ -1224,7 +1228,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(8290)),
-                arrayOf(PointerCoords(2967f, 5928f)),
+                arrayOf(PointerCoords(2967f, 5928f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1242,7 +1246,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -1252,7 +1256,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(2)),
-                arrayOf(PointerCoords(6f, 7f)),
+                arrayOf(PointerCoords(6f, 7f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1270,7 +1274,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -1280,7 +1284,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1298,7 +1302,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(3f, 4f)),
+                arrayOf(PointerCoords(3f, 4f))
             )
         )
         val motionEvent =
@@ -1308,7 +1312,7 @@ class MotionEventAdapterTest {
                 1,
                 0,
                 arrayOf(PointerProperties(46)),
-                arrayOf(PointerCoords(30f, 40f)),
+                arrayOf(PointerCoords(30f, 40f))
             )
 
         val positionCalculator =
@@ -1327,7 +1331,7 @@ class MotionEventAdapterTest {
             30f,
             40f,
             originalX = 30f,
-            originalY = 40f,
+            originalY = 40f
         )
     }
 
@@ -1341,7 +1345,7 @@ class MotionEventAdapterTest {
                 actionIndex = 0,
                 pointerProperties = arrayOf(PointerProperties(2)),
                 pointerCoords =
-                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_HSCROLL, 5f) }),
+                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_HSCROLL, 5f) })
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1360,7 +1364,7 @@ class MotionEventAdapterTest {
                 actionIndex = 0,
                 pointerProperties = arrayOf(PointerProperties(2)),
                 pointerCoords =
-                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_HSCROLL, -5f) }),
+                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_HSCROLL, -5f) })
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1379,7 +1383,7 @@ class MotionEventAdapterTest {
                 actionIndex = 0,
                 pointerProperties = arrayOf(PointerProperties(2)),
                 pointerCoords =
-                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_VSCROLL, 5f) }),
+                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_VSCROLL, 5f) })
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1399,7 +1403,7 @@ class MotionEventAdapterTest {
                 actionIndex = 0,
                 pointerProperties = arrayOf(PointerProperties(2)),
                 pointerCoords =
-                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_VSCROLL, -5f) }),
+                    arrayOf(PointerCoords(3f, 4f).apply { setAxisValue(AXIS_VSCROLL, -5f) })
             )
 
         val pointerInputEvent = motionEventAdapter.convertToPointerInputEvent(motionEvent)
@@ -1432,7 +1436,7 @@ private fun MotionEvent(
     actionIndex: Int,
     pointerProperties: Array<MotionEvent.PointerProperties>,
     pointerCoords: Array<MotionEvent.PointerCoords>,
-    downTime: Long = 0,
+    downTime: Long = 0
 ) =
     MotionEvent.obtain(
         downTime,
@@ -1448,7 +1452,7 @@ private fun MotionEvent(
         0,
         0,
         InputDevice.SOURCE_TOUCHSCREEN,
-        0,
+        0
     )
 
 private fun assertPointerInputEventData(

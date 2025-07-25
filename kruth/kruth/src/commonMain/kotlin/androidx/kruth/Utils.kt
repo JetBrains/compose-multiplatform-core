@@ -40,7 +40,10 @@ internal inline fun <T : Any> requireNonNull(value: T?): T {
  * Used for better behaviour compatibility with Truth, which uses Guava's checkNotNull.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T : Any> requireNonNull(value: T?, lazyMessage: () -> Any): T {
+internal inline fun <T : Any> requireNonNull(
+    value: T?,
+    lazyMessage: () -> Any,
+): T {
     contract { returns() implies (value != null) }
 
     return value ?: throw NullPointerException(lazyMessage().toString())

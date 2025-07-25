@@ -16,9 +16,8 @@
 
 package androidx.xr.scenecore.impl.perception;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-
-import org.jspecify.annotations.NonNull;
 
 /** Contains the view projections for both eyes */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -32,12 +31,14 @@ public final class ViewProjections {
     }
 
     // Returns the left eye view projection.
-    public @NonNull ViewProjection getLeftEye() {
+    @NonNull
+    public ViewProjection getLeftEye() {
         return mLeftEye;
     }
 
     // Returns the right eye view projection.
-    public @NonNull ViewProjection getRightEye() {
+    @NonNull
+    public ViewProjection getRightEye() {
         return mRightEye;
     }
 

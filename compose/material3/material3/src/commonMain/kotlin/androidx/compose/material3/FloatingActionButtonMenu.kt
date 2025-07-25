@@ -109,7 +109,7 @@ fun FloatingActionButtonMenu(
     button: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.End,
-    content: @Composable FloatingActionButtonMenuScope.() -> Unit,
+    content: @Composable FloatingActionButtonMenuScope.() -> Unit
 ) {
     var buttonHeight by remember { mutableIntStateOf(0) }
 
@@ -120,7 +120,7 @@ fun FloatingActionButtonMenu(
                 expanded,
                 horizontalAlignment,
                 { buttonHeight },
-                content,
+                content
             )
 
             button()
@@ -168,11 +168,9 @@ private fun FloatingActionButtonMenuItemColumn(
     expanded: Boolean,
     horizontalAlignment: Alignment.Horizontal,
     buttonHeight: () -> Int,
-    content: @Composable FloatingActionButtonMenuScope.() -> Unit,
+    content: @Composable FloatingActionButtonMenuScope.() -> Unit
 ) {
     var itemCount by remember { mutableIntStateOf(0) }
-    var itemsNeedVerticalScroll by remember { mutableStateOf(false) }
-    var originalConstraints: Constraints? = null
     var staggerAnim by remember { mutableStateOf<Animatable<Int, AnimationVector1D>?>(null) }
     val coroutineScope = rememberCoroutineScope()
     // TODO Load the motionScheme tokens from the component tokens file
@@ -184,7 +182,7 @@ private fun FloatingActionButtonMenuItemColumn(
             spring(
                 stiffness = staggerAnimSpec.stiffness,
                 dampingRatio = staggerAnimSpec.dampingRatio,
-                visibilityThreshold = 1,
+                visibilityThreshold = 1
             )
     }
     Layout(
@@ -194,19 +192,7 @@ private fun FloatingActionButtonMenuItemColumn(
                     isTraversalGroup = true
                     traversalIndex = -0.9f
                 }
-                .layout { measurable, constraints ->
-                    // Use a layout modifier before the verticalScroll to get the original
-                    // constraints from the parent, since verticalScroll will cause the constraints
-                    // max height to be infinity.
-                    originalConstraints = constraints
-                    val placeable = measurable.measure(constraints)
-                    layout(placeable.width, placeable.height) { placeable.place(0, 0) }
-                }
-                .then(
-                    if (itemsNeedVerticalScroll)
-                        Modifier.verticalScroll(state = rememberScrollState(), enabled = expanded)
-                    else Modifier
-                ),
+                .verticalScroll(state = rememberScrollState(), enabled = expanded),
         content = {
             val scope =
                 remember(horizontalAlignment) {
@@ -216,7 +202,7 @@ private fun FloatingActionButtonMenuItemColumn(
                     }
                 }
             content(scope)
-        },
+        }
     ) { measurables, constraints ->
         itemCount = measurables.size
 
@@ -260,9 +246,6 @@ private fun FloatingActionButtonMenuItemColumn(
         }
 
         val finalHeight = if (placeables.fastAny { item -> item.isVisible }) height else 0
-
-        itemsNeedVerticalScroll = finalHeight > originalConstraints!!.maxHeight
-
         layout(width, finalHeight, rulers = { MenuItemRuler provides height - visibleHeight }) {
             var y = 0
             placeables.fastForEachIndexed { index, placeable ->
@@ -306,7 +289,7 @@ fun FloatingActionButtonMenuScope.FloatingActionButtonMenuItem(
     icon: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
-    contentColor: Color = contentColorFor(containerColor),
+    contentColor: Color = contentColorFor(containerColor)
 ) {
     var widthAnim by remember { mutableStateOf<Animatable<Float, AnimationVector1D>?>(null) }
     var alphaAnim by remember { mutableStateOf<Animatable<Float, AnimationVector1D>?>(null) }
@@ -350,7 +333,7 @@ fun FloatingActionButtonMenuScope.FloatingActionButtonMenuItem(
             shape = FabMenuBaselineTokens.ListItemContainerShape.value,
             color = containerColor,
             contentColor = contentColor,
-            onClick = onClick,
+            onClick = onClick
         ) {
             Row(
                 Modifier.layout { measurable, constraints ->
@@ -366,19 +349,19 @@ fun FloatingActionButtonMenuScope.FloatingActionButtonMenuItem(
                     .sizeIn(minWidth = FabMenuItemMinWidth, minHeight = FabMenuItemHeight)
                     .padding(
                         start = FabMenuItemContentPaddingStart,
-                        end = FabMenuItemContentPaddingEnd,
+                        end = FabMenuItemContentPaddingEnd
                     ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement =
                     Arrangement.spacedBy(
                         FabMenuItemContentSpacingHorizontal,
-                        Alignment.CenterHorizontally,
-                    ),
+                        Alignment.CenterHorizontally
+                    )
             ) {
                 icon()
                 CompositionLocalProvider(
                     LocalTextStyle provides MaterialTheme.typography.titleMedium,
-                    content = text,
+                    content = text
                 )
             }
         }
@@ -428,7 +411,7 @@ fun ToggleFloatingActionButton(
         animateFloatAsState(
             targetValue = if (checked) 1f else 0f,
             // TODO Load the motionScheme tokens from the component tokens file
-            animationSpec = MotionSchemeKeyTokens.FastSpatial.value(),
+            animationSpec = MotionSchemeKeyTokens.FastSpatial.value()
         )
     ToggleFloatingActionButton(
         checked,
@@ -439,7 +422,7 @@ fun ToggleFloatingActionButton(
         contentAlignment,
         containerSize,
         containerCornerRadius,
-        content,
+        content
     )
 }
 
@@ -514,14 +497,14 @@ private fun ToggleFloatingActionButton(
                     val radius = with(density) { containerCornerRadius(checkedProgress()).toPx() }
                     drawRoundRect(
                         color = containerColor(checkedProgress()),
-                        cornerRadius = CornerRadius(radius),
+                        cornerRadius = CornerRadius(radius)
                     )
                 }
                 .toggleable(
                     value = checked,
                     onValueChange = onCheckedChange,
                     interactionSource = null,
-                    indication = ripple(radius = fabRippleRadius),
+                    indication = ripple(radius = fabRippleRadius)
                 )
                 .layout { measurable, constraints ->
                     val placeable = measurable.measure(constraints)
@@ -529,7 +512,7 @@ private fun ToggleFloatingActionButton(
                     layout(sizePx, sizePx) {
                         placeable.place(
                             (sizePx - placeable.width) / 2,
-                            (sizePx - placeable.height) / 2,
+                            (sizePx - placeable.height) / 2
                         )
                     }
                 }
@@ -553,7 +536,7 @@ object ToggleFloatingActionButtonDefaults {
     @Composable
     fun containerColor(
         initialColor: Color = MaterialTheme.colorScheme.primaryContainer,
-        finalColor: Color = MaterialTheme.colorScheme.primary,
+        finalColor: Color = MaterialTheme.colorScheme.primary
     ): (Float) -> Color = { progress -> lerp(initialColor, finalColor, progress) }
 
     fun containerSize(initialSize: Dp, finalSize: Dp = FabFinalSize): (Float) -> Dp = { progress ->
@@ -568,7 +551,7 @@ object ToggleFloatingActionButtonDefaults {
 
     fun containerCornerRadius(
         initialSize: Dp,
-        finalSize: Dp = FabFinalCornerRadius,
+        finalSize: Dp = FabFinalCornerRadius
     ): (Float) -> Dp = { progress -> lerp(initialSize, finalSize, progress) }
 
     fun containerCornerRadius() = containerCornerRadius(FabInitialCornerRadius)
@@ -580,7 +563,7 @@ object ToggleFloatingActionButtonDefaults {
     @Composable
     fun iconColor(
         initialColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-        finalColor: Color = MaterialTheme.colorScheme.onPrimary,
+        finalColor: Color = MaterialTheme.colorScheme.onPrimary
     ): (Float) -> Color = { progress -> lerp(initialColor, finalColor, progress) }
 
     fun iconSize(initialSize: Dp, finalSize: Dp = FabFinalIconSize): (Float) -> Dp = { progress ->
@@ -661,8 +644,9 @@ private class MenuItemVisibleElement(private val isVisible: () -> Boolean) :
     }
 }
 
-private class MenuItemVisibilityModifier(isVisible: () -> Boolean) :
-    ParentDataModifierNode, SemanticsModifierNode, Modifier.Node() {
+private class MenuItemVisibilityModifier(
+    isVisible: () -> Boolean,
+) : ParentDataModifierNode, SemanticsModifierNode, Modifier.Node() {
 
     var visible: () -> Boolean = isVisible
 

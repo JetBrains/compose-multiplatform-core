@@ -29,6 +29,7 @@ import android.os.CancellationSignal
 import android.text.TextUtils
 import android.util.Pair
 import androidx.annotation.RequiresApi
+import androidx.annotation.RestrictTo
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
@@ -42,8 +43,9 @@ import java.util.Locale
  * @param delegate The delegate to receive all calls.
  * @constructor Creates a wrapper around [SQLiteDatabase].
  */
-internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
-    SupportSQLiteDatabase {
+// TODO(b/408010324): Make internal and remove @RestrictTo
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) : SupportSQLiteDatabase {
     override fun compileStatement(sql: String): SupportSQLiteStatement {
         return FrameworkSQLiteStatement(delegate.compileStatement(sql))
     }
@@ -87,7 +89,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                 0 /* SQLiteSession.TRANSACTION_MODE_DEFERRED */,
                 transactionListener,
                 0 /* connectionFlags */,
-                null, /* cancellationSignal */
+                null /* cancellationSignal */
             )
         } else if (transactionListener != null) {
             beginTransactionWithListener(transactionListener)
@@ -192,7 +194,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
             query.sql,
             EMPTY_STRING_ARRAY,
             null,
-            cancellationSignal!!,
+            cancellationSignal!!
         )
     }
 
@@ -220,7 +222,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         conflictAlgorithm: Int,
         values: ContentValues,
         whereClause: String?,
-        whereArgs: Array<out Any?>?,
+        whereArgs: Array<out Any?>?
     ): Int {
         // taken from SQLiteDatabase class.
         require(values.size() != 0) { "Empty values" }
@@ -326,7 +328,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
         fun execPerConnectionSQL(
             sQLiteDatabase: SQLiteDatabase,
             sql: String,
-            bindArgs: Array<out Any?>?,
+            bindArgs: Array<out Any?>?
         ) {
             sQLiteDatabase.execPerConnectionSQL(sql, bindArgs)
         }
@@ -358,7 +360,7 @@ internal class FrameworkSQLiteDatabase(private val delegate: SQLiteDatabase) :
                             Int::class.java,
                             SQLiteTransactionListener::class.java,
                             Int::class.java,
-                            CancellationSignal::class.java,
+                            CancellationSignal::class.java
                         )
                 } catch (t: Throwable) {
                     null

@@ -29,4 +29,4 @@ package androidx.compose.runtime
  */
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.ANNOTATION_CLASS)
-public annotation class ComposableTargetMarker(val description: String = "")
+annotation class ComposableTargetMarker(val description: String = "")

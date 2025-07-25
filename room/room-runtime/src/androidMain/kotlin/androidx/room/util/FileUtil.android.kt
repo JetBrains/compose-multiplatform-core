@@ -35,7 +35,7 @@ import java.nio.channels.ReadableByteChannel
  */
 @SuppressLint("LambdaLast")
 @Throws(IOException::class)
-public fun copy(input: ReadableByteChannel, output: FileChannel) {
+fun copy(input: ReadableByteChannel, output: FileChannel) {
     try {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             output.transferFrom(input, 0, Long.MAX_VALUE)

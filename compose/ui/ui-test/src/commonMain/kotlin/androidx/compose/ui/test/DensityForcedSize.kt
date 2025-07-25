@@ -43,7 +43,7 @@ import kotlin.math.min
 internal fun DensityForcedSize(
     size: DpSize,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
         val measurables =
@@ -67,7 +67,10 @@ internal fun DensityForcedSize(
                 // fit
                 val density =
                     LocalDensity.current.density *
-                        min(maxWidth / requiredWidth, maxHeight / requiredHeight)
+                        min(
+                            maxWidth / requiredWidth,
+                            maxHeight / requiredHeight,
+                        )
 
                 CompositionLocalProvider(
                     LocalDensity provides
@@ -77,7 +80,7 @@ internal fun DensityForcedSize(
                             // height requirements, and the platform density requirements.
                             density = coerceDensity(density),
                             // Pass through the font scale
-                            fontScale = LocalDensity.current.fontScale,
+                            fontScale = LocalDensity.current.fontScale
                         )
                 ) {
                     Layout(
@@ -90,7 +93,7 @@ internal fun DensityForcedSize(
                                 } else {
                                     Modifier
                                 }
-                            ),
+                            )
                     ) { measurables, constraints ->
                         val placeables = measurables.map { it.measure(constraints) }
                         layout(constraints.maxWidth, constraints.maxHeight) {

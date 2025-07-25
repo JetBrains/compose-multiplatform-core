@@ -43,4 +43,4 @@ package androidx.compose.runtime
     AnnotationTarget.TYPE,
     AnnotationTarget.TYPE_PARAMETER,
 )
-public annotation class ComposableOpenTarget(val index: Int)
+annotation class ComposableOpenTarget(val index: Int)

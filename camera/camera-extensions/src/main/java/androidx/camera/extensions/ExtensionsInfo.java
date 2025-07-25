@@ -37,14 +37,12 @@ import androidx.camera.core.impl.Identifier;
 import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
-import androidx.camera.extensions.internal.Camera2ExtensionsInfo;
 import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ClientVersion;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.ExtensionsUseCaseConfigFactory;
 import androidx.camera.extensions.internal.VendorExtender;
 import androidx.camera.extensions.internal.Version;
-import androidx.camera.extensions.internal.compat.workaround.PostviewFormatValidator;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -68,21 +66,19 @@ final class ExtensionsInfo {
     private static final VendorExtender EMPTY_VENDOR_EXTENDER = new VendorExtender() {
     };
     private final CameraProvider mCameraProvider;
+    private final @Nullable CameraManager mCameraManager;
     private final boolean mShouldUseCamera2Extensions;
     private @NonNull VendorExtenderFactory mVendorExtenderFactory;
-    private final @Nullable Camera2ExtensionsInfo mCamera2ExtensionsInfo;
 
     ExtensionsInfo(@NonNull CameraProvider cameraProvider, @NonNull Context applicationContext) {
         mCameraProvider = cameraProvider;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            mCamera2ExtensionsInfo = new Camera2ExtensionsInfo(
-                    applicationContext.getSystemService(CameraManager.class));
+            mCameraManager = applicationContext.getSystemService(CameraManager.class);
         } else {
-            mCamera2ExtensionsInfo = null;
+            mCameraManager = null;
         }
         mShouldUseCamera2Extensions = shouldUseCamera2Extensions(
                 mCameraProvider.getConfigImplType());
-
         mVendorExtenderFactory = this::getVendorExtender;
     }
 
@@ -265,11 +261,6 @@ final class ExtensionsInfo {
                         .setUseCaseCombinationRequiredRule(
                                 REQUIRED_RULE_COEXISTING_PREVIEW_AND_IMAGE_CAPTURE);
 
-                if (mShouldUseCamera2Extensions) {
-                    builder.setPostviewFormatSelector(
-                            new PostviewFormatValidator().getPostviewFormatSelector());
-                }
-
                 SessionProcessor sessionProcessor = vendorExtender.createSessionProcessor(context);
                 if (sessionProcessor != null) {
                     builder.setSessionProcessor(sessionProcessor);
@@ -284,14 +275,11 @@ final class ExtensionsInfo {
     VendorExtender getVendorExtender(@ExtensionMode.Mode int mode, boolean useCamera2Extensions) {
         VendorExtender vendorExtender;
         if (useCamera2Extensions) {
-            // Returns Camera2ExtensionsVendorExtender only when API level is 33 or above and
+            // Always returns Camera2ExtensionsVendorExtender when API level is 31 or above and
             // configImplType is PIPE.
-            // CameraExtensionCharacteristics#getAvailableCaptureRequestKeys(int) is supported
-            // since API level 33 that allows app to clearly know whether features like
-            // tap-to-focus or zoom ratio are supported or not.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 vendorExtender = new Camera2ExtensionsVendorExtender(mode,
-                        Objects.requireNonNull(mCamera2ExtensionsInfo));
+                        Objects.requireNonNull(mCameraManager));
             } else {
                 vendorExtender = EMPTY_VENDOR_EXTENDER;
             }

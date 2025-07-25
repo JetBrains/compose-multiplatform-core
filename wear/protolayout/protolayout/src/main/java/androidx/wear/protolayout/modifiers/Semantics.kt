@@ -37,7 +37,7 @@ import java.util.Objects
 @SuppressLint("ProtoLayoutMinSchema") // 1.2 schema only used when dynamicValue is non-null
 fun LayoutModifier.contentDescription(
     staticValue: String,
-    @RequiresSchemaVersion(major = 1, minor = 200) dynamicValue: DynamicString? = null,
+    @RequiresSchemaVersion(major = 1, minor = 200) dynamicValue: DynamicString? = null
 ): LayoutModifier =
     this then
         BaseSemanticElement(
@@ -54,22 +54,16 @@ fun LayoutModifier.contentDescription(
 fun LayoutModifier.semanticsRole(@SemanticsRole semanticsRole: Int): LayoutModifier =
     this then BaseSemanticElement(semanticsRole = semanticsRole)
 
-/** Mark the element as heading for a section of content for accessibility purpose. */
-@RequiresSchemaVersion(major = 1, minor = 600)
-fun LayoutModifier.semanticsHeading(heading: Boolean): LayoutModifier =
-    this then BaseSemanticElement(heading = heading)
-
 /** Clears the semantics, including [contentDescription] and [semanticsRole], from the modifier. */
 fun LayoutModifier.clearSemantics(): LayoutModifier = this then CLEAR_SEMANTIC_ELEMENT
 
 internal class BaseSemanticElement(
     val contentDescription: StringProp? = null,
-    @SemanticsRole val semanticsRole: Int? = null,
-    val heading: Boolean? = null,
+    @SemanticsRole val semanticsRole: Int? = null
 ) : BaseProtoLayoutModifiersElement<Semantics.Builder> {
     @SuppressLint("ProtoLayoutMinSchema")
     override fun mergeTo(initialBuilder: Semantics.Builder?): Semantics.Builder? =
-        if (contentDescription == null && semanticsRole == null && heading == null) {
+        if (contentDescription == null && semanticsRole == null) {
             null
         } else {
             (initialBuilder ?: Semantics.Builder()).apply {
@@ -77,25 +71,18 @@ internal class BaseSemanticElement(
                 if (semanticsRole != null && semanticsRole != SEMANTICS_ROLE_NONE) {
                     setRole(semanticsRole)
                 }
-                if (heading != null) {
-                    setHeading(heading)
-                }
             }
         }
 
     override fun equals(other: Any?): Boolean =
         other is BaseSemanticElement &&
             contentDescription == other.contentDescription &&
-            semanticsRole == other.semanticsRole &&
-            heading == other.heading
+            semanticsRole == other.semanticsRole
 
-    override fun hashCode(): Int = Objects.hash(contentDescription, semanticsRole, heading)
+    override fun hashCode(): Int = Objects.hash(contentDescription, semanticsRole)
 
     override fun toString(): String =
-        "BaseSemanticElement[" +
-            "contentDescription=$contentDescription," +
-            "semanticRole=$semanticsRole," +
-            "heading=$heading]"
+        "BaseSemanticElement[contentDescription=$contentDescription, semanticRole=$semanticsRole"
 
     companion object {
         val CLEAR_SEMANTIC_ELEMENT = BaseSemanticElement()

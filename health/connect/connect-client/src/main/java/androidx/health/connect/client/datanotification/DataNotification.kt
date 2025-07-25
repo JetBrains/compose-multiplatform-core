@@ -31,7 +31,10 @@ import kotlin.reflect.KClass
  * @see androidx.health.connect.client.HealthConnectClient.registerForDataNotifications
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY) // Not yet ready for public
-class DataNotification private constructor(val dataTypes: Set<KClass<out Record>>) {
+class DataNotification
+private constructor(
+    val dataTypes: Set<KClass<out Record>>,
+) {
 
     companion object {
         private const val EXTRA_DATA_TYPES = "com.google.android.healthdata.extra.DATA_TYPES"
@@ -53,7 +56,7 @@ class DataNotification private constructor(val dataTypes: Set<KClass<out Record>
                     ?: return null
 
             return DataNotification(
-                dataTypes = dataTypes.mapTo(HashSet(), DataType::toDataTypeKClass)
+                dataTypes = dataTypes.mapTo(HashSet(), DataType::toDataTypeKClass),
             )
         }
     }

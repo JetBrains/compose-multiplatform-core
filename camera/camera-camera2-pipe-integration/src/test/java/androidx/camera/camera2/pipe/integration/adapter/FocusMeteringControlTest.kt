@@ -119,7 +119,7 @@ private val M_RECT_3 =
         SENSOR_WIDTH - AREA_WIDTH / 2,
         SENSOR_HEIGHT - AREA_HEIGHT / 2,
         SENSOR_WIDTH,
-        SENSOR_HEIGHT,
+        SENSOR_HEIGHT
     )
 
 // the following rectangles are for metering point (0, 0)
@@ -421,21 +421,21 @@ class FocusMeteringControlTest {
                 SENSOR_WIDTH - M_RECT_1.right,
                 M_RECT_1.top,
                 SENSOR_WIDTH - M_RECT_1.left,
-                M_RECT_1.bottom,
+                M_RECT_1.bottom
             )
         val flippedRect2 =
             Rect(
                 SENSOR_WIDTH - M_RECT_2.right,
                 M_RECT_2.top,
                 SENSOR_WIDTH - M_RECT_2.left,
-                M_RECT_2.bottom,
+                M_RECT_2.bottom
             )
         val flippedRect3 =
             Rect(
                 SENSOR_WIDTH - M_RECT_3.right,
                 M_RECT_3.top,
                 SENSOR_WIDTH - M_RECT_3.left,
-                M_RECT_3.bottom,
+                M_RECT_3.bottom
             )
 
         with(fakeRequestControl.focusMeteringCalls.last()) {
@@ -470,7 +470,7 @@ class FocusMeteringControlTest {
                     point3,
                     FocusMeteringAction.FLAG_AF or
                         FocusMeteringAction.FLAG_AE or
-                        FocusMeteringAction.FLAG_AWB,
+                        FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         )
@@ -520,7 +520,7 @@ class FocusMeteringControlTest {
                 SENSOR_WIDTH / 2 - cropWidth / 2,
                 SENSOR_HEIGHT / 2 - cropHeight / 2,
                 SENSOR_WIDTH / 2 + cropWidth / 2,
-                SENSOR_HEIGHT / 2 + cropHeight / 2,
+                SENSOR_HEIGHT / 2 + cropHeight / 2
             )
 
         focusMeteringControl =
@@ -539,7 +539,7 @@ class FocusMeteringControlTest {
                 cropRect.centerX() - areaWidth / 2,
                 cropRect.centerY() - areaHeight / 2,
                 cropRect.centerX() + areaWidth / 2,
-                cropRect.centerY() + areaHeight / 2,
+                cropRect.centerY() + areaHeight / 2
             )
         with(fakeRequestControl.focusMeteringCalls.last()) {
             assertWithMessage("Wrong number of AF regions").that(afRegions?.size).isEqualTo(1)
@@ -558,12 +558,15 @@ class FocusMeteringControlTest {
                 SENSOR_WIDTH / 2 - cropWidth / 2,
                 SENSOR_HEIGHT / 2 - cropHeight / 2,
                 SENSOR_WIDTH / 2 + cropWidth / 2,
-                SENSOR_HEIGHT / 2 + cropHeight / 2,
+                SENSOR_HEIGHT / 2 + cropHeight / 2
             )
 
         val zoomCompat = FakeZoomCompat(croppedSensorArea = Rect(0, 0, 640, 480))
         focusMeteringControl =
-            initFocusMeteringControl(cameraId = CAMERA_ID_0, zoomCompat = zoomCompat)
+            initFocusMeteringControl(
+                cameraId = CAMERA_ID_0,
+                zoomCompat = zoomCompat,
+            )
 
         val centerPt = pointFactory.createPoint(0.5f, 0.5f)
         startFocusMeteringAndAwait(FocusMeteringAction.Builder(centerPt).build())
@@ -578,7 +581,7 @@ class FocusMeteringControlTest {
                 cropRect.centerX() - areaWidth / 2,
                 cropRect.centerY() - areaHeight / 2,
                 cropRect.centerX() + areaWidth / 2,
-                cropRect.centerY() + areaHeight / 2,
+                cropRect.centerY() + areaHeight / 2
             )
         with(fakeRequestControl.focusMeteringCalls.last()) {
             assertWithMessage("Wrong number of AF regions").that(afRegions?.size).isEqualTo(1)
@@ -614,7 +617,7 @@ class FocusMeteringControlTest {
             initFocusMeteringControl(
                 cameraId = CAMERA_ID_1,
                 useCases = setOf(createPreview(Size(640, 480))),
-                zoomCompat = FakeZoomCompat(croppedSensorArea = Rect(0, 0, 1920, 1080)),
+                zoomCompat = FakeZoomCompat(croppedSensorArea = Rect(0, 0, 1920, 1080))
             )
 
         startFocusMeteringAndAwait(FocusMeteringAction.Builder(point1).build())
@@ -656,7 +659,10 @@ class FocusMeteringControlTest {
     fun previewRatioNotUsed_whenPreviewUseCaseIsRemoved() {
         // add 16:9 aspect ratio Preview with sensor region of 4:3 (camera 0), then remove Preview
         focusMeteringControl =
-            initFocusMeteringControl(CAMERA_ID_0, useCases = setOf(createPreview(Size(1920, 1080))))
+            initFocusMeteringControl(
+                CAMERA_ID_0,
+                useCases = setOf(createPreview(Size(1920, 1080))),
+            )
         focusMeteringControl.onRunningUseCasesChanged(emptySet())
 
         startFocusMeteringAndAwait(FocusMeteringAction.Builder(point1).build())
@@ -717,7 +723,7 @@ class FocusMeteringControlTest {
                         FakeFrameMetadata(
                             extraMetadata =
                                 mapOf(CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED)
-                        ),
+                        )
                 )
             )
         val action = FocusMeteringAction.Builder(point1).build()
@@ -737,7 +743,7 @@ class FocusMeteringControlTest {
                         FakeFrameMetadata(
                             extraMetadata =
                                 mapOf(CONTROL_AF_STATE to CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
-                        ),
+                        )
                 )
             )
         val action = FocusMeteringAction.Builder(point1).build()
@@ -754,7 +760,7 @@ class FocusMeteringControlTest {
                 Result3A(
                     status = Result3A.Status.OK,
                     frameMetadata =
-                        FakeFrameMetadata(extraMetadata = mapOf(CONTROL_AF_STATE to null)),
+                        FakeFrameMetadata(extraMetadata = mapOf(CONTROL_AF_STATE to null))
                 )
             )
         val action = FocusMeteringAction.Builder(point1).build()
@@ -792,7 +798,7 @@ class FocusMeteringControlTest {
                                             mapOf(
                                                 CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED
                                             )
-                                    ),
+                                    )
                             )
                         )
                     }
@@ -845,7 +851,7 @@ class FocusMeteringControlTest {
                         FakeFrameMetadata(
                             extraMetadata =
                                 mapOf(CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED)
-                        ),
+                        )
                 )
             )
         }
@@ -867,7 +873,7 @@ class FocusMeteringControlTest {
                         FakeFrameMetadata(
                             extraMetadata =
                                 mapOf(CONTROL_AF_STATE to CONTROL_AF_STATE_FOCUSED_LOCKED)
-                        ),
+                        )
                 )
             )
         val action = FocusMeteringAction.Builder(point1).build()
@@ -893,7 +899,7 @@ class FocusMeteringControlTest {
                     point1,
                     FocusMeteringAction.FLAG_AF or
                         FocusMeteringAction.FLAG_AE or
-                        FocusMeteringAction.FLAG_AWB,
+                        FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         val future = focusMeteringControl.startFocusAndMetering(action)
@@ -907,7 +913,7 @@ class FocusMeteringControlTest {
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         val future = focusMeteringControl.startFocusAndMetering(action)
@@ -921,7 +927,7 @@ class FocusMeteringControlTest {
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         val future = focusMeteringControl.startFocusAndMetering(action)
@@ -941,14 +947,14 @@ class FocusMeteringControlTest {
                         FakeFrameMetadata(
                             extraMetadata =
                                 mapOf(CONTROL_AF_STATE to CONTROL_AF_STATE_NOT_FOCUSED_LOCKED)
-                        ),
+                        )
                 )
             )
 
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .addPoint(point2, FocusMeteringAction.FLAG_AWB)
                 .build()
@@ -984,7 +990,7 @@ class FocusMeteringControlTest {
                     point1,
                     FocusMeteringAction.FLAG_AF or
                         FocusMeteringAction.FLAG_AE or
-                        FocusMeteringAction.FLAG_AWB,
+                        FocusMeteringAction.FLAG_AWB
                 )
                 .addPoint(point2, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
                 .addPoint(point2, FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
@@ -999,7 +1005,7 @@ class FocusMeteringControlTest {
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .addPoint(point2, FocusMeteringAction.FLAG_AWB)
                 .build()
@@ -1233,7 +1239,10 @@ class FocusMeteringControlTest {
 
         // Act.
         focusMeteringControl
-            .startFocusAndMeteringAndAdvanceTestScope(this, action)[5, TimeUnit.SECONDS]
+            .startFocusAndMeteringAndAdvanceTestScope(
+                this,
+                action,
+            )[5, TimeUnit.SECONDS]
 
         // Assert.
         assertThat(state3AControl.preferredFocusMode).isNull()
@@ -1245,7 +1254,7 @@ class FocusMeteringControlTest {
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         val state3AControl = createState3AControl(CAMERA_ID_0)
@@ -1280,7 +1289,10 @@ class FocusMeteringControlTest {
 
         // Act.
         focusMeteringControl
-            .startFocusAndMeteringAndAdvanceTestScope(this, action)[5, TimeUnit.SECONDS]
+            .startFocusAndMeteringAndAdvanceTestScope(
+                this,
+                action,
+            )[5, TimeUnit.SECONDS]
         focusMeteringControl.cancelFocusAndMeteringAsync().join()
 
         // Assert.
@@ -1292,7 +1304,10 @@ class FocusMeteringControlTest {
     fun startFocusMetering_submitFailed_failsWithOperationCanceledOperation() = runTest {
         fakeRequestControl.focusMeteringResult =
             CompletableDeferred(
-                Result3A(status = Result3A.Status.SUBMIT_FAILED, frameMetadata = null)
+                Result3A(
+                    status = Result3A.Status.SUBMIT_FAILED,
+                    frameMetadata = null,
+                )
             )
 
         val result =
@@ -1307,7 +1322,7 @@ class FocusMeteringControlTest {
         val action =
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         val future = focusMeteringControl.startFocusAndMetering(action)
@@ -1324,7 +1339,12 @@ class FocusMeteringControlTest {
              * method returns early with Result3A made of 'OK' status and 'null' metadata.
              */
             fakeRequestControl.focusMeteringResult =
-                CompletableDeferred(Result3A(status = Result3A.Status.OK, frameMetadata = null))
+                CompletableDeferred(
+                    Result3A(
+                        status = Result3A.Status.OK,
+                        frameMetadata = null,
+                    )
+                )
 
             val focusMeteringControl = initFocusMeteringControl(CAMERA_ID_0)
             val future =
@@ -1340,7 +1360,7 @@ class FocusMeteringControlTest {
         startFocusMeteringAndAwait(
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         )
@@ -1357,7 +1377,7 @@ class FocusMeteringControlTest {
         startFocusMeteringAndAwait(
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         )
@@ -1372,7 +1392,7 @@ class FocusMeteringControlTest {
         startFocusMeteringAndAwait(
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         )
@@ -1397,7 +1417,7 @@ class FocusMeteringControlTest {
         startFocusMeteringAndAwait(
             FocusMeteringAction.Builder(
                     point1,
-                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AF,
+                    FocusMeteringAction.FLAG_AE or FocusMeteringAction.FLAG_AF
                 )
                 .build()
         )
@@ -1419,7 +1439,7 @@ class FocusMeteringControlTest {
                     point1,
                     FocusMeteringAction.FLAG_AF or
                         FocusMeteringAction.FLAG_AE or
-                        FocusMeteringAction.FLAG_AWB,
+                        FocusMeteringAction.FLAG_AWB
                 )
                 .build()
         )
@@ -1441,7 +1461,7 @@ class FocusMeteringControlTest {
     private fun TestScope.assertFutureFocusCompleted(
         future: ListenableFuture<FocusMeteringResult>,
         isFocused: Boolean,
-        timeoutSeconds: Long = 3,
+        timeoutSeconds: Long = 3
     ) {
         advanceUntilIdle()
         val focusMeteringResult = future[timeoutSeconds, TimeUnit.SECONDS]
@@ -1504,7 +1524,7 @@ class FocusMeteringControlTest {
         Futures.addCallback<FocusMeteringResult>(
             result,
             focusMeteringResultCallback,
-            Executors.newSingleThreadExecutor(),
+            Executors.newSingleThreadExecutor()
         )
     }
 
@@ -1518,7 +1538,7 @@ class FocusMeteringControlTest {
         useCases: Set<UseCase> = emptySet(),
         useCaseThreads: UseCaseThreads = fakeUseCaseThreads,
         state3AControl: State3AControl = createState3AControl(cameraId),
-        zoomCompat: ZoomCompat = FakeZoomCompat(),
+        zoomCompat: ZoomCompat = FakeZoomCompat()
     ): FocusMeteringControl {
         runningUseCases.addAll(useCases)
         return FocusMeteringControl(
@@ -1530,14 +1550,14 @@ class FocusMeteringControlTest {
                             StreamConfigurationMapBuilder.newBuilder().build(),
                             OutputSizesCorrector(
                                 cameraPropertiesMap[cameraId]!!.metadata,
-                                StreamConfigurationMapBuilder.newBuilder().build(),
+                                StreamConfigurationMapBuilder.newBuilder().build()
                             ),
-                        ),
+                        )
                     )
                 ),
                 state3AControl,
                 useCaseThreads,
-                zoomCompat,
+                zoomCompat
             )
             .apply {
                 requestControl = fakeRequestControl
@@ -1547,12 +1567,12 @@ class FocusMeteringControlTest {
 
     private fun initCameraProperties(
         cameraIdStr: String,
-        characteristics: Map<CameraCharacteristics.Key<*>, Any?>,
+        characteristics: Map<CameraCharacteristics.Key<*>, Any?>
     ): FakeCameraProperties {
         val cameraId = CameraId(cameraIdStr)
         return FakeCameraProperties(
             FakeCameraMetadata(cameraId = cameraId, characteristics = characteristics),
-            cameraId,
+            cameraId
         )
     }
 
@@ -1567,25 +1587,25 @@ class FocusMeteringControlTest {
                         CaptureResult.CONTROL_AF_MODE_CONTINUOUS_VIDEO,
                         CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
                         CaptureResult.CONTROL_AF_MODE_AUTO,
-                        CaptureResult.CONTROL_AF_MODE_OFF,
+                        CaptureResult.CONTROL_AF_MODE_OFF
                     ),
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES to
                     intArrayOf(
                         CaptureResult.CONTROL_AE_MODE_ON,
                         CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                         CaptureResult.CONTROL_AE_MODE_ON_AUTO_FLASH,
-                        CaptureResult.CONTROL_AE_MODE_OFF,
+                        CaptureResult.CONTROL_AE_MODE_OFF
                     ),
                 CameraCharacteristics.CONTROL_AWB_AVAILABLE_MODES to
                     intArrayOf(
                         CaptureResult.CONTROL_AWB_MODE_AUTO,
-                        CaptureResult.CONTROL_AWB_MODE_OFF,
+                        CaptureResult.CONTROL_AWB_MODE_OFF
                     ),
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AF to 3,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE to 3,
-                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1,
+                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1
             )
 
         cameraPropertiesMap[CAMERA_ID_0] = initCameraProperties(CAMERA_ID_0, characteristics0)
@@ -1599,7 +1619,7 @@ class FocusMeteringControlTest {
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AF to 1,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE to 1,
-                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1,
+                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1
             )
 
         cameraPropertiesMap[CAMERA_ID_1] = initCameraProperties(CAMERA_ID_1, characteristics1)
@@ -1615,7 +1635,7 @@ class FocusMeteringControlTest {
                     intArrayOf(CaptureResult.CONTROL_AF_MODE_OFF),
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AF to 1,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE to 1,
-                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1,
+                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 1
             )
 
         cameraPropertiesMap[CAMERA_ID_2] = initCameraProperties(CAMERA_ID_2, characteristics2)
@@ -1629,7 +1649,7 @@ class FocusMeteringControlTest {
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AF to 0,
                 CameraCharacteristics.CONTROL_MAX_REGIONS_AE to 0,
-                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 0,
+                CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 0
             )
 
         cameraPropertiesMap[CAMERA_ID_3] = initCameraProperties(CAMERA_ID_3, characteristics3)
@@ -1647,7 +1667,7 @@ class FocusMeteringControlTest {
                 mapOf(
                     CameraCharacteristics.CONTROL_MAX_REGIONS_AF to 3,
                     CameraCharacteristics.CONTROL_MAX_REGIONS_AE to 0,
-                    CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 0,
+                    CameraCharacteristics.CONTROL_MAX_REGIONS_AWB to 0
                 )
 
         cameraPropertiesMap[CAMERA_ID_5] = initCameraProperties(CAMERA_ID_5, characteristics5)
@@ -1661,14 +1681,14 @@ class FocusMeteringControlTest {
             .apply {
                 setSurfaceProvider(
                     CameraXExecutors.mainThreadExecutor(),
-                    SurfaceTextureProvider.createSurfaceTextureProvider(),
+                    SurfaceTextureProvider.createSurfaceTextureProvider()
                 )
             }
             .also {
                 it.bindToCamera(FakeCamera("0"), null, null, null)
                 it.updateSuggestedStreamSpec(
                     StreamSpec.builder(suggestedStreamSpecResolution).build(),
-                    null,
+                    null
                 )
             }
 

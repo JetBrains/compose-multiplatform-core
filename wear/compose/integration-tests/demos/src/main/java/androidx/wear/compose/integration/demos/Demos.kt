@@ -42,9 +42,12 @@ val Info =
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "Version: $version", textAlign = TextAlign.Center)
+                    Text(
+                        text = "Version: $version",
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         ),
@@ -54,5 +57,5 @@ val Info =
 val WearComposeDemos =
     DemoCategory(
         "Wear Compose Demos",
-        listOf(WearFoundationDemos, WearMaterialDemos, WearMaterial3Demos, Info),
+        listOf(WearFoundationDemos, WearMaterialDemos, WearMaterial3Demos, Info)
     )

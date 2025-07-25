@@ -29,12 +29,11 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.lifecycle.viewmodel.testing"
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
@@ -84,6 +83,7 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependsOn(jvmTest)
             dependencies {
+                implementation(libs.robolectric)
             }
         }
 
@@ -144,5 +144,8 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2024"
     description = "Testing utilities for 'lifecycle-viewmodel' artifact"
-    enableRobolectric()
+}
+
+android {
+    namespace "androidx.lifecycle.viewmodel.testing"
 }

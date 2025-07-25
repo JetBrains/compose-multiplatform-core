@@ -23,9 +23,13 @@
     android:layout_marginBottom="10dp"
     android:gravity="center_vertical">
 
-    <androidx.privacysandbox.ui.integration.testapp.util.AdHolder
-        android:id="@+id/recyclerview_ad_view_holder"
-        android:background="#FFFFFF"
+    <androidx.privacysandbox.ui.client.view.SandboxedSdkView
+        android:id="@+id/recyclerview_ad_view"
+        android:background="#FF0000"
         android:layout_height="match_parent"
-        android:layout_width="match_parent"/>
+        android:layout_width="match_parent"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="16dp" />
 </LinearLayout>

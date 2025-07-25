@@ -38,6 +38,7 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
+    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
@@ -58,6 +59,9 @@ android {
     buildTypes.configureEach {
         consumerProguardFiles "proguard-rules.pro"
     }
+
+    // Use Robolectric 4.+
+    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.wear"
 }
 
@@ -70,5 +74,4 @@ androidx {
     failOnDeprecationWarnings = false
     legacyDisableKotlinStrictApiMode = true
     addGoldenImageAssets()
-    enableRobolectric()
 }

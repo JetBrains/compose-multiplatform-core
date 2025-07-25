@@ -155,9 +155,6 @@ val DONT_TRY_RERUNNING_TASKS =
 
         // https://github.com/spdx/spdx-gradle-plugin/issues/18
         "spdxSbomForRelease",
-
-        // Task not cacheable, will always rerun.
-        "validateIntegrationPatches",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =
@@ -224,7 +221,10 @@ abstract class TaskUpToDateValidator :
                 return true
             }
             val taskName = taskPath.substringAfterLast(":")
-            return ALLOW_RERUNNING_TASKS.contains(taskName)
+            if (ALLOW_RERUNNING_TASKS.contains(taskName)) {
+                return true
+            }
+            return false
         }
 
         private fun shouldTryRerunningTask(task: Task): Boolean {
@@ -247,7 +247,7 @@ abstract class TaskUpToDateValidator :
             val validatorProvider =
                 project.gradle.sharedServices.registerIfAbsent(
                     "TaskUpToDateValidator",
-                    TaskUpToDateValidator::class.java,
+                    TaskUpToDateValidator::class.java
                 ) { spec ->
                     spec.parameters.validate = validate
                 }

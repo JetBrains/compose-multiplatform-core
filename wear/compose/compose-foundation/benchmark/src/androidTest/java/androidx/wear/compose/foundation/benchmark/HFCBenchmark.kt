@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.wear.compose.foundation.hierarchicalFocusGroup
-import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
+import androidx.wear.compose.foundation.hierarchicalFocus
+import androidx.wear.compose.foundation.hierarchicalFocusRequester
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,15 +93,15 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                         )
                         .thenIf(
                             useHfc,
-                            Modifier.hierarchicalFocusGroup(active = selectedRow == rowIx),
+                            Modifier.hierarchicalFocus(focusEnabled = selectedRow == rowIx)
                         ),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     BasicText(
                         "Sel",
                         Modifier.background(Color.Gray, CircleShape).clickable {
                             selectedRow = rowIx
-                        },
+                        }
                     )
                     repeat(numColumns) { colIx ->
                         var focused by remember { mutableStateOf(false) }
@@ -112,15 +112,15 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                                 TextStyle(
                                     color = Color.White,
                                     fontSize = 20.sp,
-                                    textAlign = TextAlign.Center,
+                                    textAlign = TextAlign.Center
                                 ),
                             modifier =
                                 Modifier.thenIf(
                                         useHfc,
-                                        Modifier.hierarchicalFocusGroup(
-                                                active = selectedColumn[rowIx].value == colIx
+                                        Modifier.hierarchicalFocus(
+                                                focusEnabled = selectedColumn[rowIx].value == colIx
                                             )
-                                            .requestFocusOnHierarchyActive(),
+                                            .hierarchicalFocusRequester(focusRequester)
                                     )
                                     .weight(1f)
                                     .clickable { selectedColumn[rowIx].value = colIx }
@@ -129,9 +129,9 @@ internal class caseFactory(val useHfc: Boolean) : LayeredComposeTestCase() {
                                     .focusable()
                                     .thenIf(
                                         selectedColumn[rowIx].value == colIx,
-                                        Modifier.border(BorderStroke(2.dp, Color.Red)),
+                                        Modifier.border(BorderStroke(2.dp, Color.Red))
                                     )
-                                    .thenIf(focused, Modifier.background(Color.Gray)),
+                                    .thenIf(focused, Modifier.background(Color.Gray))
                         )
                     }
                 }

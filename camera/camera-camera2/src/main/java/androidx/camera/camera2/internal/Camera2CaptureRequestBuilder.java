@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.os.Build;
-import android.util.Range;
 import android.view.Surface;
 
 import androidx.annotation.OptIn;
@@ -112,12 +111,12 @@ class Camera2CaptureRequestBuilder {
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     private static void applyAeFpsRange(@NonNull CaptureConfig captureConfig,
             CaptureRequest.@NonNull Builder builder) {
-        Range<Integer> expectedFrameRateRange = captureConfig.getExpectedFrameRateRange();
-        if (!expectedFrameRateRange.equals(
+        if (!captureConfig.getExpectedFrameRateRange().equals(
                 StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED)) {
-            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, expectedFrameRateRange);
+            builder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                    captureConfig.getExpectedFrameRateRange());
         }
-        Logger.d(TAG, "applyAeFpsRange: expectedFrameRateRange = " + expectedFrameRateRange);
+
     }
 
     @VisibleForTesting
@@ -127,7 +126,6 @@ class Camera2CaptureRequestBuilder {
         if (mode != null) {
             builder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, mode);
         }
-        Logger.d(TAG, "applyVideoStabilization: mode = " + mode);
     }
 
     // null indicates the stabilization mode unspecified.

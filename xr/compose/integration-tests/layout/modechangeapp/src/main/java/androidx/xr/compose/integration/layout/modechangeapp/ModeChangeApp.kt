@@ -34,8 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
-import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
 import androidx.xr.compose.spatial.Subspace
@@ -73,6 +73,7 @@ class ModeChangeApp : ComponentActivity() {
                         (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
                             .session
                             .scene
+                            .spatialEnvironment
                             .requestHomeSpaceMode()
                     }
                 }
@@ -89,6 +90,7 @@ class ModeChangeApp : ComponentActivity() {
             (Session.create(this@ModeChangeApp) as SessionCreateSuccess)
                 .session
                 .scene
+                .spatialEnvironment
                 .requestFullSpaceMode()
         }
     }
@@ -109,7 +111,7 @@ class ModeChangeApp : ComponentActivity() {
             contentAlignment = Alignment.Center,
         ) {
             Column {
-                Orbiter(position = ContentEdge.Top, offset = 5.dp) {
+                Orbiter(position = OrbiterEdge.Top, offset = 5.dp) {
                     Text(
                         text = orbiterText,
                         fontSize = 20.sp,
@@ -119,7 +121,7 @@ class ModeChangeApp : ComponentActivity() {
                     )
                 }
                 if (showButton) {
-                    SpatialElevation(elevation = SpatialElevationLevel.Level3) {
+                    SpatialElevation(spatialElevationLevel = SpatialElevationLevel.Level3) {
                         Button(onClick = buttonOnClick) { Text(text = buttonText) }
                     }
                 }

@@ -49,16 +49,6 @@ public class RemoteEntryJavaTest {
 
         assertNotNull(entry);
         assertThat(mPendingIntent).isEqualTo(entry.getPendingIntent());
-        assertThat(entry.isAutoSelect()).isFalse();
-    }
-
-    @Test
-    public void constructor_withAutoSelect_success() {
-        RemoteEntry entry = new RemoteEntry(mPendingIntent, /*isAutoSelect=*/ true);
-
-        assertNotNull(entry);
-        assertThat(mPendingIntent).isEqualTo(entry.getPendingIntent());
-        assertThat(entry.isAutoSelect()).isTrue();
     }
 
     @Test
@@ -79,20 +69,19 @@ public class RemoteEntryJavaTest {
     @Test
     @SdkSuppress(minSdkVersion = 28)
     public void fromSlice_success() {
-        RemoteEntry originalEntry = new RemoteEntry(mPendingIntent, true);
+        RemoteEntry originalEntry = new RemoteEntry(mPendingIntent);
 
         RemoteEntry fromSlice = RemoteEntry.fromSlice(RemoteEntry.toSlice(originalEntry));
 
         assertThat(fromSlice).isNotNull();
         assertThat(fromSlice.getPendingIntent()).isEqualTo(mPendingIntent);
-        assertThat(fromSlice.isAutoSelect()).isTrue();
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 34)
     @SuppressWarnings("deprecation")
     public void fromRemoteEntry_success() {
-        RemoteEntry originalEntry = new RemoteEntry(mPendingIntent, true);
+        RemoteEntry originalEntry = new RemoteEntry(mPendingIntent);
         android.app.slice.Slice slice = RemoteEntry.toSlice(originalEntry);
         assertNotNull(slice);
 
@@ -101,6 +90,5 @@ public class RemoteEntryJavaTest {
 
         assertThat(remoteEntry).isNotNull();
         assertThat(remoteEntry.getPendingIntent()).isEqualTo(mPendingIntent);
-        assertThat(remoteEntry.isAutoSelect()).isTrue();
     }
 }

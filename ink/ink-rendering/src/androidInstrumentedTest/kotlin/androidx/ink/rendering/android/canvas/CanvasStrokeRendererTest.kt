@@ -69,7 +69,7 @@ class CanvasStrokeRendererTest {
                         "Solid",
                         finishedInProgressStroke(
                             brush(color = TestColors.AVOCADO_GREEN),
-                            INPUTS_ZIGZAG,
+                            INPUTS_ZIGZAG
                         ),
                     ),
                     Pair(
@@ -182,7 +182,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             brush(
                                 BrushFamily(BrushTip(particleGapDistanceScale = 2f)),
-                                TestColors.RED,
+                                TestColors.RED
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -346,7 +346,7 @@ class CanvasStrokeRendererTest {
                         finishedInProgressStroke(
                             texturedBrush(
                                 textureSize = 5f,
-                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
+                                textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES
                             ),
                             INPUTS_ZIGZAG,
                         ),
@@ -644,53 +644,6 @@ class CanvasStrokeRendererTest {
         assertScreenshot("TextureOffset")
     }
 
-    @Test
-    fun supportsTextureRotation() {
-        activityScenarioRule.scenario.onActivity { activity ->
-            activity.addStrokeRows(
-                listOf(
-                    Pair(
-                        """
-              offsetX=0.0
-              offsetY=0.0
-              rotation=45
-            """
-                            .trimIndent(),
-                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 45f),
-                    ),
-                    Pair(
-                        """
-              offsetX=0.5
-              offsetY=0.0
-              rotation=45
-            """
-                            .trimIndent(),
-                        textureRotationStroke(offsetX = 0.5f, offsetY = 0.0f, rotation = 45f),
-                    ),
-                    Pair(
-                        """
-              offsetX=0.0
-              offsetY=0.0
-              rotation=180
-            """
-                            .trimIndent(),
-                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.0f, rotation = 180f),
-                    ),
-                    Pair(
-                        """
-              offsetX=0.0
-              offsetY=0.5
-              rotation=180
-            """
-                            .trimIndent(),
-                        textureRotationStroke(offsetX = 0.0f, offsetY = 0.5f, rotation = 180f),
-                    ),
-                )
-            )
-        }
-        assertScreenshot("TextureRotation")
-    }
-
     private fun assertScreenshot(filename: String) {
         onView(withId(R.id.stroke_grid))
             .perform(
@@ -705,44 +658,44 @@ class CanvasStrokeRendererTest {
 
         val INPUTS_ZIGZAG =
             MutableStrokeInputBatch()
-                .add(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
-                .add(InputToolType.UNKNOWN, x = 13F, y = 13F, elapsedTimeMillis = 117)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 27F, elapsedTimeMillis = 133)
-                .add(InputToolType.UNKNOWN, x = 40F, y = 40F, elapsedTimeMillis = 150)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 50F, elapsedTimeMillis = 167)
-                .add(InputToolType.UNKNOWN, x = 13F, y = 60F, elapsedTimeMillis = 183)
-                .add(InputToolType.UNKNOWN, x = 0F, y = 70F, elapsedTimeMillis = 200)
-                .add(InputToolType.UNKNOWN, x = 10F, y = 80F, elapsedTimeMillis = 217)
-                .add(InputToolType.UNKNOWN, x = 20F, y = 90F, elapsedTimeMillis = 233)
-                .add(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
+                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 13F, elapsedTimeMillis = 117)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 27F, elapsedTimeMillis = 133)
+                .addOrThrow(InputToolType.UNKNOWN, x = 40F, y = 40F, elapsedTimeMillis = 150)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 50F, elapsedTimeMillis = 167)
+                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 60F, elapsedTimeMillis = 183)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 70F, elapsedTimeMillis = 200)
+                .addOrThrow(InputToolType.UNKNOWN, x = 10F, y = 80F, elapsedTimeMillis = 217)
+                .addOrThrow(InputToolType.UNKNOWN, x = 20F, y = 90F, elapsedTimeMillis = 233)
+                .addOrThrow(InputToolType.UNKNOWN, x = 30F, y = 100F, elapsedTimeMillis = 250)
                 .asImmutable()
 
         val INPUTS_ZAGZIG =
             MutableStrokeInputBatch()
-                .add(InputToolType.UNKNOWN, x = 30F, y = 0F, elapsedTimeMillis = 100)
-                .add(InputToolType.UNKNOWN, x = 20F, y = 13F, elapsedTimeMillis = 117)
-                .add(InputToolType.UNKNOWN, x = 10F, y = 27F, elapsedTimeMillis = 133)
-                .add(InputToolType.UNKNOWN, x = 0F, y = 40F, elapsedTimeMillis = 150)
-                .add(InputToolType.UNKNOWN, x = 13F, y = 50F, elapsedTimeMillis = 167)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 60F, elapsedTimeMillis = 183)
-                .add(InputToolType.UNKNOWN, x = 40F, y = 70F, elapsedTimeMillis = 200)
-                .add(InputToolType.UNKNOWN, x = 28F, y = 77F, elapsedTimeMillis = 217)
-                .add(InputToolType.UNKNOWN, x = 17F, y = 83F, elapsedTimeMillis = 233)
-                .add(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
+                .addOrThrow(InputToolType.UNKNOWN, x = 30F, y = 0F, elapsedTimeMillis = 100)
+                .addOrThrow(InputToolType.UNKNOWN, x = 20F, y = 13F, elapsedTimeMillis = 117)
+                .addOrThrow(InputToolType.UNKNOWN, x = 10F, y = 27F, elapsedTimeMillis = 133)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 40F, elapsedTimeMillis = 150)
+                .addOrThrow(InputToolType.UNKNOWN, x = 13F, y = 50F, elapsedTimeMillis = 167)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 60F, elapsedTimeMillis = 183)
+                .addOrThrow(InputToolType.UNKNOWN, x = 40F, y = 70F, elapsedTimeMillis = 200)
+                .addOrThrow(InputToolType.UNKNOWN, x = 28F, y = 77F, elapsedTimeMillis = 217)
+                .addOrThrow(InputToolType.UNKNOWN, x = 17F, y = 83F, elapsedTimeMillis = 233)
+                .addOrThrow(InputToolType.UNKNOWN, x = 5F, y = 90F, elapsedTimeMillis = 250)
                 .asImmutable()
 
         val INPUTS_TWIST =
             MutableStrokeInputBatch()
-                .add(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 33F, elapsedTimeMillis = 117)
-                .add(InputToolType.UNKNOWN, x = 53F, y = 67F, elapsedTimeMillis = 133)
-                .add(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
-                .add(InputToolType.UNKNOWN, x = 53F, y = 100F, elapsedTimeMillis = 167)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 100F, elapsedTimeMillis = 183)
-                .add(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
-                .add(InputToolType.UNKNOWN, x = 27F, y = 67F, elapsedTimeMillis = 217)
-                .add(InputToolType.UNKNOWN, x = 53F, y = 33F, elapsedTimeMillis = 233)
-                .add(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 0F, elapsedTimeMillis = 100)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 33F, elapsedTimeMillis = 117)
+                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 67F, elapsedTimeMillis = 133)
+                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 100F, elapsedTimeMillis = 150)
+                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 100F, elapsedTimeMillis = 167)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 100F, elapsedTimeMillis = 183)
+                .addOrThrow(InputToolType.UNKNOWN, x = 0F, y = 100F, elapsedTimeMillis = 200)
+                .addOrThrow(InputToolType.UNKNOWN, x = 27F, y = 67F, elapsedTimeMillis = 217)
+                .addOrThrow(InputToolType.UNKNOWN, x = 53F, y = 33F, elapsedTimeMillis = 233)
+                .addOrThrow(InputToolType.UNKNOWN, x = 80F, y = 0F, elapsedTimeMillis = 250)
                 .asImmutable()
 
         fun brush(
@@ -760,7 +713,6 @@ class CanvasStrokeRendererTest {
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
-            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
@@ -779,7 +731,6 @@ class CanvasStrokeRendererTest {
                     textureOrigin = textureOrigin,
                     textureOffsetX = textureOffsetX,
                     textureOffsetY = textureOffsetY,
-                    textureRotationDegrees = textureRotationDegrees,
                     textureMapping = textureMapping,
                 )
             return brush(
@@ -796,7 +747,6 @@ class CanvasStrokeRendererTest {
             textureOrigin: TextureOrigin = TextureOrigin.STROKE_SPACE_ORIGIN,
             textureOffsetX: Float = 0f,
             textureOffsetY: Float = 0f,
-            textureRotationDegrees: Float = 0f,
             textureMapping: TextureMapping = TextureMapping.TILING,
             textureWrapX: TextureWrap = TextureWrap.REPEAT,
             textureWrapY: TextureWrap = TextureWrap.REPEAT,
@@ -808,7 +758,6 @@ class CanvasStrokeRendererTest {
                     sizeY = textureSize,
                     offsetX = textureOffsetX,
                     offsetY = textureOffsetY,
-                    rotation = Angle.degreesToRadians(textureRotationDegrees),
                     sizeUnit = textureSizeUnit,
                     origin = textureOrigin,
                     mapping = textureMapping,
@@ -830,30 +779,12 @@ class CanvasStrokeRendererTest {
                 INPUTS_ZIGZAG,
             )
 
-        fun textureRotationStroke(
-            offsetX: Float,
-            offsetY: Float,
-            rotation: Float,
-        ): InProgressStroke =
-            finishedInProgressStroke(
-                texturedBrush(
-                    textureId = CanvasStrokeRendererTestActivity.TEXTURE_ID_AIRPLANE_EMOJI,
-                    textureSize = 30f,
-                    textureSizeUnit = TextureSizeUnit.STROKE_COORDINATES,
-                    textureOffsetX = offsetX,
-                    textureOffsetY = offsetY,
-                    textureRotationDegrees = rotation,
-                    brushSize = 30f,
-                ),
-                INPUTS_ZIGZAG,
-            )
-
         fun finishedInProgressStroke(brush: Brush, inputs: ImmutableStrokeInputBatch) =
             InProgressStroke().apply {
                 start(brush)
-                enqueueInputs(inputs, NO_PREDICTION)
+                enqueueInputs(inputs, NO_PREDICTION).getOrThrow()
                 finishInput()
-                updateShape(inputs.getDurationMillis())
+                updateShape(inputs.getDurationMillis()).getOrThrow()
             }
 
         fun colorBlendedStroke(blendMode: BlendMode, @ColorInt color: Int): InProgressStroke {

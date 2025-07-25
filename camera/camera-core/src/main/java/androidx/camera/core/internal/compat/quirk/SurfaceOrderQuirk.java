@@ -21,7 +21,7 @@ import androidx.camera.core.internal.compat.workaround.SurfaceSorter;
 
 /**
  * <p>QuirkSummary
- *     Bug Id: 196755459, 205340278, 414494617
+ *     Bug Id: 196755459, 205340278
  *     Description: Quirk that requires Preview surface is in front of the MediaCodec surface
  *                  when creating a CameraCaptureSession.
  *                  On some Samsung devices, create CameraCaptureSession will fail silently if
@@ -36,11 +36,7 @@ import androidx.camera.core.internal.compat.workaround.SurfaceSorter;
  *                  this quirk should be safe to apply regardless the video surface resolution
  *                  since the workaround just sorts the surface list while creating
  *                  CameraCaptureSession.
- *                  On Redmi Note 9S with the front camera, when Preview, VideoCapture, and
- *                  ImageAnalysis are bound and StreamSharing is active, StreamSharing may fail
- *                  to receive camera frames if ImageAnalysis surface is in front of StreamSharing
- *                  surface.
- *     Device(s): Some Samsung devices, Pixel 1 and Redmi Note 9S.
+ *     Device(s): Some Samsung devices and Pixel 1
  *     @see SurfaceSorter
  */
 public class SurfaceOrderQuirk implements Quirk {

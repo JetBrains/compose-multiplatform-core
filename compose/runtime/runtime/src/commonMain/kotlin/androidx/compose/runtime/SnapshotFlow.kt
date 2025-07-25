@@ -45,9 +45,8 @@ import kotlinx.coroutines.withContext
  */
 @Suppress("StateFlowValueCalledInComposition")
 @Composable
-public fun <T> StateFlow<T>.collectAsState(
-    context: CoroutineContext = EmptyCoroutineContext
-): State<T> = collectAsState(value, context)
+fun <T> StateFlow<T>.collectAsState(context: CoroutineContext = EmptyCoroutineContext): State<T> =
+    collectAsState(value, context)
 
 /**
  * Collects values from this [Flow] and represents its latest value via [State]. Every time there
@@ -59,9 +58,9 @@ public fun <T> StateFlow<T>.collectAsState(
  * @param context [CoroutineContext] to use for collecting.
  */
 @Composable
-public fun <T : R, R> Flow<T>.collectAsState(
+fun <T : R, R> Flow<T>.collectAsState(
     initial: R,
-    context: CoroutineContext = EmptyCoroutineContext,
+    context: CoroutineContext = EmptyCoroutineContext
 ): State<R> =
     produceState(initial, this, context) {
         if (context == EmptyCoroutineContext) {
@@ -106,7 +105,7 @@ public fun <T : R, R> Flow<T>.collectAsState(
  * produce the same result. It is valid for a state observer to both skip intermediate states as
  * well as run multiple times for the same state and the result should be the same.
  */
-public fun <T> snapshotFlow(block: () -> T): Flow<T> = flow {
+fun <T> snapshotFlow(block: () -> T): Flow<T> = flow {
     // Objects read the last time block was run
     val readSet = MutableScatterSet<Any>()
     val readObserver: (Any) -> Unit = {

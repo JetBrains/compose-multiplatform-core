@@ -50,7 +50,7 @@ class SpatialAudioTrackTest {
     private var mockRuntime: JxrPlatformAdapter = mock()
     private var mockRtAudioTrackExtensions: RtAudioTrackExtensionsWrapper = mock()
 
-    private val mockGroupEntity = mock<RtEntity>()
+    private val mockContentlessEntity = mock<RtEntity>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
 
@@ -65,7 +65,7 @@ class SpatialAudioTrackTest {
             on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
-            on { createGroupEntity(any(), any(), any()) } doReturn mockGroupEntity
+            on { createEntity(any(), any(), any()) } doReturn mockContentlessEntity
             on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
@@ -78,7 +78,7 @@ class SpatialAudioTrackTest {
     fun setWithPointSource_callsRuntimeAudioTrackSetPointSource() {
         val track = AudioTrack.Builder().build()
 
-        val entity = GroupEntity.create(session, "test")
+        val entity = ContentlessEntity.create(session, "test")
         val pointSourceParams = PointSourceParams(entity)
 
         SpatialAudioTrack.setPointSourceParams(session, track, pointSourceParams)
@@ -86,7 +86,7 @@ class SpatialAudioTrackTest {
         verify(mockRtAudioTrackExtensions)
             .setPointSourceParams(
                 eq(track),
-                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
+                argWhere<RtPointSourceParams> { it.entity == mockContentlessEntity },
             )
     }
 
@@ -94,13 +94,13 @@ class SpatialAudioTrackTest {
     fun setWithPointSource_rethrowsIfExtensionThrows() {
         val track = AudioTrack.Builder().build()
 
-        val entity = GroupEntity.create(session, "test")
+        val entity = ContentlessEntity.create(session, "test")
         val pointSourceParams = PointSourceParams(entity)
 
         whenever(
                 mockRtAudioTrackExtensions.setPointSourceParams(
                     eq(track),
-                    any<RtPointSourceParams>(),
+                    any<RtPointSourceParams>()
                 )
             )
             .thenThrow(IllegalStateException("test"))
@@ -114,13 +114,13 @@ class SpatialAudioTrackTest {
     fun setWithPointSource_callsRuntimeAudioTrackBuilderSetPointSource() {
         val builder = AudioTrack.Builder()
 
-        val entity = GroupEntity.create(session, "test")
+        val entity = ContentlessEntity.create(session, "test")
         val pointSourceParams = PointSourceParams(entity)
 
         whenever(
                 mockRtAudioTrackExtensions.setPointSourceParams(
                     eq(builder),
-                    any<RtPointSourceParams>(),
+                    any<RtPointSourceParams>()
                 )
             )
             .thenReturn(builder)
@@ -131,7 +131,7 @@ class SpatialAudioTrackTest {
         verify(mockRtAudioTrackExtensions)
             .setPointSourceParams(
                 eq(builder),
-                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
+                argWhere<RtPointSourceParams> { it.entity == mockContentlessEntity },
             )
         assertThat(actualBuilder).isEqualTo(builder)
     }
@@ -180,7 +180,7 @@ class SpatialAudioTrackTest {
     @Test
     fun getPointSourceParams_callsRuntimeAudioTrackGetPointSourceParams() {
         val audioTrack = AudioTrack.Builder().build()
-        val entity = GroupEntity.create(session, "test")
+        val entity = ContentlessEntity.create(session, "test")
 
         val temp: BaseEntity<*> = entity as BaseEntity<*>
         val rtEntity = temp.rtEntity

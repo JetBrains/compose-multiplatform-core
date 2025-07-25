@@ -29,7 +29,9 @@ class InternalModifierTest {
     fun testInternalsAndInlines_excludeInlines() {
         val signatures =
             buildSignatures(
-                XProcessingEnvConfig.DEFAULT.copy(excludeMethodsWithInvalidJvmSourceNames = true)
+                XProcessingEnvConfig.DEFAULT.copy(
+                    excludeMethodsWithInvalidJvmSourceNames = true,
+                )
             )
         assertThat(signatures.ksp).containsExactlyElementsIn(signatures.kapt)
     }
@@ -55,7 +57,7 @@ class InternalModifierTest {
                 "main.Subject.internalInlineReceivingFun",
                 "main.Subject.internalInlineReturningFun",
                 "main.Subject.setInlineProp",
-                "main.Subject.setInternalInlineProp",
+                "main.Subject.setInternalInlineProp"
             )
     }
 
@@ -91,7 +93,7 @@ class InternalModifierTest {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         fun XType.toSignature() = this.asTypeName().java.toString()
@@ -128,12 +130,19 @@ class InternalModifierTest {
         var kspResult: List<String>? = null
         val source = buildSource("main")
         val classpath = compileFiles(sources = listOf(buildSource("lib")))
-        runKaptTest(sources = listOf(source), classpath = classpath, config = config) { invocation
-            ->
+        runKaptTest(
+            sources = listOf(source),
+            classpath = classpath,
+            config = config,
+        ) { invocation ->
             kaptResult = traverse(invocation.processingEnv)
         }
 
-        runKspTest(sources = listOf(source), classpath = classpath, config = config) { invocation ->
+        runKspTest(
+            sources = listOf(source),
+            classpath = classpath,
+            config = config,
+        ) { invocation ->
             kspResult = traverse(invocation.processingEnv)
         }
         return Signatures(ksp = checkNotNull(kspResult), kapt = checkNotNull(kaptResult))

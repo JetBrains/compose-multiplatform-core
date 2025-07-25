@@ -18,45 +18,18 @@ package androidx.compose.ui.semantics
 
 object SemanticsPropertiesAndroid {
     /** @see SemanticsPropertyReceiver.testTagsAsResourceId */
+    @Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
     val TestTagsAsResourceId =
         SemanticsPropertyKey<Boolean>(
             name = "TestTagsAsResourceId",
             isImportantForAccessibility = false,
-            mergePolicy = { parentValue, _ -> parentValue },
+            mergePolicy = { parentValue, _ -> parentValue }
         )
 
     /** @see SemanticsPropertyReceiver.accessibilityClassName */
     val AccessibilityClassName =
         AccessibilityKey<String>("AccessibilityClassName") { parentValue, _ -> parentValue }
 }
-
-/**
- * Creates a [SemanticsPropertyKey] that allows declaring Android-specific semantics properties
- * (key/value pairs set inside semantics blocks in a type-safe way) that are made available as
- * accessibility extras provided to accessibility services via
- * [android.view.accessibility.AccessibilityNodeInfo.getExtras].
- *
- * Each key has one particular statically defined value type T, where T is required to be either
- * [Serializable] (which including boxed primitive types) or [android.os.Parcelable].
- *
- * If the same property is set multiple times, the last value set in the outer modifier wins.
- *
- * @param name The name of the property, which should be the same as the constant from which it is
- *   accessed.
- * @param accessibilityExtraKey The key used to store the value in the extras [android.os.Bundle].
- * @param mergePolicy The merge policy to use when merging descendant semantics.
- */
-fun <T> SemanticsPropertyKey(
-    name: String,
-    accessibilityExtraKey: String,
-    mergePolicy: (T?, T) -> T? = { parentValue, _ -> parentValue },
-) =
-    SemanticsPropertyKey(
-        name = name,
-        isImportantForAccessibility = false,
-        accessibilityExtraKey = accessibilityExtraKey,
-        mergePolicy = mergePolicy,
-    )
 
 /**
  * Configuration toggle to map testTags to resource-id.
@@ -74,6 +47,7 @@ fun <T> SemanticsPropertyKey(
  * semantics node of the app (and no child nodes set it back to false), then every testTag will be
  * mapped.
  */
+@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
 var SemanticsPropertyReceiver.testTagsAsResourceId by
     SemanticsPropertiesAndroid.TestTagsAsResourceId
 

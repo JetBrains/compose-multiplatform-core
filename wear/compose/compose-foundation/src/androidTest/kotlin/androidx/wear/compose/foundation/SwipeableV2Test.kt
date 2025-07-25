@@ -69,8 +69,14 @@ class SwipeableV2Test {
         val state = SwipeableV2State(false)
         rule.setContent {
             SimpleSwipeableV2Box { size ->
-                Modifier.swipeableV2(state = state, orientation = Orientation.Horizontal)
-                    .swipeAnchors(state = state, possibleValues = setOf(false, true)) { value, _ ->
+                Modifier.swipeableV2(
+                        state = state,
+                        orientation = Orientation.Horizontal,
+                    )
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = setOf(false, true),
+                    ) { value, _ ->
                         when (value) {
                             false -> 0f
                             true -> size.width
@@ -90,8 +96,14 @@ class SwipeableV2Test {
         val state = SwipeableV2State(false)
         rule.setContent {
             SimpleSwipeableV2Box { size ->
-                Modifier.swipeableV2(state = state, orientation = Orientation.Vertical)
-                    .swipeAnchors(state = state, possibleValues = setOf(false, true)) { value, _ ->
+                Modifier.swipeableV2(
+                        state = state,
+                        orientation = Orientation.Vertical,
+                    )
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = setOf(false, true),
+                    ) { value, _ ->
                         when (value) {
                             false -> 0f
                             true -> size.height
@@ -111,8 +123,14 @@ class SwipeableV2Test {
         val state = SwipeableV2State(false)
         rule.setContent {
             SimpleSwipeableV2Box { size ->
-                Modifier.swipeableV2(state = state, orientation = Orientation.Horizontal)
-                    .swipeAnchors(state = state, possibleValues = setOf(false, true)) { value, _ ->
+                Modifier.swipeableV2(
+                        state = state,
+                        orientation = Orientation.Horizontal,
+                    )
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = setOf(false, true),
+                    ) { value, _ ->
                         when (value) {
                             false -> 0f
                             true -> size.width
@@ -143,9 +161,12 @@ class SwipeableV2Test {
                 Modifier.swipeableV2(
                         state = state,
                         orientation = Orientation.Horizontal,
-                        reverseDirection = true,
+                        reverseDirection = true
                     )
-                    .swipeAnchors(state = state, possibleValues = setOf(false, true)) { value, _ ->
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = setOf(false, true),
+                    ) { value, _ ->
                         when (value) {
                             false -> 0f
                             true -> size.width
@@ -165,7 +186,7 @@ class SwipeableV2Test {
                     orientation = Orientation.Horizontal,
                     value = 0.75f,
                     maxValue = 1f,
-                    reverseScrolling = true,
+                    reverseScrolling = true
                 )
             )
 
@@ -177,7 +198,7 @@ class SwipeableV2Test {
                     orientation = Orientation.Horizontal,
                     value = 0.5f,
                     maxValue = 1f,
-                    reverseScrolling = true,
+                    reverseScrolling = true
                 )
             )
     }
@@ -190,9 +211,12 @@ class SwipeableV2Test {
                 Modifier.swipeableV2(
                         state = state,
                         orientation = Orientation.Horizontal,
-                        enabled = false,
+                        enabled = false
                     )
-                    .swipeAnchors(state = state, possibleValues = setOf(false, true)) { value, _ ->
+                    .swipeAnchors(
+                        state = state,
+                        possibleValues = setOf(false, true),
+                    ) { value, _ ->
                         when (value) {
                             false -> 0f
                             true -> size.width
@@ -212,7 +236,7 @@ class SwipeableV2Test {
         var delta = 0f
         rule.testSwipe(
             touchInput = { swipeLeft() },
-            consumePreScrollDelta = { offset -> delta = offset.x },
+            consumePreScrollDelta = { offset -> delta = offset.x }
         )
 
         assert(delta < 0) { "Expected delta to be negative, was $delta" }
@@ -223,7 +247,7 @@ class SwipeableV2Test {
         var delta = 0f
         rule.testSwipe(
             touchInput = { swipeRight() },
-            consumePreScrollDelta = { offset -> delta = offset.x },
+            consumePreScrollDelta = { offset -> delta = offset.x }
         )
 
         assert(delta > 0) { "Expected delta to be positive, was $delta" }
@@ -235,7 +259,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeUp() },
             consumePreScrollDelta = { offset -> delta = offset.y },
-            orientation = Orientation.Vertical,
+            orientation = Orientation.Vertical
         )
 
         assert(delta < 0) { "Expected delta to be negative, was $delta" }
@@ -247,7 +271,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeDown() },
             consumePreScrollDelta = { offset -> delta = offset.y },
-            orientation = Orientation.Vertical,
+            orientation = Orientation.Vertical
         )
 
         assert(delta > 0) { "Expected delta to be positive, was $delta" }
@@ -258,7 +282,7 @@ class SwipeableV2Test {
         var delta = 0f
         rule.testSwipe(
             touchInput = { swipeLeft() },
-            consumePostScrollDelta = { offset -> delta = offset.x },
+            consumePostScrollDelta = { offset -> delta = offset.x }
         )
 
         assert(delta < 0) { "Expected delta to be negative, was $delta" }
@@ -270,7 +294,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeRight() },
             consumePostScrollDelta = { offset -> delta = offset.x },
-            reverseAnchors = true, //  reverse anchors or else swipeable consumes whole delta
+            reverseAnchors = true //  reverse anchors or else swipeable consumes whole delta
         )
 
         assert(delta > 0) { "Expected delta to be positive, was $delta" }
@@ -282,7 +306,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeUp() },
             consumePostScrollDelta = { offset -> delta = offset.y },
-            orientation = Orientation.Vertical,
+            orientation = Orientation.Vertical
         )
 
         assert(delta < 0) { "Expected delta to be negative, was $delta" }
@@ -295,7 +319,7 @@ class SwipeableV2Test {
             touchInput = { swipeDown() },
             consumePostScrollDelta = { offset -> delta = offset.y },
             orientation = Orientation.Vertical,
-            reverseAnchors = true, //  reverse anchors or else swipeable consumes whole delta
+            reverseAnchors = true //  reverse anchors or else swipeable consumes whole delta
         )
 
         assert(delta > 0) { "Expected delta to be positive, was $delta" }
@@ -307,7 +331,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeLeft() },
             consumePreScrollDelta = { offset -> delta = offset.x },
-            testTag = CHILD_TEST_TAG,
+            testTag = CHILD_TEST_TAG
         )
 
         assert(delta < 0) { "Expected delta to be negative, was $delta" }
@@ -319,7 +343,7 @@ class SwipeableV2Test {
         rule.testSwipe(
             touchInput = { swipeRight() },
             consumePreScrollDelta = { offset -> delta = offset.x },
-            testTag = CHILD_TEST_TAG,
+            testTag = CHILD_TEST_TAG
         )
 
         assert(delta > 0) { "Expected delta to be positive, was $delta" }
@@ -331,14 +355,14 @@ class SwipeableV2Test {
         consumePostScrollDelta: (Offset) -> Unit = {},
         orientation: Orientation = Orientation.Horizontal,
         reverseAnchors: Boolean = false,
-        testTag: String = TEST_TAG,
+        testTag: String = TEST_TAG
     ) {
         setContent {
             val nestedScrollConnection = remember {
                 object : NestedScrollConnection {
                     override fun onPreScroll(
                         available: Offset,
-                        source: NestedScrollSource,
+                        source: NestedScrollSource
                     ): Offset {
                         consumePreScrollDelta(available)
                         return super.onPreScroll(available, source)
@@ -347,7 +371,7 @@ class SwipeableV2Test {
                     override fun onPostScroll(
                         consumed: Offset,
                         available: Offset,
-                        source: NestedScrollSource,
+                        source: NestedScrollSource
                     ): Offset {
                         consumePostScrollDelta(available)
                         return super.onPostScroll(consumed, available, source)
@@ -358,7 +382,7 @@ class SwipeableV2Test {
                 SwipeableContent(
                     orientation = orientation,
                     reverseAnchors = reverseAnchors,
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 ) {
                     Box(
                         modifier =
@@ -370,7 +394,7 @@ class SwipeableV2Test {
                                         rememberScrollableState { _ ->
                                             0f // Do not consume any delta, just return it
                                         },
-                                    orientation = orientation,
+                                    orientation = orientation
                                 )
                     )
                 }
@@ -385,7 +409,7 @@ class SwipeableV2Test {
         modifier: Modifier = Modifier,
         orientation: Orientation = Orientation.Horizontal,
         reverseAnchors: Boolean = false,
-        content: @Composable BoxScope.() -> Unit = {},
+        content: @Composable BoxScope.() -> Unit = {}
     ) {
         // To participate as a producer of scroll events
         val nestedScrollDispatcher = remember { NestedScrollDispatcher() }
@@ -414,7 +438,7 @@ class SwipeableV2Test {
                         }
                     }
                     .nestedScroll(nestedScrollConnection, nestedScrollDispatcher),
-            content = content,
+            content = content
         )
     }
 
@@ -454,7 +478,7 @@ class SwipeableV2Test {
         orientation: Orientation,
         value: Float,
         maxValue: Float,
-        reverseScrolling: Boolean = false,
+        reverseScrolling: Boolean = false
     ): SemanticsMatcher =
         SemanticsMatcher(
             "has $orientation scroll range [0,$maxValue] with " +

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0-alpha04" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0-alpha04)" variant="all" version="8.12.0-alpha04">
+<issues format="6" by="lint 8.10.0-alpha07" type="baseline" client="gradle" dependencies="false" name="AGP (8.10.0-alpha07)" variant="all" version="8.10.0-alpha07">
 
     <issue
         id="BanThreadSleep"
@@ -17,15 +17,6 @@
         errorLine2="               ~~~~~">
         <location
             file="src/androidMain/kotlin/androidx/compose/ui/test/android/WindowCapture.android.kt"/>
-    </issue>
-
-    <issue
-        id="CoroutineCreationDuringComposition"
-        message="Calls to launch should happen inside a LaunchedEffect and not composition"
-        errorLine1="            setContent { rememberCoroutineScope().launch { withFrameNanos {} } }"
-        errorLine2="                                                  ~~~~~~">
-        <location
-            file="src/androidInstrumentedTest/kotlin/androidx/compose/ui/test/CustomEffectContextTest.kt"/>
     </issue>
 
     <issue
@@ -220,7 +211,7 @@
     <issue
         id="PrimitiveInCollection"
         message="method swipe has parameter keyTimes with type List&lt;Long>: replace with LongList"
-        errorLine1="    keyTimes: List&lt;Long> = emptyList(),"
+        errorLine1="    keyTimes: List&lt;Long> = emptyList()"
         errorLine2="              ~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/test/TouchInjectionScope.kt"/>
@@ -229,7 +220,7 @@
     <issue
         id="PrimitiveInCollection"
         message="method multiTouchSwipe has parameter keyTimes with type List&lt;Long>: replace with LongList"
-        errorLine1="    keyTimes: List&lt;Long> = emptyList(),"
+        errorLine1="    keyTimes: List&lt;Long> = emptyList()"
         errorLine2="              ~~~~~~~~~~">
         <location
             file="src/commonMain/kotlin/androidx/compose/ui/test/TouchInjectionScope.kt"/>

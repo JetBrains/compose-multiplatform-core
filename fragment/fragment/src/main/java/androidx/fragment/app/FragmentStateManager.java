@@ -715,8 +715,7 @@ class FragmentStateManager {
         stateBundle.putParcelable(FRAGMENT_STATE_KEY, fs);
 
         // Save the user state associated with the Fragment
-        // only when the Fragment has at least reached the CREATED state
-        if (mFragment.mState > Fragment.ATTACHED) {
+        if (mFragment.mState > Fragment.INITIALIZING) {
             Bundle savedInstanceState = new Bundle();
             mFragment.performSaveInstanceState(savedInstanceState);
             if (!savedInstanceState.isEmpty()) {

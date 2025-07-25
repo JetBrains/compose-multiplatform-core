@@ -95,13 +95,13 @@ class PerfettoCaptureSweepTest(
         perfettoCapture.start(
             PerfettoConfig.Benchmark(
                 appTagPackages = listOf(Packages.TEST),
-                useStackSamplingConfig = false,
+                useStackSamplingConfig = false
             )
         )
 
         assertTrue(
             "In-process tracing should be enabled immediately after trace capture is started",
-            Trace.isEnabled(),
+            Trace.isEnabled()
         )
 
         /**
@@ -117,7 +117,7 @@ class PerfettoCaptureSweepTest(
                 "PerfettoCaptureTest_$it".also { label -> trace(label) { Thread.sleep(50) } }
             }
 
-        perfettoCapture.stop(traceFilePath, null)
+        perfettoCapture.stop(traceFilePath)
 
         val matchingSlices =
             TraceProcessor.runSingleSessionServer(traceFilePath) {

@@ -115,8 +115,9 @@ private fun allowHiddenApi() {
     }
 }
 
-private class ScopedReflectionFactory(private val original: ReflectionFactory) :
-    ReflectionFactory() {
+private class ScopedReflectionFactory(
+    private val original: ReflectionFactory,
+) : ReflectionFactory() {
     private val mainFactory = ReflectionFactoryImpl()
     private val threadLocalFactory = ThreadLocal<ReflectionFactory>()
 
@@ -142,7 +143,7 @@ private class ScopedReflectionFactory(private val original: ReflectionFactory) :
 
     override fun getOrCreateKotlinPackage(
         javaClass: Class<*>?,
-        moduleName: String?,
+        moduleName: String?
     ): KDeclarationContainer {
         return factory.getOrCreateKotlinPackage(javaClass, moduleName)
     }
@@ -194,7 +195,7 @@ private class ScopedReflectionFactory(private val original: ReflectionFactory) :
     override fun typeOf(
         klass: KClassifier?,
         arguments: MutableList<KTypeProjection>?,
-        isMarkedNullable: Boolean,
+        isMarkedNullable: Boolean
     ): KType {
         return factory.typeOf(klass, arguments, isMarkedNullable)
     }
@@ -203,7 +204,7 @@ private class ScopedReflectionFactory(private val original: ReflectionFactory) :
         container: Any?,
         name: String?,
         variance: KVariance?,
-        isReified: Boolean,
+        isReified: Boolean
     ): KTypeParameter {
         return factory.typeParameter(container, name, variance, isReified)
     }

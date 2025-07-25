@@ -37,11 +37,15 @@ import kotlin.math.sqrt
 internal class ScalingLazyColumnSnapFlingBehavior(
     val state: ScalingLazyListState,
     val snapOffset: Int = 0,
-    val decay: DecayAnimationSpec<Float> = exponentialDecay(),
+    val decay: DecayAnimationSpec<Float> = exponentialDecay()
 ) : FlingBehavior {
 
     override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
-        val animationState = AnimationState(initialValue = 0f, initialVelocity = initialVelocity)
+        val animationState =
+            AnimationState(
+                initialValue = 0f,
+                initialVelocity = initialVelocity,
+            )
 
         var lastValue = 0f
         val visibleItemsInfo = state.layoutInfo.visibleItemsInfo
@@ -107,7 +111,7 @@ internal class ScalingLazyColumnSnapFlingBehavior(
                 lerp(
                     FINAL_SNAP_DURATION_MIN,
                     FINAL_SNAP_DURATION_MAX,
-                    abs(initialSpeed) / SNAP_SPEED_THRESHOLD,
+                    abs(initialSpeed) / SNAP_SPEED_THRESHOLD
                 )
 
             // Initial control point. Has slope (velocity) adjustedSpeed and magnitude (inertia)
@@ -126,8 +130,8 @@ internal class ScalingLazyColumnSnapFlingBehavior(
                 finalTarget,
                 tween(
                     (finalSnapDuration * 1000).roundToInt(),
-                    easing = CubicBezierEasing(easingX0, easingY0, easingX1, easingY1),
-                ),
+                    easing = CubicBezierEasing(easingX0, easingY0, easingX1, easingY1)
+                )
             ) {
                 scrollBy(value - lastValue)
                 lastValue = value

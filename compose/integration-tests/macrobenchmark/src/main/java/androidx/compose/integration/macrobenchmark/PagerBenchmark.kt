@@ -23,10 +23,7 @@ import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingGfxInfoMetric
 import androidx.benchmark.macro.FrameTimingMetric
-import androidx.benchmark.macro.TraceSectionMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
-import androidx.compose.integration.macrobenchmark.FormFillingBenchmark.Companion.COMPOSE_APPLY_CHANGES
-import androidx.compose.integration.macrobenchmark.FormFillingBenchmark.Companion.CONTENT_CAPTURE_CHANGE_CHECKER
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -56,18 +53,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_grids_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -75,7 +61,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.Grid)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -92,18 +78,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_grids_animated_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -112,7 +87,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.Grid)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -126,18 +101,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_lists_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -145,7 +109,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.List)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -162,18 +126,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_lists_animated_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -182,7 +135,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.List)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -196,18 +149,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_webviews_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -215,7 +157,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.WebView)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -232,18 +174,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_webviews_animated_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -252,7 +183,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.WebView)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -266,18 +197,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_images_full_page_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -285,7 +205,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FullScreenImage)
                 intent.action = Action
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -302,18 +222,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_images_full_page_animated_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -322,7 +231,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Tab, true)
                 intent.action = Action
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -336,19 +245,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_images_fixed_size_page_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingMetric(),
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingMetric(), FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -356,7 +253,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FixedSizeImage)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc(ContentDescription))
             // Setting a gesture margin is important otherwise gesture nav is triggered.
@@ -373,18 +270,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun pager_of_images_fixed_size_page_animated_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -393,7 +279,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.FixedSizeImage)
                 intent.putExtra(BenchmarkType.Tab, true)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val nextButton = device.findObject(By.desc(NextDescription))
             repeat(EventRepeatCount) {
@@ -407,18 +293,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
     fun list_of_pagers_gesture_scroll() {
         benchmarkRule.measureRepeated(
             packageName = PackageName,
-            metrics =
-                listOf(
-                    FrameTimingGfxInfoMetric(),
-                    TraceSectionMetric(
-                        sectionName = CONTENT_CAPTURE_CHANGE_CHECKER,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                    TraceSectionMetric(
-                        sectionName = COMPOSE_APPLY_CHANGES,
-                        mode = TraceSectionMetric.Mode.Sum,
-                    ),
-                ),
+            metrics = listOf(FrameTimingGfxInfoMetric()),
             compilationMode = compilationMode,
             iterations = 5,
             setupBlock = {
@@ -426,7 +301,7 @@ class PagerBenchmark(private val compilationMode: CompilationMode) {
                 intent.action = Action
                 intent.putExtra(BenchmarkType.Key, BenchmarkType.ListOfPager)
                 startActivityAndWait(intent)
-            },
+            }
         ) {
             val pager = device.findObject(By.desc("List"))
             // Setting a gesture margin is important otherwise gesture nav is triggered.

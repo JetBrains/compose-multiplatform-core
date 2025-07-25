@@ -17,6 +17,7 @@
 package androidx.xr.compose.spatial
 
 import android.util.Log
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
@@ -33,7 +34,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
@@ -49,23 +49,27 @@ import androidx.xr.compose.platform.LocalSpatialCapabilities
  *
  * SpatialElevation does not support a [content] lambda that has a width or height of zero.
  *
- * @param elevation the desired elevation level for the panel in spatial environments.
+ * @param spatialElevationLevel the desired elevation level for the panel in spatial environments.
  * @param content the composable content to be displayed within the elevated panel.
  */
 @Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SpatialElevation(
-    elevation: Dp = SpatialElevationLevel.Level0,
+    spatialElevationLevel: SpatialElevationLevel = SpatialElevationLevel.Level0,
     content: @Composable () -> Unit,
 ) {
     if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-        LayoutSpatialElevation(elevation, content)
+        LayoutSpatialElevation(spatialElevationLevel, content)
     } else {
         content()
     }
 }
 
 @Composable
-private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Unit) {
+private fun LayoutSpatialElevation(
+    spatialElevationLevel: SpatialElevationLevel,
+    content: @Composable () -> Unit,
+) {
     val bufferPadding = 1.dp
     val bufferPaddingPx = with(LocalDensity.current) { bufferPadding.toPx() }
     var contentSize by remember { mutableStateOf(IntSize.Zero) }
@@ -84,7 +88,7 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
     // not know the constraints of the parent view.
     BoxWithConstraints {
         ElevatedPanel(
-            elevation = elevation,
+            spatialElevationLevel = spatialElevationLevel,
             contentSize = contentSize,
             contentOffset = contentOffset,
         ) {

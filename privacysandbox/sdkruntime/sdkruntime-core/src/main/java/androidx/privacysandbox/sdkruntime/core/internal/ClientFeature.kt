@@ -17,35 +17,31 @@
 package androidx.privacysandbox.sdkruntime.core.internal
 
 import androidx.annotation.RestrictTo
-import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerBackendHolder
+import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
 
 /**
  * List of features using Client-Core internal API. Each feature available since particular
  * ([ClientApiVersion]).
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public enum class ClientFeature {
+enum class ClientFeature {
     /**
      * Support for retrieving client app package name:
-     * [androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat.getClientPackageName]
+     * [SdkSandboxControllerCompat.getClientPackageName]
      */
     GET_CLIENT_PACKAGE_NAME,
 
     /**
      * Support for listening of client app foreground state:
-     *
-     * [androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener]
-     * [androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat.unregisterSdkSandboxClientImportanceListener]
+     * [SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener]
+     * [SdkSandboxControllerCompat.unregisterSdkSandboxClientImportanceListener]
      */
-    CLIENT_IMPORTANCE_LISTENER,
+    CLIENT_IMPORTANCE_LISTENER;
 
-    /** Dedicated [SdkSandboxControllerBackendHolder] for setting local implementation. */
-    SDK_SANDBOX_CONTROLLER_BACKEND_HOLDER;
-
-    public val availableFrom: ClientApiVersion
+    val availableFrom: ClientApiVersion
         get() = ClientApiVersion.minAvailableVersionFor(this)
 
-    public fun isAvailable(apiLevel: Int): Boolean {
+    fun isAvailable(apiLevel: Int): Boolean {
         return apiLevel >= availableFrom.apiLevel
     }
 }

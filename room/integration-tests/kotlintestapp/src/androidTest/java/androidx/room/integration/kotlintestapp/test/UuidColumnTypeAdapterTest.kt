@@ -200,9 +200,15 @@ class UuidColumnTypeAdapterTest {
             assertThat(retrieved).isEqualTo(expected)
         }
 
-    private fun runTest(kClass: KClass<out ConverterDb>, block: (ByteDao, StringDao) -> Unit) {
+    private fun runTest(
+        kClass: KClass<out ConverterDb>,
+        block: (ByteDao, StringDao) -> Unit,
+    ) {
         val db =
-            Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), kClass.java)
+            Room.inMemoryDatabaseBuilder(
+                    ApplicationProvider.getApplicationContext(),
+                    kClass.java,
+                )
                 .build()
 
         try {
@@ -212,11 +218,14 @@ class UuidColumnTypeAdapterTest {
         }
     }
 
-    @Entity data class UUIDEntity(@PrimaryKey val id: UUID)
+    @Entity
+    data class UUIDEntity(
+        @PrimaryKey val id: UUID,
+    )
 
     @Entity
     data class UUIDStringEntity(
-        @PrimaryKey @ColumnInfo(typeAffinity = ColumnInfo.TEXT) val id: UUID
+        @PrimaryKey @ColumnInfo(typeAffinity = ColumnInfo.TEXT) val id: UUID,
     )
 
     @Dao
@@ -249,7 +258,7 @@ class UuidColumnTypeAdapterTest {
     @Database(
         entities = [UUIDEntity::class, UUIDStringEntity::class],
         version = 1,
-        exportSchema = false,
+        exportSchema = false
     )
     internal abstract class NoConverterDatabase : ConverterDb()
 
@@ -257,7 +266,7 @@ class UuidColumnTypeAdapterTest {
     @Database(
         entities = [UUIDEntity::class, UUIDStringEntity::class],
         version = 1,
-        exportSchema = false,
+        exportSchema = false
     )
     @TypeConverters(FromByteConverter::class)
     internal abstract class ToUUIDConverterDatabase : ConverterDb()
@@ -266,7 +275,7 @@ class UuidColumnTypeAdapterTest {
     @Database(
         entities = [UUIDEntity::class, UUIDStringEntity::class],
         version = 1,
-        exportSchema = false,
+        exportSchema = false
     )
     @TypeConverters(TwoWayConverter::class)
     internal abstract class TwoWayConverterDatabase : ConverterDb()
@@ -275,7 +284,7 @@ class UuidColumnTypeAdapterTest {
     @Database(
         entities = [UUIDEntity::class, UUIDStringEntity::class],
         version = 1,
-        exportSchema = false,
+        exportSchema = false
     )
     @TypeConverters(TwoWayStringConverter::class)
     internal abstract class TwoWayStringConverterDatabase : ConverterDb()

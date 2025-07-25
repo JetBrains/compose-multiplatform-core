@@ -48,7 +48,7 @@ class SpatialMediaPlayerTest {
     private var mockRuntime: JxrPlatformAdapter = mock()
     private var mockRtMediaPlayerExtensions: RtMediaPlayerExtensionsWrapper = mock()
 
-    private val mockGroupEntity = mock<RtEntity>()
+    private val mockContentlessEntity = mock<RtEntity>()
     private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
     private val mockActivitySpace = mock<RtActivitySpace>()
 
@@ -63,7 +63,7 @@ class SpatialMediaPlayerTest {
             on { headActivityPose } doReturn mock()
             on { perceptionSpaceActivityPose } doReturn mock()
             on { mainPanelEntity } doReturn mock()
-            on { createGroupEntity(any(), any(), any()) } doReturn mockGroupEntity
+            on { createEntity(any(), any(), any()) } doReturn mockContentlessEntity
             on { spatialCapabilities } doReturn RtSpatialCapabilities(0)
         }
 
@@ -76,7 +76,7 @@ class SpatialMediaPlayerTest {
     fun setWithPointSource_callsRuntimeMediaPlayerSetPointSource() {
         val mediaPlayer = MediaPlayer()
 
-        val entity = GroupEntity.create(session, "test")
+        val entity = ContentlessEntity.create(session, "test")
         val pointSourceAttributes = PointSourceParams(entity)
 
         SpatialMediaPlayer.setPointSourceParams(session, mediaPlayer, pointSourceAttributes)
@@ -84,7 +84,7 @@ class SpatialMediaPlayerTest {
         verify(mockRtMediaPlayerExtensions)
             .setPointSourceParams(
                 eq(mediaPlayer),
-                argWhere<RtPointSourceParams> { it.entity == mockGroupEntity },
+                argWhere<RtPointSourceParams> { it.entity == mockContentlessEntity },
             )
     }
 

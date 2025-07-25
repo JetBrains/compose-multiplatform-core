@@ -21,8 +21,6 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -36,14 +34,12 @@ dependencies {
     api(libs.kotlinStdlib)
     api(project(":room:room-runtime"))
     api(project(":sqlite:sqlite"))
-    implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":concurrent:concurrent-futures"))
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(project(":kruth:kruth"))
     androidTestImplementation(project(":room:room-runtime"))
     kspAndroidTest(project(":room:room-compiler"))
@@ -59,5 +55,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Use SupportSQLite APIs backed by a RoomDatabase"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }

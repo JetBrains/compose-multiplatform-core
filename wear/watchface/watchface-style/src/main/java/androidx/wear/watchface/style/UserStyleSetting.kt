@@ -102,13 +102,15 @@ internal abstract class DisplayText {
 
     open class ResourceDisplayText(
         protected val resources: Resources,
-        @StringRes protected val id: Int,
+        @StringRes protected val id: Int
     ) : DisplayText() {
         override fun toCharSequence() = resources.getString(id)
     }
 
-    class ResourceDisplayTextWithIndex(resources: Resources, @StringRes id: Int) :
-        ResourceDisplayText(resources, id) {
+    class ResourceDisplayTextWithIndex(
+        resources: Resources,
+        @StringRes id: Int,
+    ) : ResourceDisplayText(resources, id) {
         private var index: Int? = null
         private var indexString: String = ""
 
@@ -179,7 +181,7 @@ private constructor(
     public val watchFaceEditorData: WatchFaceEditorData?,
     public val options: List<Option>,
     public val defaultOptionIndex: Int,
-    public val affectedWatchFaceLayers: Collection<WatchFaceLayer>,
+    public val affectedWatchFaceLayers: Collection<WatchFaceLayer>
 ) {
     public val icon by lazy { TraceEvent("invoke iconProvider").use { iconProvider() } }
 
@@ -259,7 +261,7 @@ private constructor(
     public fun estimateWireSizeInBytesAndValidateIconDimensions(
         context: Context,
         @Px maxWidth: Int,
-        @Px maxHeight: Int,
+        @Px maxHeight: Int
     ): Int {
         TraceEvent("estimateWireSizeInBytesAndValidateIconDimensions").use {
             var sizeEstimate =
@@ -285,7 +287,7 @@ private constructor(
                     option.estimateWireSizeInBytesAndValidateIconDimensions(
                         context,
                         maxWidth,
-                        maxHeight,
+                        maxHeight
                     )
             }
             return sizeEstimate
@@ -365,7 +367,7 @@ private constructor(
             parser: XmlResourceParser,
             attributeId: String,
             defaultValue: DisplayText? = null,
-            indexedResourceNamesSupported: Boolean = false,
+            indexedResourceNamesSupported: Boolean = false
         ): DisplayText {
             val displayNameId = parser.getAttributeResourceValue(NAMESPACE_APP, attributeId, -1)
             return if (displayNameId != -1) {
@@ -406,7 +408,7 @@ private constructor(
             resources: Resources,
             parser: XmlResourceParser,
             parentNodeName: String,
-            inflateSetting: (resources: Resources, parser: XmlResourceParser) -> T,
+            inflateSetting: (resources: Resources, parser: XmlResourceParser) -> T
         ): T? {
             val parentRef = parser.getAttributeResourceValue(NAMESPACE_APP, "parent", 0)
             return if (0 != parentRef) {
@@ -426,7 +428,7 @@ private constructor(
             val watchFaceEditorData: WatchFaceEditorData?,
             val options: List<Option>,
             val defaultOptionIndex: Int?,
-            val affectedWatchFaceLayers: Collection<WatchFaceLayer>,
+            val affectedWatchFaceLayers: Collection<WatchFaceLayer>
         )
 
         /**
@@ -440,7 +442,7 @@ private constructor(
             inflateDefault: Boolean,
             optionInflater:
                 Pair<String, ((resources: Resources, parser: XmlResourceParser) -> Option)>? =
-                null,
+                null
         ): Params {
             val settingType = "UserStyleSetting"
             val id =
@@ -460,7 +462,7 @@ private constructor(
                         "defaultOptionIndex",
                         String::toInt,
                         parent?.defaultOptionIndex ?: 0,
-                        settingType,
+                        settingType
                     )
                 } else null
 
@@ -470,7 +472,7 @@ private constructor(
                     "affectedWatchFaceLayers",
                     { value -> affectsWatchFaceLayersFlagsToSet(Integer.decode(value)) },
                     parent?.affectedWatchFaceLayers ?: WatchFaceLayer.ALL_WATCH_FACE_LAYERS,
-                    settingType,
+                    settingType
                 )
 
             var watchFaceEditorData: WatchFaceEditorData? = null
@@ -497,7 +499,7 @@ private constructor(
                 watchFaceEditorData ?: parent?.watchFaceEditorData,
                 if (parent == null || options.isNotEmpty()) options else parent.options,
                 defaultOptionIndex,
-                affectsWatchFaceLayers,
+                affectsWatchFaceLayers
             )
         }
     }
@@ -519,7 +521,7 @@ private constructor(
         wireFormat.mOnWatchFaceEditorBundle?.let { WatchFaceEditorData(it) },
         wireFormat.mOptions.map { Option.createFromWireFormat(it) },
         wireFormat.mDefaultOptionIndex,
-        wireFormat.mAffectsLayers.map { WatchFaceLayer.values()[it] },
+        wireFormat.mAffectsLayers.map { WatchFaceLayer.values()[it] }
     )
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -583,7 +585,7 @@ private constructor(
     public abstract class Option
     internal constructor(
         public val id: Id,
-        public val childSettings: Collection<UserStyleSetting>,
+        public val childSettings: Collection<UserStyleSetting>
     ) {
         /**
          * This constructor is unused (the parent class is sealed), but is required to make tooling
@@ -612,7 +614,7 @@ private constructor(
         internal open fun estimateWireSizeInBytesAndValidateIconDimensions(
             context: Context,
             @Px maxWidth: Int,
-            @Px maxHeight: Int,
+            @Px maxHeight: Int
         ): Int = id.value.size
 
         // We don't want Option to be subclassed by users.
@@ -750,7 +752,7 @@ private constructor(
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val defaultValue: Boolean,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -775,13 +777,13 @@ private constructor(
                 defaultValue: Boolean,
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
-                @StringRes descriptionResourceId: Int,
+                @StringRes descriptionResourceId: Int
             ) : this(
                 id,
                 affectsWatchFaceLayers,
                 defaultValue,
                 DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId),
+                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId)
             )
 
             /**
@@ -802,13 +804,13 @@ private constructor(
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 defaultValue: Boolean,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 affectsWatchFaceLayers,
                 defaultValue,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -843,7 +845,7 @@ private constructor(
                     iconProvider,
                     watchFaceEditorData,
                     affectsWatchFaceLayers,
-                    defaultValue,
+                    defaultValue
                 )
             }
         }
@@ -874,7 +876,7 @@ private constructor(
             icon: Icon?,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Boolean,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.CharSequenceDisplayText(displayName),
@@ -886,7 +888,7 @@ private constructor(
                 true -> 0
                 false -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         /**
@@ -919,7 +921,7 @@ private constructor(
             icon: Icon?,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Boolean,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
@@ -931,7 +933,7 @@ private constructor(
                 true -> 0
                 false -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -941,7 +943,7 @@ private constructor(
             iconProvider: () -> Icon?,
             watchFaceEditorData: WatchFaceEditorData?,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultValue: Boolean,
+            defaultValue: Boolean
         ) : super(
             id,
             displayName,
@@ -953,7 +955,7 @@ private constructor(
                 true -> 0
                 false -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: BooleanUserStyleSettingWireFormat) : super(wireFormat)
@@ -969,7 +971,7 @@ private constructor(
                 defaultOptionIndex,
                 affectedWatchFaceLayers.map { it.ordinal },
                 watchFaceEditorData?.toWireFormat(),
-                /* optionsOnWatchFaceEditorIcons = */ null,
+                /* optionsOnWatchFaceEditorIcons = */ null
             )
 
         /** Returns the default value. */
@@ -986,7 +988,7 @@ private constructor(
                         "defaultBoolean",
                         String::toBoolean,
                         parent?.getDefaultValue(),
-                        settingType,
+                        settingType
                     )
                 val params = createBaseWithParent(resources, parser, parent, inflateDefault = false)
                 return BooleanUserStyleSetting(
@@ -996,7 +998,7 @@ private constructor(
                     params.iconProvider,
                     params.watchFaceEditorData,
                     params.affectedWatchFaceLayers,
-                    defaultValue,
+                    defaultValue
                 )
             }
         }
@@ -1053,7 +1055,7 @@ private constructor(
             private val options: List<ColorOption>,
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -1077,13 +1079,13 @@ private constructor(
                 options: List<ColorOption>,
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 options,
                 affectsWatchFaceLayers,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -1129,7 +1131,7 @@ private constructor(
                     watchFaceEditorData,
                     options,
                     affectsWatchFaceLayers,
-                    options.indexOf(defaultOption),
+                    options.indexOf(defaultOption)
                 )
         }
 
@@ -1141,7 +1143,7 @@ private constructor(
             watchFaceEditorData: WatchFaceEditorData?,
             options: List<ColorOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultOptionIndex: Int,
+            defaultOptionIndex: Int
         ) : super(
             id,
             displayName,
@@ -1150,7 +1152,7 @@ private constructor(
             watchFaceEditorData,
             options,
             defaultOptionIndex,
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1163,7 +1165,7 @@ private constructor(
                 getWireFormatOptionsList(),
                 defaultOptionIndex,
                 affectedWatchFaceLayers.map { it.ordinal },
-                watchFaceEditorData?.toWireFormat(),
+                watchFaceEditorData?.toWireFormat()
             )
 
         internal constructor(wireFormat: ColorUserStyleSettingWireFormat) : super(wireFormat)
@@ -1174,9 +1176,9 @@ private constructor(
                     (
                         resources: Resources,
                         parser: XmlResourceParser,
-                        idToSetting: Map<String, UserStyleSetting>,
+                        idToSetting: Map<String, UserStyleSetting>
                     ) -> T,
-                idToSetting: Map<String, UserStyleSetting>,
+                idToSetting: Map<String, UserStyleSetting>
             ): (resources: Resources, parser: XmlResourceParser) -> T {
                 return { resources: Resources, parser: XmlResourceParser ->
                     function(resources, parser, idToSetting)
@@ -1188,7 +1190,7 @@ private constructor(
             fun inflate(
                 resources: Resources,
                 parser: XmlResourceParser,
-                idToSetting: Map<String, UserStyleSetting>,
+                idToSetting: Map<String, UserStyleSetting>
             ): ColorUserStyleSetting {
                 val params =
                     createBaseWithParent(
@@ -1198,10 +1200,10 @@ private constructor(
                             resources,
                             parser,
                             "ColorUserStyleSetting",
-                            bindIdToSetting(::inflate, idToSetting),
+                            bindIdToSetting(::inflate, idToSetting)
                         ),
                         inflateDefault = true,
-                        "ColorOption" to bindIdToSetting(ColorOption::inflate, idToSetting),
+                        "ColorOption" to bindIdToSetting(ColorOption::inflate, idToSetting)
                     )
                 return ColorUserStyleSetting(
                     params.id,
@@ -1211,7 +1213,7 @@ private constructor(
                     params.watchFaceEditorData,
                     params.options as List<ColorOption>,
                     params.affectedWatchFaceLayers,
-                    params.defaultOptionIndex!!,
+                    params.defaultOptionIndex!!
                 )
             }
         }
@@ -1263,7 +1265,7 @@ private constructor(
                 private val id: Id,
                 private val displayName: DisplayText,
                 private val screenReaderName: DisplayText,
-                @ColorInt private val colors: List<Int>,
+                @ColorInt private val colors: List<Int>
             ) {
                 private var watchFaceEditorData: WatchFaceEditorData? = null
 
@@ -1289,12 +1291,12 @@ private constructor(
                     resources: Resources,
                     @StringRes displayNameResourceId: Int,
                     @StringRes screenReaderNameResourceId: Int,
-                    @ColorInt colors: List<Int>,
+                    @ColorInt colors: List<Int>
                 ) : this(
                     id,
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
                     DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId),
-                    colors,
+                    colors
                 )
 
                 /**
@@ -1316,12 +1318,12 @@ private constructor(
                     id: Id,
                     displayName: CharSequence,
                     screenReaderName: CharSequence,
-                    @ColorInt colors: List<Int>,
+                    @ColorInt colors: List<Int>
                 ) : this(
                     id,
                     DisplayText.CharSequenceDisplayText(displayName),
                     DisplayText.CharSequenceDisplayText(screenReaderName),
-                    colors,
+                    colors
                 )
 
                 /**
@@ -1368,7 +1370,7 @@ private constructor(
             internal override fun estimateWireSizeInBytesAndValidateIconDimensions(
                 context: Context,
                 @Px maxWidth: Int,
-                @Px maxHeight: Int,
+                @Px maxHeight: Int
             ): Int {
                 var sizeEstimate = id.value.size + displayName.length
                 screenReaderName.let { sizeEstimate + it.length }
@@ -1383,7 +1385,7 @@ private constructor(
                     displayName,
                     screenReaderName,
                     colors.toList(),
-                    watchFaceEditorData?.toWireFormat(),
+                    watchFaceEditorData?.toWireFormat()
                 )
 
             override fun write(dos: DataOutputStream) {
@@ -1402,7 +1404,7 @@ private constructor(
                 fun inflate(
                     resources: Resources,
                     parser: XmlResourceParser,
-                    idToSetting: Map<String, UserStyleSetting>,
+                    idToSetting: Map<String, UserStyleSetting>
                 ): ColorOption {
                     val id = getStringRefAttribute(resources, parser, "id")
                     require(id != null) { "ColorOption must have an id" }
@@ -1411,7 +1413,7 @@ private constructor(
                             resources,
                             parser,
                             "displayName",
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
                     val screenReaderName =
                         createDisplayText(
@@ -1419,7 +1421,7 @@ private constructor(
                             parser,
                             "nameForScreenReaders",
                             defaultValue = displayName,
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
 
                     val colors = getStringRefAttribute(resources, parser, "colors")
@@ -1430,7 +1432,7 @@ private constructor(
                         displayName,
                         screenReaderName,
                         colors.split(",").map { Color.parseColor(it) },
-                        null,
+                        null
                     )
                 }
             }
@@ -1463,7 +1465,7 @@ private constructor(
             private val complicationConfig: List<ComplicationSlotsOption>,
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -1489,13 +1491,13 @@ private constructor(
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
-                @StringRes descriptionResourceId: Int,
+                @StringRes descriptionResourceId: Int
             ) : this(
                 id,
                 complicationConfig,
                 affectsWatchFaceLayers,
                 DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId),
+                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId)
             )
 
             /**
@@ -1516,13 +1518,13 @@ private constructor(
                 complicationConfig: List<ComplicationSlotsOption>,
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 complicationConfig,
                 affectsWatchFaceLayers,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -1558,7 +1560,7 @@ private constructor(
                     watchFaceEditorData,
                     complicationConfig,
                     complicationConfig.indexOf(defaultOption),
-                    affectsWatchFaceLayers,
+                    affectsWatchFaceLayers
                 )
         }
 
@@ -1570,7 +1572,7 @@ private constructor(
             watchFaceEditorData: WatchFaceEditorData?,
             options: List<ComplicationSlotsOption>,
             defaultOptionIndex: Int,
-            affectedWatchFaceLayers: Collection<WatchFaceLayer>,
+            affectedWatchFaceLayers: Collection<WatchFaceLayer>
         ) : super(
             id,
             displayNameInternal,
@@ -1579,7 +1581,7 @@ private constructor(
             watchFaceEditorData,
             options,
             defaultOptionIndex,
-            affectedWatchFaceLayers,
+            affectedWatchFaceLayers
         ) {
             require(affectedWatchFaceLayers.contains(WatchFaceLayer.COMPLICATIONS)) {
                 "ComplicationSlotsUserStyleSetting must affect the complications layer"
@@ -1624,7 +1626,7 @@ private constructor(
             public val nameResourceId: Int? = null,
             @SuppressWarnings("AutoBoxing")
             @get:Suppress("AutoBoxing")
-            public val screenReaderNameResourceId: Int? = null,
+            public val screenReaderNameResourceId: Int? = null
         ) {
             init {
                 require(nameResourceId != 0)
@@ -1640,20 +1642,20 @@ private constructor(
                 message =
                     "This constructor is deprecated in favour of the one that specifies " +
                         "optional parameters nameResourceId and screenReaderNameResourceId",
-                level = DeprecationLevel.WARNING,
+                level = DeprecationLevel.WARNING
             )
             public constructor(
                 complicationSlotId: Int,
                 @Suppress("AutoBoxing") enabled: Boolean? = null,
                 complicationSlotBounds: ComplicationSlotBounds? = null,
-                @SuppressWarnings("AutoBoxing") accessibilityTraversalIndex: Int? = null,
+                @SuppressWarnings("AutoBoxing") accessibilityTraversalIndex: Int? = null
             ) : this(
                 complicationSlotId,
                 enabled,
                 complicationSlotBounds,
                 accessibilityTraversalIndex,
                 null,
-                null,
+                null
             )
 
             internal fun write(dos: DataOutputStream) {
@@ -1726,7 +1728,7 @@ private constructor(
                         complicationSlotBounds,
                         accessibilityTraversalIndex,
                         nameResourceId,
-                        screenReaderNameResourceId,
+                        screenReaderNameResourceId
                     )
             }
 
@@ -1734,7 +1736,7 @@ private constructor(
                 wireFormat: ComplicationOverlayWireFormat,
                 perComplicationTypeMargins: Map<Int, RectF>?,
                 nameResourceId: Int? = null,
-                screenReaderNameResourceId: Int? = null,
+                screenReaderNameResourceId: Int? = null
             ) : this(
                 wireFormat.mComplicationSlotId,
                 when (wireFormat.mEnabled) {
@@ -1751,12 +1753,12 @@ private constructor(
                         perComplicationTypeBounds.mapKeys { ComplicationType.fromWireType(it.key) },
                         perComplicationTypeMargins?.let { margins ->
                             margins.mapKeys { ComplicationType.fromWireType(it.key) }
-                        } ?: emptyMap(),
+                        } ?: emptyMap()
                     )
                 },
                 wireFormat.accessibilityTraversalIndex,
                 nameResourceId,
-                screenReaderNameResourceId,
+                screenReaderNameResourceId
             )
 
             /**
@@ -1778,7 +1780,7 @@ private constructor(
                     complicationSlotBounds?.perComplicationTypeBounds?.mapKeys {
                         it.key.toWireComplicationType()
                     },
-                    accessibilityTraversalIndex,
+                    accessibilityTraversalIndex
                 )
 
             override fun equals(other: Any?): Boolean {
@@ -1821,7 +1823,7 @@ private constructor(
                     resources: Resources,
                     parser: XmlResourceParser,
                     complicationScaleX: Float,
-                    complicationScaleY: Float,
+                    complicationScaleY: Float
                 ): ComplicationSlotOverlay {
                     val complicationSlotId =
                         getIntRefAttribute(resources, parser, "complicationSlotId")
@@ -1839,7 +1841,7 @@ private constructor(
                             parser.getAttributeIntValue(
                                 NAMESPACE_APP,
                                 "accessibilityTraversalIndex",
-                                0,
+                                0
                             )
                         } else {
                             null
@@ -1861,7 +1863,7 @@ private constructor(
                             resources,
                             parser,
                             complicationScaleX,
-                            complicationScaleY,
+                            complicationScaleY
                         )
 
                     return ComplicationSlotOverlay(
@@ -1870,7 +1872,7 @@ private constructor(
                         bounds,
                         accessibilityTraversalIndex,
                         nameResourceId,
-                        screenReaderNameResourceId,
+                        screenReaderNameResourceId
                     )
                 }
             }
@@ -1905,7 +1907,7 @@ private constructor(
             complicationConfig: List<ComplicationSlotsOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultOption: ComplicationSlotsOption = complicationConfig.first(),
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : this(
             id,
             DisplayText.CharSequenceDisplayText(displayName),
@@ -1914,7 +1916,7 @@ private constructor(
             watchFaceEditorData,
             complicationConfig,
             complicationConfig.indexOf(defaultOption),
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         /**
@@ -1951,7 +1953,7 @@ private constructor(
             complicationConfig: List<ComplicationSlotsOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultOption: ComplicationSlotsOption = complicationConfig.first(),
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : this(
             id,
             DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
@@ -1960,7 +1962,7 @@ private constructor(
             watchFaceEditorData,
             complicationConfig,
             complicationConfig.indexOf(defaultOption),
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -1971,7 +1973,7 @@ private constructor(
             watchFaceEditorData: WatchFaceEditorData? = null,
             options: List<ComplicationSlotsOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultOptionIndex: Int,
+            defaultOptionIndex: Int
         ) : this(
             id,
             displayName,
@@ -1980,7 +1982,7 @@ private constructor(
             watchFaceEditorData,
             options,
             defaultOptionIndex,
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -2022,7 +2024,7 @@ private constructor(
                 options.map {
                     it as ComplicationSlotsOption
                     it.screenReaderName ?: it.displayName
-                },
+                }
             )
 
         internal companion object {
@@ -2032,10 +2034,10 @@ private constructor(
                         resources: Resources,
                         parser: XmlResourceParser,
                         complicationScaleX: Float,
-                        complicationScaleY: Float,
+                        complicationScaleY: Float
                     ) -> T,
                 complicationScaleX: Float,
-                complicationScaleY: Float,
+                complicationScaleY: Float
             ): (resources: Resources, parser: XmlResourceParser) -> T {
                 return { resources: Resources, parser: XmlResourceParser ->
                     function(resources, parser, complicationScaleX, complicationScaleY)
@@ -2048,7 +2050,7 @@ private constructor(
                 resources: Resources,
                 parser: XmlResourceParser,
                 complicationScaleX: Float,
-                complicationScaleY: Float,
+                complicationScaleY: Float
             ): ComplicationSlotsUserStyleSetting {
                 val params =
                     createBaseWithParent(
@@ -2058,7 +2060,7 @@ private constructor(
                             resources,
                             parser,
                             "ComplicationSlotsUserStyleSetting",
-                            bindScale(::inflate, complicationScaleX, complicationScaleY),
+                            bindScale(::inflate, complicationScaleX, complicationScaleY)
                         ),
                         inflateDefault = true,
                         optionInflater =
@@ -2066,8 +2068,8 @@ private constructor(
                                 bindScale(
                                     ComplicationSlotsOption::inflate,
                                     complicationScaleX,
-                                    complicationScaleY,
-                                ),
+                                    complicationScaleY
+                                )
                     )
                 return ComplicationSlotsUserStyleSetting(
                     params.id,
@@ -2077,7 +2079,7 @@ private constructor(
                     params.watchFaceEditorData,
                     params.options as List<ComplicationSlotsOption>,
                     params.affectedWatchFaceLayers,
-                    params.defaultOptionIndex!!,
+                    params.defaultOptionIndex!!
                 )
             }
         }
@@ -2132,7 +2134,7 @@ private constructor(
                 private val id: Id,
                 private val complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
                 private val displayName: DisplayText,
-                private val screenReaderName: DisplayText,
+                private val screenReaderName: DisplayText
             ) {
                 private var iconProvider: () -> Icon? = { null }
                 private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -2157,12 +2159,12 @@ private constructor(
                     complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
                     resources: Resources,
                     @StringRes displayNameResourceId: Int,
-                    @StringRes screenReaderNameResourceId: Int,
+                    @StringRes screenReaderNameResourceId: Int
                 ) : this(
                     id,
                     complicationSlotOverlays,
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                    DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId),
+                    DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId)
                 )
 
                 /**
@@ -2183,12 +2185,12 @@ private constructor(
                     id: Id,
                     complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
                     displayName: CharSequence,
-                    screenReaderName: CharSequence,
+                    screenReaderName: CharSequence
                 ) : this(
                     id,
                     complicationSlotOverlays,
                     DisplayText.CharSequenceDisplayText(displayName),
-                    DisplayText.CharSequenceDisplayText(screenReaderName),
+                    DisplayText.CharSequenceDisplayText(screenReaderName)
                 )
 
                 /**
@@ -2223,7 +2225,7 @@ private constructor(
                         screenReaderName,
                         iconProvider,
                         watchFaceEditorData,
-                        complicationSlotOverlays,
+                        complicationSlotOverlays
                     )
             }
 
@@ -2253,7 +2255,7 @@ private constructor(
                 screenReaderName: CharSequence,
                 icon: Icon?,
                 complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, emptyList()) {
                 this.complicationSlotOverlays = complicationSlotOverlays
                 displayNameInternal = DisplayText.CharSequenceDisplayText(displayName)
@@ -2289,7 +2291,7 @@ private constructor(
                 @StringRes displayNameResourceId: Int,
                 icon: Icon?,
                 complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, emptyList()) {
                 this.complicationSlotOverlays = complicationSlotOverlays
                 displayNameInternal =
@@ -2334,7 +2336,7 @@ private constructor(
                 @StringRes screenReaderNameResourceId: Int,
                 icon: Icon?,
                 complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, emptyList()) {
                 this.complicationSlotOverlays = complicationSlotOverlays
                 this.displayNameInternal =
@@ -2351,7 +2353,7 @@ private constructor(
                 screenReaderName: DisplayText,
                 iconProvider: () -> Icon?,
                 watchFaceEditorData: WatchFaceEditorData?,
-                complicationSlotOverlays: Collection<ComplicationSlotOverlay>,
+                complicationSlotOverlays: Collection<ComplicationSlotOverlay>
             ) : super(id, emptyList()) {
                 this.complicationSlotOverlays = complicationSlotOverlays
                 this.displayNameInternal = displayName
@@ -2373,7 +2375,7 @@ private constructor(
                             wireFormat.mComplicationNameResourceIds?.get(index)?.asResourceId(),
                             wireFormat.mComplicationScreenReaderNameResourceIds
                                 ?.get(index)
-                                ?.asResourceId(),
+                                ?.asResourceId()
                         )
                     }
                 displayNameInternal = DisplayText.CharSequenceDisplayText(wireFormat.mDisplayName)
@@ -2388,7 +2390,7 @@ private constructor(
             internal override fun estimateWireSizeInBytesAndValidateIconDimensions(
                 context: Context,
                 @Px maxWidth: Int,
-                @Px maxHeight: Int,
+                @Px maxHeight: Int
             ): Int {
                 var sizeEstimate = id.value.size + displayName.length
                 screenReaderName?.let { sizeEstimate + it.length }
@@ -2444,7 +2446,7 @@ private constructor(
                     resources: Resources,
                     parser: XmlResourceParser,
                     complicationScaleX: Float,
-                    complicationScaleY: Float,
+                    complicationScaleY: Float
                 ): ComplicationSlotsOption {
                     val id = getStringRefAttribute(resources, parser, "id")
                     require(id != null) { "ComplicationSlotsOption must have an id" }
@@ -2453,7 +2455,7 @@ private constructor(
                             resources,
                             parser,
                             "displayName",
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
                     val screenReaderName =
                         createDisplayText(
@@ -2461,7 +2463,7 @@ private constructor(
                             parser,
                             "nameForScreenReaders",
                             defaultValue = displayName,
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
                     val iconProvider = createLazyIcon(resources, parser)
 
@@ -2475,7 +2477,7 @@ private constructor(
                                         resources,
                                         parser,
                                         complicationScaleX,
-                                        complicationScaleY,
+                                        complicationScaleY
                                     )
                                 )
                             "OnWatchEditorData" -> {
@@ -2496,7 +2498,7 @@ private constructor(
                         screenReaderName,
                         iconProvider,
                         watchFaceEditorData,
-                        complicationSlotOverlays,
+                        complicationSlotOverlays
                     )
                 }
             }
@@ -2513,7 +2515,7 @@ private constructor(
             internal fun createOptionsList(
                 minimumValue: Double,
                 maximumValue: Double,
-                defaultValue: Double,
+                defaultValue: Double
             ): List<DoubleRangeOption> {
                 require(minimumValue < maximumValue)
                 require(defaultValue >= minimumValue)
@@ -2523,7 +2525,7 @@ private constructor(
                     listOf(
                         DoubleRangeOption(minimumValue),
                         DoubleRangeOption(defaultValue),
-                        DoubleRangeOption(maximumValue),
+                        DoubleRangeOption(maximumValue)
                     )
                 } else {
                     listOf(DoubleRangeOption(minimumValue), DoubleRangeOption(maximumValue))
@@ -2533,7 +2535,7 @@ private constructor(
             @SuppressLint("ResourceType")
             fun inflate(
                 resources: Resources,
-                parser: XmlResourceParser,
+                parser: XmlResourceParser
             ): DoubleRangeUserStyleSetting {
                 val settingType = "DoubleRangeUserStyleSetting"
                 val parent = createParent(resources, parser, settingType, ::inflate)
@@ -2543,7 +2545,7 @@ private constructor(
                         "maxDouble",
                         String::toDouble,
                         parent?.maximumValue,
-                        settingType,
+                        settingType
                     )
                 val minDouble =
                     getAttributeChecked(
@@ -2551,7 +2553,7 @@ private constructor(
                         "minDouble",
                         String::toDouble,
                         parent?.minimumValue,
-                        settingType,
+                        settingType
                     )
                 val defaultDouble =
                     getAttributeChecked(
@@ -2559,7 +2561,7 @@ private constructor(
                         "defaultDouble",
                         String::toDouble,
                         parent?.defaultValue,
-                        settingType,
+                        settingType
                     )
                 val params = createBaseWithParent(resources, parser, parent, inflateDefault = false)
                 return DoubleRangeUserStyleSetting(
@@ -2571,7 +2573,7 @@ private constructor(
                     minDouble,
                     maxDouble,
                     params.affectedWatchFaceLayers,
-                    defaultDouble,
+                    defaultDouble
                 )
             }
         }
@@ -2585,7 +2587,7 @@ private constructor(
             private val defaultValue: Double,
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -2615,7 +2617,7 @@ private constructor(
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
-                @StringRes descriptionResourceId: Int,
+                @StringRes descriptionResourceId: Int
             ) : this(
                 id,
                 minimumValue,
@@ -2623,7 +2625,7 @@ private constructor(
                 defaultValue,
                 affectsWatchFaceLayers,
                 DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId),
+                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId)
             )
 
             /**
@@ -2649,7 +2651,7 @@ private constructor(
                 defaultValue: Double,
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 minimumValue,
@@ -2657,7 +2659,7 @@ private constructor(
                 defaultValue,
                 affectsWatchFaceLayers,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -2694,7 +2696,7 @@ private constructor(
                     minimumValue,
                     maximumValue,
                     affectsWatchFaceLayers,
-                    defaultValue,
+                    defaultValue
                 )
         }
 
@@ -2728,7 +2730,7 @@ private constructor(
             maximumValue: Double,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Double,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.CharSequenceDisplayText(displayName),
@@ -2741,7 +2743,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         /**
@@ -2778,7 +2780,7 @@ private constructor(
             maximumValue: Double,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Double,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
@@ -2791,7 +2793,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -2803,7 +2805,7 @@ private constructor(
             minimumValue: Double,
             maximumValue: Double,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultValue: Double,
+            defaultValue: Double
         ) : super(
             id,
             displayName,
@@ -2816,7 +2818,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: DoubleRangeUserStyleSettingWireFormat) : super(wireFormat)
@@ -2832,7 +2834,7 @@ private constructor(
                 defaultOptionIndex,
                 affectedWatchFaceLayers.map { it.ordinal },
                 watchFaceEditorData?.toWireFormat(),
-                /* optionsOnWatchFaceEditorIcons = */ null,
+                /* optionsOnWatchFaceEditorIcons = */ null
             )
 
         /** Represents an option as a [Double] in the range [minimumValue .. maximumValue]. */
@@ -2849,7 +2851,7 @@ private constructor(
                 value: Double
             ) : super(
                 Id(ByteArray(8).apply { ByteBuffer.wrap(this).putDouble(value) }),
-                emptyList(),
+                emptyList()
             ) {
                 this.value = value
             }
@@ -2916,7 +2918,7 @@ private constructor(
             private val options: List<ListOption>,
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -2942,13 +2944,13 @@ private constructor(
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
-                @StringRes descriptionResourceId: Int,
+                @StringRes descriptionResourceId: Int
             ) : this(
                 id,
                 options,
                 affectsWatchFaceLayers,
                 DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId),
+                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId)
             )
 
             /**
@@ -2969,13 +2971,13 @@ private constructor(
                 options: List<ListOption>,
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 options,
                 affectsWatchFaceLayers,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -3021,7 +3023,7 @@ private constructor(
                     watchFaceEditorData,
                     options,
                     affectsWatchFaceLayers,
-                    options.indexOf(defaultOption),
+                    options.indexOf(defaultOption)
                 )
         }
 
@@ -3053,7 +3055,7 @@ private constructor(
             options: List<ListOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultOption: ListOption = options.first(),
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.CharSequenceDisplayText(displayName),
@@ -3062,7 +3064,7 @@ private constructor(
             watchFaceEditorData,
             options,
             options.indexOf(defaultOption),
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         /**
@@ -3097,7 +3099,7 @@ private constructor(
             options: List<ListOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultOption: ListOption = options.first(),
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
@@ -3106,7 +3108,7 @@ private constructor(
             watchFaceEditorData,
             options,
             options.indexOf(defaultOption),
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -3117,7 +3119,7 @@ private constructor(
             watchFaceEditorData: WatchFaceEditorData?,
             options: List<ListOption>,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultOptionIndex: Int,
+            defaultOptionIndex: Int
         ) : super(
             id,
             displayName,
@@ -3126,7 +3128,7 @@ private constructor(
             watchFaceEditorData,
             options,
             defaultOptionIndex,
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: ListUserStyleSettingWireFormat) : super(wireFormat) {
@@ -3164,7 +3166,7 @@ private constructor(
                 options.map {
                     it as ListOption
                     it.screenReaderName ?: it.displayName
-                },
+                }
             )
 
         internal companion object {
@@ -3173,9 +3175,9 @@ private constructor(
                     (
                         resources: Resources,
                         parser: XmlResourceParser,
-                        idToSetting: Map<String, UserStyleSetting>,
+                        idToSetting: Map<String, UserStyleSetting>
                     ) -> T,
-                idToSetting: Map<String, UserStyleSetting>,
+                idToSetting: Map<String, UserStyleSetting>
             ): (resources: Resources, parser: XmlResourceParser) -> T {
                 return { resources: Resources, parser: XmlResourceParser ->
                     function(resources, parser, idToSetting)
@@ -3187,7 +3189,7 @@ private constructor(
             fun inflate(
                 resources: Resources,
                 parser: XmlResourceParser,
-                idToSetting: Map<String, UserStyleSetting>,
+                idToSetting: Map<String, UserStyleSetting>
             ): ListUserStyleSetting {
                 val params =
                     createBaseWithParent(
@@ -3197,10 +3199,10 @@ private constructor(
                             resources,
                             parser,
                             "ListUserStyleSetting",
-                            bindIdToSetting(::inflate, idToSetting),
+                            bindIdToSetting(::inflate, idToSetting)
                         ),
                         inflateDefault = true,
-                        "ListOption" to bindIdToSetting(ListOption::inflate, idToSetting),
+                        "ListOption" to bindIdToSetting(ListOption::inflate, idToSetting)
                     )
                 return ListUserStyleSetting(
                     params.id,
@@ -3210,7 +3212,7 @@ private constructor(
                     params.watchFaceEditorData,
                     params.options as List<ListOption>,
                     params.affectedWatchFaceLayers,
-                    params.defaultOptionIndex!!,
+                    params.defaultOptionIndex!!
                 )
             }
         }
@@ -3261,7 +3263,7 @@ private constructor(
             private constructor(
                 private val id: Id,
                 private val displayName: DisplayText,
-                private val screenReaderName: DisplayText,
+                private val screenReaderName: DisplayText
             ) {
                 private var iconProvider: () -> Icon? = { null }
                 private var childSettings: Collection<UserStyleSetting> = emptyList()
@@ -3285,11 +3287,11 @@ private constructor(
                     id: Id,
                     resources: Resources,
                     @StringRes displayNameResourceId: Int,
-                    @StringRes screenReaderNameResourceId: Int,
+                    @StringRes screenReaderNameResourceId: Int
                 ) : this(
                     id,
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                    DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId),
+                    DisplayText.ResourceDisplayTextWithIndex(resources, screenReaderNameResourceId)
                 )
 
                 /**
@@ -3307,11 +3309,11 @@ private constructor(
                 constructor(
                     id: Id,
                     displayName: CharSequence,
-                    screenReaderName: CharSequence,
+                    screenReaderName: CharSequence
                 ) : this(
                     id,
                     DisplayText.CharSequenceDisplayText(displayName),
-                    DisplayText.CharSequenceDisplayText(screenReaderName),
+                    DisplayText.CharSequenceDisplayText(screenReaderName)
                 )
 
                 /**
@@ -3355,7 +3357,7 @@ private constructor(
                         screenReaderName,
                         iconProvider,
                         watchFaceEditorData,
-                        childSettings,
+                        childSettings
                     )
             }
 
@@ -3385,7 +3387,7 @@ private constructor(
                 screenReaderName: CharSequence,
                 icon: Icon?,
                 childSettings: Collection<UserStyleSetting> = emptyList(),
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, childSettings) {
                 displayNameInternal = DisplayText.CharSequenceDisplayText(displayName)
                 screenReaderNameInternal = DisplayText.CharSequenceDisplayText(screenReaderName)
@@ -3417,7 +3419,7 @@ private constructor(
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
                 icon: Icon?,
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, emptyList()) {
                 displayNameInternal =
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId)
@@ -3450,7 +3452,7 @@ private constructor(
                 @StringRes displayNameResourceId: Int,
                 icon: Icon?,
                 childSettings: Collection<UserStyleSetting> = emptyList(),
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, childSettings) {
                 displayNameInternal =
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId)
@@ -3492,7 +3494,7 @@ private constructor(
                 @StringRes screenReaderNameResourceId: Int,
                 icon: Icon?,
                 childSettings: Collection<UserStyleSetting> = emptyList(),
-                watchFaceEditorData: WatchFaceEditorData? = null,
+                watchFaceEditorData: WatchFaceEditorData? = null
             ) : super(id, childSettings) {
                 displayNameInternal =
                     DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId)
@@ -3508,7 +3510,7 @@ private constructor(
                 screenReaderName: DisplayText,
                 iconProvider: () -> Icon?,
                 watchFaceEditorData: WatchFaceEditorData?,
-                childSettings: Collection<UserStyleSetting> = emptyList(),
+                childSettings: Collection<UserStyleSetting> = emptyList()
             ) : super(id, childSettings) {
                 displayNameInternal = displayName
                 screenReaderNameInternal = screenReaderName
@@ -3531,7 +3533,7 @@ private constructor(
             internal override fun estimateWireSizeInBytesAndValidateIconDimensions(
                 context: Context,
                 @Px maxWidth: Int,
-                @Px maxHeight: Int,
+                @Px maxHeight: Int
             ): Int {
                 var sizeEstimate = id.value.size + displayName.length
                 screenReaderName?.let { sizeEstimate + it.length }
@@ -3566,7 +3568,7 @@ private constructor(
                 fun inflate(
                     resources: Resources,
                     parser: XmlResourceParser,
-                    idToSetting: Map<String, UserStyleSetting>,
+                    idToSetting: Map<String, UserStyleSetting>
                 ): ListOption {
                     val id = getStringRefAttribute(resources, parser, "id")
                     require(id != null) { "ListOption must have an id" }
@@ -3575,7 +3577,7 @@ private constructor(
                             resources,
                             parser,
                             "displayName",
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
                     val screenReaderName =
                         createDisplayText(
@@ -3583,7 +3585,7 @@ private constructor(
                             parser,
                             "nameForScreenReaders",
                             defaultValue = displayName,
-                            indexedResourceNamesSupported = true,
+                            indexedResourceNamesSupported = true
                         )
                     val iconProvider = createLazyIcon(resources, parser)
 
@@ -3619,7 +3621,7 @@ private constructor(
                         screenReaderName,
                         iconProvider,
                         watchFaceEditorData,
-                        childSettings,
+                        childSettings
                     )
                 }
             }
@@ -3636,7 +3638,7 @@ private constructor(
             internal fun createOptionsList(
                 minimumValue: Long,
                 maximumValue: Long,
-                defaultValue: Long,
+                defaultValue: Long
             ): List<LongRangeOption> {
                 require(minimumValue < maximumValue)
                 require(defaultValue >= minimumValue)
@@ -3646,7 +3648,7 @@ private constructor(
                     listOf(
                         LongRangeOption(minimumValue),
                         LongRangeOption(defaultValue),
-                        LongRangeOption(maximumValue),
+                        LongRangeOption(maximumValue)
                     )
                 } else {
                     listOf(LongRangeOption(minimumValue), LongRangeOption(maximumValue))
@@ -3656,7 +3658,7 @@ private constructor(
             @SuppressLint("ResourceType")
             fun inflate(
                 resources: Resources,
-                parser: XmlResourceParser,
+                parser: XmlResourceParser
             ): LongRangeUserStyleSetting {
                 val settingType = "LongRangeUserStyleSetting"
                 val parent = createParent(resources, parser, settingType, ::inflate)
@@ -3666,7 +3668,7 @@ private constructor(
                         "maxLong",
                         String::toLong,
                         parent?.maximumValue,
-                        settingType,
+                        settingType
                     )
                 val minInteger =
                     getAttributeChecked(
@@ -3674,7 +3676,7 @@ private constructor(
                         "minLong",
                         String::toLong,
                         parent?.minimumValue,
-                        settingType,
+                        settingType
                     )
                 val defaultInteger =
                     getAttributeChecked(
@@ -3682,7 +3684,7 @@ private constructor(
                         "defaultLong",
                         String::toLong,
                         parent?.defaultValue,
-                        settingType,
+                        settingType
                     )
                 val params = createBaseWithParent(resources, parser, parent, inflateDefault = false)
                 return LongRangeUserStyleSetting(
@@ -3694,7 +3696,7 @@ private constructor(
                     minInteger,
                     maxInteger,
                     params.affectedWatchFaceLayers,
-                    defaultInteger,
+                    defaultInteger
                 )
             }
         }
@@ -3708,7 +3710,7 @@ private constructor(
             private val defaultValue: Long,
             private val affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             private val displayName: DisplayText,
-            private val description: DisplayText,
+            private val description: DisplayText
         ) {
             private var iconProvider: () -> Icon? = { null }
             private var watchFaceEditorData: WatchFaceEditorData? = null
@@ -3738,7 +3740,7 @@ private constructor(
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 resources: Resources,
                 @StringRes displayNameResourceId: Int,
-                @StringRes descriptionResourceId: Int,
+                @StringRes descriptionResourceId: Int
             ) : this(
                 id,
                 minimumValue,
@@ -3746,7 +3748,7 @@ private constructor(
                 defaultValue,
                 affectsWatchFaceLayers,
                 DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
-                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId),
+                DisplayText.ResourceDisplayTextWithIndex(resources, descriptionResourceId)
             )
 
             /**
@@ -3772,7 +3774,7 @@ private constructor(
                 defaultValue: Long,
                 affectsWatchFaceLayers: Collection<WatchFaceLayer>,
                 displayName: CharSequence,
-                description: CharSequence,
+                description: CharSequence
             ) : this(
                 id,
                 minimumValue,
@@ -3780,7 +3782,7 @@ private constructor(
                 defaultValue,
                 affectsWatchFaceLayers,
                 DisplayText.CharSequenceDisplayText(displayName),
-                DisplayText.CharSequenceDisplayText(description),
+                DisplayText.CharSequenceDisplayText(description)
             )
 
             /**
@@ -3817,7 +3819,7 @@ private constructor(
                     minimumValue,
                     maximumValue,
                     affectsWatchFaceLayers,
-                    defaultValue,
+                    defaultValue
                 )
         }
 
@@ -3851,7 +3853,7 @@ private constructor(
             maximumValue: Long,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Long,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.CharSequenceDisplayText(displayName),
@@ -3864,7 +3866,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         /**
@@ -3901,7 +3903,7 @@ private constructor(
             maximumValue: Long,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
             defaultValue: Long,
-            watchFaceEditorData: WatchFaceEditorData? = null,
+            watchFaceEditorData: WatchFaceEditorData? = null
         ) : super(
             id,
             DisplayText.ResourceDisplayTextWithIndex(resources, displayNameResourceId),
@@ -3914,7 +3916,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(
@@ -3926,7 +3928,7 @@ private constructor(
             minimumValue: Long,
             maximumValue: Long,
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultValue: Long,
+            defaultValue: Long
         ) : super(
             id,
             displayName,
@@ -3939,7 +3941,7 @@ private constructor(
                 minimumValue -> 0
                 else -> 1
             },
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: LongRangeUserStyleSettingWireFormat) : super(wireFormat)
@@ -3955,7 +3957,7 @@ private constructor(
                 defaultOptionIndex,
                 affectedWatchFaceLayers.map { it.ordinal },
                 watchFaceEditorData?.toWireFormat(),
-                /* optionsOnWatchFaceEditorIcons = */ null,
+                /* optionsOnWatchFaceEditorIcons = */ null
             )
 
         /** Represents an option a [Long] in the range [minimumValue .. maximumValue]. */
@@ -3972,7 +3974,7 @@ private constructor(
                 value: Long
             ) : super(
                 Id(ByteArray(8).apply { ByteBuffer.wrap(this).putLong(value) }),
-                emptyList(),
+                emptyList()
             ) {
                 this.value = value
             }
@@ -4052,7 +4054,7 @@ private constructor(
          */
         public constructor(
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultValue: ByteArray,
+            defaultValue: ByteArray
         ) : super(
             Id(CUSTOM_VALUE_USER_STYLE_SETTING_ID),
             DisplayText.CharSequenceDisplayText(""),
@@ -4061,7 +4063,7 @@ private constructor(
             null,
             listOf(CustomValueOption(defaultValue)),
             0,
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: CustomValueUserStyleSettingWireFormat) : super(wireFormat)
@@ -4076,7 +4078,7 @@ private constructor(
                 getWireFormatOptionsList(),
                 affectedWatchFaceLayers.map { it.ordinal },
                 watchFaceEditorData?.toWireFormat(),
-                /* optionsOnWatchFaceEditorIcons = */ null,
+                /* optionsOnWatchFaceEditorIcons = */ null
             )
 
         /**
@@ -4146,7 +4148,7 @@ private constructor(
          */
         public constructor(
             affectsWatchFaceLayers: Collection<WatchFaceLayer>,
-            defaultValue: ByteArray,
+            defaultValue: ByteArray
         ) : super(
             Id(CUSTOM_VALUE_USER_STYLE_SETTING_ID),
             DisplayText.CharSequenceDisplayText(""),
@@ -4155,7 +4157,7 @@ private constructor(
             null,
             listOf(CustomValueOption(defaultValue)),
             0,
-            affectsWatchFaceLayers,
+            affectsWatchFaceLayers
         )
 
         internal constructor(wireFormat: CustomValueUserStyleSetting2WireFormat) : super(wireFormat)
@@ -4170,7 +4172,7 @@ private constructor(
                 getWireFormatOptionsList(),
                 affectedWatchFaceLayers.map { it.ordinal },
                 watchFaceEditorData?.toWireFormat(),
-                /* optionsOnWatchFaceEditorIcons = */ null,
+                /* optionsOnWatchFaceEditorIcons = */ null
             )
 
         /**
@@ -4228,7 +4230,7 @@ private constructor(
 
 internal fun requireUniqueOptionIds(
     setting: UserStyleSetting.Id,
-    options: List<UserStyleSetting.Option>,
+    options: List<UserStyleSetting.Option>
 ) {
     val uniqueIds = HashSet<UserStyleSetting.Option.Id>()
     for (option in options) {
@@ -4247,7 +4249,7 @@ internal class IconHelper {
                 Icon.TYPE_RESOURCE -> {
                     return getWireSizeAndDimensionsFromStream(
                         context.resources.openRawResource(icon.resId, TypedValue()),
-                        context.resources,
+                        context.resources
                     )
                 }
                 Icon.TYPE_URI -> {
@@ -4308,7 +4310,7 @@ internal fun Icon.write(dos: DataOutputStream) {
 
 private fun getWireSizeAndDimensionsFromStream(
     stream: InputStream,
-    resources: Resources,
+    resources: Resources
 ): WireSizeAndDimensions {
     try {
         val wireSize = stream.available()
@@ -4329,7 +4331,7 @@ private fun <T> getAttributeChecked(
     name: String,
     converter: (String) -> T,
     defaultValue: T?,
-    settingType: String,
+    settingType: String
 ): T {
     return if (parser.hasValue(name)) {
         converter(parser.getAttributeValue(NAMESPACE_APP, name)!!)

@@ -425,7 +425,10 @@ class LazyColumnMultiTextRegressionTest {
                     LocalTextToolbar provides textToolbar,
                     LocalViewConfiguration provides testViewConfiguration,
                 ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         SelectionContainer(
                             modifier = Modifier.height(100.dp),
                             selection = selection.value,
@@ -438,9 +441,9 @@ class LazyColumnMultiTextRegressionTest {
                                         style =
                                             TextStyle(
                                                 fontSize = 15.sp,
-                                                textAlign = TextAlign.Center,
+                                                textAlign = TextAlign.Center
                                             ),
-                                        modifier = Modifier.fillMaxWidth().testTag(it.toString()),
+                                        modifier = Modifier.fillMaxWidth().testTag(it.toString())
                                     )
                                 }
                             }
@@ -458,7 +461,7 @@ class LazyColumnMultiTextRegressionTest {
                 clipboard,
                 textToolbar,
                 coroutineScope,
-                spyTextActionModeCallback,
+                spyTextActionModeCallback
             )
         scope.resetClipboard()
         scope.block()
@@ -480,7 +483,7 @@ private class TextToolbarWrapper(private val delegate: TextToolbar) : TextToolba
         onPasteRequested: (() -> Unit)?,
         onCutRequested: (() -> Unit)?,
         onSelectAllRequested: (() -> Unit)?,
-        onAutofillRequested: (() -> Unit)?,
+        onAutofillRequested: (() -> Unit)?
     ) {
         _shown = true
         _mostRecentRect = rect
@@ -490,7 +493,7 @@ private class TextToolbarWrapper(private val delegate: TextToolbar) : TextToolba
             onPasteRequested,
             onCutRequested,
             onSelectAllRequested,
-            onAutofillRequested,
+            onAutofillRequested
         )
     }
 
@@ -499,7 +502,7 @@ private class TextToolbarWrapper(private val delegate: TextToolbar) : TextToolba
         onCopyRequested: (() -> Unit)?,
         onPasteRequested: (() -> Unit)?,
         onCutRequested: (() -> Unit)?,
-        onSelectAllRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?
     ) {
         _shown = true
         _mostRecentRect = rect
@@ -508,7 +511,7 @@ private class TextToolbarWrapper(private val delegate: TextToolbar) : TextToolba
             onCopyRequested,
             onPasteRequested,
             onCutRequested,
-            onSelectAllRequested,
+            onSelectAllRequested
         )
     }
 

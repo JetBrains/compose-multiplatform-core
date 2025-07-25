@@ -46,8 +46,10 @@ import java.util.Locale
 import javax.lang.model.element.Modifier
 
 /** Writes implementation of classes that were annotated with @Database. */
-class DatabaseWriter(val database: Database, writerContext: WriterContext) :
-    TypeWriter(writerContext) {
+class DatabaseWriter(
+    val database: Database,
+    writerContext: WriterContext,
+) : TypeWriter(writerContext) {
     private val className = database.implTypeName
     override val packageName = className.packageName
 
@@ -87,7 +89,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
             val typeConvertersTypeName =
                 CommonTypeNames.MUTABLE_MAP.parametrizedBy(
                     classOfAnyTypeName,
-                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName),
+                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
                 )
             when (language) {
                 CodeLanguage.JAVA ->
@@ -98,16 +100,16 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                             XCodeBlock.ofNewInstance(
                                 CommonTypeNames.HASH_MAP.parametrizedBy(
                                     classOfAnyTypeName,
-                                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName),
+                                    CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName)
                                 )
-                            ),
+                            )
                     )
                 CodeLanguage.KOTLIN ->
                     addLocalVal(
                         typeConvertersVar,
                         typeConvertersTypeName,
                         "%M()",
-                        KotlinCollectionMemberNames.MUTABLE_MAP_OF,
+                        KotlinCollectionMemberNames.MUTABLE_MAP_OF
                     )
             }
             database.daoFunctions.forEach {
@@ -119,7 +121,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                         CodeLanguage.KOTLIN -> XCodeBlock.ofKotlinClassLiteral(it.dao.typeName)
                     },
                     it.dao.implTypeName,
-                    DaoWriter.GET_LIST_OF_TYPE_CONVERTERS_FUNCTION,
+                    DaoWriter.GET_LIST_OF_TYPE_CONVERTERS_FUNCTION
                 )
             }
             addStatement("return %L", typeConvertersVar)
@@ -128,16 +130,16 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                 name =
                     XName.of(
                         java = "getRequiredTypeConverters",
-                        kotlin = "getRequiredTypeConverterClasses",
+                        kotlin = "getRequiredTypeConverterClasses"
                     ),
                 visibility = VisibilityModifier.PROTECTED,
-                isOverride = true,
+                isOverride = true
             )
             .applyTo { language ->
                 returns(
                     CommonTypeNames.MAP.parametrizedBy(
                         classOfAnyTypeName(language),
-                        CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName(language)),
+                        CommonTypeNames.LIST.parametrizedBy(classOfAnyTypeName(language))
                     )
                 )
                 addCode(body)
@@ -167,14 +169,14 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                 CommonTypeNames.HASH_SET.parametrizedBy(
                                     classOfAutoMigrationSpecTypeName
                                 )
-                            ),
+                            )
                     )
                 CodeLanguage.KOTLIN ->
                     addLocalVal(
                         autoMigrationSpecsVar,
                         autoMigrationSpecsTypeName,
                         "%M()",
-                        KotlinCollectionMemberNames.MUTABLE_SET_OF,
+                        KotlinCollectionMemberNames.MUTABLE_SET_OF
                     )
             }
             database.autoMigrations
@@ -187,7 +189,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                         when (language) {
                             CodeLanguage.JAVA -> XCodeBlock.ofJavaClassLiteral(specClassName)
                             CodeLanguage.KOTLIN -> XCodeBlock.ofKotlinClassLiteral(specClassName)
-                        },
+                        }
                     )
                 }
             addStatement("return %L", autoMigrationSpecsVar)
@@ -196,7 +198,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                 name =
                     XName.of(
                         java = "getRequiredAutoMigrationSpecs",
-                        kotlin = "getRequiredAutoMigrationSpecClasses",
+                        kotlin = "getRequiredAutoMigrationSpecClasses"
                     ),
                 visibility = VisibilityModifier.PUBLIC,
                 isOverride = true,
@@ -214,7 +216,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
         return XFunSpec.builder(
                 name = "clearAllTables",
                 visibility = VisibilityModifier.PUBLIC,
-                isOverride = true,
+                isOverride = true
             )
             .apply {
                 val tableNames =
@@ -252,12 +254,12 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                             CommonTypeNames.HASH_MAP.parametrizedBy(
                                                 *shadowTablesTypeParam
                                             ),
-                                            shadowTableNames.size,
+                                            shadowTableNames.size
                                         )
                                     CodeLanguage.KOTLIN ->
                                         add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
                                 }
-                            },
+                            }
                     )
                     shadowTableNames.forEach { (tableName, shadowTableName) ->
                         addStatement("%L.put(%S, %S)", shadowTablesVar, tableName, shadowTableName)
@@ -266,7 +268,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                     val viewTableTypeParam =
                         arrayOf(
                             CommonTypeNames.STRING,
-                            CommonTypeNames.SET.parametrizedBy(CommonTypeNames.STRING),
+                            CommonTypeNames.SET.parametrizedBy(CommonTypeNames.STRING)
                         )
                     val viewTablesTypeName =
                         CommonTypeNames.MUTABLE_MAP.parametrizedBy(*viewTableTypeParam)
@@ -282,12 +284,12 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                             CommonTypeNames.HASH_MAP.parametrizedBy(
                                                 *viewTableTypeParam
                                             ),
-                                            database.views.size,
+                                            database.views.size
                                         )
                                     CodeLanguage.KOTLIN ->
                                         add("%M()", KotlinCollectionMemberNames.MUTABLE_MAP_OF)
                                 }
-                            },
+                            }
                     )
                     val tablesType =
                         CommonTypeNames.MUTABLE_SET.parametrizedBy(CommonTypeNames.STRING)
@@ -305,12 +307,12 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                                 CommonTypeNames.HASH_SET.parametrizedBy(
                                                     CommonTypeNames.STRING
                                                 ),
-                                                view.tables.size,
+                                                view.tables.size
                                             )
                                         CodeLanguage.KOTLIN ->
                                             add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
                                     }
-                                },
+                                }
                         )
                         for (table in view.tables) {
                             addStatement("%L.add(%S)", tablesVar, table)
@@ -319,7 +321,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                             "%L.put(%S, %L)",
                             viewTablesVar,
                             view.viewName.lowercase(Locale.US),
-                            tablesVar,
+                            tablesVar
                         )
                     }
                     val tableNames = database.entities.joinToString(", ") { "\"${it.tableName}\"" }
@@ -330,15 +332,15 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                             "this, %L, %L, %L",
                             shadowTablesVar,
                             viewTablesVar,
-                            tableNames,
-                        ),
+                            tableNames
+                        )
                     )
                 }
                 .build()
         return XFunSpec.builder(
                 name = "createInvalidationTracker",
                 visibility = VisibilityModifier.PROTECTED,
-                isOverride = true,
+                isOverride = true
             )
             .apply {
                 returns(RoomTypeNames.INVALIDATION_TRACKER)
@@ -362,7 +364,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                 CodeLanguage.JAVA -> function.dao.typeName
                             },
                         visibility = VisibilityModifier.PRIVATE,
-                        isMutable = scope.language == CodeLanguage.JAVA,
+                        isMutable = scope.language == CodeLanguage.JAVA
                     )
                     .applyTo { language ->
                         // For Kotlin we rely on kotlin.Lazy while for Java we'll memoize the dao
@@ -376,8 +378,8 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                             "%L",
                                             XCodeBlock.ofNewInstance(
                                                 function.dao.implTypeName,
-                                                "this",
-                                            ),
+                                                "this"
+                                            )
                                         )
                                         endControlFlow()
                                     }
@@ -425,7 +427,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                     addStatement(
                                         "%N = %L",
                                         daoProperty,
-                                        XCodeBlock.ofNewInstance(function.dao.implTypeName, "this"),
+                                        XCodeBlock.ofNewInstance(function.dao.implTypeName, "this")
                                     )
                                 }
                                 endControlFlow()
@@ -483,14 +485,14 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                         assignExpr =
                             XCodeBlock.ofNewInstance(
                                 CommonTypeNames.ARRAY_LIST.parametrizedBy(RoomTypeNames.MIGRATION)
-                            ),
+                            )
                     )
                 CodeLanguage.KOTLIN ->
                     addLocalVal(
                         listVar,
                         CommonTypeNames.MUTABLE_LIST.parametrizedBy(RoomTypeNames.MIGRATION),
                         "%M()",
-                        KotlinCollectionMemberNames.MUTABLE_LIST_OF,
+                        KotlinCollectionMemberNames.MUTABLE_LIST_OF
                     )
             }
 
@@ -512,7 +514,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                                     CodeLanguage.KOTLIN ->
                                         add(XCodeBlock.ofKotlinClassLiteral(specClassName))
                                 }
-                            },
+                            }
                         )
                     } else {
                         XCodeBlock.ofNewInstance(implTypeName)
@@ -540,7 +542,7 @@ class DatabaseWriter(val database: Database, writerContext: WriterContext) :
                     CommonTypeNames.MAP.parametrizedBy(
                         classOfAutoMigrationSpecTypeName,
                         RoomTypeNames.AUTO_MIGRATION_SPEC,
-                    ),
+                    )
                 )
                 addCode(body)
             }

@@ -43,7 +43,7 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     fun parseSymbol(
         pattern: Regex,
         peek: Boolean = false,
-        skipInlineWhitespace: Boolean = true,
+        skipInlineWhitespace: Boolean = true
     ): String? {
         val match = pattern.find(currentLine)
         return match?.value?.also {
@@ -64,6 +64,10 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
 
     fun copy() = Cursor(lines, rowIndex, columnIndex)
 
+    private fun hasNextColumn(): Boolean {
+        return columnIndex < lines[rowIndex].length - 1
+    }
+
     private fun setColumn(index: Int) {
         columnIndex = index
     }
@@ -75,14 +79,5 @@ private constructor(private val lines: List<String>, rowIndex: Int = 0, columnIn
     }
 }
 
-// Match any '=' not followed by '...' because they're valid characters, but we don't want to
-// parse part of the parameter default symbol (=...) by accident. Otherwise match all non-illegal
-// characters
-private val validIdentifierRegex =
-    Regex(
-        """
-    ^((=(?!\s?\.\.\.)|[^.;\[\]/<>:\\(){}?=,&])+)
-    """
-            .trimIndent()
-    )
+private val validIdentifierRegex = Regex("^\\$?[a-zA-Z_][a-zA-Z0-9_]+")
 private val wordRegex = Regex("[a-zA-Z]+")

@@ -112,7 +112,7 @@ class ExtensionWindowBackendTest {
         backend.registerLayoutChangeCallback(windowContext, Runnable::run, windowContextConsumer)
         assertTrue(
             "Expected call with Context: $windowContext",
-            component.hasAddCall(windowContext),
+            component.hasAddCall(windowContext)
         )
     }
 
@@ -157,7 +157,11 @@ class ExtensionWindowBackendTest {
 
         backend.registerLayoutChangeCallback(windowContext, Runnable::run, windowContextConsumer)
         backend.registerLayoutChangeCallback(windowContext, Runnable::run, mock())
-        verify(component).addWindowLayoutInfoListener(eq(windowContext), consumerCaptor.capture())
+        verify(component)
+            .addWindowLayoutInfoListener(
+                eq(windowContext),
+                consumerCaptor.capture(),
+            )
 
         activityScenario.scenario.onActivity { activity ->
             val consumer = TestConsumer<WindowLayoutInfo>()
@@ -353,7 +357,7 @@ class ExtensionWindowBackendTest {
             backend.registerLayoutChangeCallback(
                 windowContext,
                 Runnable::run,
-                windowContextConsumer,
+                windowContextConsumer
             )
             backend.unregisterLayoutChangeCallback(windowContextConsumer)
 
@@ -393,12 +397,12 @@ class ExtensionWindowBackendTest {
             backend.registerLayoutChangeCallback(
                 windowContext,
                 Runnable::run,
-                windowContextConsumer,
+                windowContextConsumer
             )
             backend.registerLayoutChangeCallback(
                 windowContext,
                 Runnable::run,
-                windowContextConsumer2,
+                windowContextConsumer2
             )
             backend.unregisterLayoutChangeCallback(windowContextConsumer)
             backend.unregisterLayoutChangeCallback(windowContextConsumer2)
@@ -489,13 +493,13 @@ class ExtensionWindowBackendTest {
             backend.registerLayoutChangeCallback(
                 activity,
                 { obj: Runnable -> obj.run() },
-                firstConsumer,
+                firstConsumer
             )
 
             backend.registerLayoutChangeCallback(
                 activity,
                 { obj: Runnable -> obj.run() },
-                secondConsumer,
+                secondConsumer
             )
             assertEquals("Expected one registration for same Activity", 1, component.consumers.size)
             // Check unregistering the layout change callback
@@ -534,7 +538,7 @@ class ExtensionWindowBackendTest {
             assertEquals(
                 "Expected one registration for same Activity",
                 2 /* expected */,
-                component.oemConsumers.size,
+                component.oemConsumers.size
             )
             // Check unregistering the layout change callback
             backend.unregisterLayoutChangeCallback(firstConsumer)
@@ -595,7 +599,7 @@ class ExtensionWindowBackendTest {
             val expected =
                 listOf(
                     translate(activity, oemWindowLayoutInfo),
-                    translate(activity, oemWindowLayoutInfo),
+                    translate(activity, oemWindowLayoutInfo)
                 )
 
             backend.registerLayoutChangeCallback(activity, Runnable::run, consumer)
@@ -625,7 +629,7 @@ class ExtensionWindowBackendTest {
         val expected =
             listOf(
                 translate(windowContext, oemWindowLayoutInfo),
-                translate(windowContext, oemWindowLayoutInfo),
+                translate(windowContext, oemWindowLayoutInfo)
             )
 
         backend.registerLayoutChangeCallback(windowContext, Runnable::run, consumer)
@@ -750,10 +754,10 @@ class ExtensionWindowBackendTest {
 
         val records = mutableListOf<AddCall>()
 
-        @Deprecated("Deprecated in interface but added for compatibility")
+        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
         override fun addWindowLayoutInfoListener(
             activity: Activity,
-            consumer: JavaConsumer<OEMWindowLayoutInfo>,
+            consumer: JavaConsumer<OEMWindowLayoutInfo>
         ) {
             records.add(AddCall(activity))
         }
@@ -765,7 +769,7 @@ class ExtensionWindowBackendTest {
             records.add(AddCall(context))
         }
 
-        @Deprecated("Deprecated in interface but added for compatibility")
+        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
         override fun removeWindowLayoutInfoListener(consumer: JavaConsumer<OEMWindowLayoutInfo>) {}
 
         class AddCall(val context: Context)
@@ -783,22 +787,22 @@ class ExtensionWindowBackendTest {
         val consumers = mutableListOf<JavaConsumer<OEMWindowLayoutInfo>>()
         val oemConsumers = mutableListOf<OEMConsumer<OEMWindowLayoutInfo>>()
 
-        @Deprecated("Deprecated in interface but added for compatibility")
+        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
         override fun addWindowLayoutInfoListener(
             activity: Activity,
-            consumer: JavaConsumer<OEMWindowLayoutInfo>,
+            consumer: JavaConsumer<OEMWindowLayoutInfo>
         ) {
             consumers.add(consumer)
         }
 
         override fun addWindowLayoutInfoListener(
             context: Context,
-            consumer: OEMConsumer<OEMWindowLayoutInfo>,
+            consumer: OEMConsumer<OEMWindowLayoutInfo>
         ) {
             oemConsumers.add(consumer)
         }
 
-        @Deprecated("Deprecated in interface but added for compatibility")
+        @Suppress("OVERRIDE_DEPRECATION") // b/407501611
         override fun removeWindowLayoutInfoListener(consumer: JavaConsumer<OEMWindowLayoutInfo>) {
             consumers.remove(consumer)
         }

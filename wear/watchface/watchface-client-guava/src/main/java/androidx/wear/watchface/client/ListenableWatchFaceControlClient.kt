@@ -71,7 +71,7 @@ public open class ListenableWatchFaceControlClient(
         // TODO(flerda): Move this to a location where it can be shared.
         internal fun <T> launchFutureCoroutine(
             traceTag: String,
-            block: suspend CoroutineScope.() -> T,
+            block: suspend CoroutineScope.() -> T
         ): ListenableFuture<T> {
             val traceEvent = AsyncTraceEvent(traceTag)
             val future = ResolvableFuture.create<T>()
@@ -84,7 +84,7 @@ public open class ListenableWatchFaceControlClient(
                             coroutineScope.cancel()
                         }
                     },
-                    { runner -> runner.run() },
+                    { runner -> runner.run() }
                 )
                 try {
                     future.set(block())
@@ -115,13 +115,15 @@ public open class ListenableWatchFaceControlClient(
         @JvmStatic
         public fun createWatchFaceControlClient(
             context: Context,
-            watchFacePackageName: String,
+            watchFacePackageName: String
         ): ListenableFuture<ListenableWatchFaceControlClient> =
-            launchFutureCoroutine("ListenableWatchFaceControlClient.createWatchFaceControlClient") {
+            launchFutureCoroutine(
+                "ListenableWatchFaceControlClient.createWatchFaceControlClient",
+            ) {
                 ListenableWatchFaceControlClient(
                     WatchFaceControlClient.createWatchFaceControlClient(
                         context,
-                        watchFacePackageName,
+                        watchFacePackageName
                     )
                 )
             }
@@ -157,16 +159,16 @@ public open class ListenableWatchFaceControlClient(
         public fun createWatchFaceRuntimeControlClientAsync(
             context: Context,
             runtimePackageName: String,
-            resourceOnlyWatchFacePackageName: String,
+            resourceOnlyWatchFacePackageName: String
         ): ListenableFuture<ListenableWatchFaceControlClient> =
             launchFutureCoroutine(
-                "ListenableWatchFaceControlClient.createWatchFaceRuntimeControlClient"
+                "ListenableWatchFaceControlClient.createWatchFaceRuntimeControlClient",
             ) {
                 ListenableWatchFaceControlClient(
                     WatchFaceControlClient.createWatchFaceRuntimeControlClient(
                         context,
                         runtimePackageName,
-                        resourceOnlyWatchFacePackageName,
+                        resourceOnlyWatchFacePackageName
                     )
                 )
             }
@@ -178,13 +180,13 @@ public open class ListenableWatchFaceControlClient(
         watchFaceName: ComponentName,
         deviceConfig: DeviceConfig,
         surfaceWidth: Int,
-        surfaceHeight: Int,
+        surfaceHeight: Int
     ): HeadlessWatchFaceClient? =
         watchFaceControlClient.createHeadlessWatchFaceClient(
             watchFaceName,
             deviceConfig,
             surfaceWidth,
-            surfaceHeight,
+            surfaceHeight
         )
 
     override fun createHeadlessWatchFaceClient(
@@ -192,14 +194,14 @@ public open class ListenableWatchFaceControlClient(
         watchFaceName: ComponentName,
         deviceConfig: DeviceConfig,
         surfaceWidth: Int,
-        surfaceHeight: Int,
+        surfaceHeight: Int
     ): HeadlessWatchFaceClient? =
         watchFaceControlClient.createHeadlessWatchFaceClient(
             id,
             watchFaceName,
             deviceConfig,
             surfaceWidth,
-            surfaceHeight,
+            surfaceHeight
         )
 
     /**
@@ -224,17 +226,17 @@ public open class ListenableWatchFaceControlClient(
             "listenableGetOrCreateInteractiveWatchFaceClient(" +
                 "String, DeviceConfig, WatchUiState, UserStyleData?, Map<Int, ComplicationData>?," +
                 " Executor, Consumer<String>)"
-        ),
+        )
     )
     public open fun listenableGetOrCreateInteractiveWatchFaceClient(
         id: String,
         deviceConfig: DeviceConfig,
         watchUiState: WatchUiState,
         userStyle: UserStyleData?,
-        slotIdToComplicationData: Map<Int, ComplicationData>?,
+        slotIdToComplicationData: Map<Int, ComplicationData>?
     ): ListenableFuture<InteractiveWatchFaceClient> =
         launchFutureCoroutine(
-            "ListenableWatchFaceControlClient.listenableGetOrCreateInteractiveWatchFaceClient"
+            "ListenableWatchFaceControlClient.listenableGetOrCreateInteractiveWatchFaceClient",
         ) {
             @Suppress("Deprecation")
             watchFaceControlClient.getOrCreateInteractiveWatchFaceClient(
@@ -242,7 +244,7 @@ public open class ListenableWatchFaceControlClient(
                 deviceConfig,
                 watchUiState,
                 userStyle,
-                slotIdToComplicationData,
+                slotIdToComplicationData
             )
         }
 
@@ -281,10 +283,10 @@ public open class ListenableWatchFaceControlClient(
         userStyle: UserStyleData?,
         slotIdToComplicationData: Map<Int, ComplicationData>?,
         previewImageUpdateRequestedExecutor: Executor,
-        previewImageUpdateRequestedListener: Consumer<String>,
+        previewImageUpdateRequestedListener: Consumer<String>
     ): ListenableFuture<InteractiveWatchFaceClient> =
         launchFutureCoroutine(
-            "ListenableWatchFaceControlClient.listenableGetOrCreateInteractiveWatchFaceClient"
+            "ListenableWatchFaceControlClient.listenableGetOrCreateInteractiveWatchFaceClient",
         ) {
             watchFaceControlClient.getOrCreateInteractiveWatchFaceClient(
                 id,
@@ -293,7 +295,7 @@ public open class ListenableWatchFaceControlClient(
                 userStyle,
                 slotIdToComplicationData,
                 previewImageUpdateRequestedExecutor,
-                previewImageUpdateRequestedListener,
+                previewImageUpdateRequestedListener
             )
         }
 
@@ -304,7 +306,7 @@ public open class ListenableWatchFaceControlClient(
                 "getOrCreateInteractiveWatchFaceClient(String, DeviceConfig, WatchUiState," +
                     " UserStyleData?, Map<Int, ComplicationData>?, Executor, " +
                     "Consumer<String>)"
-            ),
+            )
     )
     @Suppress("deprecation")
     override suspend fun getOrCreateInteractiveWatchFaceClient(
@@ -312,14 +314,14 @@ public open class ListenableWatchFaceControlClient(
         deviceConfig: DeviceConfig,
         watchUiState: WatchUiState,
         userStyle: UserStyleData?,
-        slotIdToComplicationData: Map<Int, ComplicationData>?,
+        slotIdToComplicationData: Map<Int, ComplicationData>?
     ): InteractiveWatchFaceClient =
         watchFaceControlClient.getOrCreateInteractiveWatchFaceClient(
             id,
             deviceConfig,
             watchUiState,
             userStyle,
-            slotIdToComplicationData,
+            slotIdToComplicationData
         )
 
     override suspend fun getOrCreateInteractiveWatchFaceClient(
@@ -329,7 +331,7 @@ public open class ListenableWatchFaceControlClient(
         userStyle: UserStyleData?,
         slotIdToComplicationData: Map<Int, ComplicationData>?,
         previewImageUpdateRequestedExecutor: Executor,
-        previewImageUpdateRequestedListener: Consumer<String>,
+        previewImageUpdateRequestedListener: Consumer<String>
     ): InteractiveWatchFaceClient =
         watchFaceControlClient.getOrCreateInteractiveWatchFaceClient(
             instanceId,
@@ -338,7 +340,7 @@ public open class ListenableWatchFaceControlClient(
             userStyle,
             slotIdToComplicationData,
             previewImageUpdateRequestedExecutor,
-            previewImageUpdateRequestedListener,
+            previewImageUpdateRequestedListener
         )
 
     override fun hasComplicationDataCache(): Boolean =

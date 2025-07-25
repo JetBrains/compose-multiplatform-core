@@ -46,7 +46,7 @@ import kotlinx.coroutines.async
  * clients.
  */
 @OptIn(ExperimentalFeatures.Ext8OptIn::class)
-public abstract class AdSelectionManagerFutures internal constructor() {
+abstract class AdSelectionManagerFutures internal constructor() {
 
     /**
      * Runs the ad selection process on device to select a remarketing ad for the caller
@@ -74,7 +74,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      * allowed rate limits and is throttled.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun selectAdsAsync(
+    abstract fun selectAdsAsync(
         adSelectionConfig: AdSelectionConfig
     ): ListenableFuture<AdSelectionOutcome>
 
@@ -110,7 +110,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext10OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun selectAdsAsync(
+    abstract fun selectAdsAsync(
         adSelectionFromOutcomesConfig: AdSelectionFromOutcomesConfig
     ): ListenableFuture<AdSelectionOutcome>
 
@@ -138,7 +138,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      * @param reportImpressionRequest the request for reporting impression.
      */
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun reportImpressionAsync(
+    abstract fun reportImpressionAsync(
         reportImpressionRequest: ReportImpressionRequest
     ): ListenableFuture<Unit>
 
@@ -181,9 +181,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext8OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun reportEventAsync(
-        reportEventRequest: ReportEventRequest
-    ): ListenableFuture<Unit>
+    abstract fun reportEventAsync(reportEventRequest: ReportEventRequest): ListenableFuture<Unit>
 
     /**
      * Updates the counter histograms for an ad which was previously selected by a call to
@@ -218,7 +216,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext8OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun updateAdCounterHistogramAsync(
+    abstract fun updateAdCounterHistogramAsync(
         updateAdCounterHistogramRequest: UpdateAdCounterHistogramRequest
     ): ListenableFuture<Unit>
 
@@ -257,7 +255,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext10OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun getAdSelectionDataAsync(
+    abstract fun getAdSelectionDataAsync(
         getAdSelectionDataRequest: GetAdSelectionDataRequest
     ): ListenableFuture<GetAdSelectionDataOutcome>
 
@@ -293,7 +291,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
      */
     @ExperimentalFeatures.Ext10OptIn
     @RequiresPermission(AdServicesPermissions.ACCESS_ADSERVICES_CUSTOM_AUDIENCE)
-    public abstract fun persistAdSelectionResultAsync(
+    abstract fun persistAdSelectionResultAsync(
         persistAdSelectionResultRequest: PersistAdSelectionResultRequest
     ): ListenableFuture<AdSelectionOutcome>
 
@@ -378,7 +376,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * Creates [AdSelectionManagerFutures].
          *
@@ -386,7 +384,7 @@ public abstract class AdSelectionManagerFutures internal constructor() {
          *   the value returned is null.
          */
         @JvmStatic
-        public fun from(context: Context): AdSelectionManagerFutures? {
+        fun from(context: Context): AdSelectionManagerFutures? {
             return obtain(context)?.let { Api33Ext4JavaImpl(it) }
         }
     }

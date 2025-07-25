@@ -112,9 +112,7 @@ excludedHashes = ["-x", "*.md5*", "-x", "*.sha**", "-I", "        \"md5\".*",
 # Don"t care about maven-metadata files because they have timestamps in them.
 # temporarily ignore knm files
 # If changes to the dackka args json are meaningful, they will affect the generated docs and show diff there
-# kotlin-project-structure-metadata.json is not used by Kotlin or Android Studio, and changes to it
-# are dependent on the plugin and targets that are applied to the project
-excludedFiles = ["-x", "*maven-metadata.xml**", "-x", r"**\.knm", "-x", "dackkaArgs-docs-tip-of-tree.json", "-x", "**kotlin-project-structure-metadata.json"]
+excludedFiles = ["-x", "*maven-metadata.xml**", "-x", r"**\.knm", "-x", "dackkaArgs-docs-tip-of-tree.json"]
 # Also, ignore files that we already unzipped
 excludedZips = ["-x", "*.zip", "-x", "*.jar", "-x", "*.aar", "-x", "*.apk", "-x", "*.klib"]
 
@@ -161,28 +159,6 @@ re.compile(r"""
 <           \]
 ---
 >           \}"""),
-# This was an AGP workaround for a dependency resolution issue for kotlin stdlib
-# https://chat.google.com/room/AAAAW8qmCIs/4phaNn_gsrc
-re.compile(r"""
-[0-9]+,[0-9]+c[0-9]+
-<           "module": "kotlin-stdlib",
-<           "excludes": \[
-<             \{
-<               "group": "org.jetbrains.kotlin",
-<               "module": "kotlin-stdlib-common"
-<             \},
-<             \{
-<               "group": "org.jetbrains.kotlin",
-<               "module": "kotlin-test-common"
-<             \},
-<             \{
-<               "group": "org.jetbrains.kotlin",
-<               "module": "kotlin-test-annotations-common"
-<             \}
-<           \]
----
->           "module": "kotlin-stdlib"
-"""),
 re.compile(r"""
 <       <exclusions>
 <         <exclusion>

@@ -74,7 +74,7 @@ class BackgroundTest {
             override fun createOutline(
                 size: Size,
                 layoutDirection: LayoutDirection,
-                density: Density,
+                density: Density
             ) =
                 if (layoutDirection == LayoutDirection.Ltr) {
                     RectangleShape.createOutline(size, layoutDirection, density)
@@ -99,7 +99,7 @@ class BackgroundTest {
             SemanticParent {
                 Box(
                     Modifier.size(40f.toDp()).background(Color.Magenta),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(Modifier.size(20f.toDp()).background(Color.White))
                 }
@@ -111,7 +111,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeSize = Size(20f, 20f),
-            shapeColor = Color.White,
+            shapeColor = Color.White
         )
     }
 
@@ -121,7 +121,7 @@ class BackgroundTest {
             SemanticParent {
                 Box(
                     Modifier.size(40f.toDp()).background(Color.Magenta),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(Modifier.size(20f.toDp()).background(SolidColor(Color.White)))
                 }
@@ -133,7 +133,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeSize = Size(20f, 20f),
-            shapeColor = Color.White,
+            shapeColor = Color.White
         )
     }
 
@@ -154,7 +154,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = CircleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -175,97 +175,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = CircleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
-        )
-    }
-
-    @Test
-    fun background_changeColor() {
-        var color by mutableStateOf(Color.White)
-
-        rule.setContent {
-            SemanticParent { Box(Modifier.size(40f.toDp()).background(color = color)) }
-        }
-
-        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.White,
-            backgroundColor = null,
-        )
-
-        color = Color.Magenta
-        rule.waitForIdle()
-
-        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap2.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.Magenta,
-            backgroundColor = null,
-        )
-    }
-
-    @Test
-    fun background_changeBrush() {
-        var brush by mutableStateOf(SolidColor(Color.White))
-
-        rule.setContent {
-            SemanticParent { Box(Modifier.size(40f.toDp()).background(brush = brush)) }
-        }
-
-        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.White,
-            backgroundColor = null,
-        )
-
-        brush = SolidColor(Color.Magenta)
-        rule.waitForIdle()
-
-        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap2.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.Magenta,
-            backgroundColor = null,
-        )
-    }
-
-    @Test
-    fun background_changeAlpha() {
-        var alpha by mutableStateOf(1f)
-
-        rule.setContent {
-            SemanticParent {
-                Box(
-                    Modifier.size(40f.toDp())
-                        .background(Color.Magenta)
-                        .background(brush = SolidColor(Color.White), alpha = alpha)
-                )
-            }
-        }
-
-        val bitmap = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.White,
-            backgroundColor = null,
-        )
-
-        alpha = 0f
-        rule.waitForIdle()
-
-        val bitmap2 = rule.onNodeWithTag(contentTag).captureToImage()
-        bitmap2.assertShape(
-            density = rule.density,
-            shape = RectangleShape,
-            shapeColor = Color.Magenta,
-            backgroundColor = null,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -289,7 +199,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RoundedCornerShape(10f),
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
 
         shape = CircleShape
@@ -301,7 +211,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = CircleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -314,7 +224,7 @@ class BackgroundTest {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density,
+                    density: Density
                 ): Outline {
                     return if (roundCorners) {
                         RoundedCornerShape(50f).createOutline(size, layoutDirection, density)
@@ -340,7 +250,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
 
         roundCorners = true
@@ -352,7 +262,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RoundedCornerShape(50f),
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
 
         roundCorners = false
@@ -364,7 +274,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -378,7 +288,7 @@ class BackgroundTest {
                 override fun createOutline(
                     size: Size,
                     layoutDirection: LayoutDirection,
-                    density: Density,
+                    density: Density
                 ): Outline {
                     val outlineToAdd =
                         if (roundCorners) {
@@ -408,7 +318,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
 
         roundCorners = true
@@ -420,7 +330,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RoundedCornerShape(50f),
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
 
         roundCorners = false
@@ -432,7 +342,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = RectangleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -455,7 +365,7 @@ class BackgroundTest {
             backgroundColor = Color.Magenta,
             shape = CircleShape,
             shapeColor = Color.White,
-            antiAliasingGap = 2.0f,
+            antiAliasingGap = 2.0f
         )
     }
 
@@ -483,7 +393,7 @@ class BackgroundTest {
                 backgroundColor = Color.Magenta,
                 shape = CircleShape,
                 shapeColor = Color.White,
-                antiAliasingGap = 2.0f,
+                antiAliasingGap = 2.0f
             )
     }
 
@@ -495,7 +405,7 @@ class BackgroundTest {
         assertThat(modifier.inspectableElements.asIterable())
             .containsExactly(
                 ValueElement("color", Color.Magenta),
-                ValueElement("shape", RectangleShape),
+                ValueElement("shape", RectangleShape)
             )
     }
 
@@ -508,7 +418,7 @@ class BackgroundTest {
             .containsExactly(
                 ValueElement("alpha", 1.0f),
                 ValueElement("brush", SolidColor(Color.Red)),
-                ValueElement("shape", RectangleShape),
+                ValueElement("shape", RectangleShape)
             )
     }
 

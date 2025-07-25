@@ -106,7 +106,8 @@ fun StatefulSwipeToDismissBox() {
                     Column(
                         modifier =
                             Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+                        verticalArrangement =
+                            Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
                     ) {
                         SplitToggleChip(
                             checked = checked.value,
@@ -120,10 +121,10 @@ fun StatefulSwipeToDismissBox() {
                                         ToggleChipDefaults.checkboxIcon(checked = checked.value),
                                     contentDescription = null,
                                 )
-                            },
+                            }
                         )
                     }
-                },
+                }
             )
         } else {
             Column(

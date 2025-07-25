@@ -32,7 +32,7 @@ import kotlin.jvm.functions.FunctionN
 internal class ComposableLambdaNImpl(
     val key: Int,
     private val tracked: Boolean,
-    override val arity: Int,
+    override val arity: Int
 ) : ComposableLambdaN {
     private var _block: Any? = null
     private var scope: RecomposeScope? = null
@@ -132,16 +132,16 @@ internal class ComposableLambdaNImpl(
     }
 }
 
-@Stable @ComposeCompilerApi public interface ComposableLambdaN : FunctionN<Any?>
+@Stable @ComposeCompilerApi interface ComposableLambdaN : FunctionN<Any?>
 
 @Suppress("unused")
 @ComposeCompilerApi
-public fun composableLambdaN(
+fun composableLambdaN(
     composer: Composer,
     key: Int,
     tracked: Boolean,
     arity: Int,
-    block: Any,
+    block: Any
 ): ComposableLambdaN {
     composer.startReplaceableGroup(key)
     val slot = composer.rememberedValue()
@@ -162,19 +162,19 @@ public fun composableLambdaN(
 @Suppress
 @ComposeCompilerApi
 @Composable
-public fun rememberComposableLambdaN(
+fun rememberComposableLambdaN(
     key: Int,
     tracked: Boolean,
     arity: Int,
-    block: Any,
+    block: Any
 ): ComposableLambdaN =
     remember { ComposableLambdaNImpl(key, tracked, arity) }.also { it.update(block) }
 
 @Suppress("unused")
 @ComposeCompilerApi
-public fun composableLambdaNInstance(
+fun composableLambdaNInstance(
     key: Int,
     tracked: Boolean,
     arity: Int,
-    block: Any,
+    block: Any
 ): ComposableLambdaN = ComposableLambdaNImpl(key, tracked, arity).apply { update(block) }

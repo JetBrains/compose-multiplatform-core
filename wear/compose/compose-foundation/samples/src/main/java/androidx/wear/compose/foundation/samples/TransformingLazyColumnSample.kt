@@ -22,7 +22,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.lazy.LocalTransformingLazyColumnItemScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material.Text
@@ -66,14 +69,14 @@ fun TransformingLazyColumnAnimateItemSample() {
         TransformingLazyColumn(
             state = state,
             contentPadding = PaddingValues(5.dp),
-            modifier = Modifier.background(Color.Black).fillMaxSize(),
+            modifier = Modifier.background(Color.Black).fillMaxSize()
         ) {
             items(list.size, key = { list[it] }) {
                 Text(
                     "Item ${list[it]}",
                     Modifier.animateItem().clickable {
                         list = list.filter { elem -> elem != list[it] }
-                    },
+                    }
                 )
             }
         }
@@ -81,13 +84,13 @@ fun TransformingLazyColumnAnimateItemSample() {
             "+",
             Modifier.align(Alignment.CenterStart).padding(horizontal = 5.dp).clickable {
                 if (list.size < 25) list = list + "${next++}"
-            },
+            }
         )
         Text(
             "S",
             Modifier.align(Alignment.CenterEnd).padding(horizontal = 5.dp).clickable {
                 list = list.shuffled()
-            },
+            }
         )
     }
 }
@@ -106,7 +109,7 @@ fun TransformingLazyColumnLettersSample() {
         return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
 
-    TransformingLazyColumn {
+    TransformingLazyColumn(contentPadding = PaddingValues(vertical = 10.dp)) {
         items(count = alphabet.size) { index ->
             Text(
                 alphabet[index],
@@ -142,7 +145,7 @@ fun TransformingLazyColumnLettersSample() {
                                 drawCircle(rainbowColor(colorProgress))
                             }
                         }
-                        .padding(20.dp),
+                        .padding(20.dp)
             )
         }
     }
@@ -164,19 +167,75 @@ fun TransformingLazyColumnRectangularBoxesSample() {
                                     override fun createOutline(
                                         size: Size,
                                         layoutDirection: LayoutDirection,
-                                        density: Density,
+                                        density: Density
                                     ): Outline =
                                         RectangleShape.createOutline(
                                             size.copy(height = size.height / 2),
                                             layoutDirection,
-                                            density,
+                                            density
                                         )
                                 }
                         }
                         .background(Color.Gray)
-                        .padding(10.dp),
+                        .padding(10.dp)
             )
         }
+    }
+}
+
+@Preview
+@Sampled
+@Composable
+fun TransformingLazyColumnImplicitSample() {
+    fun rainbowColor(progress: Float): Color {
+        val hue = progress * 360f
+        val saturation = 1f
+        val value = 1f
+
+        return Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+    }
+
+    // Create a Box that automatically transform when in a TransformingLazyColumn
+    val implicitTransformingBox: @Composable (String) -> Unit = { text ->
+        val itemScope = LocalTransformingLazyColumnItemScope.current
+        Box(
+            Modifier.height(30.dp)
+                .then(
+                    itemScope?.let {
+                        with(it) {
+                            Modifier.graphicsLayer {
+                                    with(scrollProgress) {
+                                        if (isUnspecified) {
+                                            return@graphicsLayer
+                                        }
+                                        scaleX =
+                                            (bottomOffsetFraction - max(topOffsetFraction, 0f)) /
+                                                (bottomOffsetFraction - topOffsetFraction)
+                                    }
+                                }
+                                .drawBehind {
+                                    with(scrollProgress) {
+                                        if (isUnspecified) {
+                                            return@drawBehind
+                                        }
+                                        val colorProgress =
+                                            (topOffsetFraction + bottomOffsetFraction) / 2f
+                                        drawRect(rainbowColor(colorProgress))
+                                    }
+                                }
+                        }
+                    } ?: Modifier.background(Color.Green)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            BasicText(text)
+        }
+    }
+    TransformingLazyColumn {
+        items(count = 10) { implicitTransformingBox("Before #$it") }
+        // The middle 3 boxes will not auto-transform
+        items(count = 3) { TransformExclusion { implicitTransformingBox("Middle #$it") } }
+        items(count = 10) { implicitTransformingBox("After #$it") }
     }
 }
 
@@ -187,14 +246,14 @@ fun TransformingLazyColumnScrollToItemSample() {
     val state =
         rememberTransformingLazyColumnState(
             // Customize initial scroll position of the TransformingLazyColumn.
-            initialAnchorItemIndex = 10
+            initialAnchorItemIndex = 10,
         )
     val coroutineScope = rememberCoroutineScope()
 
     TransformingLazyColumn(
         modifier = Modifier.background(Color.Black),
         state = state,
-        contentPadding = PaddingValues(vertical = 20.dp),
+        contentPadding = PaddingValues(vertical = 20.dp)
     ) {
         items(count = 20) {
             Text(
@@ -207,7 +266,7 @@ fun TransformingLazyColumnScrollToItemSample() {
                             drawRect(if (isCentered) Color.Green else Color.DarkGray)
                         }
                         .padding(5.dp)
-                        .clickable { coroutineScope.launch { state.scrollToItem(it) } },
+                        .clickable { coroutineScope.launch { state.scrollToItem(it) } }
             )
         }
 
@@ -215,7 +274,7 @@ fun TransformingLazyColumnScrollToItemSample() {
             Text(
                 "Scroll to top",
                 modifier =
-                    Modifier.clickable { coroutineScope.launch { state.animateScrollToItem(0) } },
+                    Modifier.clickable { coroutineScope.launch { state.animateScrollToItem(0) } }
             )
         }
     }

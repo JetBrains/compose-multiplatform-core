@@ -44,6 +44,7 @@ public class PaginationModelTest {
     @Before
     public void init() {
         mContext = ApplicationProvider.getApplicationContext();
+        PdfViewer.setScreenForTest(mContext);
         mPaginationModel = new PaginationModel(mContext);
     }
 

@@ -29,7 +29,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
@@ -131,7 +130,7 @@ class TooltipTest {
             scope = rememberCoroutineScope()
             PlainTooltipTest(
                 modifier = Modifier.size(customWidth, customHeight),
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -162,7 +161,7 @@ class TooltipTest {
             scope = rememberCoroutineScope()
             RichTooltipTest(
                 modifier = Modifier.size(customWidth, customHeight),
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -191,7 +190,7 @@ class TooltipTest {
             scope = rememberCoroutineScope()
             PlainTooltipTest(
                 tooltipContent = { Text(text = "Test", modifier = Modifier.testTag(TextTestTag)) },
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -222,7 +221,7 @@ class TooltipTest {
                 title = { Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag)) },
                 text = { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) },
                 action = { Text(text = "Action", modifier = Modifier.testTag(ActionTestTag)) },
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -270,7 +269,7 @@ class TooltipTest {
             scope = rememberCoroutineScope()
             PlainTooltipTest(
                 tooltipContent = { Text(text = "Test", modifier = Modifier.testTag(TextTestTag)) },
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -306,7 +305,7 @@ class TooltipTest {
             RichTooltipTest(
                 title = { Text(text = "Subhead", modifier = Modifier.testTag(SubheadTestTag)) },
                 text = { Text(text = "Text", modifier = Modifier.testTag(TextTestTag)) },
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -345,12 +344,12 @@ class TooltipTest {
                 action = {
                     TextButton(
                         onClick = { scope.launch { state.dismiss() } },
-                        modifier = Modifier.testTag(ActionTestTag),
+                        modifier = Modifier.testTag(ActionTestTag)
                     ) {
                         Text(text = "Action")
                     }
                 },
-                tooltipState = state,
+                tooltipState = state
             )
         }
 
@@ -473,7 +472,7 @@ class TooltipTest {
                 anchorBounds = anchorBounds,
                 windowSize = windowSize,
                 layoutDirection = LayoutDirection.Ltr,
-                popupContentSize = popupSize,
+                popupContentSize = popupSize
             )
 
         val tooltipBounds = IntRect(tooltipPosition, popupSize)
@@ -506,7 +505,7 @@ class TooltipTest {
                 anchorBounds = anchorBounds,
                 windowSize = windowSize,
                 layoutDirection = LayoutDirection.Ltr,
-                popupContentSize = popupSize,
+                popupContentSize = popupSize
             )
 
         val tooltipBounds = IntRect(tooltipPosition, popupSize)
@@ -525,18 +524,17 @@ class TooltipTest {
                 tooltip = {
                     PlainTooltip(
                         modifier =
-                            Modifier.layout { measureables, constraints ->
-                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
-                                val placeable = measureables.measure(constraints)
-                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                            Modifier.drawCaret {
+                                it?.let { anchorBounds = it.boundsInWindow() }
+                                onDrawBehind {}
                             }
                     ) {}
-                },
+                }
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     modifier = Modifier.testTag(AnchorTestTag),
-                    contentDescription = null,
+                    contentDescription = null
                 )
             }
         }
@@ -550,7 +548,7 @@ class TooltipTest {
                     expectedAnchorBoundsDp.left.roundToPx().toFloat(),
                     expectedAnchorBoundsDp.top.roundToPx().toFloat(),
                     expectedAnchorBoundsDp.right.roundToPx().toFloat(),
-                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat()
                 )
             }
 
@@ -568,20 +566,19 @@ class TooltipTest {
                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
                 state = rememberTooltipState(initialIsVisible = true, isPersistent = true),
                 tooltip = {
-                    PlainTooltip(
+                    RichTooltip(
                         modifier =
-                            Modifier.layout { measureables, constraints ->
-                                obtainAnchorBounds()?.let { anchorBounds = it.boundsInWindow() }
-                                val placeable = measureables.measure(constraints)
-                                layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                            Modifier.drawCaret {
+                                it?.let { anchorBounds = it.boundsInWindow() }
+                                onDrawBehind {}
                             }
                     ) {}
-                },
+                }
             ) {
                 Icon(
                     Icons.Filled.Favorite,
                     modifier = Modifier.testTag(AnchorTestTag),
-                    contentDescription = null,
+                    contentDescription = null
                 )
             }
         }
@@ -595,7 +592,7 @@ class TooltipTest {
                     expectedAnchorBoundsDp.left.roundToPx().toFloat(),
                     expectedAnchorBoundsDp.top.roundToPx().toFloat(),
                     expectedAnchorBoundsDp.right.roundToPx().toFloat(),
-                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat(),
+                    expectedAnchorBoundsDp.bottom.roundToPx().toFloat()
                 )
             }
 
@@ -626,13 +623,13 @@ class TooltipTest {
                             TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
-                        },
+                        }
                     ) {
                         Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
                     }
                 },
                 state = topState,
-                modifier = Modifier.testTag(topTooltipTag),
+                modifier = Modifier.testTag(topTooltipTag)
             ) {}
             scope.launch { topState.show() }
 
@@ -647,13 +644,13 @@ class TooltipTest {
                             TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
-                        },
+                        }
                     ) {
                         Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
                     }
                 },
                 state = bottomState,
-                modifier = Modifier.testTag(bottomTooltipTag),
+                modifier = Modifier.testTag(bottomTooltipTag)
             ) {}
             scope.launch { bottomState.show() }
         }
@@ -690,13 +687,13 @@ class TooltipTest {
                             TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
-                        },
+                        }
                     ) {
                         Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
                     }
                 },
                 state = topState,
-                modifier = Modifier.testTag(topTooltipTag),
+                modifier = Modifier.testTag(topTooltipTag)
             ) {}
             scope.launch { topState.show() }
 
@@ -712,13 +709,13 @@ class TooltipTest {
                             TextButton(modifier = Modifier.testTag(ActionTestTag), onClick = {}) {
                                 Text(text = "Action")
                             }
-                        },
+                        }
                     ) {
                         Text(text = "Text", modifier = Modifier.testTag(TextTestTag))
                     }
                 },
                 state = bottomState,
-                modifier = Modifier.testTag(bottomTooltipTag),
+                modifier = Modifier.testTag(bottomTooltipTag)
             ) {}
             scope.launch { bottomState.show() }
         }
@@ -746,10 +743,10 @@ class TooltipTest {
             tooltip = {
                 PlainTooltip(
                     modifier = modifier.testTag(ContainerTestTag),
-                    content = tooltipContent,
+                    content = tooltipContent
                 )
             },
-            state = tooltipState,
+            state = tooltipState
         ) {
             Icon(Icons.Filled.Favorite, contentDescription = null)
         }
@@ -770,7 +767,7 @@ class TooltipTest {
                     title = title,
                     action = action,
                     modifier = modifier.testTag(ContainerTestTag),
-                    text = text,
+                    text = text
                 )
             },
             state = tooltipState,
@@ -787,10 +784,10 @@ class TooltipTest {
                 tooltip = {
                     PlainTooltip(
                         modifier = Modifier.testTag(ContainerTestTag),
-                        content = { Text("Tooltip") },
+                        content = { Text("Tooltip") }
                     )
                 },
-                state = rememberTooltipState(),
+                state = rememberTooltipState()
             ) {
                 IconButton(modifier = Modifier.testTag(AnchorTestTag), onClick = {}) {
                     Icon(Icons.Filled.Favorite, contentDescription = null)
@@ -802,39 +799,6 @@ class TooltipTest {
             .onNodeWithTag(AnchorTestTag)
             .assertHasClickAction()
             .assert(SemanticsMatcher.keyIsDefined(SemanticsActions.OnLongClick))
-    }
-
-    @Test
-    fun fullWidthTooltipCaret_xPositioning() {
-        val screenWidth = 1080
-        val tooltipWidth = 1080f
-
-        // Test for when the anchor is near the left side of the screen
-        var caretX: Float =
-            caretX(
-                screenWidthPx = screenWidth,
-                tooltipWidth = tooltipWidth,
-                anchorBounds = Rect(left = 135f, right = 185f, top = 0f, bottom = 0f),
-            )
-        assertThat(caretX).isEqualTo(160f)
-
-        // Test for when the anchor is in the middle of the screen
-        caretX =
-            caretX(
-                screenWidthPx = screenWidth,
-                tooltipWidth = tooltipWidth,
-                anchorBounds = Rect(left = 515.5f, right = 565.5f, top = 0f, bottom = 0f),
-            )
-        assertThat(caretX).isEqualTo(540.5f)
-
-        // Test for when the anchor is in the right side of the screen
-        caretX =
-            caretX(
-                screenWidthPx = screenWidth,
-                tooltipWidth = tooltipWidth,
-                anchorBounds = Rect(left = 920.88f, right = 970.88f, top = 0f, bottom = 0f),
-            )
-        assertThat(caretX).isEqualTo(945.88f)
     }
 }
 

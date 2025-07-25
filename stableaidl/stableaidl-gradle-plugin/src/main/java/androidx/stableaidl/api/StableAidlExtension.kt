@@ -44,9 +44,6 @@ interface StableAidlExtension {
     fun addStaticImportDirs(vararg dirs: File)
 
     val shadowFrameworkDir: DirectoryProperty
-
-    /** The version to use when recording the current ABI for compatibility tracking. */
-    var version: Int?
 }
 
 interface Action {

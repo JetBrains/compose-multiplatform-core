@@ -18,4 +18,4 @@ package androidx.glance.wear.tiles
 
 @RequiresOptIn("This API is experimental and is likely to change in the future.")
 @Retention(AnnotationRetention.BINARY)
-public annotation class ExperimentalGlanceWearTilesApi
+annotation class ExperimentalGlanceWearTilesApi

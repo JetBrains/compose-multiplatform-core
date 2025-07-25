@@ -94,14 +94,16 @@ class PagerTest {
                     object : GestureInclusion {
                         override fun ignoreGestureStart(
                             offset: Offset,
-                            layoutCoordinates: LayoutCoordinates,
+                            layoutCoordinates: LayoutCoordinates
                         ): Boolean {
                             return false
                         }
                     },
                 // disable swipe to dismiss as it conflicts with swipeRight()
             ) { page ->
-                ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item { BasicText(text = "Page $page") }
                 }
             }
@@ -140,7 +142,7 @@ class PagerTest {
                     object : GestureInclusion {
                         override fun ignoreGestureStart(
                             offset: Offset,
-                            layoutCoordinates: LayoutCoordinates,
+                            layoutCoordinates: LayoutCoordinates
                         ): Boolean {
                             val screenOffset = layoutCoordinates.localToScreen(offset)
                             val screenWidth = layoutCoordinates.findRootCoordinates().size.width
@@ -150,7 +152,9 @@ class PagerTest {
                     },
                 // enable swipe to dismiss on each page
             ) { page ->
-                ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item { BasicText(text = "Page $page") }
                 }
             }
@@ -195,7 +199,9 @@ class PagerTest {
             pagerState = rememberPagerState { pageCount }
 
             VerticalPager(state = pagerState, modifier = Modifier.testTag(pagerTestTag)) { page ->
-                ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item { BasicText(text = "Page $page") }
                 }
             }
@@ -221,7 +227,7 @@ class PagerTest {
     private fun verifyScrollsToEachPage(
         pageCount: Int,
         pagerState: PagerState,
-        scrollScope: CoroutineScope,
+        scrollScope: CoroutineScope
     ) {
         val listOfPageIndices = 0 until pageCount
 
@@ -259,7 +265,9 @@ class PagerTest {
             scrollScope = rememberCoroutineScope()
 
             HorizontalPager(state = pagerState, modifier = Modifier.testTag(pagerTestTag)) { page ->
-                ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item { BasicText(text = "Page $page") }
                 }
             }
@@ -280,7 +288,9 @@ class PagerTest {
             scrollScope = rememberCoroutineScope()
 
             VerticalPager(state = pagerState, modifier = Modifier.testTag(pagerTestTag)) { page ->
-                ScalingLazyColumn(modifier = Modifier.fillMaxSize()) {
+                ScalingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     item { BasicText(text = "Page $page") }
                 }
             }
@@ -333,7 +343,7 @@ class PagerTest {
                     advanceEventTime(100)
                 }
             },
-            expectedPageTarget = 2,
+            expectedPageTarget = 2
         )
     }
 
@@ -350,7 +360,7 @@ class PagerTest {
                     advanceEventTime(100)
                 }
             },
-            expectedPageTarget = 2,
+            expectedPageTarget = 2
         )
     }
 
@@ -367,7 +377,7 @@ class PagerTest {
                         RotarySnapSensitivity.HIGH.minThresholdDivider + 1
                 )
             },
-            expectedPageTarget = 0,
+            expectedPageTarget = 0
         )
     }
 
@@ -384,7 +394,7 @@ class PagerTest {
                         RotarySnapSensitivity.HIGH.minThresholdDivider + 1
                 )
             },
-            expectedPageTarget = 0,
+            expectedPageTarget = 0
         )
     }
 
@@ -404,7 +414,7 @@ class PagerTest {
                     advanceEventTime(100)
                 }
             },
-            expectedPageTarget = 2,
+            expectedPageTarget = 2
         )
     }
 
@@ -421,7 +431,7 @@ class PagerTest {
                     advanceEventTime(100)
                 }
             },
-            expectedPageTarget = 2,
+            expectedPageTarget = 2
         )
     }
 
@@ -438,7 +448,7 @@ class PagerTest {
                         RotarySnapSensitivity.HIGH.minThresholdDivider + 1
                 )
             },
-            expectedPageTarget = 0,
+            expectedPageTarget = 0
         )
     }
 
@@ -455,7 +465,7 @@ class PagerTest {
                         RotarySnapSensitivity.HIGH.minThresholdDivider + 1
                 )
             },
-            expectedPageTarget = 0,
+            expectedPageTarget = 0
         )
     }
 
@@ -503,7 +513,7 @@ class PagerTest {
                 HorizontalPager(
                     modifier = Modifier.testTag(pagerTestTag).size(100.dp),
                     state = state,
-                    rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(state),
+                    rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(state)
                 ) { page ->
                     DefaultLazyColumn(lcStates[page])
                 }
@@ -539,7 +549,7 @@ class PagerTest {
                 VerticalPager(
                     modifier = Modifier.testTag(pagerTestTag).size(100.dp),
                     state = pagerState,
-                    rotaryScrollableBehavior = null,
+                    rotaryScrollableBehavior = null
                 ) { page ->
                     DefaultLazyColumn(lcStates[page])
                 }
@@ -570,7 +580,7 @@ class PagerTest {
                 HorizontalPager(
                     modifier = Modifier.testTag(pagerTestTag).size(100.dp),
                     state = state,
-                    rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(state),
+                    rotaryScrollableBehavior = RotaryScrollableDefaults.snapBehavior(state)
                 ) { page ->
                     DefaultLazyColumn(lcStates[page])
                 }
@@ -598,7 +608,7 @@ class PagerTest {
         lowRes: Boolean,
         userScrollEnabled: Boolean,
         rotaryScrollableBehavior: @Composable (pagerState: PagerState) -> RotaryScrollableBehavior?,
-        rotaryScrollInput: RotaryInjectionScope.(pagerState: PagerState) -> Unit,
+        rotaryScrollInput: RotaryInjectionScope.(pagerState: PagerState) -> Unit
     ) {
         lateinit var pagerState: PagerState
         val pageCount = 5
@@ -611,7 +621,7 @@ class PagerTest {
                     modifier = Modifier.testTag(pagerTestTag),
                     state = pagerState,
                     userScrollEnabled = userScrollEnabled,
-                    rotaryScrollableBehavior = rotaryScrollableBehavior(pagerState),
+                    rotaryScrollableBehavior = rotaryScrollableBehavior(pagerState)
                 ) { page ->
                     BasicText(text = "Page $page")
                 }
@@ -629,7 +639,7 @@ class PagerTest {
         lowRes: Boolean,
         userScrollEnabled: Boolean,
         rotaryScrollableBehavior: @Composable (pagerState: PagerState) -> RotaryScrollableBehavior?,
-        rotaryScrollInput: RotaryInjectionScope.(pagerState: PagerState) -> Unit,
+        rotaryScrollInput: RotaryInjectionScope.(pagerState: PagerState) -> Unit
     ) {
         lateinit var pagerState: PagerState
         val pageCount = 5
@@ -642,7 +652,7 @@ class PagerTest {
                     modifier = Modifier.testTag(pagerTestTag),
                     state = pagerState,
                     userScrollEnabled = userScrollEnabled,
-                    rotaryScrollableBehavior = rotaryScrollableBehavior(pagerState),
+                    rotaryScrollableBehavior = rotaryScrollableBehavior(pagerState)
                 ) { page ->
                     BasicText(text = "Page $page")
                 }
@@ -660,8 +670,8 @@ class PagerTest {
         LazyColumn(
             state = state,
             modifier =
-                Modifier.requestFocusOnHierarchyActive()
-                    .rotaryScrollable(RotaryScrollableDefaults.behavior(state), focusRequester),
+                Modifier.rotaryScrollable(RotaryScrollableDefaults.behavior(state), focusRequester)
+                    .hierarchicalFocusRequester(focusRequester)
         ) {
             for (i in 0..20) {
                 item { BasicText(modifier = Modifier.height(lcItemSizeDp), text = "Page content") }

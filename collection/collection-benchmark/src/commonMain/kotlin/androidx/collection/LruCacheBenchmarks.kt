@@ -32,8 +32,10 @@ internal class LruCacheCreateThenFetchWithAllHitsBenchmark(
     }
 }
 
-internal class LruCacheAllMissesBenchmark(private val keyList: List<Int>, private val size: Int) :
-    CollectionBenchmark {
+internal class LruCacheAllMissesBenchmark(
+    private val keyList: List<Int>,
+    private val size: Int,
+) : CollectionBenchmark {
     override fun measuredBlock() {
         val cache = MyCache(size)
         for (e in keyList) {

@@ -20,12 +20,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.performance.annotation"
-    }
+    androidTarget()
     jvm()
     mac()
     linux()
@@ -47,6 +46,10 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
     }
+}
+
+android {
+    namespace = "androidx.performance.annotation"
 }
 
 androidx {

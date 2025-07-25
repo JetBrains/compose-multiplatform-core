@@ -22,9 +22,7 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
 import androidx.pdf.PdfDocument
-import androidx.pdf.PdfRect
 import androidx.pdf.content.PdfPageTextContent
-import androidx.pdf.models.FormWidgetInfo
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,7 +49,7 @@ class PageTest {
     private val pageContent =
         PdfDocument.PdfPageContent(
             listOf(PdfPageTextContent(listOf(RectF(10f, 10f, 50f, 20f)), "SampleText")),
-            emptyList(), // No images in this test case
+            emptyList() // No images in this test case
         )
 
     private val pdfDocument =
@@ -61,7 +59,6 @@ class PageTest {
                     FakeBitmapSource(invocation.getArgument(0))
                 }
             onBlocking { getPageContent(pageNumber = 0) } doReturn pageContent
-            onBlocking { getFormWidgetInfos(any()) } doReturn UPDATED_PAGE_WIDGET_INFOS
         }
 
     private val canvasSpy = spy(Canvas())
@@ -76,35 +73,17 @@ class PageTest {
 
     private val errorFlow = MutableSharedFlow<Throwable>()
 
-    private fun createPage(): Page {
+    private fun createPage(isTouchExplorationEnabled: Boolean): Page {
         return Page(
-            pageNum = 0,
+            0,
             pageSize = PAGE_SIZE,
-            pdfDocument = pdfDocument,
-            backgroundScope = testScope,
-            maxBitmapSizePx = MAX_BITMAP_SIZE,
-            onPageUpdate = invalidationTracker,
-            onPageTextReady = onPageTextReady,
-            errorFlow = errorFlow,
-            isAccessibilityEnabled = true,
-            formWidgetInfos =
-                listOf(
-                    FormWidgetInfo(
-                        widgetIndex = 0,
-                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
-                        widgetRect = Rect(10, 10, 20, 20),
-                        textValue = "true",
-                        accessibilityLabel = "radio",
-                    ),
-                    FormWidgetInfo(
-                        widgetIndex = 0,
-                        widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
-                        widgetRect = Rect(10, 10, 20, 20),
-                        textValue = "false",
-                        accessibilityLabel = "radio",
-                    ),
-                ),
-            pdfFormFillingConfig = PdfFormFillingConfig({ false }, Color.CYAN),
+            pdfDocument,
+            testScope,
+            MAX_BITMAP_SIZE,
+            isTouchExplorationEnabled = isTouchExplorationEnabled,
+            invalidationTracker,
+            onPageTextReady,
+            errorFlow
         )
     }
 
@@ -115,7 +94,7 @@ class PageTest {
         invalidationCounter = 0
         pageTextReadyCounter = 0
 
-        page = createPage()
+        page = createPage(isTouchExplorationEnabled = true)
     }
 
     @Test
@@ -123,7 +102,7 @@ class PageTest {
         // Notably we don't call testDispatcher.scheduler.runCurrent(), so we start, but do not
         // finish, fetching a Bitmap
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
-        val locationInView = RectF(-60f, 125f, -60f + PAGE_SIZE.x, 125f + PAGE_SIZE.y)
+        val locationInView = Rect(-60, 125, -60 + PAGE_SIZE.x, 125 + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -134,7 +113,7 @@ class PageTest {
     fun draw_withBitmap() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val locationInView = RectF(50f, -100f, 50f + PAGE_SIZE.x, -100f + PAGE_SIZE.y)
+        val locationInView = Rect(50, -100, 50 + PAGE_SIZE.x, -100 + PAGE_SIZE.y)
 
         page.draw(canvasSpy, locationInView, listOf())
 
@@ -146,7 +125,7 @@ class PageTest {
                 },
                 isNull(),
                 eq(locationInView),
-                eq(BMP_PAINT),
+                eq(BMP_PAINT)
             )
     }
 
@@ -154,14 +133,14 @@ class PageTest {
     fun draw_withHighlight() {
         page.setVisible(zoom = 1.5F, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
-        val leftEdgeInView = 650f
-        val topEdgeInView = -320f
+        val leftEdgeInView = 650
+        val topEdgeInView = -320
         val locationInView =
-            RectF(
+            Rect(
                 leftEdgeInView,
                 topEdgeInView,
                 leftEdgeInView + PAGE_SIZE.x,
-                topEdgeInView + PAGE_SIZE.y,
+                topEdgeInView + PAGE_SIZE.y
             )
         val highlight = Highlight(PdfRect(pageNum = 0, RectF(10F, 0F, 30F, 20F)), Color.YELLOW)
 
@@ -171,13 +150,8 @@ class PageTest {
         // location in View
         val expectedHighlightLoc =
             RectF().apply {
-                set(
-                    highlight.area.left,
-                    highlight.area.top,
-                    highlight.area.right,
-                    highlight.area.bottom,
-                )
-                offset(leftEdgeInView, topEdgeInView)
+                set(highlight.area.pageRect)
+                offset(leftEdgeInView.toFloat(), topEdgeInView.toFloat())
             }
         verify(canvasSpy).drawRect(eq(expectedHighlightLoc), argThat { color == highlight.color })
 
@@ -187,8 +161,7 @@ class PageTest {
     }
 
     @Test
-    fun updateState_withAccessibilityEnabled_fetchesPageText() {
-        page.isAccessibilityEnabled = true
+    fun updateState_withTouchExplorationEnabled_fetchesPageText() {
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
         assertThat(page.pageText).isEqualTo("SampleText")
@@ -196,8 +169,8 @@ class PageTest {
     }
 
     @Test
-    fun setVisible_withAccessibilityDisabled_doesNotFetchPageText() {
-        page.isAccessibilityEnabled = false
+    fun setVisible_withTouchExplorationDisabled_doesNotFetchPageText() {
+        page = createPage(isTouchExplorationEnabled = false)
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
 
@@ -207,7 +180,6 @@ class PageTest {
 
     @Test
     fun updateState_doesNotFetchPageTextIfAlreadyFetched() {
-        page.isAccessibilityEnabled = true
         page.setVisible(zoom = 1.0f, FULL_PAGE_RECT)
         testDispatcher.scheduler.runCurrent()
         assertThat(page.pageText).isEqualTo("SampleText")
@@ -227,34 +199,8 @@ class PageTest {
         assertThat(page.pageText).isNull()
         assertThat(pageTextReadyCounter).isEqualTo(0)
     }
-
-    @Test
-    fun maybeUpdateFormWidgetInfos_updatesFormWidgetInfos() {
-        page.maybeUpdateFormWidgetInfos()
-        testDispatcher.scheduler.runCurrent()
-        assertThat(page.formWidgetInfos).isNotNull()
-        assertThat(page.formWidgetInfos?.size).isEqualTo(2)
-        assertThat(page.formWidgetInfos).isEqualTo(UPDATED_PAGE_WIDGET_INFOS)
-    }
 }
 
 val PAGE_SIZE = Point(100, 150)
-val FULL_PAGE_RECT = RectF(0f, 0f, PAGE_SIZE.x.toFloat(), PAGE_SIZE.y.toFloat())
+val FULL_PAGE_RECT = Rect(0, 0, PAGE_SIZE.x, PAGE_SIZE.y)
 val MAX_BITMAP_SIZE = Point(500, 500)
-val UPDATED_PAGE_WIDGET_INFOS =
-    listOf(
-        FormWidgetInfo(
-            widgetIndex = 0,
-            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
-            widgetRect = Rect(10, 10, 20, 20),
-            textValue = "false",
-            accessibilityLabel = "radio",
-        ),
-        FormWidgetInfo(
-            widgetIndex = 0,
-            widgetType = FormWidgetInfo.WIDGET_TYPE_RADIOBUTTON,
-            widgetRect = Rect(10, 10, 20, 20),
-            textValue = "true",
-            accessibilityLabel = "radio",
-        ),
-    )

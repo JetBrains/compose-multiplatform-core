@@ -89,13 +89,29 @@ private val knownOwnersOfCreateRefsFor by
 private val horizontalConstraintAnchors by
     lazy(LazyThreadSafetyMode.NONE) { setOf("start", "end", "absoluteLeft", "absoluteRight") }
 
-private val verticalConstraintAnchors by lazy(LazyThreadSafetyMode.NONE) { setOf("top", "bottom") }
+private val verticalConstraintAnchors by
+    lazy(LazyThreadSafetyMode.NONE) {
+        setOf(
+            "top",
+            "bottom",
+        )
+    }
 
 private val horizontalCenterMethodNames by
-    lazy(LazyThreadSafetyMode.NONE) { setOf(CENTER_TO_NAME, CENTER_HORIZONTALLY_TO_NAME) }
+    lazy(LazyThreadSafetyMode.NONE) {
+        setOf(
+            CENTER_TO_NAME,
+            CENTER_HORIZONTALLY_TO_NAME,
+        )
+    }
 
 private val verticalCenterMethodNames by
-    lazy(LazyThreadSafetyMode.NONE) { setOf(CENTER_TO_NAME, CENTER_VERTICALLY_TO_NAME) }
+    lazy(LazyThreadSafetyMode.NONE) {
+        setOf(
+            CENTER_TO_NAME,
+            CENTER_VERTICALLY_TO_NAME,
+        )
+    }
 
 class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
 
@@ -183,7 +199,7 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                         .mapNotNull { expression ->
                             EvaluateableExpression.createForMatchParentUsage(
                                 expression = expression,
-                                isHorizontal = isHorizontal,
+                                isHorizontal = isHorizontal
                             )
                         }
                         .any(EvaluateableExpression::isErrorProneForMatchParentUsage)
@@ -211,7 +227,7 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                             .all()
                             .with("Dimension.percent(1f)")
                             .autoFix()
-                            .build(),
+                            .build()
                 )
             }
 
@@ -269,7 +285,7 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                     location = context.getNameLocation(node),
                     message =
                         "Arguments of `$CREATE_REFS_FOR_NAME` ($argsGiven) do not match " +
-                            "assigned variables ($varsReceived)",
+                            "assigned variables ($varsReceived)"
                 )
             }
 
@@ -337,7 +353,7 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                                         argumentExpression is UQualifiedReferenceExpression ||
                                             containingBlock.isChainParamsCalledInIdentifier(
                                                 identifier
-                                            ),
+                                            )
                                 )
                             previousNode?.let { prevNode ->
                                 chainNode.prev = prevNode
@@ -363,13 +379,13 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                             resolvedExpression.marginExpression?.let {
                                 chainParamsBuilder.append(
                                     resolvedExpression.marginParamName,
-                                    resolvedExpression.marginExpression,
+                                    resolvedExpression.marginExpression
                                 )
                             }
                             resolvedExpression.marginGoneExpression?.let {
                                 chainParamsBuilder.append(
                                     resolvedExpression.marginGoneParamName,
-                                    resolvedExpression.marginGoneExpression,
+                                    resolvedExpression.marginGoneExpression
                                 )
                             }
                             val expressionToDelete =
@@ -417,7 +433,7 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                                             .autoFix()
                                             .build()
                                     )
-                                    .build(),
+                                    .build()
                         )
                     }
                 }
@@ -442,8 +458,8 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         ConstraintLayoutDslDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE),
-                    ),
+                        EnumSet.of(Scope.JAVA_FILE)
+                    )
             )
 
         val IncorrectMatchParentUsageIssue =
@@ -462,8 +478,8 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         ConstraintLayoutDslDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE),
-                    ),
+                        EnumSet.of(Scope.JAVA_FILE)
+                    )
             )
 
         val IncorrectChainMarginsUsageIssue =
@@ -484,15 +500,15 @@ class ConstraintLayoutDslDetector : Detector(), SourceCodeScanner {
                 implementation =
                     Implementation(
                         ConstraintLayoutDslDetector::class.java,
-                        EnumSet.of(Scope.JAVA_FILE),
-                    ),
+                        EnumSet.of(Scope.JAVA_FILE)
+                    )
             )
     }
 }
 
 internal class EvaluateableExpression(
     private val expectedArgumentText: String,
-    private val expression: UCallExpression,
+    private val expression: UCallExpression
 ) {
     /**
      * Should only return `true` when we know for certain that there's wrong usage.
@@ -517,7 +533,7 @@ internal class EvaluateableExpression(
     companion object {
         fun createForMatchParentUsage(
             expression: UExpression,
-            isHorizontal: Boolean,
+            isHorizontal: Boolean
         ): EvaluateableExpression? {
             if (expression is UQualifiedReferenceExpression) {
                 // For the form of `start.linkTo(parent.start)`
@@ -534,7 +550,7 @@ internal class EvaluateableExpression(
                 }
                 return EvaluateableExpression(
                     expectedArgumentText = "$PARENT_NAME.$receiverAnchorName",
-                    expression = callExpression,
+                    expression = callExpression
                 )
             } else if (expression is UCallExpression) {
                 // For the form of `centerTo(parent)`
@@ -547,7 +563,7 @@ internal class EvaluateableExpression(
                 }
                 return EvaluateableExpression(
                     expectedArgumentText = PARENT_NAME,
-                    expression = expression,
+                    expression = expression
                 )
             }
             return null
@@ -558,7 +574,7 @@ internal class EvaluateableExpression(
 internal fun findChainLikeConstraints(
     constraintSetBlock: UBlockExpression,
     chainNode: ChainNode,
-    isHorizontal: Boolean,
+    isHorizontal: Boolean
 ): List<ResolvedChainLikeExpression> {
     val identifier = chainNode.expression
     val constrainTargetExpressions =
@@ -627,7 +643,7 @@ internal fun findChainLikeConstraints(
                     linkCallExpression,
                     anchorName,
                     linkCallExpression.getArgumentForParameter(MARGIN_INDEX_IN_LINK_TO),
-                    linkCallExpression.getArgumentForParameter(GONE_MARGIN_INDEX_IN_LINK_TO),
+                    linkCallExpression.getArgumentForParameter(GONE_MARGIN_INDEX_IN_LINK_TO)
                 )
             } else {
                 null
@@ -638,7 +654,7 @@ internal fun findChainLikeConstraints(
 
 internal class ChainNode(
     val expression: USimpleNameReferenceExpression,
-    val hasChainParams: Boolean,
+    val hasChainParams: Boolean
 ) {
     var prev: ChainNode? = null
     var next: ChainNode? = null
@@ -648,7 +664,7 @@ internal class ResolvedChainLikeExpression(
     val fullExpression: UCallExpression,
     anchorName: String,
     val marginExpression: UExpression?,
-    val marginGoneExpression: UExpression?,
+    val marginGoneExpression: UExpression?
 ) {
     val marginParamName: String = anchorName.asChainParamsArgument(false)
     val marginGoneParamName: String = anchorName.asChainParamsArgument(true)

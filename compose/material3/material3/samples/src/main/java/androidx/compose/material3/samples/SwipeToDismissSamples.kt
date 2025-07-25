@@ -29,9 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -42,35 +39,25 @@ import androidx.compose.ui.tooling.preview.Preview
 @Composable
 fun SwipeToDismissListItems() {
     val dismissState = rememberSwipeToDismissBoxState()
-    var isVisible by remember { mutableStateOf(true) }
-    if (isVisible) {
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {
-                val color by
-                    animateColorAsState(
-                        when (dismissState.targetValue) {
-                            SwipeToDismissBoxValue.Settled -> Color.LightGray
-                            SwipeToDismissBoxValue.StartToEnd -> Color.Green
-                            SwipeToDismissBoxValue.EndToStart -> Color.Red
-                        }
-                    )
-                Box(Modifier.fillMaxSize().background(color))
-            },
-            onDismiss = { direction ->
-                if (direction == SwipeToDismissBoxValue.EndToStart) {
-                    isVisible = false
-                } else {
-                    dismissState.reset()
-                }
-            },
-        ) {
-            OutlinedCard(shape = RectangleShape) {
-                ListItem(
-                    headlineContent = { Text("Cupcake") },
-                    supportingContent = { Text("Swipe me left or right!") },
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color by
+                animateColorAsState(
+                    when (dismissState.targetValue) {
+                        SwipeToDismissBoxValue.Settled -> Color.LightGray
+                        SwipeToDismissBoxValue.StartToEnd -> Color.Green
+                        SwipeToDismissBoxValue.EndToStart -> Color.Red
+                    }
                 )
-            }
+            Box(Modifier.fillMaxSize().background(color))
+        }
+    ) {
+        OutlinedCard(shape = RectangleShape) {
+            ListItem(
+                headlineContent = { Text("Cupcake") },
+                supportingContent = { Text("Swipe me left or right!") }
+            )
         }
     }
 }

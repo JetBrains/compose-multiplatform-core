@@ -19,6 +19,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
-        <activity android:name="androidx.activity.ComponentActivity" />
+        <activity android:name="android.app.Activity" />
     </application>
 </manifest>

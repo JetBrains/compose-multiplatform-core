@@ -30,16 +30,16 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public expect class SchemaBundle(formatVersion: Int, database: DatabaseBundle) :
+expect class SchemaBundle(formatVersion: Int, database: DatabaseBundle) :
     SchemaEquality<SchemaBundle> {
 
-    public val formatVersion: Int
-    public val database: DatabaseBundle
+    val formatVersion: Int
+    val database: DatabaseBundle
 
     override fun isSchemaEqual(other: SchemaBundle): Boolean
 }
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val SCHEMA_LATEST_FORMAT_VERSION: Int = 1
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) const val SCHEMA_LATEST_FORMAT_VERSION = 1
 
 @OptIn(ExperimentalSerializationApi::class) // due to prettyPrintIndex
 internal val json = Json {

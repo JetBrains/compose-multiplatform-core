@@ -29,8 +29,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.fromColorLong
-import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -169,7 +167,7 @@ internal fun AnnotatedString.convertToCharSequence(): CharSequence {
             Annotation("androidx.compose.text.SpanStyle", encodeHelper.encodedString()),
             start,
             end,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
     }
     return spannableString
@@ -254,7 +252,7 @@ internal class EncodeHelper {
     }
 
     fun encode(color: Color) {
-        encode(color.toColorLong().toULong())
+        encode(color.value)
     }
 
     fun encode(textUnit: TextUnit) {
@@ -427,7 +425,7 @@ internal class DecodeHelper(string: String) {
     }
 
     fun decodeColor(): Color {
-        return Color.fromColorLong(parcel.readLong())
+        return Color(decodeULong())
     }
 
     @OptIn(ExperimentalUnitApi::class)
@@ -495,7 +493,7 @@ internal class DecodeHelper(string: String) {
         return Shadow(
             color = decodeColor(),
             offset = Offset(decodeFloat(), decodeFloat()),
-            blurRadius = decodeFloat(),
+            blurRadius = decodeFloat()
         )
     }
 
@@ -538,7 +536,7 @@ private class MutableSpanStyle(
     var localeList: LocaleList? = null,
     var background: Color = Color.Unspecified,
     var textDecoration: TextDecoration? = null,
-    var shadow: Shadow? = null,
+    var shadow: Shadow? = null
 ) {
     fun toSpanStyle(): SpanStyle {
         return SpanStyle(
@@ -555,7 +553,7 @@ private class MutableSpanStyle(
             localeList = localeList,
             background = background,
             textDecoration = textDecoration,
-            shadow = shadow,
+            shadow = shadow
         )
     }
 }

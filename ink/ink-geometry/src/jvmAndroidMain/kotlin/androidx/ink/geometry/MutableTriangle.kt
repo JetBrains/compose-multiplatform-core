@@ -40,13 +40,7 @@ public class MutableTriangle(
     /** Constructs a degenerate [MutableTriangle] with [p0], [p1], and [p2] set to (0, 0). */
     public constructor() : this(MutableVec(0f, 0f), MutableVec(0f, 0f), MutableVec(0f, 0f))
 
-    /**
-     * Fills this [MutableTriangle] with the values from [input].
-     *
-     * Returns the modified instance to allow chaining calls.
-     *
-     * @return `this`
-     */
+    /** Copies the points from [input] to this [MutableTriangle] and returns `this`. */
     public fun populateFrom(input: Triangle): MutableTriangle {
         p0.x = input.p0.x
         p0.y = input.p0.y

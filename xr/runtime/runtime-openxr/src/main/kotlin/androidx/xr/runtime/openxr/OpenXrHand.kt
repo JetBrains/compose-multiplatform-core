@@ -21,32 +21,28 @@ import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.internal.Hand
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.nio.FloatBuffer
 
 /** Wraps the native [XrHandJointLocationsEXT] with the [Hand] interface. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrHand internal constructor(private val isLeftHand: Boolean) : Hand, Updatable {
 
-    override var trackingState: TrackingState = TrackingState.PAUSED
+    override var trackingState: TrackingState = TrackingState.Paused
         private set
 
-    override var handJointsBuffer: FloatBuffer = ByteBuffer.allocate(0).asFloatBuffer()
+    override var handJointsBuffer: ByteBuffer = ByteBuffer.allocate(0)
         private set
 
     override fun update(xrTime: Long) {
-        val handDataBuffer = nativeGetHandDataBuffer(isLeftHand, xrTime)
-        if (handDataBuffer == null) {
-            trackingState = TrackingState.PAUSED
-            return
-        }
-
+        val handDataBuffer =
+            nativeGetHandDataBuffer(isLeftHand, xrTime)
+                ?: throw IllegalStateException("Could not get hand data buffer.")
         trackingState =
-            if (handDataBuffer.int != 0) TrackingState.TRACKING else TrackingState.PAUSED
-        handJointsBuffer = handDataBuffer.slice().order(ByteOrder.nativeOrder()).asFloatBuffer()
+            if (handDataBuffer.int != 0) TrackingState.Tracking else TrackingState.Paused
+        handJointsBuffer = handDataBuffer.slice().order(ByteOrder.nativeOrder())
     }
 
     private external fun nativeGetHandDataBuffer(
         isLeftHand: Boolean,
-        timestampNs: Long,
+        timestampNs: Long
     ): ByteBuffer?
 }

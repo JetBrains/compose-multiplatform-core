@@ -52,7 +52,9 @@ import androidx.compose.ui.unit.dp
 @Sampled
 @Composable
 fun FloatingActionButtonSample() {
-    FloatingActionButton(onClick = { /* do something */ }) {
+    FloatingActionButton(
+        onClick = { /* do something */ },
+    ) {
         Icon(Icons.Filled.Add, "Localized description")
     }
 }
@@ -61,7 +63,9 @@ fun FloatingActionButtonSample() {
 @Sampled
 @Composable
 fun SmallFloatingActionButtonSample() {
-    SmallFloatingActionButton(onClick = { /* do something */ }) {
+    SmallFloatingActionButton(
+        onClick = { /* do something */ },
+    ) {
         Icon(Icons.Filled.Add, contentDescription = "Localized description")
     }
 }
@@ -71,7 +75,9 @@ fun SmallFloatingActionButtonSample() {
 @Sampled
 @Composable
 fun MediumFloatingActionButtonSample() {
-    MediumFloatingActionButton(onClick = { /* do something */ }) {
+    MediumFloatingActionButton(
+        onClick = { /* do something */ },
+    ) {
         Icon(
             Icons.Filled.Add,
             contentDescription = "Localized description",
@@ -84,7 +90,9 @@ fun MediumFloatingActionButtonSample() {
 @Sampled
 @Composable
 fun LargeFloatingActionButtonSample() {
-    LargeFloatingActionButton(onClick = { /* do something */ }) {
+    LargeFloatingActionButton(
+        onClick = { /* do something */ },
+    ) {
         Icon(
             Icons.Filled.Add,
             contentDescription = "Localized description",
@@ -109,7 +117,7 @@ fun AnimatedFloatingActionButtonSample() {
                 modifier =
                     Modifier.animateFloatingActionButton(
                         visible = fabVisible,
-                        alignment = Alignment.BottomEnd,
+                        alignment = Alignment.BottomEnd
                     ),
                 onClick = { /* do something */ },
             ) {
@@ -201,7 +209,7 @@ fun MediumExtendedFloatingActionButtonSample() {
             Icon(
                 Icons.Filled.Add,
                 "Localized description",
-                modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize),
+                modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize)
             )
         },
         text = { Text(text = "Medium Extended FAB") },
@@ -219,7 +227,7 @@ fun LargeExtendedFloatingActionButtonSample() {
             Icon(
                 Icons.Filled.Add,
                 "Localized description",
-                modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize),
+                modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
             )
         },
         text = { Text(text = "Large Extended FAB") },
@@ -299,7 +307,7 @@ fun MediumAnimatedExtendedFloatingActionButtonSample() {
                     Icon(
                         Icons.Filled.Add,
                         "Localized Description",
-                        modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize),
+                        modifier = Modifier.size(FloatingActionButtonDefaults.MediumIconSize)
                     )
                 },
                 text = { Text(text = "Medium Extended FAB") },
@@ -333,7 +341,7 @@ fun LargeAnimatedExtendedFloatingActionButtonSample() {
                     Icon(
                         Icons.Filled.Add,
                         "Localized Description",
-                        modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize),
+                        modifier = Modifier.size(FloatingActionButtonDefaults.LargeIconSize)
                     )
                 },
                 text = { Text(text = "Large Extended FAB") },

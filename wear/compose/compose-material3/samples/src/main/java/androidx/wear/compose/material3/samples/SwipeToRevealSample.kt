@@ -21,14 +21,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -38,48 +36,47 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.RevealValue
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.foundation.rememberRevealState
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.Card
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.RevealValue
 import androidx.wear.compose.material3.SwipeToReveal
 import androidx.wear.compose.material3.SwipeToRevealDefaults
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TitleCard
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
-import androidx.wear.compose.material3.rememberRevealState
-import kotlinx.coroutines.launch
 
 @Composable
 @Sampled
 fun SwipeToRevealSample() {
     SwipeToReveal(
-        primaryAction = {
-            PrimaryActionButton(
+        // Use the double action anchor width when revealing two actions
+        revealState =
+            rememberRevealState(
+                anchors =
+                    SwipeToRevealDefaults.anchors(
+                        anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                    )
+            ),
+        actions = {
+            primaryAction(
                 onClick = { /* This block is called when the primary action is executed. */ },
                 icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                text = { Text("Delete") },
+                text = { Text("Delete") }
             )
-        },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-        },
-        secondaryAction = {
-            SecondaryActionButton(
+            secondaryAction(
                 onClick = { /* This block is called when the secondary action is executed. */ },
-                icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") },
+                icon = { Icon(Icons.Outlined.MoreVert, contentDescription = "Options") }
             )
-        },
-        undoPrimaryAction = {
-            UndoActionButton(
+            undoPrimaryAction(
                 onClick = { /* This block is called when the undo primary action is executed. */ },
                 text = { Text("Undo Delete") },
             )
-        },
+        }
     ) {
         Button(
             modifier =
@@ -94,10 +91,10 @@ fun SwipeToRevealSample() {
                             CustomAccessibilityAction("Options") {
                                 /* Add the secondary click handler here */
                                 true
-                            },
+                            }
                         )
                 },
-            onClick = {},
+            onClick = {}
         ) {
             Text("This Button has two actions", modifier = Modifier.fillMaxSize())
         }
@@ -108,22 +105,18 @@ fun SwipeToRevealSample() {
 @Sampled
 fun SwipeToRevealSingleActionCardSample() {
     SwipeToReveal(
-        primaryAction = {
-            PrimaryActionButton(
+        actionButtonHeight = SwipeToRevealDefaults.LargeActionButtonHeight,
+        actions = {
+            primaryAction(
                 onClick = { /* This block is called when the primary action is executed. */ },
                 icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                text = { Text("Delete") },
-                modifier = Modifier.height(SwipeToRevealDefaults.LargeActionButtonHeight),
+                text = { Text("Delete") }
             )
-        },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-        },
-        undoPrimaryAction = {
-            UndoActionButton(
+            undoPrimaryAction(
                 onClick = { /* This block is called when the undo primary action is executed. */ },
                 text = { Text("Undo Delete") },
             )
-        },
+        }
     ) {
         Card(
             modifier =
@@ -134,14 +127,14 @@ fun SwipeToRevealSingleActionCardSample() {
                             CustomAccessibilityAction("Delete") {
                                 /* Add the primary action click handler here */
                                 true
-                            }
+                            },
                         )
                 },
-            onClick = {},
+            onClick = {}
         ) {
             Text(
                 "This Card has one action, and the revealed button is taller",
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
@@ -149,25 +142,24 @@ fun SwipeToRevealSingleActionCardSample() {
 
 @Composable
 @Sampled
-fun SwipeToRevealNoPartiallyRevealedStateSample() {
+fun SwipeToRevealNonAnchoredSample() {
     SwipeToReveal(
-        primaryAction = {
-            PrimaryActionButton(
+        revealState =
+            rememberRevealState(
+                anchors = SwipeToRevealDefaults.anchors(useAnchoredActions = false)
+            ),
+        actions = {
+            primaryAction(
                 onClick = { /* This block is called when the primary action is executed. */ },
                 icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                text = { Text("Delete") },
+                text = { Text("Delete") }
             )
-        },
-        onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-        },
-        undoPrimaryAction = {
-            UndoActionButton(
+            undoPrimaryAction(
                 onClick = { /* This block is called when the undo primary action is executed. */ },
                 icon = { Icon(Icons.Outlined.Refresh, contentDescription = "Undo") },
                 text = { Text("Undo") },
             )
-        },
-        hasPartiallyRevealedState = false,
+        }
     ) {
         Button(
             modifier =
@@ -178,10 +170,10 @@ fun SwipeToRevealNoPartiallyRevealedStateSample() {
                             CustomAccessibilityAction("Delete") {
                                 /* Add the primary action click handler here */
                                 true
-                            }
+                            },
                         )
                 },
-            onClick = {},
+            onClick = {}
         ) {
             Text("Swipe to execute the primary action.", modifier = Modifier.fillMaxSize())
         }
@@ -191,40 +183,35 @@ fun SwipeToRevealNoPartiallyRevealedStateSample() {
 @Preview
 @Composable
 @Sampled
-fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
+fun SwipeToRevealWithTransformingLazyColumnSample() {
     val transformationSpec = rememberTransformationSpec()
     val tlcState = rememberTransformingLazyColumnState()
-    val coroutineScope = rememberCoroutineScope()
+
     TransformingLazyColumn(
         state = tlcState,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
-        modifier = Modifier.background(Color.Black),
+        modifier = Modifier.background(Color.Black)
     ) {
         items(count = 100) { index ->
-            val revealState = rememberRevealState()
+            val revealState =
+                rememberRevealState(
+                    anchors =
+                        SwipeToRevealDefaults.anchors(
+                            anchorWidth = SwipeToRevealDefaults.DoubleActionAnchorWidth,
+                        )
+                )
 
             // SwipeToReveal is covered on scroll.
             LaunchedEffect(tlcState.isScrollInProgress) {
                 if (
                     tlcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
                 ) {
-                    coroutineScope.launch {
-                        revealState.animateTo(targetValue = RevealValue.Covered)
-                    }
+                    revealState.animateTo(targetValue = RevealValue.Covered)
                 }
             }
 
             SwipeToReveal(
-                primaryAction = {
-                    PrimaryActionButton(
-                        onClick = { /* Called when the primary action is executed. */ },
-                        icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                        text = { Text("Delete") },
-                    )
-                },
                 revealState = revealState,
-                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-                },
                 modifier =
                     Modifier.transformedHeight(this@items, transformationSpec).graphicsLayer {
                         with(transformationSpec) { applyContainerTransformation(scrollProgress) }
@@ -232,82 +219,32 @@ fun SwipeToRevealWithTransformingLazyColumnResetOnScrollSample() {
                         compositingStrategy = CompositingStrategy.ModulateAlpha
                         clip = false
                     },
-            ) {
-                TitleCard(
-                    onClick = {},
-                    title = { Text("Message #$index") },
-                    subtitle = { Text("Body of the message") },
-                    modifier =
-                        Modifier.semantics {
-                            // Use custom actions to make the primary action accessible
-                            customActions =
-                                listOf(
-                                    CustomAccessibilityAction("Delete") {
-                                        /* Add the primary action click handler here */
-                                        true
-                                    }
-                                )
-                        },
-                )
-            }
-        }
-    }
-}
-
-@Preview
-@Composable
-@Sampled
-fun SwipeToRevealWithScalingLazyColumnResetOnScrollSample() {
-    val slcState = rememberScalingLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-    ScalingLazyColumn(
-        state = slcState,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
-        modifier = Modifier.background(Color.Black),
-    ) {
-        items(count = 100) { index ->
-            val revealState = rememberRevealState()
-
-            // SwipeToReveal is covered on scroll.
-            LaunchedEffect(slcState.isScrollInProgress) {
-                if (
-                    slcState.isScrollInProgress && revealState.currentValue != RevealValue.Covered
-                ) {
-                    coroutineScope.launch {
-                        revealState.animateTo(targetValue = RevealValue.Covered)
-                    }
-                }
-            }
-
-            SwipeToReveal(
-                primaryAction = {
-                    PrimaryActionButton(
+                actions = {
+                    primaryAction(
                         onClick = { /* Called when the primary action is executed. */ },
                         icon = { Icon(Icons.Outlined.Delete, contentDescription = "Delete") },
-                        text = { Text("Delete") },
+                        text = { Text("Delete") }
                     )
-                },
-                revealState = revealState,
-                onSwipePrimaryAction = { /* This block is called when the full swipe gesture is performed. */
-                },
-                hasPartiallyRevealedState = true,
+                }
             ) {
-                TitleCard(
-                    onClick = {},
-                    title = { Text("Message #$index") },
-                    subtitle = { Text("Body of the message") },
-                    modifier =
-                        Modifier.semantics {
-                            // Use custom actions to make the primary action accessible
-                            customActions =
-                                listOf(
-                                    CustomAccessibilityAction("Delete") {
-                                        /* Add the primary action click handler here */
-                                        true
-                                    }
-                                )
-                        },
-                )
+                TransformExclusion {
+                    TitleCard(
+                        onClick = {},
+                        title = { Text("Message #$index") },
+                        subtitle = { Text("Body of the message") },
+                        modifier =
+                            Modifier.semantics {
+                                // Use custom actions to make the primary action accessible
+                                customActions =
+                                    listOf(
+                                        CustomAccessibilityAction("Delete") {
+                                            /* Add the primary action click handler here */
+                                            true
+                                        },
+                                    )
+                            }
+                    )
+                }
             }
         }
     }

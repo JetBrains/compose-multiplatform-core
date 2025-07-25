@@ -32,7 +32,9 @@ import java.io.File
  * bitmap.saveToFile(file)
  * ```
  */
-public class ResultsReporter(private val testName: String) {
+public class ResultsReporter(
+    private val testName: String,
+) {
 
     private data class Result(val file: File, val title: String)
 
@@ -86,7 +88,7 @@ public class ResultsReporter(private val testName: String) {
                 putString("android.studio.v2display.benchmark", summary)
                 putString(
                     "android.studio.v2display.benchmark.outputDirPath",
-                    outputFolder.absolutePath,
+                    outputFolder.absolutePath
                 )
 
                 // Result files

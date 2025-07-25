@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.DefaultCameraDistance
 import androidx.compose.ui.graphics.DefaultShadowColor
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
@@ -213,8 +212,8 @@ class ParameterFactoryTest {
                 Brush.linearGradient(
                     colors = listOf(Color.Red, Color.Blue),
                     start = Offset(0.0f, 0.5f),
-                    end = Offset(5.0f, 10.0f),
-                ),
+                    end = Offset(5.0f, 10.0f)
+                )
             )
         ) {
             parameter("brush", ParameterType.String, "LinearGradient") {
@@ -241,12 +240,6 @@ class ParameterFactoryTest {
                 }
                 parameter("tileMode", ParameterType.String, "Clamp", index = 5)
                 parameter("createdSize", ParameterType.String, "Unspecified", index = 6)
-                parameter(
-                    "transform",
-                    ParameterType.String,
-                    Matrix::class.java.simpleName,
-                    index = 8,
-                )
             }
         }
         // TODO: add tests for RadialGradient & ShaderBrush
@@ -352,7 +345,7 @@ class ParameterFactoryTest {
                     Font(1234, FontWeight.Normal, FontStyle.Italic),
                     Font(1235, FontWeight.Normal, FontStyle.Normal),
                     Font(1236, FontWeight.Bold, FontStyle.Italic),
-                    Font(1237, FontWeight.Bold, FontStyle.Normal),
+                    Font(1237, FontWeight.Bold, FontStyle.Normal)
                 )
             )
         assertThat(lookup(family)).isEqualTo(ParameterType.Resource to 1235)
@@ -577,7 +570,7 @@ class ParameterFactoryTest {
                 "f",
                 null,
                 "g",
-                null,
+                null
             )
         val parameter = create("array", value)
         val refToSelf = ref()
@@ -617,7 +610,7 @@ class ParameterFactoryTest {
                     .wrapContentHeight(Alignment.Bottom)
                     .width(30.0.dp)
                     .paint(TestPainter(10f, 20f)),
-                maxRecursions = 4,
+                maxRecursions = 4
             )
         ) {
             parameter("modifier", ParameterType.String, "") {
@@ -679,7 +672,7 @@ class ParameterFactoryTest {
         validate(
             create(
                 "modifier",
-                Modifier.graphicsLayer(scaleX = 2f, scaleY = 1.5f, alpha = 0.5f, clip = true),
+                Modifier.graphicsLayer(scaleX = 2f, scaleY = 1.5f, alpha = 0.5f, clip = true)
             )
         ) {
             parameter("modifier", ParameterType.String, "") {
@@ -900,7 +893,7 @@ class ParameterFactoryTest {
             parameter(
                 "transform",
                 ParameterType.String,
-                TextGeometricTransform::class.java.simpleName,
+                TextGeometricTransform::class.java.simpleName
             ) {
                 parameter("scaleX", ParameterType.Float, 2.0f)
                 parameter("skewX", ParameterType.Float, 1.5f)
@@ -926,7 +919,7 @@ class ParameterFactoryTest {
             TextStyle(
                 color = Color.Red,
                 textDecoration = TextDecoration.Underline,
-                textDirection = TextDirection.Content,
+                textDirection = TextDirection.Content
             )
         validate(create("style", style)) {
             parameter("style", ParameterType.String, TextStyle::class.java.simpleName) {
@@ -964,7 +957,7 @@ class ParameterFactoryTest {
         name: String,
         value: Any,
         maxRecursions: Int = MAX_RECURSIONS,
-        maxInitialIterableSize: Int = MAX_ITERABLE_SIZE,
+        maxInitialIterableSize: Int = MAX_ITERABLE_SIZE
     ): NodeParameter {
         val parameter =
             factory.create(
@@ -976,7 +969,7 @@ class ParameterFactoryTest {
                 ParameterKind.Normal,
                 PARAM_INDEX,
                 maxRecursions,
-                maxInitialIterableSize,
+                maxInitialIterableSize
             )
 
         // Check that factory.expand will return the exact same information as factory.create
@@ -987,7 +980,7 @@ class ParameterFactoryTest {
             value,
             mutableIntListOf(),
             maxRecursions,
-            maxInitialIterableSize,
+            maxInitialIterableSize
         )
 
         return parameter
@@ -1000,7 +993,7 @@ class ParameterFactoryTest {
         startIndex: Int = 0,
         maxElements: Int = MAX_ITERABLE_SIZE,
         maxRecursions: Int = MAX_RECURSIONS,
-        maxInitialIterableSize: Int = MAX_ITERABLE_SIZE,
+        maxInitialIterableSize: Int = MAX_ITERABLE_SIZE
     ): NodeParameter? =
         factory.expand(
             ROOT_ID,
@@ -1012,7 +1005,7 @@ class ParameterFactoryTest {
             startIndex,
             maxElements,
             maxRecursions,
-            maxInitialIterableSize,
+            maxInitialIterableSize
         )
 
     private fun lookup(value: Any): Pair<ParameterType, Any?> {
@@ -1027,12 +1020,12 @@ class ParameterFactoryTest {
             ANCHOR_HASH,
             ParameterKind.Normal,
             PARAM_INDEX,
-            intListOf(*reference),
+            intListOf(*reference)
         )
 
     private fun validate(
         parameter: NodeParameter,
-        expected: ParameterValidationReceiver.() -> Unit = {},
+        expected: ParameterValidationReceiver.() -> Unit = {}
     ) {
         val elements = ParameterValidationReceiver(listOf(parameter).listIterator())
         elements.expected()
@@ -1045,7 +1038,7 @@ class ParameterFactoryTest {
         value: Any,
         indices: MutableIntList,
         maxRecursions: Int,
-        maxInitialIterableSize: Int,
+        maxInitialIterableSize: Int
     ) {
         factory.clearReferenceCache()
         val reference =
@@ -1056,7 +1049,7 @@ class ParameterFactoryTest {
                 value,
                 reference,
                 maxRecursions = maxRecursions,
-                maxInitialIterableSize = maxInitialIterableSize,
+                maxInitialIterableSize = maxInitialIterableSize
             )
         if (parameter.value == null && indices.isNotEmpty()) {
             assertThat(expanded).isNull()
@@ -1072,7 +1065,7 @@ class ParameterFactoryTest {
                             value,
                             indices,
                             maxRecursions,
-                            maxInitialIterableSize,
+                            maxInitialIterableSize
                         )
                         indices.removeLast()
                     }
@@ -1102,7 +1095,7 @@ private class TestPainter(val width: Float, val height: Float) : Painter() {
 class ParameterValidationReceiver(
     private val parameterIterator: ListIterator<NodeParameter>,
     private val trace: String = "",
-    private val startIndex: Int = 0,
+    private val startIndex: Int = 0
 ) {
     fun parameter(
         name: String,
@@ -1111,7 +1104,7 @@ class ParameterValidationReceiver(
         ref: NodeParameterReference? = null,
         index: Int = -1,
         childStartIndex: Int = 0,
-        block: ParameterValidationReceiver.() -> Unit = {},
+        block: ParameterValidationReceiver.() -> Unit = {}
     ) {
         val listIndex = startIndex + parameterIterator.nextIndex()
         val expectedIndex = if (index < 0) listIndex else index

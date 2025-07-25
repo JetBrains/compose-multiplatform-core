@@ -31,15 +31,14 @@ private object ThreadLocalData {
 
 /** Container of thread-local data. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public actual class ThreadLocal<T> {
+actual class ThreadLocal<T> {
     private val threadId = currentThreadId()
 
-    public actual fun get(): T? {
-        @Suppress("UNCHECKED_CAST")
-        return ThreadLocalData.threadLocalMap[threadId] as? T
+    actual fun get(): T? {
+        @Suppress("UNCHECKED_CAST") return ThreadLocalData.threadLocalMap[threadId] as? T
     }
 
-    public actual fun set(value: T?) {
+    actual fun set(value: T?) {
         if (value == null) {
             ThreadLocalData.threadLocalMap.remove(threadId)
         } else {

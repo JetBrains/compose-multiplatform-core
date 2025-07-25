@@ -83,7 +83,7 @@ fun PlaceholderChips() {
                 ChipWithContentPlaceholders(
                     label = labelText,
                     textAlignment = TextAlign.Center,
-                    colors = ChipDefaults.primaryChipColors(),
+                    colors = ChipDefaults.primaryChipColors()
                 )
                 LaunchedEffect(resetCount) {
                     labelText = ""
@@ -96,7 +96,7 @@ fun PlaceholderChips() {
                 ChipWithContentPlaceholders(
                     label = labelText,
                     textAlignment = TextAlign.Center,
-                    colors = ChipDefaults.gradientBackgroundChipColors(),
+                    colors = ChipDefaults.gradientBackgroundChipColors()
                 )
                 LaunchedEffect(resetCount) {
                     labelText = ""
@@ -121,7 +121,9 @@ fun PlaceholderChips() {
             }
             item {
                 var label by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     delay(3000)
@@ -130,7 +132,9 @@ fun PlaceholderChips() {
             }
             item {
                 var label by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     delay(3000)
@@ -141,7 +145,10 @@ fun PlaceholderChips() {
             }
             item {
                 var label by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label, icon = R.drawable.ic_accessibility_24px)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                    icon = R.drawable.ic_accessibility_24px,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     delay(3000)
@@ -150,7 +157,10 @@ fun PlaceholderChips() {
             }
             item {
                 var label by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label, icon = R.drawable.ic_accessibility_24px)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                    icon = R.drawable.ic_accessibility_24px,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     delay(3000)
@@ -167,7 +177,10 @@ fun PlaceholderChips() {
             item {
                 var label by remember { mutableStateOf("") }
                 var secondaryLabel by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label, secondaryLabel = secondaryLabel)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                    secondaryLabel = secondaryLabel,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     secondaryLabel = ""
@@ -179,7 +192,10 @@ fun PlaceholderChips() {
             item {
                 var label by remember { mutableStateOf("") }
                 var secondaryLabel by remember { mutableStateOf("") }
-                ChipWithOverlaidPlaceholder(label = label, secondaryLabel = secondaryLabel)
+                ChipWithOverlaidPlaceholder(
+                    label = label,
+                    secondaryLabel = secondaryLabel,
+                )
                 LaunchedEffect(resetCount) {
                     label = ""
                     secondaryLabel = ""
@@ -265,7 +281,7 @@ fun PlaceholderChips() {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Bottom,
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CompactChip(label = { Text("Reset") }, onClick = { resetCount++ })
         }
@@ -298,7 +314,7 @@ fun PlaceholderCards() {
                     content = {
                         Text("Some content $refreshCount")
                         Text("Some more content")
-                    },
+                    }
                 )
             }
         }
@@ -336,7 +352,7 @@ fun ChipWithOverlaidPlaceholder(
                     overflow = TextOverflow.Clip,
                     modifier =
                         Modifier.fillMaxWidth()
-                            .wrapContentHeight(align = Alignment.CenterVertically),
+                            .wrapContentHeight(align = Alignment.CenterVertically)
                 )
             },
             secondaryLabel =
@@ -347,7 +363,7 @@ fun ChipWithOverlaidPlaceholder(
                             textAlign = textAlignment,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 } else {
@@ -356,7 +372,9 @@ fun ChipWithOverlaidPlaceholder(
             icon =
                 if (icon != null) {
                     {
-                        DemoIcon(resourceId = icon)
+                        DemoIcon(
+                            resourceId = icon,
+                        )
                         if (!iconReady) {
                             LaunchedEffect(Unit) {
                                 delay(2000)
@@ -371,15 +389,17 @@ fun ChipWithOverlaidPlaceholder(
             colors =
                 PlaceholderDefaults.placeholderChipColors(
                     originalChipColors = colors,
-                    placeholderState = chipPlaceholderState,
-                ),
+                    placeholderState = chipPlaceholderState
+                )
         )
         if (!chipPlaceholderState.isShowContent) {
             Chip(
                 modifier =
                     modifier
                         .fillMaxWidth()
-                        .placeholderShimmer(placeholderState = chipPlaceholderState),
+                        .placeholderShimmer(
+                            placeholderState = chipPlaceholderState,
+                        ),
                 onClick = onClick,
                 label = {
                     Box(
@@ -420,7 +440,7 @@ fun ChipWithOverlaidPlaceholder(
                 colors =
                     PlaceholderDefaults.placeholderChipColors(
                         placeholderState = chipPlaceholderState
-                    ),
+                    )
             )
         }
     }
@@ -457,7 +477,7 @@ fun ChipWithContentPlaceholders(
                     modifier =
                         Modifier.fillMaxSize()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .placeholder(placeholderState = chipPlaceholderState),
+                            .placeholder(placeholderState = chipPlaceholderState)
                 )
             }
         },
@@ -469,7 +489,7 @@ fun ChipWithContentPlaceholders(
                         textAlign = textAlignment,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth().placeholder(chipPlaceholderState),
+                        modifier = Modifier.fillMaxWidth().placeholder(chipPlaceholderState)
                     )
                 }
             } else {
@@ -480,7 +500,7 @@ fun ChipWithContentPlaceholders(
                 {
                     DemoIcon(
                         resourceId = icon,
-                        modifier = Modifier.placeholder(chipPlaceholderState),
+                        modifier = Modifier.placeholder(chipPlaceholderState)
                     )
                     if (!iconReady) {
                         LaunchedEffect(Unit) {
@@ -496,8 +516,8 @@ fun ChipWithContentPlaceholders(
         colors =
             PlaceholderDefaults.placeholderChipColors(
                 originalChipColors = colors,
-                placeholderState = chipPlaceholderState,
-            ),
+                placeholderState = chipPlaceholderState
+            )
     )
     LaunchedEffect(chipPlaceholderState) { chipPlaceholderState.startPlaceholderAnimation() }
 }
@@ -516,7 +536,7 @@ fun CardWithOverlaidPlaceholder(
             appName = { Text("AppName") },
             title = { Text("AppCard") },
             time = { Text("now") },
-            modifier = Modifier.fillMaxHeight(),
+            modifier = Modifier.fillMaxHeight()
         ) {
             if (content != null) content()
         }
@@ -526,7 +546,7 @@ fun CardWithOverlaidPlaceholder(
                 appName = {
                     Text(
                         " ",
-                        modifier = Modifier.weight(2f, true).placeholder(cardPlaceholderState),
+                        modifier = Modifier.weight(2f, true).placeholder(cardPlaceholderState)
                     )
                 },
                 title = {
@@ -535,7 +555,7 @@ fun CardWithOverlaidPlaceholder(
                 time = {
                     Text(
                         " ",
-                        modifier = Modifier.weight(1f, true).placeholder(cardPlaceholderState),
+                        modifier = Modifier.weight(1f, true).placeholder(cardPlaceholderState)
                     )
                 },
                 modifier =
@@ -544,7 +564,7 @@ fun CardWithOverlaidPlaceholder(
                 backgroundPainter =
                     PlaceholderDefaults.placeholderBackgroundBrush(
                         placeholderState = cardPlaceholderState
-                    ),
+                    )
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Box(

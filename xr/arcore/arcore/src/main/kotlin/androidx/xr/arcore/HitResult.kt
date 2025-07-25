@@ -16,22 +16,19 @@
 
 package androidx.xr.arcore
 
-import androidx.xr.runtime.Config
-import androidx.xr.runtime.Session
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 
 /**
  * Defines an intersection between a ray and estimated real-world geometry.
  *
- * Can be obtained from [hitTest]. If the ray intersects a [Plane] that is being subsumed, the
- * subsuming [Plane] will be returned.
+ * Can be obtained from [Interaction.hitTest].
  *
  * @property distance the distance from the camera to the hit location, in meters.
- * @property hitPose the [Pose] of the intersection between a ray and the [Trackable] in the world
- *   coordinate space. If the hit [Trackable] is a [Plane], the hitPose will be parallel to the
- *   [Pose] of the [Plane].
+ * @property hitPose the [Pose] of the intersection between a ray and the [Trackable].
  * @property trackable the [Trackable] that was hit.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HitResult
 internal constructor(
     public val distance: Float,
@@ -42,8 +39,7 @@ internal constructor(
      * Creates an [Anchor] that is attached to this trackable, using the given initial [hitPose] in
      * the world coordinate space.
      *
-     * @throws [IllegalStateException] if [Session.config] is set to
-     *   [Config.PlaneTrackingMode.DISABLED]
+     * @throws [IllegalStateException] if [PlaneTrackingMode] is set to Disabled.
      */
     public fun createAnchor(): AnchorCreateResult {
         return trackable.createAnchor(hitPose)

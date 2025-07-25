@@ -2,7 +2,6 @@ import androidx.room.EntityInsertAdapter
 import androidx.room.RoomDatabase
 import androidx.room.util.convertByteToUUID
 import androidx.room.util.convertUUIDToByte
-import androidx.room.util.getColumnIndex
 import androidx.room.util.getColumnIndexOrThrow
 import androidx.room.util.performBlocking
 import androidx.sqlite.SQLiteStatement
@@ -107,25 +106,7 @@ public class MyDao_Impl(
           _tmpGenericData = GenericValueClass<String>(_password)
           _result = MyEntity(_tmpPk,_tmpUuidData,_tmpNullableUuidData,_tmpNullableLongData,_tmpDoubleNullableLongData,_tmpGenericData)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
-        }
-        _result
-      } finally {
-        _stmt.close()
-      }
-    }
-  }
-
-  public override fun getEntitySkipVerification(): MyEntity {
-    val _sql: String = "SELECT * FROM MyEntity"
-    return performBlocking(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        val _result: MyEntity
-        if (_stmt.step()) {
-          _result = __entityStatementConverter_MyEntity(_stmt)
-        } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type <MyEntity>.")
         }
         _result
       } finally {
@@ -145,81 +126,13 @@ public class MyDao_Impl(
           _data = convertByteToUUID(_stmt.getBlob(0))
           _result = UUIDValueClass(_data)
         } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'UUIDValueClass'.")
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type <UUIDValueClass>.")
         }
         _result
       } finally {
         _stmt.close()
       }
     }
-  }
-
-  private fun __entityStatementConverter_MyEntity(statement: SQLiteStatement): MyEntity {
-    val _entity: MyEntity
-    val _columnIndexOfPk: Int = getColumnIndex(statement, "pk")
-    val _columnIndexOfUuidData: Int = getColumnIndex(statement, "uuidData")
-    val _columnIndexOfNullableUuidData: Int = getColumnIndex(statement, "nullableUuidData")
-    val _columnIndexOfNullableLongData: Int = getColumnIndex(statement, "nullableLongData")
-    val _columnIndexOfDoubleNullableLongData: Int = getColumnIndex(statement, "doubleNullableLongData")
-    val _columnIndexOfGenericData: Int = getColumnIndex(statement, "genericData")
-    val _tmpPk: LongValueClass
-    if (_columnIndexOfPk == -1) {
-      error("Missing column 'pk' for a NON-NULL value, column not found in result.")
-    } else {
-      val _data: Long
-      _data = statement.getLong(_columnIndexOfPk)
-      _tmpPk = LongValueClass(_data)
-    }
-    val _tmpUuidData: UUIDValueClass
-    if (_columnIndexOfUuidData == -1) {
-      error("Missing column 'uuidData' for a NON-NULL value, column not found in result.")
-    } else {
-      val _data_1: UUID
-      _data_1 = convertByteToUUID(statement.getBlob(_columnIndexOfUuidData))
-      _tmpUuidData = UUIDValueClass(_data_1)
-    }
-    val _tmpNullableUuidData: UUIDValueClass?
-    if (_columnIndexOfNullableUuidData == -1) {
-      _tmpNullableUuidData = null
-    } else {
-      if (statement.isNull(_columnIndexOfNullableUuidData)) {
-        _tmpNullableUuidData = null
-      } else {
-        val _data_2: UUID
-        _data_2 = convertByteToUUID(statement.getBlob(_columnIndexOfNullableUuidData))
-        _tmpNullableUuidData = UUIDValueClass(_data_2)
-      }
-    }
-    val _tmpNullableLongData: NullableLongValueClass
-    if (_columnIndexOfNullableLongData == -1) {
-      error("Missing column 'nullableLongData' for a NON-NULL value, column not found in result.")
-    } else {
-      val _data_3: Long
-      _data_3 = statement.getLong(_columnIndexOfNullableLongData)
-      _tmpNullableLongData = NullableLongValueClass(_data_3)
-    }
-    val _tmpDoubleNullableLongData: NullableLongValueClass?
-    if (_columnIndexOfDoubleNullableLongData == -1) {
-      _tmpDoubleNullableLongData = null
-    } else {
-      if (statement.isNull(_columnIndexOfDoubleNullableLongData)) {
-        _tmpDoubleNullableLongData = null
-      } else {
-        val _data_4: Long
-        _data_4 = statement.getLong(_columnIndexOfDoubleNullableLongData)
-        _tmpDoubleNullableLongData = NullableLongValueClass(_data_4)
-      }
-    }
-    val _tmpGenericData: GenericValueClass<String>
-    if (_columnIndexOfGenericData == -1) {
-      error("Missing column 'genericData' for a NON-NULL value, column not found in result.")
-    } else {
-      val _password: String
-      _password = statement.getText(_columnIndexOfGenericData)
-      _tmpGenericData = GenericValueClass<String>(_password)
-    }
-    _entity = MyEntity(_tmpPk,_tmpUuidData,_tmpNullableUuidData,_tmpNullableLongData,_tmpDoubleNullableLongData,_tmpGenericData)
-    return _entity
   }
 
   public companion object {

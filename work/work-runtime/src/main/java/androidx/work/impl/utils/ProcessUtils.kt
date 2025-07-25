@@ -31,7 +31,7 @@ import androidx.work.WorkManager
 private val TAG = Logger.tagWithPrefix("ProcessUtils")
 
 /** @return `true` when `WorkManager` is running in the configured app process. */
-public fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
+fun isDefaultProcess(context: Context, configuration: Configuration): Boolean {
     val processName = getProcessName(context)
     return if (!configuration.defaultProcessName.isNullOrEmpty()) {
         processName == configuration.defaultProcessName

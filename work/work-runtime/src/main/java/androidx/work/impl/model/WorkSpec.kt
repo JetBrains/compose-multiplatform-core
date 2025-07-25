@@ -40,7 +40,7 @@ import java.util.UUID
 /** Stores information about a logical unit of work. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Entity(indices = [Index(value = ["schedule_requested_at"]), Index(value = ["last_enqueue_time"])])
-public data class WorkSpec(
+data class WorkSpec(
     @JvmField @ColumnInfo(name = "id") @PrimaryKey val id: String,
     @JvmField @ColumnInfo(name = "state") var state: WorkInfo.State = WorkInfo.State.ENQUEUED,
     @JvmField @ColumnInfo(name = "worker_class_name") var workerClassName: String,
@@ -138,14 +138,14 @@ public data class WorkSpec(
     @ColumnInfo(name = "backoff_on_system_interruptions")
     var backOffOnSystemInterruptions: Boolean? = false,
 ) {
-    public constructor(
+    constructor(
         id: String,
-        workerClassName_: String,
+        workerClassName_: String
     ) : this(id = id, workerClassName = workerClassName_)
 
-    public constructor(
+    constructor(
         newId: String,
-        other: WorkSpec,
+        other: WorkSpec
     ) : this(
         id = newId,
         workerClassName = other.workerClassName,
@@ -174,7 +174,7 @@ public data class WorkSpec(
     )
 
     /** @param backoffDelayDuration The backoff delay duration in milliseconds */
-    public fun setBackoffDelayDuration(backoffDelayDuration: Long) {
+    fun setBackoffDelayDuration(backoffDelayDuration: Long) {
         if (backoffDelayDuration > WorkRequest.MAX_BACKOFF_MILLIS) {
             Logger.get().warning(TAG, "Backoff delay duration exceeds maximum value")
         }
@@ -185,7 +185,7 @@ public data class WorkSpec(
         this.backoffDelayDuration =
             backoffDelayDuration.coerceIn(
                 WorkRequest.MIN_BACKOFF_MILLIS,
-                WorkRequest.MAX_BACKOFF_MILLIS,
+                WorkRequest.MAX_BACKOFF_MILLIS
             )
     }
 
@@ -200,18 +200,18 @@ public data class WorkSpec(
      *
      * @param intervalDuration The interval in milliseconds
      */
-    public fun setPeriodic(intervalDuration: Long) {
+    fun setPeriodic(intervalDuration: Long) {
         if (intervalDuration < MIN_PERIODIC_INTERVAL_MILLIS) {
             Logger.get()
                 .warning(
                     TAG,
                     "Interval duration lesser than minimum allowed value; " +
-                        "Changed to $MIN_PERIODIC_INTERVAL_MILLIS",
+                        "Changed to $MIN_PERIODIC_INTERVAL_MILLIS"
                 )
         }
         setPeriodic(
             intervalDuration.coerceAtLeast(MIN_PERIODIC_INTERVAL_MILLIS),
-            intervalDuration.coerceAtLeast(MIN_PERIODIC_INTERVAL_MILLIS),
+            intervalDuration.coerceAtLeast(MIN_PERIODIC_INTERVAL_MILLIS)
         )
     }
 
@@ -221,13 +221,13 @@ public data class WorkSpec(
      * @param intervalDuration The interval in milliseconds
      * @param flexDuration The flex duration in milliseconds
      */
-    public fun setPeriodic(intervalDuration: Long, flexDuration: Long) {
+    fun setPeriodic(intervalDuration: Long, flexDuration: Long) {
         if (intervalDuration < MIN_PERIODIC_INTERVAL_MILLIS) {
             Logger.get()
                 .warning(
                     TAG,
                     "Interval duration lesser than minimum allowed value; " +
-                        "Changed to $MIN_PERIODIC_INTERVAL_MILLIS",
+                        "Changed to $MIN_PERIODIC_INTERVAL_MILLIS"
                 )
         }
 
@@ -238,14 +238,14 @@ public data class WorkSpec(
                 .warning(
                     TAG,
                     "Flex duration lesser than minimum allowed value; " +
-                        "Changed to $MIN_PERIODIC_FLEX_MILLIS",
+                        "Changed to $MIN_PERIODIC_FLEX_MILLIS"
                 )
         }
         if (flexDuration > this.intervalDuration) {
             Logger.get()
                 .warning(
                     TAG,
-                    "Flex duration greater than interval duration; Changed to $intervalDuration",
+                    "Flex duration greater than interval duration; Changed to $intervalDuration"
                 )
         }
         this.flexDuration = flexDuration.coerceIn(MIN_PERIODIC_FLEX_MILLIS, this.intervalDuration)
@@ -276,7 +276,7 @@ public data class WorkSpec(
      *
      * @return UTC time at which this [WorkSpec] should be allowed to run.
      */
-    public fun calculateNextRunTime(): Long {
+    fun calculateNextRunTime(): Long {
         return calculateNextRunTime(
             isBackedOff = isBackedOff,
             runAttemptCount = runAttemptCount,
@@ -288,12 +288,12 @@ public data class WorkSpec(
             initialDelay = initialDelay,
             flexDuration = flexDuration,
             intervalDuration = intervalDuration,
-            nextScheduleTimeOverride = nextScheduleTimeOverride,
+            nextScheduleTimeOverride = nextScheduleTimeOverride
         )
     }
 
     /** @return `true` if the [WorkSpec] has constraints. */
-    public fun hasConstraints(): Boolean {
+    fun hasConstraints(): Boolean {
         return Constraints.NONE != constraints
     }
 
@@ -302,13 +302,13 @@ public data class WorkSpec(
     }
 
     /** A POJO containing the ID and state of a WorkSpec. */
-    public data class IdAndState(
+    data class IdAndState(
         @JvmField @ColumnInfo(name = "id") var id: String,
         @JvmField @ColumnInfo(name = "state") var state: WorkInfo.State,
     )
 
     /** A POJO containing externally queryable info for the WorkSpec. */
-    public data class WorkInfoPojo(
+    data class WorkInfoPojo(
         @ColumnInfo(name = "id") val id: String,
         @ColumnInfo(name = "state") val state: WorkInfo.State,
         @ColumnInfo(name = "output") val output: Data,
@@ -330,7 +330,7 @@ public data class WorkSpec(
             parentColumn = "id",
             entityColumn = "work_spec_id",
             entity = WorkTag::class,
-            projection = ["tag"],
+            projection = ["tag"]
         )
         val tags: List<String>,
 
@@ -340,7 +340,7 @@ public data class WorkSpec(
             parentColumn = "id",
             entityColumn = "work_spec_id",
             entity = WorkProgress::class,
-            projection = ["progress"],
+            projection = ["progress"]
         )
         val progress: List<Data>,
     ) {
@@ -355,7 +355,7 @@ public data class WorkSpec(
          *
          * @return The [WorkInfo] represented by this POJO
          */
-        public fun toWorkInfo(): WorkInfo {
+        fun toWorkInfo(): WorkInfo {
             val progress = if (progress.isNotEmpty()) progress[0] else Data.EMPTY
             return WorkInfo(
                 UUID.fromString(id),
@@ -390,23 +390,22 @@ public data class WorkSpec(
                     initialDelay = initialDelay,
                     flexDuration = flexDuration,
                     intervalDuration = intervalDuration,
-                    nextScheduleTimeOverride = nextScheduleTimeOverride,
+                    nextScheduleTimeOverride = nextScheduleTimeOverride
                 )
             else Long.MAX_VALUE
         }
     }
 
-    public companion object {
+    companion object {
         private val TAG = Logger.tagWithPrefix("WorkSpec")
-        public const val SCHEDULE_NOT_REQUESTED_YET: Long = -1
+        const val SCHEDULE_NOT_REQUESTED_YET: Long = -1
 
         @JvmField
-        public val WORK_INFO_MAPPER: Function<List<WorkInfoPojo>, List<WorkInfo>> =
-            Function { input ->
-                input?.map { it.toWorkInfo() }
-            }
+        val WORK_INFO_MAPPER: Function<List<WorkInfoPojo>, List<WorkInfo>> = Function { input ->
+            input?.map { it.toWorkInfo() }
+        }
 
-        public fun calculateNextRunTime(
+        fun calculateNextRunTime(
             isBackedOff: Boolean,
             runAttemptCount: Int,
             backoffPolicy: BackoffPolicy,
@@ -459,8 +458,8 @@ public data class WorkSpec(
     }
 }
 
-public data class WorkGenerationalId(val workSpecId: String, val generation: Int)
+data class WorkGenerationalId(val workSpecId: String, val generation: Int)
 
-public fun WorkSpec.generationalId() = WorkGenerationalId(id, generation)
+fun WorkSpec.generationalId() = WorkGenerationalId(id, generation)
 
 private const val NOT_ENQUEUED = -1L

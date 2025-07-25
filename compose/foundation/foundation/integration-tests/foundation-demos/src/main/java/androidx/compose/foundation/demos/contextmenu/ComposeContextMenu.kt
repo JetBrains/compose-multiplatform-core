@@ -19,4 +19,6 @@ package androidx.compose.foundation.demos.contextmenu
 import androidx.compose.integration.demos.common.ComposableDemo
 
 val ContextMenuDemos =
-    listOf(ComposableDemo(title = "Text Context Menus") { TextContextMenusDemo() })
+    listOf(
+        ComposableDemo(title = "Text Context Menus") { TextContextMenusDemo() },
+    )

@@ -129,7 +129,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithSLC(
                 scrollIndicatorColor = scrollIndicatorColor,
-                timeTextColor = Color.Blue,
+                timeTextColor = Color.Blue
             )
         }
 
@@ -144,7 +144,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithTLC(
                 scrollIndicatorColor = scrollIndicatorColor,
-                timeTextColor = Color.Blue,
+                timeTextColor = Color.Blue
             )
         }
 
@@ -160,7 +160,7 @@ class ScaffoldTest {
             TestScreenScaffoldWithSLC(
                 scrollIndicatorColor = scrollIndicatorColor,
                 timeTextColor = Color.Blue,
-                itemsCount = 1,
+                itemsCount = 1
             )
         }
 
@@ -179,7 +179,7 @@ class ScaffoldTest {
             TestScreenScaffoldWithSLCAndEdgeButton(
                 scrollIndicatorColor = scrollIndicatorColor,
                 timeTextColor = Color.Blue,
-                itemsCount = 1,
+                itemsCount = 1
             )
         }
 
@@ -198,7 +198,7 @@ class ScaffoldTest {
             TestScreenScaffoldWithTLC(
                 scrollIndicatorColor = scrollIndicatorColor,
                 timeTextColor = Color.Blue,
-                itemsCount = 1,
+                itemsCount = 1
             )
         }
 
@@ -217,7 +217,7 @@ class ScaffoldTest {
             TestScreenScaffoldWithTLCAndEdgeButton(
                 scrollIndicatorColor = scrollIndicatorColor,
                 timeTextColor = Color.Blue,
-                itemsCount = 1,
+                itemsCount = 1
             )
         }
 
@@ -235,7 +235,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithSLC(
                 scrollIndicatorColor = scrollIndicatorColor,
-                timeTextColor = Color.Blue,
+                timeTextColor = Color.Blue
             )
         }
 
@@ -258,7 +258,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithTLC(
                 scrollIndicatorColor = scrollIndicatorColor,
-                timeTextColor = Color.Blue,
+                timeTextColor = Color.Blue
             )
         }
 
@@ -281,7 +281,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithSLC(
                 scrollIndicatorColor = Color.Blue,
-                timeTextColor = timeTextColor,
+                timeTextColor = timeTextColor
             )
         }
 
@@ -303,7 +303,7 @@ class ScaffoldTest {
         rule.setContentWithTheme {
             TestScreenScaffoldWithTLC(
                 scrollIndicatorColor = Color.Blue,
-                timeTextColor = timeTextColor,
+                timeTextColor = timeTextColor
             )
         }
 
@@ -326,7 +326,7 @@ class ScaffoldTest {
             Box(Modifier.size(300.dp)) {
                 TestScreenScaffoldWithSLCAndEdgeButton(
                     scrollIndicatorColor = Color.Blue,
-                    timeTextColor = Color.Red,
+                    timeTextColor = Color.Red
                 ) {
                     BoxWithConstraints {
                         // Check how much space we have for the bottom button
@@ -348,7 +348,7 @@ class ScaffoldTest {
             Box(Modifier.size(300.dp)) {
                 TestScreenScaffoldWithTLCAndEdgeButton(
                     scrollIndicatorColor = Color.Blue,
-                    timeTextColor = Color.Red,
+                    timeTextColor = Color.Red
                 ) {
                     BoxWithConstraints {
                         // Check how much space we have for the bottom button
@@ -377,7 +377,7 @@ class ScaffoldTest {
                 TestScreenScaffoldWithSLCAndEdgeButton(
                     scrollIndicatorColor = Color.Blue,
                     timeTextColor = Color.Red,
-                    itemsCount = 10,
+                    itemsCount = 10
                 ) {
                     // Check how much space we have for the bottom button
                     BoxWithConstraints { spaceAvailable = constraints.maxHeight }
@@ -420,7 +420,7 @@ class ScaffoldTest {
 
     private fun check_bottom_button_lc(
         verticalPadding: Dp = 0.dp,
-        itemsCount: Int = DEFAULT_ITEMS_COUNT,
+        itemsCount: Int = DEFAULT_ITEMS_COUNT
     ) {
         var spaceAvailable: Int = Int.MAX_VALUE
         var expectedSpace: Float = Float.MAX_VALUE
@@ -449,10 +449,9 @@ class ScaffoldTest {
         scrollIndicatorColor: Color,
         timeTextColor: Color,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
-        @Suppress("ComposableLambdaParameterNaming")
         edgeButton: @Composable BoxScope.() -> Unit = {
             EdgeButton(onClick = {}) { Text("Edge Button") }
-        },
+        }
     ) {
         AppScaffold {
             val scrollState = rememberScalingLazyListState()
@@ -474,9 +473,14 @@ class ScaffoldTest {
                 ScalingLazyColumn(
                     state = scrollState,
                     contentPadding = PaddingValues(horizontal = 0.dp),
-                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG)
                 ) {
-                    items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    items(itemsCount) {
+                        Button(
+                            onClick = {},
+                            label = { Text("Item ${it + 1}") },
+                        )
+                    }
                 }
             }
         }
@@ -505,9 +509,14 @@ class ScaffoldTest {
             ) {
                 ScalingLazyColumn(
                     state = scrollState,
-                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG)
                 ) {
-                    items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    items(itemsCount) {
+                        Button(
+                            onClick = {},
+                            label = { Text("Item ${it + 1}") },
+                        )
+                    }
                 }
             }
         }
@@ -532,14 +541,19 @@ class ScaffoldTest {
                                 .background(scrollIndicatorColor)
                     )
                 },
-                timeText = { Box(Modifier.size(20.dp).background(timeTextColor)) },
+                timeText = { Box(Modifier.size(20.dp).background(timeTextColor)) }
             ) {
                 TransformingLazyColumn(
                     state = scrollState,
                     contentPadding = it,
-                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG)
                 ) {
-                    items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    items(itemsCount) {
+                        Button(
+                            onClick = {},
+                            label = { Text("Item ${it + 1}") },
+                        )
+                    }
                 }
             }
         }
@@ -550,10 +564,9 @@ class ScaffoldTest {
         scrollIndicatorColor: Color,
         timeTextColor: Color,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
-        @Suppress("ComposableLambdaParameterNaming")
         edgeButton: @Composable BoxScope.() -> Unit = {
             EdgeButton(onClick = {}) { Text("Edge Button") }
-        },
+        }
     ) {
         AppScaffold {
             val scrollState = rememberTransformingLazyColumnState()
@@ -575,9 +588,14 @@ class ScaffoldTest {
                 TransformingLazyColumn(
                     state = scrollState,
                     contentPadding = it,
-                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
+                    modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG)
                 ) {
-                    items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    items(itemsCount) {
+                        Button(
+                            onClick = {},
+                            label = { Text("Item ${it + 1}") },
+                        )
+                    }
                 }
             }
         }
@@ -587,8 +605,7 @@ class ScaffoldTest {
     private fun TestEdgeButtonLazyColumn(
         verticalPadding: Dp = 0.dp,
         itemsCount: Int = DEFAULT_ITEMS_COUNT,
-        @Suppress("ComposableLambdaParameterNaming")
-        edgeButton: @Composable BoxScope.() -> Unit = {},
+        edgeButton: @Composable BoxScope.() -> Unit = {}
     ) {
         AppScaffold {
             val scrollState = rememberLazyListState()
@@ -601,9 +618,14 @@ class ScaffoldTest {
                 LazyColumn(
                     state = scrollState,
                     modifier = Modifier.fillMaxSize().background(Color.Black).testTag(SCROLL_TAG),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = verticalPadding),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = verticalPadding)
                 ) {
-                    items(itemsCount) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
+                    items(itemsCount) {
+                        Button(
+                            onClick = {},
+                            label = { Text("Item ${it + 1}") },
+                        )
+                    }
                 }
             }
         }

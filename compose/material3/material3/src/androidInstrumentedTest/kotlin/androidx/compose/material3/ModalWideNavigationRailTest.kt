@@ -68,7 +68,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -91,9 +91,9 @@ class ModalWideNavigationRailTest {
                 header = {
                     Button(
                         modifier = Modifier.testTag("header"),
-                        onClick = { scope.launch { state.toggle() } },
+                        onClick = { scope.launch { state.toggle() } }
                     ) {}
-                },
+                }
             ) {
                 WideNavigationRailItem(
                     modifier = Modifier.testTag("item"),
@@ -101,7 +101,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -131,16 +131,16 @@ class ModalWideNavigationRailTest {
                 header = {
                     Button(
                         modifier = Modifier.testTag("header"),
-                        onClick = { scope.launch { state.toggle() } },
+                        onClick = { scope.launch { state.toggle() } }
                     ) {}
-                },
+                }
             ) {
                 WideNavigationRailItem(
                     railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -165,13 +165,16 @@ class ModalWideNavigationRailTest {
             state = rememberWideNavigationRailState(WideNavigationRailValue.Expanded)
             closeRail = getString(Strings.CloseRail)
 
-            ModalWideNavigationRail(modifier = Modifier.testTag("rail"), state = state) {
+            ModalWideNavigationRail(
+                modifier = Modifier.testTag("rail"),
+                state = state,
+            ) {
                 WideNavigationRailItem(
                     railExpanded = state.targetValue.isExpanded,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -205,7 +208,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -236,7 +239,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -272,7 +275,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -306,7 +309,7 @@ class ModalWideNavigationRailTest {
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }
@@ -331,14 +334,14 @@ class ModalWideNavigationRailTest {
             ModalWideNavigationRail(
                 modifier = Modifier.testTag("rail"),
                 state = state,
-                hideOnCollapse = true,
+                hideOnCollapse = true
             ) {
                 WideNavigationRailItem(
                     railExpanded = true,
                     icon = { Icon(Icons.Filled.Favorite, null) },
                     label = { Text("ItemText") },
                     selected = true,
-                    onClick = {},
+                    onClick = {}
                 )
             }
         }

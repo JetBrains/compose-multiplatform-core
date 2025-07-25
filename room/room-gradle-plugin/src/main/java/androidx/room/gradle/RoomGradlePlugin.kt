@@ -27,7 +27,10 @@ import org.gradle.api.provider.ProviderFactory
 
 class RoomGradlePlugin
 @Inject
-constructor(projectLayout: ProjectLayout, providerFactory: ProviderFactory) : Plugin<Project> {
+constructor(
+    projectLayout: ProjectLayout,
+    providerFactory: ProviderFactory,
+) : Plugin<Project> {
 
     private val commonIntegration = CommonIntegration(projectLayout, providerFactory)
     private val androidIntegration by lazy { AndroidPluginIntegration(commonIntegration) }

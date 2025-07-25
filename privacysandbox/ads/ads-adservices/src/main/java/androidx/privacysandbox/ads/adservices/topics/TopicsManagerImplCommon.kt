@@ -31,7 +31,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 4)
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 9)
-public open class TopicsManagerImplCommon(
+open class TopicsManagerImplCommon(
     private val mTopicsManager: android.adservices.topics.TopicsManager
 ) : TopicsManager() {
     @DoNotInline

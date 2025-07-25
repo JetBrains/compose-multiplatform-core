@@ -16,6 +16,7 @@
 
 // Need to access Impl classes from 'org.jetbrains.kotlin.library.abi.impl.'
 // ideally the parser would also live alongside that project to access to impl classes
+@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // b/407928023
 @file:OptIn(ExperimentalLibraryAbiReader::class)
 
 package androidx.binarycompatibilityvalidator
@@ -45,7 +46,7 @@ import org.jetbrains.kotlin.library.abi.impl.AbiValueParameterImpl
 class MutableAbiInfo(
     val declarations: MutableList<AbiDeclaration> = mutableListOf(),
     var uniqueName: String = "",
-    var signatureVersions: MutableSet<AbiSignatureVersion> = mutableSetOf(),
+    var signatureVersions: MutableSet<AbiSignatureVersion> = mutableSetOf()
 )
 
 @OptIn(ExperimentalLibraryAbiReader::class)
@@ -100,8 +101,8 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
                                 platformTargets = listOf(),
                                 compilerVersion = "",
                                 abiVersion = "",
-                                irProviderName = "",
-                            ),
+                                irProviderName = ""
+                            )
                     )
             }
             .toMap()
@@ -181,13 +182,13 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             isFunction = isFunction,
             superTypes = superTypes.toList(),
             declarations = childDeclarations,
-            typeParameters = typeParams,
+            typeParameters = typeParams
         )
     }
 
     internal fun parseFunction(
         parentQualifiedName: AbiQualifiedName? = null,
-        isGetterOrSetter: Boolean = false,
+        isGetterOrSetter: Boolean = false
     ): AbiFunction {
         val modality = cursor.parseAbiModality()
         val isConstructor = cursor.parseFunctionKind(peek = true) == "constructor"
@@ -231,7 +232,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             kind = kind,
             getter = getter,
             setter = setter,
-            backingField = null,
+            backingField = null
         )
     }
 
@@ -247,7 +248,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         return AbiEnumEntryImpl(
             qualifiedName = qualifiedName,
             signatures = signaturesStub,
-            annotations = emptySet(),
+            annotations = emptySet()
         )
     }
 
@@ -268,14 +269,13 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
     private fun parseNonConstructorFunction(
         parentQualifiedName: AbiQualifiedName? = null,
         isGetterOrSetter: Boolean = false,
-        modality: AbiModality,
+        modality: AbiModality
     ): AbiFunction {
         val modifiers = cursor.parseFunctionModifiers()
         val isInline = modifiers.contains("inline")
         val isSuspend = modifiers.contains("suspend")
         cursor.parseFunctionKind()
         val typeParams = cursor.parseTypeParams() ?: emptyList()
-        val contextParams = cursor.parseContextParams() ?: emptyList()
         val functionReceiver = cursor.parseFunctionReceiver()
         val abiQualifiedName =
             if (isGetterOrSetter) {
@@ -286,20 +286,19 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
         val valueParameters =
             cursor.parseValueParameters() ?: throw parseException("Couldn't parse value params")
         val allValueParameters =
-            contextParams +
-                if (null != functionReceiver) {
-                    val functionReceiverAsValueParam =
-                        AbiValueParameterImpl(
-                            type = functionReceiver,
-                            isVararg = false,
-                            hasDefaultArg = false,
-                            isNoinline = false,
-                            isCrossinline = false,
-                        )
-                    listOf(functionReceiverAsValueParam) + valueParameters
-                } else {
-                    valueParameters
-                }
+            if (null != functionReceiver) {
+                val functionReceiverAsValueParam =
+                    AbiValueParameterImpl(
+                        type = functionReceiver,
+                        isVararg = false,
+                        hasDefaultArg = false,
+                        isNoinline = false,
+                        isCrossinline = false
+                    )
+                listOf(functionReceiverAsValueParam) + valueParameters
+            } else {
+                valueParameters
+            }
         val returnType = cursor.parseReturnType()
         cursor.nextLine()
         return AbiFunctionImpl(
@@ -311,9 +310,9 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             isSuspend = isSuspend,
             typeParameters = typeParams,
             hasExtensionReceiverParameter = null != functionReceiver,
-            contextReceiverParametersCount = contextParams.size,
+            contextReceiverParametersCount = 0, // TODO
             valueParameters = allValueParameters,
-            returnType = returnType,
+            returnType = returnType
         )
     }
 
@@ -322,7 +321,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             parentQualifiedName?.let {
                 AbiQualifiedName(
                     parentQualifiedName.packageName,
-                    AbiCompoundName(parentQualifiedName.relativeName.value + ".<init>"),
+                    AbiCompoundName(parentQualifiedName.relativeName.value + ".<init>")
                 )
             } ?: throw parseException("Cannot parse constructor outside of class context")
         cursor.parseConstructorName()
@@ -348,7 +347,7 @@ class KlibDumpParser(klibDump: String, private val fileName: String? = null) {
             if (parentQualifiedName == null) {
                 throw parseException("Failed to parse qName")
             }
-            val identifier = cursor.parseValidIdentifierAndMaybeTrim()
+            val identifier = cursor.parseValidIdentifier()
             val relativeName = parentQualifiedName.relativeName.value + "." + identifier
             return AbiQualifiedName(parentQualifiedName.packageName, AbiCompoundName(relativeName))
         }

@@ -60,9 +60,13 @@ private val DEFAULT_SUPPORTED_SIZES =
         Size(640, 480), // 4:3
         Size(320, 240), // 4:3
         Size(320, 180), // 16:9
-        Size(256, 144), // 16:9
+        Size(256, 144) // 16:9
     )
-private val HIGH_RESOLUTION_SUPPORTED_SIZES = listOf(Size(8000, 6000), Size(8000, 4500))
+private val HIGH_RESOLUTION_SUPPORTED_SIZES =
+    listOf(
+        Size(8000, 6000),
+        Size(8000, 4500),
+    )
 private val CUSTOM_SUPPORTED_SIZES = listOf(Size(1920, 1080), Size(720, 480), Size(640, 480))
 private val PORTRAIT_SUPPORTED_SIZES =
     listOf(
@@ -74,7 +78,7 @@ private val PORTRAIT_SUPPORTED_SIZES =
         Size(960, 540),
         Size(480, 640),
         Size(640, 480),
-        Size(360, 480),
+        Size(360, 480)
     )
 private val LANDSCAPE_ACTIVE_ARRAY_SIZE = Size(4032, 3024)
 private val PORTRAIT_ACTIVE_ARRAY_SIZE = Size(1440, 1920)
@@ -155,7 +159,7 @@ class SupportedOutputSizesSorterTest {
                     Size(1280, 960),
                     Size(640, 480),
                     Size(320, 240),
-                ),
+                )
         )
     }
 
@@ -180,8 +184,8 @@ class SupportedOutputSizesSorterTest {
                     Size(960, 544),
                     Size(800, 450),
                     Size(320, 180),
-                    Size(256, 144),
-                ),
+                    Size(256, 144)
+                )
         )
     }
 
@@ -200,7 +204,7 @@ class SupportedOutputSizesSorterTest {
                     Size(800, 450),
                     Size(320, 180),
                     Size(256, 144),
-                ),
+                )
         )
     }
 
@@ -226,7 +230,7 @@ class SupportedOutputSizesSorterTest {
                     Size(640, 480),
                     Size(320, 240),
                     Size(960, 960), // 1:1
-                ),
+                )
         )
     }
 
@@ -236,7 +240,7 @@ class SupportedOutputSizesSorterTest {
             boundSize = Size(1280, 960),
             resolutionFallbackRule = ResolutionStrategy.FALLBACK_RULE_NONE,
             // Only returns preferred AspectRatio matched item.
-            expectedList = listOf(Size(1280, 960)),
+            expectedList = listOf(Size(1280, 960))
         )
     }
 
@@ -248,7 +252,7 @@ class SupportedOutputSizesSorterTest {
             boundSize = Size(1920, 1080),
             resolutionFallbackRule = ResolutionStrategy.FALLBACK_RULE_NONE,
             // No size is returned since only 1920x1080 is allowed but it is not a 4:3 size
-            expectedList = Collections.emptyList(),
+            expectedList = Collections.emptyList()
         )
     }
 
@@ -275,7 +279,7 @@ class SupportedOutputSizesSorterTest {
                     Size(800, 450),
                     Size(320, 180),
                     Size(256, 144),
-                ),
+                )
         )
     }
 
@@ -302,7 +306,7 @@ class SupportedOutputSizesSorterTest {
                     Size(800, 450),
                     Size(320, 180),
                     Size(256, 144),
-                ),
+                )
         )
     }
 
@@ -320,7 +324,7 @@ class SupportedOutputSizesSorterTest {
                     // Mismatched default preferred AspectRatio items, sorted by FOV and area size.
                     Size(1920, 1080), // 16:9 smallest larger size
                     Size(3840, 2160), // the remaining 16:9 larger sizes
-                ),
+                )
         )
     }
 
@@ -347,7 +351,7 @@ class SupportedOutputSizesSorterTest {
                     Size(320, 180),
                     Size(256, 144),
                     Size(3840, 2160), // the remaining 16:9 larger sizes
-                ),
+                )
         )
     }
 
@@ -371,7 +375,7 @@ class SupportedOutputSizesSorterTest {
                     Size(800, 450),
                     Size(320, 180),
                     Size(256, 144),
-                ),
+                )
         )
     }
 
@@ -398,8 +402,8 @@ class SupportedOutputSizesSorterTest {
                     Size(480, 640),
                     Size(360, 480),
                     Size(640, 480),
-                    Size(960, 540),
-                ),
+                    Size(960, 540)
+                )
         )
     }
 
@@ -428,7 +432,7 @@ class SupportedOutputSizesSorterTest {
                     Size(640, 480),
                     Size(320, 240),
                     Size(960, 960), // 1:1
-                ),
+                )
         )
     }
 
@@ -456,7 +460,7 @@ class SupportedOutputSizesSorterTest {
                     Size(640, 480),
                     Size(320, 240),
                     Size(960, 960), // 1:1
-                ),
+                )
         )
     }
 
@@ -472,14 +476,14 @@ class SupportedOutputSizesSorterTest {
                 if (
                     AspectRatioUtil.hasMatchingAspectRatio(
                         supportedSize,
-                        AspectRatioUtil.ASPECT_RATIO_4_3,
+                        AspectRatioUtil.ASPECT_RATIO_4_3
                     )
                 ) {
                     AspectRatio.RATIO_4_3
                 } else if (
                     AspectRatioUtil.hasMatchingAspectRatio(
                         supportedSize,
-                        AspectRatioUtil.ASPECT_RATIO_16_9,
+                        AspectRatioUtil.ASPECT_RATIO_16_9
                     )
                 ) {
                     AspectRatio.RATIO_16_9
@@ -498,7 +502,7 @@ class SupportedOutputSizesSorterTest {
                 createUseCaseConfig(
                     preferredAspectRatio = preferredAspectRatio,
                     boundSize = supportedSize,
-                    resolutionFilter = resolutionFilter,
+                    resolutionFilter = resolutionFilter
                 )
 
             val resultList = supportedOutputSizesSorter.getSortedSupportedOutputSizes(useCaseConfig)
@@ -512,7 +516,7 @@ class SupportedOutputSizesSorterTest {
         val resolutionFilter = ResolutionFilter { _, _ -> filteredSizesList }
         verifySupportedOutputSizesWithResolutionSelectorSettings(
             resolutionFilter = resolutionFilter,
-            expectedList = filteredSizesList,
+            expectedList = filteredSizesList
         )
     }
 
@@ -567,7 +571,7 @@ class SupportedOutputSizesSorterTest {
                     Size(800, 450),
                     Size(320, 180),
                     Size(256, 144),
-                ),
+                )
         )
     }
 

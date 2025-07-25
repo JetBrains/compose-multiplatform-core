@@ -49,8 +49,8 @@ Note: \$SUPPORT/samples/SupportSliceDemos/src/main/java/com/example/androidx/sli
 [0-9]+ problem.* found storing the configuration cache.*
 See the complete report at file://.*/build/reports/configuration\-cache/[^ ]*/[^ ]*/configuration\-cache\-report\.html
 # > Task :compose:ui:ui:processDebugAndroidTestManifest
-\$OUT_DIR/androidx/compose/runtime/runtime\-saveable/build/intermediates/tmp/manifest/androidTest/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
-\$OUT_DIR/androidx/compose/ui/ui\-tooling/build/intermediates/tmp/manifest/androidTest/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+\$OUT_DIR/androidx/compose/runtime/runtime\-saveable/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+\$OUT_DIR/androidx/compose/ui/ui\-tooling/build/intermediates/tmp/manifest/androidTest/release/tempFile[0-9]+ProcessTestManifest[0-9]+\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
 # > Task :buildSrc:build UP-TO-DATE
 A fine\-grained performance profile is available\: use the \-\-scan option\.
 # > Task :docs
@@ -230,7 +230,6 @@ WARN: .*\/unzippedMultiplatformSources\/desktopMain\/androidx\/compose\/material
 WARN: .*\/unzippedMultiplatformSources\/commonJvmMain\/androidx\/datastore\/core\/Serializer\.kt:[0-9]+ Missing @param tag for parameter `output` in DFunction writeTo
 WARN: .*\/unzippedMultiplatformSources\/nonJvmMain\/androidx\/annotation\/RestrictTo\.nonJvm\.kt:[0-9]+ Link does not resolve for @throws kotlin\.IllegalArgumentException in DFunction valueOf\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
 WARN: .*\/unzippedMultiplatformSources\/.*Main\/androidx\/room\/RoomDatabase.*\.kt:[0-9]+ Link does not resolve for @throws kotlin\.IllegalArgumentException in DFunction valueOf\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
-WARN: .*\/unzippedMultiplatformSources/jvmNativeMain/androidx/room/RoomDatabase\.jvmNative\.kt:[0-9]+ Link does not resolve for @throws IllegalArgumentException in DFunction setQueryCoroutineContext\. Is it from a package that the containing file does not import\? Are docs inherited by an un\-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
 # b/376423687
 WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateDecoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction decodeFromSavedState\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
 WARN: .*\/unzippedMultiplatformSources\/commonMain\/androidx\/savedstate\/serialization\/SavedStateEncoder\.kt:[0-9]+ Link does not resolve for @throws SerializationException in DFunction encodeToSavedState\. Is it from a package that the containing file does not import\? Are docs inherited by an un-documented override function, but the exception class is not in scope in the inheriting class\? The general fix for these is to fully qualify the exception name, e\.g\. `@throws java\.io\.IOException under some conditions`\.
@@ -278,7 +277,7 @@ import androidx\.slice\.widget\.SliceView;
 .*Downloading dependency[:]? file:.*/prebuilts/androidx/konan/.*
 Please wait while Kotlin/Native compiler .* is being installed\.
 Unpack Kotlin/Native compiler to .*
-Download file:\$CHECKOUT/prebuilts/androidx/konan/nativeCompilerPrebuilts/.*
+Download file:\.\./\.\./.*
 Download kotlin\-native\-prebuilt\-.*.gz finished\, took .*
 Downloading native dependencies \(LLVM, sysroot etc\)\. This is a one\-time action performed only on the first run of the compiler\.
 Extracting dependency: .*\.konan/dependencies/cache.*
@@ -307,7 +306,6 @@ spdx sboms require a version but project: noto\-emoji\-compat\-flatbuffers has n
 docs-public:docs starting
 docs-public:docs completing
 docs-tip-of-tree:docs starting
-WARN: Source sets 'main' and 'commonMain' have the common sample roots: \$OUT_DIR/androidx/docs\-(tip-of-tree|public)/build/unzippedDeprecatedSampleSources, \$OUT_DIR/androidx/docs\-(tip-of-tree|public)/build/unzippedJvmSampleSources, \$OUT_DIR/androidx/docs\-(tip-of-tree|public)/build/unzippedMultiplatformSampleSources, \$SUPPORT/samples\. Every Kotlin source file should belong to only one source set \(module\)\.
 docs-tip-of-tree:docs completing
 # > Configure project :androidx-demos
 The current default is 'false'\.
@@ -367,7 +365,6 @@ For more details, see: https://kotl\.in/gradle/internal\-compiler\-symbols
 \[log\].*
 # b/382336155 Capture more logging for Kotlin JS Tests
 .*STANDARD_OUT
-Completed
 # Warning emitted on empty Java files generated from AIDL:
 # https://github.com/kythe/kythe/issues/6145
 .*com.google\.devtools\.kythe\.extractors\.java\.JavaCompilationUnitExtractor.*
@@ -375,8 +372,8 @@ Completed
 # b/359449191
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
 > Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
-> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:macrobenchmark:testapp:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
-> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:macrobenchmark:testapp:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
+> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:macrobenchmark:testapp:testsdkproviderwrapper\) with ExtractCompileSdkShimTransform
+> Transform sdk\-interface\-descriptors\.jar \(project :privacysandbox:ui:integration\-tests:macrobenchmark:testapp:mediateesdkproviderwrapper\) with ExtractCompileSdkShimTransform
 # > Task :room:integration-tests:room-testapp:runErrorProneWithPreKmpCompilerRelease
 \$OUT_DIR/androidx/room/integration\-tests/room\-testapp/build/errorProne/WithPreKmpCompilerRelease/androidx/room/integration/testapp/database/CustomerDao_Impl\.java:[0-9]+: warning: \[removal\] finalize\(\) in Object has been deprecated and marked for removal
 protected void finalize\(\) \{
@@ -389,14 +386,9 @@ protected void finalize\(\) \{
 # > Task :privacysandbox:tools:integration-tests:testsdk:compileReleaseKotlin
 w: file://\$OUT_DIR/androidx/privacysandbox/tools/integration\-tests/testsdk/build/generated/ksp/release/kotlin/androidx/privacysandbox/tools/integration/testsdk/NativeAdDataConverter\.kt:[0-9]+:[0-9]+ This API is experimental\. It may be changed in the future without notice\.
 # > Task :docs-public:docs
-In Dokka K[0-9]+ it will be an error\. Also, please consider reporting your user case: https://github\.com/Kotlin/dokka/issues/[0-9]+
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/CredentialAuthExtensions\.kt:[0-9]+ Failed to resolve See CredentialAuthPrompt\.authenticate in DFunction authenticate\. Did you mean CredentialAuthPrompt\#authenticate\?
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/Class[0-9]+BiometricOrCredentialAuthExtensions\.kt:[0-9]+ Failed to resolve See Class[0-9]+BiometricOrCredentialAuthPrompt\.authenticate in DFunction authenticate\. Did you mean Class[0-9]+BiometricOrCredentialAuthPrompt\#authenticate\?
 WARN: \$OUT_DIR/androidx/docs\-public/build/unzippedJvmSources/androidx/biometric/auth/Class[0-9]+BiometricAuthExtensions\.kt:[0-9]+ Failed to resolve See Class[0-9]+BiometricAuthPrompt\.authenticate in DFunction authenticate\. Did you mean Class[0-9]+BiometricAuthPrompt\#authenticate\?
+# Remove OPT_IN_MARKER_ON_WRONG_TARGET from this list and from all instances in code when b/174708311 is fixed
 # Remove UNSAFE_CALL when b/409324917 is fixed
-.*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|UNSAFE_CALL|WRONG_ANNOTATION_TARGET)'.*
-# Remove when https://youtrack.jetbrains.com/issue/KT-70013 is fixed, o/w anytime a new entry is added to this list, this message will be printed.
-Calculating task graph as configuration cache cannot be reused because the set of paths ignored in file-system-check input tracking.*
-# b/414775532
-# > Task :compose-hero-benchmarks:poxedex-compose:app:kspReleaseKotlin
-w: \[ksp\] LibraryGlideModules \[\] are included more than once, keeping only one\!
+.*This code uses error suppression for '(ABSTRACT_MEMBER_NOT_IMPLEMENTED|CANNOT_OVERRIDE_INVISIBLE_MEMBER|INVISIBLE_REFERENCE|OPT_IN_MARKER_ON_WRONG_TARGET|UNSAFE_CALL|UPPER_BOUND_VIOLATED|WRONG_ANNOTATION_TARGET)'.*

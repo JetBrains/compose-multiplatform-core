@@ -94,7 +94,7 @@ internal fun ThreePaneScaffoldState.calculateThreePaneMotion(
             ThreePaneMotion(
                 paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Primary)],
                 paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Secondary)],
-                paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Tertiary)],
+                paneMotions[ltrPaneOrder.indexOf(ThreePaneScaffoldRole.Tertiary)]
             )
     }
     return resultHolder.value
@@ -109,14 +109,6 @@ internal class ThreePaneScaffoldMotionDataProvider :
     private val primary = PaneMotionData()
     private val secondary = PaneMotionData()
     private val tertiary = PaneMotionData()
-
-    internal var scaffoldState: ThreePaneScaffoldState? = null
-
-    internal val predictiveBackScaleState =
-        PredictiveBackScaleState(
-            scaffoldSize = { scaffoldSize },
-            isPredictiveBackInProgress = { scaffoldState?.isPredictiveBackInProgress ?: false },
-        )
 
     override var scaffoldSize: IntSize = IntSize.Zero
 
@@ -135,7 +127,7 @@ internal class ThreePaneScaffoldMotionDataProvider :
 
     internal fun update(
         threePaneMotion: ThreePaneMotion,
-        ltrOrder: ThreePaneScaffoldHorizontalOrder,
+        ltrOrder: ThreePaneScaffoldHorizontalOrder
     ) {
         this.ltrOrder = ltrOrder
         forEach { role, it ->

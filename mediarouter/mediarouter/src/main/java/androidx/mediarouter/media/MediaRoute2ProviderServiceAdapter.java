@@ -134,13 +134,10 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         }
 
         int sessionFlags = SessionRecord.SESSION_FLAG_MR2;
-        RouteControllerOptions routeControllerOptions =
-                new RouteControllerOptions.Builder()
-                        .setControlHints(sessionHints)
-                        .setClientPackageName(packageName)
-                        .build();
         DynamicGroupRouteController controller;
         if (mProviderDescriptor.supportsDynamicGroupRoute()) {
+            RouteControllerOptions routeControllerOptions =
+                    new RouteControllerOptions.Builder().setControlHints(sessionHints).build();
             controller =
                     provider.onCreateDynamicGroupRouteController(routeId, routeControllerOptions);
             sessionFlags |= SessionRecord.SESSION_FLAG_GROUP | SessionRecord.SESSION_FLAG_DYNAMIC;
@@ -150,8 +147,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 return;
             }
         } else {
-            RouteController routeController =
-                    provider.onCreateRouteController(routeId, routeControllerOptions);
+            RouteController routeController = provider.onCreateRouteController(routeId);
             if (routeController == null) {
                 Log.w(TAG, "onCreateSession: Couldn't create a controller");
                 notifyRequestFailed(requestId, REASON_REJECTED);
@@ -191,7 +187,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 // for a dynamic group will be created after the group route is created.
                 // (DynamicGroupRouteController#notifyDynamicRoutesChanged is called).
                 sessionRecord.updateMemberRouteControllers(
-                        routeId, /* oldSession= */ null, sessionInfo, routeControllerOptions);
+                        routeId, /* oldSession= */ null, sessionInfo);
             } else {
                 // The session has a non-group static route controller, whose proxy route
                 // controller has already been created. We just need to map the route id to said
@@ -812,11 +808,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
 
             if ((mFlags & (SESSION_FLAG_MR2 | SESSION_FLAG_DYNAMIC))
                     == (SESSION_FLAG_MR2 | SESSION_FLAG_DYNAMIC) && groupRoute != null) {
-                updateMemberRouteControllers(
-                        groupRoute.getId(),
-                        sessionInfo,
-                        mSessionInfo,
-                        RouteControllerOptions.EMPTY);
+                updateMemberRouteControllers(groupRoute.getId(), sessionInfo, mSessionInfo);
             }
 
             if (!mIsCreated) {
@@ -831,11 +823,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
                 // Release member controllers
                 if ((mFlags & (SESSION_FLAG_MR2 | SESSION_FLAG_GROUP))
                         == (SESSION_FLAG_MR2 | SESSION_FLAG_GROUP)) {
-                    updateMemberRouteControllers(
-                            /* groupId= */ null,
-                            mSessionInfo,
-                            /* newSession= */ null,
-                            RouteControllerOptions.EMPTY);
+                    updateMemberRouteControllers(null, mSessionInfo, null);
                 }
 
                 if (shouldUnselect) {
@@ -858,11 +846,8 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             }
         }
 
-        public void updateMemberRouteControllers(
-                @Nullable String groupId,
-                @Nullable RoutingSessionInfo oldSession,
-                @Nullable RoutingSessionInfo newSession,
-                RouteControllerOptions routeControllerOptions) {
+        public void updateMemberRouteControllers(String groupId, RoutingSessionInfo oldSession,
+                RoutingSessionInfo newSession) {
             List<String> oldRouteIds = (oldSession == null) ? Collections.emptyList() :
                     oldSession.getSelectedRoutes();
             List<String> newRouteIds = (newSession == null) ? Collections.emptyList() :
@@ -871,8 +856,7 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
             for (String routeId : newRouteIds) {
                 RouteController controller = findControllerByRouteId(routeId);
                 if (controller == null) {
-                    controller =
-                            getOrCreateRouteController(routeId, groupId, routeControllerOptions);
+                    controller = getOrCreateRouteController(routeId, groupId);
                     if (controller != null) {
                         controller.onSelect();
                     }
@@ -895,21 +879,15 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
         }
 
         @Nullable
-        private RouteController getOrCreateRouteController(
-                String routeId,
-                String routeGroupId,
-                RouteControllerOptions routeControllerOptions) {
+        private RouteController getOrCreateRouteController(String routeId, String routeGroupId) {
             RouteController controller = mRouteIdToControllerMap.get(routeId);
             if (controller != null) {
                 return controller;
             }
 
-            controller =
-                    routeGroupId == null
-                            ? getMediaRouteProvider()
-                                    .onCreateRouteController(routeId, routeControllerOptions)
-                            : getMediaRouteProvider()
-                                    .onCreateRouteController(routeId, routeGroupId);
+            controller = routeGroupId == null
+                    ? getMediaRouteProvider().onCreateRouteController(routeId)
+                    : getMediaRouteProvider().onCreateRouteController(routeId, routeGroupId);
             if (controller != null) {
                 mRouteIdToControllerMap.put(routeId, controller);
             }

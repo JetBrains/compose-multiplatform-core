@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.ReusableGraphicsLayerScope
 import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerIconService
 import androidx.compose.ui.modifier.ModifierLocalManager
 import androidx.compose.ui.node.InternalCoreApi
@@ -76,7 +77,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
 internal fun createDelegate(
     root: LayoutNode,
     firstMeasureCompleted: Boolean = true,
-    createLayer: () -> OwnedLayer = { TODO() },
+    createLayer: () -> OwnedLayer = { TODO() }
 ): MeasureAndLayoutDelegate {
     val delegate = MeasureAndLayoutDelegate(root)
     root.attach(FakeOwner(delegate, createLayer))
@@ -92,7 +93,7 @@ private class FakeOwner(
     val delegate: MeasureAndLayoutDelegate,
     val createLayer: () -> OwnedLayer,
     override val coroutineContext: CoroutineContext =
-        Executors.newFixedThreadPool(3).asCoroutineDispatcher(),
+        Executors.newFixedThreadPool(3).asCoroutineDispatcher()
 ) : Owner {
     override val measureIteration: Long
         get() = delegate.measureIteration
@@ -101,7 +102,7 @@ private class FakeOwner(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
         forceRequest: Boolean,
-        scheduleMeasureAndLayout: Boolean,
+        scheduleMeasureAndLayout: Boolean
     ) {
         if (affectsLookahead) {
             delegate.requestLookaheadRemeasure(layoutNode)
@@ -113,7 +114,7 @@ private class FakeOwner(
     override fun onRequestRelayout(
         layoutNode: LayoutNode,
         affectsLookahead: Boolean,
-        forceRequest: Boolean,
+        forceRequest: Boolean
     ) {
         if (affectsLookahead) {
             delegate.requestLookaheadRelayout(layoutNode, forceRequest)
@@ -238,7 +239,7 @@ private class FakeOwner(
 
     @Deprecated(
         "fontLoader is deprecated, use fontFamilyResolver",
-        replaceWith = ReplaceWith("fontFamilyResolver"),
+        replaceWith = ReplaceWith("fontFamilyResolver")
     )
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")
     override val fontLoader: Font.ResourceLoader
@@ -267,6 +268,7 @@ private class FakeOwner(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
         invalidateParentLayer: () -> Unit,
         explicitLayer: GraphicsLayer?,
+        forceUseOldLayers: Boolean
     ): OwnedLayer = createLayer()
 
     override fun requestOnPositionedCallback(layoutNode: LayoutNode) {
@@ -277,11 +279,15 @@ private class FakeOwner(
 
     override fun calculateLocalPosition(positionInWindow: Offset) = TODO("Not yet implemented")
 
+    override fun requestFocus() = TODO("Not yet implemented")
+
     override fun requestAutofill(node: LayoutNode) {
         TODO("Not yet implemented")
     }
 
     override fun onSemanticsChange() {}
+
+    override fun getFocusDirection(keyEvent: KeyEvent) = TODO("Not yet implemented")
 }
 
 internal fun defaultRootConstraints() = Constraints(maxWidth = 100, maxHeight = 100)
@@ -296,7 +302,7 @@ internal fun assertRemeasured(
     node: LayoutNode,
     times: Int = 1,
     withDirection: LayoutDirection? = null,
-    block: (LayoutNode) -> Unit,
+    block: (LayoutNode) -> Unit
 ) {
     val measuresCountBefore = node.measuresCount
     block(node)
@@ -459,7 +465,7 @@ internal abstract class SmartMeasurePolicy : LayoutNode.NoIntrinsicsMeasurePolic
 internal class MeasureInMeasureBlock : SmartMeasurePolicy() {
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         measuresCount++
         preMeasureCallback?.invoke()
@@ -529,7 +535,7 @@ internal class MeasureInLayoutBlock : SmartMeasurePolicy() {
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         measuresCount++
         preMeasureCallback?.invoke()
@@ -577,7 +583,7 @@ internal class NoMeasure : SmartMeasurePolicy() {
 
     override fun MeasureScope.measure(
         measurables: List<Measurable>,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         measuresCount++
         preMeasureCallback?.invoke()
@@ -603,7 +609,7 @@ internal class SpyLayoutModifier : LayoutModifier {
 
     override fun MeasureScope.measure(
         measurable: Measurable,
-        constraints: Constraints,
+        constraints: Constraints
     ): MeasureResult {
         measuresCount++
         return layout(constraints.maxWidth, constraints.maxHeight) {
@@ -635,7 +641,7 @@ internal open class MockLayer() : OwnedLayer {
 
     override fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit,
+        invalidateParentLayer: () -> Unit
     ) {}
 
     override fun transform(matrix: Matrix) {}

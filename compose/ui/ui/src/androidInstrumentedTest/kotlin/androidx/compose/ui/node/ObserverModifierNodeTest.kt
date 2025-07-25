@@ -137,8 +137,9 @@ class ObserverModifierNodeTest {
         rule.runOnIdle { assertThat(callbackInvoked).isFalse() }
     }
 
-    class TestObserverNode(private val onObserveReadsChanged: () -> Unit) :
-        ObserverModifierNode, Modifier.Node() {
+    class TestObserverNode(
+        private val onObserveReadsChanged: () -> Unit,
+    ) : ObserverModifierNode, Modifier.Node() {
         override fun onObservedReadsChanged() {
             this.onObserveReadsChanged()
         }

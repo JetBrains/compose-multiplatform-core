@@ -16,8 +16,6 @@
 
 package androidx.camera.core;
 
-import android.os.Process;
-
 import androidx.annotation.GuardedBy;
 import androidx.annotation.RestrictTo;
 import androidx.camera.core.impl.CameraFactory;
@@ -42,16 +40,6 @@ public class CameraExecutor implements Executor {
     private static final int DEFAULT_CORE_THREADS = 1;
     private static final int DEFAULT_MAX_THREADS = DEFAULT_CORE_THREADS;
 
-    /**
-     * Camera threads are given higher priority due to the realtime nature of camera operations.
-     * These are utilized for camera device and capture session operations as well as their
-     * respective callbacks. This is set to have slightly (1) lower priority than the display
-     * rendering thread should have.
-     */
-    private static final int CAMERA_THREAD_PROCESS_PRIORITY =
-            Process.THREAD_PRIORITY_DISPLAY + Process.THREAD_PRIORITY_LESS_FAVORABLE;
-    private static final int CAMERA_THREAD_JAVA_PRIORITY = 7;
-
     private final Object mExecutorLock = new Object();
     @GuardedBy("mExecutorLock")
     private @NonNull ThreadPoolExecutor mThreadPoolExecutor = createExecutor();
@@ -63,11 +51,7 @@ public class CameraExecutor implements Executor {
 
         @Override
         public Thread newThread(@NonNull Runnable runnable) {
-            Thread t = new Thread(() -> {
-                Process.setThreadPriority(CAMERA_THREAD_PROCESS_PRIORITY);
-                runnable.run();
-            });
-            t.setPriority(CAMERA_THREAD_JAVA_PRIORITY);
+            Thread t = new Thread(runnable);
             t.setName(
                     String.format(
                             Locale.US,

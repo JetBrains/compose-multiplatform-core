@@ -66,7 +66,12 @@ class SchedulersTest {
                 override fun hasLimitedSchedulingSlots() = false
             }
         val wm =
-            WorkManagerImpl(context, configuration, env.taskExecutor, env.db) {
+            WorkManagerImpl(
+                context,
+                configuration,
+                env.taskExecutor,
+                env.db,
+            ) {
                 context: Context,
                 configuration: Configuration,
                 taskExecutor: TaskExecutor,
@@ -80,9 +85,9 @@ class SchedulersTest {
                         trackers,
                         processor,
                         WorkLauncherImpl(processor, taskExecutor),
-                        taskExecutor,
+                        taskExecutor
                     ),
-                    trackingScheduler,
+                    trackingScheduler
                 )
             }
 
@@ -120,7 +125,7 @@ class SchedulersTest {
                 env.db,
                 listOf(trackingScheduler, greedyScheduler),
                 env.processor,
-                trackers,
+                trackers
             )
 
         val workRequest = OneTimeWorkRequest.from(FailureWorker::class.java)
@@ -146,7 +151,7 @@ class SchedulersTest {
                 env.db,
                 schedulers,
                 env.processor,
-                trackers,
+                trackers
             )
         val scheduledSpecs = mutableListOf<WorkSpec>()
         val cancelledIds = mutableListOf<String>()
@@ -207,7 +212,7 @@ class SchedulersTest {
                 env.db,
                 schedulers,
                 env.processor,
-                trackers,
+                trackers
             )
         val scheduledSpecs = mutableListOf<WorkSpec>()
         val cancelledIds = mutableListOf<String>()

@@ -21,10 +21,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.annotation.RestrictTo
-import androidx.xr.runtime.math.Matrix3
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.math.Vector4
 import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.util.concurrent.ListenableFuture
 import java.time.Duration
@@ -76,13 +73,6 @@ public interface JxrPlatformAdapter {
     public val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper
 
     /**
-     * Returns a [SpatialModeChangeListener] instance.
-     *
-     * Setting this property will update the handler that is used to process spatial mode changes.
-     */
-    public var spatialModeChangeListener: SpatialModeChangeListener
-
-    /**
      * Returns the CameraViewActivityPose for the specified camera type or null if it is not
      * ready/available.
      */
@@ -95,14 +85,12 @@ public interface JxrPlatformAdapter {
      * route. The future returned by this method will fire listeners on the UI thread if
      * Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
     public fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource>
 
     /**
      * Loads glTF Asset from a provided byte array. The future returned by this method will fire
      * listeners on the UI thread if Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
     // TODO(b/397746548): Add InputStream support for loading glTFs.
     // Suppressed to allow CompletableFuture.
     public fun loadGltfByByteArray(
@@ -118,7 +106,6 @@ public interface JxrPlatformAdapter {
     public fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource>
 
     /** Loads an ExrImage from a provided byte array using the Split Engine route. */
-    @Suppress("AsyncSuffixFuture")
     // Suppressed to allow CompletableFuture.
     public fun loadExrImageByByteArray(
         assetData: ByteArray,
@@ -129,7 +116,6 @@ public interface JxrPlatformAdapter {
      * Loads a texture resource for the given asset name or URL. The future returned by this method
      * will fire listeners on the UI thread if Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
     public fun loadTexture(
         assetName: String,
         sampler: TextureSampler,
@@ -148,286 +134,34 @@ public interface JxrPlatformAdapter {
      * Creates a water material by querying it from the system's built-in materials. The future
      * returned by this method will fire listeners on the UI thread if Runnable::run is supplied.
      */
-    @Suppress("AsyncSuffixFuture")
     public fun createWaterMaterial(isAlphaMapVersion: Boolean): ListenableFuture<MaterialResource>?
 
     /** Destroys the given water material resource. */
     public fun destroyWaterMaterial(material: MaterialResource)
 
-    /** Sets the reflection map texture for the water material. */
-    public fun setReflectionMapOnWaterMaterial(
-        material: MaterialResource,
-        reflectionMap: TextureResource,
-    )
+    /** Sets the reflection cube texture for the water material. */
+    public fun setReflectionCube(material: MaterialResource, reflectionCube: TextureResource)
 
     /** Sets the normal map texture for the water material. */
-    public fun setNormalMapOnWaterMaterial(material: MaterialResource, normalMap: TextureResource)
+    public fun setNormalMap(material: MaterialResource, normalMap: TextureResource)
 
     /** Sets the normal tiling for the water material. */
-    public fun setNormalTilingOnWaterMaterial(material: MaterialResource, normalTiling: Float)
+    public fun setNormalTiling(material: MaterialResource, normalTiling: Float)
 
     /** Sets the normal speed for the water material. */
-    public fun setNormalSpeedOnWaterMaterial(material: MaterialResource, normalSpeed: Float)
+    public fun setNormalSpeed(material: MaterialResource, normalSpeed: Float)
 
     /** Sets the alpha step multiplier for the water material. */
-    public fun setAlphaStepMultiplierOnWaterMaterial(
-        material: MaterialResource,
-        alphaStepMultiplier: Float,
-    )
+    public fun setAlphaStepMultiplier(material: MaterialResource, alphaStepMultiplier: Float)
 
     /** Sets the alpha map for the water material. */
-    public fun setAlphaMapOnWaterMaterial(material: MaterialResource, alphaMap: TextureResource)
+    public fun setAlphaMap(material: MaterialResource, alphaMap: TextureResource)
 
     /** Sets the normal z for the water material. */
-    public fun setNormalZOnWaterMaterial(material: MaterialResource, normalZ: Float)
+    public fun setNormalZ(material: MaterialResource, normalZ: Float)
 
     /** Sets the normal boundary for the water material. */
-    public fun setNormalBoundaryOnWaterMaterial(material: MaterialResource, normalBoundary: Float)
-
-    /**
-     * Creates a Khronos PBR material by querying it from the system's built-in materials. The
-     * future returned by this method will fire listeners on the UI thread if Runnable::run is
-     * supplied.
-     */
-    public fun createKhronosPbrMaterial(
-        spec: KhronosPbrMaterialSpec
-    ): ListenableFuture<MaterialResource>?
-
-    /** Destroys the given Khronos PBR material resource. */
-    public fun destroyKhronosPbrMaterial(material: MaterialResource)
-
-    /**
-     * Sets the base color texture for the Khronos PBR material. This texture defines the albedo or
-     * diffuse color of the material.
-     */
-    public fun setBaseColorTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        baseColor: TextureResource,
-    )
-
-    /**
-     * Sets the UV transformation matrix for the base color texture. This allows for scaling,
-     * rotating, and translating the texture coordinates.
-     */
-    public fun setBaseColorUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /**
-     * Sets the base color factors for the Khronos PBR material. These factors multiplies the base
-     * color texture or defines a uniform base color.
-     */
-    public fun setBaseColorFactorsOnKhronosPbrMaterial(material: MaterialResource, factors: Vector4)
-
-    /**
-     * Sets the metallic-roughness texture for the Khronos PBR material. This texture defines the
-     * metallic and roughness properties of the material.
-     */
-    public fun setMetallicRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        metallicRoughness: TextureResource,
-    )
-
-    /**
-     * Sets the UV transformation matrix for the metallic-roughness texture. Controls how the
-     * metallic-roughness texture is mapped onto the surface.
-     */
-    public fun setMetallicRoughnessUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /**
-     * Sets the metallic factor for the Khronos PBR material. Controls the metalness of the
-     * material, ranging from non-metal to metal.
-     */
-    public fun setMetallicFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float)
-
-    /**
-     * Sets the roughness factor for the Khronos PBR material. Controls the surface roughness,
-     * affecting the sharpness of reflections.
-     */
-    public fun setRoughnessFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float)
-
-    /**
-     * Sets the normal map texture for the Khronos PBR material. This texture perturbs the surface
-     * normals, creating detailed surface features.
-     */
-    public fun setNormalTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        normal: TextureResource,
-    )
-
-    /**
-     * Sets the UV transformation matrix for the normal map texture. Adjusts the mapping of the
-     * normal map texture.
-     */
-    public fun setNormalUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /**
-     * Sets the factor of the normal map effect. Controls the strength of the normal map's
-     * influence.
-     */
-    public fun setNormalFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float)
-
-    /**
-     * Sets the ambient occlusion texture for the Khronos PBR material. Simulates the occlusion of
-     * ambient light by surface details.
-     */
-    public fun setAmbientOcclusionTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        ambientOcclusion: TextureResource,
-    )
-
-    /**
-     * Sets the UV transformation matrix for the ambient occlusion texture. Controls the mapping of
-     * the ambient occlusion texture.
-     */
-    public fun setAmbientOcclusionUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /** Sets the factor of the ambient occlusion effect. */
-    public fun setAmbientOcclusionFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    )
-
-    /**
-     * Sets the emissive texture for the Khronos PBR material. Defines the light emitted by the
-     * material.
-     */
-    public fun setEmissiveTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        emissive: TextureResource,
-    )
-
-    /** Sets the UV transformation matrix for the emissive texture. */
-    public fun setEmissiveUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /**
-     * Sets the emissive color factors for the Khronos PBR material. Multiplies the emissive texture
-     * or defines a uniform emissive color.
-     */
-    public fun setEmissiveFactorsOnKhronosPbrMaterial(material: MaterialResource, factors: Vector3)
-
-    /**
-     * Sets the clearcoat texture for the Khronos PBR material. Adds a clearcoat layer to the
-     * material, affecting reflections.
-     */
-    public fun setClearcoatTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoat: TextureResource,
-    )
-
-    /**
-     * Sets the clearcoat normal texture for the Khronos PBR material. Perturbs the normals of the
-     * clearcoat layer.
-     */
-    public fun setClearcoatNormalTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoatNormal: TextureResource,
-    )
-
-    /**
-     * Sets the clearcoat roughness texture for the Khronos PBR material. Controls the roughness of
-     * the clearcoat layer.
-     */
-    public fun setClearcoatRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        clearcoatRoughness: TextureResource,
-    )
-
-    /**
-     * Sets the clearcoat factor for the Khronos PBR material. Multiplies the clearcoat texture or
-     * defines a uniform clearcoat color.
-     */
-    public fun setClearcoatFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        intensity: Float,
-        roughness: Float,
-        normal: Float,
-    )
-
-    /**
-     * Sets the sheen color texture for the Khronos PBR material. Defines the color of the sheen
-     * effect, visible at grazing angles.
-     */
-    public fun setSheenColorTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        sheenColor: TextureResource,
-    )
-
-    /**
-     * Sets the sheen color factors for the Khronos PBR material. Multiplies the sheen color texture
-     * or defines a uniform sheen color.
-     */
-    public fun setSheenColorFactorsOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factors: Vector3,
-    )
-
-    /**
-     * Sets the sheen roughness texture for the Khronos PBR material. Controls the roughness of the
-     * sheen effect.
-     */
-    public fun setSheenRoughnessTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        sheenRoughness: TextureResource,
-    )
-
-    /**
-     * Sets the sheen roughness factor for the Khronos PBR material. Controls the roughness of the
-     * sheen effect.
-     */
-    public fun setSheenRoughnessFactorOnKhronosPbrMaterial(
-        material: MaterialResource,
-        factor: Float,
-    )
-
-    /**
-     * Sets the transmission texture for the Khronos PBR material. Defines the transmission of light
-     * through the material.
-     */
-    public fun setTransmissionTextureOnKhronosPbrMaterial(
-        material: MaterialResource,
-        transmission: TextureResource,
-    )
-
-    /** Sets the UV transformation matrix for the transmission texture. */
-    public fun setTransmissionUvTransformOnKhronosPbrMaterial(
-        material: MaterialResource,
-        uvTransform: Matrix3,
-    )
-
-    /**
-     * Sets the transmission factor for the Khronos PBR material. Controls the amount of light
-     * transmitted through the material.
-     */
-    public fun setTransmissionFactorOnKhronosPbrMaterial(material: MaterialResource, factor: Float)
-
-    /**
-     * Sets the index of refraction for the Khronos PBR material. Defines how much light bends when
-     * entering the material.
-     */
-    public fun setIndexOfRefractionOnKhronosPbrMaterial(
-        material: MaterialResource,
-        indexOfRefraction: Float,
-    )
-
-    /**
-     * Sets the alpha cutoff for the Khronos PBR material. Defines the threshold for transparency,
-     * used for cutout effects.
-     */
-    public fun setAlphaCutoffOnKhronosPbrMaterial(material: MaterialResource, alphaCutoff: Float)
+    public fun setNormalBoundary(material: MaterialResource, normalBoundary: Float)
 
     /**
      * A factory function to create a SceneCore GltfEntity. The parent may be the activity space or
@@ -439,51 +173,13 @@ public interface JxrPlatformAdapter {
         parentEntity: Entity,
     ): GltfEntity
 
-    /**
-     * Factory method for SurfaceEntity.
-     *
-     * @param stereoMode Stereo mode for the surface.
-     * @param pose Pose of this entity relative to its parent, default value is Identity.
-     * @param canvasShape The [SurfaceEntity.CanvasShape] which describes the spatialized shape of
-     *   the canvas.
-     * @param contentSecurityLevel The [SurfaceEntity.ContentSecurityLevel] which describes whether
-     *   DRM is enabled.
-     * @param superSampling The [SurfaceEntity.SuperSampling] which describes whether super sampling
-     *   is enabled. Whether to use super sampling for the surface.
-     * @param parentEntity The parent entity of this entity.
-     * @return A [SurfaceEntity] which is a child of the parent entity.
-     */
+    /** A factory function for an Entity which displays drawable surfaces. */
     public fun createSurfaceEntity(
         stereoMode: Int,
-        pose: Pose,
         canvasShape: SurfaceEntity.CanvasShape,
-        @SurfaceEntity.ContentSecurityLevel contentSecurityLevel: Int,
-        superSampling: Int,
+        pose: Pose,
         parentEntity: Entity,
     ): SurfaceEntity
-
-    /**
-     * Sets whether the depth test is enabled for all panels in the Scene when the Scene is in full
-     * space mode. Panels in home space mode are unaffected.
-     *
-     * <p>When the depth test for panels is enabled, panels in the Scene will undergo depth testing,
-     * where they can appear behind other content in the Scene. When the depth test is disabled,
-     * panels in the Scene do not undergo depth tests, that will always be drawn on top of other
-     * objects in the Scene that were already drawn. Panels and non-panel content (ex:
-     * SurfaceEntity, GltfEntity) are always drawn after the SpatialEnvironment in back to front
-     * order when such an order exists. Subsequent content will be drawn on top of panels with no
-     * depth test if the subsequent content is drawn later.
-     *
-     * <p>This method says "panel" because it only affects panels. Other content in the Scene is
-     * unaffected by this setting.
-     *
-     * <p>By default the depth test is enabled for all panels in the Scene. It can be disabled, or
-     * re-enabled, by using this method.
-     *
-     * @param enabled True to enable the depth test for all panels in the Scene (default), false to
-     *   disable the depth test for all panels in the Scene.
-     */
-    public fun enablePanelDepthTest(enabled: Boolean)
 
     /**
      * Adds the given {@link Consumer} as a listener to be invoked when this Session's current
@@ -535,44 +231,6 @@ public interface JxrPlatformAdapter {
 
     /** Releases the listener previously added by [setSpatialVisibilityChangedListener]. */
     public fun clearSpatialVisibilityChangedListener()
-
-    /**
-     * Sets the listener to be invoked when the perceived resolution of the main window changes in
-     * Home Space Mode.
-     *
-     * The main panel's own rotation and the display's viewing direction are disregarded; this value
-     * represents the pixel dimensions of the panel on the camera view without changing its distance
-     * to the display.
-     *
-     * The listener is invoked on the provided executor. If the app intends to modify the UI
-     * elements/views during the callback, the app should provide the thread executor that is
-     * appropriate for the UI operations. For example, if the app is using the main thread to render
-     * the UI, the app should provide the main thread (Looper.getMainLooper()) executor. If the app
-     * is using a separate thread to render the UI, the app should provide the executor for that
-     * thread.
-     *
-     * Non-zero values are only guaranteed in Home Space Mode. In Full Space Mode, the callback will
-     * always return a (0,0) size. Use the [PanelEntity.getPerceivedResolution] or
-     * [SurfaceEntity.getPerceivedResolution] methods directly on the relevant entities to retrieve
-     * non-zero values in Full Space Mode.
-     *
-     * @param callbackExecutor The executor to run the listener on.
-     * @param listener The [Consumer] to be invoked asynchronously on the given callbackExecutor
-     *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
-     *   to the Consumer’s accept method is the new value for [PixelDimensions] value for perceived
-     *   resolution.
-     */
-    public fun addPerceivedResolutionChangedListener(
-        callbackExecutor: Executor,
-        listener: Consumer<PixelDimensions>,
-    ): Unit
-
-    /**
-     * Releases the listener previously added by [addPerceivedResolutionChangedListener].
-     *
-     * @param listener The [Consumer] to be removed. It will no longer receive change events.
-     */
-    public fun removePerceivedResolutionChangedListener(listener: Consumer<PixelDimensions>): Unit
 
     /** A function to create a XR Runtime Entity. */
     public fun createLoggingEntity(pose: Pose): LoggingEntity
@@ -670,14 +328,14 @@ public interface JxrPlatformAdapter {
     public fun createAnchorEntity(anchor: Anchor): AnchorEntity
 
     /**
-     * A factory function to create a group entity. This entity is used as a connection point for
-     * attaching children entities and managing them (i.e. setPose()) as a group.
+     * A factory function to create a content-less entity. This entity is used as a connection point
+     * for attaching children entities and managing them (i.e. setPose()) as a group.
      *
      * @param pose Initial pose of the entity.
      * @param name Name of the entity.
      * @param parent Parent entity.
      */
-    public fun createGroupEntity(pose: Pose, name: String, parent: Entity): Entity
+    public fun createEntity(pose: Pose, name: String, parent: Entity): Entity
 
     /**
      * A factory function to create a SubspaceNodeEntity.
@@ -772,8 +430,6 @@ public interface JxrPlatformAdapter {
         stateListener: PointerCaptureComponent.StateListener,
         inputListener: InputEventListener,
     ): PointerCaptureComponent
-
-    public fun createSpatialPointerComponent(): SpatialPointerComponent
 
     /**
      * A factory function to recreate an Anchor entity which was persisted in a previous session.

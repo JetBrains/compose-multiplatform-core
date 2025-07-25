@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.xr.compose.spatial.SpatialElevationLevel
@@ -87,18 +86,21 @@ class UxTestApp : ComponentActivity() {
 }
 
 @Composable
-fun TestPanel(elevationLevel: Dp, levelName: String) {
-    var elevation by remember(elevationLevel) { mutableStateOf(elevationLevel) }
+fun TestPanel(initialElevationLevel: SpatialElevationLevel, levelName: String) {
+    var elevation by remember(initialElevationLevel) { mutableStateOf(initialElevationLevel.level) }
     Column(Modifier.width(200.dp)) {
         Box(Modifier.background(Color.White)) {
-            Text("Initial Level: $levelName at $elevationLevel", Modifier.padding(10.dp))
+            Text(
+                "Initial Level: $levelName at ${initialElevationLevel.level}",
+                Modifier.padding(10.dp)
+            )
         }
 
         Subspace {
             SpatialPanel(SubspaceModifier.offset(z = elevation)) {
                 Box(
                     Modifier.size(200.dp).background(Color.White),
-                    contentAlignment = Alignment.Center,
+                    contentAlignment = Alignment.Center
                 ) {
                     Text("${elevation.value.roundToInt().dp}", fontSize = 8.em)
                 }

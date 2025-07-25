@@ -94,7 +94,7 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
         val shouldFreeze =
             shouldFreezeApis(
                 Version(parameters.referenceVersion.get()),
-                Version(parameters.projectVersion.get()),
+                Version(parameters.projectVersion.get())
             )
         val ignoredErrors =
             BinaryCompatibilityChecker.checkAllBinariesAreCompatible(
@@ -102,7 +102,7 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
                     previousDump,
                     null,
                     validate = false,
-                    shouldFreeze = shouldFreeze,
+                    shouldFreeze = shouldFreeze
                 )
                 .map { it.toString() }
                 .toSet()
@@ -110,12 +110,12 @@ private abstract class IgnoreChangesWorker : WorkAction<IgnoreChangesParameters>
             if (!exists()) {
                 createNewFile()
             }
-            writeText(FORMAT_STRING + "\n" + ignoredErrors.joinToString("\n"))
+            writeText(formatString + "\n" + ignoredErrors.joinToString("\n"))
         }
     }
 
     private companion object {
         const val BASELINE_FORMAT_VERSION = "1.0"
-        const val FORMAT_STRING = "// Baseline format: $BASELINE_FORMAT_VERSION"
+        const val formatString = "// Baseline format: $BASELINE_FORMAT_VERSION"
     }
 }

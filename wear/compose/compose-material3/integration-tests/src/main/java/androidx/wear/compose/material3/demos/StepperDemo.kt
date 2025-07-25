@@ -59,7 +59,7 @@ val StepperDemos =
 @Composable
 fun DisabledStepperDemo() {
     var value by remember { mutableFloatStateOf(2f) }
-    val valueRange = remember { 0f..4f }
+    val valueRange = 0f..4f
     Box(modifier = Modifier.fillMaxSize()) {
         Stepper(
             value = value,
@@ -76,7 +76,7 @@ fun DisabledStepperDemo() {
             value = { value },
             valueRange = valueRange,
             modifier = Modifier.align(Alignment.CenterStart),
-            enabled = false,
+            enabled = false
         )
     }
 }
@@ -84,7 +84,7 @@ fun DisabledStepperDemo() {
 @Composable
 fun CustomColorsStepperDemo() {
     var value by remember { mutableFloatStateOf(2f) }
-    val valueRange = remember { 0f..4f }
+    val valueRange = 0f..4f
 
     Box(modifier = Modifier.fillMaxSize()) {
         Stepper(
@@ -114,7 +114,7 @@ fun CustomColorsStepperDemo() {
                 LevelIndicatorDefaults.colors(
                     indicatorColor = Color.Green,
                     trackColor = Color.Green.copy(alpha = 0.5f),
-                ),
+                )
         )
     }
 }
@@ -124,7 +124,7 @@ internal fun DecreaseIcon(size: Dp) =
     Icon(
         imageVector = Icons.Filled.KeyboardArrowDown,
         contentDescription = "Decrease",
-        modifier = Modifier.size(size),
+        modifier = Modifier.size(size)
     )
 
 @Composable
@@ -132,5 +132,5 @@ internal fun IncreaseIcon(size: Dp) =
     Icon(
         imageVector = Icons.Filled.KeyboardArrowUp,
         contentDescription = "Increase",
-        modifier = Modifier.size(size),
+        modifier = Modifier.size(size)
     )

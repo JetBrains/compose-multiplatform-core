@@ -37,8 +37,6 @@ for Kotlin libraries.
 
 <!--#include file="/company/teams/androidx/api_guidelines/processors.md"-->
 
-<!--#include file="/company/teams/androidx/api_guidelines/tooling.md"-->
-
 <!--#include file="/company/teams/androidx/api_guidelines/kotlin.md"-->
 
 <!--#include file="/company/teams/androidx/api_guidelines/testing.md"-->

@@ -19,15 +19,15 @@ package androidx.xr.compose.platform
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.subspace.layout.CoreContentlessEntity
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.ContentlessEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
@@ -70,7 +70,7 @@ class SpatialComposeSceneTest {
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
         assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints())
+            .isEqualTo(VolumeConstraints.Unbounded)
         assertThat(scene.lifecycle).isEqualTo(composeTestRule.activity.lifecycle)
         assertThat(currentSession).isEqualTo(session)
     }
@@ -89,8 +89,8 @@ class SpatialComposeSceneTest {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             session = createFakeSession(composeTestRule.activity, fakeRuntime)
 
-            val entity = GroupEntity.create(session, "test")
-            coreEntity = CoreGroupEntity(entity)
+            val entity = ContentlessEntity.create(session, "test")
+            coreEntity = CoreContentlessEntity(entity)
 
             composition = rememberCompositionContext()
             testConstraints = VolumeConstraints(10, 20, 30, 40, 50, 60)
@@ -101,8 +101,8 @@ class SpatialComposeSceneTest {
                     jxrSession = session,
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
+                    rootVolumeConstraints = testConstraints,
                 )
-            scene.rootVolumeConstraints = testConstraints
 
             owner = AndroidComposeSpatialElement()
             owner.spatialComposeScene = scene

@@ -83,10 +83,8 @@ public class PerfettoCapture(
      * @param destinationPath Absolute path to write perfetto trace to. Must be shell-writable, such
      *   as result of `context.getExternalFilesDir(null)` or other similar `external` paths.
      */
-    public fun stop(destinationPath: String, inMemoryTracingLabel: String?) =
-        inMemoryTrace("stop perfetto") {
-            helper.stopCollecting(destinationPath, inMemoryTracingLabel)
-        }
+    public fun stop(destinationPath: String) =
+        inMemoryTrace("stop perfetto") { helper.stopCollecting(destinationPath) }
 
     /**
      * Enables Perfetto SDK tracing in the [PerfettoSdkConfig.targetPackage]
@@ -105,7 +103,7 @@ public class PerfettoCapture(
                     InitialProcessState.Alive -> false
                     InitialProcessState.NotAlive -> true
                     InitialProcessState.Unknown -> Shell.isPackageAlive(config.targetPackage)
-                },
+                }
         )
 
     @RequiresApi(30) // TODO(234351579): Support API < 30
@@ -119,7 +117,7 @@ public class PerfettoCapture(
     private fun enableAndroidxTracingPerfetto(
         targetPackage: String,
         provideBinariesIfMissing: Boolean,
-        isColdStartupTracing: Boolean,
+        isColdStartupTracing: Boolean
     ): Pair<Int, String> {
         if (!isAbiSupported()) {
             throw IllegalStateException("Unsupported ABI (${Build.SUPPORTED_ABIS.joinToString()})")
@@ -146,7 +144,7 @@ public class PerfettoCapture(
                     listOf(stdout, stderr)
                         .filter { it.isNotBlank() }
                         .joinToString(separator = System.lineSeparator())
-                },
+                }
             )
 
         // try without supplying external Perfetto SDK tracing binaries
@@ -201,7 +199,7 @@ public class PerfettoCapture(
                         binaryMissingResponseString(
                             responseNoSideloading.requiredVersion,
                             response
-                                .message, // note: we're using the error from the sideloading attempt
+                                .message // note: we're using the error from the sideloading attempt
                         )
                     } else {
                         "Error: ${response.message}."
@@ -237,14 +235,14 @@ public class PerfettoCapture(
         return PerfettoSdkHandshake.LibrarySource.apkLibrarySource(
             baseApk,
             Outputs.dirUsableByAppAndShell,
-            mvTmpFileDstFile,
+            mvTmpFileDstFile
         )
     }
 
     class PerfettoSdkConfig(
         val targetPackage: String,
         val processState: InitialProcessState,
-        val provideBinariesIfMissing: Boolean = true,
+        val provideBinariesIfMissing: Boolean = true
     ) {
         /** State of process before tracing begins. */
         enum class InitialProcessState {
@@ -255,7 +253,7 @@ public class PerfettoCapture(
             Alive,
 
             /** trigger cold start vs running tracing based on a check if process is alive */
-            Unknown,
+            Unknown
         }
     }
 }

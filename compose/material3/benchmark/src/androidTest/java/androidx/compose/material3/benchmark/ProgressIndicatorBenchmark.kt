@@ -53,7 +53,15 @@ class ProgressIndicatorBenchmark(private val type: ProgressIndicatorType) {
 
     @Test
     fun firstPixel() {
-        benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
+        if (type != ProgressIndicatorType.CircularWavy) {
+            benchmarkRule.benchmarkToFirstPixel(testCaseFactory)
+        } else {
+            // The CircularWavyProgressIndicator will have a second recomposition when the number
+            // over vertices is determined by its size and the speed of the wave is determined to
+            // start the animation.
+            // TODO We may be able to fix this by using a Modifier.Node
+            benchmarkRule.benchmarkFirstRenderUntilStable(testCaseFactory)
+        }
     }
 
     @Test
@@ -82,16 +90,16 @@ internal class ProgressIndicatorTestCase(private val type: ProgressIndicatorType
                 LinearWavyProgressIndicator(
                     progress = { state.value },
                     amplitude = { 1f },
-                    waveSpeed = 0.dp,
+                    waveSpeed = 0.dp
                 )
             ProgressIndicatorType.Circular -> CircularProgressIndicator(progress = { state.value })
-            // We set the waveSpeed to zero and a constant amplitude of 0.0 to eliminate the
+            // We set the waveSpeed to zero and a constant amplitude of 1.0 to eliminate the
             // animations that can affect the benchmark.
             ProgressIndicatorType.CircularWavy ->
                 CircularWavyProgressIndicator(
                     progress = { state.value },
-                    amplitude = { 0f },
-                    waveSpeed = 0.dp,
+                    amplitude = { 1f },
+                    waveSpeed = 0.dp
                 )
         }
     }
@@ -110,5 +118,5 @@ enum class ProgressIndicatorType {
     Linear,
     LinearWavy,
     Circular,
-    CircularWavy,
+    CircularWavy
 }

@@ -16,21 +16,21 @@
 package androidx.room
 
 import androidx.annotation.RestrictTo
+import androidx.room.driver.SupportSQLiteConnection
 import androidx.room.util.useCursor
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /** An open helper that holds a reference to the configuration until the database is opened. */
 @Suppress("DEPRECATION") // Due to usage of RoomOpenHelper.Delegate
 @Deprecated("Replaced by RoomConnectionManager and no longer used in generated code.")
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public open class RoomOpenHelper(
+open class RoomOpenHelper(
     configuration: DatabaseConfiguration,
     delegate: Delegate,
     identityHash: String,
-    legacyHash: String,
+    legacyHash: String
 ) : SupportSQLiteOpenHelper.Callback(delegate.version) {
     private var configuration: DatabaseConfiguration?
     private val callbacks: List<RoomDatabase.Callback>? = configuration.callbacks
@@ -51,10 +51,10 @@ public open class RoomOpenHelper(
         this.legacyHash = legacyHash
     }
 
-    public constructor(
+    constructor(
         configuration: DatabaseConfiguration,
         delegate: Delegate,
-        legacyHash: String,
+        legacyHash: String
     ) : this(configuration, delegate, "", legacyHash)
 
     override fun onConfigure(db: SupportSQLiteDatabase) {
@@ -181,14 +181,14 @@ public open class RoomOpenHelper(
 
     @Deprecated("Replaced by OpenDelegate  and no longer used in generated code.")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public abstract class Delegate(@JvmField public val version: Int) {
-        public abstract fun dropAllTables(db: SupportSQLiteDatabase)
+    abstract class Delegate(@JvmField val version: Int) {
+        abstract fun dropAllTables(db: SupportSQLiteDatabase)
 
-        public abstract fun createAllTables(db: SupportSQLiteDatabase)
+        abstract fun createAllTables(db: SupportSQLiteDatabase)
 
-        public abstract fun onOpen(db: SupportSQLiteDatabase)
+        abstract fun onOpen(db: SupportSQLiteDatabase)
 
-        public abstract fun onCreate(db: SupportSQLiteDatabase)
+        abstract fun onCreate(db: SupportSQLiteDatabase)
 
         /**
          * Called after a migration run to validate database integrity.
@@ -206,7 +206,7 @@ public open class RoomOpenHelper(
          * @param db The SQLite database.
          */
         @Suppress("DEPRECATION")
-        public open fun onValidateSchema(db: SupportSQLiteDatabase): ValidationResult {
+        open fun onValidateSchema(db: SupportSQLiteDatabase): ValidationResult {
             validateMigration(db)
             return ValidationResult(true, null)
         }
@@ -216,24 +216,24 @@ public open class RoomOpenHelper(
          *
          * @param db The SQLite database.
          */
-        public open fun onPreMigrate(db: SupportSQLiteDatabase) {}
+        open fun onPreMigrate(db: SupportSQLiteDatabase) {}
 
         /**
          * Called after migrations execute to perform additional work.
          *
          * @param db The SQLite database.
          */
-        public open fun onPostMigrate(db: SupportSQLiteDatabase) {}
+        open fun onPostMigrate(db: SupportSQLiteDatabase) {}
     }
 
     @Deprecated("Replaced by OpenDelegate.ValidationResult and no longer used in generated code.")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open class ValidationResult(
-        @JvmField public val isValid: Boolean,
-        @JvmField public val expectedFoundMsg: String?,
+    open class ValidationResult(
+        @JvmField val isValid: Boolean,
+        @JvmField val expectedFoundMsg: String?
     )
 
-    public companion object {
+    companion object {
         internal fun hasRoomMasterTable(db: SupportSQLiteDatabase): Boolean {
             db.query(
                     "SELECT 1 FROM sqlite_master WHERE type = 'table' AND " +

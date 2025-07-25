@@ -29,15 +29,12 @@ import androidx.room.compiler.codegen.XTypeName
 import androidx.room.compiler.codegen.impl.XAnnotationSpecImpl
 import androidx.room.compiler.codegen.impl.XCodeBlockImpl
 import androidx.room.compiler.codegen.impl.XParameterSpecImpl
-import androidx.room.compiler.codegen.java.JavaFunSpec.Builder
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.javapoet.KTypeVariableName
 
-internal class KotlinFunSpec(override val actual: KFunSpec) : KotlinSpec<KFunSpec>(), XFunSpec {
+internal class KotlinFunSpec(internal val actual: KFunSpec) : XSpec(), XFunSpec {
 
     override val name: XName = XName.of(actual.name)
-
-    override fun toBuilder() = Builder(actual.toBuilder())
 
     internal class Builder(internal val actual: KFunSpecBuilder) :
         XSpec.Builder(), XFunSpec.Builder {

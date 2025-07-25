@@ -117,7 +117,9 @@ private fun ComposeBenchmarkRule.benchmarkCreateFor(content: @Composable () -> U
     createBenchmark { SubcomposeLayoutReuseTestCase(reusableSlots = 0, content) }
 }
 
-private fun ComposeBenchmarkRule.createBenchmark(testCase: () -> SubcomposeLayoutReuseTestCase) {
+private fun ComposeBenchmarkRule.createBenchmark(
+    testCase: () -> SubcomposeLayoutReuseTestCase,
+) {
     runBenchmarkFor(testCase) {
         runOnUiThread {
             setupContent()
@@ -138,7 +140,9 @@ private fun ComposeBenchmarkRule.createBenchmark(testCase: () -> SubcomposeLayou
     }
 }
 
-private fun ComposeBenchmarkRule.disposeBenchmark(testCase: () -> SubcomposeLayoutReuseTestCase) {
+private fun ComposeBenchmarkRule.disposeBenchmark(
+    testCase: () -> SubcomposeLayoutReuseTestCase,
+) {
     runBenchmarkFor(testCase) {
         runOnUiThread {
             setupContent()

@@ -59,6 +59,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -74,7 +75,7 @@ class VideoCaptureTest(
     private val cameraXConfig: CameraXConfig,
     private val implType: ExtensionsTestlibControl.ImplementationType,
     @field:ExtensionMode.Mode @param:ExtensionMode.Mode private val extensionMode: Int,
-    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int,
+    @field:CameraSelector.LensFacing @param:CameraSelector.LensFacing private val lensFacing: Int
 ) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -169,6 +170,7 @@ class VideoCaptureTest(
 
     @UiThreadTest
     @Test
+    @Ignore("b/331617278")
     fun canBindToLifeCycleAndRecordVideo() {
         // Arrange.
         val file = createTempFile()
@@ -180,7 +182,7 @@ class VideoCaptureTest(
             cameraProvider.bindToLifecycle(
                 fakeLifecycleOwner,
                 extensionsCameraSelector,
-                videoCapture,
+                videoCapture
             )
         }
         videoCapture.recordTo(file)
@@ -196,6 +198,7 @@ class VideoCaptureTest(
 
     @UiThreadTest
     @Test
+    @Ignore("b/331617278")
     fun canBindToLifeCycleAndRecordVideoWithPreviewAndImageCaptureBound() {
         // Arrange.
         val file = createTempFile()
@@ -211,7 +214,7 @@ class VideoCaptureTest(
                 extensionsCameraSelector,
                 preview,
                 imageCapture,
-                videoCapture,
+                videoCapture
             )
             preview.setSurfaceProvider(createPreviewSurfaceProvider())
         }
@@ -231,7 +234,7 @@ class VideoCaptureTest(
             object : SurfaceTextureProvider.SurfaceTextureCallback {
                 override fun onSurfaceTextureReady(
                     surfaceTexture: SurfaceTexture,
-                    resolution: Size,
+                    resolution: Size
                 ) {
                     // No-op.
                 }

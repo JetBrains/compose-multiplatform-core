@@ -19,7 +19,6 @@ package androidx.build.clang
 import androidx.build.androidExtension
 import com.android.build.api.variant.HasDeviceTests
 import com.android.build.api.variant.SourceDirectories
-import com.android.build.api.variant.Sources
 import com.android.utils.appendCapitalized
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.get
@@ -40,7 +39,7 @@ class NativeLibraryBundler(private val project: Project) {
     fun addNativeLibrariesToResources(
         jvmTarget: KotlinJvmTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME,
+        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME
     ) {
         val combineTask =
             project.tasks.register(
@@ -48,14 +47,14 @@ class NativeLibraryBundler(private val project: Project) {
                     .appendCapitalized(
                         jvmTarget.name,
                         nativeCompilation.archiveName,
-                        compilationName,
+                        compilationName
                     ),
-                CombineObjectFilesTask::class.java,
+                CombineObjectFilesTask::class.java
             ) {
                 it.outputDirectory.set(
                     project.layout.buildDirectory.dir(
                         "combinedNativeLibraries/${jvmTarget.name}/" +
-                            "${nativeCompilation.archiveName}/$compilationName"
+                            "${nativeCompilation.archiveName}/compilationName"
                     )
                 )
             }
@@ -68,21 +67,20 @@ class NativeLibraryBundler(private val project: Project) {
     }
 
     /**
-     * Adds the shared library outputs from [nativeCompilation] to a given variant src set of the
-     * [androidTarget], expressed with the [provideSourceDirectories].
+     * Adds the shared library outputs from [nativeCompilation] to the jni libs dependency of the
+     * [androidTarget].
      *
      * @see CombineObjectFilesTask for details.
      */
-    fun addNativeLibrariesToAndroidVariantSources(
+    fun addNativeLibrariesToJniLibs(
         androidTarget: KotlinAndroidTarget,
         nativeCompilation: MultiTargetNativeCompilation,
-        forTest: Boolean,
-        provideSourceDirectories: Sources.() -> (SourceDirectories.Layered?),
+        forTest: Boolean
     ) {
         project.androidExtension.onVariants(project.androidExtension.selector().all()) { variant ->
-            fun setup(name: String, sources: SourceDirectories.Layered?) {
-                checkNotNull(sources) {
-                    "Cannot find jni libs sources for variant: $variant (forTest=$forTest)"
+            fun setup(name: String, jniLibsSources: SourceDirectories.Layered?) {
+                checkNotNull(jniLibsSources) {
+                    "Cannot find jni libs sources for variant: " + "$variant (forTest=$forTest)"
                 }
                 val combineTask =
                     project.tasks.register(
@@ -91,25 +89,25 @@ class NativeLibraryBundler(private val project: Project) {
                                 nativeCompilation.archiveName,
                                 "for",
                                 name,
-                                androidTarget.name,
+                                androidTarget.name
                             ),
-                        CombineObjectFilesTask::class.java,
+                        CombineObjectFilesTask::class.java
                     )
                 combineTask.configureFrom(nativeCompilation) { it.family == Family.ANDROID }
 
-                sources.addGeneratedSourceDirectory(
+                jniLibsSources.addGeneratedSourceDirectory(
                     taskProvider = combineTask,
-                    wiredWith = { it.outputDirectory },
+                    wiredWith = { it.outputDirectory }
                 )
             }
 
             if (forTest) {
                 check(variant is HasDeviceTests) { "Variant $variant does not have a test target" }
                 variant.deviceTests.forEach { (_, deviceTest) ->
-                    setup(deviceTest.name, provideSourceDirectories(deviceTest.sources))
+                    setup(deviceTest.name, deviceTest.sources.jniLibs)
                 }
             } else {
-                setup(variant.name, provideSourceDirectories(variant.sources))
+                setup(variant.name, variant.sources.jniLibs)
             }
         }
     }

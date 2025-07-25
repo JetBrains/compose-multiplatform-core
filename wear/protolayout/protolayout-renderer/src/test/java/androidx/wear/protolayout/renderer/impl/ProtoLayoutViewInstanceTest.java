@@ -52,7 +52,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.expression.pipeline.StateStore;
 import androidx.wear.protolayout.proto.LayoutElementProto.Layout;
 import androidx.wear.protolayout.proto.ResourceProto.Resources;
-import androidx.wear.protolayout.renderer.ProtoLayoutVisibilityState;
 import androidx.wear.protolayout.renderer.common.RenderingArtifact;
 import androidx.wear.protolayout.renderer.helper.TestDsl.LayoutNode;
 import androidx.wear.protolayout.renderer.impl.ProtoLayoutViewInstance.Config;
@@ -679,8 +678,6 @@ public class ProtoLayoutViewInstanceTest {
     private void setupInstance(boolean adaptiveUpdateRatesEnabled) {
         Config config = createInstanceConfig(adaptiveUpdateRatesEnabled).build();
         mInstanceUnderTest = new ProtoLayoutViewInstance(config);
-        mInstanceUnderTest.setLayoutVisibility(
-                ProtoLayoutVisibilityState.VISIBILITY_STATE_FULLY_VISIBLE);
     }
 
     private Config.@NonNull Builder createInstanceConfig(boolean adaptiveUpdateRatesEnabled) {
@@ -699,7 +696,8 @@ public class ProtoLayoutViewInstanceTest {
                 .setAnimationEnabled(true)
                 .setRunningAnimationsLimit(Integer.MAX_VALUE)
                 .setUpdatesEnabled(true)
-                .setAdaptiveUpdateRatesEnabled(adaptiveUpdateRatesEnabled);
+                .setAdaptiveUpdateRatesEnabled(adaptiveUpdateRatesEnabled)
+                .setIsViewFullyVisible(false);
     }
 
     private List<View> findViewsWithText(ViewGroup root, String text) {

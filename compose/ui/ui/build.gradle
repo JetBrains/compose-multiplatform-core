@@ -188,6 +188,7 @@ androidXMultiplatform {
                 implementation(libs.junit)
                 implementation(libs.truth)
                 implementation(libs.kotlinTest)
+                implementation(libs.robolectric)
                 implementation(libs.mockitoCore4)
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.byteBuddy)
@@ -406,14 +407,16 @@ androidx {
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui:ui-samples"))
     addGoldenImageAssets()
-    enableRobolectric()
 }
 
 android {
     compileSdk = 35
+    testOptions.unitTests.includeAndroidResources = true
     buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
+    // TODO(b/345531033)
+    experimentalProperties["android.lint.useK2Uast"] = false
     namespace = "androidx.compose.ui"
     // namespace has to be unique, but default androidx.compose.ui.test package is taken by
     // the androidx.compose.ui:ui-test library

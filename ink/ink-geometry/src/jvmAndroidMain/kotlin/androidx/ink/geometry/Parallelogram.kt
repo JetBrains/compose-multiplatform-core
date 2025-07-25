@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,7 @@ package androidx.ink.geometry
 
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
-import androidx.ink.nativeloader.NativeLoader
-import androidx.ink.nativeloader.UsedByNative
+import androidx.ink.geometry.internal.ParallelogramNative
 import kotlin.math.abs
 
 /**
@@ -131,6 +130,8 @@ public abstract class Parallelogram internal constructor() {
             height,
             rotation,
             shearFactor,
+            ImmutableBox::class.java,
+            ImmutableVec::class.java,
         )
     }
 
@@ -177,6 +178,7 @@ public abstract class Parallelogram internal constructor() {
                 height,
                 rotation,
                 shearFactor,
+                ImmutableVec::class.java,
             )
             .toList()
     }
@@ -221,6 +223,7 @@ public abstract class Parallelogram internal constructor() {
                 height,
                 rotation,
                 shearFactor,
+                ImmutableVec::class.java,
             )
             .toList()
     }
@@ -339,92 +342,4 @@ public abstract class Parallelogram internal constructor() {
                     "shearFactor=$shearFactor)"
             }
     }
-}
-
-/** Native helper functions for Parallelogram. */
-@UsedByNative
-internal object ParallelogramNative {
-
-    init {
-        NativeLoader.load()
-    }
-
-    @UsedByNative
-    external fun createBoundingBox(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-    ): ImmutableBox
-
-    @UsedByNative
-    external fun populateBoundingBox(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-        outBox: MutableBox,
-    )
-
-    @UsedByNative
-    external fun createSemiAxes(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-    ): Array<ImmutableVec>
-
-    @UsedByNative
-    external fun populateSemiAxes(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-        outAxis1: MutableVec,
-        outAxis2: MutableVec,
-    )
-
-    @UsedByNative
-    external fun createCorners(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-    ): Array<ImmutableVec>
-
-    @UsedByNative
-    external fun populateCorners(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-        outCorner1: MutableVec,
-        outCorner2: MutableVec,
-        outCorner3: MutableVec,
-        outCorner4: MutableVec,
-    )
-
-    @UsedByNative
-    external fun contains(
-        centerX: Float,
-        centerY: Float,
-        width: Float,
-        height: Float,
-        rotation: Float,
-        shearFactor: Float,
-        pointX: Float,
-        pointY: Float,
-    ): Boolean
 }

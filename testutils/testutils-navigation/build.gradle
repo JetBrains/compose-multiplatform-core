@@ -126,5 +126,4 @@ androidx {
 
 android {
     namespace = "androidx.testutils.navigation"
-    testOptions.unitTests.returnDefaultValues = true
 }

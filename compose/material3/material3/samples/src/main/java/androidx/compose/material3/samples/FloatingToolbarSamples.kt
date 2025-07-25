@@ -31,15 +31,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.AppBarColumn
-import androidx.compose.material3.AppBarRow
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FilledIconButton
@@ -88,14 +85,14 @@ fun ExpandableHorizontalFloatingToolbarSample() {
                         ),
                     state = rememberLazyListState(),
                     contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val list = (0..75).map { it.toString() }
                     items(count = list.size) {
                         Text(
                             text = list[it],
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -107,122 +104,11 @@ fun ExpandableHorizontalFloatingToolbarSample() {
                     content = {
                         FilledIconButton(
                             modifier = Modifier.width(64.dp),
-                            onClick = { /* doSomething() */ },
+                            onClick = { /* doSomething() */ }
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
-                    },
-                )
-            }
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Preview
-@Sampled
-@Composable
-fun OverflowingHorizontalFloatingToolbarSample() {
-    Scaffold(
-        content = { innerPadding ->
-            Box(Modifier.padding(innerPadding)) {
-                LazyColumn(
-                    state = rememberLazyListState(),
-                    contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val list = (0..75).map { it.toString() }
-                    items(count = list.size) {
-                        Text(
-                            text = list[it],
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        )
                     }
-                }
-                HorizontalFloatingToolbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).offset(y = -ScreenOffset),
-                    expanded = true,
-                    leadingContent = { LeadingContent() },
-                    trailingContent = {
-                        AppBarRow(
-                            overflowIndicator = { menuState ->
-                                IconButton(
-                                    onClick = {
-                                        if (menuState.isExpanded) {
-                                            menuState.dismiss()
-                                        } else {
-                                            menuState.show()
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.MoreVert,
-                                        contentDescription = "Localized description",
-                                    )
-                                }
-                            }
-                        ) {
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Download,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Download",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Favorite,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Favorite",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Add,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Add",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Person,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Person",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.ArrowUpward,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "ArrowUpward",
-                            )
-                        }
-                    },
-                    content = {
-                        FilledIconButton(
-                            modifier = Modifier.width(64.dp),
-                            onClick = { /* doSomething() */ },
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Localized description")
-                        }
-                    },
                 )
             }
         }
@@ -243,14 +129,14 @@ fun ScrollableHorizontalFloatingToolbarSample() {
                 LazyColumn(
                     state = rememberLazyListState(),
                     contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val list = (0..75).map { it.toString() }
                     items(count = list.size) {
                         Text(
                             text = list[it],
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -262,15 +148,15 @@ fun ScrollableHorizontalFloatingToolbarSample() {
                     content = {
                         FilledIconButton(
                             modifier = Modifier.width(64.dp),
-                            onClick = { /* doSomething() */ },
+                            onClick = { /* doSomething() */ }
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
                     },
-                    scrollBehavior = exitAlwaysScrollBehavior,
+                    scrollBehavior = exitAlwaysScrollBehavior
                 )
             }
-        },
+        }
     )
 }
 
@@ -294,14 +180,14 @@ fun ExpandableVerticalFloatingToolbarSample() {
                         ),
                     state = rememberLazyListState(),
                     contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val list = (0..75).map { it.toString() }
                     items(count = list.size) {
                         Text(
                             text = list[it],
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -313,118 +199,7 @@ fun ExpandableVerticalFloatingToolbarSample() {
                     content = {
                         FilledIconButton(
                             modifier = Modifier.height(64.dp),
-                            onClick = { /* doSomething() */ },
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = "Localized description")
-                        }
-                    },
-                )
-            }
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Preview
-@Sampled
-@Composable
-fun OverflowingVerticalFloatingToolbarSample() {
-    Scaffold(
-        content = { innerPadding ->
-            Box(Modifier.padding(innerPadding)) {
-                LazyColumn(
-                    state = rememberLazyListState(),
-                    contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val list = (0..75).map { it.toString() }
-                    items(count = list.size) {
-                        Text(
-                            text = list[it],
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        )
-                    }
-                }
-                VerticalFloatingToolbar(
-                    modifier = Modifier.align(Alignment.CenterEnd).offset(x = -ScreenOffset),
-                    expanded = true,
-                    leadingContent = { LeadingContent() },
-                    trailingContent = {
-                        AppBarColumn(
-                            overflowIndicator = { menuState ->
-                                IconButton(
-                                    onClick = {
-                                        if (menuState.isExpanded) {
-                                            menuState.dismiss()
-                                        } else {
-                                            menuState.show()
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.MoreVert,
-                                        contentDescription = "Localized description",
-                                    )
-                                }
-                            }
-                        ) {
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Download,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Download",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Favorite,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Favorite",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Add,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Add",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.Person,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "Person",
-                            )
-                            clickableItem(
-                                onClick = { /* doSomething() */ },
-                                icon = {
-                                    Icon(
-                                        Icons.Filled.ArrowUpward,
-                                        contentDescription = "Localized description",
-                                    )
-                                },
-                                label = "ArrowUpward",
-                            )
-                        }
-                    },
-                    content = {
-                        FilledIconButton(
-                            modifier = Modifier.height(64.dp),
-                            onClick = { /* doSomething() */ },
+                            onClick = { /* doSomething() */ }
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
@@ -449,14 +224,14 @@ fun ScrollableVerticalFloatingToolbarSample() {
                 LazyColumn(
                     state = rememberLazyListState(),
                     contentPadding = innerPadding,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val list = (0..75).map { it.toString() }
                     items(count = list.size) {
                         Text(
                             text = list[it],
                             style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                         )
                     }
                 }
@@ -468,15 +243,15 @@ fun ScrollableVerticalFloatingToolbarSample() {
                     content = {
                         FilledIconButton(
                             modifier = Modifier.height(64.dp),
-                            onClick = { /* doSomething() */ },
+                            onClick = { /* doSomething() */ }
                         ) {
                             Icon(Icons.Filled.Add, contentDescription = "Localized description")
                         }
                     },
-                    scrollBehavior = exitAlwaysScrollBehavior,
+                    scrollBehavior = exitAlwaysScrollBehavior
                 )
             }
-        },
+        }
     )
 }
 
@@ -497,7 +272,7 @@ fun HorizontalFloatingToolbarWithFabSample() {
                     .floatingToolbarVerticalNestedScroll(
                         expanded = expanded,
                         onExpand = { expanded = true },
-                        onCollapse = { expanded = false },
+                        onCollapse = { expanded = false }
                     )
                     .verticalScroll(rememberScrollState())
             ) {
@@ -508,7 +283,7 @@ fun HorizontalFloatingToolbarWithFabSample() {
                 floatingActionButton = {
                     // Match the FAB to the vibrantColors. See also StandardFloatingActionButton.
                     FloatingToolbarDefaults.VibrantFloatingActionButton(
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }
@@ -560,7 +335,7 @@ fun CenteredHorizontalFloatingToolbarWithFabSample() {
                 floatingActionButton = {
                     // Match the FAB to the vibrantColors. See also StandardFloatingActionButton.
                     FloatingToolbarDefaults.VibrantFloatingActionButton(
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }
@@ -605,7 +380,7 @@ fun VerticalFloatingToolbarWithFabSample() {
                         Modifier.floatingToolbarVerticalNestedScroll(
                             expanded = expanded,
                             onExpand = { expanded = true },
-                            onCollapse = { expanded = false },
+                            onCollapse = { expanded = false }
                         )
                     )
                     .verticalScroll(rememberScrollState())
@@ -617,7 +392,7 @@ fun VerticalFloatingToolbarWithFabSample() {
                 floatingActionButton = {
                     // Match the FAB to the vibrantColors. See also StandardFloatingActionButton.
                     FloatingToolbarDefaults.VibrantFloatingActionButton(
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }
@@ -669,7 +444,7 @@ fun CenteredVerticalFloatingToolbarWithFabSample() {
                 floatingActionButton = {
                     // Match the FAB to the vibrantColors. See also StandardFloatingActionButton.
                     FloatingToolbarDefaults.VibrantFloatingActionButton(
-                        onClick = { /* doSomething() */ }
+                        onClick = { /* doSomething() */ },
                     ) {
                         Icon(Icons.Filled.Add, "Localized description")
                     }

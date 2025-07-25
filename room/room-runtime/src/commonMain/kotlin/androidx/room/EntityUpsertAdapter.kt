@@ -30,9 +30,9 @@ import androidx.sqlite.SQLiteException
  *   the insertion fails
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public class EntityUpsertAdapter<T>(
+class EntityUpsertAdapter<T>(
     private val entityInsertAdapter: EntityInsertAdapter<T>,
-    private val updateAdapter: EntityDeleteOrUpdateAdapter<T>,
+    private val updateAdapter: EntityDeleteOrUpdateAdapter<T>
 ) {
 
     /**
@@ -41,7 +41,7 @@ public class EntityUpsertAdapter<T>(
      *
      * @param entity The entity to insert
      */
-    public fun upsert(connection: SQLiteConnection, entity: T?) {
+    fun upsert(connection: SQLiteConnection, entity: T?) {
         try {
             entityInsertAdapter.insert(connection, entity)
         } catch (ex: SQLiteException) {
@@ -56,7 +56,7 @@ public class EntityUpsertAdapter<T>(
      *
      * @param entities array of entities to upsert
      */
-    public fun upsert(connection: SQLiteConnection, entities: Array<out T?>?) {
+    fun upsert(connection: SQLiteConnection, entities: Array<out T?>?) {
         if (entities == null) return
         entities.forEach { entity ->
             try {
@@ -68,7 +68,7 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public fun upsert(connection: SQLiteConnection, entities: Iterable<T?>?) {
+    fun upsert(connection: SQLiteConnection, entities: Iterable<T?>?) {
         if (entities == null) return
         entities.forEach { entity ->
             try {
@@ -87,7 +87,7 @@ public class EntityUpsertAdapter<T>(
      * @param entity The entity to upsert
      * @return The SQLite row id or -1L if the insertion failed and update is performed
      */
-    public fun upsertAndReturnId(connection: SQLiteConnection, entity: T?): Long {
+    fun upsertAndReturnId(connection: SQLiteConnection, entity: T?): Long {
         return try {
             entityInsertAdapter.insertAndReturnId(connection, entity)
         } catch (ex: SQLiteException) {
@@ -104,10 +104,7 @@ public class EntityUpsertAdapter<T>(
      * @return The SQLite row ids, for entities that are not inserted the row id returned will be
      *   -1L
      */
-    public fun upsertAndReturnIdsArray(
-        connection: SQLiteConnection,
-        entities: Array<out T?>?,
-    ): LongArray {
+    fun upsertAndReturnIdsArray(connection: SQLiteConnection, entities: Array<out T?>?): LongArray {
         if (entities == null) return longArrayOf()
         return LongArray(entities.size) { index ->
             try {
@@ -120,9 +117,9 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public fun upsertAndReturnIdsArray(
+    fun upsertAndReturnIdsArray(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
+        entities: Collection<T?>?
     ): LongArray {
         if (entities == null) return longArrayOf()
         return LongArray(entities.size) { index ->
@@ -136,9 +133,24 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public fun upsertAndReturnIdsList(
+    fun upsertAndReturnIdsList(connection: SQLiteConnection, entities: Array<out T?>?): List<Long> {
+        if (entities == null) return emptyList()
+        return buildList {
+            entities.forEach { entity ->
+                try {
+                    add(entityInsertAdapter.insertAndReturnId(connection, entity))
+                } catch (ex: SQLiteException) {
+                    checkUniquenessException(ex)
+                    updateAdapter.handle(connection, entity)
+                    add(-1L)
+                }
+            }
+        }
+    }
+
+    fun upsertAndReturnIdsList(
         connection: SQLiteConnection,
-        entities: Array<out T?>?,
+        entities: Collection<T?>?
     ): List<Long> {
         if (entities == null) return emptyList()
         return buildList {
@@ -154,27 +166,9 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public fun upsertAndReturnIdsList(
+    fun upsertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
-    ): List<Long> {
-        if (entities == null) return emptyList()
-        return buildList {
-            entities.forEach { entity ->
-                try {
-                    add(entityInsertAdapter.insertAndReturnId(connection, entity))
-                } catch (ex: SQLiteException) {
-                    checkUniquenessException(ex)
-                    updateAdapter.handle(connection, entity)
-                    add(-1L)
-                }
-            }
-        }
-    }
-
-    public fun upsertAndReturnIdsArrayBox(
-        connection: SQLiteConnection,
-        entities: Array<out T?>?,
+        entities: Array<out T?>?
     ): Array<out Long> {
         if (entities == null) return emptyArray()
         return Array(entities.size) { index ->
@@ -188,9 +182,9 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public fun upsertAndReturnIdsArrayBox(
+    fun upsertAndReturnIdsArrayBox(
         connection: SQLiteConnection,
-        entities: Collection<T?>?,
+        entities: Collection<T?>?
     ): Array<out Long> {
         if (entities == null) return emptyArray()
         return Array(entities.size) { index ->
@@ -224,7 +218,7 @@ public class EntityUpsertAdapter<T>(
         }
     }
 
-    public companion object {
+    companion object {
         /**
          * The error code defined by SQLite Library for SQLITE_CONSTRAINT_PRIMARYKEY error Only used
          * by android of version newer than 19.

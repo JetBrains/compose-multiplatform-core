@@ -66,7 +66,7 @@ import java.util.concurrent.TimeUnit
             SystemIdInfo::class,
             WorkName::class,
             WorkProgress::class,
-            Preference::class,
+            Preference::class
         ],
     autoMigrations =
         [
@@ -80,35 +80,35 @@ import java.util.concurrent.TimeUnit
             AutoMigration(from = 22, to = 23),
             AutoMigration(from = 23, to = 24),
         ],
-    version = 24,
+    version = 24
 )
 @TypeConverters(value = [Data::class, WorkTypeConverters::class])
-public abstract class WorkDatabase : RoomDatabase() {
+abstract class WorkDatabase : RoomDatabase() {
     /** @return The Data Access Object for [WorkSpec]s. */
-    public abstract fun workSpecDao(): WorkSpecDao
+    abstract fun workSpecDao(): WorkSpecDao
 
     /** @return The Data Access Object for [Dependency]s. */
-    public abstract fun dependencyDao(): DependencyDao
+    abstract fun dependencyDao(): DependencyDao
 
     /** @return The Data Access Object for [WorkTag]s. */
-    public abstract fun workTagDao(): WorkTagDao
+    abstract fun workTagDao(): WorkTagDao
 
     /** @return The Data Access Object for [SystemIdInfo]s. */
-    public abstract fun systemIdInfoDao(): SystemIdInfoDao
+    abstract fun systemIdInfoDao(): SystemIdInfoDao
 
     /** @return The Data Access Object for [WorkName]s. */
-    public abstract fun workNameDao(): WorkNameDao
+    abstract fun workNameDao(): WorkNameDao
 
     /** @return The Data Access Object for [WorkProgress]. */
-    public abstract fun workProgressDao(): WorkProgressDao
+    abstract fun workProgressDao(): WorkProgressDao
 
     /** @return The Data Access Object for [Preference]. */
-    public abstract fun preferenceDao(): PreferenceDao
+    abstract fun preferenceDao(): PreferenceDao
 
     /** @return The Data Access Object which can be used to execute raw queries. */
-    public abstract fun rawWorkInfoDao(): RawWorkInfoDao
+    abstract fun rawWorkInfoDao(): RawWorkInfoDao
 
-    public companion object {
+    companion object {
         /**
          * Creates an instance of the WorkDatabase.
          *
@@ -120,11 +120,11 @@ public abstract class WorkDatabase : RoomDatabase() {
          * @return The created WorkDatabase
          */
         @JvmStatic
-        public fun create(
+        fun create(
             context: Context,
             queryExecutor: Executor,
             clock: Clock,
-            useTestDatabase: Boolean,
+            useTestDatabase: Boolean
         ): WorkDatabase {
             val builder =
                 if (useTestDatabase) {
@@ -143,6 +143,7 @@ public abstract class WorkDatabase : RoomDatabase() {
                             FrameworkSQLiteOpenHelperFactory().create(configBuilder.build())
                         }
                 }
+            @Suppress("DEPRECATION") // b/310884421 for fallbackToDestructiveMigration()
             return builder
                 .setQueryExecutor(queryExecutor)
                 .addCallback(CleanupCallback(clock))
@@ -161,7 +162,7 @@ public abstract class WorkDatabase : RoomDatabase() {
                 .addMigrations(Migration_15_16)
                 .addMigrations(Migration_16_17)
                 .addMigrations(RescheduleMigration(context, VERSION_21, VERSION_22))
-                .fallbackToDestructiveMigration(dropAllTables = true)
+                .fallbackToDestructiveMigration()
                 .build()
         }
     }
@@ -182,7 +183,7 @@ private const val PRUNE_SQL_FORMAT_SUFFIX =
         "    work_spec_id NOT IN " +
         "        (SELECT id FROM workspec WHERE state IN $COMPLETED_STATES))"
 
-@JvmField public val PRUNE_THRESHOLD_MILLIS: Long = TimeUnit.DAYS.toMillis(1)
+@JvmField val PRUNE_THRESHOLD_MILLIS: Long = TimeUnit.DAYS.toMillis(1)
 
 internal class CleanupCallback(val clock: Clock) : RoomDatabase.Callback() {
 

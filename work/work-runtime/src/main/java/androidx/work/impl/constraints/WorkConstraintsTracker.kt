@@ -19,9 +19,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.Build
-import androidx.annotation.GuardedBy
 import androidx.annotation.RequiresApi
 import androidx.work.Constraints
 import androidx.work.Logger
@@ -50,32 +48,32 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-private typealias OnConstraintState = (ConstraintsState) -> Unit
+sealed class ConstraintsState {
+    object ConstraintsMet : ConstraintsState()
 
-public sealed class ConstraintsState {
-    public object ConstraintsMet : ConstraintsState()
-
-    public data class ConstraintsNotMet(@StopReason val reason: Int) : ConstraintsState()
+    data class ConstraintsNotMet(@StopReason val reason: Int) : ConstraintsState()
 }
 
-public fun WorkConstraintsTracker.listen(
+fun WorkConstraintsTracker.listen(
     spec: WorkSpec,
     dispatcher: CoroutineDispatcher,
-    listener: OnConstraintsStateChangedListener,
+    listener: OnConstraintsStateChangedListener
 ): Job {
-    return CoroutineScope(dispatcher).launch {
+    val job = Job()
+    CoroutineScope(dispatcher + job).launch {
         track(spec).collect { listener.onConstraintsStateChanged(spec, it) }
     }
+    return job
 }
 
-public fun interface OnConstraintsStateChangedListener {
-    public fun onConstraintsStateChanged(workSpec: WorkSpec, state: ConstraintsState)
+fun interface OnConstraintsStateChangedListener {
+    fun onConstraintsStateChanged(workSpec: WorkSpec, state: ConstraintsState)
 }
 
-public class WorkConstraintsTracker(private val controllers: List<ConstraintController>) {
+class WorkConstraintsTracker(private val controllers: List<ConstraintController>) {
     /** @param trackers Constraints trackers */
-    public constructor(
-        trackers: Trackers
+    constructor(
+        trackers: Trackers,
     ) : this(
         listOfNotNull(
             BatteryChargingController(trackers.batteryChargingTracker),
@@ -90,7 +88,7 @@ public class WorkConstraintsTracker(private val controllers: List<ConstraintCont
         )
     )
 
-    public fun track(spec: WorkSpec): Flow<ConstraintsState> {
+    fun track(spec: WorkSpec): Flow<ConstraintsState> {
         val flows = controllers.filter { it.hasConstraint(spec) }.map { it.track(spec.constraints) }
         return combine(flows) { states ->
                 states.firstOrNull { it != ConstraintsMet } ?: ConstraintsMet
@@ -98,7 +96,7 @@ public class WorkConstraintsTracker(private val controllers: List<ConstraintCont
             .distinctUntilChanged()
     }
 
-    public fun areAllConstraintsMet(workSpec: WorkSpec): Boolean {
+    fun areAllConstraintsMet(workSpec: WorkSpec): Boolean {
         val controllers = controllers.filter { it.isCurrentlyConstrained(workSpec) }
 
         if (controllers.isNotEmpty()) {
@@ -106,7 +104,7 @@ public class WorkConstraintsTracker(private val controllers: List<ConstraintCont
                 .debug(
                     TAG,
                     "Work ${workSpec.id} constrained by " +
-                        controllers.joinToString { it.javaClass.simpleName },
+                        controllers.joinToString { it.javaClass.simpleName }
                 )
         }
         return controllers.isEmpty()
@@ -116,24 +114,23 @@ public class WorkConstraintsTracker(private val controllers: List<ConstraintCont
 private val TAG = Logger.tagWithPrefix("WorkConstraintsTracker")
 
 @RequiresApi(28)
-public fun NetworkRequestConstraintController(
-    context: Context
-): NetworkRequestConstraintController {
+fun NetworkRequestConstraintController(context: Context): NetworkRequestConstraintController {
     val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     return NetworkRequestConstraintController(manager)
 }
 
-private const val DefaultNetworkRequestTimeoutMs = 1000L
+private val DefaultNetworkRequestTimeoutMs = 1000L
 
-// Due to foreground workers constraint tracking we can't simply rely on JobScheduler to kick off
-// workers. For APIs 28 and 29 the tracker is not shared because we rely on registerNetworkCallback
-// with specific a NetworkRequest to get a signal that required Network is available. However, for
-// APIs 30+ we rely on registerDefaultNetwork with a single shared tracker and check if network
-// satisfies requirement via request.canBeSatisfiedBy(). Using a shared network callback avoids the
-// TooManyRequestsException error that can occur when too many callbacks are registered
-// (b/231499040).
+// So we don't have a tracker that is shared, because we rely on
+// registerNetworkCallback with specific NetworkRequest to get a signal that
+// required Network is available. Alternatively we could have used a tracker with
+// registerDefaultNetwork and check if network satisfies requirement via
+// `request.canBeSatisfiedBy()`. However this method available only since API level 30,
+// that would significantly limit the feature availability. While we can simply rely on JobScheduler
+// to kick off the workers on API level 28-30, we also need to track constraint for
+// foreground workers, thus we need still controller on levels 28-30.
 @RequiresApi(28)
-public class NetworkRequestConstraintController(
+class NetworkRequestConstraintController(
     private val connManager: ConnectivityManager,
     private val timeoutMs: Long = DefaultNetworkRequestTimeoutMs,
 ) : ConstraintController {
@@ -147,37 +144,45 @@ public class NetworkRequestConstraintController(
         // stop the work in case foreground worker, even though network could be present
         // However, we need to send it eventually, because otherwise we won't stop foreground
         // worker at all, if there is no available network.
-        val timeoutJob = launch {
+        val job = launch {
             delay(timeoutMs)
             Logger.get()
                 .debug(
                     TAG,
                     "NetworkRequestConstraintController didn't receive " +
-                        "neither onCapabilitiesChanged/onLost callback, sending " +
-                        "`ConstraintsNotMet` after $timeoutMs ms",
+                        "neither  onCapabilitiesChanged/onLost callback, sending " +
+                        "`ConstraintsNotMet` after $timeoutMs ms"
                 )
             trySend(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
         }
 
-        val onConstraintState: (ConstraintsState) -> Unit = {
-            timeoutJob.cancel()
-            trySend(it)
-        }
-        val tryUnregister =
-            if (Build.VERSION.SDK_INT >= 30) {
-                SharedNetworkCallback.addCallback(
-                    connManager = connManager,
-                    networkRequest = networkRequest,
-                    onConstraintState = onConstraintState,
-                )
-            } else {
-                IndividualNetworkCallback.addCallback(
-                    connManager = connManager,
-                    networkRequest = networkRequest,
-                    onConstraintState = onConstraintState,
-                )
+        val networkCallback =
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onCapabilitiesChanged(
+                    network: Network,
+                    networkCapabilities: NetworkCapabilities
+                ) {
+                    job.cancel()
+                    Logger.get()
+                        .debug(
+                            TAG,
+                            "NetworkRequestConstraintController onCapabilitiesChanged callback"
+                        )
+                    trySend(ConstraintsMet)
+                }
+
+                override fun onLost(network: Network) {
+                    job.cancel()
+                    Logger.get().debug(TAG, "NetworkRequestConstraintController onLost callback")
+                    trySend(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+                }
             }
-        awaitClose { tryUnregister() }
+        Logger.get().debug(TAG, "NetworkRequestConstraintController register callback")
+        connManager.registerNetworkCallback(networkRequest, networkCallback)
+        awaitClose {
+            Logger.get().debug(TAG, "NetworkRequestConstraintController unregister callback")
+            connManager.unregisterNetworkCallback(networkCallback)
+        }
     }
 
     override fun hasConstraint(workSpec: WorkSpec): Boolean =
@@ -195,122 +200,5 @@ public class NetworkRequestConstraintController(
                 "NetworkRequestConstraintController. isCurrentlyConstrained() is called only " +
                 "on older platforms where NetworkRequest isn't supported"
         )
-    }
-}
-
-/**
- * A [ConnectivityManager.NetworkCallback] used to track network constraints for workers with
- * [NetworkRequest] on API 28-29.
- */
-@RequiresApi(28)
-private class IndividualNetworkCallback
-private constructor(private val onConstraintState: OnConstraintState) :
-    ConnectivityManager.NetworkCallback() {
-    override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-        Logger.get().debug(TAG, "NetworkRequestConstraintController onCapabilitiesChanged callback")
-        onConstraintState(ConstraintsMet)
-    }
-
-    override fun onLost(network: Network) {
-        Logger.get().debug(TAG, "NetworkRequestConstraintController onLost callback")
-        onConstraintState(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
-    }
-
-    companion object {
-        fun addCallback(
-            connManager: ConnectivityManager,
-            networkRequest: NetworkRequest,
-            onConstraintState: OnConstraintState,
-        ): () -> Unit {
-            val networkCallback = IndividualNetworkCallback(onConstraintState)
-            var callbackRegistered = false
-            try {
-                Logger.get().debug(TAG, "NetworkRequestConstraintController register callback")
-                connManager.registerNetworkCallback(networkRequest, networkCallback)
-                callbackRegistered = true
-            } catch (ex: RuntimeException) {
-                // Catch TooManyRequestsException since there is an app limit of 100 registered
-                // callbacks. Since the limit is shared with other libraries and app code, we try to
-                // avoid crashing. The constraint will timeout and the work won't be done
-                // opportunistically but will eventually execute through its Job.
-                if (ex.javaClass.name.endsWith("TooManyRequestsException")) {
-                    Logger.get()
-                        .debug(
-                            TAG,
-                            "NetworkRequestConstraintController couldn't register callback",
-                            ex,
-                        )
-                    onConstraintState(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
-                } else {
-                    throw ex
-                }
-            }
-            return {
-                if (callbackRegistered) {
-                    Logger.get()
-                        .debug(TAG, "NetworkRequestConstraintController unregister callback")
-                    connManager.unregisterNetworkCallback(networkCallback)
-                }
-            }
-        }
-    }
-}
-
-/**
- * A singleton [ConnectivityManager.NetworkCallback] used to track network constraints for all
- * workers with [NetworkRequest] on API 30+. Using a shared callback avoids the app hitting the app
- * limit of registered callbacks (b/231499040).
- */
-@RequiresApi(30)
-private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
-
-    private val requestsLock = Any()
-    @GuardedBy("requestsLock")
-    private val requests = mutableMapOf<OnConstraintState, NetworkRequest>()
-
-    override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-        Logger.get().debug(TAG, "NetworkRequestConstraintController onCapabilitiesChanged callback")
-        synchronized(requestsLock) { requests.entries.toList() }
-            .forEach { (onConstraintState, request) ->
-                onConstraintState(
-                    if (request.canBeSatisfiedBy(networkCapabilities)) {
-                        ConstraintsMet
-                    } else {
-                        ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)
-                    }
-                )
-            }
-    }
-
-    override fun onLost(network: Network) {
-        Logger.get().debug(TAG, "NetworkRequestConstraintController onLost callback")
-        synchronized(requestsLock) { requests.keys.toList() }
-            .forEach { it(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)) }
-    }
-
-    fun addCallback(
-        connManager: ConnectivityManager,
-        networkRequest: NetworkRequest,
-        onConstraintState: OnConstraintState,
-    ): () -> Unit {
-        synchronized(requestsLock) {
-            val registerCallback = requests.isEmpty()
-            requests.put(onConstraintState, networkRequest)
-            if (registerCallback) {
-                Logger.get()
-                    .debug(TAG, "NetworkRequestConstraintController register shared callback")
-                connManager.registerDefaultNetworkCallback(this)
-            }
-        }
-        return {
-            synchronized(requestsLock) {
-                requests.remove(onConstraintState)
-                if (requests.isEmpty()) {
-                    Logger.get()
-                        .debug(TAG, "NetworkRequestConstraintController unregister shared callback")
-                    connManager.unregisterNetworkCallback(this)
-                }
-            }
-        }
     }
 }

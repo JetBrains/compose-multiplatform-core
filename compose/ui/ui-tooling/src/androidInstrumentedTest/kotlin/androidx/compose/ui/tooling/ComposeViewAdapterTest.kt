@@ -66,7 +66,7 @@ class ComposeViewAdapterTest {
     private fun initAndWaitForDraw(
         className: String,
         methodName: String,
-        designInfoProvidersArgument: String? = null,
+        designInfoProvidersArgument: String? = null
     ) {
         val committedAndDrawn = CountDownLatch(1)
         val committed = AtomicBoolean(false)
@@ -82,7 +82,7 @@ class ComposeViewAdapterTest {
                     if (committed.get()) {
                         committedAndDrawn.countDown()
                     }
-                },
+                }
             )
         }
 
@@ -99,7 +99,7 @@ class ComposeViewAdapterTest {
         val viewInfos =
             assertRendersCorrectly(
                     "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-                    "SimpleComposablePreview",
+                    "SimpleComposablePreview"
                 )
                 .flatMap { it.allChildren() + it }
                 .filter { it.fileName == "SimpleComposablePreview.kt" }
@@ -121,7 +121,7 @@ class ComposeViewAdapterTest {
             val viewInfos =
                 assertRendersCorrectly(
                     "androidx.compose.ui.tooling.LazyColumnPreviewKt",
-                    "SimpleLazyComposablePreview",
+                    "SimpleLazyComposablePreview"
                 )
 
             assertEquals(
@@ -138,7 +138,7 @@ class ComposeViewAdapterTest {
                     ..|LazyColumnPreview.kt:31
                 """
                     .trimIndent(),
-                viewInfos.toDebugString { it.fileName == "LazyColumnPreview.kt" }.trimIndent(),
+                viewInfos.toDebugString { it.fileName == "LazyColumnPreview.kt" }.trimIndent()
             )
         }
 
@@ -147,7 +147,7 @@ class ComposeViewAdapterTest {
             val viewInfos =
                 assertRendersCorrectly(
                     "androidx.compose.ui.tooling.LazyColumnPreviewKt",
-                    "SimpleLazyComposablePreview",
+                    "SimpleLazyComposablePreview"
                 )
 
             assertEquals(1, viewInfos.size)
@@ -162,7 +162,7 @@ class ComposeViewAdapterTest {
                     ...|LazyColumnPreview.kt:31
                 """
                     .trimIndent(),
-                viewInfos.toDebugString() { it.fileName == "LazyColumnPreview.kt" }.trimIndent(),
+                viewInfos.toDebugString() { it.fileName == "LazyColumnPreview.kt" }.trimIndent()
             )
         }
     }
@@ -174,7 +174,7 @@ class ComposeViewAdapterTest {
             val viewInfos =
                 assertRendersCorrectly(
                     "androidx.compose.ui.tooling.LazyColumnPreviewKt",
-                    "ComplexLazyComposablePreview",
+                    "ComplexLazyComposablePreview"
                 )
 
             assertEquals(1, viewInfos.size)
@@ -197,7 +197,7 @@ class ComposeViewAdapterTest {
                     .....|LazyColumnPreview.kt:42
                 """
                     .trimIndent(),
-                viewInfos.toDebugString() { it.fileName == "LazyColumnPreview.kt" }.trimIndent(),
+                viewInfos.toDebugString() { it.fileName == "LazyColumnPreview.kt" }.trimIndent()
             )
         }
     }
@@ -209,7 +209,7 @@ class ComposeViewAdapterTest {
         activityTestRule.runOnUiThread {
             composeViewAdapter.init(
                 "androidx.compose.ui.tooling.TestAnimationPreviewKt",
-                "AnimatedVisibilityPreview",
+                "AnimatedVisibilityPreview"
             )
             composeViewAdapter.clock = clock
             assertFalse(composeViewAdapter.hasAnimations())
@@ -234,7 +234,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "TransitionAnimatedVisibilityPreview",
             emptyList(),
-            listOf("transition.AV"),
+            listOf("transition.AV")
         )
     }
 
@@ -242,7 +242,7 @@ class ComposeViewAdapterTest {
     fun animatedContentIsSubscribed() {
         checkAnimationsAreSubscribed(
             "AnimatedContentPreview",
-            animatedContent = listOf("AnimatedContent"),
+            animatedContent = listOf("AnimatedContent")
         )
     }
 
@@ -251,7 +251,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "AnimatedContentAndTransitionPreview",
             transitions = listOf("checkBoxAnim"),
-            animatedContent = listOf("AnimatedContent"),
+            animatedContent = listOf("AnimatedContent")
         )
     }
 
@@ -265,7 +265,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "TransitionWithScaffoldPreview",
             emptyList(),
-            listOf("checkBoxAnim"),
+            listOf("checkBoxAnim")
         )
     }
 
@@ -273,7 +273,7 @@ class ComposeViewAdapterTest {
     fun animateXAsStateIsSubscribed() {
         checkAnimationsAreSubscribed(
             "AnimateAsStatePreview",
-            animateXAsState = listOf("DpAnimation", "IntAnimation"),
+            animateXAsState = listOf("DpAnimation", "IntAnimation")
         )
     }
 
@@ -282,11 +282,16 @@ class ComposeViewAdapterTest {
         AnimateXAsStateComposeAnimation.testOverrideAvailability(false)
         checkAnimationsAreSubscribed(
             "AllAnimations",
-            unsupported = listOf("animateContentSize", "TargetBasedAnimation", "DecayAnimation"),
+            unsupported =
+                listOf(
+                    "animateContentSize",
+                    "TargetBasedAnimation",
+                    "DecayAnimation",
+                ),
             transitions = listOf("checkBoxAnim", "Crossfade"),
             animatedContent = listOf("AnimatedContent"),
             animateXAsState = emptyList(),
-            infiniteTransitions = listOf("InfiniteTransition"),
+            infiniteTransitions = listOf("InfiniteTransition")
         )
         AnimateXAsStateComposeAnimation.testOverrideAvailability(true)
     }
@@ -301,7 +306,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "AnimateContentSizeAndTransitionPreview",
             listOf("animateContentSize"),
-            listOf("checkBoxAnim"),
+            listOf("checkBoxAnim")
         )
     }
 
@@ -324,7 +329,7 @@ class ComposeViewAdapterTest {
     fun infiniteTransitionIsSubscribed() {
         checkAnimationsAreSubscribed(
             "InfiniteTransitionPreview",
-            infiniteTransitions = listOf("InfiniteTransition"),
+            infiniteTransitions = listOf("InfiniteTransition")
         )
     }
 
@@ -333,7 +338,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "TargetBasedAndTransitionPreview",
             listOf("TargetBasedAnimation"),
-            listOf("checkBoxAnim"),
+            listOf("checkBoxAnim")
         )
     }
 
@@ -342,7 +347,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "DecayAndTransitionPreview",
             listOf("DecayAnimation"),
-            listOf("checkBoxAnim"),
+            listOf("checkBoxAnim")
         )
     }
 
@@ -351,7 +356,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "InfiniteAndTransitionPreview",
             transitions = listOf("checkBoxAnim"),
-            infiniteTransitions = listOf("InfiniteTransition"),
+            infiniteTransitions = listOf("InfiniteTransition")
         )
     }
 
@@ -364,7 +369,7 @@ class ComposeViewAdapterTest {
             transitions = listOf("checkBoxAnim", "Crossfade"),
             animateXAsState = listOf("DpAnimation", "IntAnimation"),
             animatedContent = listOf("AnimatedContent"),
-            infiniteTransitions = listOf("InfiniteTransition"),
+            infiniteTransitions = listOf("InfiniteTransition")
         )
         UnsupportedComposeAnimation.testOverrideAvailability(true)
     }
@@ -374,7 +379,7 @@ class ComposeViewAdapterTest {
         checkAnimationsAreSubscribed(
             "AnimationOrder",
             emptyList(),
-            listOf("transitionOne", "transitionTwo", "transitionThree"),
+            listOf("transitionOne", "transitionTwo", "transitionThree")
         )
     }
 
@@ -384,7 +389,7 @@ class ComposeViewAdapterTest {
             "MaterialPreview",
             unsupported = emptyList(),
             transitions = listOf("ToggleableState"),
-            animateXAsState = listOf("ColorAnimation", "ColorAnimation", "ColorAnimation"),
+            animateXAsState = listOf("ColorAnimation", "ColorAnimation", "ColorAnimation")
         )
     }
 
@@ -394,7 +399,7 @@ class ComposeViewAdapterTest {
         transitions: List<String> = emptyList(),
         animateXAsState: List<String> = emptyList(),
         animatedContent: List<String> = emptyList(),
-        infiniteTransitions: List<String> = emptyList(),
+        infiniteTransitions: List<String> = emptyList()
     ) {
         val clock = PreviewAnimationClock()
 
@@ -421,15 +426,15 @@ class ComposeViewAdapterTest {
             assertEquals(transitions, clock.transitionClocks.values.map { it.animation.label })
             assertEquals(
                 animateXAsState,
-                clock.animateXAsStateClocks.values.map { it.animation.label },
+                clock.animateXAsStateClocks.values.map { it.animation.label }
             )
             assertEquals(
                 animatedContent,
-                clock.animatedContentClocks.values.map { it.animation.label },
+                clock.animatedContentClocks.values.map { it.animation.label }
             )
             assertEquals(
                 infiniteTransitions,
-                clock.infiniteTransitionClocks.values.map { it.animation.label },
+                clock.infiniteTransitionClocks.values.map { it.animation.label }
             )
             assertEquals(0, clock.animatedVisibilityClocks.size)
         }
@@ -465,7 +470,7 @@ class ComposeViewAdapterTest {
         val viewInfos =
             assertRendersCorrectly(
                     "androidx.compose.ui.tooling.LineNumberPreviewKt",
-                    "LineNumberPreview",
+                    "LineNumberPreview"
                 )
                 .flatMap { it.allChildren() + it }
                 .filter { it.fileName == "LineNumberPreview.kt" }
@@ -475,7 +480,7 @@ class ComposeViewAdapterTest {
             // Verify all calls, generate the correct line number information
             assertArrayEquals(
                 arrayOf(35, 36, 37, 39, 42, 43, 44),
-                viewInfos.map { it.lineNumber }.sorted().distinct().toTypedArray(),
+                viewInfos.map { it.lineNumber }.sorted().distinct().toTypedArray()
             )
         }
     }
@@ -485,7 +490,7 @@ class ComposeViewAdapterTest {
         val viewInfos =
             assertRendersCorrectly(
                     "androidx.compose.ui.tooling.LineNumberPreviewKt",
-                    "LineNumberPreview",
+                    "LineNumberPreview"
                 )
                 .flatMap { it.allChildren() + it }
                 .filter { it.location?.let { it.sourceFile == "LineNumberPreview.kt" } == true }
@@ -500,7 +505,7 @@ class ComposeViewAdapterTest {
             val offsets = viewInfos.map { it.location?.offset ?: -1 }.sorted().toTypedArray()
             assertArrayEquals(
                 arrayOf(1235, 1272, 1293, 1421, 1421, 1421, 1469, 1491, 1508, 1531, 1548),
-                offsets,
+                offsets
             )
         }
     }
@@ -509,7 +514,7 @@ class ComposeViewAdapterTest {
     fun instantiatePrivateComposeViewAdapter() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "PrivateSimpleComposablePreview",
+            "PrivateSimpleComposablePreview"
         )
     }
 
@@ -517,7 +522,7 @@ class ComposeViewAdapterTest {
     fun defaultParametersComposableTest1() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "DefaultParametersPreview1",
+            "DefaultParametersPreview1"
         )
     }
 
@@ -525,7 +530,7 @@ class ComposeViewAdapterTest {
     fun defaultParametersComposableTest2() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "DefaultParametersPreview2",
+            "DefaultParametersPreview2"
         )
     }
 
@@ -533,7 +538,7 @@ class ComposeViewAdapterTest {
     fun defaultParametersComposableTest3() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "DefaultParametersPreview3",
+            "DefaultParametersPreview3"
         )
     }
 
@@ -546,7 +551,7 @@ class ComposeViewAdapterTest {
     fun defaultParametersComposableTest4() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "DefaultParametersPreview4",
+            "DefaultParametersPreview4"
         )
     }
 
@@ -554,7 +559,7 @@ class ComposeViewAdapterTest {
     fun PreviewParametersComposableTest() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "PreviewParametersComposablePreview",
+            "PreviewParametersComposablePreview"
         )
     }
 
@@ -567,7 +572,7 @@ class ComposeViewAdapterTest {
     fun lifecycleUsedInsidePreview() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "LifecyclePreview",
+            "LifecyclePreview"
         )
     }
 
@@ -575,7 +580,7 @@ class ComposeViewAdapterTest {
     fun saveableStateRegistryUsedInsidePreview() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "SaveableStateRegistryPreview",
+            "SaveableStateRegistryPreview"
         )
     }
 
@@ -583,7 +588,7 @@ class ComposeViewAdapterTest {
     fun onBackPressedDispatcherUsedInsidePreview() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "OnBackPressedDispatcherPreview",
+            "OnBackPressedDispatcherPreview"
         )
     }
 
@@ -591,7 +596,7 @@ class ComposeViewAdapterTest {
     fun activityResultRegistryUsedInsidePreview() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "ActivityResultRegistryPreview",
+            "ActivityResultRegistryPreview"
         )
     }
 
@@ -599,7 +604,7 @@ class ComposeViewAdapterTest {
     fun viewModelPreviewRendersCorrectly() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "ViewModelPreview",
+            "ViewModelPreview"
         )
     }
 
@@ -607,11 +612,11 @@ class ComposeViewAdapterTest {
     fun multipreviewTest() {
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "Multipreview",
+            "Multipreview"
         )
         assertRendersCorrectly(
             "androidx.compose.ui.tooling.SimpleComposablePreviewKt",
-            "MultiPreviews",
+            "MultiPreviews"
         )
     }
 
@@ -625,7 +630,7 @@ class ComposeViewAdapterTest {
             composeViewAdapter.init(
                 "androidx.compose.ui.tooling.TestInvalidationPreviewKt",
                 "CounterPreview",
-                onDraw = { onDrawCounter++ },
+                onDraw = { onDrawCounter++ }
             )
         }
 
@@ -636,7 +641,7 @@ class ComposeViewAdapterTest {
                 assertEquals(1, compositionCount.get())
                 assertTrue(
                     "At most, $expectedDrawCount draw is expected ($onDrawCounter happened)",
-                    onDrawCounter <= expectedDrawCount,
+                    onDrawCounter <= expectedDrawCount
                 )
             }
             Thread.sleep(250)
@@ -660,12 +665,12 @@ class ComposeViewAdapterTest {
     private fun checkDesignInfoList(
         methodName: String,
         customArgument: String,
-        expectedResult: String,
+        expectedResult: String
     ) {
         initAndWaitForDraw(
             "androidx.compose.ui.tooling.DesignInfoProviderComposableKt",
             methodName,
-            customArgument,
+            customArgument
         )
 
         activityTestRule.runOnUiThread {

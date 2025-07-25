@@ -34,7 +34,6 @@ import java.lang.reflect.InvocationHandler;
  * {@link WebViewNavigationClientBoundaryInterface}. It handles the delegation for callback
  * triggers.
  */
-@WebNavigationClient.ExperimentalNavigationCallback
 public class WebNavigationClientAdapter implements
         WebViewNavigationClientBoundaryInterface {
     WebNavigationClient mWebNavigationClient;
@@ -69,7 +68,6 @@ public class WebNavigationClientAdapter implements
                         () -> new NavigationAdapter(boundaryInterface)));
     }
 
-    @WebNavigationClient.ExperimentalNavigationCallback
     @Override
     public void onNavigationCompleted(@NonNull InvocationHandler navigation) {
         WebViewNavigationBoundaryInterface boundaryInterface =

@@ -63,7 +63,7 @@ fun SampleNavigationDrawer() {
             Column(
                 Modifier.background(Color.Gray).fillMaxHeight().padding(12.dp).selectableGroup(),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items.forEachIndexed { index, item ->
                     val (text, icon) = item
@@ -71,7 +71,12 @@ fun SampleNavigationDrawer() {
                     NavigationDrawerItem(
                         selected = selectedIndex == index,
                         onClick = { selectedIndex = index },
-                        leadingContent = { Icon(imageVector = icon, contentDescription = null) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                            )
+                        }
                     ) {
                         Text(text)
                     }
@@ -102,7 +107,7 @@ fun SampleModalNavigationDrawerWithSolidScrim() {
             Column(
                 Modifier.background(Color.Gray).fillMaxHeight().padding(12.dp).selectableGroup(),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items.forEachIndexed { index, item ->
                     val (text, icon) = item
@@ -110,7 +115,12 @@ fun SampleModalNavigationDrawerWithSolidScrim() {
                     NavigationDrawerItem(
                         selected = selectedIndex == index,
                         onClick = { selectedIndex = index },
-                        leadingContent = { Icon(imageVector = icon, contentDescription = null) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                            )
+                        }
                     ) {
                         Text(text)
                     }
@@ -123,7 +133,7 @@ fun SampleModalNavigationDrawerWithSolidScrim() {
                 Modifier.padding(closeDrawerWidth + backgroundContentPadding)
                     .height(100.dp)
                     .fillMaxWidth(),
-            onClick = {},
+            onClick = {}
         ) {
             Text("BUTTON")
         }
@@ -150,7 +160,7 @@ fun SampleModalNavigationDrawerWithGradientScrim() {
             Column(
                 Modifier.background(Color.Gray).fillMaxHeight().padding(12.dp).selectableGroup(),
                 horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items.forEachIndexed { index, item ->
                     val (text, icon) = item
@@ -158,21 +168,26 @@ fun SampleModalNavigationDrawerWithGradientScrim() {
                     NavigationDrawerItem(
                         selected = selectedIndex == index,
                         onClick = { selectedIndex = index },
-                        leadingContent = { Icon(imageVector = icon, contentDescription = null) },
+                        leadingContent = {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                            )
+                        }
                     ) {
                         Text(text)
                     }
                 }
             }
         },
-        scrimBrush = Brush.horizontalGradient(listOf(Color.DarkGray, Color.Transparent)),
+        scrimBrush = Brush.horizontalGradient(listOf(Color.DarkGray, Color.Transparent))
     ) {
         Button(
             modifier =
                 Modifier.padding(closeDrawerWidth + backgroundContentPadding)
                     .height(100.dp)
                     .fillMaxWidth(),
-            onClick = {},
+            onClick = {}
         ) {
             Text("BUTTON")
         }

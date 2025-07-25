@@ -25,14 +25,14 @@ import kotlin.coroutines.CoroutineContext
  *
  * @sample androidx.compose.runtime.samples.snapshotAsContextElementSample
  */
-public fun Snapshot.asContextElement(): SnapshotContextElement = SnapshotContextElementImpl(this)
+fun Snapshot.asContextElement(): SnapshotContextElement = SnapshotContextElementImpl(this)
 
 /**
  * A [CoroutineContext] element that [enters][Snapshot.enter] an associated snapshot whenever a
  * coroutine associated with this context is resumed.
  */
-public interface SnapshotContextElement : CoroutineContext.Element {
-    public companion object Key : CoroutineContext.Key<SnapshotContextElement>
+interface SnapshotContextElement : CoroutineContext.Element {
+    companion object Key : CoroutineContext.Key<SnapshotContextElement>
 }
 
 internal expect class SnapshotContextElementImpl(snapshot: Snapshot) : SnapshotContextElement {

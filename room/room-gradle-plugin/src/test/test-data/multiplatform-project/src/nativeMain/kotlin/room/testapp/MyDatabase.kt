@@ -24,9 +24,7 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun getMyDao(): MyDao
 }
 
-expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase> {
-    override fun initialize(): MyDatabase
-}
+expect object MyDatabaseCtor : RoomDatabaseConstructor<MyDatabase>
 
 @Entity
 data class NativeEntity(

@@ -87,7 +87,6 @@ internal class NavBackStackEntryImpl(val entry: NavBackStackEntry) {
         }
 
     internal fun handleLifecycleEvent(event: Lifecycle.Event) {
-        entry.hostLifecycleState = event.targetState
         hostLifecycleState = event.targetState
         updateState()
     }

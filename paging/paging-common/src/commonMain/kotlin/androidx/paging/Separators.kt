@@ -67,8 +67,7 @@ internal suspend fun <R : Any, T : R> TransformablePage<T>.insertInternalSeparat
     generator: suspend (T?, T?) -> R?
 ): TransformablePage<R> {
     if (data.isEmpty()) {
-        @Suppress("UNCHECKED_CAST")
-        return this as TransformablePage<R>
+        @Suppress("UNCHECKED_CAST") return this as TransformablePage<R>
     }
 
     val initialCapacity = data.size + 4 // extra space to avoid bigger allocations
@@ -101,7 +100,7 @@ internal suspend fun <R : Any, T : R> TransformablePage<T>.insertInternalSeparat
             originalPageOffsets = originalPageOffsets,
             data = outputList,
             hintOriginalPageOffset = hintOriginalPageOffset,
-            hintOriginalIndices = outputIndices,
+            hintOriginalIndices = outputIndices
         )
     }
 }
@@ -111,13 +110,13 @@ internal fun <T : Any> separatorPage(
     separator: T,
     originalPageOffsets: IntArray,
     hintOriginalPageOffset: Int,
-    hintOriginalIndex: Int,
+    hintOriginalIndex: Int
 ): TransformablePage<T> =
     TransformablePage(
         originalPageOffsets = originalPageOffsets,
         data = listOf(separator),
         hintOriginalPageOffset = hintOriginalPageOffset,
-        hintOriginalIndices = listOf(hintOriginalIndex),
+        hintOriginalIndices = listOf(hintOriginalIndex)
     )
 
 /**
@@ -130,7 +129,7 @@ internal fun <T : Any> MutableList<TransformablePage<T>>.addSeparatorPage(
     separator: T?,
     originalPageOffsets: IntArray,
     hintOriginalPageOffset: Int,
-    hintOriginalIndex: Int,
+    hintOriginalIndex: Int
 ) {
     if (separator == null) return
 
@@ -139,7 +138,7 @@ internal fun <T : Any> MutableList<TransformablePage<T>>.addSeparatorPage(
             separator = separator,
             originalPageOffsets = originalPageOffsets,
             hintOriginalPageOffset = hintOriginalPageOffset,
-            hintOriginalIndex = hintOriginalIndex,
+            hintOriginalIndex = hintOriginalIndex
         )
     add(separatorPage)
 }
@@ -155,7 +154,7 @@ internal fun <R : Any, T : R> MutableList<TransformablePage<R>>.addSeparatorPage
     adjacentPageBefore: TransformablePage<T>?,
     adjacentPageAfter: TransformablePage<T>?,
     hintOriginalPageOffset: Int,
-    hintOriginalIndex: Int,
+    hintOriginalIndex: Int
 ) {
     val beforeOffsets = adjacentPageBefore?.originalPageOffsets
     val afterOffsets = adjacentPageAfter?.originalPageOffsets
@@ -175,13 +174,13 @@ internal fun <R : Any, T : R> MutableList<TransformablePage<R>>.addSeparatorPage
                     )
             },
         hintOriginalPageOffset = hintOriginalPageOffset,
-        hintOriginalIndex = hintOriginalIndex,
+        hintOriginalIndex = hintOriginalIndex
     )
 }
 
 private class SeparatorState<R : Any, T : R>(
     val terminalSeparatorType: TerminalSeparatorType,
-    val generator: suspend (before: T?, after: T?) -> R?,
+    val generator: suspend (before: T?, after: T?) -> R?
 ) {
     /**
      * Lookup table of previously emitted pages, that skips empty pages.
@@ -229,8 +228,7 @@ private class SeparatorState<R : Any, T : R>(
         }
 
     fun Insert<T>.asRType(): Insert<R> {
-        @Suppress("UNCHECKED_CAST")
-        return this as Insert<R>
+        @Suppress("UNCHECKED_CAST") return this as Insert<R>
     }
 
     fun <T : Any> Insert<T>.terminatesStart(terminalSeparatorType: TerminalSeparatorType): Boolean {
@@ -374,7 +372,7 @@ private class SeparatorState<R : Any, T : R>(
                 adjacentPageBefore = null,
                 adjacentPageAfter = pageAfter,
                 hintOriginalPageOffset = pageAfter.hintOriginalPageOffset,
-                hintOriginalIndex = pageAfter.hintOriginalIndices?.first() ?: 0,
+                hintOriginalIndex = pageAfter.hintOriginalIndices?.first() ?: 0
             )
         }
 
@@ -394,7 +392,7 @@ private class SeparatorState<R : Any, T : R>(
                     adjacentPageBefore = lastStash,
                     adjacentPageAfter = firstNonEmptyPage,
                     hintOriginalPageOffset = firstNonEmptyPage.hintOriginalPageOffset,
-                    hintOriginalIndex = firstNonEmptyPage.hintOriginalIndices?.first() ?: 0,
+                    hintOriginalIndex = firstNonEmptyPage.hintOriginalIndices?.first() ?: 0
                 )
             }
 
@@ -426,7 +424,7 @@ private class SeparatorState<R : Any, T : R>(
                                         ?: pageBefore.data.lastIndex
                                 } else {
                                     page.hintOriginalIndices?.first() ?: 0
-                                },
+                                }
                         )
                     }
 
@@ -451,7 +449,7 @@ private class SeparatorState<R : Any, T : R>(
                     hintOriginalPageOffset = lastNonEmptyPage.hintOriginalPageOffset,
                     hintOriginalIndex =
                         lastNonEmptyPage.hintOriginalIndices?.last()
-                            ?: lastNonEmptyPage.data.lastIndex,
+                            ?: lastNonEmptyPage.data.lastIndex
                 )
             }
 
@@ -473,7 +471,7 @@ private class SeparatorState<R : Any, T : R>(
                 adjacentPageAfter = null,
                 hintOriginalPageOffset = pageBefore.hintOriginalPageOffset,
                 hintOriginalIndex =
-                    pageBefore.hintOriginalIndices?.last() ?: pageBefore.data.lastIndex,
+                    pageBefore.hintOriginalIndices?.last() ?: pageBefore.data.lastIndex
             )
         }
 
@@ -513,8 +511,7 @@ private class SeparatorState<R : Any, T : R>(
             stash.originalPageOffsets.any { pageOffsetsToDrop.contains(it) }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        return event as Drop<R>
+        @Suppress("UNCHECKED_CAST") return event as Drop<R>
     }
 
     suspend fun onLoadStateUpdate(event: LoadStateUpdate<T>): PageEvent<R> {
@@ -522,8 +519,7 @@ private class SeparatorState<R : Any, T : R>(
         // Check for redundant LoadStateUpdate events to avoid unnecessary mapping to empty inserts
         // that might cause terminal separators to get added out of place.
         if (sourceStates.snapshot() == event.source && prevMediator == event.mediator) {
-            @Suppress("UNCHECKED_CAST")
-            return event as PageEvent<R>
+            @Suppress("UNCHECKED_CAST") return event as PageEvent<R>
         }
 
         sourceStates.set(event.source)
@@ -562,8 +558,7 @@ private class SeparatorState<R : Any, T : R>(
                 )
             return onInsert(appendTerminalInsert)
         }
-        @Suppress("UNCHECKED_CAST")
-        return event as PageEvent<R>
+        @Suppress("UNCHECKED_CAST") return event as PageEvent<R>
     }
 
     suspend fun onStaticList(event: StaticList<T>): PageEvent<R> {
@@ -598,8 +593,8 @@ private class SeparatorState<R : Any, T : R>(
             hintOriginalIndices =
                 listOf(
                     originalPage.hintOriginalIndices?.first() ?: 0,
-                    originalPage.hintOriginalIndices?.last() ?: originalPage.data.lastIndex,
-                ),
+                    originalPage.hintOriginalIndices?.last() ?: originalPage.data.lastIndex
+                )
         )
     }
 }
@@ -610,7 +605,7 @@ private class SeparatorState<R : Any, T : R>(
  */
 internal fun <T : R, R : Any> Flow<PageEvent<T>>.insertEventSeparators(
     terminalSeparatorType: TerminalSeparatorType,
-    generator: suspend (T?, T?) -> R?,
+    generator: suspend (T?, T?) -> R?
 ): Flow<PageEvent<R>> {
     val separatorState =
         SeparatorState(terminalSeparatorType) { before: T?, after: T? -> generator(before, after) }

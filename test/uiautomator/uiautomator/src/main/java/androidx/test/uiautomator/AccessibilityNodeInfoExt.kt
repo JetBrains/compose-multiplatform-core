@@ -23,7 +23,7 @@ import android.os.Build
 import android.view.Display
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.uiautomator.internal.displayManager
-import androidx.test.uiautomator.internal.findElements
+import androidx.test.uiautomator.internal.findViews
 import androidx.test.uiautomator.internal.notNull
 import androidx.test.uiautomator.internal.takeScreenshotBitmap
 import androidx.test.uiautomator.internal.takeViewNodeTree
@@ -90,7 +90,7 @@ public fun AccessibilityNodeInfo.siblings(
  * @return a bitmap containing the image of this node.
  */
 public fun AccessibilityNodeInfo.takeScreenshot(): Bitmap =
-    takeScreenshotBitmap(nodeBounds = Rect().apply { getBoundsInScreen(this) })
+    takeScreenshotBitmap(bounds = Rect().apply { getBoundsInScreen(this) })
 
 /**
  * Waits for the node to become stable. A node is considered stable when it and its descendants have
@@ -103,10 +103,10 @@ public fun AccessibilityNodeInfo.takeScreenshot(): Bitmap =
  *   considered stable.
  * @param stablePollIntervalMs specifies how often the ui should be checked for changes.
  * @param requireStableScreenshot specifies if also the bitmap of the node should not change over
- *   the specified [stableIntervalMs]. Note that this won't work with elements that change
- *   constantly, like a video player.
- * @return a [androidx.test.uiautomator.StableResult] containing the latest acquired element
- *   hierarchy and screenshot, and a flag indicating if the node was stable before timeout.
+ *   the specified [stableIntervalMs]. Note that this won't work with views that change constantly,
+ *   like a video player.
+ * @return a [androidx.test.uiautomator.StableResult] containing the latest acquired view hierarchy
+ *   and screenshot, and a flag indicating if the node was stable before timeout.
  */
 @JvmOverloads
 public fun AccessibilityNodeInfo.waitForStable(
@@ -128,34 +128,34 @@ public fun AccessibilityNodeInfo.waitForStable(
         stablePollIntervalMs = stablePollIntervalMs,
         stableIntervalMs = stableIntervalMs,
         bitmapProvider = { if (requireStableScreenshot) takeScreenshot() else null },
-        rootElementNodeProvider = { takeViewNodeTree(root = this, displayRect = displayRect) },
+        rootViewNodeProvider = { takeViewNodeTree(root = this, displayRect = displayRect) }
     )
 }
 
 /**
  * Performs a DFS on the accessibility tree starting from this node and returns the first node
  * matching the given [block]. The node is returned as an [UiObject2] that allows interacting with
- * it. If the requested node doesn't exist, a [androidx.test.uiautomator.ElementNotFoundException]
- * is thrown. Internally it works searching periodically every [pollIntervalMs].
+ * it. If the requested node doesn't exist, a [androidx.test.uiautomator.ViewNotFoundException] is
+ * thrown. Internally it works searching periodically every [pollIntervalMs].
  *
  * Example:
  * ```kotlin
- * node.onElement { textAsString == "Search" }.click()
+ * node.onView { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the element that satisfies the given condition.
+ * @param timeoutMs a timeout to find the view that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition.
  */
 @JvmOverloads
-public fun AccessibilityNodeInfo.onElement(
+public fun AccessibilityNodeInfo.onView(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2 =
-    onElementOrNull(timeoutMs = timeoutMs, pollIntervalMs = pollIntervalMs, block = block)
-        .notNull(ElementNotFoundException())
+    onViewOrNull(timeoutMs = timeoutMs, pollIntervalMs = pollIntervalMs, block = block)
+        .notNull(ViewNotFoundException())
 
 /**
  * Performs a DFS on the accessibility tree starting from this node and returns the first node
@@ -165,26 +165,26 @@ public fun AccessibilityNodeInfo.onElement(
  *
  * Example:
  * ```kotlin
- * node.onElement { textAsString == "Search" }.click()
+ * node.onView { textAsString == "Search" }.click()
  * ```
  *
- * @param timeoutMs a timeout to find the element that satisfies the given condition.
+ * @param timeoutMs a timeout to find the view that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a [UiObject2] from a node that matches the given [block] condition or null.
  */
 @JvmOverloads
-public fun AccessibilityNodeInfo.onElementOrNull(
+public fun AccessibilityNodeInfo.onViewOrNull(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): UiObject2? =
-    findElements(
+    findViews(
             shouldStop = { it.size == 1 },
             block = block,
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
-            rootNodeBlock = { listOf(this) },
+            rootNodeBlock = { listOf(this) }
         )
         .firstOrNull()
         ?.toUiObject2()
@@ -197,29 +197,29 @@ public fun AccessibilityNodeInfo.onElementOrNull(
  *
  * Example:
  * ```kotlin
- * node.onElements { className == Button::class.java.name }
+ * node.onViews { className == Button::class.java.name }
  * ```
  *
  * If multiple nodes are expected but they appear at different times, it's recommended to call
  * [androidx.test.uiautomator.waitForStable] before, to ensure any operation is complete.
  *
- * @param timeoutMs a timeout to find the element that satisfies the given condition.
+ * @param timeoutMs a timeout to find the view that satisfies the given condition.
  * @param pollIntervalMs an interval to wait before rechecking the accessibility tree for updates.
  * @param block a block that specifies a condition on the node to find.
  * @return a list of [UiObject2] from nodes that matches the given [block] condition.
  */
 @JvmOverloads
-public fun AccessibilityNodeInfo.onElements(
+public fun AccessibilityNodeInfo.onViews(
     timeoutMs: Long = 10000,
     pollIntervalMs: Long = 100,
     block: AccessibilityNodeInfo.() -> (Boolean),
 ): List<UiObject2> =
-    findElements(
+    findViews(
             timeoutMs = timeoutMs,
             pollIntervalMs = pollIntervalMs,
             shouldStop = { false },
             block = block,
-            rootNodeBlock = { listOf(this) },
+            rootNodeBlock = { listOf(this) }
         )
         .mapNotNull { it.toUiObject2() }
 
@@ -227,11 +227,11 @@ internal fun AccessibilityNodeInfo.toUiObject2(): UiObject2? =
     UiObject2.create(uiDevice, BySelector(), this)
 
 /**
- * Returns this node's element id resource name without the resource namespace, i.e. only the
- * portion after the "/" character. If the element id is not specified, then it returns `null`.
+ * Returns this node's id without the full resource namespace, i.e. only the portion after the "/"
+ * character. If the view id is not specified, then it returns `null`.
  */
-public fun AccessibilityNodeInfo.simpleViewResourceName(): String? =
-    viewIdResourceName?.substringAfter("/")
+public val AccessibilityNodeInfo.id: String?
+    get() = viewIdResourceName?.substringAfter("/")
 
 /**
  * Returns this node's text as a string. This should always be preferred to
@@ -240,17 +240,18 @@ public fun AccessibilityNodeInfo.simpleViewResourceName(): String? =
  *
  * Usage:
  * ```kotlin
- * onElement { textAsString() == "Some text" }.click()
+ * onView { textAsString == "Some text" }.click()
  * ```
  */
-public fun AccessibilityNodeInfo.textAsString(): String? = text?.toString()
+public val AccessibilityNodeInfo.textAsString: String?
+    get() = text?.toString()
 
 /**
  * Returns whether this node class name is the same of the given class.
  *
  * Usage:
  * ```kotlin
- * onElement { isClass(Button::class.java) }.click()
+ * onView { isClass(Button::class.java) }.click()
  * ```
  */
 public fun AccessibilityNodeInfo.isClass(cls: Class<*>): Boolean = cls.name == this.className

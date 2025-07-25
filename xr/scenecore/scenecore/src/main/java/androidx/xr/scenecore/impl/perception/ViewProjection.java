@@ -16,9 +16,8 @@
 
 package androidx.xr.scenecore.impl.perception;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * Contains the view projection state. <a
@@ -35,12 +34,14 @@ public class ViewProjection {
     }
 
     /** Returns the location and orientation of the camera/eye pose. */
-    public @NonNull Pose getPose() {
+    @NonNull
+    public Pose getPose() {
         return mPose;
     }
 
     /** Returns the four sides of the projection / view frustum. */
-    public @NonNull Fov getFov() {
+    @NonNull
+    public Fov getFov() {
         return mFov;
     }
 

@@ -32,6 +32,10 @@ internal class KaptCompilationTestRunner(
 ) : CompilationTestRunner {
     override val name: String = "kapt"
 
+    override fun canRun(params: TestCompilationParameters): Boolean {
+        return true
+    }
+
     override fun compile(workingDir: File, params: TestCompilationParameters): CompilationResult {
         val syntheticJavacProcessor = SyntheticJavacProcessor(params.config, params.handlers)
         val args =
@@ -48,7 +52,7 @@ internal class KaptCompilationTestRunner(
         return KotlinCompilationResult(
             testRunner = this,
             processor = syntheticJavacProcessor,
-            delegate = result,
+            delegate = result
         )
     }
 }

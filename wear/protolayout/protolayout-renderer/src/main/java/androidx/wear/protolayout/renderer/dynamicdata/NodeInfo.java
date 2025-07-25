@@ -52,46 +52,15 @@ import java.util.stream.Collectors;
  */
 class NodeInfo implements TreeNode {
 
-    /** A potential binding request that yet has to be bound, depending on available quota. */
-    static final class PendingBindingRequest {
-
-        /** The binding request to be bound. */
-        private final @NonNull DynamicTypeBindingRequest mRequest;
-
-        /** The runnable to be executed if the binding request fails. */
-        private final @NonNull Runnable mOnBindFailed;
-
-        /**
-         * Creates a new pending binding request.
-         *
-         * @param request the binding request to be bound
-         * @param onBindFailed the runnable to be executed if the binding request fails
-         */
-        private PendingBindingRequest(
-                @NonNull DynamicTypeBindingRequest request, @NonNull Runnable onBindFailed) {
-            this.mRequest = request;
-            this.mOnBindFailed = onBindFailed;
-        }
-
-        /** Returns the binding request to be bound. */
-        @NonNull DynamicTypeBindingRequest getRequest() {
-            return mRequest;
-        }
-
-        /** Returns the runnable to be executed if the binding request fails. */
-        @NonNull Runnable getOnBindFailed() {
-            return mOnBindFailed;
-        }
-    }
-
     /** List of active bound dynamic types in the pipeline. */
     private final @NonNull List<BoundDynamicType> mActiveBoundTypes = new ArrayList<>();
 
     /** List of bound dynamic types that need to be evaluated. */
     private @NonNull List<BoundDynamicType> mPendingBoundTypes = Collections.emptyList();
 
-    /** List of binding requests that need to be bound. */
-    private final @NonNull List<PendingBindingRequest> mPendingBindingRequests = new ArrayList<>();
+    /** List of binding requests that failed to bind. */
+    private final @NonNull List<DynamicTypeBindingRequest> mFailedBindingRequests =
+            new ArrayList<>();
 
     private final @NonNull QuotaManager mAnimationQuotaManager;
 
@@ -128,13 +97,12 @@ class NodeInfo implements TreeNode {
 
     /**
      * Adds {@link DynamicTypeBindingRequest} that {@link
-     * androidx.wear.protolayout.expression.pipeline.DynamicTypeEvaluator} needs to bind. Pending
-     * requests will be removed once a binding initiated by {@link ProtoLayoutDynamicDataPipeline}
-     * succeed.
+     * androidx.wear.protolayout.expression.pipeline.DynamicTypeEvaluator} failed to bind. Failed
+     * requests will be removed once a binding retry initiated by {@link
+     * ProtoLayoutDynamicDataPipeline} succeed.
      */
-    void addPendingBindingRequest(
-            @NonNull DynamicTypeBindingRequest request, @NonNull Runnable onBindFailed) {
-        mPendingBindingRequests.add(new PendingBindingRequest(request, onBindFailed));
+    void addFailedBindingRequest(@NonNull DynamicTypeBindingRequest request) {
+        mFailedBindingRequests.add(request);
     }
 
     /**
@@ -147,8 +115,8 @@ class NodeInfo implements TreeNode {
         mPendingBoundTypes.clear();
     }
 
-    @NonNull List<PendingBindingRequest> getPendingBindingRequests() {
-        return mPendingBindingRequests;
+    List<DynamicTypeBindingRequest> getFailedBindingRequest() {
+        return mFailedBindingRequests;
     }
 
     @NonNull ResolvedAvd addResolvedAvd(

@@ -24,7 +24,6 @@ import android.os.Build
 import android.os.Handler
 import android.view.Surface
 import androidx.annotation.RequiresApi
-import androidx.camera.camera2.pipe.CameraInterop
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.Log
@@ -39,7 +38,6 @@ import kotlinx.atomicfu.atomic
  * wrapper interfaces instead of the native Camera2 types.
  */
 internal interface CameraCaptureSessionWrapper : UnsafeWrapper, AutoCloseable {
-    val id: CameraInterop.CameraCaptureSessionId
 
     /**
      * @return The [CameraDeviceWrapper] that created this CameraCaptureSession
@@ -80,7 +78,7 @@ internal interface CameraCaptureSessionWrapper : UnsafeWrapper, AutoCloseable {
      */
     fun captureBurst(
         requests: List<CaptureRequest>,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int?
 
     /**
@@ -92,7 +90,7 @@ internal interface CameraCaptureSessionWrapper : UnsafeWrapper, AutoCloseable {
      */
     fun setRepeatingBurst(
         requests: List<CaptureRequest>,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int?
 
     /**
@@ -103,7 +101,7 @@ internal interface CameraCaptureSessionWrapper : UnsafeWrapper, AutoCloseable {
      */
     fun setRepeatingRequest(
         request: CaptureRequest,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int?
 
     /** @see [CameraCaptureSession.stopRepeating]. */
@@ -149,53 +147,49 @@ internal class AndroidCaptureSessionStateCallback(
     private val stateCallback: CameraCaptureSessionWrapper.StateCallback,
     lastStateCallback: SessionStateCallback?,
     private val cameraErrorListener: CameraErrorListener,
-    private val interopCaptureSessionListener: CameraInterop.CaptureSessionListener? = null,
-    private val callbackHandler: Handler,
+    private val interopSessionStateCallback: CameraCaptureSession.StateCallback? = null,
+    private val callbackHandler: Handler
 ) : CameraCaptureSession.StateCallback() {
     private val _lastStateCallback = atomic(lastStateCallback)
     private val captureSession = atomic<CameraCaptureSessionWrapper?>(null)
 
     override fun onConfigured(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
-        stateCallback.onConfigured(wrappedSession)
+        stateCallback.onConfigured(getWrapped(session, cameraErrorListener))
 
         // b/249258992 - This is a workaround to ensure previous CameraCaptureSession.StateCallback
         //   instances receive some kind of "finalization" signal if onClosed is not fired by the
         //   framework after a subsequent session has been configured.
         finalizeLastSession()
-        interopCaptureSessionListener?.onConfigured(device.cameraId, wrappedSession.id)
+        interopSessionStateCallback?.onConfigured(session)
     }
 
     override fun onConfigureFailed(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
-        stateCallback.onConfigureFailed(wrappedSession)
+        stateCallback.onConfigureFailed(getWrapped(session, cameraErrorListener))
         finalizeSession()
-        interopCaptureSessionListener?.onConfigureFailed(device.cameraId, wrappedSession.id)
+        interopSessionStateCallback?.onConfigureFailed(session)
     }
 
     override fun onReady(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
         stateCallback.onReady(getWrapped(session, cameraErrorListener))
-        interopCaptureSessionListener?.onReady(device.cameraId, wrappedSession.id)
+        interopSessionStateCallback?.onReady(session)
     }
 
     override fun onActive(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
         stateCallback.onActive(getWrapped(session, cameraErrorListener))
-        interopCaptureSessionListener?.onActive(device.cameraId, wrappedSession.id)
+        interopSessionStateCallback?.onActive(session)
     }
 
     override fun onClosed(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
         stateCallback.onClosed(getWrapped(session, cameraErrorListener))
         finalizeSession()
-        interopCaptureSessionListener?.onClosed(device.cameraId, wrappedSession.id)
+        interopSessionStateCallback?.onClosed(session)
     }
 
     override fun onCaptureQueueEmpty(session: CameraCaptureSession) {
-        val wrappedSession = getWrapped(session, cameraErrorListener)
         stateCallback.onCaptureQueueEmpty(getWrapped(session, cameraErrorListener))
-        interopCaptureSessionListener?.onCaptureQueueEmpty(device.cameraId, wrappedSession.id)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Api26Compat.onCaptureQueueEmpty(interopSessionStateCallback, session)
+        }
     }
 
     private fun getWrapped(
@@ -229,7 +223,7 @@ internal class AndroidCaptureSessionStateCallback(
                 device,
                 session,
                 cameraErrorListener,
-                callbackHandler,
+                callbackHandler
             )
         } else {
             AndroidCameraCaptureSession(device, session, cameraErrorListener, callbackHandler)
@@ -248,21 +242,18 @@ internal class AndroidCaptureSessionStateCallback(
     }
 }
 
-internal val captureSessionIds = atomic(0)
-
 internal open class AndroidCameraCaptureSession(
     override val device: CameraDeviceWrapper,
     private val cameraCaptureSession: CameraCaptureSession,
     private val cameraErrorListener: CameraErrorListener,
-    private val callbackHandler: Handler,
+    private val callbackHandler: Handler
 ) : CameraCaptureSessionWrapper {
-
     override fun abortCaptures(): Boolean =
         instrumentAndCatch("abortCaptures") { cameraCaptureSession.abortCaptures() } != null
 
     override fun capture(
         request: CaptureRequest,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int? =
         instrumentAndCatch("capture") {
             cameraCaptureSession.capture(request, listener, callbackHandler)
@@ -270,7 +261,7 @@ internal open class AndroidCameraCaptureSession(
 
     override fun captureBurst(
         requests: List<CaptureRequest>,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int? =
         instrumentAndCatch("captureBurst") {
             cameraCaptureSession.captureBurst(requests, listener, callbackHandler)
@@ -278,7 +269,7 @@ internal open class AndroidCameraCaptureSession(
 
     override fun setRepeatingBurst(
         requests: List<CaptureRequest>,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int? =
         instrumentAndCatch("setRepeatingBurst") {
             cameraCaptureSession.setRepeatingBurst(requests, listener, callbackHandler)
@@ -286,7 +277,7 @@ internal open class AndroidCameraCaptureSession(
 
     override fun setRepeatingRequest(
         request: CaptureRequest,
-        listener: CameraCaptureSession.CaptureCallback,
+        listener: CameraCaptureSession.CaptureCallback
     ): Int? =
         instrumentAndCatch("setRepeatingRequest") {
             cameraCaptureSession.setRepeatingRequest(request, listener, callbackHandler)
@@ -294,9 +285,6 @@ internal open class AndroidCameraCaptureSession(
 
     override fun stopRepeating(): Boolean =
         instrumentAndCatch("stopRepeating") { cameraCaptureSession.stopRepeating() } != null
-
-    override val id: CameraInterop.CameraCaptureSessionId =
-        CameraInterop.nextCameraCaptureSessionId()
 
     override val isReprocessable: Boolean
         get() {
@@ -330,7 +318,7 @@ internal open class AndroidCameraCaptureSession(
         return instrumentAndCatch("finalizeOutputConfigurations") {
             Api26Compat.finalizeOutputConfigurations(
                 cameraCaptureSession,
-                outputConfigs.map { it.unwrapAs(OutputConfiguration::class) },
+                outputConfigs.map { it.unwrapAs(OutputConfiguration::class) }
             )
         } != null
     }
@@ -364,7 +352,7 @@ internal constructor(
     device: CameraDeviceWrapper,
     private val session: CameraConstrainedHighSpeedCaptureSession,
     cameraErrorListener: CameraErrorListener,
-    callbackHandler: Handler,
+    callbackHandler: Handler
 ) :
     AndroidCameraCaptureSession(device, session, cameraErrorListener, callbackHandler),
     CameraConstrainedHighSpeedCaptureSessionWrapper {

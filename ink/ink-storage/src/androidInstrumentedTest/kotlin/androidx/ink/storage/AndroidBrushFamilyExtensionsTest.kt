@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import androidx.ink.brush.BrushCoat
 import androidx.ink.brush.BrushFamily
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.brush.TextureBitmapStore
+import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import java.io.ByteArrayInputStream
@@ -78,27 +78,27 @@ class AndroidBrushFamilyExtensionsTest {
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f,
+                                            sizeY = 4f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = unknownId,
                                             sizeX = 2f,
-                                            sizeY = 5f,
+                                            sizeY = 5f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f,
+                                            sizeY = 2f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f,
+                                            sizeY = 2f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f,
+                                            sizeY = 4f
                                         ),
                                     )
                             )
@@ -111,17 +111,17 @@ class AndroidBrushFamilyExtensionsTest {
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f,
+                                            sizeY = 4f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId2,
                                             sizeX = 2f,
-                                            sizeY = 2f,
+                                            sizeY = 2f
                                         ),
                                         BrushPaint.TextureLayer(
                                             clientTextureId = textureId1,
                                             sizeX = 1f,
-                                            sizeY = 4f,
+                                            sizeY = 4f
                                         ),
                                     )
                             )
@@ -157,58 +157,101 @@ class AndroidBrushFamilyExtensionsTest {
         Base64.decode("H4sIAAAAAAAA/1Ni52INZWBo2A8Agg/YJAkAAAA=", Base64.DEFAULT)
 
     @Test
-    fun decode_notGzippedBytes_throws() {
+    fun encode_decodeOrNull_roundTrip() {
+        val decodedTextureBitmapStore = mutableMapOf<String, Bitmap>()
+        val decodeCallback = BrushFamilyDecodeCallback { id: String, bitmap: Bitmap? ->
+            if (bitmap != null) {
+                decodedTextureBitmapStore[id] = bitmap
+            }
+            id
+        }
+
+        val encoded =
+            ByteArrayOutputStream().use {
+                testFamily.encode(it, textureBitmapStore)
+                it.toByteArray()
+            }
+
+        ByteArrayInputStream(encoded).use {
+            assertThat(BrushFamily.decodeOrNull(it, decodeCallback)).isEqualTo(testFamily)
+        }
+
+        assertEquals(decodedTextureBitmapStore.size, 2)
+        val actualBitmap1 = decodedTextureBitmapStore[textureId1]
+        val expectedBitmap1 = textureBitmapStore[textureId1]
+        assertTrue(actualBitmap1!!.sameAs(expectedBitmap1))
+
+        val actualBitmap2 = decodedTextureBitmapStore[textureId2]
+        val expectedBitmap2 = textureBitmapStore[textureId2]
+        assertTrue(actualBitmap2!!.sameAs(expectedBitmap2))
+    }
+
+    @Test
+    fun decodeOrThrow_notGzippedBytes_throws() {
         assertFailsWith<IOException> {
             @Suppress("CheckReturnValue")
-            ByteArrayInputStream(notGzippedBytes).use { BrushFamily.decode(it, { _, _ -> "id" }) }
+            ByteArrayInputStream(notGzippedBytes).use {
+                BrushFamily.decodeOrThrow(it, { _, _ -> "id" })
+            }
         }
     }
 
     @Test
-    fun decode_gzippedNotProtoBytes_throws() {
+    fun decodeOrThrow_gzippedNotProtoBytes_throws() {
         val exception =
             assertFailsWith<IllegalArgumentException> {
                 @Suppress("CheckReturnValue")
                 ByteArrayInputStream(gzippedNotProtoBytes).use {
-                    BrushFamily.decode(it, { _, _ -> "id" })
+                    BrushFamily.decodeOrThrow(it, { _, _ -> "id" })
                 }
             }
         assertThat(exception).hasMessageThat().contains("Failed to parse ink.proto.BrushFamily")
     }
 
     @Test
-    fun decode_gzippedInvalidProtoBytes_throws() {
+    fun decodeOrThrow_gzippedInvalidProtoBytes_throws() {
         val exception =
             assertFailsWith<IllegalArgumentException> {
                 @Suppress("CheckReturnValue")
                 ByteArrayInputStream(gzippedInvalidProtoBytes).use {
-                    BrushFamily.decode(it, { _, _ -> "id" })
+                    BrushFamily.decodeOrThrow(it, { _, _ -> "id" })
                 }
             }
         assertThat(exception).hasMessageThat().contains("particle_gap_duration")
     }
 
     @Test
-    fun decode_callbackThrows_exceptionIsRaised() {
-        val original = testFamily
-        val encoded =
-            ByteArrayOutputStream().use {
-                original.encode(it, textureBitmapStore)
-                it.toByteArray()
-            }
-        val callbackException = RuntimeException("callbackException")
-        val resultException =
-            assertFailsWith<RuntimeException> {
-                ByteArrayInputStream(encoded).use {
-                    @Suppress("CheckReturnValue")
-                    BrushFamily.decode(it, { _, _ -> throw callbackException })
+    fun decodeOrNull_notGzippedBytes_returnsNull() {
+        assertThat(
+                ByteArrayInputStream(notGzippedBytes).use {
+                    BrushFamily.decodeOrNull(it, { _, _ -> "id" })
                 }
-            }
-        assertThat(resultException).isSameInstanceAs(callbackException)
+            )
+            .isNull()
     }
 
     @Test
-    fun encode_decode_roundTrip_staticApi() {
+    fun decodeOrNull_gzippedNotProtoBytes_returnsNull() {
+        assertThat(
+                ByteArrayInputStream(gzippedNotProtoBytes).use {
+                    BrushFamily.decodeOrNull(it, { _, _ -> "id" })
+                }
+            )
+            .isNull()
+    }
+
+    @Test
+    fun decodeOrNull_gzippedInvalidProtoBytes_returnsNull() {
+        assertThat(
+                ByteArrayInputStream(gzippedInvalidProtoBytes).use {
+                    BrushFamily.decodeOrNull(it, { _, _ -> "id" })
+                }
+            )
+            .isNull()
+    }
+
+    @Test
+    fun encode_decodeOrThrow_roundTrip_staticApi() {
         val decodedTextureBitmapStore = mutableMapOf<String, Bitmap>()
         val decodeCallback = BrushFamilyDecodeCallback { id: String, bitmap: Bitmap? ->
             if (bitmap != null) {
@@ -224,7 +267,7 @@ class AndroidBrushFamilyExtensionsTest {
                 it.toByteArray()
             }
         ByteArrayInputStream(encoded).use {
-            assertThat(AndroidBrushFamilySerialization.decode(it, decodeCallback))
+            assertThat(AndroidBrushFamilySerialization.decodeOrThrow(it, decodeCallback))
                 .isEqualTo(original)
         }
         assertEquals(decodedTextureBitmapStore.size, 2)
@@ -238,17 +281,59 @@ class AndroidBrushFamilyExtensionsTest {
     }
 
     @Test
-    fun decode_notGzippedBytes_throws_staticApi() {
+    fun encode_decodeOrNull_roundTrip_staticApi() {
+        val decodedTextureBitmapStore = mutableMapOf<String, Bitmap>()
+        val decodeCallback = BrushFamilyDecodeCallback { id: String, bitmap: Bitmap? ->
+            if (bitmap != null) {
+                decodedTextureBitmapStore[id] = bitmap
+            }
+            id
+        }
+        // Kotlin callers should prefer the extension methods, but the static wrappers do work.
+        val original = testFamily
+        val encoded =
+            ByteArrayOutputStream().use {
+                original.encode(it, textureBitmapStore)
+                it.toByteArray()
+            }
+        ByteArrayInputStream(encoded).use {
+            assertThat(AndroidBrushFamilySerialization.decodeOrNull(it, decodeCallback))
+                .isEqualTo(original)
+        }
+
+        assertEquals(decodedTextureBitmapStore.size, 2)
+        val actualBitmap1 = decodedTextureBitmapStore[textureId1]
+        val expectedBitmap1 = textureBitmapStore[textureId1]
+        assertTrue(actualBitmap1!!.sameAs(expectedBitmap1))
+
+        val actualBitmap2 = decodedTextureBitmapStore[textureId2]
+        val expectedBitmap2 = textureBitmapStore[textureId2]
+        assertTrue(actualBitmap2!!.sameAs(expectedBitmap2))
+    }
+
+    @Test
+    fun decodeOrNull_gzippedInvalidProtoBytes_returnsNull_staticApi() {
+        // Kotlin callers should prefer the extension methods, but the static wrappers do work.
+        assertThat(
+                ByteArrayInputStream(gzippedInvalidProtoBytes).use {
+                    AndroidBrushFamilySerialization.decodeOrNull(it, { _, _ -> "id" })
+                }
+            )
+            .isNull()
+    }
+
+    @Test
+    fun decodeOrThrow_notGzippedBytes_throws_staticApi() {
         assertFailsWith<IOException> {
             @Suppress("CheckReturnValue")
             ByteArrayInputStream(notGzippedBytes).use {
-                AndroidBrushFamilySerialization.decode(it, { _, _ -> "id" })
+                AndroidBrushFamilySerialization.decodeOrThrow(it, { _, _ -> "id" })
             }
         }
     }
 
     @Test
-    fun encode_decode_roundTrip() {
+    fun encode_decodeOrThrow_roundTrip() {
         val decodedTextureBitmapStore = mutableMapOf<String, Bitmap>()
         val decodeCallback = BrushFamilyDecodeCallback { id: String, bitmap: Bitmap? ->
             if (bitmap != null) {
@@ -264,7 +349,7 @@ class AndroidBrushFamilyExtensionsTest {
             }
 
         ByteArrayInputStream(encoded).use {
-            assertThat(BrushFamily.decode(it, decodeCallback)).isEqualTo(originalFamily)
+            assertThat(BrushFamily.decodeOrThrow(it, decodeCallback)).isEqualTo(originalFamily)
         }
 
         assertEquals(decodedTextureBitmapStore.size, 2)

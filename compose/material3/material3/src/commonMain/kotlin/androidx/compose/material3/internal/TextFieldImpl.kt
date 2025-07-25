@@ -73,7 +73,7 @@ import androidx.compose.ui.unit.isUnspecified
 
 internal enum class TextFieldType {
     Filled,
-    Outlined,
+    Outlined
 }
 
 @Composable
@@ -163,7 +163,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = placeholderColor,
                             textStyle = bodyLarge,
-                            content = placeholder,
+                            content = placeholder
                         )
                     }
                 }
@@ -180,7 +180,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = prefixColor,
                             textStyle = bodyLarge,
-                            content = prefix,
+                            content = prefix
                         )
                     }
                 }
@@ -194,7 +194,7 @@ internal fun CommonDecorationBox(
                         Decoration(
                             contentColor = suffixColor,
                             textStyle = bodyLarge,
-                            content = suffix,
+                            content = suffix
                         )
                     }
                 }
@@ -219,7 +219,7 @@ internal fun CommonDecorationBox(
                     Decoration(
                         contentColor = supportingTextColor,
                         textStyle = bodySmall,
-                        content = it,
+                        content = it
                     )
                 }
             }
@@ -246,7 +246,7 @@ internal fun CommonDecorationBox(
                     singleLine = singleLine,
                     labelPosition = labelPosition,
                     labelProgress = labelProgress::value,
-                    paddingValues = contentPadding,
+                    paddingValues = contentPadding
                 )
             }
             TextFieldType.Outlined -> {
@@ -258,9 +258,9 @@ internal fun CommonDecorationBox(
                             .outlineCutout(
                                 labelSize = cutoutSize::value,
                                 alignment = labelPosition.minimizedAlignment,
-                                paddingValues = contentPadding,
+                                paddingValues = contentPadding
                             ),
-                        propagateMinConstraints = true,
+                        propagateMinConstraints = true
                     ) {
                         container()
                     }
@@ -294,7 +294,7 @@ internal fun CommonDecorationBox(
                     labelPosition = labelPosition,
                     labelProgress = labelProgress::value,
                     container = borderContainerWithId,
-                    paddingValues = contentPadding,
+                    paddingValues = contentPadding
                 )
             }
         }
@@ -341,7 +341,10 @@ internal fun Modifier.defaultErrorSemantics(
  * Replacement for Modifier.background which takes color lazily to avoid recomposition while
  * animating.
  */
-internal fun Modifier.textFieldBackground(color: ColorProducer, shape: Shape): Modifier =
+internal fun Modifier.textFieldBackground(
+    color: ColorProducer,
+    shape: Shape,
+): Modifier =
     this.drawWithCache {
         val outline = shape.createOutline(size, layoutDirection, this)
         onDrawBehind { drawOutline(outline, color = color()) }
@@ -378,7 +381,7 @@ private inline fun TextFieldTransitionScope(
             labelContentColor: State<Color>,
             placeholderOpacity: State<Float>,
             prefixSuffixOpacity: State<Float>,
-        ) -> Unit,
+        ) -> Unit
 ) {
     // Transitions from/to InputPhase.Focused are the most critical in the transition below.
     // UnfocusedEmpty <-> UnfocusedNotEmpty are needed when a single state is used to control
@@ -412,7 +415,7 @@ private inline fun TextFieldTransitionScope(
                 } else {
                     fastOpacityTransitionSpec
                 }
-            },
+            }
         ) {
             when (it) {
                 InputPhase.Focused -> 1f
@@ -424,7 +427,7 @@ private inline fun TextFieldTransitionScope(
     val prefixSuffixOpacity =
         transition.animateFloat(
             label = "PrefixSuffixOpacity",
-            transitionSpec = { fastOpacityTransitionSpec },
+            transitionSpec = { fastOpacityTransitionSpec }
         ) {
             when (it) {
                 InputPhase.Focused -> 1f
@@ -437,7 +440,7 @@ private inline fun TextFieldTransitionScope(
     val labelTextStyleColor =
         transition.animateColor(
             transitionSpec = { colorTransitionSpec },
-            label = "LabelTextStyleColor",
+            label = "LabelTextStyleColor"
         ) {
             when (it) {
                 InputPhase.Focused -> focusedLabelTextStyleColor
@@ -450,7 +453,7 @@ private inline fun TextFieldTransitionScope(
         transition.animateColor(
             transitionSpec = { colorTransitionSpec },
             label = "LabelContentColor",
-            targetValueByState = { labelColor },
+            targetValueByState = { labelColor }
         )
 
     content(
@@ -469,7 +472,7 @@ internal fun animateBorderStrokeAsState(
     focused: Boolean,
     colors: TextFieldColors,
     focusedBorderThickness: Dp,
-    unfocusedBorderThickness: Dp,
+    unfocusedBorderThickness: Dp
 ): State<BorderStroke> {
     // TODO Load the motionScheme tokens from the component tokens file
     val targetColor = colors.indicatorColor(enabled, isError, focused)
@@ -502,7 +505,7 @@ private enum class InputPhase {
     UnfocusedEmpty,
 
     // Text field is not focused but input text is not empty
-    UnfocusedNotEmpty,
+    UnfocusedNotEmpty
 }
 
 internal const val TextFieldId = "TextField"

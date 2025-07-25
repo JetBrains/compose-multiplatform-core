@@ -246,11 +246,14 @@ class DialogWithMaterialSlcBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Start Screen")
                 }
-                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
+                Dialog(
+                    showDialog = showDialog,
+                    onDismissRequest = { showDialog = false },
+                ) {
                     AlertWithMaterialSlc(
                         title = {},
                         negativeButton = { Button(onClick = {}, content = {}) },
@@ -275,11 +278,14 @@ class DialogWithMaterialSlcBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Label")
                 }
-                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
+                Dialog(
+                    showDialog = showDialog,
+                    onDismissRequest = { showDialog = false },
+                ) {
                     AlertWithMaterialSlc(
                         icon = {},
                         title = {},
@@ -304,11 +310,14 @@ class DialogWithMaterialSlcBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Label")
                 }
-                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
+                Dialog(
+                    showDialog = showDialog,
+                    onDismissRequest = { showDialog = false },
+                ) {
                     ConfirmationWithMaterialSlc(
                         onTimeout = { showDialog = false },
                         icon = {},
@@ -332,11 +341,14 @@ class DialogWithMaterialSlcBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Chip(onClick = { showDialog = true }, label = { Text("Show") })
                 }
-                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
+                Dialog(
+                    showDialog = showDialog,
+                    onDismissRequest = { showDialog = false },
+                ) {
                     Text("Text", modifier = Modifier.testTag(TEST_TAG))
                 }
             }
@@ -355,11 +367,14 @@ class DialogWithMaterialSlcBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(if (dismissed) dismissedText else "Label")
                 }
-                Dialog(showDialog = !dismissed, onDismissRequest = { dismissed = true }) {
+                Dialog(
+                    showDialog = !dismissed,
+                    onDismissRequest = { dismissed = true },
+                ) {
                     AlertWithMaterialSlc(
                         icon = {},
                         title = {},
@@ -435,7 +450,7 @@ class DialogWithMaterialSlcContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG),
+                            modifier = Modifier.testTag(CHIP_TAG)
                         )
                     }
                 },
@@ -463,7 +478,7 @@ class DialogWithMaterialSlcContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG),
+                            modifier = Modifier.testTag(CHIP_TAG)
                         )
                     }
                 },
@@ -532,7 +547,7 @@ class DialogWithMaterialSlcContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG),
+                            modifier = Modifier.testTag(CHIP_TAG)
                         )
                     }
                 },
@@ -585,7 +600,7 @@ class DialogWithMaterialSlcContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG),
+                            modifier = Modifier.testTag(CHIP_TAG)
                         )
                     }
                 },
@@ -893,7 +908,7 @@ class DialogWithMaterialSlcContentColorTest {
                 negativeButton = {},
                 positiveButton = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
     }
@@ -906,7 +921,7 @@ class DialogWithMaterialSlcContentColorTest {
                 title = {},
                 message = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
     }
@@ -980,7 +995,7 @@ class DialogWithMaterialSlcContentColorTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     private fun verifyBackgroundColor(
         expected: @Composable () -> Color,
-        content: @Composable () -> Unit,
+        content: @Composable () -> Unit
     ) {
         val testBackground = Color.White
         var expectedBackground = Color.Transparent
@@ -1048,7 +1063,7 @@ class DialogWithMaterialSlcTextStyleTest {
                 title = { Text("Title") },
                 negativeButton = {},
                 positiveButton = {},
-                content = { actualTextStyle = LocalTextStyle.current },
+                content = { actualTextStyle = LocalTextStyle.current }
             )
         }
 

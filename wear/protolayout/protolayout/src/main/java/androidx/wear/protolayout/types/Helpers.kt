@@ -25,8 +25,7 @@ import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.TypeBuilders.BoolProp
 import androidx.wear.protolayout.expression.RequiresSchemaVersion
 
-@get:RestrictTo(Scope.LIBRARY_GROUP)
-val Float.sp: SpProp
+internal val Float.sp: SpProp
     get() = SpProp.Builder().setValue(this).build()
 
 internal val Float.em: EmProp

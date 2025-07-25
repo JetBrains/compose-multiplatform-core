@@ -129,10 +129,6 @@ public class CallStats extends BaseStats {
     public static final int CALL_TYPE_GLOBAL_OPEN_READ_BLOB = 35;
     public static final int CALL_TYPE_REMOVE_BLOB = 36;
     public static final int CALL_TYPE_SET_BLOB_VISIBILITY = 37;
-    // Most call types are for AppSearchManager APIs. This call type is for internal calls, such
-    // as from indexers.
-    public static final int INTERNAL_CALL_TYPE_APP_OPEN_EVENT_INDEXER = 38;
-
 
     // These strings are for the subset of call types that correspond to an AppSearchManager API
     private static final String CALL_TYPE_STRING_INITIALIZE = "initialize";
@@ -187,7 +183,6 @@ public class CallStats extends BaseStats {
     private final int mEstimatedBinderLatencyMillis;
     private final int mNumOperationsSucceeded;
     private final int mNumOperationsFailed;
-    private final long mCallReceivedTimestampMillis;
 
     CallStats(@NonNull Builder builder) {
         super(builder);
@@ -199,7 +194,6 @@ public class CallStats extends BaseStats {
         mEstimatedBinderLatencyMillis = builder.mEstimatedBinderLatencyMillis;
         mNumOperationsSucceeded = builder.mNumOperationsSucceeded;
         mNumOperationsFailed = builder.mNumOperationsFailed;
-        mCallReceivedTimestampMillis = builder.mCallReceivedTimestampMillis;
     }
 
     /** Returns calling package name. */
@@ -269,11 +263,6 @@ public class CallStats extends BaseStats {
         return mNumOperationsFailed;
     }
 
-    /** Returns the wall-clock timestamp in milliseconds when the API call was received. */
-    public long getCallReceivedTimestampMillis() {
-        return mCallReceivedTimestampMillis;
-    }
-
     /** Builder for {@link CallStats}. */
     public static class Builder extends BaseStats.Builder<CallStats.Builder> {
         @Nullable String mPackageName;
@@ -286,7 +275,6 @@ public class CallStats extends BaseStats {
         int mEstimatedBinderLatencyMillis;
         int mNumOperationsSucceeded;
         int mNumOperationsFailed;
-        long mCallReceivedTimestampMillis;
 
         /** Sets the PackageName used by the session. */
         @CanIgnoreReturnValue
@@ -366,13 +354,6 @@ public class CallStats extends BaseStats {
         @CanIgnoreReturnValue
         public @NonNull Builder setNumOperationsFailed(int numOperationsFailed) {
             mNumOperationsFailed = numOperationsFailed;
-            return this;
-        }
-
-        /** Sets the wall-clock timestamp in milliseconds when the API call was received. */
-        @CanIgnoreReturnValue
-        public @NonNull Builder setCallReceivedTimestampMillis(long callReceivedTimestampMillis) {
-            mCallReceivedTimestampMillis = callReceivedTimestampMillis;
             return this;
         }
 

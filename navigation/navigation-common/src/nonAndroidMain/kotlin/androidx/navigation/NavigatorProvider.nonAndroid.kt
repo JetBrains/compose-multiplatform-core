@@ -75,7 +75,7 @@ public actual open class NavigatorProvider actual constructor() {
     @CallSuper
     public actual open fun addNavigator(
         name: String,
-        navigator: Navigator<out NavDestination>,
+        navigator: Navigator<out NavDestination>
     ): Navigator<out NavDestination>? {
         require(validateName(name)) { "Navigator name cannot be an empty string" }
         _typeToNavigatorName[navigator::class] = name

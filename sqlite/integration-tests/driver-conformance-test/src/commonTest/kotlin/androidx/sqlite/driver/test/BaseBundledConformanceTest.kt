@@ -57,7 +57,7 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
             getDriver()
                 .open(
                     fileName = getDatabaseFileName(),
-                    flags = SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE or SQLITE_OPEN_FULLMUTEX,
+                    flags = SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE or SQLITE_OPEN_FULLMUTEX
                 )
         connection.execSQL("CREATE TABLE Test (col)")
         // Concurrently use the connection, many threads inserting and two threads reading, due to
@@ -96,6 +96,6 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
     }
 
     companion object {
-        const val EXPECTED_SQLITE_VERSION = "3.50.1"
+        const val EXPECTED_SQLITE_VERSION = "3.46.0"
     }
 }

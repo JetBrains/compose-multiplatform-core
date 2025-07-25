@@ -21,6 +21,7 @@ import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.Timebase
@@ -59,7 +60,7 @@ import org.junit.runners.Parameterized
 @SdkSuppress(minSdkVersion = 21)
 class AudioEncoderConfigAudioProfileResolverTest(
     private val implName: String,
-    private val cameraConfig: CameraXConfig,
+    private val cameraConfig: CameraXConfig
 ) {
 
     companion object {
@@ -68,15 +69,18 @@ class AudioEncoderConfigAudioProfileResolverTest(
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
     private val defaultAudioSpec = AudioSpec.builder().build()
     private val timebase = Timebase.UPTIME
 
@@ -88,9 +92,11 @@ class AudioEncoderConfigAudioProfileResolverTest(
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
-        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+
+        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
+
         CameraXUtil.initialize(context, cameraConfig).get()
 
         val cameraInfo = CameraUtil.createCameraUseCaseAdapter(context, cameraSelector).cameraInfo
@@ -128,7 +134,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         defaultAudioSpec,
                         audioSettings,
-                        audioProfile,
+                        audioProfile
                     )
                     .get()
 
@@ -156,7 +162,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     defaultAudioSettings,
-                    profile,
+                    profile
                 )
                 .get()
         val defaultChannelCount = defaultConfig.channelCount
@@ -171,7 +177,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     higherChannelCountAudioSettings,
-                    profile,
+                    profile
                 )
                 .get()
 
@@ -194,7 +200,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     defaultAudioSettings,
-                    profile,
+                    profile
                 )
                 .get()
         val defaultSampleRate = defaultConfig.captureSampleRate
@@ -209,7 +215,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                     timebase,
                     defaultAudioSpec,
                     higherSampleRateAudioSettings,
-                    profile,
+                    profile
                 )
                 .get()
 
@@ -243,7 +249,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         higherAudioSpec,
                         defaultAudioSettings,
-                        profile,
+                        profile
                     )
                     .get()
                     .bitrate
@@ -257,7 +263,7 @@ class AudioEncoderConfigAudioProfileResolverTest(
                         timebase,
                         lowerAudioSpec,
                         defaultAudioSettings,
-                        profile,
+                        profile
                     )
                     .get()
                     .bitrate

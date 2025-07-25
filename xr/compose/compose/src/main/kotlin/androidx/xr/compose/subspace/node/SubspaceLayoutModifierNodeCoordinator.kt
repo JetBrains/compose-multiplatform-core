@@ -16,20 +16,20 @@
 
 package androidx.xr.compose.subspace.node
 
-import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
+import androidx.xr.compose.subspace.layout.LayoutMeasureScope
+import androidx.xr.compose.subspace.layout.Measurable
+import androidx.xr.compose.subspace.layout.MeasureResult
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
+import androidx.xr.compose.subspace.layout.Placeable
 import androidx.xr.compose.subspace.layout.SubspaceLayoutCoordinates
-import androidx.xr.compose.subspace.layout.SubspaceMeasurable
-import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 
 /**
- * A [SubspaceMeasurable] and [SubspacePlaceable] object that is used to measure and lay out the
- * children of a [SubspaceLayoutModifierNode].
+ * A [Measurable] and [Placeable] object that is used to measure and lay out the children of a
+ * [SubspaceLayoutModifierNode].
  *
  * See [androidx.compose.ui.node.NodeCoordinator]
  *
@@ -39,7 +39,7 @@ import androidx.xr.runtime.math.Pose
  */
 internal class SubspaceLayoutModifierNodeCoordinator(
     private val layoutModifierNode: SubspaceLayoutModifierNode
-) : SubspaceLayoutCoordinates, SubspaceMeasurable, SubspacePlaceable() {
+) : SubspaceLayoutCoordinates, Measurable, Placeable() {
 
     private val baseNode: SubspaceModifier.Node
         get() = layoutModifierNode as SubspaceModifier.Node
@@ -103,13 +103,13 @@ internal class SubspaceLayoutModifierNodeCoordinator(
     override val size: IntVolumeSize
         get() = IntVolumeSize(width = measuredWidth, height = measuredHeight, depth = measuredDepth)
 
-    private var subspaceMeasureResult: SubspaceMeasureResult? = null
+    private var measureResult: MeasureResult? = null
     private var layoutPose: Pose? = null
 
     public override fun placeAt(pose: Pose) {
         layoutPose = pose
-        subspaceMeasureResult?.placeChildren(
-            object : SubspacePlacementScope() {
+        measureResult?.placeChildren(
+            object : PlacementScope() {
                 public override val coordinates = this@SubspaceLayoutModifierNodeCoordinator
             }
         )
@@ -119,20 +119,20 @@ internal class SubspaceLayoutModifierNodeCoordinator(
      * Measures the wrapped content within the given [constraints].
      *
      * @param constraints the constraints to apply during measurement.
-     * @return the [SubspacePlaceable] representing the measured child layout that can be positioned
-     *   by its parent layout.
+     * @return the [Placeable] representing the measured child layout that can be positioned by its
+     *   parent layout.
      */
-    override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
+    override fun measure(constraints: VolumeConstraints): Placeable {
         with(layoutModifierNode) {
-            val measurable: SubspaceMeasurable = child ?: layoutNode!!.measurableLayout
-            val subspaceMeasureResult: SubspaceMeasureResult =
-                LayoutSubspaceMeasureScope(layoutNode!!).measure(measurable, constraints).also {
-                    this@SubspaceLayoutModifierNodeCoordinator.subspaceMeasureResult = it
+            val measurable: Measurable = child ?: layoutNode!!.measurableLayout
+            val measureResult: MeasureResult =
+                LayoutMeasureScope(layoutNode!!).measure(measurable, constraints).also {
+                    this@SubspaceLayoutModifierNodeCoordinator.measureResult = it
                 }
 
-            measuredWidth = subspaceMeasureResult.width
-            measuredHeight = subspaceMeasureResult.height
-            measuredDepth = subspaceMeasureResult.depth
+            measuredWidth = measureResult.width
+            measuredHeight = measureResult.height
+            measuredDepth = measureResult.depth
         }
 
         return this

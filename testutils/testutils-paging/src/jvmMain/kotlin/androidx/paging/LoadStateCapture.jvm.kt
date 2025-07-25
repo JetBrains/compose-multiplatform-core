@@ -30,4 +30,7 @@ class LoadStateCapture : (LoadType, LoadState) -> Unit {
     }
 }
 
-data class LoadStateEvent(val loadType: LoadType, val loadState: LoadState)
+data class LoadStateEvent(
+    val loadType: LoadType,
+    val loadState: LoadState,
+)

@@ -32,7 +32,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 12)
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 12)
-public open class OnDevicePersonalizationManagerImplCommon(
+open class OnDevicePersonalizationManagerImplCommon(
     private val mOdpManager:
         android.adservices.ondevicepersonalization.OnDevicePersonalizationManager
 ) : OnDevicePersonalizationManager() {
@@ -48,10 +48,12 @@ public open class OnDevicePersonalizationManagerImplCommon(
                     executeInIsolatedServiceRequest.service,
                     executeInIsolatedServiceRequest.appParams,
                     Runnable::run,
-                    continuation.asOutcomeReceiver(),
+                    continuation.asOutcomeReceiver()
                 )
             }
-        return ExecuteInIsolatedServiceResponse(surfacePackageToken = result.surfacePackageToken)
+        return ExecuteInIsolatedServiceResponse(
+            surfacePackageToken = result.surfacePackageToken,
+        )
     }
 
     @DoNotInline
@@ -60,7 +62,7 @@ public open class OnDevicePersonalizationManagerImplCommon(
         surfaceViewHostToken: IBinder,
         displayId: Int,
         width: Int,
-        height: Int,
+        height: Int
     ): SurfaceControlViewHost.SurfacePackage =
         suspendCancellableCoroutine<SurfaceControlViewHost.SurfacePackage> { continuation ->
             mOdpManager.requestSurfacePackage(
@@ -70,7 +72,7 @@ public open class OnDevicePersonalizationManagerImplCommon(
                 width,
                 height,
                 Runnable::run,
-                continuation.asOutcomeReceiver(),
+                continuation.asOutcomeReceiver()
             )
         }
 }

@@ -16,9 +16,9 @@
 package androidx.room.util
 
 import androidx.annotation.RestrictTo
+import androidx.room.driver.SupportSQLiteConnection
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /**
  * A data class that holds the information about a view.
@@ -28,20 +28,20 @@ import androidx.sqlite.driver.SupportSQLiteConnection
  * Even though SQLite column names are case insensitive, this class uses case sensitive matching.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public actual class ViewInfo
+actual class ViewInfo
 actual constructor(
     /** The view name */
-    @JvmField public actual val name: String,
+    @JvmField actual val name: String,
     /** The SQL of CREATE VIEW. */
-    @JvmField public actual val sql: String?,
+    @JvmField actual val sql: String?
 ) {
-    actual override fun equals(other: Any?): Boolean = equalsCommon(other)
+    actual override fun equals(other: Any?) = equalsCommon(other)
 
-    actual override fun hashCode(): Int = hashCodeCommon()
+    actual override fun hashCode() = hashCodeCommon()
 
-    actual override fun toString(): String = toStringCommon()
+    actual override fun toString() = toStringCommon()
 
-    public actual companion object {
+    actual companion object {
         /**
          * Reads the view information from the given database.
          *
@@ -51,7 +51,7 @@ actual constructor(
          */
         @Deprecated("No longer used by generated code.")
         @JvmStatic
-        public fun read(database: SupportSQLiteDatabase, viewName: String): ViewInfo {
+        fun read(database: SupportSQLiteDatabase, viewName: String): ViewInfo {
             return read(SupportSQLiteConnection(database), viewName)
         }
 
@@ -63,7 +63,7 @@ actual constructor(
          * @return A ViewInfo containing the schema information for the provided view name.
          */
         @JvmStatic
-        public actual fun read(connection: SQLiteConnection, viewName: String): ViewInfo {
+        actual fun read(connection: SQLiteConnection, viewName: String): ViewInfo {
             return readViewInfo(connection, viewName)
         }
     }

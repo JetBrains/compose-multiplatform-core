@@ -25,30 +25,19 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.navigation"
-        androidResources.enable = true
-        // Needed for api tasks and docs generation
-        sourceSets {
-            androidMain {
-                kotlin.srcDirs += 'src/androidMain/java'
-            }
-        }
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
     ios()
-    js()
-    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -58,49 +47,41 @@ androidXMultiplatform {
                 api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(project(":navigation:navigation-common"))
-                api(project(":lifecycle:lifecycle-common"))
-                api(project(":lifecycle:lifecycle-runtime"))
-                api(project(":lifecycle:lifecycle-viewmodel"))
+                api("androidx.lifecycle:lifecycle-common:2.8.7")
+                api("androidx.lifecycle:lifecycle-runtime:2.8.7")
+                api("androidx.lifecycle:lifecycle-viewmodel:2.8.7")
 
                 implementation(libs.kotlinSerializationCore)
-                implementation("androidx.collection:collection:1.5.0")
+                implementation("androidx.collection:collection:1.4.2")
             }
         }
-
         commonTest {
             dependencies {
                 implementation(libs.kotlinTest)
             }
         }
-
         nonAndroidMain {
             dependsOn(commonMain)
         }
-
         nonAndroidTest {
             dependsOn(commonTest)
         }
-
-        jvmMain {
+        jvmCommonMain {
             dependsOn(commonMain)
         }
-
-        jvmTest {
+        jvmCommonTest {
             dependsOn(commonTest)
         }
-
         desktopMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmCommonMain)
             dependsOn(nonAndroidMain)
         }
-
         desktopTest {
-            dependsOn(jvmTest)
+            dependsOn(jvmCommonTest)
             dependsOn(nonAndroidTest)
         }
-
         androidMain {
-            dependsOn(jvmMain)
+            dependsOn(jvmCommonMain)
             dependencies {
                 api("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
                 api("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
@@ -109,11 +90,9 @@ androidXMultiplatform {
                 api("androidx.annotation:annotation-experimental:1.4.1")
             }
         }
-
         androidUnitTest {
             dependsOn(commonTest)
         }
-
         androidInstrumentedTest {
             dependsOn(commonTest)
             dependencies {
@@ -139,68 +118,23 @@ androidXMultiplatform {
                 implementation(libs.mockitoCore)
             }
         }
-
-        nonJvmMain {
-            dependsOn(nonAndroidMain)
-        }
-
-        nonJvmTest {
-            dependsOn(nonAndroidTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        linuxMain {
-            dependsOn(nativeMain)
-        }
-
-        linuxTest {
-            dependsOn(nativeTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinXw3c)
-            }
-        }
-
+        nonJvmCommonMain { dependsOn(nonAndroidMain) }
+        nonJvmCommonTest { dependsOn(nonAndroidTest) }
+        nativeMain { dependsOn(nonJvmCommonMain) }
+        linuxMain { dependsOn(nativeMain) }
+        darwinMain { dependsOn(nativeMain) }
+        nativeTest { dependsOn(nonJvmCommonTest) }
+        linuxTest { dependsOn(nativeTest) }
+        darwinTest { dependsOn(nativeTest) }
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
                     target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == Family.LINUX) {
+                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
                 }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }
@@ -210,9 +144,14 @@ dependencies {
     lintPublish(project(":navigation:navigation-runtime-lint"))
 }
 
+android {
+    namespace = "androidx.navigation"
+}
+
 androidx {
     name = "Navigation Runtime"
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Runtime"
+    metalavaK2UastEnabled = false
 }

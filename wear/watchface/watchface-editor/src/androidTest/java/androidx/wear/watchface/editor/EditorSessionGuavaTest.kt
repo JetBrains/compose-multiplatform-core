@@ -82,23 +82,26 @@ public class EditorSessionGuavaTest {
         CanvasComplicationDrawable(
             ComplicationDrawable(),
             placeholderWatchState,
-            mockInvalidateCallback,
+            mockInvalidateCallback
         )
     @OptIn(ComplicationExperimental::class)
     private val leftComplication =
         @Suppress("DEPRECATION")
         ComplicationSlot.createRoundRectComplicationSlotBuilder(
                 LEFT_COMPLICATION_ID,
-                { _, _ -> mockLeftCanvasComplication },
+                { _, _,
+                    ->
+                    mockLeftCanvasComplication
+                },
                 listOf(
                     ComplicationType.RANGED_VALUE,
                     ComplicationType.LONG_TEXT,
                     ComplicationType.SHORT_TEXT,
                     ComplicationType.MONOCHROMATIC_IMAGE,
-                    ComplicationType.SMALL_IMAGE,
+                    ComplicationType.SMALL_IMAGE
                 ),
                 DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_SUNRISE_SUNSET),
-                ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f)),
+                ComplicationSlotBounds(RectF(0.2f, 0.4f, 0.4f, 0.6f))
             )
             .setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
@@ -107,23 +110,26 @@ public class EditorSessionGuavaTest {
         CanvasComplicationDrawable(
             ComplicationDrawable(),
             placeholderWatchState,
-            mockInvalidateCallback,
+            mockInvalidateCallback
         )
     @OptIn(ComplicationExperimental::class)
     private val rightComplication =
         @Suppress("DEPRECATION")
         ComplicationSlot.createRoundRectComplicationSlotBuilder(
                 RIGHT_COMPLICATION_ID,
-                { _, _ -> mockRightCanvasComplication },
+                { _, _,
+                    ->
+                    mockRightCanvasComplication
+                },
                 listOf(
                     ComplicationType.RANGED_VALUE,
                     ComplicationType.LONG_TEXT,
                     ComplicationType.SHORT_TEXT,
                     ComplicationType.MONOCHROMATIC_IMAGE,
-                    ComplicationType.SMALL_IMAGE,
+                    ComplicationType.SMALL_IMAGE
                 ),
                 DefaultComplicationDataSourcePolicy(SystemDataSources.DATA_SOURCE_DAY_OF_WEEK),
-                ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f)),
+                ComplicationSlotBounds(RectF(0.6f, 0.4f, 0.8f, 0.6f))
             )
             .setDefaultDataSourceType(ComplicationType.SHORT_TEXT)
             .build()
@@ -137,7 +143,7 @@ public class EditorSessionGuavaTest {
         userStyleSettings: List<UserStyleSetting>,
         complicationSlots: List<ComplicationSlot>,
         watchFaceId: WatchFaceId = testInstanceId,
-        previewReferenceInstant: Instant = Instant.ofEpochMilli(12345),
+        previewReferenceInstant: Instant = Instant.ofEpochMilli(12345)
     ): ActivityScenario<OnWatchFaceEditingTestActivity> {
         val userStyleRepository = CurrentUserStyleRepository(UserStyleSchema(userStyleSettings))
         val complicationSlotsManager =
@@ -165,14 +171,14 @@ public class EditorSessionGuavaTest {
                         null,
                         watchFaceId,
                         null,
-                        null,
-                    ),
+                        null
+                    )
                 )
                 .apply {
                     component =
                         ComponentName(
                             ApplicationProvider.getApplicationContext<Context>(),
-                            OnWatchFaceEditingTestActivity::class.java,
+                            OnWatchFaceEditingTestActivity::class.java
                         )
                 }
         )
@@ -197,21 +203,21 @@ public class EditorSessionGuavaTest {
                 "TestDataSource3",
                 Icon.createWithBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)),
                 ComplicationType.LONG_TEXT,
-                dataSource3,
+                dataSource3
             )
         TestComplicationHelperActivity.resultIntent =
             CompletableDeferred(
                 Intent().apply {
                     putExtra(
                         ComplicationDataSourceChooserIntent.EXTRA_PROVIDER_INFO,
-                        chosenComplicationDataSourceInfo.toWireComplicationProviderInfo(),
+                        chosenComplicationDataSourceInfo.toWireComplicationProviderInfo()
                     )
                 }
             )
         val scenario =
             createOnWatchFaceEditingTestActivity(
                 emptyList(),
-                listOf(leftComplication, rightComplication),
+                listOf(leftComplication, rightComplication)
             )
 
         lateinit var listenableEditorSession: ListenableEditorSession
@@ -232,7 +238,7 @@ public class EditorSessionGuavaTest {
         assertThat(chosenComplicationDataSource.complicationSlotId).isEqualTo(LEFT_COMPLICATION_ID)
         assertEquals(
             chosenComplicationDataSourceInfo,
-            chosenComplicationDataSource.complicationDataSourceInfo,
+            chosenComplicationDataSource.complicationDataSourceInfo
         )
 
         // This should update the preview data to point to the updated dataSource3 data.
@@ -243,7 +249,7 @@ public class EditorSessionGuavaTest {
         assertThat(
                 previewComplication.text.getTextAt(
                     ApplicationProvider.getApplicationContext<Context>().resources,
-                    Instant.EPOCH,
+                    Instant.EPOCH
                 )
             )
             .isEqualTo("DataSource3")
@@ -255,7 +261,7 @@ public class EditorSessionGuavaTest {
         val scenario =
             createOnWatchFaceEditingTestActivity(
                 listOf(colorStyleSetting, watchHandStyleSetting),
-                emptyList(),
+                emptyList()
             )
 
         val editorObserver = TestEditorObserver()
@@ -314,7 +320,7 @@ public class EditorSessionGuavaTest {
         val scenario =
             createOnWatchFaceEditingTestActivity(
                 listOf(colorStyleSetting, watchHandStyleSetting),
-                emptyList(),
+                emptyList()
             )
 
         scenario.onActivity { activity ->

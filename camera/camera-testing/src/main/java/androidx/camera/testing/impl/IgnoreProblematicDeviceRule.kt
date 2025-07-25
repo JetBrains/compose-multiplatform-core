@@ -56,20 +56,15 @@ public class IgnoreProblematicDeviceRule : TestRule {
         private val emulatorHardwareNames: Set<String> =
             setOf(EMULATOR_HARDWARE_GOLDFISH, EMULATOR_HARDWARE_RANCHU, EMULATOR_HARDWARE_GCE)
         private var avdName: String =
-            getPropSanitized("ro.kernel.qemu.avd_name").ifEmpty {
-                getPropSanitized("ro.boot.qemu.avd_name")
-            }
-
-        public fun getPropSanitized(propKey: String): String {
-            return try {
+            try {
                 val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-                device.executeShellCommand("getprop $propKey")?.filter { it.isLetterOrDigit() }
-                    ?: ""
+                device.executeShellCommand("getprop ro.kernel.qemu.avd_name").filterNot {
+                    it == '_' || it == '-' || it == ' '
+                }
             } catch (e: Exception) {
-                Log.w("ProblematicDeviceRule", "Cannot get $propKey", e)
+                Log.d("ProblematicDeviceRule", "Cannot get avd name", e)
                 ""
             }
-        }
 
         public val isEmulator: Boolean = emulatorHardwareNames.contains(Build.HARDWARE.lowercase())
         public val isPixel2Api26Emulator: Boolean =
@@ -84,9 +79,5 @@ public class IgnoreProblematicDeviceRule : TestRule {
             isEmulator &&
                 avdName.contains("Pixel2", ignoreCase = true) &&
                 Build.VERSION.SDK_INT == Build.VERSION_CODES.R
-        public val isMediumPhoneApi35Emulator: Boolean =
-            isEmulator &&
-                avdName.contains("MediumPhone", ignoreCase = true) &&
-                Build.VERSION.SDK_INT == 35
     }
 }

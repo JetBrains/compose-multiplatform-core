@@ -23,6 +23,7 @@ import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
@@ -60,11 +61,16 @@ import org.mockito.Mockito
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = 21)
-class AudioVideoSyncTest(private val implName: String, private val cameraConfig: CameraXConfig) {
+class AudioVideoSyncTest(
+    private val implName: String,
+    private val cameraConfig: CameraXConfig,
+) {
 
     @get:Rule
     val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+        CameraPipeConfigTestRule(
+            active = implName == CameraPipeConfig::class.simpleName,
+        )
 
     @get:Rule
     val useCamera =
@@ -76,13 +82,14 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
     val grantPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(
             android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.RECORD_AUDIO
         )
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
     @Suppress("UNCHECKED_CAST")
     private val videoRecordEventListener =
@@ -98,15 +105,15 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
         // Skip for b/264902324
         Assume.assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator(),
+            Build.VERSION.SDK_INT == 30 && isEmulator()
         )
 
-        val cameraSelector = CameraUtil.assumeFirstAvailableCameraSelector()
+        Assume.assumeTrue(CameraUtil.hasCameraWithLensFacing(CameraSelector.LENS_FACING_BACK))
         // Skip for b/168175357, b/233661493
         Assume.assumeFalse(
             "Skip tests for Cuttlefish MediaCodec issues",
             Build.MODEL.contains("Cuttlefish") &&
-                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33),
+                (Build.VERSION.SDK_INT == 29 || Build.VERSION.SDK_INT == 33)
         )
         Assume.assumeTrue(AudioUtil.canStartAudioRecord(MediaRecorder.AudioSource.CAMCORDER))
 
@@ -127,7 +134,7 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
                     object : SurfaceTextureProvider.SurfaceTextureCallback {
                         override fun onSurfaceTextureReady(
                             surfaceTexture: SurfaceTexture,
-                            resolution: Size,
+                            resolution: Size
                         ) {
                             // No-op
                         }
@@ -142,7 +149,7 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
 
         Assume.assumeTrue(
             "This combination (preview, surfaceTexturePreview) is not supported.",
-            cameraUseCaseAdapter.isUseCasesCombinationSupported(preview, surfaceTexturePreview),
+            cameraUseCaseAdapter.isUseCasesCombinationSupported(preview, surfaceTexturePreview)
         )
 
         cameraUseCaseAdapter =
@@ -152,7 +159,7 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
                 // Must put surfaceTexturePreview before preview while addUseCases, otherwise
                 // an issue on Samsung device will occur. See b/196755459.
                 surfaceTexturePreview,
-                preview,
+                preview
             )
         recorder.onSourceStateChanged(VideoOutput.SourceState.ACTIVE_NON_STREAMING)
     }
@@ -234,7 +241,7 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
         fun data() =
             listOf(
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig())
             )
     }
 }

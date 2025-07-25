@@ -54,7 +54,10 @@ private class S2DBoxTestCase : LayeredComposeTestCase() {
     @Composable
     private fun Screen() {
         val state = rememberSwipeToDismissBoxState()
-        SwipeToDismissBox(state = state, onDismissed = {}) { isBackground ->
+        SwipeToDismissBox(
+            state = state,
+            onDismissed = {},
+        ) { isBackground ->
             if (isBackground) {
                 Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.onSurface))
             } else {

@@ -36,7 +36,9 @@ import kotlin.reflect.KClass
 @JvmInline
 public actual value class SavedStateReader
 @PublishedApi
-internal actual constructor(private actual val source: SavedState) {
+internal actual constructor(
+    private actual val source: SavedState,
+) {
 
     /**
      * Retrieves an [IBinder] value associated with the specified [key], or throws an
@@ -296,7 +298,7 @@ internal actual constructor(private actual val source: SavedState) {
      */
     public fun <T : Serializable> getJavaSerializable(
         key: String,
-        serializableClass: KClass<T>,
+        serializableClass: KClass<T>
     ): T {
         return getSerializable(source, key, serializableClass.java) ?: keyOrValueNotFoundError(key)
     }
@@ -332,7 +334,7 @@ internal actual constructor(private actual val source: SavedState) {
      */
     public fun <T : Serializable> getJavaSerializableOrNull(
         key: String,
-        serializableClass: KClass<T>,
+        serializableClass: KClass<T>
     ): T? {
         return getSerializable(source, key, serializableClass.java)
     }
@@ -484,7 +486,7 @@ internal actual constructor(private actual val source: SavedState) {
      */
     public fun <T : Parcelable> getParcelableList(
         key: String,
-        parcelableClass: KClass<T>,
+        parcelableClass: KClass<T>
     ): List<T> {
         return getParcelableArrayList(source, key, parcelableClass.java)
             ?: keyOrValueNotFoundError(key)
@@ -522,7 +524,7 @@ internal actual constructor(private actual val source: SavedState) {
     @Suppress("NullableCollection")
     public fun <T : Parcelable> getParcelableListOrNull(
         key: String,
-        parcelableClass: KClass<T>,
+        parcelableClass: KClass<T>
     ): List<T>? {
         return getParcelableArrayList(source, key, parcelableClass.java)
     }
@@ -627,7 +629,7 @@ internal actual constructor(private actual val source: SavedState) {
     @Suppress("ArrayReturn")
     public fun <T : Parcelable> getParcelableArray(
         key: String,
-        parcelableClass: KClass<T>,
+        parcelableClass: KClass<T>
     ): Array<T> {
         return getParcelableArrayOrNull(key, parcelableClass) ?: keyOrValueNotFoundError(key)
     }
@@ -665,7 +667,7 @@ internal actual constructor(private actual val source: SavedState) {
     @Suppress("ArrayReturn", "NullableCollection")
     public fun <T : Parcelable> getParcelableArrayOrNull(
         key: String,
-        parcelableClass: KClass<T>,
+        parcelableClass: KClass<T>
     ): Array<T>? {
         @Suppress("UNCHECKED_CAST")
         return getParcelableArray(source, key, parcelableClass.java) as? Array<T>
@@ -782,8 +784,7 @@ internal actual constructor(private actual val source: SavedState) {
         // Using `getString` to check for `null` is unreliable as it returns null for type
         // mismatches. To reliably determine if the value is actually `null`, we use the
         // deprecated `Bundle.get`.
-        @Suppress("DEPRECATION")
-        return contains(key) && source[key] == null
+        @Suppress("DEPRECATION") return contains(key) && source[key] == null
     }
 
     public actual operator fun contains(key: String): Boolean = source.containsKey(key)

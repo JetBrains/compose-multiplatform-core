@@ -1,4 +1,4 @@
-package androidx.appfunctions.service.`internal`
+package androidx.appfunctions.`internal`
 
 import com.testdata.`$AllPrimitiveInputFunctions_AppFunctionInventory`
 import com.testdata.`$SimpleFunction_AppFunctionInventory`

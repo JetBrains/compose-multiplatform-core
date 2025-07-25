@@ -19,6 +19,7 @@ package androidx.compose.foundation.text
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.scrollable
@@ -28,7 +29,6 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.contextmenu.modifier.ToolbarRequesterImpl
@@ -54,9 +54,7 @@ import androidx.compose.foundation.text.input.internal.selection.TextToolbarHand
 import androidx.compose.foundation.text.input.internal.selection.TextToolbarState
 import androidx.compose.foundation.text.input.internal.selection.addBasicTextFieldTextContextMenuComponents
 import androidx.compose.foundation.text.input.internal.selection.menuItem
-import androidx.compose.foundation.text.selection.SelectedTextType
 import androidx.compose.foundation.text.selection.SelectionHandle
-import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -88,7 +86,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -281,7 +278,7 @@ internal fun BasicTextField(
                 textFieldState = state,
                 inputTransformation = inputTransformation,
                 codepointTransformation = appliedCodepointTransformation,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
         }
 
@@ -294,17 +291,7 @@ internal fun BasicTextField(
     val resolvedKeyboardOptions =
         keyboardOptions.fillUnspecifiedValuesWith(inputTransformation?.keyboardOptions)
 
-    val coroutineScope = rememberCoroutineScope()
-    @OptIn(ExperimentalFoundationApi::class)
-    val platformSelectionBehaviors =
-        if (ComposeFoundationFlags.isSmartSelectionEnabled) {
-            val resolvedLocaleList = textStyle.localeList ?: LocaleList.current
-            rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, resolvedLocaleList)
-        } else {
-            null
-        }
     val toolbarRequester = remember { ToolbarRequesterImpl() }
-    val currentClipboard = LocalClipboard.current
     val textFieldSelectionState =
         remember(transformedState) {
             TextFieldSelectionState(
@@ -316,12 +303,11 @@ internal fun BasicTextField(
                 isFocused = isWindowAndTextFieldFocused,
                 isPassword = isPassword,
                 toolbarRequester = toolbarRequester,
-                coroutineScope = coroutineScope,
-                platformSelectionBehaviors = platformSelectionBehaviors,
-                clipboard = currentClipboard,
             )
         }
+    val coroutineScope = rememberCoroutineScope()
     val currentHapticFeedback = LocalHapticFeedback.current
+    val currentClipboard = LocalClipboard.current
     val currentTextToolbar = LocalTextToolbar.current
 
     val textToolbarHandler =
@@ -329,7 +315,7 @@ internal fun BasicTextField(
             object : TextToolbarHandler {
                 override suspend fun showTextToolbar(
                     selectionState: TextFieldSelectionState,
-                    rect: Rect,
+                    rect: Rect
                 ) =
                     with(selectionState) {
                         selectionState.updateClipboardEntry()
@@ -358,7 +344,7 @@ internal fun BasicTextField(
                                     selectAll()
                                 },
                             onAutofillRequested =
-                                menuItem(canAutofill(), TextToolbarState.None) { autofill() },
+                                menuItem(canAutofill(), TextToolbarState.None) { autofill() }
                         )
                     }
 
@@ -369,14 +355,6 @@ internal fun BasicTextField(
                 }
             }
         }
-
-    // TODO: upstreaming https://youtrack.jetbrains.com/issue/CMP-7517/Upstream-rememberClipboardEventsHandler
-    rememberClipboardEventsHandler(
-        isEnabled = isFocused,
-        onPaste = { textFieldSelectionState.pasteAsPlainText(it) },
-        onCopy = { textFieldSelectionState.copyWithResult() },
-        onCut = { textFieldSelectionState.cutWithResult() }
-    )
 
     SideEffect {
         // These properties are not backed by snapshot state, so they can't be updated directly in
@@ -390,13 +368,11 @@ internal fun BasicTextField(
             enabled = enabled,
             readOnly = readOnly,
             isPassword = isPassword,
-            showTextToolbar = textToolbarHandler,
+            showTextToolbar = textToolbarHandler
         )
     }
 
     DisposableEffect(textFieldSelectionState) { onDispose { textFieldSelectionState.dispose() } }
-
-    val overscrollEffect = rememberTextFieldOverscrollEffect()
 
     val handwritingEnabled =
         !isPassword &&
@@ -404,6 +380,23 @@ internal fun BasicTextField(
             keyboardOptions.keyboardType != KeyboardType.NumberPassword
     val decorationModifiers =
         modifier
+            .then(
+                // semantics + some focus + input session + touch to focus
+                TextFieldDecoratorModifier(
+                    textFieldState = transformedState,
+                    textLayoutState = textLayoutState,
+                    textFieldSelectionState = textFieldSelectionState,
+                    filter = inputTransformation,
+                    enabled = enabled,
+                    readOnly = readOnly,
+                    keyboardOptions = resolvedKeyboardOptions,
+                    keyboardActionHandler = onKeyboardAction,
+                    singleLine = singleLine,
+                    interactionSource = interactionSource,
+                    isPassword = isPassword,
+                    stylusHandwritingTrigger = stylusHandwritingTrigger
+                )
+            )
             .stylusHandwriting(enabled, handwritingEnabled) {
                 // If this is a password field, we can't trigger handwriting.
                 // The expected behavior is 1) request focus 2) show software keyboard.
@@ -425,38 +418,22 @@ internal fun BasicTextField(
                     stylusHandwritingTrigger.tryEmit(Unit)
                 }
             }
-            .then(
-                // semantics + some focus + input session + touch to focus
-                TextFieldDecoratorModifier(
-                    textFieldState = transformedState,
-                    textLayoutState = textLayoutState,
-                    textFieldSelectionState = textFieldSelectionState,
-                    filter = inputTransformation,
-                    enabled = enabled,
-                    readOnly = readOnly,
-                    keyboardOptions = resolvedKeyboardOptions,
-                    keyboardActionHandler = onKeyboardAction,
-                    singleLine = singleLine,
-                    interactionSource = interactionSource,
-                    isPassword = isPassword,
-                    stylusHandwritingTrigger = stylusHandwritingTrigger,
-                )
-            )
+            .focusable(interactionSource = interactionSource, enabled = enabled)
             .scrollable(
                 state = scrollState,
                 orientation = orientation,
                 // Disable scrolling when textField is disabled or another dragging gesture is
-                // taking place
+                // taking
+                // place
                 enabled =
                     enabled && textFieldSelectionState.directDragGestureInitiator == InputType.None,
                 reverseDirection =
                     ScrollableDefaults.reverseDirection(
                         layoutDirection = layoutDirection,
                         orientation = orientation,
-                        reverseScrolling = false,
+                        reverseScrolling = false
                     ),
                 interactionSource = interactionSource,
-                overscrollEffect = overscrollEffect
             )
             .pointerHoverIcon(PointerIcon.Text)
             .addContextMenuComponents(textFieldSelectionState, coroutineScope)
@@ -482,11 +459,10 @@ internal fun BasicTextField(
                             .heightInLines(
                                 textStyle = textStyle,
                                 minLines = minLines,
-                                maxLines = maxLines,
+                                maxLines = maxLines
                             )
                             .textFieldMinSize(textStyle)
                             .clipToBounds()
-                            .overscroll(overscrollEffect)
                             .then(
                                 TextFieldCoreModifier(
                                     isFocused = isWindowAndTextFieldFocused,
@@ -499,20 +475,22 @@ internal fun BasicTextField(
                                     scrollState = scrollState,
                                     orientation = orientation,
                                     toolbarRequester = toolbarRequester,
-                                    platformSelectionBehaviors = platformSelectionBehaviors,
                                 )
-                            ),
+                            )
                 ) {
                     Box(
                         modifier =
-                            TextFieldTextLayoutModifier(
-                                textLayoutState = textLayoutState,
-                                textFieldState = transformedState,
-                                textStyle = textStyle,
-                                singleLine = singleLine,
-                                onTextLayout = onTextLayout,
-                                keyboardOptions = resolvedKeyboardOptions,
-                            )
+                            Modifier.bringIntoViewRequester(textLayoutState.bringIntoViewRequester)
+                                .then(
+                                    TextFieldTextLayoutModifier(
+                                        textLayoutState = textLayoutState,
+                                        textFieldState = transformedState,
+                                        textStyle = textStyle,
+                                        singleLine = singleLine,
+                                        onTextLayout = onTextLayout,
+                                        keyboardOptions = resolvedKeyboardOptions,
+                                    )
+                                )
                     )
 
                     if (
@@ -534,7 +512,7 @@ internal fun BasicTextField(
 @OptIn(ExperimentalFoundationApi::class)
 private fun Modifier.addContextMenuComponents(
     textFieldSelectionState: TextFieldSelectionState,
-    coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope
 ): Modifier =
     if (ComposeFoundationFlags.isNewContextMenuEnabled)
         addBasicTextFieldTextContextMenuComponents(textFieldSelectionState, coroutineScope)
@@ -569,7 +547,7 @@ internal fun TextFieldSelectionHandles(selectionState: TextFieldSelectionState) 
             derivedStateOf {
                 selectionState.getSelectionHandleState(
                     isStartHandle = true,
-                    includePosition = false,
+                    includePosition = false
                 )
             }
         }
@@ -598,7 +576,7 @@ internal fun TextFieldSelectionHandles(selectionState: TextFieldSelectionState) 
             derivedStateOf {
                 selectionState.getSelectionHandleState(
                     isStartHandle = false,
-                    includePosition = false,
+                    includePosition = false
                 )
             }
         }
@@ -748,7 +726,7 @@ fun BasicTextField(
     interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
-        @Composable { innerTextField -> innerTextField() },
+        @Composable { innerTextField -> innerTextField() }
 ) {
     // Holds the latest internal TextFieldValue state. We need to keep it to have the correct value
     // of the composition.
@@ -796,7 +774,7 @@ fun BasicTextField(
         maxLines = if (singleLine) 1 else maxLines,
         decorationBox = decorationBox,
         enabled = enabled,
-        readOnly = readOnly,
+        readOnly = readOnly
     )
 }
 
@@ -905,7 +883,7 @@ fun BasicTextField(
     interactionSource: MutableInteractionSource? = null,
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
-        @Composable { innerTextField -> innerTextField() },
+        @Composable { innerTextField -> innerTextField() }
 ) {
     CoreTextField(
         value = value,
@@ -927,7 +905,7 @@ fun BasicTextField(
         maxLines = if (singleLine) 1 else maxLines,
         decorationBox = decorationBox,
         enabled = enabled,
-        readOnly = readOnly,
+        readOnly = readOnly
     )
 }
 
@@ -949,7 +927,7 @@ fun BasicTextField(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
-        @Composable { innerTextField -> innerTextField() },
+        @Composable { innerTextField -> innerTextField() }
 ) {
     BasicTextField(
         value = value,
@@ -967,7 +945,7 @@ fun BasicTextField(
         onTextLayout = onTextLayout,
         interactionSource = interactionSource,
         cursorBrush = cursorBrush,
-        decorationBox = decorationBox,
+        decorationBox = decorationBox
     )
 }
 
@@ -989,7 +967,7 @@ fun BasicTextField(
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     cursorBrush: Brush = SolidColor(Color.Black),
     decorationBox: @Composable (innerTextField: @Composable () -> Unit) -> Unit =
-        @Composable { innerTextField -> innerTextField() },
+        @Composable { innerTextField -> innerTextField() }
 ) {
     BasicTextField(
         value = value,
@@ -1007,6 +985,6 @@ fun BasicTextField(
         onTextLayout = onTextLayout,
         interactionSource = interactionSource,
         cursorBrush = cursorBrush,
-        decorationBox = decorationBox,
+        decorationBox = decorationBox
     )
 }

@@ -19,31 +19,25 @@ package androidx.xr.scenecore.impl;
 import android.app.Activity;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.internal.ActivityPose;
+import androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue;
 import androidx.xr.runtime.internal.ActivitySpace;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.Entity;
 import androidx.xr.runtime.internal.HitTestResult;
 import androidx.xr.runtime.internal.SpaceValue;
-import androidx.xr.runtime.internal.SpatialModeChangeListener;
-import androidx.xr.runtime.math.BoundingBox;
-import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
-import com.android.extensions.xr.node.Box3;
 import com.android.extensions.xr.node.Node;
-import com.android.extensions.xr.node.NodeTransaction;
 import com.android.extensions.xr.node.Vec3;
 import com.android.extensions.xr.space.Bounds;
 import com.android.extensions.xr.space.SpatialState;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -69,14 +63,6 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     private final Activity mActivity;
     private final Supplier<SpatialState> mSpatialStateProvider;
     private final AtomicReference<Dimensions> mBounds = new AtomicReference<>();
-    // The current scene parent aka ActivitySpace origin transform.
-
-    private final boolean mUnscaledGravityAlignedActivitySpace;
-    // Spatial mode change handler will be invoked on every update to activity space origin we
-    // receive from the node transform listener.
-    private SpatialModeChangeListener mSpatialModeChangeListener;
-    private final AtomicReference<BoundingBox> mCachedRecommendedContentBox =
-            new AtomicReference<>(null);
 
     ActivitySpaceImpl(
             Node taskNode,
@@ -84,33 +70,29 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
             XrExtensions extensions,
             EntityManager entityManager,
             Supplier<SpatialState> spatialStateProvider,
-            boolean unscaledGravityAlignedActivitySpace,
             ScheduledExecutorService executor) {
         super(taskNode, extensions, entityManager, executor);
         mActivity = activity;
         mSpatialStateProvider = spatialStateProvider;
-        mUnscaledGravityAlignedActivitySpace = unscaledGravityAlignedActivitySpace;
-        Log.i(
-                TAG,
-                "ActivitySpaceImpl: mUnscaledGravityAlignedActivitySpace: "
-                        + mUnscaledGravityAlignedActivitySpace);
     }
 
     /** Returns the identity pose since this entity defines the origin of the activity space. */
     @Override
-    public @NonNull Pose getPoseInActivitySpace() {
+    public Pose getPoseInActivitySpace() {
         return new Pose();
     }
 
     /** Returns the identity pose since we assume the activity space is the world space root. */
+    @NonNull
     @Override
-    public @NonNull Pose getActivitySpacePose() {
+    public Pose getActivitySpacePose() {
 
         return new Pose();
     }
 
+    @NonNull
     @Override
-    public @NonNull Vector3 getActivitySpaceScale() {
+    public Vector3 getActivitySpaceScale() {
         return new Vector3(1.0f, 1.0f, 1.0f);
     }
 
@@ -125,11 +107,6 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         Log.e(TAG, "Cannot set scale for the ActivitySpace.");
     }
 
-    @Override
-    public void setPose(Pose p, @SpaceValue int s) {
-        Log.e(TAG, "Cannot set pose for the ActivitySpace.");
-    }
-
     @SuppressWarnings("ObjectToString")
     @Override
     public void dispose() {
@@ -137,75 +114,9 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         super.dispose();
     }
 
-    /**
-     * Handles the updates to scene core root transform.
-     *
-     * <pre>
-     * Hierarchy:
-     * OpenXR Unbounded Reference Space Origin
-     *  └── Scene Parent Node (Intermediate system-managed node)
-     *      └── Scene Root Node (ActivitySpace Node)
-     *
-     * Transform Flow:
-     *   1. The system updates the transform of the 'Scene Parent Node' when in HOME_SPACE mode.
-     *   2. The 'Scene Root Node' becomes a child of 'Scene Parent Node' and inherits its transform
-     *      when activity enters FULL_SPACE_MANAGED mode.
-     * </pre>
-     *
-     * <p>By inverting the full inherited rotation and scale, SceneCore effectively re-orients the
-     * ActivitySpace to be unscaled and gravity-aligned like its grand parent OpenXR unbounded
-     * space.
-     *
-     * <p>To maintain continuity when entering FSM, SceneCore provides the original rotation and
-     * scale of the scene parent transform via the onSpatialModeChanged callback. This ensures FSM
-     * continuity when spatial modes change.
-     *
-     * @param newTransform New scene parent transform relative to OpenXR unbounded reference space.
-     */
-    public void handleOriginUpdate(Matrix4 newTransform) {
-        mOpenXrReferenceSpaceTransform.set(newTransform);
-        Vector3 transformScaleAbsolute = new Vector3(1.0f, 1.0f, 1.0f);
-        Quaternion activitySpaceRotation = Quaternion.Identity;
-
-        if (mUnscaledGravityAlignedActivitySpace) {
-            Vector3 transformScale = newTransform.getScale();
-            transformScaleAbsolute =
-                    new Vector3(
-                            Math.abs(transformScale.getX()),
-                            Math.abs(transformScale.getY()),
-                            Math.abs(transformScale.getZ()));
-            // Get the unscaled rotation of the activity space.
-            activitySpaceRotation = Matrix4Ext.getUnscaled(newTransform).getRotation();
-            Quaternion gravityAlignedRotation = activitySpaceRotation.getInverse();
-            try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-                transaction
-                        .setScale(
-                                mNode,
-                                1.0f / transformScaleAbsolute.getX(),
-                                1.0f / transformScaleAbsolute.getY(),
-                                1.0f / transformScaleAbsolute.getZ())
-                        .setOrientation(
-                                mNode,
-                                gravityAlignedRotation.getX(),
-                                gravityAlignedRotation.getY(),
-                                gravityAlignedRotation.getZ(),
-                                gravityAlignedRotation.getW())
-                        .apply();
-            }
-        }
-
-        // The translation is zero - since the activity space origin has been already translated by
-        // system.
-        // SceneCore is relaying the same rotation and scale that activity space would have
-        // inherited if it was in HOME_SPACE mode for continuity in FULL_SPACE_MANAGED mode.
-        if (mSpatialModeChangeListener != null) {
-            mSpatialModeChangeListener.onSpatialModeChanged(
-                    new Pose(Vector3.Zero, activitySpaceRotation), transformScaleAbsolute);
-        }
-    }
-
+    @NonNull
     @Override
-    public @NonNull Dimensions getBounds() {
+    public Dimensions getBounds() {
         // The bounds are kept in sync with the Extensions in the onBoundsChangedEvent callback. We
         // only
         // invoke getSpatialState if they've never been set.
@@ -248,10 +159,6 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
         for (OnBoundsChangedListener listener : mBoundsListeners) {
             listener.onBoundsChanged(newDimensions);
         }
-    }
-
-    public void setSpatialModeChangeListener(SpatialModeChangeListener SpatialModeChangeListener) {
-        mSpatialModeChangeListener = SpatialModeChangeListener;
     }
 
     @SuppressWarnings("RestrictTo")
@@ -360,36 +267,5 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                 },
                 mExecutor);
         return updatedHitTestFuture;
-    }
-
-    /**
-     * Return a recommended box for content to be placed in when in Full Space Mode.
-     *
-     * <p>The box is relative to the ActivitySpace's coordinate system. It is not scaled by the
-     * ActivitySpace's transform. The dimensions are always in meters. This provides a
-     * device-specific default volume that developers can use to size their content appropriately.
-     *
-     * @return a [BoundingBox] sized to place content in.
-     */
-    @Override
-    @NonNull
-    public BoundingBox getRecommendedContentBoxInFullSpace() {
-        return mCachedRecommendedContentBox.updateAndGet(
-                currentBox -> {
-                    if (currentBox != null) {
-                        return currentBox;
-                    }
-
-                    Box3 recommendedBox = mExtensions.getRecommendedContentBoxInFullSpace();
-                    return new BoundingBox(
-                            new Vector3(
-                                    recommendedBox.getMin().x,
-                                    recommendedBox.getMin().y,
-                                    recommendedBox.getMin().z),
-                            new Vector3(
-                                    recommendedBox.getMax().x,
-                                    recommendedBox.getMax().y,
-                                    recommendedBox.getMax().z));
-                });
     }
 }

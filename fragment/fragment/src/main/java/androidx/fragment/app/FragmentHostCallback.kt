@@ -53,22 +53,22 @@ import java.io.PrintWriter
  *   must be returned by [onGetHost].
  */
 @Suppress("deprecation")
-public abstract class FragmentHostCallback<H>
+abstract class FragmentHostCallback<H>
 internal constructor(
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val activity: Activity?,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val context: Context,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY) public val handler: Handler,
-    private val windowAnimations: Int,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val activity: Activity?,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val context: Context,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY) val handler: Handler,
+    private val windowAnimations: Int
 ) : FragmentContainer() {
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY)
-    public val fragmentManager: FragmentManager = FragmentManagerImpl()
+    val fragmentManager: FragmentManager = FragmentManagerImpl()
 
     @Suppress("unused")
-    public constructor(
+    constructor(
         context: Context,
         handler: Handler,
-        windowAnimations: Int,
+        windowAnimations: Int
     ) : this(if (context is Activity) context else null, context, handler, windowAnimations)
 
     @Suppress("deprecation")
@@ -85,20 +85,20 @@ internal constructor(
      *   you after you return.
      * @param args additional arguments to the dump request.
      */
-    public open fun onDump(
+    open fun onDump(
         prefix: String,
         fd: FileDescriptor?,
         writer: PrintWriter,
-        args: Array<String>?,
+        args: Array<String>?
     ) {}
 
     /** Return `true` if the fragment's state needs to be saved. */
-    public open fun onShouldSaveFragmentState(fragment: Fragment): Boolean {
+    open fun onShouldSaveFragmentState(fragment: Fragment): Boolean {
         return true
     }
 
     /** Return a [LayoutInflater]. See [Activity.getLayoutInflater]. */
-    public open fun onGetLayoutInflater(): LayoutInflater {
+    open fun onGetLayoutInflater(): LayoutInflater {
         return LayoutInflater.from(context)
     }
 
@@ -107,22 +107,18 @@ internal constructor(
      * [FragmentActivity], the object returned here should be the same object returned from
      * [Fragment.getActivity].
      */
-    public abstract fun onGetHost(): H
+    abstract fun onGetHost(): H
 
     /**
      * Invalidates the activity's options menu. See [FragmentActivity.supportInvalidateOptionsMenu]
      */
-    public open fun onSupportInvalidateOptionsMenu() {}
+    open fun onSupportInvalidateOptionsMenu() {}
 
     /**
      * Starts a new [Activity] from the given fragment. See
      * [FragmentActivity.startActivityForResult].
      */
-    public open fun onStartActivityFromFragment(
-        fragment: Fragment,
-        intent: Intent,
-        requestCode: Int,
-    ) {
+    open fun onStartActivityFromFragment(fragment: Fragment, intent: Intent, requestCode: Int) {
         onStartActivityFromFragment(fragment, intent, requestCode, null)
     }
 
@@ -130,11 +126,11 @@ internal constructor(
      * Starts a new [Activity] from the given fragment. See
      * [FragmentActivity.startActivityForResult].
      */
-    public open fun onStartActivityFromFragment(
+    open fun onStartActivityFromFragment(
         fragment: Fragment,
         intent: Intent,
         requestCode: Int,
-        options: Bundle?,
+        options: Bundle?
     ) {
         check(requestCode == -1) {
             "Starting activity with a requestCode requires a FragmentActivity host"
@@ -151,7 +147,7 @@ internal constructor(
       call the deprecated <code>startIntentSenderForResult()</code> method."""
     )
     @Throws(SendIntentException::class)
-    public open fun onStartIntentSenderFromFragment(
+    open fun onStartIntentSenderFromFragment(
         fragment: Fragment,
         intent: IntentSender,
         requestCode: Int,
@@ -159,7 +155,7 @@ internal constructor(
         flagsMask: Int,
         flagsValues: Int,
         extraFlags: Int,
-        options: Bundle?,
+        options: Bundle?
     ) {
         check(requestCode == -1) {
             "Starting intent sender with a requestCode requires a FragmentActivity host"
@@ -176,7 +172,7 @@ internal constructor(
             flagsMask,
             flagsValues,
             extraFlags,
-            options,
+            options
         )
     }
 
@@ -188,27 +184,27 @@ internal constructor(
       with {@link RequestMultiplePermissions}. This method will still be called when Fragments
       call the deprecated <code>requestPermissions()</code> method."""
     )
-    public open fun onRequestPermissionsFromFragment(
+    open fun onRequestPermissionsFromFragment(
         fragment: Fragment,
         permissions: Array<String>,
-        requestCode: Int,
+        requestCode: Int
     ) {}
 
     /**
      * Checks whether to show permission rationale UI from a fragment. See
      * [FragmentActivity.shouldShowRequestPermissionRationale]
      */
-    public open fun onShouldShowRequestPermissionRationale(permission: String): Boolean {
+    open fun onShouldShowRequestPermissionRationale(permission: String): Boolean {
         return false
     }
 
     /** Return `true` if there are window animations. */
-    public open fun onHasWindowAnimations(): Boolean {
+    open fun onHasWindowAnimations(): Boolean {
         return true
     }
 
     /** Return the window animations. */
-    public open fun onGetWindowAnimations(): Int {
+    open fun onGetWindowAnimations(): Int {
         return windowAnimations
     }
 

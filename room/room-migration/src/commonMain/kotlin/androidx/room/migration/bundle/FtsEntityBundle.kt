@@ -27,16 +27,16 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class FtsEntityBundle(
+class FtsEntityBundle(
     @SerialName("tableName") override val tableName: String,
     @SerialName("createSql") override val createSql: String,
     @SerialName("fields") override val fields: List<FieldBundle>,
     @SerialName("primaryKey") override val primaryKey: PrimaryKeyBundle,
     @SerialName("indices") override val indices: List<IndexBundle> = emptyList(),
     @SerialName("foreignKeys") override val foreignKeys: List<ForeignKeyBundle> = emptyList(),
-    @SerialName("ftsVersion") public val ftsVersion: String,
-    @SerialName("ftsOptions") public val ftsOptions: FtsOptionsBundle,
-    @SerialName("contentSyncTriggers") public val contentSyncSqlTriggers: List<String>,
+    @SerialName("ftsVersion") val ftsVersion: String,
+    @SerialName("ftsOptions") val ftsOptions: FtsOptionsBundle,
+    @SerialName("contentSyncTriggers") val contentSyncSqlTriggers: List<String>
 ) : BaseEntityBundle(), SchemaEquality<FtsEntityBundle> {
 
     /** Creates the list of SQL queries that are necessary to create this entity. */
@@ -60,13 +60,13 @@ public class FtsEntityBundle(
     }
 
     /** Gets the list of shadow table names corresponding to the FTS virtual table. */
-    public val shadowTableNames: List<String> by lazy {
+    val shadowTableNames: List<String> by lazy {
         val currentTable = this@FtsEntityBundle.tableName
         buildList { SHADOW_TABLE_NAME_SUFFIXES.forEach { suffix -> add(currentTable + suffix) } }
     }
 
-    public companion object {
-        private val SHADOW_TABLE_NAME_SUFFIXES: List<String> =
+    companion object {
+        private val SHADOW_TABLE_NAME_SUFFIXES =
             listOf("_content", "_segdir", "_segments", "_stat", "_docsize")
     }
 }

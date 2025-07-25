@@ -54,9 +54,9 @@ actual constructor(public actual val navigatorName: String) {
         private val isExactDeepLink: Boolean,
         private val matchingPathSegments: Int,
         private val hasMatchingAction: Boolean,
-        private val mimeTypeMatchLevel: Int,
+        private val mimeTypeMatchLevel: Int
     ) : Comparable<DeepLinkMatch> {
-        public actual override fun compareTo(other: DeepLinkMatch): Int {
+        override fun compareTo(other: DeepLinkMatch): Int {
             // Prefer exact deep links
             if (isExactDeepLink && !other.isExactDeepLink) {
                 return 1
@@ -442,7 +442,7 @@ actual constructor(public actual val navigatorName: String) {
         protected fun <C> parseClassFromName(
             context: Context,
             name: String,
-            expectedClassType: Class<out C?>,
+            expectedClassType: Class<out C?>
         ): Class<out C?> {
             var innerName = name
             if (innerName[0] == '.') {
@@ -469,7 +469,7 @@ actual constructor(public actual val navigatorName: String) {
         public fun <C> parseClassFromNameInternal(
             context: Context,
             name: String,
-            expectedClassType: Class<out C?>,
+            expectedClassType: Class<out C?>
         ): Class<out C?> {
             return parseClassFromName(context, name, expectedClassType)
         }

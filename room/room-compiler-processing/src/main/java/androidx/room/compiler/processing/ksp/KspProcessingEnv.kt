@@ -129,7 +129,12 @@ internal class KspProcessingEnv(
     override val filer: XFiler = KspFiler(codeGenerator, messager)
 
     val voidType
-        get() = KspVoidType(env = this, ksType = resolver.builtIns.unitType, boxed = false)
+        get() =
+            KspVoidType(
+                env = this,
+                ksType = resolver.builtIns.unitType,
+                boxed = false,
+            )
 
     internal val jvmDefaultMode by lazy {
         jvmPlatformInfo?.let { JvmDefaultMode.fromStringOrNull(it.jvmDefaultMode) }
@@ -158,7 +163,7 @@ internal class KspProcessingEnv(
         return resolver.findClass(kotlinTypeName)?.let {
             wrap(
                 allowPrimitives = KspTypeMapper.isJavaPrimitiveType(qName),
-                ksType = it.asType(emptyList()),
+                ksType = it.asType(emptyList())
             )
         }
     }
@@ -191,7 +196,7 @@ internal class KspProcessingEnv(
                             argType.typeArg.variance
                         } else {
                             Variance.INVARIANT
-                        },
+                        }
                 )
             }
         return wrap(ksType = type.declaration.asType(typeArguments), allowPrimitives = false)
@@ -206,18 +211,18 @@ internal class KspProcessingEnv(
                 if (consumerSuper != null) {
                     resolver.getTypeArgument(
                         typeRef = (consumerSuper as KspType).ksType.createTypeReference(),
-                        variance = Variance.CONTRAVARIANT,
+                        variance = Variance.CONTRAVARIANT
                     )
                 } else if (producerExtends != null) {
                     resolver.getTypeArgument(
                         typeRef = (producerExtends as KspType).ksType.createTypeReference(),
-                        variance = Variance.COVARIANT,
+                        variance = Variance.COVARIANT
                     )
                 } else {
                     // This returns the type "out Any?", which should be equivalent to "*"
                     resolver.getTypeArgument(
                         typeRef = resolver.builtIns.anyType.makeNullable().createTypeReference(),
-                        variance = Variance.COVARIANT,
+                        variance = Variance.COVARIANT
                     )
                 }
         )
@@ -253,7 +258,7 @@ internal class KspProcessingEnv(
         return wrap(
             originalAnnotations = originatingReference.annotations,
             ksType = ksType,
-            allowPrimitives = !originatingReference.isTypeParameterReference(),
+            allowPrimitives = !originatingReference.isTypeParameterReference()
         )
     }
 
@@ -270,7 +275,7 @@ internal class KspProcessingEnv(
                 return KspValueClassArgumentType(
                     env = this,
                     typeArg = ksTypeArgument,
-                    originalKSAnnotations = ksTypeArgument.annotations,
+                    originalKSAnnotations = ksTypeArgument.annotations
                 )
             }
 
@@ -278,7 +283,7 @@ internal class KspProcessingEnv(
             return wrap(
                 ksTypeArgument.annotations,
                 ksType = typeRef.resolve(),
-                allowPrimitives = false,
+                allowPrimitives = false
             )
         }
         return if (ksTypeArgument.variance == Variance.STAR) {
@@ -302,14 +307,14 @@ internal class KspProcessingEnv(
     fun wrap(
         originalAnnotations: Sequence<KSAnnotation>,
         ksType: KSType,
-        allowPrimitives: Boolean,
+        allowPrimitives: Boolean
     ): KspType {
         val declaration = ksType.declaration
         if (declaration is KSTypeAlias) {
             return wrap(
                     originalAnnotations = originalAnnotations,
                     ksType = ksType.replaceTypeAliases(resolver),
-                    allowPrimitives = allowPrimitives && ksType.nullability == Nullability.NOT_NULL,
+                    allowPrimitives = allowPrimitives && ksType.nullability == Nullability.NOT_NULL
                 )
                 .copyWithTypeAlias(ksType)
         }

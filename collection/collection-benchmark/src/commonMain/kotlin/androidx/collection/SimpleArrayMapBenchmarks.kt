@@ -18,8 +18,9 @@ package androidx.collection
 
 import kotlin.random.Random
 
-internal class SimpleArrayMapCreateBenchmark(private val sourceMap: Map<Int, String>) :
-    CollectionBenchmark {
+internal class SimpleArrayMapCreateBenchmark(
+    private val sourceMap: Map<Int, String>,
+) : CollectionBenchmark {
     override fun measuredBlock() {
         val map = SimpleArrayMap<Int, String>()
         for ((key, value) in sourceMap) {
@@ -28,8 +29,9 @@ internal class SimpleArrayMapCreateBenchmark(private val sourceMap: Map<Int, Str
     }
 }
 
-internal class SimpleArrayMapContainsKeyBenchmark(sourceMap: Map<Int, String>) :
-    CollectionBenchmark {
+internal class SimpleArrayMapContainsKeyBenchmark(
+    sourceMap: Map<Int, String>,
+) : CollectionBenchmark {
     // Split the source map into two lists, one with elements in the created map, one not.
     val src = sourceMap.toList()
     val inList = src.slice(0 until src.size / 2)

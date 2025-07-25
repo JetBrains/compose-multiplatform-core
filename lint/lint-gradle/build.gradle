@@ -35,7 +35,7 @@ dependencies {
     compileOnly(libs.kotlinStdlib)
 
     testImplementation(libs.androidLintStableAnalysis)
-    testImplementation(libs.androidLintTests)
+    testImplementation(libs.androidLintTestsStableAnalysis)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
 }

@@ -50,13 +50,13 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
+import androidx.xr.scenecore.testing.FakeImpressApi;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.ar.imp.apibindings.FakeImpressApiImpl;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -75,7 +75,7 @@ public class EntityManagerTest {
     private static final int VGA_WIDTH = 640;
     private static final int VGA_HEIGHT = 480;
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
-    private final FakeImpressApiImpl mFakeImpressApi = new FakeImpressApiImpl();
+    private final FakeImpressApi mFakeImpressApi = new FakeImpressApi();
     private final FakeScheduledExecutorService mFakeExecutor = new FakeScheduledExecutorService();
     private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
     private final Session mSession = mock(Session.class);
@@ -88,7 +88,7 @@ public class EntityManagerTest {
             Mockito.mock(SplitEngineSubspaceManager.class);
     private final ImpSplitEngineRenderer mSplitEngineRenderer =
             Mockito.mock(ImpSplitEngineRenderer.class);
-    private Node mGroupEntityNode;
+    private Node mContentLessEntityNode;
     private Node mGltfEntityNode;
     private Activity mActivity;
     private JxrPlatformAdapterAxr mPlatformAdapterAxr;
@@ -113,8 +113,7 @@ public class EntityManagerTest {
                         mPerceptionLibrary,
                         mSplitEngineSubspaceManager,
                         mSplitEngineRenderer,
-                        /* useSplitEngine= */ true,
-                        /* unscaledGravityAlignedActivitySpace= */ false);
+                        /* useSplitEngine= */ true);
         Node taskNode = mXrExtensions.createNode();
         mActivitySpace =
                 new ActivitySpaceImpl(
@@ -123,7 +122,6 @@ public class EntityManagerTest {
                         mXrExtensions,
                         mEntityManager,
                         () -> mXrExtensions.getSpatialState(mActivity),
-                        /* unscaledGravityAlignedActivitySpace= */ false,
                         mExecutor);
         long currentTimeMillis = 1000000000L;
         SystemClock.setCurrentTimeMillis(currentTimeMillis);
@@ -142,7 +140,7 @@ public class EntityManagerTest {
     public void creatingEntity_addsEntityToEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
@@ -152,20 +150,25 @@ public class EntityManagerTest {
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
+                        gltfEntity,
+                        panelEntity,
+                        contentlessEntity,
+                        anchorEntity,
+                        activityPanelEntity);
     }
 
     @Test
     public void getEntityForNode_returnsEntity() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         Node testNode = mXrExtensions.createNode();
 
         assertThat(mEntityManager.getEntityForNode(mGltfEntityNode)).isEqualTo(gltfEntity);
         assertThat(mEntityManager.getEntityForNode(mPanelEntityNode)).isEqualTo(panelEntity);
-        assertThat(mEntityManager.getEntityForNode(mGroupEntityNode)).isEqualTo(groupEntity);
+        assertThat(mEntityManager.getEntityForNode(mContentLessEntityNode))
+                .isEqualTo(contentlessEntity);
         assertThat(mEntityManager.getEntityForNode(mAnchorEntityNode)).isEqualTo(anchorEntity);
         assertThat(mEntityManager.getEntityForNode(testNode)).isNull();
     }
@@ -174,7 +177,7 @@ public class EntityManagerTest {
     public void getEntityByType_returnsEntityOfType() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
@@ -182,7 +185,7 @@ public class EntityManagerTest {
         // MainPanel is also a PanelEntity.
         assertThat(mEntityManager.getEntitiesOfType(PanelEntity.class)).contains(panelEntity);
         // Base class of all entities.
-        assertThat(mEntityManager.getEntitiesOfType(Entity.class)).contains(groupEntity);
+        assertThat(mEntityManager.getEntitiesOfType(Entity.class)).contains(contentlessEntity);
         assertThat(mEntityManager.getEntitiesOfType(AnchorEntity.class))
                 .containsExactly(anchorEntity);
         assertThat(mEntityManager.getEntitiesOfType(ActivityPanelEntity.class))
@@ -193,38 +196,46 @@ public class EntityManagerTest {
     public void removeEntity_removesFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
+                        gltfEntity,
+                        panelEntity,
+                        contentlessEntity,
+                        anchorEntity,
+                        activityPanelEntity);
 
-        mEntityManager.removeEntityForNode(mGroupEntityNode);
+        mEntityManager.removeEntityForNode(mContentLessEntityNode);
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(4);
-        assertThat(mEntityManager.getAllEntities()).doesNotContain(groupEntity);
+        assertThat(mEntityManager.getAllEntities()).doesNotContain(contentlessEntity);
     }
 
     @Test
     public void disposeEntity_removesFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
+                        gltfEntity,
+                        panelEntity,
+                        contentlessEntity,
+                        anchorEntity,
+                        activityPanelEntity);
 
-        groupEntity.dispose();
+        contentlessEntity.dispose();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(4);
-        assertThat(mEntityManager.getAllEntities()).doesNotContain(groupEntity);
+        assertThat(mEntityManager.getAllEntities()).doesNotContain(contentlessEntity);
     }
 
     @Test
@@ -260,14 +271,18 @@ public class EntityManagerTest {
     public void clearEntityManager_removesAllEntityFromEntityManager() {
         GltfEntity gltfEntity = createGltfEntity();
         PanelEntity panelEntity = createPanelEntity();
-        Entity groupEntity = createGroupEntity();
+        Entity contentlessEntity = createContentlessEntity();
         AnchorEntity anchorEntity = createAnchorEntity();
         ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
 
         assertThat(mEntityManager.getAllEntities().size()).isAtLeast(5);
         assertThat(mEntityManager.getAllEntities())
                 .containsAtLeast(
-                        gltfEntity, panelEntity, groupEntity, anchorEntity, activityPanelEntity);
+                        gltfEntity,
+                        panelEntity,
+                        contentlessEntity,
+                        anchorEntity,
+                        activityPanelEntity);
 
         mEntityManager.clear();
 
@@ -325,13 +340,13 @@ public class EntityManagerTest {
         return panelEntity;
     }
 
-    private Entity createGroupEntity() {
-        Entity groupEntity =
-                mPlatformAdapterAxr.createGroupEntity(
-                        new Pose(), "testGroup", mPlatformAdapterAxr.getActivitySpace());
-        mGroupEntityNode = ((AndroidXrEntity) groupEntity).getNode();
-        mEntityManager.setEntityForNode(mGroupEntityNode, groupEntity);
-        return groupEntity;
+    private Entity createContentlessEntity() {
+        Entity contentlessEntity =
+                mPlatformAdapterAxr.createEntity(
+                        new Pose(), "testContentLess", mPlatformAdapterAxr.getActivitySpace());
+        mContentLessEntityNode = ((AndroidXrEntity) contentlessEntity).getNode();
+        mEntityManager.setEntityForNode(mContentLessEntityNode, contentlessEntity);
+        return contentlessEntity;
     }
 
     private AnchorEntity createAnchorEntity() {

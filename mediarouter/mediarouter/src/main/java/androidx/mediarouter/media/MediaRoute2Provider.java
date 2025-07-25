@@ -82,7 +82,6 @@ class MediaRoute2Provider extends MediaRouteProvider {
     private boolean mMediaTransferRestrictedToSelfProviders;
     private List<MediaRoute2Info> mRoutes = new ArrayList<>();
     private Map<String, String> mRouteIdToOriginalRouteIdMap = new ArrayMap<>();
-    @Nullable private String mPendingTransferRouteId;
 
     @SuppressWarnings({"SyntheticAccessor"})
     MediaRoute2Provider(@NonNull Context context, @NonNull Callback callback) {
@@ -174,16 +173,11 @@ class MediaRoute2Provider extends MediaRouteProvider {
             Log.w(TAG, "transferTo: Specified route not found. routeId=" + routeId);
             return;
         }
-        if (TextUtils.equals(mPendingTransferRouteId, routeId)) {
-            Log.w(TAG, "Ignoring attempt to transfer to pending transfer route: " + route);
-            return;
-        }
-        mPendingTransferRouteId = routeId;
         mMediaRouter2.transferTo(route);
     }
 
     protected void refreshRoutes() {
-        // System routes should not be published by this provider.
+        // Syetem routes should not be published by this provider.
         List<MediaRoute2Info> newRoutes = new ArrayList<>();
         Set<MediaRoute2Info> route2InfoSet = new ArraySet<>();
         for (MediaRoute2Info route : mMediaRouter2.getRoutes()) {
@@ -444,7 +438,6 @@ class MediaRoute2Provider extends MediaRouteProvider {
         @Override
         public void onTransfer(@NonNull MediaRouter2.RoutingController oldController,
                 @NonNull MediaRouter2.RoutingController newController) {
-            mPendingTransferRouteId = null;
             mControllerMap.remove(oldController);
             if (newController == mMediaRouter2.getSystemController()) {
                 mCallback.onSelectFallbackRoute(UNSELECT_REASON_ROUTE_CHANGED);
@@ -465,13 +458,11 @@ class MediaRoute2Provider extends MediaRouteProvider {
 
         @Override
         public void onTransferFailure(@NonNull MediaRoute2Info requestedRoute) {
-            mPendingTransferRouteId = null;
             Log.w(TAG, "Transfer failed. requestedRoute=" + requestedRoute);
         }
 
         @Override
         public void onStop(@NonNull MediaRouter2.RoutingController routingController) {
-            mPendingTransferRouteId = null;
             RouteController routeController = mControllerMap.remove(routingController);
             if (routeController != null) {
                 mCallback.onReleaseController(routeController);

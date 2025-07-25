@@ -55,7 +55,7 @@ import kotlin.reflect.KProperty
  * @see mutableFloatStateOf
  */
 @StateFactoryMarker
-public fun mutableDoubleStateOf(value: Double): MutableDoubleState =
+fun mutableDoubleStateOf(value: Double): MutableDoubleState =
     createSnapshotMutableDoubleState(value)
 
 /**
@@ -67,17 +67,17 @@ public fun mutableDoubleStateOf(value: Double): MutableDoubleState =
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface DoubleState : State<Double> {
+interface DoubleState : State<Double> {
     @get:AutoboxingStateValueProperty("doubleValue")
     override val value: Double
         @Suppress("AutoBoxing") get() = doubleValue
 
-    public val doubleValue: Double
+    val doubleValue: Double
 }
 
 /** Permits property delegation of `val`s using `by` for [DoubleState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun DoubleState.getValue(thisObj: Any?, property: KProperty<*>): Double =
+inline operator fun DoubleState.getValue(thisObj: Any?, property: KProperty<*>): Double =
     doubleValue
 
 /**
@@ -92,7 +92,7 @@ public inline operator fun DoubleState.getValue(thisObj: Any?, property: KProper
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface MutableDoubleState : DoubleState, MutableState<Double> {
+interface MutableDoubleState : DoubleState, MutableState<Double> {
     @get:AutoboxingStateValueProperty("doubleValue")
     @set:AutoboxingStateValueProperty("doubleValue")
     override var value: Double
@@ -106,10 +106,10 @@ public interface MutableDoubleState : DoubleState, MutableState<Double> {
 
 /** Permits property delegation of `var`s using `by` for [MutableDoubleState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun MutableDoubleState.setValue(
+inline operator fun MutableDoubleState.setValue(
     thisObj: Any?,
     property: KProperty<*>,
-    value: Double,
+    value: Double
 ) {
     this.doubleValue = value
 }
@@ -165,7 +165,7 @@ internal open class SnapshotMutableDoubleStateImpl(value: Double) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord,
+        applied: StateRecord
     ): StateRecord? {
         val currentRecord = current as DoubleStateStateRecord
         val appliedRecord = applied as DoubleStateStateRecord

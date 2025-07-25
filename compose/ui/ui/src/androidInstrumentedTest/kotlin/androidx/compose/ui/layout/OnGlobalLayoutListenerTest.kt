@@ -36,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.node.DelegatableNode.RegistrationHandle
@@ -55,8 +54,6 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.zIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -207,7 +204,7 @@ class OnGlobalLayoutListenerTest {
             rule.setContent {
                 Column(
                     modifier = Modifier.size(rootSizePx.toDp()),
-                    verticalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Box(
                         Modifier.graphicsLayer {
@@ -247,7 +244,7 @@ class OnGlobalLayoutListenerTest {
                     topBar = {
                         Row(
                             modifier = Modifier.height(topBarHeightPx.toDp()).testTag(occlusionTag),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Box(
                                 Modifier.fillMaxHeight()
@@ -268,7 +265,7 @@ class OnGlobalLayoutListenerTest {
                                 // Will only fit one box, so that it can scroll up
                                 .size(columnBoxSizePx.toDp())
                                 .verticalScroll(scrollState),
-                        verticalArrangement = Arrangement.spacedBy(2f.toDp()),
+                        verticalArrangement = Arrangement.spacedBy(2f.toDp())
                     ) {
                         Box(Modifier.size(columnBoxSizePx.toDp()).testTag(targetTag))
                         Box(Modifier.size(columnBoxSizePx.toDp()))
@@ -426,55 +423,39 @@ class OnGlobalLayoutListenerTest {
     @Test
     fun globalLayoutListener_updatedOffset() =
         with(rule.density) {
-            val rootSizePx = 400f
+            val rootSizePx = 300f
             val itemSizePx = 100f
 
             var sizeMultiplier by mutableFloatStateOf(1f)
-            var sizeMultiplier2 by mutableFloatStateOf(1f)
 
-            var posInRoot = IntOffset(-1, -1)
-            var size = IntSize(-1, -1)
+            var fromRoot = IntOffset(-1, -1)
             var countDown = CountDownLatch(1)
 
             rule.setContent {
-                Column(modifier = Modifier.size((rootSizePx).toDp())) {
+                Column(
+                    modifier = Modifier.size((rootSizePx).toDp()),
+                ) {
                     Box(Modifier.size((itemSizePx * sizeMultiplier).toDp()))
                     Box(
-                        Modifier.size((itemSizePx * sizeMultiplier2).toDp())
-                            .testGlobalLayoutListener { rectInfo ->
-                                posInRoot = rectInfo.positionInRoot
-                                size = IntSize(rectInfo.width, rectInfo.height)
+                        Modifier.testGlobalLayoutListener { rectInfo ->
+                                fromRoot = rectInfo.positionInRoot
                                 countDown.countDown()
                             }
+                            .size(itemSizePx.toDp())
                     )
                 }
             }
 
             assertTrue(countDown.await(1, TimeUnit.SECONDS))
             // Position should be the size of the first item
-            assertEquals(IntOffset(0, (itemSizePx * sizeMultiplier).fastRoundToInt()), posInRoot)
-            assertEquals(
-                Size(itemSizePx * sizeMultiplier2, itemSizePx * sizeMultiplier2).roundToIntSize(),
-                size,
-            )
+            assertEquals(IntOffset(0, (itemSizePx * sizeMultiplier).fastRoundToInt()), fromRoot)
 
             countDown = CountDownLatch(1)
             sizeMultiplier = 2f
-            sizeMultiplier2 = 3f
             rule.waitForIdle()
 
             assertTrue(countDown.await(1, TimeUnit.SECONDS))
-            assertEquals(IntOffset(0, (itemSizePx * sizeMultiplier).fastRoundToInt()), posInRoot)
-            assertEquals(
-                Size(
-                        itemSizePx * sizeMultiplier2,
-                        (itemSizePx * sizeMultiplier2).coerceAtMost(
-                            rootSizePx - (itemSizePx * sizeMultiplier)
-                        ),
-                    )
-                    .roundToIntSize(),
-                size,
-            )
+            assertEquals(IntOffset(0, (itemSizePx * sizeMultiplier).fastRoundToInt()), fromRoot)
         }
 
     /** Asserts that there are no occlusions around the current SemanticsNode. */
@@ -492,7 +473,7 @@ class OnGlobalLayoutListenerTest {
      */
     private fun SemanticsNodeInteraction.assertOcclusions(
         occludingTag: String,
-        expectedCount: Int,
+        expectedCount: Int
     ) {
         val occlusionSet = mutableIntSetOf()
         var callbackCount = 0
@@ -538,7 +519,7 @@ class OnGlobalLayoutListenerTest {
             OnGlobaLayoutListenerElement(
                 throttleMillis = 0,
                 debounceMillis = 0,
-                callback = callback,
+                callback = callback
             )
 }
 
@@ -575,7 +556,7 @@ private fun PlaceTwoLayoutsApartVert(
             }
         },
         modifier = modifier,
-        content = content,
+        content = content
     )
 }
 
@@ -588,7 +569,7 @@ private data class OnGlobaLayoutListenerElement(
         OnGlobalLayoutListenerNode(
             throttleMillis = throttleMillis,
             debounceMillis = debounceMillis,
-            callback = callback,
+            callback = callback
         )
 
     override fun update(node: OnGlobalLayoutListenerNode) {

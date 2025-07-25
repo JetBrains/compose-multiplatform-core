@@ -27,8 +27,6 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorizedFiniteAnimationSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -156,7 +154,7 @@ object PaneMotionDefaults {
         spring(
             dampingRatio = 0.8f,
             stiffness = 380f,
-            visibilityThreshold = IntRectVisibilityThreshold,
+            visibilityThreshold = IntRectVisibilityThreshold
         )
 
     /**
@@ -169,12 +167,8 @@ object PaneMotionDefaults {
             dampingRatio = 0.8f,
             stiffness = 380f,
             delayedRatio = 0.1f,
-            visibilityThreshold = IntRectVisibilityThreshold,
+            visibilityThreshold = IntRectVisibilityThreshold
         )
-
-    /** The default [FiniteAnimationSpec] used to animate panes' visibility. */
-    val VisibilityAnimationSpec: FiniteAnimationSpec<Float> =
-        spring(dampingRatio = 0.8f, stiffness = 380f)
 
     /**
      * The derived [FiniteAnimationSpec] that can be used to animate panes' positions when the
@@ -236,8 +230,6 @@ class PaneMotionData internal constructor() {
 
     var targetPosition: IntOffset = IntOffset.Zero
         internal set
-
-    internal var zIndex: Float = 0f
 
     internal var isOriginSizeAndPositionSet = false
 
@@ -437,9 +429,6 @@ fun <Role> PaneScaffoldMotionDataProvider<Role>.calculateDefaultEnterTransition(
                     getHiddenPaneCurrentLeft(role) - this[role].targetLeft
                 }
         }
-        PaneMotion.EnterAsModal -> {
-            fadeIn(animationSpec = PaneMotionDefaults.VisibilityAnimationSpec)
-        }
         else -> EnterTransition.None
     }
 
@@ -462,9 +451,6 @@ fun <Role> PaneScaffoldMotionDataProvider<Role>.calculateDefaultExitTransition(r
                 slideOutHorizontally(PaneMotionDefaults.OffsetAnimationSpec) {
                     getHidingPaneTargetLeft(role) - this[role].currentLeft
                 }
-        }
-        PaneMotion.ExitAsModal -> {
-            fadeOut(animationSpec = PaneMotionDefaults.VisibilityAnimationSpec)
         }
         else -> ExitTransition.None
     }
@@ -490,8 +476,6 @@ sealed interface PaneMotion {
                     Exiting -> "Exiting"
                     Entering -> "Entering"
                     Shown -> "Shown"
-                    ExitingModal -> "ExitingModal"
-                    EnteringModal -> "EnteringModal"
                     else -> "Unknown value=$value"
                 }
             }]"
@@ -510,34 +494,13 @@ sealed interface PaneMotion {
             /** Indicates the pane is keeping being shown during the current motion. */
             val Shown = Type(3)
 
-            /**
-             * Indicates the pane is exiting or hiding as a modal, i.e., a levitated pane, during
-             * the current motion.
-             */
-            val ExitingModal = Type(5)
-
-            /**
-             * Indicates the pane is entering or showing as a modal, i.e., a levitated pane, during
-             * the current motion.
-             */
-            val EnteringModal = Type(6)
-
             internal fun calculate(
                 previousValue: PaneAdaptedValue,
-                currentValue: PaneAdaptedValue,
+                currentValue: PaneAdaptedValue
             ): Type {
-                val wasShown = previousValue != PaneAdaptedValue.Hidden
-                val isShown = currentValue != PaneAdaptedValue.Hidden
-                val levitatedPane =
-                    previousValue is PaneAdaptedValue.Levitated ||
-                        currentValue is PaneAdaptedValue.Levitated
-                return when {
-                    wasShown && isShown -> Shown
-                    !wasShown && !isShown -> Hidden
-                    wasShown && !isShown -> if (levitatedPane) ExitingModal else Exiting
-                    !wasShown && isShown -> if (levitatedPane) EnteringModal else Entering
-                    else -> Hidden // Not possible
-                }
+                val wasShown = if (previousValue == PaneAdaptedValue.Hidden) 0 else 1
+                val isShown = if (currentValue == PaneAdaptedValue.Hidden) 0 else 2
+                return Type(wasShown or isShown)
             }
         }
     }
@@ -609,18 +572,6 @@ sealed interface PaneMotion {
          * state.
          */
         val ExitWithShrink: PaneMotion = DefaultImpl("ExitWithShrink", Type.Exiting)
-
-        /**
-         * The default pane motion that will show the pane as a modal. Note that this should only be
-         * used when the associated pane is entering into a levitated state from a hidden state.
-         */
-        val EnterAsModal: PaneMotion = DefaultImpl("EnterAsModal", Type.EnteringModal)
-
-        /**
-         * The default pane motion that will hide the pane as a modal. Note that this should only be
-         * used when the associated pane is exiting from a leviated state to a hidden state.
-         */
-        val ExitAsModal: PaneMotion = DefaultImpl("ExitAsModal", Type.ExitingModal)
     }
 }
 
@@ -628,7 +579,7 @@ sealed interface PaneMotion {
 internal fun <T> calculatePaneMotion(
     previousScaffoldValue: PaneScaffoldValue<T>,
     currentScaffoldValue: PaneScaffoldValue<T>,
-    paneOrder: PaneScaffoldHorizontalOrder<T>,
+    paneOrder: PaneScaffoldHorizontalOrder<T>
 ): List<PaneMotion> {
     val numOfPanes = paneOrder.size
     val paneMotionTypes = Array(numOfPanes) { PaneMotion.Type.Hidden }
@@ -730,14 +681,6 @@ internal fun <T> calculatePaneMotion(
                 }
         }
     }
-    // Fourth pass, to decide the motions of all levitated panes.
-    paneOrder.forEachIndexed { i, _ ->
-        if (paneMotionTypes[i] == PaneMotion.Type.EnteringModal) {
-            paneMotions[i] = PaneMotion.EnterAsModal
-        } else if (paneMotionTypes[i] == PaneMotion.Type.ExitingModal) {
-            paneMotions[i] = PaneMotion.ExitAsModal
-        }
-    }
     return paneMotions
 }
 
@@ -748,7 +691,7 @@ internal val IntRectToVector: TwoWayConverter<IntRect, AnimationVector4D> =
                 it.left.toFloat(),
                 it.top.toFloat(),
                 it.right.toFloat(),
-                it.bottom.toFloat(),
+                it.bottom.toFloat()
             )
         },
         convertFromVector = {
@@ -756,9 +699,9 @@ internal val IntRectToVector: TwoWayConverter<IntRect, AnimationVector4D> =
                 it.v1.fastRoundToInt(),
                 it.v2.fastRoundToInt(),
                 it.v3.fastRoundToInt(),
-                it.v4.fastRoundToInt(),
+                it.v4.fastRoundToInt()
             )
-        },
+        }
     )
 
 internal class DerivedSizeAnimationSpec(private val boundsSpec: FiniteAnimationSpec<IntRect>) :
@@ -815,7 +758,7 @@ internal class DelayedSpringSpec<T>(
     dampingRatio: Float = Spring.DampingRatioNoBouncy,
     stiffness: Float = Spring.StiffnessMedium,
     private val delayedRatio: Float,
-    visibilityThreshold: T? = null,
+    visibilityThreshold: T? = null
 ) : FiniteAnimationSpec<T> {
     private val originalSpringSpec = spring(dampingRatio, stiffness, visibilityThreshold)
 
@@ -839,7 +782,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V,
+        initialVelocity: V
     ): V {
         updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
         return if (playTimeNanos <= delayedTimeNanos) {
@@ -849,7 +792,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 playTimeNanos - delayedTimeNanos,
                 initialValue,
                 targetValue,
-                initialVelocity,
+                initialVelocity
             )
         }
     }
@@ -858,7 +801,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V,
+        initialVelocity: V
     ): V {
         updateDelayedTimeNanosIfNeeded(initialValue, targetValue, initialVelocity)
         return if (playTimeNanos <= delayedTimeNanos) {
@@ -868,7 +811,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 playTimeNanos - delayedTimeNanos,
                 initialValue,
                 targetValue,
-                initialVelocity,
+                initialVelocity
             )
         }
     }
@@ -881,7 +824,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
     private fun updateDelayedTimeNanosIfNeeded(
         initialValue: V,
         targetValue: V,
-        initialVelocity: V,
+        initialVelocity: V
     ) {
         if (
             initialValue != cachedInitialValue ||
@@ -892,7 +835,7 @@ private class DelayedVectorizedSpringSpec<V : AnimationVector>(
                 originalVectorizedSpringSpec.getDurationNanos(
                     initialValue,
                     targetValue,
-                    initialVelocity,
+                    initialVelocity
                 )
             delayedTimeNanos = (cachedOriginalDurationNanos * delayedRatio).toLong()
         }

@@ -25,31 +25,16 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 35
-        namespace = "androidx.compose.ui.text"
-        androidResources.enable = true
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-    }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
-
-    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+    androidTarget()
+    jvmStubs()
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -69,37 +54,48 @@ androidXMultiplatform {
 
                 implementation(project(":compose:ui:ui-util"))
 
-                api("androidx.annotation:annotation:1.9.1")
-                implementation("androidx.collection:collection:1.5.0")
+                // TODO: Pin androidx.collection when SieveCache is available
+                // implementation("androidx.collection:collection:1.4.2")
+                implementation(project(":collection:collection"))
             }
         }
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
+            dependencies {
+            }
         }
 
         androidMain {
             dependsOn(commonMain)
             dependsOn(jvmMain)
             dependencies {
+                api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
                 implementation("androidx.core:core:1.7.0")
                 implementation("androidx.emoji2:emoji2:1.4.0")
             }
         }
 
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
+        }
+
         androidInstrumentedTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation("androidx.emoji2:emoji2-bundled:1.4.0")
                 implementation(project(":compose:ui:ui-test-junit4"))
@@ -118,7 +114,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(project(":internal-testutils-fonts"))
                 implementation(libs.testRules)
@@ -131,142 +127,6 @@ androidXMultiplatform {
                 implementation(libs.mockitoKotlin4)
                 implementation(libs.byteBuddy)
             }
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        skikoMain {
-            dependsOn(commonMain)
-            dependencies {
-                api(libs.skiko)
-                implementation(libs.atomicFu)
-            }
-        }
-
-        skikoTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(skikoMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(skikoTest)
-            kotlin.srcDirs("src/test/java", "src/desktopTest/kotlin")
-            resources.srcDirs("src/test/resources", "src/desktopTest/resources")
-            dependencies {
-                implementation(libs.truth)
-                implementation(libs.junit)
-                implementation(libs.skikoCurrentOs)
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":compose:ui:ui-test-junit4"))
-                implementation(project(":internal-testutils-fonts"))
-                implementation(libs.mockitoCore)
-                implementation(libs.mockitoKotlin)
-                implementation(libs.mockitoCore4)
-                implementation(libs.mockitoKotlin4)
-                implementation(libs.kotlinReflect)
-            }
-        }
-
-        nonJvmMain {
-            dependsOn(skikoMain)
-        }
-
-        nonJvmTest {
-            dependsOn(skikoTest)
-        }
-
-        nativeMain {
-            dependsOn(nonJvmMain)
-        }
-
-        nativeTest {
-            dependsOn(nonJvmTest)
-        }
-
-        darwinMain {
-            dependsOn(nativeMain)
-        }
-
-        darwinTest {
-            dependsOn(nativeTest)
-        }
-
-        macosMain {
-            dependsOn(darwinMain)
-        }
-
-        macosTest {
-            dependsOn(darwinTest)
-        }
-
-        uikitMain {
-            dependsOn(darwinMain)
-        }
-
-        uikitTest {
-            dependsOn(darwinTest)
-        }
-
-        webMain {
-            dependsOn(nonJvmMain)
-        }
-
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
-        jsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
-        }
-
-        wasmJsMain {
-            kotlin.srcDir("src/webCommonW3C/kotlin")
-            dependencies {
-                implementation(libs.skikoWasmJs)
-                implementation(libs.skikoJsWasmRuntime)
-            }
-        }
-
-        targets.configureEach { target ->
-
-            // TODO: Ignore stubs. Remove together with stubs target
-            if (target.name.endsWith("Stubs")) return
-
-            if (target.platformType == KotlinPlatformType.native) {
-                if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
-                } else if (target.konanTarget.family == Family.OSX) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
-                } else if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else {
-                    target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-                }
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
-        }
-
-        // TODO: Align it with AOSP or make explicit
-        configureEach {
-            languageSettings.optIn("androidx.compose.ui.text.ExperimentalTextApi")
-        }
-
-        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
     }
 }
@@ -284,4 +144,14 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     metalavaK2UastEnabled = false
     samples(project(":compose:ui:ui-text:ui-text-samples"))
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.ui.text"
+    // TODO(b/328001575)
+    experimentalProperties["android.lint.useK2Uast"] = false
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

@@ -56,8 +56,6 @@ public final class ResultCodeToProtoConverter {
                 return AppSearchResult.RESULT_INVALID_ARGUMENT;
             case ALREADY_EXISTS:
                 return AppSearchResult.RESULT_ALREADY_EXISTS;
-            case UNAVAILABLE:
-                return AppSearchResult.RESULT_UNAVAILABLE;
             default:
                 // Some unknown/unsupported error
                 Log.e(TAG, "Cannot convert IcingSearchEngine status code: "

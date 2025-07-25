@@ -45,7 +45,6 @@ internal expect object MappedKeys {
     val DirectionRight: Key
     val DirectionUp: Key
     val DirectionDown: Key
-    val DirectionCenter: Key
     val PageUp: Key
     val PageDown: Key
     val MoveHome: Key
@@ -102,7 +101,6 @@ internal fun commonKeyMapping(shortcutModifier: (KeyEvent) -> Boolean): KeyMappi
                         MappedKeys.DirectionRight -> KeyCommand.RIGHT_CHAR
                         MappedKeys.DirectionUp -> KeyCommand.UP
                         MappedKeys.DirectionDown -> KeyCommand.DOWN
-                        MappedKeys.DirectionCenter -> KeyCommand.CENTER
                         MappedKeys.PageUp -> KeyCommand.PAGE_UP
                         MappedKeys.PageDown -> KeyCommand.PAGE_DOWN
                         MappedKeys.MoveHome -> KeyCommand.LINE_START

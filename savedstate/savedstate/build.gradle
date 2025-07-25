@@ -6,6 +6,7 @@
  * modifying its settings.
  */
 
+
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
@@ -13,18 +14,12 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.savedstate"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        androidResources.enable = true
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
@@ -42,7 +37,7 @@ androidXMultiplatform {
             dependencies {
                 api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
-                implementation(project(":lifecycle:lifecycle-common"))
+                implementation("androidx.lifecycle:lifecycle-common:2.9.2")
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
             }
@@ -50,6 +45,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
+                implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
                 implementation(project(":kruth:kruth"))
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinTestCommon)
@@ -69,22 +65,24 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
+                api("androidx.annotation:annotation:1.8.1")
                 implementation("androidx.core:core-ktx:1.13.1")
                 implementation("androidx.core:core-viewtree:1.0.0")
-
+                api(libs.kotlinStdlib)
             }
         }
 
         androidUnitTest {
             dependsOn(jvmTest)
             dependencies {
+                implementation(libs.robolectric)
             }
         }
 
         androidInstrumentedTest {
             dependsOn(jvmTest)
             dependencies {
-                implementation(project(":lifecycle:lifecycle-runtime"))
+                implementation("androidx.lifecycle:lifecycle-runtime:2.9.2")
                 implementation(libs.testExtJunit)
                 implementation(libs.testCore)
                 implementation(libs.testRunner)
@@ -145,6 +143,14 @@ androidXMultiplatform {
             dependsOn(unixTest)
         }
 
+        mingwMain {
+            dependsOn(nativeMain)
+        }
+
+        mingwTest {
+            dependsOn(nativeTest)
+        }
+
         webMain {
             dependsOn(nonAndroidMain)
         }
@@ -168,7 +174,7 @@ androidXMultiplatform {
             dependsOn(webTest)
             dependencies {
                 implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
+                implementation(libs.kotlinTestForWasmTests)
             }
         }
 
@@ -195,6 +201,9 @@ androidXMultiplatform {
                 } else if (target.konanTarget.family == Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
+                } else if (target.konanTarget.family == Family.MINGW) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(mingwMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(mingwTest)
                 } else {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
@@ -207,11 +216,19 @@ androidXMultiplatform {
     }
 }
 
+android {
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
+    namespace = "androidx.savedstate"
+    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
+}
+
 androidx {
     name = "Saved State"
     type = SoftwareType.PUBLISHED_LIBRARY
     samples(project(":savedstate:savedstate-samples"))
     inceptionYear = "2018"
     description = "Android Lifecycle Saved State"
-    enableRobolectric()
+    metalavaK2UastEnabled = false
 }

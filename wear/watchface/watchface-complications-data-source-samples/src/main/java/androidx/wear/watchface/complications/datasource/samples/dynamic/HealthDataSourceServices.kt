@@ -35,7 +35,11 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.samples.R
 
 object HealthDataSourceServices {
-    class Calories : Base(max = 1000f, title = "Calories") {
+    class Calories :
+        Base(
+            max = 1000f,
+            title = "Calories",
+        ) {
         override val value: DynamicFloat?
             get() =
                 if (checkSelfPermission(permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED) {
@@ -45,7 +49,11 @@ object HealthDataSourceServices {
                 }
     }
 
-    class Distance : Base(max = 1000f, title = "Distance") {
+    class Distance :
+        Base(
+            max = 1000f,
+            title = "Distance",
+        ) {
         override val value: DynamicFloat?
             get() =
                 if (checkSelfPermission(permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED) {
@@ -55,7 +63,11 @@ object HealthDataSourceServices {
                 }
     }
 
-    class Floors : Base(max = 1000f, title = "Floors") {
+    class Floors :
+        Base(
+            max = 1000f,
+            title = "Floors",
+        ) {
         override val value: DynamicFloat?
             get() =
                 if (checkSelfPermission(permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED) {
@@ -65,7 +77,11 @@ object HealthDataSourceServices {
                 }
     }
 
-    class HeartRate : Base(max = 200f, title = "HR") {
+    class HeartRate :
+        Base(
+            max = 200f,
+            title = "HR",
+        ) {
         override val value: DynamicFloat?
             get() =
                 if (checkSelfPermission(permission.BODY_SENSORS) == PERMISSION_GRANTED) {
@@ -91,7 +107,11 @@ object HealthDataSourceServices {
             }
     }
 
-    class Steps : Base(max = 1000f, title = "Steps") {
+    class Steps :
+        Base(
+            max = 1000f,
+            title = "Steps",
+        ) {
         override val value: DynamicFloat?
             get() =
                 if (checkSelfPermission(permission.ACTIVITY_RECOGNITION) == PERMISSION_GRANTED) {
@@ -101,7 +121,10 @@ object HealthDataSourceServices {
                 }
     }
 
-    abstract class Base(private val max: Float, title: String) : ComplicationDataSourceService() {
+    abstract class Base(
+        private val max: Float,
+        title: String,
+    ) : ComplicationDataSourceService() {
         private val title = PlainComplicationText.Builder(title).build()
 
         /** Returns [DynamicFloat] or `null` if missing permissions. */
@@ -113,7 +136,7 @@ object HealthDataSourceServices {
 
         override fun onComplicationRequest(
             request: ComplicationRequest,
-            listener: ComplicationRequestListener,
+            listener: ComplicationRequestListener
         ) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 val text =
@@ -124,7 +147,7 @@ object HealthDataSourceServices {
                             value = 0f,
                             min = 0f,
                             max = max,
-                            contentDescription = text,
+                            contentDescription = text
                         )
                         .setTitle(title)
                         .setText(text)

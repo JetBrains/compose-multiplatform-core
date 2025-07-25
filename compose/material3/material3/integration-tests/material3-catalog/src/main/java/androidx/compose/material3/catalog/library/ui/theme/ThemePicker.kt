@@ -40,7 +40,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.catalog.library.R
 import androidx.compose.material3.catalog.library.model.ColorMode
@@ -75,29 +74,31 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                 .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
                 .add(WindowInsets(top = ThemePickerPadding, bottom = ThemePickerPadding))
                 .asPaddingValues(),
-        verticalArrangement = Arrangement.spacedBy(ThemePickerPadding),
+        verticalArrangement = Arrangement.spacedBy(ThemePickerPadding)
     ) {
         item {
             Text(
                 text = stringResource(id = R.string.theme),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = ThemePickerPadding),
+                modifier = Modifier.padding(horizontal = ThemePickerPadding)
             )
             // LazyVerticalGrid can't be used within LazyColumn due to nested scrolling
             val themeColorModes = ThemeColorMode.values()
-            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+            Column(
+                modifier = Modifier.padding(ThemePickerPadding),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)) {
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = themeColorModes[0],
                         selected = themeColorModes[0] == theme.themeColorMode,
-                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) }
                     )
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = themeColorModes[1],
                         selected = themeColorModes[1] == theme.themeColorMode,
-                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) }
                     )
                 }
                 Row {
@@ -105,7 +106,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                         modifier = Modifier.weight(1f),
                         option = themeColorModes[2],
                         selected = themeColorModes[2] == theme.themeColorMode,
-                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(themeColorMode = it)) }
                     )
                 }
             }
@@ -115,23 +116,25 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
             Text(
                 text = stringResource(id = R.string.color_mode),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = ThemePickerPadding),
+                modifier = Modifier.padding(horizontal = ThemePickerPadding)
             )
             // LazyVerticalGrid can't be used within LazyColumn due to nested scrolling
             val colorModes = ColorMode.values()
-            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+            Column(
+                modifier = Modifier.padding(ThemePickerPadding),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)) {
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = colorModes[0],
                         selected = colorModes[0] == theme.colorMode,
-                        onClick = { onThemeChange(theme.copy(colorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(colorMode = it)) }
                     )
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = colorModes[1],
                         selected = colorModes[1] == theme.colorMode,
-                        onClick = { onThemeChange(theme.copy(colorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(colorMode = it)) }
                     )
                 }
                 Row {
@@ -140,7 +143,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                         option = colorModes[2],
                         selected = colorModes[2] == theme.colorMode,
                         enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                        onClick = { onThemeChange(theme.copy(colorMode = it)) },
+                        onClick = { onThemeChange(theme.copy(colorMode = it)) }
                     )
                 }
             }
@@ -150,23 +153,25 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
             Text(
                 text = stringResource(id = R.string.text_direction),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = ThemePickerPadding),
+                modifier = Modifier.padding(horizontal = ThemePickerPadding)
             )
             // LazyVerticalGrid can't be used within LazyColumn due to nested scrolling
             val textDirections = TextDirection.values()
-            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+            Column(
+                modifier = Modifier.padding(ThemePickerPadding),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)) {
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = textDirections[0],
                         selected = textDirections[0] == theme.textDirection,
-                        onClick = { onThemeChange(theme.copy(textDirection = it)) },
+                        onClick = { onThemeChange(theme.copy(textDirection = it)) }
                     )
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
                         option = textDirections[1],
                         selected = textDirections[1] == theme.textDirection,
-                        onClick = { onThemeChange(theme.copy(textDirection = it)) },
+                        onClick = { onThemeChange(theme.copy(textDirection = it)) }
                     )
                 }
                 Row {
@@ -174,7 +179,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                         modifier = Modifier.weight(1f),
                         option = textDirections[2],
                         selected = textDirections[2] == theme.textDirection,
-                        onClick = { onThemeChange(theme.copy(textDirection = it)) },
+                        onClick = { onThemeChange(theme.copy(textDirection = it)) }
                     )
                 }
             }
@@ -184,18 +189,20 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
             Text(
                 text = stringResource(id = R.string.font_scale),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = ThemePickerPadding),
+                modifier = Modifier.padding(horizontal = ThemePickerPadding)
             )
-            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+            Column(
+                modifier = Modifier.padding(ThemePickerPadding),
+            ) {
                 RadioButtonOption(
                     option = FontScaleMode.System,
                     selected = theme.fontScaleMode == FontScaleMode.System,
-                    onClick = { onThemeChange(theme.copy(fontScaleMode = FontScaleMode.System)) },
+                    onClick = { onThemeChange(theme.copy(fontScaleMode = FontScaleMode.System)) }
                 )
                 RadioButtonOption(
                     option = FontScaleMode.Custom,
                     selected = theme.fontScaleMode == FontScaleMode.Custom,
-                    onClick = { onThemeChange(theme.copy(fontScaleMode = FontScaleMode.Custom)) },
+                    onClick = { onThemeChange(theme.copy(fontScaleMode = FontScaleMode.Custom)) }
                 )
 
                 var fontScale by remember(theme.fontScale) { mutableFloatStateOf(theme.fontScale) }
@@ -204,7 +211,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                     enabled = theme.fontScaleMode == FontScaleMode.Custom,
                     fontScale = fontScale,
                     onValueChange = { fontScale = it },
-                    onValueChangeFinished = { onThemeChange(theme.copy(fontScale = fontScale)) },
+                    onValueChangeFinished = { onThemeChange(theme.copy(fontScale = fontScale)) }
                 )
             }
             HorizontalDivider(Modifier.padding(horizontal = ThemePickerPadding))
@@ -218,14 +225,16 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                         Modifier.padding(
                             start = ThemePickerPadding,
                             // Align Badge closer to text
-                            end = ThemePickerPadding / 2,
-                        ),
+                            end = ThemePickerPadding / 2
+                        )
                 )
                 Badge { Text(stringResource(R.string.experimental)) }
             }
             // LazyVerticalGrid can't be used within LazyColumn due to nested scrolling
             val expressiveThemeModes = ExpressiveThemeMode.values()
-            Column(modifier = Modifier.padding(ThemePickerPadding)) {
+            Column(
+                modifier = Modifier.padding(ThemePickerPadding),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)) {
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
@@ -236,7 +245,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                                 expressiveThemeValue.value = it
                                 openExpressiveDialog.value = true
                             }
-                        },
+                        }
                     )
                     RadioButtonOption(
                         modifier = Modifier.weight(1f),
@@ -247,36 +256,16 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
                                 expressiveThemeValue.value = it
                                 openExpressiveDialog.value = true
                             }
-                        },
+                        }
                     )
                 }
-                SwitchSetting(
-                    text = stringResource(id = R.string.mark_expressive_components),
-                    modifier = Modifier.fillMaxWidth(),
-                    checked = theme.markExpressiveComponents,
-                    onCheckedChange = { checked ->
-                        if (theme.markExpressiveComponents != checked) {
-                            onThemeChange(theme.copy(markExpressiveComponents = checked))
-                        }
-                    },
-                )
-                SwitchSetting(
-                    text = stringResource(id = R.string.display_only_expressive_components),
-                    modifier = Modifier.fillMaxWidth(),
-                    checked = theme.showOnlyExpressiveComponents,
-                    onCheckedChange = { checked ->
-                        if (theme.showOnlyExpressiveComponents != checked) {
-                            onThemeChange(theme.copy(showOnlyExpressiveComponents = checked))
-                        }
-                    },
-                )
             }
             HorizontalDivider(Modifier.padding(horizontal = ThemePickerPadding))
         }
         item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Button(onClick = { onThemeChange(Theme()) }) {
                     Text(text = stringResource(id = R.string.reset_all))
@@ -306,7 +295,7 @@ fun ThemePicker(theme: Theme, onThemeChange: (theme: Theme) -> Unit) {
             },
             onConfirmButtonClick = {
                 onThemeChange(theme.copy(expressiveThemeMode = expressiveThemeValue.value))
-            },
+            }
         )
     }
 }
@@ -330,39 +319,14 @@ private fun <T> RadioButtonOption(
                 )
                 .minimumInteractiveComponentSize(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding),
+        horizontalArrangement = Arrangement.spacedBy(ThemePickerPadding)
     ) {
-        RadioButton(selected = selected, enabled = enabled, onClick = null)
-        Text(text = option.toString(), style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun SwitchSetting(
-    text: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    Row(
-        modifier =
-            modifier
-                .selectable(
-                    selected = checked,
-                    enabled = enabled,
-                    onClick = { onCheckedChange(!checked) },
-                    role = Role.Switch,
-                )
-                .minimumInteractiveComponentSize(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
+        RadioButton(
+            selected = selected,
+            enabled = enabled,
+            onClick = null,
         )
-        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+        Text(text = option.toString(), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -374,7 +338,7 @@ private fun CustomFontScaleSlider(
     fontScaleMin: Float = MinFontScale,
     fontScaleMax: Float = MaxFontScale,
     onValueChange: (textScale: Float) -> Unit,
-    onValueChangeFinished: () -> Unit,
+    onValueChangeFinished: () -> Unit
 ) {
     Column(modifier = modifier) {
         Slider(
@@ -386,7 +350,7 @@ private fun CustomFontScaleSlider(
         )
         Text(
             text = stringResource(id = R.string.scale, fontScale),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

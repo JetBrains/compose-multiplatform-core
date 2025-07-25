@@ -35,6 +35,7 @@ dependencies {
 
     api(libs.kotlinStdlib)
 
+    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.mockitoCore4)
 
@@ -52,5 +53,4 @@ androidx {
     inceptionYear = "2024"
     description = "Low-level utilities for building apps and libraries for Wear OS."
     legacyDisableKotlinStrictApiMode = true
-    enableRobolectric()
 }

@@ -22,7 +22,6 @@
  * modifying its settings.
  */
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import androidx.build.Version
 
 plugins {
     id("AndroidXPlugin")
@@ -31,8 +30,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":annotation:annotation"))
-    implementation(project(":core:core"))
+    implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation(libs.kotlinStdlib)
 }
@@ -48,7 +46,6 @@ android {
         abortOnError = false
     }
     namespace = "androidx.lint.integration.tests"
-    compileSdk = 36
 }
 
 

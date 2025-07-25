@@ -19,7 +19,9 @@ package androidx.credentials.registry.provider.digitalcredentials
 /**
  * Super class for a [DigitalCredentialEntry]'s display properties.
  *
- * @property displayType type of the credential selector UI that will be displayed to the user
  * @constructor
+ * @property displayType type of the credential selector UI that will be displayed to the user
  */
-public abstract class EntryDisplayProperties(public val displayType: @DisplayType Int)
+public abstract class EntryDisplayProperties(
+    public val displayType: @DisplayType Int,
+)

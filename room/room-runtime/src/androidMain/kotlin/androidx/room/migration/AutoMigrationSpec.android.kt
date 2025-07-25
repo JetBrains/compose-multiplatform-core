@@ -15,9 +15,9 @@
  */
 package androidx.room.migration
 
+import androidx.room.driver.SupportSQLiteConnection
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /**
  * Interface for defining an automatic migration specification for Room databases.
@@ -28,7 +28,7 @@ import androidx.sqlite.driver.SupportSQLiteConnection
  *
  * @see [androidx.room.AutoMigration]
  */
-public actual interface AutoMigrationSpec {
+actual interface AutoMigrationSpec {
     /**
      * Invoked after the migration is completed.
      *
@@ -38,14 +38,14 @@ public actual interface AutoMigrationSpec {
      *
      * @param db The SQLite database.
      */
-    public fun onPostMigrate(db: SupportSQLiteDatabase) {}
+    fun onPostMigrate(db: SupportSQLiteDatabase) {}
 
     /**
      * Invoked after the migration is completed.
      *
      * @param connection The database connection.
      */
-    public actual fun onPostMigrate(connection: SQLiteConnection) {
+    actual fun onPostMigrate(connection: SQLiteConnection) {
         if (connection is SupportSQLiteConnection) {
             onPostMigrate(connection.db)
         }

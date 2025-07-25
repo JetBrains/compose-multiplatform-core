@@ -43,7 +43,6 @@ import androidx.camera.core.InitializationException;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraMode;
 import androidx.camera.core.impl.ImageFormatConstants;
-import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceConfig.ConfigSize;
 import androidx.camera.core.impl.SurfaceConfig.ConfigType;
@@ -82,8 +81,6 @@ public final class Camera2DeviceSurfaceManagerTest {
     private static final String FULL_CAMERA_ID = "2";
     private static final String LEVEL3_CAMERA_ID = "3";
     private static final int DEFAULT_SENSOR_ORIENTATION = 90;
-    private static final StreamUseCase DEFAULT_STREAM_USE_CASE =
-            SurfaceConfig.DEFAULT_STREAM_USE_CASE;
     private final Size mDisplaySize = new Size(1280, 720);
     private final Size mAnalysisSize = new Size(640, 480);
     private final Size mPreviewSize = mDisplaySize;
@@ -163,7 +160,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVAnalysisSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mAnalysisSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.VGA);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -173,7 +170,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVPreviewSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mPreviewSize, DEFAULT_STREAM_USE_CASE);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mPreviewSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, ConfigSize.PREVIEW);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -183,7 +180,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVRecordSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mRecordSize, DEFAULT_STREAM_USE_CASE);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mRecordSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.YUV, SurfaceConfig.ConfigSize.RECORD);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -193,7 +190,7 @@ public final class Camera2DeviceSurfaceManagerTest {
     public void transformSurfaceConfigWithYUVMaximumSize() {
         SurfaceConfig surfaceConfig = mSurfaceManager.transformSurfaceConfig(
                 CameraMode.DEFAULT,
-                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mMaximumSize, DEFAULT_STREAM_USE_CASE);
+                LEGACY_CAMERA_ID, ImageFormat.YUV_420_888, mMaximumSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(SurfaceConfig.ConfigType.YUV, ConfigSize.MAXIMUM);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -204,7 +201,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mAnalysisSize, DEFAULT_STREAM_USE_CASE);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mAnalysisSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(SurfaceConfig.ConfigType.JPEG, ConfigSize.VGA);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -215,7 +212,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mPreviewSize, DEFAULT_STREAM_USE_CASE);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mPreviewSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.PREVIEW);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -226,7 +223,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mRecordSize, DEFAULT_STREAM_USE_CASE);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mRecordSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.RECORD);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -237,7 +234,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         SurfaceConfig surfaceConfig =
                 mSurfaceManager.transformSurfaceConfig(
                         CameraMode.DEFAULT,
-                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mMaximumSize, DEFAULT_STREAM_USE_CASE);
+                        LEGACY_CAMERA_ID, ImageFormat.JPEG, mMaximumSize);
         SurfaceConfig expectedSurfaceConfig =
                 SurfaceConfig.create(ConfigType.JPEG, ConfigSize.MAXIMUM);
         assertEquals(expectedSurfaceConfig, surfaceConfig);
@@ -338,8 +335,7 @@ public final class Camera2DeviceSurfaceManagerTest {
         CameraXConfig.Builder appConfigBuilder =
                 new CameraXConfig.Builder()
                         .setCameraFactoryProvider(
-                                (ignored0, ignored1, ignored2,
-                                        ignored3, ignored4) -> mCameraFactory)
+                                (ignored0, ignored1, ignored2, ignored3) -> mCameraFactory)
                         .setDeviceSurfaceManagerProvider(surfaceManagerProvider)
                         .setUseCaseConfigFactoryProvider(factoryProvider);
 

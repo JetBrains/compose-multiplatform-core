@@ -62,4 +62,4 @@ package androidx.compose.runtime
     AnnotationTarget.TYPE,
     AnnotationTarget.TYPE_PARAMETER,
 )
-public annotation class ComposableTarget(val applier: String)
+annotation class ComposableTarget(val applier: String)

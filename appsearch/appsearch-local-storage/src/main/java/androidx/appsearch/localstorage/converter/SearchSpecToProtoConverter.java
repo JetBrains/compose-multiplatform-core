@@ -283,13 +283,9 @@ public final class SearchSpecToProtoConverter {
     }
 
 
-    /**
-     * Extracts {@link SearchSpecProto} information from a {@link SearchSpec}.
-     *
-     * @param isVMEnabled Whether or not icing is running in a pVM.
-     */
+    /** Extracts {@link SearchSpecProto} information from a {@link SearchSpec}. */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
-    public @NonNull SearchSpecProto toSearchSpecProto(boolean isVMEnabled) {
+    public @NonNull SearchSpecProto toSearchSpecProto() {
         // set query to SearchSpecProto and override schema and namespace filter by
         // targetPrefixedFilters which contains all existing and also accessible to the caller
         // filters.
@@ -361,9 +357,9 @@ public final class SearchSpecToProtoConverter {
             JoinSpecProto.NestedSpecProto nestedSpec =
                     JoinSpecProto.NestedSpecProto.newBuilder()
                             .setResultSpec(mNestedConverter.toResultSpecProto(
-                                    mNamespaceCache, mSchemaCache, isVMEnabled))
+                                    mNamespaceCache, mSchemaCache))
                             .setScoringSpec(mNestedConverter.toScoringSpecProto())
-                            .setSearchSpec(mNestedConverter.toSearchSpecProto(isVMEnabled))
+                            .setSearchSpec(mNestedConverter.toSearchSpecProto())
                             .build();
 
             // This cannot be null, otherwise mNestedConverter would be null as well.
@@ -427,14 +423,13 @@ public final class SearchSpecToProtoConverter {
     /**
      * Extracts {@link ResultSpecProto} information from a {@link SearchSpec}.
      *
-     * @param namespaceCache The NamespaceCache instance held in AppSearch.
-     * @param schemaCache The SchemaCache instance held in AppSearch.
-     * @param isVMEnabled Whether or not icing is running in a pVM.
+     * @param namespaceCache  The NamespaceCache instance held in AppSearch.
+     * @param schemaCache     The SchemaCache instance held in AppSearch.
      */
     @OptIn(markerClass = ExperimentalAppSearchApi.class)
     public @NonNull ResultSpecProto toResultSpecProto(
-            @NonNull NamespaceCache namespaceCache, @NonNull SchemaCache schemaCache,
-            boolean isVMEnabled) {
+            @NonNull NamespaceCache namespaceCache,
+            @NonNull SchemaCache schemaCache) {
         ResultSpecProto.Builder resultSpecBuilder = ResultSpecProto.newBuilder()
                 .setNumPerPage(mSearchSpec.getResultCountPerPage())
                 .setSnippetSpec(
@@ -443,14 +438,8 @@ public final class SearchSpecToProtoConverter {
                                 .setNumMatchesPerProperty(mSearchSpec.getSnippetCountPerProperty())
                                 .setMaxWindowUtf32Length(mSearchSpec.getMaxSnippetSize())
                                 .setGetEmbeddingMatchInfo(
-                                        mSearchSpec.shouldRetrieveEmbeddingMatchInfos()));
-        if (isVMEnabled) {
-            resultSpecBuilder.setNumTotalBytesPerPageThreshold(
-                    mIcingOptionsConfig.getMaxPageBytesLimitForVm());
-        } else {
-            resultSpecBuilder.setNumTotalBytesPerPageThreshold(
-                    mIcingOptionsConfig.getMaxPageBytesLimit());
-        }
+                                        mSearchSpec.shouldRetrieveEmbeddingMatchInfos()))
+                .setNumTotalBytesPerPageThreshold(mIcingOptionsConfig.getMaxPageBytesLimit());
         JoinSpec joinSpec = mSearchSpec.getJoinSpec();
         if (joinSpec != null) {
             resultSpecBuilder.setMaxJoinedChildrenPerParentToReturn(

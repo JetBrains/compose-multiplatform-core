@@ -25,7 +25,6 @@ import androidx.build.gradle.isRoot
 import androidx.build.license.ValidateLicensesExistTask
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
-import androidx.build.playground.ValidateIntegrationPatches
 import androidx.build.playground.VerifyPlaygroundGradleConfigurationTask
 import androidx.build.studio.StudioTask.Companion.registerStudioTask
 import androidx.build.testConfiguration.registerOwnersServiceTasks
@@ -89,7 +88,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             if (!buildFeatures.isIsolatedProjectsEnabled()) {
                 tasks.register(
                     CREATE_AGGREGATE_BUILD_INFO_FILES_TASK,
-                    CreateAggregateLibraryBuildInfoFileTask::class.java,
+                    CreateAggregateLibraryBuildInfoFileTask::class.java
                 )
             } else null
 
@@ -167,8 +166,6 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             it.baseline.set(layout.projectDirectory.file("license-baseline.txt"))
             it.cacheEvenIfNoOutputs()
         }
-
-        ValidateIntegrationPatches.createTask(project)
     }
 
     private fun Project.configureTasksForKotlinWeb() {
@@ -176,7 +173,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             if (ProjectLayoutType.isPlayground(this)) {
                 project.file(
                     layout.buildDirectory.dir("javascript-for-playground").map {
-                        it.asFile.also { file -> file.mkdirs() }
+                        it.asFile.also { it.mkdirs() }
                     }
                 )
             } else {
@@ -185,8 +182,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
         val createYarnRcFileTask =
             tasks.register("createYarnRcFile", CreateYarnRcFileTask::class.java) {
                 it.offlineMirrorStorage.set(offlineMirrorStorage)
-                it.cacheStorage.set(layout.buildDirectory.dir("yarnCache"))
-                it.yarnrcFile.set(layout.buildDirectory.file(".yarnrc"))
+                it.yarnrcFile.set(layout.buildDirectory.file("js/.yarnrc"))
             }
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {

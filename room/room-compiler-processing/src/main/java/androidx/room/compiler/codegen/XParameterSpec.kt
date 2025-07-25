@@ -28,8 +28,6 @@ interface XParameterSpec {
 
     val type: XTypeName
 
-    fun toBuilder(): Builder
-
     interface Builder {
         fun addAnnotation(annotation: XAnnotationSpec): Builder
 
@@ -49,7 +47,7 @@ interface XParameterSpec {
         fun builder(
             name: String,
             typeName: XTypeName,
-            addJavaNullabilityAnnotation: Boolean = true,
+            addJavaNullabilityAnnotation: Boolean = true
         ): Builder {
             return XParameterSpecImpl.Builder(
                 name,
@@ -70,13 +68,13 @@ interface XParameterSpec {
                                 }
                             }
                         }
-                    },
+                    }
                 ),
                 KotlinParameterSpec.Builder(
                     name,
                     typeName,
-                    KParameterSpec.builder(name, typeName.kotlin),
-                ),
+                    KParameterSpec.builder(name, typeName.kotlin)
+                )
             )
         }
     }

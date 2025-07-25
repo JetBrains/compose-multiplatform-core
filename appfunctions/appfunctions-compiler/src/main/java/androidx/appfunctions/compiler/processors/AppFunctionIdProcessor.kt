@@ -19,6 +19,7 @@ package androidx.appfunctions.compiler.processors
 import androidx.appfunctions.compiler.AppFunctionCompiler
 import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.addGeneratedTimeStamp
 import androidx.appfunctions.compiler.core.fromCamelCaseToScreamingSnakeCase
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -50,7 +51,9 @@ import com.squareup.kotlinpoet.asTypeName
  * }
  * ```
  */
-class AppFunctionIdProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+class AppFunctionIdProcessor(
+    private val codeGenerator: CodeGenerator,
+) : SymbolProcessor {
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val appFunctionSymbolResolver = AppFunctionSymbolResolver(resolver)
         val appFunctionClasses = appFunctionSymbolResolver.resolveAnnotatedAppFunctions()
@@ -72,7 +75,10 @@ class AppFunctionIdProcessor(private val codeGenerator: CodeGenerator) : SymbolP
             }
 
         val fileSpec =
-            FileSpec.builder(originalPackageName, idClassName).addType(classBuilder.build()).build()
+            FileSpec.builder(originalPackageName, idClassName)
+                .addType(classBuilder.build())
+                .addGeneratedTimeStamp()
+                .build()
         codeGenerator
             .createNewFile(
                 Dependencies(
@@ -80,10 +86,10 @@ class AppFunctionIdProcessor(private val codeGenerator: CodeGenerator) : SymbolP
                     // from a single class containing AppFunction implementations and never from
                     // other or new files.
                     aggregating = false,
-                    checkNotNull(appFunctionClass.classDeclaration.containingFile),
+                    checkNotNull(appFunctionClass.classDeclaration.containingFile)
                 ),
                 originalPackageName,
-                idClassName,
+                idClassName
             )
             .bufferedWriter()
             .use { fileSpec.writeTo(it) }
@@ -105,7 +111,7 @@ class AppFunctionIdProcessor(private val codeGenerator: CodeGenerator) : SymbolP
                     .addModifiers(KModifier.CONST)
                     .initializer(
                         "%S",
-                        appFunctionClass.getAppFunctionIdentifier(appFunctionDeclaration),
+                        appFunctionClass.getAppFunctionIdentifier(appFunctionDeclaration)
                     )
                     .build()
             this.addProperty(propertySpec)

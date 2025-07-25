@@ -40,7 +40,7 @@ public class TestLifecycleOwner
 @JvmOverloads
 constructor(
     initialState: Lifecycle.State = Lifecycle.State.STARTED,
-    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate
 ) : LifecycleOwner {
     // it is in test artifact
     private val lifecycleRegistry =

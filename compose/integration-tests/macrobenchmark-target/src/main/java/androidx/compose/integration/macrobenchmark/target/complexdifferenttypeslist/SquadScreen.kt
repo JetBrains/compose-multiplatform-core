@@ -48,10 +48,12 @@ fun SquadScreen(items: List<AdapterItemWrapper>) {
                         SquadViewType.VIEW_TOP_PLAYERS ->
                             SquadViewTopPlayers(
                                 viewTopPlayersUiModel = data as SquadViewTopPlayersUiModel,
-                                onClicked = { /*No-op.*/ },
+                                onClicked = { /*No-op.*/ }
                             )
                         SquadViewType.POSITION_SECTION_HEADER ->
-                            SquadSectionHeader(uiModel = data as SectionHeaderUiModel)
+                            SquadSectionHeader(
+                                uiModel = data as SectionHeaderUiModel,
+                            )
                         SquadViewType.COACH ->
                             SquadPlayer(
                                 uiModel = data as SquadPlayerUiModel,
@@ -63,7 +65,7 @@ fun SquadScreen(items: List<AdapterItemWrapper>) {
                                 onPlayerClicked = { /*No-op.*/ },
                             )
                     }
-                },
+                }
             )
         }
     }

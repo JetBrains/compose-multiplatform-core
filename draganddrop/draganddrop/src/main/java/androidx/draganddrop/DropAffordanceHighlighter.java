@@ -39,12 +39,11 @@ import android.view.Gravity;
 import android.view.View;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
 import androidx.core.util.Predicate;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -75,11 +74,15 @@ final class DropAffordanceHighlighter {
 
     private final Set<View> mViewsWithDragFocus = new HashSet<>();
 
-    private @Nullable Drawable mOriginalForeground;
+    @Nullable
+    private Drawable mOriginalForeground;
     private int mOriginalForegroundGravity = DEFAULT_GRAVITY;
-    @Nullable BlendMode mOriginalForegroundTintBlendMode;
-    private @Nullable ColorStateList mOriginalForegroundTintList;
-    private @Nullable Mode mOriginalForegroundTintMode;
+    @Nullable
+    BlendMode mOriginalForegroundTintBlendMode;
+    @Nullable
+    private ColorStateList mOriginalForegroundTintList;
+    @Nullable
+    private Mode mOriginalForegroundTintMode;
 
     DropAffordanceHighlighter(
             View viewToHighlight,
@@ -106,7 +109,7 @@ final class DropAffordanceHighlighter {
     }
 
     /** Makes a new builder for highlighting the given view. */
-    static DropAffordanceHighlighter.@NonNull Builder forView(
+    static @NonNull DropAffordanceHighlighter.Builder forView(
             @NonNull View viewToHighlight,
             @NonNull Predicate<ClipDescription> eligibilityPredicate) {
         Preconditions.checkNotNull(viewToHighlight);
@@ -271,7 +274,8 @@ final class DropAffordanceHighlighter {
          * be handled.
          */
         @SuppressLint("MissingGetterMatchingBuilder")
-        @NonNull Builder shouldAcceptDragsWithLocalState(boolean acceptDragsWithLocalState) {
+        @NonNull
+        Builder shouldAcceptDragsWithLocalState(boolean acceptDragsWithLocalState) {
             this.mAcceptDragsWithLocalState = acceptDragsWithLocalState;
             return this;
         }

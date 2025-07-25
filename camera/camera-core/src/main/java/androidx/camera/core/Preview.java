@@ -42,7 +42,6 @@ import static androidx.camera.core.impl.PreviewConfig.OPTION_TARGET_ROTATION;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_HIGH_RESOLUTION_DISABLED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE;
-import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_ZSL_DISABLED;
 import static androidx.camera.core.impl.utils.Threads.checkMainThread;
@@ -84,7 +83,6 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
-import androidx.camera.core.impl.StreamUseCase;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.capability.PreviewCapabilitiesImpl;
@@ -318,12 +316,6 @@ public final class Preview extends UseCase {
         if (cameraEdge != null) {
             cameraEdge.close();
             mCameraEdge = null;
-        }
-        if (mCurrentSurfaceRequest != null) {
-            // clear the transformationInfoListener to avoid memory leak
-            // SurfaceRequest reference might be held in the Camera2 framework on some devices.
-            // Its TransformationInfo listener could hold the context or activity reference forever.
-            mCurrentSurfaceRequest.clearTransformationInfoListener();
         }
         mCurrentSurfaceRequest = null;
     }
@@ -608,8 +600,6 @@ public final class Preview extends UseCase {
     protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
             @NonNull StreamSpec primaryStreamSpec,
             @Nullable StreamSpec secondaryStreamSpec) {
-        Logger.d(TAG, "onSuggestedStreamSpecUpdated: primaryStreamSpec = " + primaryStreamSpec
-                + ", secondaryStreamSpec " + secondaryStreamSpec);
         updateConfigAndOutput((PreviewConfig) getCurrentConfig(), primaryStreamSpec);
         return primaryStreamSpec;
     }
@@ -1399,13 +1389,6 @@ public final class Preview extends UseCase {
         public @NonNull Builder setCaptureType(
                 UseCaseConfigFactory.@NonNull CaptureType captureType) {
             getMutableConfig().insertOption(OPTION_CAPTURE_TYPE, captureType);
-            return this;
-        }
-
-        @RestrictTo(Scope.LIBRARY_GROUP)
-        @Override
-        public @NonNull Builder setStreamUseCase(@NonNull StreamUseCase streamUseCase) {
-            getMutableConfig().insertOption(OPTION_STREAM_USE_CASE, streamUseCase);
             return this;
         }
     }

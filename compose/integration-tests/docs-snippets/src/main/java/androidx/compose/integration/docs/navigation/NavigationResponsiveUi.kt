@@ -41,7 +41,7 @@ private object NavigationResponsiveUiSnippet1 {
     enum class WindowSizeClass {
         Compact,
         Medium,
-        Expanded,
+        Expanded
     }
 
     @Composable
@@ -65,19 +65,26 @@ private object NavigationResponsiveUiSnippet2 {
 
     /* Displays a list of items. */
     @Composable
-    fun ListOfItems(onItemSelected: (String) -> Unit) {
+    fun ListOfItems(
+        onItemSelected: (String) -> Unit,
+    ) {
         /*...*/
     }
 
     /* Displays the detail for an item. */
     @Composable
-    fun ItemDetail(selectedItemId: String? = null) {
+    fun ItemDetail(
+        selectedItemId: String? = null,
+    ) {
         /*...*/
     }
 
     /* Displays a list and the detail for an item side by side. */
     @Composable
-    fun ListAndDetail(selectedItemId: String? = null, onItemSelected: (String) -> Unit) {
+    fun ListAndDetail(
+        selectedItemId: String? = null,
+        onItemSelected: (String) -> Unit,
+    ) {
         Row {
             ListOfItems(onItemSelected = onItemSelected)
             ItemDetail(selectedItemId = selectedItemId)
@@ -96,7 +103,7 @@ private object NavigationResponsiveUiSnippet3 {
     ) {
         if (isExpandedWindowSize) {
             ListAndDetail(
-                selectedItemId = selectedItemId
+                selectedItemId = selectedItemId,
                 /*...*/
             )
         } else {
@@ -104,7 +111,7 @@ private object NavigationResponsiveUiSnippet3 {
             // show one of them based on the user's focus.
             if (selectedItemId != null) {
                 ItemDetail(
-                    selectedItemId = selectedItemId
+                    selectedItemId = selectedItemId,
                     /*...*/
                 )
             } else {
@@ -124,7 +131,7 @@ private fun NavigationResponsiveUiSnippet4(
         composable("listDetailRoute") {
             ListDetailRoute(
                 isExpandedWindowSize = isExpandedWindowSize,
-                selectedItemId = selectedItemId,
+                selectedItemId = selectedItemId
             )
         }
         /*...*/
@@ -135,7 +142,9 @@ private object NavigationResponsiveUiSnippet5 {
 
     class ListDetailViewModel : ViewModel() {
 
-        data class ListDetailUiState(val selectedItemId: String? = null)
+        data class ListDetailUiState(
+            val selectedItemId: String? = null,
+        )
 
         private val viewModelState = MutableStateFlow(ListDetailUiState())
 
@@ -161,12 +170,12 @@ private object NavigationResponsiveUiSnippet5 {
         } else {
             if (selectedItemId != null) {
                 ItemDetail(
-                    selectedItemId = selectedItemId
+                    selectedItemId = selectedItemId,
                     /*...*/
                 )
             } else {
                 ListOfItems(
-                    onItemSelected = onItemSelected
+                    onItemSelected = onItemSelected,
                     /*...*/
                 )
             }
@@ -178,7 +187,9 @@ private object NavigationResponsiveUiSnippet6 {
 
     class ListDetailViewModel : ViewModel() {
 
-        data class ListDetailUiState(val selectedItemId: String? = null)
+        data class ListDetailUiState(
+            val selectedItemId: String? = null,
+        )
 
         private val viewModelState = MutableStateFlow(ListDetailUiState())
 
@@ -209,13 +220,13 @@ private object NavigationResponsiveUiSnippet6 {
         } else {
             if (selectedItemId != null) {
                 ItemDetail(
-                    selectedItemId = selectedItemId
+                    selectedItemId = selectedItemId,
                     /*...*/
                 )
                 BackHandler { onItemBackPress() }
             } else {
                 ListOfItems(
-                    onItemSelected = onItemSelected
+                    onItemSelected = onItemSelected,
                     /*...*/
                 )
             }
@@ -233,7 +244,7 @@ private fun NavigationResponsiveUiSnippet7(
         composable("listDetailRoute") {
             ListDetailRoute(
                 isExpandedWindowSize = isExpandedWindowSize,
-                selectedItemId = selectedItemId,
+                selectedItemId = selectedItemId
             )
         }
         navigation(startDestination = "itemSubdetail1", route = "itemSubDetail") {
@@ -262,17 +273,32 @@ private object NavigationResponsiveUiSnippet8 {
 
 @Composable private fun ListOfItems() = Unit
 
-@Composable private fun ListOfItems(onItemSelected: (String) -> Unit) = Unit
-
-@Composable private fun ItemDetail(selectedItemId: String? = null) = Unit
-
-@Composable private fun ListAndDetail(selectedItemId: String? = null) = Unit
+@Composable
+private fun ListOfItems(
+    onItemSelected: (String) -> Unit,
+) = Unit
 
 @Composable
-private fun ListAndDetail(selectedItemId: String? = null, onItemSelected: (String) -> Unit) = Unit
+private fun ItemDetail(
+    selectedItemId: String? = null,
+) = Unit
 
 @Composable
-private fun ListDetailRoute(isExpandedWindowSize: Boolean = false, selectedItemId: String?) = Unit
+private fun ListAndDetail(
+    selectedItemId: String? = null,
+) = Unit
+
+@Composable
+private fun ListAndDetail(
+    selectedItemId: String? = null,
+    onItemSelected: (String) -> Unit,
+) = Unit
+
+@Composable
+private fun ListDetailRoute(
+    isExpandedWindowSize: Boolean = false,
+    selectedItemId: String?,
+) = Unit
 
 @Composable private fun ItemSubdetail1() = Unit
 

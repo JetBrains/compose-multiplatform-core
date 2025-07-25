@@ -16,23 +16,30 @@
 
 package androidx.xr.compose.platform
 
+import android.app.Activity
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.subspace.layout.CoreContentlessEntity
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.internal.ActivitySpace
 import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.scenecore.GroupEntity
+import androidx.xr.runtime.testing.FakeRuntimeFactory
+import androidx.xr.scenecore.ContentlessEntity
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class SpatialComposeElementTest {
@@ -44,6 +51,25 @@ class SpatialComposeElementTest {
     @Before
     fun setUp() {
         mockJxrPlatformAdapter = mock<JxrPlatformAdapter>()
+    }
+
+    private fun createSession(activity: Activity): Session {
+        whenever(mockJxrPlatformAdapter.spatialEnvironment).thenReturn(mock())
+        whenever(mockJxrPlatformAdapter.mainPanelEntity).thenReturn(mock())
+        whenever(mockJxrPlatformAdapter.perceptionSpaceActivityPose).thenReturn(mock())
+
+        val mockActivitySpace = mock<ActivitySpace>()
+        whenever(mockJxrPlatformAdapter.activitySpace).thenReturn(mockActivitySpace)
+
+        val session =
+            Session(activity, FakeRuntimeFactory().createRuntime(activity), mockJxrPlatformAdapter)
+
+        verify(mockJxrPlatformAdapter, times(1)).spatialEnvironment
+        verify(mockJxrPlatformAdapter, times(1)).mainPanelEntity
+        verify(mockJxrPlatformAdapter, times(1)).perceptionSpaceActivityPose
+        verify(mockJxrPlatformAdapter, times(1)).activitySpace
+
+        return session
     }
 
     @Test
@@ -60,7 +86,7 @@ class SpatialComposeElementTest {
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
         assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints())
+            .isEqualTo(VolumeConstraints.Unbounded)
     }
 
     @Test
@@ -74,8 +100,8 @@ class SpatialComposeElementTest {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
             val session = createFakeSession(composeTestRule.activity, fakeRuntime)
 
-            val entity = GroupEntity.create(session, "test")
-            coreEntity = CoreGroupEntity(entity)
+            val entity = ContentlessEntity.create(session, "test")
+            coreEntity = CoreContentlessEntity(entity)
 
             composition = rememberCompositionContext()
             testConstraints = VolumeConstraints(10, 20, 30, 40, 50, 60)
@@ -86,8 +112,8 @@ class SpatialComposeElementTest {
                     jxrSession = session,
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
+                    rootVolumeConstraints = testConstraints,
                 )
-            scene.rootVolumeConstraints = testConstraints
         }
 
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)

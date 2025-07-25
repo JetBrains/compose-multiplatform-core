@@ -33,6 +33,14 @@ plugins {
 androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.graphics.shapes"
+        withAndroidTestOnDeviceBuilder {
+            it.compilationName = "instrumentedTest"
+            it.defaultSourceSetName = "androidInstrumentedTest"
+            it.sourceSetTreeName = "test"
+        }
+        withAndroidTestOnJvmBuilder {
+            it.defaultSourceSetName = "androidUnitTest"
+        }
     }
     desktop()
     linux()

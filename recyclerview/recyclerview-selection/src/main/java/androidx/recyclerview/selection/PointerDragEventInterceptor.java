@@ -19,7 +19,6 @@ package androidx.recyclerview.selection;
 import static androidx.core.util.Preconditions.checkArgument;
 
 import android.view.MotionEvent;
-import android.view.ViewConfiguration;
 
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
@@ -27,8 +26,8 @@ import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener;
 import org.jspecify.annotations.Nullable;
 
 /**
- * OnItemTouchListener that detects and delegates drag events to a drag listener, else sends event
- * to fallback {@link OnItemTouchListener}.
+ * OnItemTouchListener that detects and delegates drag events to a drag listener,
+ * else sends event to fallback {@link OnItemTouchListener}.
  *
  * <p>See {@link OnDragInitiatedListener} for details on implementing drag and drop.
  */
@@ -37,9 +36,6 @@ final class PointerDragEventInterceptor implements OnItemTouchListener {
     private final ItemDetailsLookup<?> mEventDetailsLookup;
     private final OnDragInitiatedListener mDragListener;
     private OnItemTouchListener mDelegate;
-    private float mDownX;
-    private float mDownY;
-    private boolean mDownInItemDragRegion;
 
     PointerDragEventInterceptor(
             ItemDetailsLookup<?> eventDetailsLookup,
@@ -61,22 +57,8 @@ final class PointerDragEventInterceptor implements OnItemTouchListener {
 
     @Override
     public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
-        if (MotionEvents.isPrimaryMouseButtonPressed(e)) {
-            float x = e.getX();
-            float y = e.getY();
-            if (MotionEvents.isActionDown(e)) {
-                mDownX = x;
-                mDownY = y;
-                mDownInItemDragRegion = mEventDetailsLookup.inItemDragRegion(e);
-            } else if (mDownInItemDragRegion && MotionEvents.isActionMove(e)) {
-                int touchSlop = ViewConfiguration.get(rv.getContext()).getScaledTouchSlop();
-                float dx = x - mDownX;
-                float dy = y - mDownY;
-                float distanceSquared = (dx * dx) + (dy * dy);
-                if (distanceSquared > (touchSlop * touchSlop)) {
-                    return mDragListener.onDragInitiated(e);
-                }
-            }
+        if (MotionEvents.isPointerDragEvent(e) && mEventDetailsLookup.inItemDragRegion(e)) {
+            return mDragListener.onDragInitiated(e);
         }
         return mDelegate.onInterceptTouchEvent(rv, e);
     }

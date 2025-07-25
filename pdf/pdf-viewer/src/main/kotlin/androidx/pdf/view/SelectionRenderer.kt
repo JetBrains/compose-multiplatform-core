@@ -24,10 +24,10 @@ import android.graphics.PointF
 import android.graphics.PorterDuff.Mode
 import android.graphics.PorterDuffColorFilter
 import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import androidx.annotation.VisibleForTesting
-import androidx.pdf.PdfRect
 import androidx.pdf.R
 import kotlin.math.roundToInt
 
@@ -42,7 +42,7 @@ internal class SelectionRenderer(
             it.colorFilter =
                 PorterDuffColorFilter(
                     context.getColor(R.color.pdf_viewer_selection_handles),
-                    Mode.SRC_ATOP,
+                    Mode.SRC_ATOP
                 )
         }
     },
@@ -51,10 +51,10 @@ internal class SelectionRenderer(
             it.colorFilter =
                 PorterDuffColorFilter(
                     context.getColor(R.color.pdf_viewer_selection_handles),
-                    Mode.SRC_ATOP,
+                    Mode.SRC_ATOP
                 )
         }
-    },
+    }
 ) {
     private val rightHandle: Drawable by lazy { rightHandleFactory() }
 
@@ -64,19 +64,22 @@ internal class SelectionRenderer(
         model: SelectionModel,
         pageNum: Int,
         canvas: Canvas,
-        locationInView: RectF,
-        currentZoom: Float,
+        locationInView: Rect,
+        currentZoom: Float
     ) {
         // Draw the bounds first so the handles appear on top of them
-        model.documentSelection.selectedContents[pageNum]?.forEach {
-            it.bounds.forEach { drawBoundsOnPage(canvas, it, locationInView) }
-        }
+        model.selection.bounds
+            .filter { it.pageNum == pageNum }
+            .forEach { drawBoundsOnPage(canvas, it, locationInView) }
 
         model.startBoundary.let {
             val startLoc = it.location
             if (startLoc.pageNum == pageNum) {
                 val pointInView =
-                    PointF(locationInView.left + startLoc.x, locationInView.top + startLoc.y)
+                    PointF(
+                        locationInView.left + startLoc.pagePoint.x,
+                        locationInView.top + startLoc.pagePoint.y
+                    )
 
                 drawHandleAtPosition(canvas, pointInView, isRight = false xor it.isRtl, currentZoom)
             }
@@ -86,7 +89,10 @@ internal class SelectionRenderer(
             val endLoc = it.location
             if (endLoc.pageNum == pageNum) {
                 val pointInView =
-                    PointF(locationInView.left + endLoc.x, locationInView.top + endLoc.y)
+                    PointF(
+                        locationInView.left + endLoc.pagePoint.x,
+                        locationInView.top + endLoc.pagePoint.y
+                    )
                 drawHandleAtPosition(canvas, pointInView, isRight = true xor it.isRtl, currentZoom)
             }
         }
@@ -96,7 +102,7 @@ internal class SelectionRenderer(
         canvas: Canvas,
         pointInView: PointF,
         isRight: Boolean,
-        currentZoom: Float,
+        currentZoom: Float
     ) {
         // The sharp point of the handle is found at a particular point in the image - (25%, 10%)
         // for the right handle, and (75%, 10%) for a left handle. We apply these as negative
@@ -112,14 +118,14 @@ internal class SelectionRenderer(
             left.roundToInt(),
             top.roundToInt(),
             (left + drawable.intrinsicWidth * scale).roundToInt(),
-            (top + drawable.intrinsicHeight * scale).roundToInt(),
+            (top + drawable.intrinsicHeight * scale).roundToInt()
         )
         drawable.draw(canvas)
     }
 
-    private fun drawBoundsOnPage(canvas: Canvas, bounds: PdfRect, pageLocationInView: RectF) {
-        val boundsRect = RectF(bounds.left, bounds.top, bounds.right, bounds.bottom)
-        boundsRect.offset(pageLocationInView.left, pageLocationInView.top)
+    private fun drawBoundsOnPage(canvas: Canvas, bounds: PdfRect, pageLocationInView: Rect) {
+        val boundsRect = RectF(bounds.pageRect)
+        boundsRect.offset(pageLocationInView.left.toFloat(), pageLocationInView.top.toFloat())
         canvas.drawRect(boundsRect, BOUNDS_PAINT)
     }
 }

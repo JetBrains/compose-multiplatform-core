@@ -25,7 +25,7 @@ import androidx.tracing.perfetto.internal.handshake.protocol.Response
 import java.io.File
 
 /** Enables tracing at app startup if configured prior to app starting */
-public class StartupTracingInitializer : Initializer<Unit> {
+class StartupTracingInitializer : Initializer<Unit> {
     private companion object {
         private val TAG = StartupTracingInitializer::class.java.name
     }
@@ -56,7 +56,7 @@ public class StartupTracingInitializer : Initializer<Unit> {
                     "resultCode: ${enableTracingResponse.resultCode}, " +
                     "message: ${enableTracingResponse.message}, " +
                     "requiredVersion: ${enableTracingResponse.requiredVersion} " +
-                    "}",
+                    "}"
             )
         }
     }

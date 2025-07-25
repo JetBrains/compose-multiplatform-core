@@ -46,7 +46,9 @@ import org.junit.runners.Parameterized
 @LargeTest
 @RunWith(Parameterized::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
-class FragmentTransitionAnimTest(private val reorderingAllowed: ReorderingAllowed) {
+class FragmentTransitionAnimTest(
+    private val reorderingAllowed: ReorderingAllowed,
+) {
     private var onBackStackChangedTimes: Int = 0
 
     @get:Rule val rule = DetectLeaksAfterTestSuccess()
@@ -294,7 +296,7 @@ class FragmentTransitionAnimTest(private val reorderingAllowed: ReorderingAllowe
                     android.R.animator.fade_in,
                     android.R.animator.fade_out,
                     android.R.animator.fade_in,
-                    android.R.animator.fade_out,
+                    android.R.animator.fade_out
                 )
                 .replace(R.id.fragmentContainer, fragment2, "2")
                 .addToBackStack(null)

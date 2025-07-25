@@ -18,6 +18,7 @@ package androidx.room.integration.multiplatformtestapp.test
 
 import androidx.kruth.assertThat
 import androidx.room.Room
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.platform.app.InstrumentationRegistry
@@ -29,7 +30,7 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 
 @RunWith(Parameterized::class)
-class PagingTest(private val driver: Driver) : BasePagingTest() {
+class PagingTest(private val driver: SQLiteDriver) : BasePagingTest() {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val file = instrumentation.targetContext.getDatabasePath("test.db")
@@ -37,20 +38,17 @@ class PagingTest(private val driver: Driver) : BasePagingTest() {
     override fun getRoomDatabase(): SampleDatabase {
         return Room.databaseBuilder<SampleDatabase>(
                 context = instrumentation.targetContext,
-                name = file.path,
+                name = file.path
             )
-            .setDriver(
-                when (driver) {
-                    Driver.BUNDLED -> BundledSQLiteDriver()
-                    Driver.ANDROID -> AndroidSQLiteDriver()
-                }
-            )
+            .setDriver(driver)
             .setQueryCoroutineContext(Dispatchers.IO)
             .build()
     }
 
     companion object {
-        @JvmStatic @Parameters(name = "driver={0}") fun drivers() = Driver.entries.toTypedArray()
+        @JvmStatic
+        @Parameters(name = "driver={0}")
+        fun drivers() = arrayOf(BundledSQLiteDriver(), AndroidSQLiteDriver())
     }
 
     @BeforeTest
@@ -67,10 +65,5 @@ class PagingTest(private val driver: Driver) : BasePagingTest() {
 
     private fun deleteDatabaseFile() {
         instrumentation.targetContext.deleteDatabase(file.name)
-    }
-
-    enum class Driver {
-        BUNDLED,
-        ANDROID,
     }
 }

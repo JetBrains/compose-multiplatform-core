@@ -17,29 +17,29 @@
 package androidx.xr.compose.unit
 
 import androidx.compose.ui.unit.Density
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.Dimensions
 
 /**
- * Converts this [IntVolumeSize] to a [FloatSize3d] object in meters, taking into account [density].
+ * Converts this [IntVolumeSize] to a [Dimensions] object in meters, taking into account [density].
  *
- * @return a [FloatSize3d] object representing the volume size in meters.
+ * @return a [Dimensions] object representing the volume size in meters.
  */
-internal fun IntVolumeSize.toDimensionsInMeters(density: Density): FloatSize3d =
-    FloatSize3d(
+internal fun IntVolumeSize.toDimensionsInMeters(density: Density): Dimensions =
+    Dimensions(
         Meter.fromPixel(width.toFloat(), density).value,
         Meter.fromPixel(height.toFloat(), density).value,
         Meter.fromPixel(depth.toFloat(), density).value,
     )
 
 /**
- * Creates an [IntVolumeSize] from a [FloatSize3d] object in meters.
+ * Creates an [IntVolumeSize] from a [Dimensions] object in meters.
  *
  * The dimensions in meters are rounded to the nearest pixel value.
  *
  * @param density The pixel density of the display.
  * @return an [IntVolumeSize] object representing the same volume size in pixels.
  */
-internal fun FloatSize3d.toIntVolumeSize(density: Density): IntVolumeSize =
+internal fun Dimensions.toIntVolumeSize(density: Density): IntVolumeSize =
     IntVolumeSize(
         Meter(this.width).roundToPx(density),
         Meter(this.height).roundToPx(density),
@@ -47,17 +47,17 @@ internal fun FloatSize3d.toIntVolumeSize(density: Density): IntVolumeSize =
     )
 
 /**
- * Converts this [DpVolumeSize] to a [FloatSize3d] object in meters.
+ * Converts this [DpVolumeSize] to a [Dimensions] object in meters.
  *
- * @return a [FloatSize3d] object representing the volume size in meters
+ * @return a [Dimensions] object representing the volume size in meters
  */
-internal fun DpVolumeSize.toDimensionsInMeters(): FloatSize3d =
-    FloatSize3d(width.toMeter().value, height.toMeter().value, depth.toMeter().value)
+internal fun DpVolumeSize.toDimensionsInMeters(): Dimensions =
+    Dimensions(width.toMeter().value, height.toMeter().value, depth.toMeter().value)
 
 /**
- * Creates a [DpVolumeSize] from a [FloatSize3d] object in meters.
+ * Creates a [DpVolumeSize] from a [Dimensions] object in meters.
  *
  * @return a [DpVolumeSize] object representing the same volume size in Dp.
  */
-internal fun FloatSize3d.toDpVolumeSize(): DpVolumeSize =
+internal fun Dimensions.toDpVolumeSize(): DpVolumeSize =
     DpVolumeSize(Meter(width).toDp(), Meter(height).toDp(), Meter(depth).toDp())

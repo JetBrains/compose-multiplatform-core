@@ -43,6 +43,7 @@ public class SpatialCapabilities(@SpatialCapability private val capabilities: In
         public const val SPATIAL_CAPABILITY_EMBED_ACTIVITY: Int = 1 shl 5
     }
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(
         flag = true,

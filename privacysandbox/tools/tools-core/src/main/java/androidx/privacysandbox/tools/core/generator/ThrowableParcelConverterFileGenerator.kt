@@ -26,7 +26,9 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.TypeSpec
 
-class ThrowableParcelConverterFileGenerator(private val basePackageName: String) {
+class ThrowableParcelConverterFileGenerator(
+    private val basePackageName: String,
+) {
     companion object {
         const val converterName = "${throwableParcelName}Converter"
 

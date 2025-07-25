@@ -36,8 +36,11 @@ fun OneLineListItem() {
         ListItem(
             headlineContent = { Text("One line list item with 24x24 icon") },
             leadingContent = {
-                Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
-            },
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = "Localized description",
+                )
+            }
         )
         HorizontalDivider()
     }
@@ -54,8 +57,11 @@ fun TwoLineListItem() {
             supportingContent = { Text("Secondary text") },
             trailingContent = { Text("meta") },
             leadingContent = {
-                Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
-            },
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = "Localized description",
+                )
+            }
         )
         HorizontalDivider()
     }
@@ -72,9 +78,12 @@ fun ThreeLineListItemWithOverlineAndSupporting() {
             overlineContent = { Text("OVERLINE") },
             supportingContent = { Text("Secondary text") },
             leadingContent = {
-                Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = "Localized description",
+                )
             },
-            trailingContent = { Text("meta") },
+            trailingContent = { Text("meta") }
         )
         HorizontalDivider()
     }
@@ -90,9 +99,12 @@ fun ThreeLineListItemWithExtendedSupporting() {
             headlineContent = { Text("Three line list item") },
             supportingContent = { Text("Secondary text that\nspans multiple lines") },
             leadingContent = {
-                Icon(Icons.Filled.Favorite, contentDescription = "Localized description")
+                Icon(
+                    Icons.Filled.Favorite,
+                    contentDescription = "Localized description",
+                )
             },
-            trailingContent = { Text("meta") },
+            trailingContent = { Text("meta") }
         )
         HorizontalDivider()
     }

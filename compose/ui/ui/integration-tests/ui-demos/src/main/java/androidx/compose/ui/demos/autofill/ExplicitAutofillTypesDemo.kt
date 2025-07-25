@@ -53,9 +53,13 @@ fun ExplicitAutofillTypesDemo() {
                     @Suppress("Deprecation")
                     androidx.compose.ui.autofill.AutofillType.PersonFullName
                 ),
-            onFill = { name = TextFieldValue(it) },
+            onFill = { name = TextFieldValue(it) }
         ) {
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+            )
         }
 
         Spacer(Modifier.height(10.dp))
@@ -65,7 +69,7 @@ fun ExplicitAutofillTypesDemo() {
                 listOf(
                     @Suppress("Deprecation") androidx.compose.ui.autofill.AutofillType.EmailAddress
                 ),
-            onFill = { email = TextFieldValue(it) },
+            onFill = { email = TextFieldValue(it) }
         ) {
             OutlinedTextField(
                 value = email,
@@ -80,7 +84,7 @@ fun ExplicitAutofillTypesDemo() {
 private fun Autofill(
     autofillTypes: List<@Suppress("Deprecation") androidx.compose.ui.autofill.AutofillType>,
     onFill: ((String) -> Unit),
-    content: @Composable BoxScope.() -> Unit,
+    content: @Composable BoxScope.() -> Unit
 ) {
     val autofill = @Suppress("Deprecation") LocalAutofill.current
     val autofillTree = @Suppress("Deprecation") LocalAutofillTree.current
@@ -89,7 +93,7 @@ private fun Autofill(
             @Suppress("Deprecation")
             androidx.compose.ui.autofill.AutofillNode(
                 onFill = onFill,
-                autofillTypes = autofillTypes,
+                autofillTypes = autofillTypes
             )
         }
 
@@ -103,7 +107,7 @@ private fun Autofill(
                     }
                 }
                 .onGloballyPositioned { autofillNode.boundingBox = it.boundsInWindow() },
-        content = content,
+        content = content
     )
 
     DisposableEffect(autofillNode) {

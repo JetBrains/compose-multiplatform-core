@@ -25,9 +25,9 @@ import android.os.PersistableBundle
  * @param appParams Passed from the calling app to the Isolated Service. The expected contents of
  *   this parameter are defined by the service. The platform does not interpret this parameter.
  */
-public class ExecuteInIsolatedServiceRequest(
-    public val service: ComponentName,
-    public val appParams: PersistableBundle = PersistableBundle.EMPTY,
+class ExecuteInIsolatedServiceRequest(
+    val service: ComponentName,
+    val appParams: PersistableBundle = PersistableBundle.EMPTY,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

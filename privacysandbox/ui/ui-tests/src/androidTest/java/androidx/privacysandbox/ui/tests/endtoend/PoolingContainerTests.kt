@@ -27,9 +27,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.privacysandbox.ui.client.SandboxedUiAdapterFactory
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
-import androidx.privacysandbox.ui.client.view.SharedUiContainer
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
-import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.integration.testingutils.TestEventListener
 import androidx.privacysandbox.ui.tests.util.ScreenshotTestingUtil
 import androidx.privacysandbox.ui.tests.util.TestSessionManager
@@ -55,25 +53,18 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @MediumTest
-class PoolingContainerTests(
-    private val testContainerType: TestContainerType,
-    private val invokeBackwardsCompatFlow: Boolean,
-) {
+class PoolingContainerTests(private val invokeBackwardsCompatFlow: Boolean) {
 
     @get:Rule var activityScenarioRule = ActivityScenarioRule(MainActivity::class.java)
 
-    enum class TestContainerType {
-        SANDBOXED_SDK_VIEW,
-        SHARED_UI_CONTAINER,
-    }
-
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "testContainerType={0}, invokeBackwardsCompatFlow={1}")
-        fun data(): List<Array<Any>> =
-            TestContainerType.entries.flatMap { testContainerType ->
-                listOf(true, false).map { invokeCompat -> arrayOf(testContainerType, invokeCompat) }
-            }
+        @Parameterized.Parameters(name = "invokeBackwardsCompatFlow={0}")
+        fun data(): Array<Any> =
+            arrayOf(
+                arrayOf(true),
+                arrayOf(false),
+            )
     }
 
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -101,7 +92,7 @@ class PoolingContainerTests(
             linearLayout.layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
                 )
             linearLayout.setBackgroundColor(Color.RED)
             setContentView(linearLayout)
@@ -110,7 +101,7 @@ class PoolingContainerTests(
             recyclerView.layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
                 )
             recyclerView.setLayoutManager(LinearLayoutManager(context))
         }
@@ -161,7 +152,6 @@ class PoolingContainerTests(
     fun testPoolingContainerListener_NotifyFetchUiForSession() {
         // verifyColorOfScreenshot is only available for U+ devices.
         assumeTrue(SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-        assumeTrue(testContainerType == TestContainerType.SANDBOXED_SDK_VIEW)
 
         val recyclerViewAdapter = RecyclerViewTestAdapterForFetchingUi()
 
@@ -183,13 +173,12 @@ class PoolingContainerTests(
                     midPixelLocation,
                     midPixelLocation + 10,
                     midPixelLocation + 10,
-                    SDK_VIEW_COLOR,
+                    SDK_VIEW_COLOR
                 )
             )
             .isTrue()
     }
 
-    @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
     private fun createRecyclerViewTestAdapterAndWaitForChildrenToBeActive(
         isNestedView: Boolean
     ): RecyclerViewTestAdapter {
@@ -199,23 +188,13 @@ class PoolingContainerTests(
         recyclerViewAdapter.waitForViewsToBeAttached()
 
         for (i in 0 until recyclerView.childCount) {
-            val childView: View =
+            val childView: SandboxedSdkView =
                 if (isNestedView) {
-                    (recyclerView.getChildAt(i) as ViewGroup).getChildAt(0)
+                    (recyclerView.getChildAt(i) as ViewGroup).getChildAt(0) as SandboxedSdkView
                 } else {
-                    recyclerView.getChildAt(i)
+                    recyclerView.getChildAt(i) as SandboxedSdkView
                 }
-            if (testContainerType == TestContainerType.SANDBOXED_SDK_VIEW)
-                sessionManager.createAdapterAndEstablishSession(
-                    viewForSession = childView as SandboxedSdkView
-                )
-            else
-                sessionManager.createSharedUiAdapterAndEstablishSession(
-                    sharedUiContainer = childView as SharedUiContainer,
-                    globalOpenSessionLatch = recyclerViewAdapter.testEventListener.uiDisplayedLatch,
-                    globalCloseSessionLatch =
-                        recyclerViewAdapter.testEventListener.sessionClosedLatch,
-                )
+            sessionManager.createAdapterAndEstablishSession(viewForSession = childView)
         }
 
         recyclerViewAdapter.ensureAllChildrenBecomeActive()
@@ -242,7 +221,7 @@ class PoolingContainerTests(
             val layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
                 )
             layoutParams.setMargins(20, 20, 20, 20)
             view.layoutParams = layoutParams
@@ -257,7 +236,7 @@ class PoolingContainerTests(
 
                 val adapterFromCoreLibInfo =
                     SandboxedUiAdapterFactory.createFromCoreLibInfo(
-                        sessionManager.getCoreLibInfoFromSharedUiAdapter(adapter)
+                        sessionManager.getCoreLibInfoFromAdapter(adapter)
                     )
 
                 childSandboxedSdkView.setAdapter(adapterFromCoreLibInfo)
@@ -277,17 +256,17 @@ class PoolingContainerTests(
         override fun getItemCount(): Int = itemCount
     }
 
-    @OptIn(ExperimentalFeatures.SharedUiPresentationApi::class)
-    inner class RecyclerViewTestAdapter(
+    class RecyclerViewTestAdapter(
         private val context: Context,
         private val isNestedView: Boolean = false,
     ) : RecyclerView.Adapter<RecyclerViewTestAdapter.ViewHolder>() {
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+        class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
-        private var numberOfTestContainers = 0
+        private var numberOfSandboxedSdkViews = 0
         private val itemCount = 5
         private val attachedLatch = CountDownLatch(itemCount)
         private val detachedLatch = CountDownLatch(itemCount)
+        private val testEventListener = TestEventListener(itemCount)
         private val onAttachStateChangeListener =
             object : View.OnAttachStateChangeListener {
                 override fun onViewAttachedToWindow(v: View) {
@@ -300,10 +279,9 @@ class PoolingContainerTests(
                     }
                 }
             }
-        val testEventListener = TestEventListener(itemCount)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            if (numberOfTestContainers >= itemCount) {
+            if (numberOfSandboxedSdkViews >= itemCount) {
                 // We should return without creating a SandboxedSdkView if the
                 // number of SandboxedSdkViews is already equal to items. Recycler
                 // view will create new ViewHolders once SandboxedSdkViews are
@@ -311,15 +289,9 @@ class PoolingContainerTests(
                 return ViewHolder(View(context))
             }
 
-            numberOfTestContainers++
-            var view: View =
-                if (testContainerType == TestContainerType.SANDBOXED_SDK_VIEW)
-                    SandboxedSdkView(context).apply { setEventListener(testEventListener) }
-                else
-                    SharedUiContainer(context).apply {
-                        layoutParams =
-                            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1)
-                    }
+            numberOfSandboxedSdkViews++
+            var view: View = SandboxedSdkView(context)
+            (view as SandboxedSdkView).setEventListener(testEventListener)
             if (isNestedView) {
                 val parentView = LinearLayout(context)
                 parentView.addView(view)

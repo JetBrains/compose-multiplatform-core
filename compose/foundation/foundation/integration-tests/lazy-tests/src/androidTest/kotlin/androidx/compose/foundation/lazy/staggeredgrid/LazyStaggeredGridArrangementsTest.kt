@@ -77,7 +77,11 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
+        fun initParameters(): Array<Any> =
+            arrayOf(
+                Orientation.Vertical,
+                Orientation.Horizontal,
+            )
 
         private const val LazyStaggeredGrid = "Lazy"
     }
@@ -103,7 +107,7 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                     Modifier.testTag(LazyStaggeredGrid).axisSize(itemSizeDp * 3, itemSizeDp * 5),
                 state = state,
                 mainAxisSpacing = itemSizeDp,
-                crossAxisArrangement = Arrangement.spacedBy(itemSizeDp / 2),
+                crossAxisArrangement = Arrangement.spacedBy(itemSizeDp / 2)
             ) {
                 items(100) { Spacer(Modifier.testTag("$it").mainAxisSize(itemSizeDp)) }
             }
@@ -151,12 +155,12 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                 modifier =
                     Modifier.testTag(LazyStaggeredGrid).axisSize(itemSizeDp * 2, itemSizeDp * 5),
                 state = state,
-                mainAxisSpacing = itemSizeDp,
+                mainAxisSpacing = itemSizeDp
             ) {
                 items(100) {
                     BasicText(
                         text = "$it",
-                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp).debugBorder(),
+                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp).debugBorder()
                     )
                 }
             }
@@ -185,12 +189,12 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                 modifier =
                     Modifier.testTag(LazyStaggeredGrid).axisSize(itemSizeDp * 2, itemSizeDp * 5),
                 state = state,
-                mainAxisSpacing = -itemSizeDp,
+                mainAxisSpacing = -itemSizeDp
             ) {
                 items(100) {
                     BasicText(
                         text = "$it",
-                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp * 2),
+                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp * 2)
                     )
                 }
             }
@@ -233,12 +237,12 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                     Modifier.testTag(LazyStaggeredGrid).axisSize(itemSizeDp * 2, itemSizeDp * 5),
                 state = state,
                 mainAxisSpacing = -itemSizeDp,
-                contentPadding = PaddingValues(beforeContent = itemSizeDp),
+                contentPadding = PaddingValues(beforeContent = itemSizeDp)
             ) {
                 items(100) {
                     BasicText(
                         text = "$it",
-                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp * 2),
+                        modifier = Modifier.testTag("$it").mainAxisSize(itemSizeDp * 2)
                     )
                 }
             }
@@ -280,7 +284,7 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                 lanes = 2,
                 modifier = Modifier.axisSize(crossAxis = itemSizeDp * 2, mainAxis = itemSizeDp),
                 mainAxisSpacing = -largerThanItemSize,
-                state = state,
+                state = state
             ) {
                 items(8) { index -> Box(Modifier.size(itemSizeDp).testTag(index.toString())) }
             }
@@ -303,7 +307,7 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                 cells = StaggeredGridCells.FixedSize(itemSizeDp * 2),
                 modifier = Modifier.axisSize(crossAxis = itemSizeDp * 5, mainAxis = itemSizeDp * 5),
                 crossAxisArrangement = Arrangement.Center,
-                state = state,
+                state = state
             ) {
                 items(10) { index -> Box(Modifier.size(itemSizeDp).testTag(index.toString())) }
             }
@@ -332,15 +336,15 @@ class LazyStaggeredGridArrangementsTest(orientation: Orientation) :
                         Arrangement.HorizontalOrVertical,
                         Arrangement.Horizontal by Arrangement.spacedBy(
                             itemSizeDp * 0.5f,
-                            Alignment.End,
+                            Alignment.End
                         ),
                         Arrangement.Vertical by Arrangement.spacedBy(
                             itemSizeDp * 0.5f,
-                            Alignment.Bottom,
+                            Alignment.Bottom
                         ) {
                         override val spacing: Dp = itemSizeDp * 0.5f
                     },
-                state = state,
+                state = state
             ) {
                 items(10) { index -> Box(Modifier.size(itemSizeDp).testTag(index.toString())) }
             }

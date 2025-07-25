@@ -32,7 +32,6 @@ import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertLeftPositionInRootIsEqualTo
-import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -59,26 +58,8 @@ class SwipeToDismissTest {
     private val dismissContentTag = "dismissContent"
     private val swipeDismissTag = "swipeDismiss"
 
-    private val restorationTester = StateRestorationTester(rule)
-
     private fun advanceClock() {
         rule.mainClock.advanceTimeBy(100_000L)
-    }
-
-    @Test
-    fun test_stateSavedAndRestored() {
-        val initialValue = SwipeToDismissBoxValue.Settled
-        val expectedValue = SwipeToDismissBoxValue.StartToEnd
-        lateinit var scope: CoroutineScope
-        lateinit var state: SwipeToDismissBoxState
-        restorationTester.setContent {
-            scope = rememberCoroutineScope()
-            state = rememberSwipeToDismissBoxState(initialValue)
-        }
-        scope.launch { state.snapTo(expectedValue) }
-        assertThat(state.settledValue).isEqualTo(expectedValue)
-        restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(state.settledValue).isEqualTo(expectedValue)
     }
 
     @Test
@@ -86,7 +67,7 @@ class SwipeToDismissTest {
         rule.setContent {
             SwipeToDismissBox(
                 state = rememberSwipeToDismissBoxState(SwipeToDismissBoxValue.Settled),
-                backgroundContent = {},
+                backgroundContent = {}
             ) {
                 Box(Modifier.fillMaxSize().testTag(dismissContentTag))
             }
@@ -100,7 +81,7 @@ class SwipeToDismissTest {
         rule.setContent {
             SwipeToDismissBox(
                 state = rememberSwipeToDismissBoxState(SwipeToDismissBoxValue.StartToEnd),
-                backgroundContent = {},
+                backgroundContent = {}
             ) {
                 Box(Modifier.fillMaxSize().testTag(dismissContentTag))
             }
@@ -116,7 +97,7 @@ class SwipeToDismissTest {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 SwipeToDismissBox(
                     state = rememberSwipeToDismissBoxState(SwipeToDismissBoxValue.StartToEnd),
-                    backgroundContent = {},
+                    backgroundContent = {}
                 ) {
                     Box(Modifier.fillMaxSize().testTag(dismissContentTag))
                 }
@@ -164,7 +145,7 @@ class SwipeToDismissTest {
         rule.setContent {
             SwipeToDismissBox(
                 state = rememberSwipeToDismissBoxState(SwipeToDismissBoxValue.Settled),
-                backgroundContent = { Box(Modifier.fillMaxSize().testTag(backgroundTag)) },
+                backgroundContent = { Box(Modifier.fillMaxSize().testTag(backgroundTag)) }
             ) {
                 Box(Modifier.size(100.dp))
             }
@@ -183,7 +164,7 @@ class SwipeToDismissTest {
                 modifier = Modifier.testTag(swipeDismissTag),
                 enableDismissFromStartToEnd = true,
                 enableDismissFromEndToStart = false,
-                backgroundContent = {},
+                backgroundContent = {}
             ) {
                 Box(Modifier.fillMaxSize())
             }
@@ -343,7 +324,7 @@ class SwipeToDismissTest {
                                 modifier = Modifier.height(48.dp).fillMaxWidth(),
                                 state = composedItems[index]!!,
                                 backgroundContent = {},
-                                content = {},
+                                content = {}
                             )
                         }
                     }
@@ -399,7 +380,7 @@ class SwipeToDismissTest {
                 state = swipeToDismissBoxState,
                 modifier = Modifier.testTag(swipeDismissTag),
                 gesturesEnabled = false,
-                backgroundContent = {},
+                backgroundContent = {}
             ) {
                 Box(Modifier.fillMaxSize())
             }

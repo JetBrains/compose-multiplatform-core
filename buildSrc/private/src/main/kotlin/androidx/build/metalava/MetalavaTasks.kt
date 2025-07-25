@@ -45,7 +45,7 @@ internal object MetalavaTasks {
         androidManifest: Provider<RegularFile>?,
         baselinesApiLocation: ApiBaselinesLocation,
         builtApiLocation: ApiLocation,
-        outputApiLocations: List<ApiLocation>,
+        outputApiLocations: List<ApiLocation>
     ) {
         val metalavaClasspath = project.getMetalavaClasspath()
         val version = project.version()
@@ -97,7 +97,6 @@ internal object MetalavaTasks {
                     task.bootClasspath = compilationInputs.bootClasspath
                     task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
-                    task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.cacheEvenIfNoOutputs()
                     task.dependsOn(generateApi)
                 }
@@ -114,7 +113,6 @@ internal object MetalavaTasks {
                     task.bootClasspath = compilationInputs.bootClasspath
                     task.k2UastEnabled.set(extension.metalavaK2UastEnabled)
                     task.kotlinSourceLevel.set(kotlinSourceLevel)
-                    task.targetsJavaConsumers.set(targetsJavaConsumers)
                     task.dependsOn(generateApi)
                 }
         }
@@ -122,7 +120,7 @@ internal object MetalavaTasks {
         val updateApiLintBaseline =
             project.tasks.register(
                 "updateApiLintBaseline",
-                UpdateApiLintBaselineTask::class.java,
+                UpdateApiLintBaselineTask::class.java
             ) { task ->
                 task.metalavaClasspath.from(metalavaClasspath)
                 task.baselines.set(baselinesApiLocation)
@@ -205,7 +203,7 @@ internal object MetalavaTasks {
             regenerateOldApis,
             updateApi,
             regenerateApis,
-            generateApi,
+            generateApi
         )
     }
 
@@ -230,7 +228,7 @@ internal object MetalavaTasks {
                         sourceSetName = "main",
                         dependsOnSourceSets = emptyList(),
                         sourcePaths = inputs.sourcePaths,
-                        dependencyClasspath = inputs.dependencyClasspath,
+                        dependencyClasspath = inputs.dependencyClasspath
                     )
                 )
             )

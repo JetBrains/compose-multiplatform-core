@@ -44,8 +44,9 @@ import io.reactivex.rxjava3.plugins.RxJavaPlugins
  * @param initial The initial value for the returned [State] which will be asynchronously updated
  *   with the real one once we receive it from the stream
  */
+@Suppress("UPPER_BOUND_VIOLATED") // b/407928519
 @Composable
-public fun <R, T : R & Any> Observable<T>.subscribeAsState(initial: R): State<R> =
+fun <R, T : R> Observable<T>.subscribeAsState(initial: R): State<R> =
     asState(initial) { subscribe(it) }
 
 /**
@@ -63,8 +64,9 @@ public fun <R, T : R & Any> Observable<T>.subscribeAsState(initial: R): State<R>
  * @param initial The initial value for the returned [State] which will be asynchronously updated
  *   with the real one once we receive it from the stream
  */
+@Suppress("UPPER_BOUND_VIOLATED") // b/407928519
 @Composable
-public fun <R, T : R & Any> Flowable<T>.subscribeAsState(initial: R): State<R> =
+fun <R, T : R> Flowable<T>.subscribeAsState(initial: R): State<R> =
     asState(initial) { subscribe(it) }
 
 /**
@@ -82,9 +84,9 @@ public fun <R, T : R & Any> Flowable<T>.subscribeAsState(initial: R): State<R> =
  * @param initial The initial value for the returned [State] which will be asynchronously updated
  *   with the real one once we receive it from the stream
  */
+@Suppress("UPPER_BOUND_VIOLATED") // b/407928519
 @Composable
-public fun <R, T : R & Any> Single<T>.subscribeAsState(initial: R): State<R> =
-    asState(initial) { subscribe(it) }
+fun <R, T : R> Single<T>.subscribeAsState(initial: R): State<R> = asState(initial) { subscribe(it) }
 
 /**
  * Subscribes to this [Maybe] and represents its value via [State]. Once the value would be posted
@@ -102,8 +104,7 @@ public fun <R, T : R & Any> Single<T>.subscribeAsState(initial: R): State<R> =
  *   with the real one once we receive it from the stream
  */
 @Composable
-public fun <R, T : R & Any> Maybe<T>.subscribeAsState(initial: R): State<R> =
-    asState(initial) { subscribe(it) }
+fun <R, T : R> Maybe<T>.subscribeAsState(initial: R): State<R> = asState(initial) { subscribe(it) }
 
 /**
  * Subscribes to this [Completable] and represents its completed state via [State]. Once the
@@ -119,13 +120,13 @@ public fun <R, T : R & Any> Maybe<T>.subscribeAsState(initial: R): State<R> =
  * @sample androidx.compose.runtime.rxjava3.samples.CompletableSample
  */
 @Composable
-public fun Completable.subscribeAsState(): State<Boolean> =
+fun Completable.subscribeAsState(): State<Boolean> =
     asState(false) { callback -> subscribe { callback(true) } }
 
 @Composable
 private inline fun <T, S> S.asState(
     initial: T,
-    crossinline subscribe: S.((T) -> Unit) -> Disposable,
+    crossinline subscribe: S.((T) -> Unit) -> Disposable
 ): State<T> {
     val state = remember { mutableStateOf(initial) }
     DisposableEffect(this) {

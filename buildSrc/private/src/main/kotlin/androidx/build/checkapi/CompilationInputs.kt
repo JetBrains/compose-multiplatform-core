@@ -76,16 +76,14 @@ internal sealed interface CompilationInputs {
             }
 
             // Not a multiplatform project, set up standard inputs
-            @Suppress("UnstableApiUsage") // Usage of .kotlin
             val kotlinCollection = project.files(variant.sources.kotlin?.all)
             val javaCollection = project.files(variant.sources.java?.all)
             val sourceCollection = kotlinCollection + javaCollection
 
-            @Suppress("UnstableApiUsage") // Usage of compileClasspath
             return StandardCompilationInputs(
                 sourcePaths = sourceCollection,
                 dependencyClasspath = variant.compileClasspath,
-                bootClasspath = bootClasspath,
+                bootClasspath = bootClasspath
             )
         }
 
@@ -110,7 +108,7 @@ internal sealed interface CompilationInputs {
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
                 compilationProvider = jvmCompilation,
-                bootClasspath = project.getAndroidJar(),
+                bootClasspath = project.getAndroidJar()
             )
         }
 
@@ -137,7 +135,7 @@ internal sealed interface CompilationInputs {
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
                 compilationProvider = compilation,
-                bootClasspath = project.getAndroidJar(),
+                bootClasspath = project.getAndroidJar()
             )
         }
 
@@ -149,7 +147,7 @@ internal sealed interface CompilationInputs {
             return StandardCompilationInputs(
                 sourcePaths = sourcePaths,
                 dependencyClasspath = dependencyClasspath,
-                bootClasspath = project.getAndroidJar(),
+                bootClasspath = project.getAndroidJar()
             )
         }
 
@@ -279,7 +277,7 @@ internal class MultiplatformCompilationInputs(
                                         }
                                     it.attributes.attribute(
                                         Attribute.of("artifactType", String::class.java),
-                                        artifactType,
+                                        artifactType
                                     )
                                 }
                                 .files
@@ -296,7 +294,11 @@ internal class MultiplatformCompilationInputs(
                         )
                     }
                 }
-            return MultiplatformCompilationInputs(project, sourceSets, bootClasspath)
+            return MultiplatformCompilationInputs(
+                project,
+                sourceSets,
+                bootClasspath,
+            )
         }
     }
 }

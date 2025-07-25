@@ -55,7 +55,7 @@ class PdfViewNavigationTest {
                     pdfDocument = fakePdfDocument
                     id = PDF_VIEW_ID
                 },
-                ViewGroup.LayoutParams(width, height),
+                ViewGroup.LayoutParams(width, height)
             )
             activity.setContentView(container)
         }
@@ -79,13 +79,13 @@ class PdfViewNavigationTest {
                                                     pageNumber = VALID_PAGE_NUMBER,
                                                     xCoordinate = 10f,
                                                     yCoordinate = 40f,
-                                                    zoom = 1f,
-                                                ),
+                                                    zoom = 1f
+                                                )
                                         )
                                     ),
-                                externalLinks = emptyList(),
-                            )
-                    ),
+                                externalLinks = emptyList()
+                            ),
+                    )
             )
         setupPdfView(100, 1000, fakePdfDocument)
 
@@ -129,13 +129,13 @@ class PdfViewNavigationTest {
                                                     pageNumber = NON_EXISTENT_PAGE_NUMBER,
                                                     xCoordinate = 10f,
                                                     yCoordinate = 40f,
-                                                    zoom = 1f,
-                                                ),
+                                                    zoom = 1f
+                                                )
                                         )
                                     ),
-                                externalLinks = emptyList(),
+                                externalLinks = emptyList()
                             )
-                    ),
+                    )
             )
         setupPdfView(100, 1000, fakePdfDocument)
 
@@ -165,7 +165,7 @@ class PdfViewNavigationTest {
     fun testExternalLinkNavigation_withValidUri() = runTest {
         val fakePdfDocument =
             FakePdfDocument(
-                pages = List(10) { Point(200, 200) },
+                pages = List(10) { Point(100, 200) },
                 pageLinks =
                     mapOf(
                         0 to
@@ -175,13 +175,13 @@ class PdfViewNavigationTest {
                                     listOf(
                                         PdfPageLinkContent(
                                             bounds = listOf(RectF(0f, 0f, 100f, 200f)),
-                                            uri = Uri.parse(URI_WITH_VALID_SCHEME),
+                                            uri = Uri.parse(URI_WITH_VALID_SCHEME)
                                         )
                                     ),
-                            )
-                    ),
+                            ),
+                    )
             )
-        setupPdfView(200, 1000, fakePdfDocument)
+        setupPdfView(100, 1000, fakePdfDocument)
 
         Intents.init()
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {

@@ -22,7 +22,6 @@ import androidx.annotation.RestrictTo
 import androidx.room.concurrent.CloseBarrier
 import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
-import androidx.room.util.getCoroutineContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteException
@@ -43,7 +42,7 @@ import kotlinx.coroutines.withContext
  *
  * @see Database
  */
-public expect abstract class RoomDatabase() {
+expect abstract class RoomDatabase() {
 
     /**
      * The invalidation tracker for this database.
@@ -53,7 +52,7 @@ public expect abstract class RoomDatabase() {
      *
      * @return The invalidation tracker for the database.
      */
-    public val invalidationTracker: InvalidationTracker
+    val invalidationTracker: InvalidationTracker
 
     /**
      * A barrier that prevents the database from closing while the [InvalidationTracker] is using
@@ -103,7 +102,7 @@ public expect abstract class RoomDatabase() {
      */
     protected abstract fun createInvalidationTracker(): InvalidationTracker
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun getCoroutineScope(): CoroutineScope
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun getCoroutineScope(): CoroutineScope
 
     /**
      * Returns a Set of required [AutoMigrationSpec] classes.
@@ -115,7 +114,7 @@ public expect abstract class RoomDatabase() {
      *   this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>>
+    open fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>>
 
     /**
      * Returns a list of automatic [Migration]s that have been generated.
@@ -127,7 +126,7 @@ public expect abstract class RoomDatabase() {
      * @return A list of migration instances each of which is a generated 'auto migration'.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun createAutoMigrations(
+    open fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration>
 
@@ -141,7 +140,7 @@ public expect abstract class RoomDatabase() {
      * @return An instance of T.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public fun <T : Any> getTypeConverter(klass: KClass<T>): T
+    fun <T : Any> getTypeConverter(klass: KClass<T>): T
 
     /**
      * Adds a provided type converter to be used in the database DAOs.
@@ -181,30 +180,28 @@ public expect abstract class RoomDatabase() {
      *
      * Once a [RoomDatabase] is closed it should no longer be used.
      */
-    public fun close()
+    fun close()
 
     /**
      * Use a connection to perform database operations.
      *
      * This function is for internal access to the pool, it is an unconfined coroutine function to
-     * be used by Room generated code paths and runtime internals and is not marked with
-     * [RoomExternalOperationElement]. For the public version see [useReaderConnection] and
+     * be used by Room generated code paths. For the public version see [useReaderConnection] and
      * [useWriterConnection].
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public suspend fun <R> useConnection(isReadOnly: Boolean, block: suspend (Transactor) -> R): R
+    internal suspend fun <R> useConnection(isReadOnly: Boolean, block: suspend (Transactor) -> R): R
 
     /**
      * Journal modes for SQLite database.
      *
      * @see Builder#setJournalMode
      */
-    public enum class JournalMode {
+    enum class JournalMode {
         /** Truncate journal mode. */
         TRUNCATE,
 
         /** Write-Ahead Logging mode. */
-        WRITE_AHEAD_LOGGING,
+        WRITE_AHEAD_LOGGING
     }
 
     /**
@@ -212,14 +209,14 @@ public expect abstract class RoomDatabase() {
      *
      * @param T The type of the abstract database class.
      */
-    public class Builder<T : RoomDatabase> {
+    class Builder<T : RoomDatabase> {
         /**
          * Sets the [SQLiteDriver] implementation to be used by Room to open database connections.
          *
          * @param driver The driver
          * @return This builder instance.
          */
-        public fun setDriver(driver: SQLiteDriver): Builder<T>
+        fun setDriver(driver: SQLiteDriver): Builder<T>
 
         /**
          * Adds a migration to the builder.
@@ -236,7 +233,7 @@ public expect abstract class RoomDatabase() {
          *   necessary changes for a version change.
          * @return This builder instance.
          */
-        public fun addMigrations(vararg migrations: Migration): Builder<T>
+        fun addMigrations(vararg migrations: Migration): Builder<T>
 
         /**
          * Adds an auto migration spec instance to the builder.
@@ -245,7 +242,7 @@ public expect abstract class RoomDatabase() {
          *   [ProvidedAutoMigrationSpec] and is declared in an [AutoMigration] annotation.
          * @return This builder instance.
          */
-        public fun addAutoMigrationSpec(autoMigrationSpec: AutoMigrationSpec): Builder<T>
+        fun addAutoMigrationSpec(autoMigrationSpec: AutoMigrationSpec): Builder<T>
 
         /**
          * Allows Room to destructively recreate database tables if [Migration]s that would migrate
@@ -265,7 +262,7 @@ public expect abstract class RoomDatabase() {
          *   Room could leave obsolete data when table names or existence changes between versions.
          * @return This builder instance.
          */
-        public fun fallbackToDestructiveMigration(dropAllTables: Boolean): Builder<T>
+        fun fallbackToDestructiveMigration(dropAllTables: Boolean): Builder<T>
 
         /**
          * Allows Room to destructively recreate database tables if [Migration]s are not available
@@ -278,7 +275,7 @@ public expect abstract class RoomDatabase() {
          *   Room could leave obsolete data when table names or existence changes between versions.
          * @return This builder instance.
          */
-        public fun fallbackToDestructiveMigrationOnDowngrade(dropAllTables: Boolean): Builder<T>
+        fun fallbackToDestructiveMigrationOnDowngrade(dropAllTables: Boolean): Builder<T>
 
         /**
          * Informs Room that it is allowed to destructively recreate database tables from specific
@@ -304,9 +301,9 @@ public expect abstract class RoomDatabase() {
          *   migration.
          * @return This builder instance.
          */
-        public fun fallbackToDestructiveMigrationFrom(
+        fun fallbackToDestructiveMigrationFrom(
             dropAllTables: Boolean,
-            vararg startVersions: Int,
+            vararg startVersions: Int
         ): Builder<T>
 
         /**
@@ -316,7 +313,7 @@ public expect abstract class RoomDatabase() {
          *   [ProvidedTypeConverter].
          * @return This builder instance.
          */
-        public fun addTypeConverter(typeConverter: Any): Builder<T>
+        fun addTypeConverter(typeConverter: Any): Builder<T>
 
         /**
          * Sets the journal mode for this database.
@@ -330,7 +327,7 @@ public expect abstract class RoomDatabase() {
          * @param journalMode The journal mode.
          * @return This builder instance.
          */
-        public fun setJournalMode(journalMode: JournalMode): Builder<T>
+        fun setJournalMode(journalMode: JournalMode): Builder<T>
 
         /**
          * Sets the [CoroutineContext] that will be used to execute all asynchronous queries and
@@ -343,7 +340,7 @@ public expect abstract class RoomDatabase() {
          * @return This [Builder] instance
          * @throws IllegalArgumentException if the [context] has no [CoroutineDispatcher]
          */
-        public fun setQueryCoroutineContext(context: CoroutineContext): Builder<T>
+        fun setQueryCoroutineContext(context: CoroutineContext): Builder<T>
 
         /**
          * Adds a [Callback] to this database.
@@ -351,7 +348,7 @@ public expect abstract class RoomDatabase() {
          * @param callback The callback.
          * @return This builder instance.
          */
-        public fun addCallback(callback: Callback): Builder<T>
+        fun addCallback(callback: Callback): Builder<T>
 
         /**
          * Creates the database and initializes it.
@@ -359,21 +356,21 @@ public expect abstract class RoomDatabase() {
          * @return A new database instance.
          * @throws IllegalArgumentException if the builder was misconfigured.
          */
-        public fun build(): T
+        fun build(): T
     }
 
     /**
      * A container to hold migrations. It also allows querying its contents to find migrations
      * between two versions.
      */
-    public class MigrationContainer() {
+    class MigrationContainer() {
         /**
          * Returns the map of available migrations where the key is the start version of the
          * migration, and the value is a map of (end version -> Migration).
          *
          * @return Map of migrations keyed by the start version
          */
-        public fun getMigrations(): Map<Int, Map<Int, Migration>>
+        fun getMigrations(): Map<Int, Map<Int, Migration>>
 
         /**
          * Adds the given migrations to the list of available migrations. If 2 migrations have the
@@ -381,7 +378,7 @@ public expect abstract class RoomDatabase() {
          *
          * @param migrations List of available migrations.
          */
-        public fun addMigrations(migrations: List<Migration>)
+        fun addMigrations(migrations: List<Migration>)
 
         /**
          * Add a [Migration] to the container. If the container already has a migration with the
@@ -389,7 +386,7 @@ public expect abstract class RoomDatabase() {
          *
          * @param migration the migration to add.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public fun addMigration(migration: Migration)
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) fun addMigration(migration: Migration)
 
         /**
          * Indicates if the given migration is contained within the [MigrationContainer] based on
@@ -399,7 +396,7 @@ public expect abstract class RoomDatabase() {
          * @param endVersion End version of the migration
          * @return True if it contains a migration with the same start-end version, false otherwise.
          */
-        public fun contains(startVersion: Int, endVersion: Int): Boolean
+        fun contains(startVersion: Int, endVersion: Int): Boolean
 
         /**
          * Returns a pair corresponding to an entry in the map of available migrations whose key is
@@ -417,7 +414,7 @@ public expect abstract class RoomDatabase() {
     }
 
     /** Callback for [RoomDatabase] */
-    public abstract class Callback() {
+    abstract class Callback() {
         /**
          * Called when the database is created for the first time.
          *
@@ -425,21 +422,21 @@ public expect abstract class RoomDatabase() {
          *
          * @param connection The database connection.
          */
-        public open fun onCreate(connection: SQLiteConnection)
+        open fun onCreate(connection: SQLiteConnection)
 
         /**
          * Called after the database was destructively migrated.
          *
          * @param connection The database connection.
          */
-        public open fun onDestructiveMigration(connection: SQLiteConnection)
+        open fun onDestructiveMigration(connection: SQLiteConnection)
 
         /**
          * Called when the database has been opened.
          *
          * @param connection The database connection.
          */
-        public open fun onOpen(connection: SQLiteConnection)
+        open fun onOpen(connection: SQLiteConnection)
     }
 }
 
@@ -467,10 +464,8 @@ public expect abstract class RoomDatabase() {
  *   upgraded or there is a timeout acquiring a connection.
  * @see [useWriterConnection]
  */
-public suspend fun <R> RoomDatabase.useReaderConnection(block: suspend (Transactor) -> R): R =
-    withContext(getCoroutineContext(false) + RoomExternalOperationElement) {
-        useConnection(isReadOnly = true, block)
-    }
+suspend fun <R> RoomDatabase.useReaderConnection(block: suspend (Transactor) -> R): R =
+    withContext(getCoroutineScope().coroutineContext) { useConnection(isReadOnly = true, block) }
 
 /**
  * Acquires a WRITE connection, suspending while waiting if none is available and then calling the
@@ -497,24 +492,9 @@ public suspend fun <R> RoomDatabase.useReaderConnection(block: suspend (Transact
  *   upgraded or there is a timeout acquiring a connection.
  * @see [useReaderConnection]
  */
-public suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transactor) -> R): R =
-    withContext(getCoroutineContext(false) + RoomExternalOperationElement) {
-            useConnection(isReadOnly = false, block)
-        }
+suspend fun <R> RoomDatabase.useWriterConnection(block: suspend (Transactor) -> R): R =
+    withContext(getCoroutineScope().coroutineContext) { useConnection(isReadOnly = false, block) }
         .also { invalidationTracker.refreshAsync() }
-
-/**
- * A coroutine context element to mark coroutines that requested the use of a connection.
- *
- * This marker is used to identify database operations external to Room generated code or runtime
- * internals and is specifically needed to continue coroutines dispatching behaviour before the
- * introduction of the driver APIs and its ability to create suspending transactions.
- */
-internal object RoomExternalOperationElement :
-    CoroutineContext.Element, CoroutineContext.Key<RoomExternalOperationElement> {
-    override val key: CoroutineContext.Key<RoomExternalOperationElement>
-        get() = RoomExternalOperationElement
-}
 
 /**
  * Validates that no added migration start or end are also marked as fallback to destructive
@@ -522,7 +502,7 @@ internal object RoomExternalOperationElement :
  */
 internal fun validateMigrationsNotRequired(
     migrationStartAndEndVersions: Set<Int>,
-    migrationsNotRequiredFrom: Set<Int>,
+    migrationsNotRequiredFrom: Set<Int>
 ) {
     if (migrationStartAndEndVersions.isNotEmpty()) {
         for (version in migrationStartAndEndVersions) {
@@ -568,7 +548,7 @@ internal fun RoomDatabase.validateAutoMigrations(configuration: DatabaseConfigur
         val migrationExists =
             configuration.migrationContainer.contains(
                 autoMigration.startVersion,
-                autoMigration.endVersion,
+                autoMigration.endVersion
             )
         if (!migrationExists) {
             configuration.migrationContainer.addMigration(autoMigration)

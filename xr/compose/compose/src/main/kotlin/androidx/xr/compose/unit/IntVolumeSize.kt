@@ -16,14 +16,13 @@
 
 package androidx.xr.compose.unit
 
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.Dimensions
 
 /**
  * Represents the size of a volume in pixels.
  *
  * This class provides a convenient way to store and manipulate the [width], [height], and [depth]
- * of a 3D volume in pixels. It also provides methods to convert to and from [FloatSize3d] in
- * meters.
+ * of a 3D volume in pixels. It also provides methods to convert to and from [Dimensions] in meters.
  *
  * Note: As with all [Int] values in Compose XR, the values in this class represent pixels.
  *

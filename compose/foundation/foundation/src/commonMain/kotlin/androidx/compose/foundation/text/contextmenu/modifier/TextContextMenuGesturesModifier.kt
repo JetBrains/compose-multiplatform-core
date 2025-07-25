@@ -48,11 +48,11 @@ import kotlinx.coroutines.launch
  *   [TextContextMenuProvider.showTextContextMenu].
  */
 internal fun Modifier.textContextMenuGestures(
-    onPreShowContextMenu: (suspend () -> Unit)? = null
+    onPreShowContextMenu: (suspend () -> Unit)? = null,
 ): Modifier = this then TextContextMenuGestureElement(onPreShowContextMenu)
 
 private class TextContextMenuGestureElement(
-    private val onPreShowContextMenu: (suspend () -> Unit)?
+    private val onPreShowContextMenu: (suspend () -> Unit)?,
 ) : ModifierNodeElement<TextContextMenuGestureNode>() {
     override fun create(): TextContextMenuGestureNode =
         TextContextMenuGestureNode(onPreShowContextMenu)
@@ -78,8 +78,9 @@ private class TextContextMenuGestureElement(
     override fun hashCode(): Int = onPreShowContextMenu.hashCode()
 }
 
-private class TextContextMenuGestureNode(private var onPreShowContextMenu: (suspend () -> Unit)?) :
-    DelegatingNode(), CompositionLocalConsumerModifierNode, GlobalPositionAwareModifierNode {
+private class TextContextMenuGestureNode(
+    private var onPreShowContextMenu: (suspend () -> Unit)?,
+) : DelegatingNode(), CompositionLocalConsumerModifierNode, GlobalPositionAwareModifierNode {
 
     private companion object {
         private const val MESSAGE = "Tried to open context menu before the anchor was placed."
@@ -91,7 +92,9 @@ private class TextContextMenuGestureNode(private var onPreShowContextMenu: (susp
         delegate(SuspendingPointerInputModifierNode { onRightClickDown(::tryShowContextMenu) })
     }
 
-    fun update(onPreShowContextMenu: (suspend () -> Unit)?) {
+    fun update(
+        onPreShowContextMenu: (suspend () -> Unit)?,
+    ) {
         this.onPreShowContextMenu = onPreShowContextMenu
     }
 
@@ -108,8 +111,9 @@ private class TextContextMenuGestureNode(private var onPreShowContextMenu: (susp
         }
     }
 
-    private inner class ClickTextContextMenuDataProvider(private val localClickOffset: Offset) :
-        TextContextMenuDataProvider {
+    private inner class ClickTextContextMenuDataProvider(
+        private val localClickOffset: Offset,
+    ) : TextContextMenuDataProvider {
         override fun position(destinationCoordinates: LayoutCoordinates): Offset {
             val localCoordinates = checkPreconditionNotNull(localCoordinates) { MESSAGE }
             return destinationCoordinates.localPositionOf(localCoordinates, localClickOffset)

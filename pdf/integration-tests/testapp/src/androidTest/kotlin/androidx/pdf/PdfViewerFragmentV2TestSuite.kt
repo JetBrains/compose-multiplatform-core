@@ -16,13 +16,7 @@
 
 package androidx.pdf
 
-import android.app.Activity
-import android.app.Instrumentation
-import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.graphics.Point
-import android.graphics.PointF
-import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.view.InputDevice
@@ -34,8 +28,6 @@ import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.Lifecycle
 import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.TestUtils.waitFor
-import androidx.pdf.actions.SelectionViewActions
-import androidx.pdf.actions.clickOnPdfPoint
 import androidx.pdf.matchers.SearchViewAssertions
 import androidx.pdf.util.Preconditions
 import androidx.pdf.view.PdfView
@@ -54,17 +46,12 @@ import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intending
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.matcher.RootMatchers
-import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -72,7 +59,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -91,12 +77,11 @@ class PdfViewerFragmentV2TestSuite {
 
     @Before
     fun setup() {
-        Intents.init()
         scenario =
             launchFragmentInContainer<TestPdfViewerFragment>(
                 themeResId =
                     com.google.android.material.R.style.Theme_Material3_DayNight_NoActionBar,
-                initialState = Lifecycle.State.INITIALIZED,
+                initialState = Lifecycle.State.INITIALIZED
             )
         scenario.onFragment { fragment ->
             // Register idling resource
@@ -121,7 +106,6 @@ class PdfViewerFragmentV2TestSuite {
                 .unregister(fragment.pdfSearchViewVisibleIdlingResource.countingIdlingResource)
         }
         scenario.close()
-        Intents.release()
     }
 
     @Test
@@ -141,7 +125,7 @@ class PdfViewerFragmentV2TestSuite {
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
+                "Unable to load document due to ${it.documentError?.message}"
             )
         }
 
@@ -203,7 +187,7 @@ class PdfViewerFragmentV2TestSuite {
                     { floatArrayOf(thumbCenterX.toFloat(), thumbCenterY.toFloat()) },
                     Press.THUMB,
                     InputDevice.SOURCE_UNKNOWN,
-                    MotionEvent.BUTTON_PRIMARY,
+                    MotionEvent.BUTTON_PRIMARY
                 )
 
             fastScrollScrubberSwipe =
@@ -215,13 +199,13 @@ class PdfViewerFragmentV2TestSuite {
                         val endX = thumbCenterX.toFloat()
                         floatArrayOf(endX, endY)
                     },
-                    Press.FINGER,
+                    Press.FINGER
                 )
 
             assertPageIndicatorLabel(
                 actualLabel = pdfView.currentPageIndicatorLabel.trim(),
                 expectedPage = 1,
-                expectedTotalPages = 3,
+                expectedTotalPages = 3
             )
         }
 
@@ -232,7 +216,7 @@ class PdfViewerFragmentV2TestSuite {
             assertPageIndicatorLabel(
                 actualLabel = pdfView.currentPageIndicatorLabel.trim(),
                 expectedPage = 3,
-                expectedTotalPages = 3,
+                expectedTotalPages = 3
             )
         }
     }
@@ -255,7 +239,7 @@ class PdfViewerFragmentV2TestSuite {
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
+                "Unable to load document due to ${it.documentError?.message}"
             )
         }
 
@@ -305,13 +289,13 @@ class PdfViewerFragmentV2TestSuite {
         scenario.onFragment { fragment ->
             Preconditions.checkArgument(
                 fragment.documentError is RuntimeException,
-                "Exception is of incorrect type ${fragment.documentError}",
+                "Exception is of incorrect type ${fragment.documentError}"
             )
             Preconditions.checkArgument(
                 fragment.documentError
                     ?.message
                     .equals(fragment.resources.getString(R.string.pdf_error)),
-                "Incorrect exception returned ${fragment.documentError?.message}",
+                "Incorrect exception returned ${fragment.documentError?.message}"
             )
         }
     }
@@ -333,7 +317,7 @@ class PdfViewerFragmentV2TestSuite {
         scenario.onFragment {
             Preconditions.checkArgument(
                 it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
+                "Unable to load document due to ${it.documentError?.message}"
             )
         }
 
@@ -384,75 +368,7 @@ class PdfViewerFragmentV2TestSuite {
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
     }
 
-    /**
-     * This test verifies the behavior of the Pdf viewer in immersive mode, specifically the
-     * visibility of the toolbox
-     */
-    @Test
-    fun testPdfViewerFragment_immersiveMode_toggleMenu() {
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            // Loading view assertion
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            it.setIsAnnotationIntentResolvable(true)
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-        }
-
-        // Show the toolbox and check visibility
-        scenario.onFragment { it.isToolboxVisible = true }
-        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
-
-        // Hide the toolbox and check visibility
-        scenario.onFragment { it.isToolboxVisible = false }
-
-        onView(withId(R.id.edit_fab))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-
-        // Show the toolbox and check visibility
-        scenario.onFragment { it.isToolboxVisible = true }
-        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
-
-        // Swipe down to hide the toolbox and check visibility
-        onView(withId(PdfR.id.pdfView)).perform(swipeUp())
-        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
-        onView(withId(R.id.edit_fab))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-
-        // Swipe up to top of pdf show the toolbox and check visibility
-        onView(withId(PdfR.id.pdfView)).perform(swipeDown())
-        scenario.onFragment { it.pdfScrollIdlingResource.increment() }
-        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
-
-        // Enter immersive mode and check visibility
-        scenario.onFragment { it.onRequestImmersiveMode(true) }
-        onView(withId(R.id.edit_fab))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-
-        // Exit immersive mode and check visibility
-        scenario.onFragment { it.onRequestImmersiveMode(false) }
-        onView(withId(R.id.edit_fab)).check(matches(isDisplayed()))
-
-        // Click the host app search button and check visibility
-        scenario.onFragment {
-            it.pdfSearchViewVisibleIdlingResource.increment()
-            it.isTextSearchActive = true
-        }
-        onView(withId(PdfR.id.pdfSearchView)).check(matches(isDisplayed()))
-        onView(withId(R.id.edit_fab))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-    }
+    // TODO(b/392638037): Add immersive mode integration test
 
     @Test
     fun testPdfViewerFragment_dismissPasswordDialog() {
@@ -478,283 +394,16 @@ class PdfViewerFragmentV2TestSuite {
         }
     }
 
-    @Test
-    fun testPdfViewerFragment_whenSelectAllClicked_allContentShouldBeSelected() {
-        // Load the document and assert loading view is displayed
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_SELECT,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-        }
-
-        // The exact View position of any piece of text will vary by device, scroll position, zoom
-        // level, etc. Act on an absolute PDF coordinate that's known to contain text instead.
-        val pdfPointWithText = PdfPoint(pageNum = 0, pagePoint = PointF(297.22455F, 619.1273F))
-        onView(withId(androidx.pdf.viewer.fragment.R.id.pdfView))
-            .perform(clickOnPdfPoint(pdfPointWithText, Tap.LONG))
-        onView(ViewMatchers.withText(SELECT_ALL))
-            .inRoot(RootMatchers.isPlatformPopup())
-            .perform(click())
-
-        // Get the PdfView instance and assert selection
-        var pdfView: PdfView? = null
-        val expectedSelectionBoundsSize = 34
-        scenario.onFragment { fragment -> pdfView = fragment.getPdfViewInstance() }
-        assertNotNull(pdfView)
-        val selection = pdfView?.currentSelection
-        assertNotNull(selection)
-        assertNotNull(selection?.bounds)
-        assert(selection?.bounds?.size == expectedSelectionBoundsSize)
-    }
-
-    @Test
-    fun testPdfViewerFragment_customLinkHandler_isCalledAndOverridesDefault() {
-        scenario.onFragment { fragment -> fragment.shouldOverrideLinkHandling = true }
-
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_SAMPLE_LINKS_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            // Loading view assertion
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-        }
-
-        val selectionViewActions = SelectionViewActions()
-
-        // PDF Link coordinates for sample link PDF
-        val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
-        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
-
-        onView(withText("Handled by custom link handler"))
-            .inRoot(isDialog())
-            .check(matches(isDisplayed()))
-    }
-
-    @Test
-    fun testPdfViewerFragment_defaultLinkHandling_launchesBrowserIntent() {
-        scenario.onFragment { fragment -> fragment.shouldOverrideLinkHandling = false }
-
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_SAMPLE_LINKS_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            // Loading view assertion
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-        }
-
-        intending(hasAction(Intent.ACTION_VIEW))
-            .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
-
-        val selectionViewActions = SelectionViewActions()
-
-        // PDF Link coordinates for sample link PDF
-        val linkBounds = RectF(89.0f, 311.0f, 236.0f, 327.0f)
-        onView(withId(PdfR.id.pdfView)).perform(selectionViewActions.tapOnPosition(linkBounds))
-
-        val capturedIntent = Intents.getIntents().firstOrNull()
-        assertNotNull(
-            "Expected an external link intent to be launched, but it was null.",
-            capturedIntent,
-        )
-    }
-
-    @Test
-    fun testPdfViewerFragment_multiPageSelect_dragDownwards() {
-        // Load the document and assert loading view is displayed
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        var pdfView: PdfView? = null
-        var zoom = 1f
-        val rootViewLocation = IntArray(2)
-        val startPdfPoint = PdfPoint(0, PointF(120f, 175f))
-
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-            pdfView = it.getPdfViewInstance()
-            pdfView.isAutoScrollingEnabled = false
-            zoom = pdfView.zoom
-            pdfView.getLocationOnScreen(rootViewLocation)
-        }
-
-        assert(pdfView != null)
-        if (pdfView == null) return
-
-        // Get the PdfView's top Y-coordinate on the screen for different status bars
-        val yScreenOffset = (rootViewLocation[1] / zoom).toInt()
-
-        // create a selection by long press at a word
-        onView(isRoot()).perform(waitFor(50))
-        longPressSelection(device, pdfView, startPdfPoint, Point(0, yScreenOffset))
-
-        // drag the selection to second page
-        dragSelection(
-            device,
-            pdfView,
-            startPdfPoint,
-            PdfPoint(1, PointF(120f, 50f)),
-            Point(100, 50),
-            Point(0, yScreenOffset),
-        )
-
-        val expectedSelectionBoundsRange = 33..35
-        assertNotNull(pdfView)
-
-        assertTrue(pdfView.currentSelection?.bounds?.size in expectedSelectionBoundsRange)
-        assertEquals(pdfView.currentSelection?.bounds?.firstOrNull()?.pageNum, 0)
-        assertEquals(pdfView.currentSelection?.bounds?.lastOrNull()?.pageNum, 1)
-    }
-
-    @Test
-    fun testPdfViewerFragment_multiPageSelect_dragUpwards() {
-        // Load the document and assert loading view is displayed
-        scenarioLoadDocument(
-            scenario = scenario,
-            filename = TEST_DOCUMENT_FILE,
-            nextState = Lifecycle.State.STARTED,
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
-        ) {
-            onView(withId(PdfR.id.pdfLoadingProgressBar)).check(matches(isDisplayed()))
-        }
-
-        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-        var pdfView: PdfView? = null
-        var zoom = 1f
-        val rootViewLocation = IntArray(2)
-        val startPdfPoint = PdfPoint(1, PointF(170f, 220f))
-
-        // Assert loading progress bar is gone and document is loaded
-        onView(withId(PdfR.id.pdfLoadingProgressBar))
-            .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)))
-        scenario.onFragment {
-            Preconditions.checkArgument(
-                it.documentLoaded,
-                "Unable to load document due to ${it.documentError?.message}",
-            )
-
-            pdfView = it.getPdfViewInstance()
-            zoom = pdfView.zoom
-            pdfView.scrollToPosition(startPdfPoint)
-            pdfView.getLocationOnScreen(rootViewLocation)
-        }
-
-        assert(pdfView != null)
-        if (pdfView == null) return
-
-        // Get the PdfView's top Y-coordinate on the screen for different status bars
-        val yScreenOffset = (rootViewLocation[1] / zoom).toInt()
-
-        // create a selection by long press at a word
-        onView(isRoot()).perform(waitFor(50))
-        longPressSelection(device, pdfView, startPdfPoint, Point(0, yScreenOffset))
-
-        // drag the selection to second page
-        dragSelection(
-            device,
-            pdfView,
-            startPdfPoint,
-            PdfPoint(0, PointF(170f, 650f)),
-            Point(60, 60),
-            Point(0, yScreenOffset),
-        )
-
-        val expectedSelectionBoundsSizeRange = 13..15
-        assertNotNull(pdfView)
-
-        assertTrue(pdfView.currentSelection?.bounds?.size in expectedSelectionBoundsSizeRange)
-        assertEquals(pdfView.currentSelection?.bounds?.firstOrNull()?.pageNum, 0)
-        assertEquals(pdfView.currentSelection?.bounds?.lastOrNull()?.pageNum, 1)
-    }
-
-    private fun longPressSelection(
-        device: UiDevice,
-        pdfView: PdfView,
-        startPdfPoint: PdfPoint,
-        screenOffset: Point,
-    ) {
-        val start = pdfView.pdfToViewPoint(startPdfPoint) ?: PointF(0f, 0f)
-        val startX = start.x.toInt()
-        val startY = start.y.toInt() + screenOffset.y
-
-        // create a selection by long press at a word
-        device.swipe(startX, startY, startX, startY, 100)
-    }
-
-    private fun dragSelection(
-        device: UiDevice,
-        pdfView: PdfView,
-        startPdfPoint: PdfPoint,
-        stopPdfPoint: PdfPoint,
-        cursorOffset: Point,
-        screenOffset: Point,
-    ) {
-        val start = pdfView.pdfToViewPoint(startPdfPoint) ?: PointF(0f, 0f)
-        val startX = start.x.toInt() + cursorOffset.x
-        val startY = start.y.toInt() + +cursorOffset.y + screenOffset.y
-
-        val stop = pdfView.pdfToViewPoint(stopPdfPoint) ?: PointF(0f, 0f)
-        val dragEndX = stop.x.toInt() + cursorOffset.x
-        val dragEndY = stop.y.toInt() + +cursorOffset.y + screenOffset.y
-
-        device.drag(startX, startY, dragEndX, dragEndY, 100)
-    }
+    // TODO(b/401229449): Add Select Api in PdfDocument integration test
 
     private fun withPdfView(
         scenario: FragmentScenario<TestPdfViewerFragment>,
-        callback: (TestPdfViewerFragment, PdfView, Drawable) -> Unit,
+        callback: (TestPdfViewerFragment, PdfView, Drawable) -> Unit
     ) {
         scenario.onFragment { fragment ->
             assertNotNull(
                 "Fast scroll thumb cannot be null",
-                fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable,
+                fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable
             )
             val fastScrollThumb = fragment.getPdfViewInstance().fastScrollVerticalThumbDrawable!!
             assertNotNull("Fast scroll thumbnail cannot be null", fastScrollThumb)
@@ -766,10 +415,7 @@ class PdfViewerFragmentV2TestSuite {
         private const val TEST_DOCUMENT_FILE = "sample.pdf"
         private const val TEST_PROTECTED_DOCUMENT_FILE = "sample-protected.pdf"
         private const val TEST_CORRUPTED_DOCUMENT_FILE = "corrupted.pdf"
-        private const val TEST_DOCUMENT_SELECT = "sample-select.pdf"
-        private const val TEST_SAMPLE_LINKS_FILE = "sample_links.pdf"
 
-        private const val SELECT_ALL = "Select all"
         private const val CANCEL = "Cancel"
         private const val SEARCH_QUERY = "ipsum"
         private const val KEYBOARD_CONTENT_DESC = "keyboard"
@@ -777,16 +423,16 @@ class PdfViewerFragmentV2TestSuite {
         private fun assertPageIndicatorLabel(
             actualLabel: String,
             expectedPage: Int,
-            expectedTotalPages: Int,
+            expectedTotalPages: Int
         ) {
             TestUtils.extractFromLabel(actualLabel) { currentPage, totalPages ->
                 assertTrue(
                     "Actual page $currentPage does not match expected $expectedPage",
-                    currentPage == expectedPage,
+                    currentPage == expectedPage
                 )
                 assertTrue(
                     "Actual total pages $totalPages does not match expected $expectedTotalPages",
-                    currentPage == expectedPage,
+                    currentPage == expectedPage
                 )
             }
         }

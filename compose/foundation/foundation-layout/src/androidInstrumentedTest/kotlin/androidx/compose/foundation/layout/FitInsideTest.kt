@@ -18,11 +18,9 @@ package androidx.compose.foundation.layout
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.InsetsRulers.SystemBars
 import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.WindowInsetsRulers.Companion.SystemBars
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.positionInRoot
@@ -38,14 +36,12 @@ import androidx.core.view.WindowInsetsCompat.Type
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalComposeUiApi::class)
 @MediumTest
 @SdkSuppress(minSdkVersion = 30)
 @RunWith(JUnit4::class)
@@ -59,7 +55,6 @@ class FitInsideTest {
 
     @Test
     fun testFitWithin() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         lateinit var outsideCoordinates: LayoutCoordinates
         lateinit var insideCoordinates: LayoutCoordinates
         lateinit var view: View
@@ -67,9 +62,7 @@ class FitInsideTest {
             view = LocalView.current.parent as View
             Box(Modifier.fillMaxSize().onPlaced { outsideCoordinates = it }) {
                 Box(
-                    Modifier.fillMaxSize().fitInside(SystemBars.current).onPlaced {
-                        insideCoordinates = it
-                    }
+                    Modifier.fillMaxSize().fitInside(SystemBars).onPlaced { insideCoordinates = it }
                 )
             }
         }
@@ -84,7 +77,6 @@ class FitInsideTest {
 
     @Test
     fun testFitWithinNoBounds() {
-        Assume.assumeTrue(ComposeUiFlags.areWindowInsetsRulersEnabled)
         lateinit var outsideCoordinates: LayoutCoordinates
         lateinit var insideCoordinates: LayoutCoordinates
         lateinit var view: View
@@ -99,7 +91,7 @@ class FitInsideTest {
                                 placeable.place(0, 0)
                             }
                         }
-                        .fitInside(SystemBars.current)
+                        .fitInside(SystemBars)
                         .size(size)
                         .onPlaced { insideCoordinates = it }
                 )

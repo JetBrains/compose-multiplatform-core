@@ -22,7 +22,6 @@ import androidx.annotation.RestrictTo;
  * Represents the field of view. <a
  * href="https://registry.khronos.org/OpenXR/specs/1.0/man/html/XrFovf.html">...</a>
  */
-// TODO: b/419311998 Replace usages of this type with androidx.xr.runtime.FieldOfView
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public final class Fov {
     private final float mAngleLeft;

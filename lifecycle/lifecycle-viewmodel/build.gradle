@@ -29,17 +29,11 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.lifecycle.viewmodel"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-        androidResources.enable = true
-    }
+    androidTarget()
     desktop()
     mac()
     linux()
@@ -150,9 +144,17 @@ androidXMultiplatform {
     }
 }
 
+android {
+    buildTypes.configureEach {
+        consumerProguardFiles "proguard-rules.pro"
+    }
+    namespace = "androidx.lifecycle.viewmodel"
+}
+
 androidx {
     name = "Lifecycle ViewModel"
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
+    metalavaK2UastEnabled = false
 }

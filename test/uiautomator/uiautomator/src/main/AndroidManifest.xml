@@ -22,4 +22,6 @@
             android:name="com.android.extensions.xr"
             android:required="false" />
     </application>
+
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 </manifest>

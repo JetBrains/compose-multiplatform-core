@@ -20,8 +20,10 @@ import androidx.kruth.Fact.Companion.fact
 
 /** Propositions for [Long] subjects. */
 open class LongSubject
-internal constructor(actual: Long?, metadata: FailureMetadata = FailureMetadata()) :
-    ComparableSubject<Long>(actual, metadata) {
+internal constructor(
+    actual: Long?,
+    metadata: FailureMetadata = FailureMetadata(),
+) : ComparableSubject<Long>(actual, metadata) {
 
     /**
      * Prepares for a check that the subject is a number within the given tolerance of an expected

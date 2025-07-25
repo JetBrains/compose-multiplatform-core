@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.RootMeasurePolicy.measure
+import androidx.compose.ui.layout.SubcomposeLayoutState.PrecomposedSlotHandle
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.invalidateMeasurement
@@ -599,7 +600,7 @@ class SubcomposeLayoutTest {
 
         assertTrue(
             "state was used after reattaching view",
-            stateUsedLatch.await(1, TimeUnit.SECONDS),
+            stateUsedLatch.await(1, TimeUnit.SECONDS)
         )
     }
 
@@ -609,7 +610,7 @@ class SubcomposeLayoutTest {
 
         lateinit var container1: FrameLayout
         lateinit var container2: ComposeView
-        lateinit var remeasurer: Remeasurement
+        lateinit var remeasurement: Remeasurement
         var emitChild = true
         var composed = false
 
@@ -626,10 +627,10 @@ class SubcomposeLayoutTest {
                 SubcomposeLayout(
                     state,
                     object : RemeasurementModifier {
-                        override fun onRemeasurementAvailable(remeasurement: Remeasurement) {
-                            remeasurer = remeasurement
+                        override fun onRemeasurementAvailable(param: Remeasurement) {
+                            remeasurement = param
                         }
-                    },
+                    }
                 ) { constraints ->
                     if (emitChild) {
                         subcompose(Unit) {
@@ -650,7 +651,7 @@ class SubcomposeLayoutTest {
             assertThat(composed).isTrue()
 
             emitChild = false
-            remeasurer.forceRemeasure()
+            remeasurement.forceRemeasure()
         }
 
         rule.runOnIdle { assertThat(composed).isFalse() }
@@ -1175,7 +1176,7 @@ class SubcomposeLayoutTest {
                         // makes sure we never draw inconsistent states
                         assertThat(subcomposionValue).isEqualTo(mainCompositionValue)
                     },
-                    measureBlock,
+                    measureBlock
                 )
             }
         }
@@ -1239,7 +1240,9 @@ class SubcomposeLayoutTest {
             }
 
         rule.setContent {
-            CompositionLocalProvider(staticLocal provides isDark) {
+            CompositionLocalProvider(
+                staticLocal provides isDark,
+            ) {
                 CompositionLocalProvider(local provides staticLocal.current) {
                     SubcomposeLayout { constraints ->
                         val measurables = subcompose(Unit, content)
@@ -2161,7 +2164,7 @@ class SubcomposeLayoutTest {
         rule.runOnIdle {
             var current: LayoutCoordinates? = coordinates
             while (current != null) {
-                assertThat(current.isAttached).isTrue()
+                assertThat(current.isAttached)
                 assertThat(current.size).isEqualTo(size)
                 current = current.parentCoordinates
             }
@@ -2213,7 +2216,11 @@ class SubcomposeLayoutTest {
         rule.setContent {
             val content = remember {
                 movableContentOf {
-                    BoxWithConstraints { Spacer(modifier = Modifier.testTag(wrapped.toString())) }
+                    BoxWithConstraints {
+                        Spacer(
+                            modifier = Modifier.testTag(wrapped.toString()),
+                        )
+                    }
                 }
             }
 
@@ -2561,7 +2568,11 @@ class SubcomposeLayoutTest {
                 SubcomposeLayout { constraints ->
                     val placeable =
                         subcompose(Unit) {
-                                Layout(modifier = modifier) { _, _ -> layout(10, 10) {} }
+                                Layout(
+                                    modifier = modifier,
+                                ) { _, _ ->
+                                    layout(10, 10) {}
+                                }
                             }
                             .first()
                             .measure(constraints)
@@ -2692,7 +2703,7 @@ class SubcomposeLayoutTest {
                 // API 28 is using ViewLayer which invalidates when layer is created
                 Build.VERSION_CODES.P,
                 // waitForIdle doesn't wait for draw on API 26 (b/372068529)
-                Build.VERSION_CODES.O,
+                Build.VERSION_CODES.O
             ]
     )
     @Test
@@ -2791,7 +2802,7 @@ class SubcomposeLayoutTest {
                                                         ?.parentCoordinates
                                                         ?.localPositionOf(
                                                             coordinates!!,
-                                                            includeMotionFrameOfReference = false,
+                                                            includeMotionFrameOfReference = false
                                                         )
                                                 if (isLookingAhead) {
                                                     lookaheadPos = pos ?: lookaheadPos
@@ -3198,7 +3209,7 @@ class SubcomposeLayoutTest {
     private class RemeasureAndRelayoutOnChangeModifierElement(
         val onMeasured: () -> Unit,
         val onPlaced: () -> Unit,
-        val identity: Int,
+        val identity: Int
     ) : ModifierNodeElement<RemeasureAndRelayoutOnChangeModifier>() {
         override fun create(): RemeasureAndRelayoutOnChangeModifier =
             RemeasureAndRelayoutOnChangeModifier(onMeasured, onPlaced)
@@ -3222,7 +3233,7 @@ class SubcomposeLayoutTest {
     ) : Modifier.Node(), LayoutModifierNode {
         override fun MeasureScope.measure(
             measurable: Measurable,
-            constraints: Constraints,
+            constraints: Constraints
         ): MeasureResult {
             val placeable = measurable.measure(constraints)
             onMeasured()
@@ -3848,58 +3859,6 @@ class SubcomposeLayoutTest {
         }
     }
 
-    @Test
-    fun nestedDeactivateWithPausableComposition() {
-        val state = SubcomposeLayoutState(SubcomposeSlotReusePolicy(1))
-        var nestedState: SubcomposeLayoutState? = null
-        var hasContent by mutableStateOf(true)
-
-        val nestedContent = @Composable { Box(Modifier.size(10.dp)) }
-        val content =
-            @Composable {
-                nestedState = remember { SubcomposeLayoutState(SubcomposeSlotReusePolicy(1)) }
-                SubcomposeLayout(state = nestedState!!) { c -> layout(10, 10) {} }
-            }
-
-        rule.setContent {
-            SubcomposeLayout(state) { c ->
-                val p =
-                    if (hasContent) {
-                        subcompose(Unit, content).map { it.measure(c) }
-                    } else {
-                        emptyList()
-                    }
-                layout(10, 10) { p.forEach { it.place(0, 0) } }
-            }
-        }
-
-        rule.runOnIdle {
-            // start prefetching nested content
-            val p = nestedState!!.createPausedPrecomposition(Unit, nestedContent)
-
-            // compose but do not apply
-            p.resumeUntilCompleted()
-
-            // remove first layer of content
-            // this will deactivate everything inside nestedContent
-            hasContent = false
-            nestedState = null
-        }
-
-        rule.runOnIdle {
-            // prefetch main content
-            state.precompose(Unit, content)
-
-            // prefetch nested content
-            val p = nestedState!!.createPausedPrecomposition(Unit, nestedContent)
-
-            assertEquals(false, p.isComplete)
-
-            p.resumeUntilCompleted()
-            p.apply()
-        }
-    }
-
     private fun alternateLookaheadPlacement(shouldPlaceItem: BooleanArray) {
         var lookaheadPos: Offset? = null
         var approachPos: Offset? = null
@@ -3974,7 +3933,7 @@ class SubcomposeLayoutTest {
     private fun SubcomposeMeasureScope.measure(
         slotId: Any,
         constraints: Constraints,
-        content: @Composable () -> Unit,
+        content: @Composable () -> Unit
     ): Placeable = subcompose(slotId, content).first().measure(constraints)
 
     private fun composeItems(state: SubcomposeLayoutState, items: MutableState<List<Int>>) {

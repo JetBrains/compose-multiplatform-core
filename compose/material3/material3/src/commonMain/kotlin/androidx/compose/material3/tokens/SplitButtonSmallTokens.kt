@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-// VERSION: 18_0_18
+// VERSION: 7_0_1
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
 package androidx.compose.material3.tokens
 
+import androidx.compose.material3.ShapeDefaults
 import androidx.compose.ui.unit.dp
 
 internal object SplitButtonSmallTokens {
     val BetweenSpace = 2.0.dp
     val ContainerHeight = 40.0.dp
     val ContainerShape = ShapeKeyTokens.CornerFull
-    val InnerCornerCornerSize = ShapeTokens.CornerValueExtraSmall
-    val InnerHoveredCornerCornerSize = ShapeTokens.CornerValueMedium
-    val InnerPressedCornerCornerSize = ShapeTokens.CornerValueMedium
+    val InnerCornerFocusedSize = ShapeDefaults.CornerMedium
+    val InnerCornerHoveredSize = ShapeDefaults.CornerMedium
+    val InnerCornerPressedSize = ShapeDefaults.CornerMedium
+    val InnerCornerSize = ShapeDefaults.CornerExtraSmall
     val LeadingButtonLeadingSpace = 16.0.dp
     val LeadingButtonTrailingSpace = 12.0.dp
     val TrailingIconSize = 22.0.dp
-    val TrailingInnerSelectedCornerCornerSizePercent = 50.0f
+    val TrailingInnerCornerSelectedShapePercent = 50.0f
     val TrailingButtonLeadingSpace = 13.0.dp
     val TrailingButtonTrailingSpace = 13.0.dp
 }

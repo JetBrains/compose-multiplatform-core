@@ -35,8 +35,10 @@ import androidx.kruth.Fact.Companion.simpleFact
  */
 // Can't be final since MultisetSubject and SortedSetSubject extend it
 open class IterableSubject<T>
-protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
-    Subject<Iterable<T>>(actual, metadata = metadata, typeDescriptionOverride = null) {
+protected constructor(
+    metadata: FailureMetadata,
+    actual: Iterable<T>?,
+) : Subject<Iterable<T>>(actual, metadata = metadata, typeDescriptionOverride = null) {
 
     internal constructor(actual: Iterable<T>?, metadata: FailureMetadata) : this(metadata, actual)
 
@@ -95,7 +97,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
                     fact("expected to contain", element),
                     fact("an instance of", element.typeName()),
                     simpleFact("but did not"),
-                    fact("though it did contain", matchingItems),
+                    fact("though it did contain", matchingItems)
                 )
             } else {
                 failWithActual("expected to contain", element)
@@ -121,7 +123,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
             failWithoutActual(
                 simpleFact("expected not to contain duplicates"),
                 fact("but contained", duplicates),
-                fact("full contents", actualCustomStringRepresentation()),
+                fact("full contents", actualCustomStringRepresentation())
             )
         }
     }
@@ -148,7 +150,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
             failWithoutActual(
                 fact("expected to contain any of", expected),
                 simpleFact("but did not"),
-                fact("though it did contain", matchingItems),
+                fact("though it did contain", matchingItems)
             )
         } else {
             failWithActual("expected to contain any of", expected)
@@ -225,7 +227,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
                 simpleFact(""),
                 fact("though it did contain", nearMissing),
                 simpleFact("---"),
-                fact("expected to contain at least", expected),
+                fact("expected to contain at least", expected)
             )
         }
 
@@ -376,7 +378,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
                     fact("unexpected", extra),
                     simpleFact("---"),
                     fact("expected", required),
-                    fact("but was", actual),
+                    fact("but was", actual)
                 )
             }
 
@@ -391,7 +393,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
                 fact("unexpected", actualIter.asSequence().toList()),
                 simpleFact("---"),
                 fact("expected", required),
-                fact("but was", actual),
+                fact("but was", actual)
             )
         }
 
@@ -400,7 +402,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
                 fact("missing", requiredIter.asSequence().toList()),
                 simpleFact("---"),
                 fact("expected", required),
-                fact("but was", actual),
+                fact("but was", actual)
             )
         }
 
@@ -425,7 +427,11 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
      * Checks that a actual iterable contains none of the excluded objects or fails. (Duplicates are
      * irrelevant to this test, which fails if any of the actual elements equal any of the excluded)
      */
-    fun containsNoneOf(firstExcluded: Any?, secondExcluded: Any?, vararg restOfExcluded: Any?) {
+    fun containsNoneOf(
+        firstExcluded: Any?,
+        secondExcluded: Any?,
+        vararg restOfExcluded: Any?,
+    ) {
         containsNoneIn(listOf(firstExcluded, secondExcluded, *restOfExcluded))
     }
 
@@ -481,7 +487,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) < 0 },
-            message = { a, b -> "Expected to be in strict order but contained $a followed by $b." },
+            message = { a, b -> "Expected to be in strict order but contained $a followed by $b." }
         )
     }
 
@@ -508,7 +514,7 @@ protected constructor(metadata: FailureMetadata, actual: Iterable<T>?) :
 
         verifyInOrder(
             predicate = { a, b -> cmp.compare(a, b) <= 0 },
-            message = { a, b -> "Expected to be in order but contained $a followed by $b." },
+            message = { a, b -> "Expected to be in order but contained $a followed by $b." }
         )
     }
 

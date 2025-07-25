@@ -20,7 +20,7 @@ package androidx.compose.runtime.snapshots
 
 import androidx.collection.mutableLongListOf
 
-public actual typealias SnapshotId = Long
+actual typealias SnapshotId = Long
 
 internal actual const val SnapshotIdZero: SnapshotId = 0L
 internal actual const val SnapshotIdMax: SnapshotId = Long.MAX_VALUE
@@ -43,11 +43,11 @@ internal actual inline operator fun SnapshotId.div(other: Int): SnapshotId = thi
 
 internal actual inline operator fun SnapshotId.times(other: Int): SnapshotId = this * other.toLong()
 
-public actual inline fun SnapshotId.toInt(): Int = this.toInt()
+actual inline fun SnapshotId.toInt(): Int = this.toInt()
 
-public actual inline fun SnapshotId.toLong(): Long = this
+actual inline fun SnapshotId.toLong(): Long = this
 
-public actual typealias SnapshotIdArray = LongArray
+actual typealias SnapshotIdArray = LongArray
 
 internal actual fun snapshotIdArrayWithCapacity(capacity: Int): SnapshotIdArray =
     LongArray(capacity)
@@ -93,7 +93,7 @@ internal actual fun SnapshotIdArray.withIdInsertedAt(index: Int, id: SnapshotId)
         destination = newArray,
         destinationOffset = index + 1,
         startIndex = index,
-        endIndex = newSize - 1,
+        endIndex = newSize - 1
     )
     newArray[index] = id
     return newArray
@@ -110,7 +110,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = 0,
             startIndex = 0,
-            endIndex = index,
+            endIndex = index
         )
     }
     if (index < newSize) {
@@ -118,7 +118,7 @@ internal actual fun SnapshotIdArray.withIdRemovedAt(index: Int): SnapshotIdArray
             destination = newArray,
             destinationOffset = index,
             startIndex = index + 1,
-            endIndex = newSize + 1,
+            endIndex = newSize + 1
         )
     }
     return newArray
@@ -143,5 +143,3 @@ internal actual class SnapshotIdArrayBuilder actual constructor(array: SnapshotI
 internal actual inline fun snapshotIdArrayOf(id: SnapshotId): SnapshotIdArray = longArrayOf(id)
 
 internal actual fun Int.toSnapshotId(): SnapshotId = toLong()
-
-internal actual fun Long.toSnapshotId(): SnapshotId = this

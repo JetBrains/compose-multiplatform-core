@@ -76,7 +76,7 @@ fun LazyVerticalGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyGridScope.() -> Unit,
+    content: LazyGridScope.() -> Unit
 ) {
     LazyGrid(
         slots = rememberColumnWidthSums(columns, horizontalArrangement),
@@ -90,7 +90,7 @@ fun LazyVerticalGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        content = content,
+        content = content
     )
 }
 
@@ -107,7 +107,7 @@ fun LazyVerticalGrid(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyGridScope.() -> Unit,
+    content: LazyGridScope.() -> Unit
 ) {
     LazyVerticalGrid(
         columns = columns,
@@ -120,7 +120,7 @@ fun LazyVerticalGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content,
+        content = content
     )
 }
 
@@ -165,7 +165,7 @@ fun LazyHorizontalGrid(
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
-    content: LazyGridScope.() -> Unit,
+    content: LazyGridScope.() -> Unit
 ) {
     LazyGrid(
         slots = rememberRowHeightSums(rows, verticalArrangement),
@@ -179,7 +179,7 @@ fun LazyHorizontalGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
-        content = content,
+        content = content
     )
 }
 
@@ -196,7 +196,7 @@ fun LazyHorizontalGrid(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    content: LazyGridScope.() -> Unit,
+    content: LazyGridScope.() -> Unit
 ) {
     LazyHorizontalGrid(
         rows = rows,
@@ -209,7 +209,7 @@ fun LazyHorizontalGrid(
         flingBehavior = flingBehavior,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = rememberOverscrollEffect(),
-        content = content,
+        content = content
     )
 }
 
@@ -217,9 +217,12 @@ fun LazyHorizontalGrid(
 @Composable
 private fun rememberColumnWidthSums(
     columns: GridCells,
-    horizontalArrangement: Arrangement.Horizontal,
+    horizontalArrangement: Arrangement.Horizontal
 ) =
-    remember<LazyGridSlotsProvider>(columns, horizontalArrangement) {
+    remember<LazyGridSlotsProvider>(
+        columns,
+        horizontalArrangement,
+    ) {
         GridSlotCache { constraints ->
             requirePrecondition(constraints.maxWidth != Constraints.Infinity) {
                 "LazyVerticalGrid's width should be bound by parent."
@@ -329,7 +332,7 @@ interface GridCells {
 
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int,
+            spacing: Int
         ): List<Int> {
             return calculateCellsCrossAxisSizeImpl(availableSize, count, spacing)
         }
@@ -358,7 +361,7 @@ interface GridCells {
 
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int,
+            spacing: Int
         ): List<Int> {
             val count = maxOf((availableSize + spacing) / (minSize.roundToPx() + spacing), 1)
             return calculateCellsCrossAxisSizeImpl(availableSize, count, spacing)
@@ -391,7 +394,7 @@ interface GridCells {
 
         override fun Density.calculateCrossAxisCellSizes(
             availableSize: Int,
-            spacing: Int,
+            spacing: Int
         ): List<Int> {
             val cellSize = size.roundToPx()
             return if (cellSize + spacing < availableSize + spacing) {
@@ -415,7 +418,7 @@ interface GridCells {
 private fun calculateCellsCrossAxisSizeImpl(
     gridSize: Int,
     slotCount: Int,
-    spacing: Int,
+    spacing: Int
 ): List<Int> {
     val gridSizeWithoutSpacing = gridSize - spacing * (slotCount - 1)
     val slotSize = gridSizeWithoutSpacing / slotCount
@@ -447,7 +450,7 @@ sealed interface LazyGridScope {
         key: Any? = null,
         span: (LazyGridItemSpanScope.() -> GridItemSpan)? = null,
         contentType: Any? = null,
-        content: @Composable LazyGridItemScope.() -> Unit,
+        content: @Composable LazyGridItemScope.() -> Unit
     )
 
     /**
@@ -474,7 +477,7 @@ sealed interface LazyGridScope {
         key: ((index: Int) -> Any)? = null,
         span: (LazyGridItemSpanScope.(index: Int) -> GridItemSpan)? = null,
         contentType: (index: Int) -> Any? = { null },
-        itemContent: @Composable LazyGridItemScope.(index: Int) -> Unit,
+        itemContent: @Composable LazyGridItemScope.(index: Int) -> Unit
     )
 
     /**
@@ -499,7 +502,7 @@ sealed interface LazyGridScope {
     fun stickyHeader(
         key: Any? = null,
         contentType: Any? = null,
-        content: @Composable LazyGridItemScope.(Int) -> Unit,
+        content: @Composable LazyGridItemScope.(Int) -> Unit
     )
 }
 
@@ -526,7 +529,7 @@ inline fun <T> LazyGridScope.items(
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit,
+    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit
 ) =
     items(
         count = items.size,
@@ -535,7 +538,7 @@ inline fun <T> LazyGridScope.items(
             if (span != null) {
                 { span(items[it]) }
             } else null,
-        contentType = { index: Int -> contentType(items[index]) },
+        contentType = { index: Int -> contentType(items[index]) }
     ) {
         itemContent(items[it])
     }
@@ -563,7 +566,7 @@ inline fun <T> LazyGridScope.itemsIndexed(
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit,
+    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit
 ) =
     items(
         count = items.size,
@@ -572,7 +575,7 @@ inline fun <T> LazyGridScope.itemsIndexed(
             if (span != null) {
                 { span(it, items[it]) }
             } else null,
-        contentType = { index -> contentType(index, items[index]) },
+        contentType = { index -> contentType(index, items[index]) }
     ) {
         itemContent(it, items[it])
     }
@@ -600,7 +603,7 @@ inline fun <T> LazyGridScope.items(
     noinline key: ((item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(item: T) -> GridItemSpan)? = null,
     noinline contentType: (item: T) -> Any? = { null },
-    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit,
+    crossinline itemContent: @Composable LazyGridItemScope.(item: T) -> Unit
 ) =
     items(
         count = items.size,
@@ -609,7 +612,7 @@ inline fun <T> LazyGridScope.items(
             if (span != null) {
                 { span(items[it]) }
             } else null,
-        contentType = { index: Int -> contentType(items[index]) },
+        contentType = { index: Int -> contentType(items[index]) }
     ) {
         itemContent(items[it])
     }
@@ -637,7 +640,7 @@ inline fun <T> LazyGridScope.itemsIndexed(
     noinline key: ((index: Int, item: T) -> Any)? = null,
     noinline span: (LazyGridItemSpanScope.(index: Int, item: T) -> GridItemSpan)? = null,
     crossinline contentType: (index: Int, item: T) -> Any? = { _, _ -> null },
-    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit,
+    crossinline itemContent: @Composable LazyGridItemScope.(index: Int, item: T) -> Unit
 ) =
     items(
         count = items.size,
@@ -646,7 +649,7 @@ inline fun <T> LazyGridScope.itemsIndexed(
             if (span != null) {
                 { span(it, items[it]) }
             } else null,
-        contentType = { index -> contentType(index, items[index]) },
+        contentType = { index -> contentType(index, items[index]) }
     ) {
         itemContent(it, items[it])
     }

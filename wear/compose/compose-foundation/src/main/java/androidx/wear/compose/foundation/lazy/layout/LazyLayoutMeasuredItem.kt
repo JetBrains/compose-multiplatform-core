@@ -18,27 +18,30 @@ package androidx.wear.compose.foundation.lazy.layout
 
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
-import androidx.wear.compose.foundation.lazy.MeasurementDirection
 
 internal interface LazyLayoutMeasuredItem {
     val index: Int
     val key: Any
+    val isVertical: Boolean
     val mainAxisSizeWithSpacings: Int
-    val measuredHeight: Int
-    val transformedHeight: Int
-    val measurementDirection: MeasurementDirection
+    val placeablesCount: Int
+    var nonScrollableItem: Boolean
     val constraints: Constraints
 
-    val mainAxisOffset: Int
-    val crossAxisOffset: Int
+    fun getOffset(index: Int): IntOffset
 
-    val parentData: Any?
+    fun getParentData(index: Int): Any?
 }
 
-internal fun LazyLayoutMeasuredItem.getOffset(): IntOffset =
-    IntOffset(x = crossAxisOffset, y = mainAxisOffset)
-
-internal fun LazyLayoutMeasuredItem.hasAnimations(): Boolean = parentData.specs != null
+internal fun LazyLayoutMeasuredItem.hasAnimations(): Boolean = run {
+    repeat(placeablesCount) { index ->
+        getParentData(index).specs?.let {
+            // found at least one
+            return true
+        }
+    }
+    return false
+}
 
 internal val Any?.specs
     get() = this as? LazyLayoutAnimationSpecsNode

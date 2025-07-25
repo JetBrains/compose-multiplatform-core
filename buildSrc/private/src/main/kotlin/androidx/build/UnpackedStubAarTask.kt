@@ -39,7 +39,7 @@ abstract class UnpackedStubAarTask : DefaultTask() {
     @TaskAction
     fun generate() {
         // setup
-        val outputDir = outputDir.asFile.get()
+        val outputDir = outputDir.getAsFile().get()
         outputDir.deleteRecursively()
         outputDir.mkdirs()
         // write AndroidManifest.xml

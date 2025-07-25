@@ -54,7 +54,7 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-public fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntState(value)
+fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutableIntState(value)
 
 /**
  * A value holder where reads to the [intValue] property during the execution of a [Composable]
@@ -65,17 +65,17 @@ public fun mutableIntStateOf(value: Int): MutableIntState = createSnapshotMutabl
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface IntState : State<Int> {
+interface IntState : State<Int> {
     @get:AutoboxingStateValueProperty("intValue")
     override val value: Int
         @Suppress("AutoBoxing") get() = intValue
 
-    public val intValue: Int
+    val intValue: Int
 }
 
 /** Permits property delegation of `val`s using `by` for [IntState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<*>): Int = intValue
+inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<*>): Int = intValue
 
 /**
  * A value holder where reads to the [intValue] property during the execution of a [Composable]
@@ -89,7 +89,7 @@ public inline operator fun IntState.getValue(thisObj: Any?, property: KProperty<
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface MutableIntState : IntState, MutableState<Int> {
+interface MutableIntState : IntState, MutableState<Int> {
     @get:AutoboxingStateValueProperty("intValue")
     @set:AutoboxingStateValueProperty("intValue")
     override var value: Int
@@ -103,11 +103,7 @@ public interface MutableIntState : IntState, MutableState<Int> {
 
 /** Permits property delegation of `var`s using `by` for [MutableIntState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun MutableIntState.setValue(
-    thisObj: Any?,
-    property: KProperty<*>,
-    value: Int,
-) {
+inline operator fun MutableIntState.setValue(thisObj: Any?, property: KProperty<*>, value: Int) {
     intValue = value
 }
 
@@ -166,7 +162,7 @@ internal open class SnapshotMutableIntStateImpl(value: Int) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord,
+        applied: StateRecord
     ): StateRecord? {
         val currentRecord = current as IntStateStateRecord
         val appliedRecord = applied as IntStateStateRecord

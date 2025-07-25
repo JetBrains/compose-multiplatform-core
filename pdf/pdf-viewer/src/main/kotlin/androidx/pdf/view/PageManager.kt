@@ -18,15 +18,12 @@ package androidx.pdf.view
 
 import android.graphics.Canvas
 import android.graphics.Point
-import android.graphics.RectF
+import android.graphics.Rect
 import android.util.Range
 import android.util.SparseArray
-import androidx.core.util.isEmpty
 import androidx.core.util.keyIterator
 import androidx.core.util.valueIterator
 import androidx.pdf.PdfDocument
-import androidx.pdf.PdfPoint
-import androidx.pdf.models.FormWidgetInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -47,9 +44,9 @@ internal class PageManager(
      * threshold for tiled rendering
      */
     private val maxBitmapSizePx: Point,
+    private val isTouchExplorationEnabled: Boolean,
     /** Error flow for propagating error occurred while processing to [PdfView]. */
-    private val errorFlow: MutableSharedFlow<Throwable>,
-    isAccessibilityEnabled: Boolean,
+    private val errorFlow: MutableSharedFlow<Throwable>
 ) {
     /**
      * Replay at least 1 value in case of an invalidation signal issued while [PdfView] is not
@@ -73,23 +70,6 @@ internal class PageManager(
     val pageTextReadyFlow: SharedFlow<Int>
         get() = _pageTextReadyFlow
 
-    internal var isAccessibilityEnabled: Boolean = isAccessibilityEnabled
-        set(value) {
-            field = value
-            for (page in pages.valueIterator()) {
-                page.isAccessibilityEnabled = value
-            }
-        }
-
-    internal fun areAllVisiblePagesFullyRendered(
-        visiblePageRange: Range<Int>,
-        zoom: Float,
-        visiblePageAreas: SparseArray<RectF>?,
-    ): Boolean =
-        (visiblePageRange.lower..visiblePageRange.upper).all { pageNum ->
-            pages[pageNum]?.isFullyRendered(zoom, visiblePageAreas?.get(pageNum)) ?: false
-        }
-
     /**
      * [Highlight]s supplied by the developer to be drawn along with the pages they belong to
      *
@@ -104,23 +84,18 @@ internal class PageManager(
      * @param visiblePageAreas the visible area of each visible page, in page coordinates
      * @param currentZoomLevel the current zoom level
      * @param stablePosition true if we don't believe our position is actively changing
-     * @param pauseBitmapFetch true if we should avoid fetching Bitmaps, regardless of current
-     *   visibility
      */
     fun updatePageVisibilities(
-        visiblePageAreas: SparseArray<RectF>,
+        visiblePageAreas: SparseArray<Rect>,
         currentZoomLevel: Float,
-        stablePosition: Boolean,
-        pauseBitmapFetch: Boolean,
+        stablePosition: Boolean
     ) {
-        if (visiblePageAreas.isEmpty()) return
         // Start preparing UI for visible pages
         visiblePageAreas.keyIterator().forEach { pageNum ->
             pages[pageNum]?.setVisible(
                 currentZoomLevel,
                 visiblePageAreas.get(pageNum),
-                stablePosition,
-                pauseBitmapFetch,
+                stablePosition
             )
         }
 
@@ -131,7 +106,7 @@ internal class PageManager(
                 maxOf(0, visiblePageAreas.keyAt(0) - PAGE_RETENTION_RADIUS),
                 minOf(
                     visiblePageAreas.keyAt(visiblePageAreas.size() - 1) + PAGE_RETENTION_RADIUS,
-                    pdfDocument.pageCount - 1,
+                    pdfDocument.pageCount - 1
                 ),
             )
         for (pageNum in pages.keyIterator()) {
@@ -144,26 +119,6 @@ internal class PageManager(
     }
 
     /**
-     * Invalidates the given [areasToUpdate] for the [Page] at [pageNum].
-     *
-     * This function checks if the union of [areasToUpdate] intersects with the [visibleArea]. If
-     * there's an intersection, it updates the specific page to invalidate the intersecting area.
-     */
-    fun maybeInvalidateAreas(
-        pageNum: Int,
-        visibleArea: RectF,
-        currentZoom: Float,
-        areasToUpdate: List<RectF>,
-    ) {
-        val invalidatedArea = areasToUpdate.union()
-        if (invalidatedArea.intersect(visibleArea)) {
-            // If there is some intersection in the visible area and the invalidated area,
-            // invalidatedArea is updated to hold the intersection.
-            pages[pageNum]?.maybeInvalidateAreas(currentZoom, invalidatedArea)
-        }
-    }
-
-    /**
      * Updates the set of [Page]s owned by this manager when a new Page's dimensions are loaded.
      * Dimensions are the minimum data required to instantiate a page.
      */
@@ -172,10 +127,7 @@ internal class PageManager(
         size: Point,
         currentZoomLevel: Float,
         stablePosition: Boolean,
-        viewArea: RectF? = null,
-        pauseBitmapFetch: Boolean,
-        pdfFormFillingConfig: PdfFormFillingConfig,
-        formWidgetInfos: List<FormWidgetInfo>? = null,
+        viewArea: Rect? = null
     ) {
         if (pages.contains(pageNum)) return
         val page =
@@ -185,33 +137,18 @@ internal class PageManager(
                     pdfDocument,
                     backgroundScope,
                     maxBitmapSizePx,
+                    isTouchExplorationEnabled,
                     onPageUpdate = { _invalidationSignalFlow.tryEmit(Unit) },
                     onPageTextReady = { pageNumber -> _pageTextReadyFlow.tryEmit(pageNumber) },
-                    errorFlow = errorFlow,
-                    isAccessibilityEnabled = isAccessibilityEnabled,
-                    pdfFormFillingConfig = pdfFormFillingConfig,
-                    formWidgetInfos = formWidgetInfos,
+                    errorFlow = errorFlow
                 )
                 .apply {
                     // If the page is visible, let it know
                     if (viewArea != null) {
-                        setVisible(currentZoomLevel, viewArea, stablePosition, pauseBitmapFetch)
+                        setVisible(currentZoomLevel, viewArea, stablePosition)
                     }
                 }
         pages.put(pageNum, page)
-    }
-
-    fun maybeLoadFormWidgetMetadata() {
-        pages.valueIterator().forEach {
-            if (it.formWidgetInfos == null) {
-                it.maybeUpdateFormWidgetInfos()
-            }
-        }
-    }
-
-    /** Updates the form widget information in the given [pageNum] when a edit is applied. */
-    fun maybeUpdateFormWidgetMetadata(pageNum: Int) {
-        pages[pageNum]?.maybeUpdateFormWidgetInfos()
     }
 
     /** Adds [newHighlights]s to this manager to be drawn along with the pages they belong to */
@@ -224,7 +161,7 @@ internal class PageManager(
     }
 
     /** Draws the [Page] at [pageNum] to the canvas at [locationInView] */
-    fun drawPage(pageNum: Int, canvas: Canvas, locationInView: RectF) {
+    fun drawPage(pageNum: Int, canvas: Canvas, locationInView: Rect) {
         val highlightsForPage = highlights.getOrDefault(pageNum, EMPTY_HIGHLIGHTS)
         pages.get(pageNum)?.draw(canvas, locationInView, highlightsForPage)
     }
@@ -241,19 +178,6 @@ internal class PageManager(
 
     fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
         return pages[pdfPoint.pageNum]?.links
-    }
-
-    fun getWidgetAtTapPoint(pdfPoint: PdfPoint): List<FormWidgetInfo>? {
-        return pages[pdfPoint.pageNum]?.formWidgetInfos
-    }
-
-    private fun List<RectF>.union(): RectF {
-        if (isEmpty()) return RectF()
-        val unionRect = RectF()
-        for (rect in this) {
-            unionRect.union(rect)
-        }
-        return unionRect
     }
 }
 

@@ -18,7 +18,15 @@ package androidx.core.telecom.reference
 
 import android.app.Application
 
-/** class for managing application-level components. */
+/** Custom Application class for managing application-level components. */
 class VoipApplication : Application() {
     val callRepository: CallRepository by lazy { CallRepository() }
+
+    /**
+     * Called when the application is starting, before any activity, service, or receiver objects
+     * (excluding content providers) have been created.
+     */
+    override fun onCreate() {
+        super.onCreate()
+    }
 }

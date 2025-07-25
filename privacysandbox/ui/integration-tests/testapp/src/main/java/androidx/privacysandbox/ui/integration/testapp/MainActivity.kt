@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,25 +35,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.forEach
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxManagerCompat
 import androidx.privacysandbox.sdkruntime.client.SdkSandboxProcessDeathCallbackCompat
 import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.ui.integration.inappmediateeadaptersdk.InAppMediateeAdapter
 import androidx.privacysandbox.ui.integration.sdkproviderutils.ILoadSdkCallback
-import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdFormat
+import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.AdType
 import androidx.privacysandbox.ui.integration.sdkproviderutils.SdkApiConstants.Companion.MediationOption
-import androidx.privacysandbox.ui.integration.testapp.fragments.BaseFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.FragmentOptions
-import androidx.privacysandbox.ui.integration.testapp.fragments.compose.FullscreenSetupComposeFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.compose.FullscreenSetupFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.compose.LazyListFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.compose.ResizeComposeFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.compose.ScrollComposeFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.hidden.BaseHiddenFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.views.PoolingContainerFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.views.ResizeFragment
-import androidx.privacysandbox.ui.integration.testapp.fragments.views.ScrollFragment
 import androidx.privacysandbox.ui.integration.testapp.util.DisabledItemsArrayAdapter
 import androidx.privacysandbox.ui.integration.testsdkprovider.ISdkApi
 import androidx.privacysandbox.ui.integration.testsdkprovider.ISdkApiFactory
@@ -78,27 +68,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleBar: TextView
     private lateinit var sdkApi: ISdkApi
 
-    fun getCurrentFragment(): BaseFragment {
-        return currentFragment
+    fun getSdkApi(): ISdkApi {
+        return sdkApi
     }
 
-    @SdkApiConstants.Companion.AdFormat
+    @AdFormat
     private val adFormat
         get() =
             if (::adFormatDropDownMenu.isInitialized) adFormatDropDownMenu.selectedItemPosition
-            else SdkApiConstants.Companion.AdFormat.Companion.BANNER_AD
+            else AdFormat.BANNER_AD
 
-    @SdkApiConstants.Companion.AdType
+    @AdType
     private val adType
         get() =
             if (::adTypeDropDownMenu.isInitialized) adTypeDropDownMenu.selectedItemPosition
-            else SdkApiConstants.Companion.AdType.Companion.BASIC_NON_WEBVIEW
+            else AdType.BASIC_NON_WEBVIEW
 
-    @SdkApiConstants.Companion.MediationOption
+    @MediationOption
     private val mediationOption
         get() =
             if (::mediationDropDownMenu.isInitialized) mediationDropDownMenu.selectedItemPosition
-            else SdkApiConstants.Companion.MediationOption.Companion.NON_MEDIATED
+            else MediationOption.NON_MEDIATED
 
     private val drawViewabilityLayer
         get() = viewabilityToggleButton.isChecked
@@ -132,7 +122,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        sdkSandboxManager = SdkSandboxManagerCompat.Companion.from(applicationContext)
+        sdkSandboxManager = SdkSandboxManagerCompat.from(applicationContext)
         sdkSandboxManager.addSdkSandboxProcessDeathCallback(Runnable::run, DeathCallbackImpl())
         Log.i(TAG, "Loading SDK")
         CoroutineScope(Dispatchers.Default).launch {
@@ -153,12 +143,11 @@ class MainActivity : AppCompatActivity() {
                 // TODO(b/337793172): Replace with a default fragment
                 val extras = intent.extras
                 if (extras != null) {
-                    val fragmentOptions = FragmentOptions.Companion.createFromIntentExtras(extras)
+                    val fragmentOptions = FragmentOptions.createFromIntentExtras(extras)
                     val fragment = fragmentOptions.getFragment()
                     fragment.handleOptionsFromIntent(fragmentOptions)
                     switchContentFragment(fragment, "Automated CUJ")
-                    val loadSdkCallback =
-                        extras.getBinder(FragmentOptions.Companion.LOAD_SDK_COMPLETE)
+                    val loadSdkCallback = extras.getBinder(FragmentOptions.LOAD_SDK_COMPLETE)
                     if (loadSdkCallback != null) {
                         (loadSdkCallback as ILoadSdkCallback).onSdksLoaded()
                     }
@@ -175,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                     "loadSdk failed with errorCode: " +
                         e.loadSdkErrorCode +
                         " and errorMsg: " +
-                        e.message,
+                        e.message
                 )
             }
         }
@@ -233,14 +222,12 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.ad_format_menu_array),
+                    resources.getStringArray(R.array.ad_format_menu_array)
                 ) { position: Int ->
                     val isSupported = isSupportedOptionsCombination(position, mediationOption)
                     when (position) {
-                        SdkApiConstants.Companion.AdFormat.Companion.BANNER_AD -> isSupported
-                        SdkApiConstants.Companion.AdFormat.Companion.NATIVE_AD ->
-                            isSupported && supportsNativeAd(currentFragment)
-
+                        AdFormat.BANNER_AD -> isSupported
+                        AdFormat.NATIVE_AD -> isSupported && supportsNativeAd(currentFragment)
                         else -> false
                     }
                 }
@@ -254,7 +241,7 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.mediation_dropdown_menu_array),
+                    resources.getStringArray(R.array.mediation_dropdown_menu_array)
                 ) { position: Int ->
                     isSupportedOptionsCombination(adFormat, position)
                 }
@@ -267,7 +254,7 @@ class MainActivity : AppCompatActivity() {
             adapter =
                 DisabledItemsArrayAdapter(
                     applicationContext,
-                    resources.getStringArray(R.array.ad_type_dropdown_menu_array),
+                    resources.getStringArray(R.array.ad_type_dropdown_menu_array)
                 ) { _: Int ->
                     isSupportedOptionsCombination(adFormat, mediationOption)
                 }
@@ -277,7 +264,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeZOrderToggleButton() {
         zOrderToggleButton.setOnCheckedChangeListener { _, isChecked ->
-            BaseFragment.Companion.isZOrderAboveToggleChecked = isChecked
+            BaseFragment.isZOrderAboveToggleChecked = isChecked
         }
     }
 
@@ -301,7 +288,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeDrawer() {
         drawerLayout.addDrawerListener(
-            object : DrawerLayout.DrawerListener {
+            object : DrawerListener {
                 private var isDrawerOpen = false
 
                 override fun onDrawerSlide(drawerView: View, slideOffset: Float) {
@@ -334,7 +321,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         ResizeComposeFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}",
+                        "${menuItem.title} ${getString(R.string.compose)}"
                     )
                 } else {
                     switchContentFragment(ResizeFragment(), menuItem.title)
@@ -343,7 +330,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         ScrollComposeFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}",
+                        "${menuItem.title} ${getString(R.string.compose)}"
                     )
                 } else {
                     switchContentFragment(ScrollFragment(), menuItem.title)
@@ -352,7 +339,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         LazyListFragment(),
-                        "${menuItem.title} ${getString(R.string.compose)}",
+                        "${menuItem.title} ${getString(R.string.compose)}"
                     )
                 } else {
                     switchContentFragment(PoolingContainerFragment(), menuItem.title)
@@ -361,7 +348,7 @@ class MainActivity : AppCompatActivity() {
                 if (useCompose) {
                     switchContentFragment(
                         FullscreenSetupComposeFragment(),
-                        getString(R.string.fullscreen_compose_cuj),
+                        getString(R.string.fullscreen_compose_cuj)
                     )
                 } else {
                     switchContentFragment(FullscreenSetupFragment(), menuItem.title)
@@ -374,20 +361,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun isSupportedOptionsCombination(
         @AdFormat adFormat: Int,
-        @MediationOption mediationOption: Int,
+        @MediationOption mediationOption: Int
     ): Boolean {
         when (adFormat) {
-            SdkApiConstants.Companion.AdFormat.Companion.BANNER_AD -> return true
-            SdkApiConstants.Companion.AdFormat.Companion.NATIVE_AD -> {
+            AdFormat.BANNER_AD -> return true
+            AdFormat.NATIVE_AD -> {
                 when (mediationOption) {
-                    SdkApiConstants.Companion.MediationOption.Companion.NON_MEDIATED,
-                    SdkApiConstants.Companion.MediationOption.Companion.IN_APP_MEDIATEE,
-                    SdkApiConstants.Companion.MediationOption.Companion.SDK_RUNTIME_MEDIATEE ->
-                        return true
-                    SdkApiConstants.Companion.MediationOption.Companion
-                        .SDK_RUNTIME_MEDIATEE_WITH_OVERLAY,
-                    SdkApiConstants.Companion.MediationOption.Companion.REFRESHABLE_MEDIATION ->
-                        return false
+                    MediationOption.NON_MEDIATED,
+                    MediationOption.IN_APP_MEDIATEE,
+                    MediationOption.SDK_RUNTIME_MEDIATEE -> return true
+                    MediationOption.SDK_RUNTIME_MEDIATEE_WITH_OVERLAY,
+                    MediationOption.REFRESHABLE_MEDIATION -> return false
                 }
             }
         }
@@ -395,13 +379,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     // TODO(b/3300859): remove once all non-fullscreen fragments are supported for native.
-    private fun supportsNativeAd(fragment: BaseFragment): Boolean =
-        fragment is ResizeFragment || fragment is PoolingContainerFragment
+    private fun supportsNativeAd(fragment: BaseFragment): Boolean = fragment is ResizeFragment
 
     private fun updateDrawerOptions() {
         setAllControlsEnabled(true)
-        if (adFormat == SdkApiConstants.Companion.AdFormat.Companion.NATIVE_AD) {
-            runOnUiThread { navigationView.menu.findItem(R.id.item_scroll).isEnabled = false }
+        if (adFormat == AdFormat.NATIVE_AD) {
+            runOnUiThread {
+                navigationView.menu.findItem(R.id.item_scroll).isEnabled = false
+                navigationView.menu.findItem(R.id.item_pooling_container).isEnabled = false
+            }
             viewabilityToggleButton.isEnabled = false
             composeToggleButton.isEnabled = false
         }
@@ -435,7 +421,7 @@ class MainActivity : AppCompatActivity() {
             adFormat,
             adType,
             mediationOption,
-            drawViewabilityLayer,
+            drawViewabilityLayer
         )
     }
 

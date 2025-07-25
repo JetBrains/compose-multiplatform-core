@@ -79,23 +79,24 @@ class PageIndicatorTest {
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor,
+                    backgroundColor = backgroundColor
                 )
             }
         }
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 11%
+        // approximately equals to 12%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 9f..13f)
-        // Unselected dots should also be visible on the screen, and should take around 7.2%
+            .assertColorInPercentageRange(selectedColor, 11f..14f)
+        // Unselected dots should also be visible on the screen, and should take around 9%
+        // (4.4% per dot, 2 dots total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 6f..8f)
+            .assertColorInPercentageRange(unselectedColor, 7f..10f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -115,24 +116,25 @@ class PageIndicatorTest {
                     pagerState = pagerState_middle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor,
+                    backgroundColor = backgroundColor
                 )
             }
         }
         rule.waitForIdle()
 
         // Selected color should occupy 2 dots with space in between, which
-        // approximately equals to 11%
+        // approximately equals to 12%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 9f..13f)
+            .assertColorInPercentageRange(selectedColor, 10f..14f)
         // Unselected dots ( which doesn't participate in color merge)
-        // should also be visible on the screen, and should take around 7.2%
+        // should also be visible on the screen, and should take around 8.8%
+        // (4.4% per dot, 2 dots in total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 6f..8f)
+            .assertColorInPercentageRange(unselectedColor, 7.5f..9f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -151,7 +153,7 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 1,
                             currentPageOffsetFraction = 0.0f,
-                            pageCount = { 9 },
+                            pageCount = { 9 }
                         ),
                 )
             }
@@ -178,7 +180,7 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 1,
                             currentPageOffsetFraction = 0.0f,
-                            pageCount = { pagesCount },
+                            pageCount = { pagesCount }
                         ),
                 )
             }
@@ -210,23 +212,22 @@ class PageIndicatorTest {
                         PagerState(
                             currentPage = 0,
                             currentPageOffsetFraction = 0f,
-                            pageCount = { 1 },
+                            pageCount = { 1 }
                         ),
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    backgroundColor = backgroundColor,
+                    backgroundColor = backgroundColor
                 )
             }
         }
         rule.waitForIdle()
 
-        // Selected color should occupy 1 dot, which approximately equals to 11.5% on Medium Phone
-        // emulator (2.625f density), 9.8% on Small Phone emulator (2.0f density) and 10.7% on
-        // Pixel 9 Pro XL (3.0f density).
+        // Selected color should occupy 1 dot, which
+        // approximately equals to 12%
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 9f..12f)
+            .assertColorInPercentageRange(selectedColor, 11f..13f)
         // Unselected dots shouldn't be visible on the screen because we only have one page
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertDoesNotContainColor(unselectedColor)
 
@@ -247,23 +248,25 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor,
+                        backgroundColor = backgroundColor
                     )
                 }
             }
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 4.2%
+        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
+        // (4.4% per dot, 1 dot in total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 3.7f..4.7f)
-        // Unselected dots should also be visible on the screen, and should take around 10%
+            .assertColorInPercentageRange(selectedColor, 4f..5f)
+        // Unselected dots should also be visible on the screen, and should take around 13.2%
+        // (4.4% per dot, 3 dots total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 8f..12f)
+            .assertColorInPercentageRange(unselectedColor, 11f..16f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -282,23 +285,25 @@ class PageIndicatorTest {
                         pagerState = pagerState_start,
                         selectedColor = selectedColor,
                         unselectedColor = unselectedColor,
-                        backgroundColor = backgroundColor,
+                        backgroundColor = backgroundColor
                     )
                 }
             }
         }
         rule.waitForIdle()
 
-        // A selected dot with specified color should be visible on the screen, which is apprx 3.9%
+        // A selected dot with specified color should be visible on the screen, which is apprx 4.4%
+        // (4.% per dot, 1 dot in total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(selectedColor, 3.5f..4.5f)
-        // Three unselected dots should also be visible on the screen, and should take around 10%
+            .assertColorInPercentageRange(selectedColor, 3.5f..5.5f)
+        // Unselected dots should also be visible on the screen, and should take around 13%
+        // (4.4% per dot, 3 dots total)
         rule
             .onNodeWithTag(TEST_TAG)
             .captureToImage()
-            .assertColorInPercentageRange(unselectedColor, 8f..12f)
+            .assertColorInPercentageRange(unselectedColor, 11f..14f)
 
         // Check that background color exists
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(backgroundColor)
@@ -308,14 +313,14 @@ class PageIndicatorTest {
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.0f,
-            pageCount = { PAGE_COUNT },
+            pageCount = { PAGE_COUNT }
         )
 
     private val pagerState_middle =
         PagerState(
             currentPage = SELECTED_PAGE_INDEX,
             currentPageOffsetFraction = 0.5f,
-            pageCount = { PAGE_COUNT },
+            pageCount = { PAGE_COUNT }
         )
 
     companion object {

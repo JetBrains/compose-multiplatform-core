@@ -57,7 +57,6 @@ abstract class StableAidlExtensionImpl : StableAidlExtension {
     }
 
     override abstract val shadowFrameworkDir: DirectoryProperty
-    override var version: Int? = null
 
     internal lateinit var updateTaskProvider: TaskProvider<UpdateStableAidlApiTask>
     internal lateinit var checkTaskProvider: TaskProvider<StableAidlCheckApi>

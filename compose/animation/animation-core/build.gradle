@@ -25,29 +25,16 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidLibrary {
-        compileSdk = 35
-        namespace = "androidx.compose.animation.core"
-        optimization {
-            it.consumerKeepRules.publish = true
-            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
-        }
-    }
-    desktop()
-    mac()
-    ios()
-    js()
-    wasmJs()
-
-    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
+    androidTarget()
+    jvmStubs()
     linuxX64Stubs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
@@ -60,7 +47,7 @@ androidXMultiplatform {
                 implementation(project(":compose:ui:ui-unit"))
                 implementation(project(":compose:ui:ui-graphics"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation("androidx.collection:collection:1.5.0")
+                implementation(project(":collection:collection"))
                 implementation(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
             }
@@ -68,7 +55,7 @@ androidXMultiplatform {
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTest)
+                implementation(kotlin("test"))
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":kruth:kruth"))
             }
@@ -76,10 +63,8 @@ androidXMultiplatform {
 
         jvmMain {
             dependsOn(commonMain)
-        }
-
-        jvmTest {
-            dependsOn(commonTest)
+            dependencies {
+            }
         }
 
         androidMain {
@@ -87,6 +72,18 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
             }
+        }
+
+        commonStubsMain {
+            dependsOn(commonMain)
+        }
+
+        jvmStubsMain {
+            dependsOn(commonStubsMain)
+        }
+
+        linuxx64StubsMain {
+            dependsOn(commonStubsMain)
         }
 
         androidInstrumentedTest {
@@ -108,7 +105,7 @@ androidXMultiplatform {
         }
 
         androidUnitTest {
-            dependsOn(jvmTest)
+            dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
@@ -116,73 +113,6 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation(libs.kotlinCoroutinesCore)
             }
-        }
-
-        // TODO: Align naming: nonAndroidMain
-        jbMain {
-            dependsOn(commonMain)
-        }
-
-        jbTest {
-            dependsOn(commonTest)
-        }
-
-        desktopMain {
-            dependsOn(jvmMain)
-            dependsOn(jbMain)
-        }
-
-        desktopTest {
-            dependsOn(jvmTest)
-            dependsOn(jbTest)
-        }
-
-        // TODO: Align naming: nonJvmMain
-        jsNativeMain {
-            dependsOn(jbMain)
-        }
-
-        jsNativeTest {
-            dependsOn(jbTest)
-        }
-
-        nativeMain {
-            dependsOn(jsNativeMain)
-        }
-
-        nativeTest {
-            dependsOn(jsNativeTest)
-        }
-
-        webMain {
-            dependsOn(jsNativeMain)
-        }
-
-        webTest {
-            dependsOn(jsNativeTest)
-        }
-
-        targets.configureEach { target ->
-
-            // TODO: Ignore stubs. Remove together with stubs target
-            if (target.name.endsWith("Stubs")) return
-
-            if (target.platformType == KotlinPlatformType.native) {
-                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
-            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
-                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
-                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
-            }
-        }
-
-        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
     }
 }
@@ -198,4 +128,12 @@ androidx {
     description = "Animation engine and animation primitives that are the building blocks of the Compose animation library"
     metalavaK2UastEnabled = false
     samples(project(":compose:animation:animation-core:animation-core-samples"))
+}
+
+android {
+    compileSdk = 35
+    namespace = "androidx.compose.animation.core"
+    buildTypes.configureEach {
+        consumerProguardFiles("proguard-rules.pro")
+    }
 }

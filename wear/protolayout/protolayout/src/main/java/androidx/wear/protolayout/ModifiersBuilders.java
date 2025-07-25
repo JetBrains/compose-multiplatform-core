@@ -560,11 +560,6 @@ public final class ModifiersBuilders {
             }
         }
 
-        /** Gets whether this element should be marked as heading for accessibility. */
-        public boolean isHeading() {
-            return mImpl.getHeading();
-        }
-
         /** Get the fingerprint for this object, or null if unknown. */
         @RestrictTo(Scope.LIBRARY_GROUP)
         public @Nullable Fingerprint getFingerprint() {
@@ -597,8 +592,6 @@ public final class ModifiersBuilders {
                     + getRole()
                     + ", stateDescription="
                     + getStateDescription()
-                    + ", heading="
-                    + isHeading()
                     + "}";
         }
 
@@ -633,18 +626,6 @@ public final class ModifiersBuilders {
                 mImpl.setStateDescription(stateDescription.toProto());
                 mFingerprint.recordPropertyUpdate(
                         3, checkNotNull(stateDescription.getFingerprint()).aggregateValueAsInt());
-                return this;
-            }
-
-            /**
-             * Sets whether this element should be marked as heading for accessibility. Defaults to
-             * false.
-             */
-            @RequiresSchemaVersion(major = 1, minor = 600)
-            @SuppressLint("MissingGetterMatchingBuilder")
-            public @NonNull Builder setHeading(boolean heading) {
-                mImpl.setHeading(heading);
-                mFingerprint.recordPropertyUpdate(5, Boolean.hashCode(heading));
                 return this;
             }
 
@@ -698,8 +679,6 @@ public final class ModifiersBuilders {
         /**
          * Gets the padding on the end of the content, depending on the layout direction, in DP and
          * the value of "rtl_aware".
-         *
-         * <p>Note that negative values are supported on schema versions of 1.6 or higher.
          */
         public @Nullable DpProp getEnd() {
             if (mImpl.hasEnd()) {
@@ -712,8 +691,6 @@ public final class ModifiersBuilders {
         /**
          * Gets the padding on the start of the content, depending on the layout direction, in DP
          * and the value of "rtl_aware".
-         *
-         * <p>Note that negative values are supported on schema versions of 1.6 or higher.
          */
         public @Nullable DpProp getStart() {
             if (mImpl.hasStart()) {
@@ -723,11 +700,7 @@ public final class ModifiersBuilders {
             }
         }
 
-        /**
-         * Gets the padding at the top, in DP.
-         *
-         * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-         */
+        /** Gets the padding at the top, in DP. */
         public @Nullable DpProp getTop() {
             if (mImpl.hasTop()) {
                 return DpProp.fromProto(mImpl.getTop());
@@ -736,11 +709,7 @@ public final class ModifiersBuilders {
             }
         }
 
-        /**
-         * Gets the padding at the bottom, in DP.
-         *
-         * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-         */
+        /** Gets the padding at the bottom, in DP. */
         public @Nullable DpProp getBottom() {
             if (mImpl.hasBottom()) {
                 return DpProp.fromProto(mImpl.getBottom());
@@ -825,8 +794,6 @@ public final class ModifiersBuilders {
              * Sets the padding on the end of the content, depending on the layout direction, in DP
              * and the value of "rtl_aware".
              *
-             * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-             *
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
@@ -845,8 +812,6 @@ public final class ModifiersBuilders {
              * Sets the padding on the start of the content, depending on the layout direction, in
              * DP and the value of "rtl_aware".
              *
-             * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-             *
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
@@ -864,8 +829,6 @@ public final class ModifiersBuilders {
             /**
              * Sets the padding at the top, in DP.
              *
-             * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-             *
              * <p>Note that this field only supports static values.
              */
             @RequiresSchemaVersion(major = 1, minor = 0)
@@ -882,8 +845,6 @@ public final class ModifiersBuilders {
 
             /**
              * Sets the padding at the bottom, in DP.
-             *
-             * <p>Note that negative values are supported on schema versions of 1.6 or higher.
              *
              * <p>Note that this field only supports static values.
              */
@@ -931,13 +892,7 @@ public final class ModifiersBuilders {
                 return setRtlAware(new BoolProp.Builder(rtlAware).build());
             }
 
-            /**
-             * Sets the padding for all sides of the content, in DP.
-             *
-             * <p>Note that negative values are supported on schema versions of 1.6 or higher.
-             *
-             * <p>Note that this field only supports static values.
-             */
+            /** Sets the padding for all sides of the content, in DP. */
             @RequiresSchemaVersion(major = 1, minor = 0)
             @SuppressLint("MissingGetterMatchingBuilder")
             public @NonNull Builder setAll(@NonNull DpProp value) {

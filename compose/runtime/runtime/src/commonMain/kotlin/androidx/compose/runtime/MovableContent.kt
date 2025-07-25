@@ -16,8 +16,6 @@
 
 package androidx.compose.runtime
 
-import androidx.compose.runtime.annotation.RememberInComposition
-
 /**
  * Convert a lambda into one that moves the remembered state and nodes created in a previous call to
  * the new location it is called.
@@ -35,8 +33,7 @@ import androidx.compose.runtime.annotation.RememberInComposition
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
+fun movableContentOf(content: @Composable () -> Unit): @Composable () -> Unit {
     val movableContent = MovableContent<Nothing?>({ content() })
     return { currentComposer.insertMovableContent(movableContent, null) }
 }
@@ -58,8 +55,7 @@ public fun movableContentOf(content: @Composable () -> Unit): @Composable () -> 
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> Unit {
+fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (P) -> Unit {
     val movableContent = MovableContent(content)
     return { currentComposer.insertMovableContent(movableContent, it) }
 }
@@ -81,10 +77,7 @@ public fun <P> movableContentOf(content: @Composable (P) -> Unit): @Composable (
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <P1, P2> movableContentOf(
-    content: @Composable (P1, P2) -> Unit
-): @Composable (P1, P2) -> Unit {
+fun <P1, P2> movableContentOf(content: @Composable (P1, P2) -> Unit): @Composable (P1, P2) -> Unit {
     val movableContent = MovableContent<Pair<P1, P2>> { content(it.first, it.second) }
     return { p1, p2 -> currentComposer.insertMovableContent(movableContent, p1 to p2) }
 }
@@ -106,8 +99,7 @@ public fun <P1, P2> movableContentOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <P1, P2, P3> movableContentOf(
+fun <P1, P2, P3> movableContentOf(
     content: @Composable (P1, P2, P3) -> Unit
 ): @Composable (P1, P2, P3) -> Unit {
     val movableContent =
@@ -134,8 +126,7 @@ public fun <P1, P2, P3> movableContentOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <P1, P2, P3, P4> movableContentOf(
+fun <P1, P2, P3, P4> movableContentOf(
     content: @Composable (P1, P2, P3, P4) -> Unit
 ): @Composable (P1, P2, P3, P4) -> Unit {
     val movableContent =
@@ -165,10 +156,7 @@ public fun <P1, P2, P3, P4> movableContentOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <R> movableContentWithReceiverOf(
-    content: @Composable R.() -> Unit
-): @Composable R.() -> Unit {
+fun <R> movableContentWithReceiverOf(content: @Composable R.() -> Unit): @Composable R.() -> Unit {
     val movableContent = MovableContent<R>({ it.content() })
     return { currentComposer.insertMovableContent(movableContent, this) }
 }
@@ -190,8 +178,7 @@ public fun <R> movableContentWithReceiverOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <R, P> movableContentWithReceiverOf(
+fun <R, P> movableContentWithReceiverOf(
     content: @Composable R.(P) -> Unit
 ): @Composable R.(P) -> Unit {
     val movableContent = MovableContent<Pair<R, P>>({ it.first.content(it.second) })
@@ -215,8 +202,7 @@ public fun <R, P> movableContentWithReceiverOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <R, P1, P2> movableContentWithReceiverOf(
+fun <R, P1, P2> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2) -> Unit
 ): @Composable R.(P1, P2) -> Unit {
     val movableContent = MovableContent<Triple<R, P1, P2>> { it.first.content(it.second, it.third) }
@@ -240,8 +226,7 @@ public fun <R, P1, P2> movableContentWithReceiverOf(
  * @return A tracking composable lambda
  */
 @OptIn(InternalComposeApi::class)
-@RememberInComposition
-public fun <R, P1, P2, P3> movableContentWithReceiverOf(
+fun <R, P1, P2, P3> movableContentWithReceiverOf(
     content: @Composable R.(P1, P2, P3) -> Unit
 ): @Composable R.(P1, P2, P3) -> Unit {
     val movableContent =

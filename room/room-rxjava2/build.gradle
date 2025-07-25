@@ -22,8 +22,6 @@
  * modifying its settings.
  */
 
-
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
@@ -54,10 +52,9 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Room RXJava2"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    legacyDisableKotlinStrictApiMode = true
 }
 
 android {
     namespace = "androidx.room.rxjava2"
-    testOptions.unitTests.returnDefaultValues = true
 }

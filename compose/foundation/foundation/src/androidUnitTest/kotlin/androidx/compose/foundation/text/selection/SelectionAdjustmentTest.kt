@@ -28,7 +28,11 @@ class SelectionAdjustmentTest {
 
     @Test
     fun none_noAdjustment() {
-        val layout = getSingleSelectionLayoutFake(rawStartHandleOffset = 0, rawEndHandleOffset = 5)
+        val layout =
+            getSingleSelectionLayoutFake(
+                rawStartHandleOffset = 0,
+                rawEndHandleOffset = 5,
+            )
 
         val actualSelection = SelectionAdjustment.None.adjust(layout)
         val expectedSelection = getSelection(startOffset = 0, endOffset = 5)
@@ -37,7 +41,11 @@ class SelectionAdjustmentTest {
 
     @Test
     fun none_allowCollapsed() {
-        val layout = getSingleSelectionLayoutFake(rawStartHandleOffset = 0, rawEndHandleOffset = 0)
+        val layout =
+            getSingleSelectionLayoutFake(
+                rawStartHandleOffset = 0,
+                rawEndHandleOffset = 0,
+            )
 
         val actualSelection = SelectionAdjustment.None.adjust(layout)
         val expectedSelection = getSelection(startOffset = 0, endOffset = 0)
@@ -46,7 +54,11 @@ class SelectionAdjustmentTest {
 
     @Test
     fun none_reversed() {
-        val layout = getSingleSelectionLayoutFake(rawStartHandleOffset = 5, rawEndHandleOffset = 0)
+        val layout =
+            getSingleSelectionLayoutFake(
+                rawStartHandleOffset = 5,
+                rawEndHandleOffset = 0,
+            )
 
         val actualSelection = SelectionAdjustment.None.adjust(layout)
         val expectedSelection = getSelection(startOffset = 5, endOffset = 0)
@@ -73,7 +85,7 @@ class SelectionAdjustmentTest {
                 startSelectableId = 1L,
                 startOffset = 0,
                 endSelectableId = 2L,
-                endOffset = 5,
+                endOffset = 5
             )
         assertThat(actualSelection).isEqualTo(expectedSelection)
     }
@@ -286,8 +298,8 @@ class SelectionAdjustmentTest {
                         startSelectableId = 1L,
                         startOffset = 5,
                         endSelectableId = 2L,
-                        endOffset = 1,
-                    ),
+                        endOffset = 1
+                    )
             )
 
         val actualSelection = SelectionAdjustment.Character.adjust(layout)
@@ -296,7 +308,7 @@ class SelectionAdjustmentTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 2L,
-                endOffset = 0,
+                endOffset = 0
             )
         assertThat(actualSelection).isEqualTo(expectedSelection)
     }
@@ -341,8 +353,8 @@ class SelectionAdjustmentTest {
                         startSelectableId = 1L,
                         startOffset = 5,
                         endSelectableId = 3L,
-                        endOffset = 1,
-                    ),
+                        endOffset = 1
+                    )
             )
 
         val actualSelection = SelectionAdjustment.Character.adjust(layout)
@@ -351,7 +363,7 @@ class SelectionAdjustmentTest {
                 startSelectableId = 1L,
                 startOffset = 5,
                 endSelectableId = 3L,
-                endOffset = 0,
+                endOffset = 0
             )
         assertThat(actualSelection).isEqualTo(expectedSelection)
     }
@@ -365,7 +377,7 @@ class SelectionAdjustmentTest {
                 rawStartHandleOffset = 0,
                 rawEndHandleOffset = 0,
                 rawPreviousHandleOffset = 0,
-                previousSelection = null,
+                previousSelection = null
             )
 
         val actualSelection = SelectionAdjustment.Character.adjust(layout)
@@ -393,7 +405,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 1,
                 rawEndHandleOffset = 1,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -408,7 +420,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 6,
                 rawEndHandleOffset = 6,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -423,7 +435,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 5,
                 rawEndHandleOffset = 5,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -438,7 +450,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 0,
                 rawEndHandleOffset = 0,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -454,7 +466,7 @@ class SelectionAdjustmentTest {
                 text = text,
                 rawStartHandleOffset = text.lastIndex,
                 rawEndHandleOffset = text.lastIndex,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -470,7 +482,7 @@ class SelectionAdjustmentTest {
                 text = text,
                 rawStartHandleOffset = text.length,
                 rawEndHandleOffset = text.length,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -485,7 +497,7 @@ class SelectionAdjustmentTest {
                 text = "",
                 rawStartHandleOffset = 0,
                 rawEndHandleOffset = 0,
-                wordBoundaries = listOf(TextRange(0, 0)),
+                wordBoundaries = listOf(TextRange(0, 0))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -500,7 +512,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 1,
                 rawEndHandleOffset = 2,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -515,7 +527,7 @@ class SelectionAdjustmentTest {
                 text = "hello world",
                 rawStartHandleOffset = 2,
                 rawEndHandleOffset = 1,
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -531,7 +543,7 @@ class SelectionAdjustmentTest {
                 rawStartHandleOffset = 4,
                 rawEndHandleOffset = 7,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -547,7 +559,7 @@ class SelectionAdjustmentTest {
                 rawStartHandleOffset = 7,
                 rawEndHandleOffset = 4,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.Word.adjust(layout)
@@ -567,7 +579,11 @@ class SelectionAdjustmentTest {
                             text = "hello world",
                             rawStartHandleOffset = 8,
                             rawEndHandleOffset = 11,
-                            wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                            wordBoundaries =
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                )
                         ),
                         getSelectableInfoFake(
                             selectableId = 2L,
@@ -575,7 +591,11 @@ class SelectionAdjustmentTest {
                             text = "hello world",
                             rawStartHandleOffset = 0,
                             rawEndHandleOffset = 3,
-                            wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                            wordBoundaries =
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                )
                         ),
                     ),
                 currentInfoIndex = 0,
@@ -606,7 +626,11 @@ class SelectionAdjustmentTest {
                             text = "hello world",
                             rawStartHandleOffset = 11,
                             rawEndHandleOffset = 8,
-                            wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                            wordBoundaries =
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                )
                         ),
                         getSelectableInfoFake(
                             selectableId = 2L,
@@ -614,7 +638,11 @@ class SelectionAdjustmentTest {
                             text = "hello world",
                             rawStartHandleOffset = 3,
                             rawEndHandleOffset = 0,
-                            wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
+                            wordBoundaries =
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                )
                         ),
                     ),
                 currentInfoIndex = 0,
@@ -831,7 +859,7 @@ class SelectionAdjustmentTest {
                 rawStartHandleOffset = 3,
                 rawEndHandleOffset = 3,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -853,7 +881,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 6, endOffset = 7),
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -872,7 +900,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 7, endOffset = 6),
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -893,7 +921,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 7, endOffset = 11),
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -912,7 +940,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 11, endOffset = 7),
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -935,7 +963,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 6, endOffset = 11),
                 rawPreviousHandleOffset = 11,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -954,7 +982,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 11, endOffset = 6),
                 rawPreviousHandleOffset = 11,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -978,7 +1006,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 6, endOffset = 11),
                 rawPreviousHandleOffset = 6,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -997,7 +1025,7 @@ class SelectionAdjustmentTest {
                 previousSelection = getSelection(startOffset = 11, endOffset = 6),
                 rawPreviousHandleOffset = 6,
                 wordBoundaries =
-                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
+                    listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23))
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1025,7 +1053,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 4,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1045,7 +1073,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 4,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1073,7 +1101,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1093,7 +1121,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1121,7 +1149,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(8, 16),
+                lineBreaks = listOf(8, 16)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1141,7 +1169,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 7,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(8, 16),
+                lineBreaks = listOf(8, 16)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1171,7 +1199,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 16,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(8, 16),
+                lineBreaks = listOf(8, 16)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1191,7 +1219,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 16,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(8, 16),
+                lineBreaks = listOf(8, 16)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1299,7 +1327,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 8,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1319,7 +1347,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 8,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1347,7 +1375,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 2,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1367,7 +1395,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 2,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1399,7 +1427,7 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 15,
                 wordBoundaries =
                     listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17), TextRange(18, 23)),
-                lineBreaks = listOf(6, 12, 18),
+                lineBreaks = listOf(6, 12, 18)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1422,8 +1450,12 @@ class SelectionAdjustmentTest {
                             lineBreaks = listOf(6, 12),
                             rawPreviousHandleOffset = 6,
                             wordBoundaries =
-                                listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17)),
-                        )
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                    TextRange(12, 17),
+                                ),
+                        ),
                     ),
                 currentInfoIndex = 0,
                 startSlot = 1,
@@ -1451,8 +1483,12 @@ class SelectionAdjustmentTest {
                             lineBreaks = listOf(6, 12),
                             rawPreviousHandleOffset = 6,
                             wordBoundaries =
-                                listOf(TextRange(0, 5), TextRange(6, 11), TextRange(12, 17)),
-                        )
+                                listOf(
+                                    TextRange(0, 5),
+                                    TextRange(6, 11),
+                                    TextRange(12, 17),
+                                ),
+                        ),
                     ),
                 currentInfoIndex = 0,
                 startSlot = 1,
@@ -1656,8 +1692,12 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 10,
                 isStartHandle = true,
                 previousSelection = getSelection(startOffset = 0, endOffset = 8),
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
-                rtlRanges = listOf(0..0, 11..11),
+                wordBoundaries =
+                    listOf(
+                        TextRange(0, 5),
+                        TextRange(6, 11),
+                    ),
+                rtlRanges = listOf(0..0, 11..11)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)
@@ -1683,8 +1723,12 @@ class SelectionAdjustmentTest {
                 rawPreviousHandleOffset = 11,
                 isStartHandle = true,
                 previousSelection = getSelection(startOffset = 0, endOffset = 8),
-                wordBoundaries = listOf(TextRange(0, 5), TextRange(6, 11)),
-                rtlRanges = listOf(0..0, 11..11),
+                wordBoundaries =
+                    listOf(
+                        TextRange(0, 5),
+                        TextRange(6, 11),
+                    ),
+                rtlRanges = listOf(0..0, 11..11)
             )
 
         val actualSelection = SelectionAdjustment.CharacterWithWordAccelerate.adjust(layout)

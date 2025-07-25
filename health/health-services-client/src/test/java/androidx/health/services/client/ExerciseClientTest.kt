@@ -102,7 +102,7 @@ class ExerciseClientTest {
             .setComponentNameAndServiceForBindServiceForIntent(
                 Intent().setPackage(packageName).setAction(action),
                 ComponentName(packageName, CLIENT),
-                service,
+                service
             )
     }
 
@@ -115,7 +115,11 @@ class ExerciseClientTest {
     @Test
     fun callbackShouldMatchRequested_justSampleType_prepareExerciseSynchronously() = runTest {
         launch {
-            val warmUpConfig = WarmUpConfig(ExerciseType.WALKING, setOf(DataType.HEART_RATE_BPM))
+            val warmUpConfig =
+                WarmUpConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                )
             val availabilityEvent =
                 ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
                     AvailabilityResponse(DataType.HEART_RATE_BPM, DataTypeAvailability.ACQUIRING)
@@ -136,7 +140,11 @@ class ExerciseClientTest {
     @Test
     fun prepareExerciseSynchronously_ThrowsException() = runTest {
         launch {
-            val warmUpConfig = WarmUpConfig(ExerciseType.WALKING, setOf(DataType.HEART_RATE_BPM))
+            val warmUpConfig =
+                WarmUpConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                )
             var exception: Exception? = null
             client.setUpdateCallback(callback)
             // Mocking the calling app already has an active exercise in progress
@@ -158,7 +166,11 @@ class ExerciseClientTest {
     @Test
     fun prepareExerciseSynchronously_ThrowsSecurityException() = runTest {
         launch {
-            val warmUpConfig = WarmUpConfig(ExerciseType.WALKING, setOf(DataType.HEART_RATE_BPM))
+            val warmUpConfig =
+                WarmUpConfig(
+                    ExerciseType.WALKING,
+                    setOf(DataType.HEART_RATE_BPM),
+                )
             var exception: Exception? = null
             client.setUpdateCallback(callback)
             // Mocking the calling app does not have the required permissions
@@ -185,7 +197,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             val availabilityEvent =
                 ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
@@ -212,7 +224,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM_STATS),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             val availabilityEvent =
                 ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
@@ -243,7 +255,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             val availabilityEvent =
                 ExerciseUpdateListenerEvent.createAvailabilityUpdateEvent(
@@ -277,7 +289,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM, DataType.HEART_RATE_BPM_STATS),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             var exception: Exception? = null
             client.setUpdateCallback(callback)
@@ -306,7 +318,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -336,7 +348,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -362,7 +374,7 @@ class ExerciseClientTest {
             .containsExactly(
                 TestExerciseStates.STARTED,
                 TestExerciseStates.PAUSED,
-                TestExerciseStates.RESUMED,
+                TestExerciseStates.RESUMED
             )
     }
 
@@ -376,7 +388,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -406,7 +418,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -432,7 +444,7 @@ class ExerciseClientTest {
             .containsExactly(
                 TestExerciseStates.STARTED,
                 TestExerciseStates.PAUSED,
-                TestExerciseStates.ENDED,
+                TestExerciseStates.ENDED
             )
     }
 
@@ -445,7 +457,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -470,7 +482,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -496,7 +508,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -523,7 +535,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -553,7 +565,7 @@ class ExerciseClientTest {
                     ExerciseType.WALKING,
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
-                    isGpsEnabled = false,
+                    isGpsEnabled = false
                 )
             client.setUpdateCallback(callback)
 
@@ -618,17 +630,17 @@ class ExerciseClientTest {
                                 DataTypeCondition(
                                     DataType.DISTANCE_TOTAL,
                                     50.0,
-                                    ComparisonType.GREATER_THAN,
+                                    ComparisonType.GREATER_THAN
                                 )
                             ),
                             ExerciseGoal.createOneTimeGoal(
                                 DataTypeCondition(
                                     DataType.DISTANCE_TOTAL,
                                     150.0,
-                                    ComparisonType.GREATER_THAN,
+                                    ComparisonType.GREATER_THAN
                                 )
                             ),
-                        ),
+                        )
                 )
             client.setUpdateCallback(callback)
 
@@ -642,7 +654,7 @@ class ExerciseClientTest {
                         DataTypeCondition(
                             DataType.HEART_RATE_BPM_STATS,
                             145.0,
-                            ComparisonType.GREATER_THAN,
+                            ComparisonType.GREATER_THAN
                         )
                     )
                     .proto
@@ -674,7 +686,11 @@ class ExerciseClientTest {
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
                     isGpsEnabled = false,
-                    exerciseGoals = listOf(goal1, goal2),
+                    exerciseGoals =
+                        listOf(
+                            goal1,
+                            goal2,
+                        )
                 )
             client.setUpdateCallback(callback)
 
@@ -814,10 +830,10 @@ class ExerciseClientTest {
                                     120.0,
                                     ComparisonType.GREATER_THAN,
                                     /* initialDelay= */ 60,
-                                    /* durationAtThreshold= */ 5,
+                                    /* durationAtThreshold= */ 5
                                 )
                             )
-                        ),
+                        )
                 )
             client.setUpdateCallback(callback)
 
@@ -833,7 +849,7 @@ class ExerciseClientTest {
                             120.0,
                             ComparisonType.GREATER_THAN,
                             /* initialDelay= */ 60,
-                            /* durationAtThreshold= */ 5,
+                            /* durationAtThreshold= */ 5
                         )
                     )
                     .proto
@@ -857,7 +873,7 @@ class ExerciseClientTest {
                     120.0,
                     ComparisonType.GREATER_THAN,
                     /* initialDelay= */ 60,
-                    /* durationAtThreshold= */ 5,
+                    /* durationAtThreshold= */ 5
                 )
             )
         val debouncedGoal2 =
@@ -867,7 +883,7 @@ class ExerciseClientTest {
                     120.0,
                     ComparisonType.GREATER_THAN,
                     /* initialDelay= */ 60,
-                    /* durationAtThreshold= */ 5,
+                    /* durationAtThreshold= */ 5
                 )
             )
         val startExercise = async {
@@ -877,7 +893,7 @@ class ExerciseClientTest {
                     setOf(DataType.HEART_RATE_BPM),
                     isAutoPauseAndResumeEnabled = false,
                     isGpsEnabled = false,
-                    debouncedGoals = listOf(debouncedGoal1, debouncedGoal2),
+                    debouncedGoals = listOf(debouncedGoal1, debouncedGoal2)
                 )
             client.setUpdateCallback(callback)
 
@@ -941,7 +957,7 @@ class ExerciseClientTest {
 
         override fun prepareExercise(
             prepareExerciseRequest: PrepareExerciseRequest?,
-            statusCallback: IStatusCallback,
+            statusCallback: IStatusCallback
         ) {
             if (throwException) {
                 statusCallback.onFailure("Remote Exception")
@@ -954,7 +970,7 @@ class ExerciseClientTest {
 
         override fun startExercise(
             startExerciseRequest: StartExerciseRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (callingAppHasPermissions) {
                 exerciseConfig = startExerciseRequest?.exerciseConfig
@@ -989,7 +1005,7 @@ class ExerciseClientTest {
 
         override fun getCurrentExerciseInfo(
             packageName: String?,
-            exerciseInfoCallback: IExerciseInfoCallback?,
+            exerciseInfoCallback: IExerciseInfoCallback?
         ) {
             if (throwException) {
                 exerciseInfoCallback?.onFailure("Remote Exception")
@@ -1005,7 +1021,7 @@ class ExerciseClientTest {
                     ExerciseInfoResponse(
                         ExerciseInfo(
                             ExerciseTrackedStatus.OWNED_EXERCISE_IN_PROGRESS,
-                            exerciseConfig!!.exerciseType,
+                            exerciseConfig!!.exerciseType
                         )
                     )
                 )
@@ -1015,7 +1031,7 @@ class ExerciseClientTest {
         override fun setUpdateListener(
             packageName: String?,
             listener: IExerciseUpdateListener?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             this.listener = listener
             statusCallbackAction.invoke(statusCallback)
@@ -1024,7 +1040,7 @@ class ExerciseClientTest {
         override fun clearUpdateListener(
             packageName: String?,
             listener: IExerciseUpdateListener?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (this.listener == listener) this.listener = null
             statusCallbackAction.invoke(statusCallback)
@@ -1032,7 +1048,7 @@ class ExerciseClientTest {
 
         override fun addGoalToActiveExercise(
             request: ExerciseGoalRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (request != null) {
                 goals.add(request.exerciseGoal)
@@ -1042,7 +1058,7 @@ class ExerciseClientTest {
 
         override fun removeGoalFromActiveExercise(
             request: ExerciseGoalRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (request != null) {
                 goals.remove(request.exerciseGoal)
@@ -1052,7 +1068,7 @@ class ExerciseClientTest {
 
         override fun addDebouncedGoalToActiveExercise(
             request: DebouncedGoalRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (request != null) {
                 debouncedGoals.add(request.debouncedGoal)
@@ -1062,7 +1078,7 @@ class ExerciseClientTest {
 
         override fun removeDebouncedGoalFromActiveExercise(
             request: DebouncedGoalRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             if (request != null) {
                 debouncedGoals.remove(request.debouncedGoal)
@@ -1072,14 +1088,14 @@ class ExerciseClientTest {
 
         override fun overrideAutoPauseAndResumeForActiveExercise(
             request: AutoPauseAndResumeConfigRequest?,
-            statusCallback: IStatusCallback?,
+            statusCallback: IStatusCallback?
         ) {
             throw NotImplementedError()
         }
 
         override fun overrideBatchingModesForActiveExercise(
             batchingModeConfigRequest: BatchingModeConfigRequest?,
-            statuscallback: IStatusCallback?,
+            statuscallback: IStatusCallback?
         ) {
             batchingModeOverrides = batchingModeConfigRequest?.batchingModeOverrides
             statusCallbackAction.invoke(statuscallback)
@@ -1102,13 +1118,13 @@ class ExerciseClientTest {
                         /* supportedDataTypes= */ ImmutableSet.of(DataType.STEPS),
                         ImmutableMap.of(
                             DataType.STEPS_TOTAL,
-                            ImmutableSet.of(ComparisonType.GREATER_THAN),
+                            ImmutableSet.of(ComparisonType.GREATER_THAN)
                         ),
                         ImmutableMap.of(
                             DataType.STEPS_TOTAL,
-                            ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN),
+                            ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN)
                         ),
-                        /* supportsAutoPauseAndResume= */ false,
+                        /* supportsAutoPauseAndResume= */ false
                     ),
                     ExerciseType.RUNNING,
                     ExerciseTypeCapabilities(
@@ -1117,23 +1133,23 @@ class ExerciseClientTest {
                             DataType.HEART_RATE_BPM_STATS,
                             ImmutableSet.of(ComparisonType.GREATER_THAN, ComparisonType.LESS_THAN),
                             DataType.SPEED_STATS,
-                            ImmutableSet.of(ComparisonType.LESS_THAN),
+                            ImmutableSet.of(ComparisonType.LESS_THAN)
                         ),
                         ImmutableMap.of(
                             DataType.HEART_RATE_BPM_STATS,
                             ImmutableSet.of(ComparisonType.GREATER_THAN_OR_EQUAL),
                             DataType.SPEED_STATS,
-                            ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN),
+                            ImmutableSet.of(ComparisonType.LESS_THAN, ComparisonType.GREATER_THAN)
                         ),
-                        /* supportsAutoPauseAndResume= */ true,
+                        /* supportsAutoPauseAndResume= */ true
                     ),
                     ExerciseType.SWIMMING_POOL,
                     ExerciseTypeCapabilities(
                         /* supportedDataTypes= */ ImmutableSet.of(),
                         /* supportedGoals= */ ImmutableMap.of(),
                         /* supportedMilestones= */ ImmutableMap.of(),
-                        /* supportsAutoPauseAndResume= */ true,
-                    ),
+                        /* supportsAutoPauseAndResume= */ true
+                    )
                 )
 
             return ExerciseCapabilities(exerciseTypeToCapabilitiesMapping)
@@ -1168,7 +1184,7 @@ class ExerciseClientTest {
         STARTED,
         PAUSED,
         RESUMED,
-        ENDED,
+        ENDED
     }
 
     internal companion object {
@@ -1177,7 +1193,7 @@ class ExerciseClientTest {
             ClientConfiguration(
                 CLIENT,
                 IpcConstants.SERVICE_PACKAGE_NAME,
-                IpcConstants.EXERCISE_API_BIND_ACTION,
+                IpcConstants.EXERCISE_API_BIND_ACTION
             )
     }
 }

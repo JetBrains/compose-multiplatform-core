@@ -43,7 +43,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.untransformedText.toString()).isEqualTo("hello")
@@ -58,7 +58,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
         val annotations: List<PlacedAnnotation> =
             listOf(AnnotatedString.Range(SpanStyle(background = Color.Blue), 0, 5))
@@ -66,35 +66,6 @@ class TransformedTextFieldStateTest {
             .setComposingText(text = "hello", newCursorPosition = 1, annotations = annotations)
 
         assertThat(transformedState.visualText.composingAnnotations).isEqualTo(annotations)
-    }
-
-    @Test
-    fun outputTransformation_noChanges_emptyOutputAnnotations() {
-        val state = TextFieldState()
-        val outputTransformation = OutputTransformation {}
-        val transformedState =
-            TransformedTextFieldState(
-                textFieldState = state,
-                outputTransformation = outputTransformation,
-            )
-        assertThat(transformedState.outputText.outputAnnotations).isNull()
-        assertThat(transformedState.outputText.composingAnnotations).isNull()
-    }
-
-    @Test
-    fun outputTransformation_addingAnnotation_showsOutputAnnotations() {
-        val state = TextFieldState("Hello")
-        val outputTransformation = OutputTransformation { addStyle(SpanStyle(Color.Red), 0, 3) }
-        val transformedState =
-            TransformedTextFieldState(
-                textFieldState = state,
-                outputTransformation = outputTransformation,
-            )
-        assertThat(transformedState.outputText.outputAnnotations).hasSize(1)
-        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.item)
-            .isEqualTo(SpanStyle(Color.Red))
-        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.start).isEqualTo(0)
-        assertThat(transformedState.outputText.outputAnnotations?.get(0)?.end).isEqualTo(3)
     }
 
     @Test
@@ -108,7 +79,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("aazzbbzzcc")
@@ -132,7 +103,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("zzzz")
@@ -161,7 +132,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("cddd")
@@ -185,7 +156,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("aazzbbzzcc")
@@ -215,7 +186,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("zzzz")
@@ -238,7 +209,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         assertThat(transformedState.outputText.toString()).isEqualTo("cddd")
@@ -258,7 +229,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
         assertThat(transformedState.outputText.toString()).isEqualTo("aahello")
 
@@ -277,7 +248,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         val collectedOldValues = mutableListOf<TextFieldCharSequence>()
@@ -317,7 +288,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         val collectedOldValues = mutableListOf<TextFieldCharSequence>()
@@ -344,7 +315,7 @@ class TransformedTextFieldStateTest {
                 TextFieldCharSequence(
                     "ahelloa",
                     selection = TextRange(6),
-                    composition = TextRange(0, 6),
+                    composition = TextRange(0, 6)
                 )
             )
         assertThat(collectedNewValues)
@@ -352,7 +323,7 @@ class TransformedTextFieldStateTest {
                 TextFieldCharSequence(
                     "ahello worlda",
                     selection = TextRange(12),
-                    composition = TextRange(0, 6),
+                    composition = TextRange(0, 6)
                 )
             )
         assertThat(collectedRestartImes).containsExactly(true)
@@ -366,7 +337,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         transformedState.selectCharsIn(TextRange(0, 4))
@@ -386,7 +357,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         transformedState.selectCharsIn(TextRange(0, 4))
@@ -406,7 +377,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         transformedState.selectCharsIn(TextRange(0, 4))
@@ -426,7 +397,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         transformedState.selectCharsIn(TextRange(0, 4))
@@ -446,7 +417,7 @@ class TransformedTextFieldStateTest {
         val transformedState =
             TransformedTextFieldState(
                 textFieldState = state,
-                outputTransformation = outputTransformation,
+                outputTransformation = outputTransformation
             )
 
         transformedState.selectCharsIn(TextRange(0, 4))

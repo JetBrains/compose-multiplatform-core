@@ -16,26 +16,14 @@
 
 package androidx.pdf.testapp.ui.v2
 
-import android.app.AlertDialog
-import android.content.Context
 import android.os.Build
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
-import androidx.pdf.content.ExternalLink
-import androidx.pdf.testapp.ConfigurationProvider
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.OpCancellationHandler
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.PdfViewerFragment
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-@Suppress("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 class StyledPdfViewerFragment : PdfViewerFragment {
 
@@ -43,62 +31,11 @@ class StyledPdfViewerFragment : PdfViewerFragment {
 
     private constructor(pdfStylingOptions: PdfStylingOptions) : super(pdfStylingOptions)
 
-    private var configProvider: ConfigurationProvider? = null
-
-    private var hostView: FrameLayout? = null
-    private var searchButton: FloatingActionButton? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is ConfigurationProvider) configProvider = context
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View? {
-        val pdfContainer =
-            super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
-
-        // Inflate the custom layout for this fragment.
-        hostView = inflater.inflate(R.layout.fragment_host, container, false) as FrameLayout
-        searchButton = hostView?.findViewById(R.id.host_Search)
-
-        // Add the default PDF viewer to the custom layout
-        hostView?.addView(pdfContainer)
-
-        // Show/hide the search button based on initial toolbox visibility
-        if (isToolboxVisible) searchButton?.show() else searchButton?.hide()
-
-        // Setup click listener to activate text search
-        searchButton?.setOnClickListener { isTextSearchActive = true }
-        return hostView
-    }
-
-    override fun onRequestImmersiveMode(enterImmersive: Boolean) {
-        super.onRequestImmersiveMode(enterImmersive)
-        if (!enterImmersive) searchButton?.show() else searchButton?.hide()
-    }
-
     override fun onLoadDocumentError(error: Throwable) {
         super.onLoadDocumentError(error)
         when (error) {
             is OperationCanceledException ->
                 (activity as? OpCancellationHandler)?.handleCancelOperation()
-        }
-    }
-
-    override fun onLinkClicked(externalLink: ExternalLink): Boolean {
-        return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Custom Link Handler")
-                .setMessage("Intercepted link:\n${externalLink.uri}")
-                .setPositiveButton("OK", null)
-                .show()
-            true
-        } else {
-            false
         }
     }
 

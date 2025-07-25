@@ -34,8 +34,10 @@ private fun checkTolerance(tolerance: Double) {
 
 /** Propositions for double subjects. */
 class DoubleSubject
-internal constructor(actual: Double?, metadata: FailureMetadata = FailureMetadata()) :
-    ComparableSubject<Double>(actual, metadata = metadata) {
+internal constructor(
+    actual: Double?,
+    metadata: FailureMetadata = FailureMetadata(),
+) : ComparableSubject<Double>(actual, metadata = metadata) {
 
     abstract class TolerantDoubleComparison internal constructor() {
         /**

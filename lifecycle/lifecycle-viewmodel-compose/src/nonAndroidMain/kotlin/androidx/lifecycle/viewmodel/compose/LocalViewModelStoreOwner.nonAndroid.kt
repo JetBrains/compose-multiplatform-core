@@ -19,6 +19,4 @@ package androidx.lifecycle.viewmodel.compose
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModelStoreOwner
 
-@Composable
-internal actual fun findDefaultViewModelStoreOwner(): ViewModelStoreOwner? =
-    implementedInJetBrainsFork()
+@Composable internal actual fun findViewTreeViewModelStoreOwner(): ViewModelStoreOwner? = null

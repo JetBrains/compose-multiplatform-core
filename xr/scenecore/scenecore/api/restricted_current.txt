@@ -1,9 +1,9 @@
 // Signature format: 4.0
-package androidx.xr.scenecore {
+package @RequiresApi(34) androidx.xr.scenecore {
 
-  public final class ActivityPanelEntity extends androidx.xr.scenecore.PanelEntity {
-    method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
-    method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ActivityPanelEntity extends androidx.xr.scenecore.PanelEntity {
+    method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, android.graphics.Rect windowBoundsPx, String name);
+    method public static androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, android.graphics.Rect windowBoundsPx, String name, optional androidx.xr.runtime.math.Pose pose);
     method public void launchActivity(android.content.Intent intent);
     method public void launchActivity(android.content.Intent intent, optional android.os.Bundle? bundle);
     method public void moveActivity(android.app.Activity activity);
@@ -11,41 +11,61 @@ package androidx.xr.scenecore {
   }
 
   public static final class ActivityPanelEntity.Companion {
-    method public androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
-    method public androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, android.graphics.Rect windowBoundsPx, String name);
+    method public androidx.xr.scenecore.ActivityPanelEntity create(androidx.xr.runtime.Session session, android.graphics.Rect windowBoundsPx, String name, optional androidx.xr.runtime.math.Pose pose);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ActivityPose {
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.ActivityPose.HitTestFilterValue int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ActivityPose destination);
+  }
+
+  public static final class ActivityPose.HitTestFilter {
+    property public static int OTHER_SCENES;
+    property public static int SELF_SCENE;
+    field public static final androidx.xr.scenecore.ActivityPose.HitTestFilter INSTANCE;
+    field public static final int OTHER_SCENES = 2; // 0x2
+    field public static final int SELF_SCENE = 1; // 0x1
+  }
+
+  @IntDef(flag=true, value={androidx.xr.scenecore.ActivityPose.HitTestFilter.SELF_SCENE, androidx.xr.scenecore.ActivityPose.HitTestFilter.OTHER_SCENES}) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) public static @interface ActivityPose.HitTestFilterValue {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ActivitySpace extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.ActivitySpace> {
-    method public void addBoundsChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void addBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public androidx.xr.runtime.math.FloatSize3d getBounds();
-    method public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
+    method public void addBoundsChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.Dimensions> listener);
+    method public void addBoundsChangedListener(java.util.function.Consumer<androidx.xr.scenecore.Dimensions> listener);
+    method public androidx.xr.scenecore.Dimensions getBounds();
     method @Deprecated public void registerOnBoundsChangedListener(androidx.xr.scenecore.OnBoundsChangeListener listener);
-    method public void removeBoundsChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.FloatSize3d> listener);
-    method public void setOnSpaceUpdatedListener(Runnable? listener);
-    method public void setOnSpaceUpdatedListener(Runnable? listener, optional java.util.concurrent.Executor? executor);
+    method public void removeBoundsChangedListener(java.util.function.Consumer<androidx.xr.scenecore.Dimensions> listener);
+    method public void setOnSpaceUpdatedListener(androidx.xr.scenecore.OnSpaceUpdatedListener? listener);
+    method public void setOnSpaceUpdatedListener(androidx.xr.scenecore.OnSpaceUpdatedListener? listener, optional java.util.concurrent.Executor? executor);
     method @Deprecated public void unregisterOnBoundsChangedListener();
-    property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
   }
 
-  public final class AnchorEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.AnchorEntity> {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class AnchorEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.AnchorEntity> {
     method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.arcore.Anchor anchor);
-    method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType);
-    method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType, optional java.time.Duration timeout);
+    method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.Dimensions bounds, int planeType, int planeSemantic);
+    method public static androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.Dimensions bounds, int planeType, int planeSemantic, optional java.time.Duration timeout);
     method public androidx.xr.arcore.Anchor getAnchor(androidx.xr.runtime.Session session);
     method public int getState();
-    method public void setOnSpaceUpdatedListener(Runnable? listener);
-    method public void setOnSpaceUpdatedListener(java.util.concurrent.Executor executor, Runnable? listener);
-    method public void setOnStateChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Integer>? listener);
-    method public void setOnStateChangedListener(java.util.function.Consumer<java.lang.Integer>? listener);
-    property public int state;
+    method public void setOnSpaceUpdatedListener(androidx.xr.scenecore.OnSpaceUpdatedListener? listener);
+    method public void setOnSpaceUpdatedListener(androidx.xr.scenecore.OnSpaceUpdatedListener? listener, optional java.util.concurrent.Executor? executor);
+    method public void setOnStateChangedListener(androidx.xr.scenecore.OnStateChangedListener? onStateChangedListener);
     field public static final androidx.xr.scenecore.AnchorEntity.Companion Companion;
   }
 
   public static final class AnchorEntity.Companion {
     method public androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.arcore.Anchor anchor);
-    method public androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType);
-    method public androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.runtime.math.FloatSize2d minimumPlaneExtents, int planeOrientation, int planeSemanticType, optional java.time.Duration timeout);
+    method public androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.Dimensions bounds, int planeType, int planeSemantic);
+    method public androidx.xr.scenecore.AnchorEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.Dimensions bounds, int planeType, int planeSemantic, optional java.time.Duration timeout);
+  }
+
+  public enum AnchorEntity.PersistState {
+    enum_constant public static final androidx.xr.scenecore.AnchorEntity.PersistState PERSISTED;
+    enum_constant public static final androidx.xr.scenecore.AnchorEntity.PersistState PERSIST_NOT_REQUESTED;
+    enum_constant public static final androidx.xr.scenecore.AnchorEntity.PersistState PERSIST_PENDING;
   }
 
   public static final class AnchorEntity.State {
@@ -74,46 +94,50 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.AnchorPlacement createForPlanes(optional java.util.Set<java.lang.Integer> planeTypeFilter, optional java.util.Set<java.lang.Integer> planeSemanticFilter);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseEntity<RtEntityType extends androidx.xr.runtime.internal.Entity> extends androidx.xr.scenecore.BaseScenePose<androidx.xr.runtime.internal.ActivityPose> implements androidx.xr.scenecore.Entity {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseActivityPose<RtActivityPoseType extends androidx.xr.runtime.internal.ActivityPose> implements androidx.xr.scenecore.ActivityPose {
+    ctor public BaseActivityPose(RtActivityPoseType rtActivityPose);
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.ActivityPose.HitTestFilterValue int hitTestFilter);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ActivityPose destination);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseEntity<RtEntityType extends androidx.xr.runtime.internal.Entity> extends androidx.xr.scenecore.BaseActivityPose<androidx.xr.runtime.internal.ActivityPose> implements androidx.xr.scenecore.Entity {
     method public void addChild(androidx.xr.scenecore.Entity child);
     method public boolean addComponent(androidx.xr.scenecore.Component component);
     method public void dispose();
-    method public float getAlpha(@androidx.xr.scenecore.SpaceValue int relativeTo);
+    method public float getAlpha(int relativeTo);
     method public java.util.List<androidx.xr.scenecore.Component> getComponents();
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
-    method public String getContentDescription();
     method public androidx.xr.scenecore.Entity? getParent();
-    method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.scenecore.SpaceValue int relativeTo);
-    method public float getScale(@androidx.xr.scenecore.SpaceValue int relativeTo);
-    method @Deprecated public boolean isHidden(boolean includeParents);
+    method public androidx.xr.runtime.math.Pose getPose(int relativeTo);
+    method public float getScale(int relativeTo);
+    method public boolean isHidden(boolean includeParents);
     method public void removeAllComponents();
     method public void removeComponent(androidx.xr.scenecore.Component component);
-    method public void setAlpha(float alpha, @androidx.xr.scenecore.SpaceValue int relativeTo);
-    method public void setContentDescription(String);
-    method @Deprecated public void setHidden(boolean hidden);
-    method public void setParent(androidx.xr.scenecore.Entity?);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, @androidx.xr.scenecore.SpaceValue int relativeTo);
+    method public void setAlpha(float alpha, int relativeTo);
+    method public void setContentDescription(String text);
+    method public void setHidden(boolean hidden);
+    method public void setParent(androidx.xr.scenecore.Entity? parent);
+    method public void setPose(androidx.xr.runtime.math.Pose pose, int relativeTo);
     method public void setScale(float scale, int relativeTo);
-    property public String contentDescription;
-    property public androidx.xr.scenecore.Entity? parent;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseScenePose<RtActivityPoseType extends androidx.xr.runtime.internal.ActivityPose> implements androidx.xr.scenecore.ScenePose {
-    ctor public BaseScenePose(RtActivityPoseType rtActivityPose);
-    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
-    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
-    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
-    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
-    property public androidx.xr.runtime.math.Pose activitySpacePose;
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract sealed class BasePanelEntity<RtPanelEntityType extends androidx.xr.runtime.internal.PanelEntity> extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.PanelEntity> {
+    method public final float getCornerRadius();
+    method @Deprecated public final androidx.xr.runtime.math.Vector3 getPixelDensity();
+    method public final androidx.xr.scenecore.Dimensions getSize();
+    method public final androidx.xr.scenecore.PixelDimensions getSizeInPixels();
+    method public final void setCornerRadius(float radius);
+    method public final void setSize(androidx.xr.scenecore.Dimensions dimensions);
+    method public final void setSizeInPixels(androidx.xr.scenecore.PixelDimensions pixelDimensions);
   }
 
-  public final class CameraView extends androidx.xr.scenecore.BaseScenePose<androidx.xr.runtime.internal.CameraViewActivityPose> {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class CameraView extends androidx.xr.scenecore.BaseActivityPose<androidx.xr.runtime.internal.CameraViewActivityPose> {
     method public androidx.xr.scenecore.CameraView.CameraType getCameraType();
-    method public androidx.xr.runtime.FieldOfView getFov();
+    method public androidx.xr.scenecore.Fov getFov();
     property public androidx.xr.scenecore.CameraView.CameraType cameraType;
-    property public androidx.xr.runtime.FieldOfView fov;
+    property public androidx.xr.scenecore.Fov fov;
   }
 
   public enum CameraView.CameraType {
@@ -122,9 +146,20 @@ package androidx.xr.scenecore {
     enum_constant public static final androidx.xr.scenecore.CameraView.CameraType UNKNOWN;
   }
 
-  public interface Component {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean onAttach(androidx.xr.scenecore.Entity entity);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void onDetach(androidx.xr.scenecore.Entity entity);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Component {
+    method public boolean onAttach(androidx.xr.scenecore.Entity entity);
+    method public void onDetach(androidx.xr.scenecore.Entity entity);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ContentlessEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.Entity> {
+    method public static androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name);
+    method public static androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
+    field public static final androidx.xr.scenecore.ContentlessEntity.Companion Companion;
+  }
+
+  public static final class ContentlessEntity.Companion {
+    method public androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name);
+    method public androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class CubeMapTexture extends androidx.xr.scenecore.Texture {
@@ -136,81 +171,96 @@ package androidx.xr.scenecore {
     method @MainThread public androidx.xr.scenecore.CubeMapTexture borrowReflectionTexture(androidx.xr.runtime.Session session);
   }
 
-  public interface Entity extends androidx.xr.scenecore.ScenePose {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Dimensions {
+    ctor public Dimensions();
+    ctor public Dimensions(optional float width, optional float height, optional float depth);
+    method public float component1();
+    method public float component2();
+    method public float component3();
+    method public androidx.xr.scenecore.Dimensions copy(float width, float height, float depth);
+    method public float getDepth();
+    method public float getHeight();
+    method public float getWidth();
+    property public float depth;
+    property public float height;
+    property public float width;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Entity extends androidx.xr.scenecore.ActivityPose {
     method public void addChild(androidx.xr.scenecore.Entity child);
     method public boolean addComponent(androidx.xr.scenecore.Component component);
     method public void dispose();
-    method @FloatRange(from=0.0, to=1.0) public default float getAlpha();
-    method @FloatRange(from=0.0, to=1.0) public float getAlpha(optional @androidx.xr.scenecore.SpaceValue int relativeTo);
+    method public default float getAlpha();
+    method public float getAlpha(optional int relativeTo);
     method public java.util.List<androidx.xr.scenecore.Component> getComponents();
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
-    method public String getContentDescription();
     method public androidx.xr.scenecore.Entity? getParent();
     method public default androidx.xr.runtime.math.Pose getPose();
-    method public androidx.xr.runtime.math.Pose getPose(optional @androidx.xr.scenecore.SpaceValue int relativeTo);
-    method @FloatRange(from=0.0) public default float getScale();
-    method @FloatRange(from=0.0) public float getScale(optional @androidx.xr.scenecore.SpaceValue int relativeTo);
-    method public default boolean isEnabled(optional boolean includeParents);
-    method @Deprecated public boolean isHidden(optional boolean includeParents);
+    method public androidx.xr.runtime.math.Pose getPose(optional int relativeTo);
+    method public default float getScale();
+    method public float getScale(optional int relativeTo);
+    method public boolean isHidden(optional boolean includeParents);
     method public void removeAllComponents();
     method public void removeComponent(androidx.xr.scenecore.Component component);
-    method public default void setAlpha(@FloatRange(from=0.0, to=1.0) float alpha);
-    method public void setAlpha(@FloatRange(from=0.0, to=1.0) float alpha, optional @androidx.xr.scenecore.SpaceValue int relativeTo);
-    method public void setContentDescription(String);
-    method public default void setEnabled(boolean enabled);
-    method @Deprecated public void setHidden(boolean hidden);
-    method public void setParent(androidx.xr.scenecore.Entity?);
+    method public default void setAlpha(float alpha);
+    method public void setAlpha(float alpha, optional int relativeTo);
+    method public void setContentDescription(String text);
+    method public void setHidden(boolean hidden);
+    method public void setParent(androidx.xr.scenecore.Entity? parent);
     method public default void setPose(androidx.xr.runtime.math.Pose pose);
-    method public void setPose(androidx.xr.runtime.math.Pose pose, optional @androidx.xr.scenecore.SpaceValue int relativeTo);
-    method public default void setScale(@FloatRange(from=0.0) float scale);
-    method public void setScale(@FloatRange(from=0.0) float scale, optional @androidx.xr.scenecore.SpaceValue int relativeTo);
-    property public abstract String contentDescription;
-    property public abstract androidx.xr.scenecore.Entity? parent;
+    method public void setPose(androidx.xr.runtime.math.Pose pose, optional int relativeTo);
+    method public default void setScale(float scale);
+    method public void setScale(float scale, optional int relativeTo);
   }
 
-  public final class ExrImage {
-    method @MainThread public static suspend Object? createFromZip(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static suspend Object? createFromZip(androidx.xr.runtime.Session session, byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread public static suspend Object? createFromZip(androidx.xr.runtime.Session session, java.nio.file.Path path, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, android.net.Uri uri);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
-    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, java.nio.file.Path path);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.CubeMapTexture getReflectionTexture();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ExrImage implements androidx.xr.scenecore.Image {
+    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
+    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> create(androidx.xr.runtime.Session session, String name);
+    method @MainThread public androidx.xr.scenecore.CubeMapTexture getReflectionTexture();
     field public static final androidx.xr.scenecore.ExrImage.Companion Companion;
   }
 
   public static final class ExrImage.Companion {
-    method @MainThread public suspend Object? createFromZip(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? createFromZip(androidx.xr.runtime.Session session, byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread public suspend Object? createFromZip(androidx.xr.runtime.Session session, java.nio.file.Path path, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
-    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, android.net.Uri uri);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
-    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> createFromZipAsync(androidx.xr.runtime.Session session, java.nio.file.Path path);
+    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
+    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.ExrImage> create(androidx.xr.runtime.Session session, String name);
   }
 
-  public final class GltfModel {
-    method @MainThread public static suspend Object? create(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static suspend Object? create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
-    method @MainThread public static suspend Object? create(androidx.xr.runtime.Session session, java.nio.file.Path path, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Fov {
+    ctor public Fov(float angleLeft, float angleRight, float angleUp, float angleDown);
+    method public androidx.xr.scenecore.Fov copy();
+    method public androidx.xr.scenecore.Fov copy(optional float angleLeft);
+    method public androidx.xr.scenecore.Fov copy(optional float angleLeft, optional float angleRight);
+    method public androidx.xr.scenecore.Fov copy(optional float angleLeft, optional float angleRight, optional float angleUp);
+    method public androidx.xr.scenecore.Fov copy(optional float angleLeft, optional float angleRight, optional float angleUp, optional float angleDown);
+    method public float getAngleDown();
+    method public float getAngleLeft();
+    method public float getAngleRight();
+    method public float getAngleUp();
+    property public float angleDown;
+    property public float angleLeft;
+    property public float angleRight;
+    property public float angleUp;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class GltfModel implements androidx.xr.scenecore.Model {
+    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.GltfModel> create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
+    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.GltfModel> create(androidx.xr.runtime.Session session, String name);
     field public static final androidx.xr.scenecore.GltfModel.Companion Companion;
   }
 
   public static final class GltfModel.Companion {
-    method @MainThread public suspend Object? create(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
-    method @MainThread public suspend Object? create(androidx.xr.runtime.Session session, java.nio.file.Path path, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.GltfModel>);
+    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.GltfModel> create(androidx.xr.runtime.Session session, byte[] assetData, String assetKey);
+    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.GltfModel> create(androidx.xr.runtime.Session session, String name);
   }
 
-  public final class GltfModelEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.GltfEntity> {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class GltfModelEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.GltfEntity> {
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model);
     method @MainThread public static androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model, optional androidx.xr.runtime.math.Pose pose);
     method public int getAnimationState();
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setMaterialOverride(androidx.xr.scenecore.Material material, String meshName);
-    method @MainThread public void startAnimation();
-    method @MainThread public void startAnimation(optional boolean loop);
-    method @MainThread public void startAnimation(boolean loop, String animationName);
+    method @MainThread public void setMaterialOverride(androidx.xr.scenecore.Material material, String meshName);
+    method @MainThread public void startAnimation(boolean loop);
+    method @MainThread public void startAnimation(boolean loop, optional String? animationName);
     method @MainThread public void stopAnimation();
-    property public int animationState;
     field public static final androidx.xr.scenecore.GltfModelEntity.Companion Companion;
   }
 
@@ -227,21 +277,10 @@ package androidx.xr.scenecore {
     method @MainThread public androidx.xr.scenecore.GltfModelEntity create(androidx.xr.runtime.Session session, androidx.xr.scenecore.GltfModel model, optional androidx.xr.runtime.math.Pose pose);
   }
 
-  public final class GroupEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.Entity> {
-    method public static androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name);
-    method public static androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
-    field public static final androidx.xr.scenecore.GroupEntity.Companion Companion;
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Head extends androidx.xr.scenecore.BaseActivityPose<androidx.xr.runtime.internal.HeadActivityPose> {
   }
 
-  public static final class GroupEntity.Companion {
-    method public androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name);
-    method public androidx.xr.scenecore.Entity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
-  }
-
-  public final class Head extends androidx.xr.scenecore.BaseScenePose<androidx.xr.runtime.internal.HeadActivityPose> {
-  }
-
-  public final class HitTestResult {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class HitTestResult {
     ctor public HitTestResult(androidx.xr.runtime.math.Vector3? hitPosition, androidx.xr.runtime.math.Vector3? surfaceNormal, int surfaceType, float distance);
     method public float getDistance();
     method public androidx.xr.runtime.math.Vector3? getHitPosition();
@@ -261,6 +300,9 @@ package androidx.xr.scenecore {
     field public static final int OBJECT = 2; // 0x2
     field public static final int PLANE = 1; // 0x1
     field public static final int UNKNOWN = 0; // 0x0
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Image {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class InputEvent {
@@ -344,96 +386,11 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.InteractableComponent create(androidx.xr.runtime.Session session, java.util.concurrent.Executor executor, androidx.xr.scenecore.InputEventListener inputEventListener);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class KhronosPbrMaterial extends androidx.xr.scenecore.Material {
-    method @MainThread public static com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.KhronosPbrMaterial> create(androidx.xr.runtime.Session session, androidx.xr.scenecore.KhronosPbrMaterialSpec spec);
-    method @MainThread public void dispose();
-    method @MainThread public void setAlphaCutoff(float alphaCutoff);
-    method @MainThread public void setAmbientOcclusionFactor(float factor);
-    method @MainThread public void setAmbientOcclusionTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setAmbientOcclusionUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    method @MainThread public void setBaseColorFactors(androidx.xr.runtime.math.Vector4 factors);
-    method @MainThread public void setBaseColorTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setBaseColorUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    method @MainThread public void setClearcoatFactors(float intensity, float roughness, float normal);
-    method @MainThread public void setClearcoatNormalTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setClearcoatRoughnessTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setClearcoatTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setEmissiveFactors(androidx.xr.runtime.math.Vector3 factors);
-    method @MainThread public void setEmissiveTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setEmissiveUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    method @MainThread public void setIndexOfRefraction(float indexOfRefraction);
-    method @MainThread public void setMetallicFactor(float factor);
-    method @MainThread public void setMetallicRoughnessTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setMetallicRoughnessUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    method @MainThread public void setNormalFactor(float factor);
-    method @MainThread public void setNormalTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setNormalUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    method @MainThread public void setRoughnessFactor(float factor);
-    method @MainThread public void setSheenColorFactors(androidx.xr.runtime.math.Vector3 factors);
-    method @MainThread public void setSheenColorTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setSheenRoughnessFactor(float factor);
-    method @MainThread public void setSheenRoughnessTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setTransmissionFactor(float factor);
-    method @MainThread public void setTransmissionTexture(androidx.xr.scenecore.Texture texture);
-    method @MainThread public void setTransmissionUvTransform(androidx.xr.runtime.math.Matrix3 transform);
-    field public static final androidx.xr.scenecore.KhronosPbrMaterial.Companion Companion;
-  }
-
-  public static final class KhronosPbrMaterial.Companion {
-    method @MainThread public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.KhronosPbrMaterial> create(androidx.xr.runtime.Session session, androidx.xr.scenecore.KhronosPbrMaterialSpec spec);
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class KhronosPbrMaterialSpec {
-    method public static androidx.xr.scenecore.KhronosPbrMaterialSpec create();
-    method public static androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel);
-    method public static androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel, optional int blendMode);
-    method public static androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel, optional int blendMode, optional int doubleSidedMode);
-    method public int getBlendMode();
-    method public int getDoubleSidedMode();
-    method public int getLightingModel();
-    property public int blendMode;
-    property public int doubleSidedMode;
-    property public int lightingModel;
-    field public static final androidx.xr.scenecore.KhronosPbrMaterialSpec.Companion Companion;
-  }
-
-  public static final class KhronosPbrMaterialSpec.BlendMode {
-    property public static int MASKED;
-    property public static int OPAQUE;
-    property public static int REFRACTIVE;
-    property public static int TRANSPARENT;
-    field public static final androidx.xr.scenecore.KhronosPbrMaterialSpec.BlendMode INSTANCE;
-    field public static final int MASKED = 1; // 0x1
-    field public static final int OPAQUE = 0; // 0x0
-    field public static final int REFRACTIVE = 3; // 0x3
-    field public static final int TRANSPARENT = 2; // 0x2
-  }
-
-  public static final class KhronosPbrMaterialSpec.Companion {
-    method public androidx.xr.scenecore.KhronosPbrMaterialSpec create();
-    method public androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel);
-    method public androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel, optional int blendMode);
-    method public androidx.xr.scenecore.KhronosPbrMaterialSpec create(optional int lightingModel, optional int blendMode, optional int doubleSidedMode);
-  }
-
-  public static final class KhronosPbrMaterialSpec.DoubleSidedMode {
-    property public static int DOUBLE_SIDED;
-    property public static int SINGLE_SIDED;
-    field public static final int DOUBLE_SIDED = 1; // 0x1
-    field public static final androidx.xr.scenecore.KhronosPbrMaterialSpec.DoubleSidedMode INSTANCE;
-    field public static final int SINGLE_SIDED = 0; // 0x0
-  }
-
-  public static final class KhronosPbrMaterialSpec.LightingModel {
-    property public static int LIT;
-    property public static int UNLIT;
-    field public static final androidx.xr.scenecore.KhronosPbrMaterialSpec.LightingModel INSTANCE;
-    field public static final int LIT = 0; // 0x0
-    field public static final int UNLIT = 1; // 0x1
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class Material {
     ctor public Material(androidx.xr.runtime.internal.MaterialResource? material);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Model {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class MovableComponent implements androidx.xr.scenecore.Component {
@@ -444,12 +401,12 @@ package androidx.xr.scenecore {
     method public static androidx.xr.scenecore.MovableComponent create(androidx.xr.runtime.Session session, optional boolean systemMovable, optional boolean scaleInZ);
     method public static androidx.xr.scenecore.MovableComponent create(androidx.xr.runtime.Session session, optional boolean systemMovable, optional boolean scaleInZ, optional java.util.Set<androidx.xr.scenecore.AnchorPlacement> anchorPlacement);
     method public static androidx.xr.scenecore.MovableComponent create(androidx.xr.runtime.Session session, optional boolean systemMovable, optional boolean scaleInZ, optional java.util.Set<androidx.xr.scenecore.AnchorPlacement> anchorPlacement, optional boolean shouldDisposeParentAnchor);
-    method public androidx.xr.runtime.math.FloatSize3d getSize();
+    method public androidx.xr.scenecore.Dimensions getSize();
     method public boolean onAttach(androidx.xr.scenecore.Entity entity);
     method public void onDetach(androidx.xr.scenecore.Entity entity);
     method public void removeMoveListener(androidx.xr.scenecore.MoveListener moveListener);
-    method public void setSize(androidx.xr.runtime.math.FloatSize3d);
-    property public androidx.xr.runtime.math.FloatSize3d size;
+    method public void setSize(androidx.xr.scenecore.Dimensions);
+    property public androidx.xr.scenecore.Dimensions size;
     field public static final androidx.xr.scenecore.MovableComponent.Companion Companion;
   }
 
@@ -468,67 +425,50 @@ package androidx.xr.scenecore {
   }
 
   @Deprecated @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public fun interface OnBoundsChangeListener {
-    method @Deprecated public void onBoundsChanged(androidx.xr.runtime.math.FloatSize3d bounds);
+    method @Deprecated public void onBoundsChanged(androidx.xr.scenecore.Dimensions bounds);
   }
 
-  public class PanelEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.PanelEntity> {
-    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.FloatSize2d dimensions, String name);
-    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.FloatSize2d dimensions, String name, optional androidx.xr.runtime.math.Pose pose);
-    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
-    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
-    method public final float getCornerRadius();
-    method public final androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution();
-    method public final androidx.xr.runtime.math.FloatSize2d getSize();
-    method public final androidx.xr.runtime.math.IntSize2d getSizeInPixels();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public fun interface OnSpaceUpdatedListener {
+    method public void onSpaceUpdated();
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public fun interface OnStateChangedListener {
+    method public void onStateChanged(int newState);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class PanelEntity extends androidx.xr.scenecore.BasePanelEntity<androidx.xr.runtime.internal.PanelEntity> {
+    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.Dimensions dimensions, String name);
+    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.Dimensions dimensions, String name, optional androidx.xr.runtime.math.Pose pose);
+    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.PixelDimensions pixelDimensions, String name);
+    method public static final androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.PixelDimensions pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
     method public final boolean isMainPanelEntity();
-    method public final void setCornerRadius(float);
-    method public final void setSize(androidx.xr.runtime.math.FloatSize2d);
-    method public final void setSizeInPixels(androidx.xr.runtime.math.IntSize2d);
-    property public final float cornerRadius;
     property public final boolean isMainPanelEntity;
-    property public final androidx.xr.runtime.math.FloatSize2d size;
-    property public final androidx.xr.runtime.math.IntSize2d sizeInPixels;
     field public static final androidx.xr.scenecore.PanelEntity.Companion Companion;
   }
 
   public static final class PanelEntity.Companion {
-    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.FloatSize2d dimensions, String name);
-    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.FloatSize2d dimensions, String name, optional androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name);
-    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.runtime.math.IntSize2d pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.Dimensions dimensions, String name);
+    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.Dimensions dimensions, String name, optional androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.PixelDimensions pixelDimensions, String name);
+    method public androidx.xr.scenecore.PanelEntity create(androidx.xr.runtime.Session session, android.view.View view, androidx.xr.scenecore.PixelDimensions pixelDimensions, String name, optional androidx.xr.runtime.math.Pose pose);
   }
 
-  public abstract class PerceivedResolutionResult {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PerceptionSpace extends androidx.xr.scenecore.BaseActivityPose<androidx.xr.runtime.internal.PerceptionSpaceActivityPose> {
   }
 
-  public static final class PerceivedResolutionResult.EntityTooClose extends androidx.xr.scenecore.PerceivedResolutionResult {
-    ctor public PerceivedResolutionResult.EntityTooClose();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PixelDimensions {
+    ctor public PixelDimensions();
+    ctor public PixelDimensions(optional int width, optional int height);
+    method public int component1();
+    method public int component2();
+    method public androidx.xr.scenecore.PixelDimensions copy(int width, int height);
+    method public int getHeight();
+    method public int getWidth();
+    property public int height;
+    property public int width;
   }
 
-  public static final class PerceivedResolutionResult.InvalidCameraView extends androidx.xr.scenecore.PerceivedResolutionResult {
-    ctor public PerceivedResolutionResult.InvalidCameraView();
-  }
-
-  public static final class PerceivedResolutionResult.Success extends androidx.xr.scenecore.PerceivedResolutionResult {
-    ctor public PerceivedResolutionResult.Success(androidx.xr.runtime.math.IntSize2d perceivedResolution);
-    method public androidx.xr.runtime.math.IntSize2d getPerceivedResolution();
-    property public androidx.xr.runtime.math.IntSize2d perceivedResolution;
-  }
-
-  public final class PerceptionSpace extends androidx.xr.scenecore.BaseScenePose<androidx.xr.runtime.internal.PerceptionSpaceActivityPose> {
-  }
-
-  public final class PlaneOrientation {
-    property public static int ANY;
-    property public static int HORIZONTAL;
-    property public static int VERTICAL;
-    field public static final int ANY = 2; // 0x2
-    field public static final int HORIZONTAL = 0; // 0x0
-    field public static final androidx.xr.scenecore.PlaneOrientation INSTANCE;
-    field public static final int VERTICAL = 1; // 0x1
-  }
-
-  public final class PlaneSemanticType {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PlaneSemantic {
     property public static int ANY;
     property public static int CEILING;
     property public static int FLOOR;
@@ -537,9 +477,19 @@ package androidx.xr.scenecore {
     field public static final int ANY = 4; // 0x4
     field public static final int CEILING = 2; // 0x2
     field public static final int FLOOR = 1; // 0x1
-    field public static final androidx.xr.scenecore.PlaneSemanticType INSTANCE;
+    field public static final androidx.xr.scenecore.PlaneSemantic INSTANCE;
     field public static final int TABLE = 3; // 0x3
     field public static final int WALL = 0; // 0x0
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PlaneType {
+    property public static int ANY;
+    property public static int HORIZONTAL;
+    property public static int VERTICAL;
+    field public static final int ANY = 2; // 0x2
+    field public static final int HORIZONTAL = 0; // 0x0
+    field public static final androidx.xr.scenecore.PlaneType INSTANCE;
+    field public static final int VERTICAL = 1; // 0x1
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class PointSourceParams {
@@ -571,15 +521,15 @@ package androidx.xr.scenecore {
     method public void addResizeListener(androidx.xr.scenecore.ResizeListener resizeListener);
     method public void addResizeListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.ResizeListener resizeListener);
     method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session);
-    method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.FloatSize3d minimumSize);
-    method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.FloatSize3d minimumSize, optional androidx.xr.runtime.math.FloatSize3d maximumSize);
+    method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.scenecore.Dimensions minimumSize);
+    method public static androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.scenecore.Dimensions minimumSize, optional androidx.xr.scenecore.Dimensions maximumSize);
     method public boolean getAutoHideContent();
     method public boolean getAutoUpdateSize();
     method public float getFixedAspectRatio();
     method public boolean getForceShowResizeOverlay();
-    method public androidx.xr.runtime.math.FloatSize3d getMaximumSize();
-    method public androidx.xr.runtime.math.FloatSize3d getMinimumSize();
-    method public androidx.xr.runtime.math.FloatSize3d getSize();
+    method public androidx.xr.scenecore.Dimensions getMaximumSize();
+    method public androidx.xr.scenecore.Dimensions getMinimumSize();
+    method public androidx.xr.scenecore.Dimensions getSize();
     method public boolean onAttach(androidx.xr.scenecore.Entity entity);
     method public void onDetach(androidx.xr.scenecore.Entity entity);
     method public void removeResizeListener(androidx.xr.scenecore.ResizeListener resizeListener);
@@ -587,89 +537,73 @@ package androidx.xr.scenecore {
     method public void setAutoUpdateSize(boolean);
     method public void setFixedAspectRatio(float);
     method public void setForceShowResizeOverlay(boolean);
-    method public void setMaximumSize(androidx.xr.runtime.math.FloatSize3d);
-    method public void setMinimumSize(androidx.xr.runtime.math.FloatSize3d);
-    method public void setSize(androidx.xr.runtime.math.FloatSize3d);
+    method public void setMaximumSize(androidx.xr.scenecore.Dimensions);
+    method public void setMinimumSize(androidx.xr.scenecore.Dimensions);
+    method public void setSize(androidx.xr.scenecore.Dimensions);
     property public boolean autoHideContent;
     property public boolean autoUpdateSize;
     property public float fixedAspectRatio;
     property public boolean forceShowResizeOverlay;
-    property public androidx.xr.runtime.math.FloatSize3d maximumSize;
-    property public androidx.xr.runtime.math.FloatSize3d minimumSize;
-    property public androidx.xr.runtime.math.FloatSize3d size;
+    property public androidx.xr.scenecore.Dimensions maximumSize;
+    property public androidx.xr.scenecore.Dimensions minimumSize;
+    property public androidx.xr.scenecore.Dimensions size;
     field public static final androidx.xr.scenecore.ResizableComponent.Companion Companion;
   }
 
   public static final class ResizableComponent.Companion {
     method public androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session);
-    method public androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.FloatSize3d minimumSize);
-    method public androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.runtime.math.FloatSize3d minimumSize, optional androidx.xr.runtime.math.FloatSize3d maximumSize);
+    method public androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.scenecore.Dimensions minimumSize);
+    method public androidx.xr.scenecore.ResizableComponent create(androidx.xr.runtime.Session session, optional androidx.xr.scenecore.Dimensions minimumSize, optional androidx.xr.scenecore.Dimensions maximumSize);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ResizeListener {
-    method public default void onResizeEnd(androidx.xr.scenecore.Entity entity, androidx.xr.runtime.math.FloatSize3d finalSize);
-    method public default void onResizeStart(androidx.xr.scenecore.Entity entity, androidx.xr.runtime.math.FloatSize3d originalSize);
-    method public default void onResizeUpdate(androidx.xr.scenecore.Entity entity, androidx.xr.runtime.math.FloatSize3d newSize);
+    method public default void onResizeEnd(androidx.xr.scenecore.Entity entity, androidx.xr.scenecore.Dimensions finalSize);
+    method public default void onResizeStart(androidx.xr.scenecore.Entity entity, androidx.xr.scenecore.Dimensions originalSize);
+    method public default void onResizeUpdate(androidx.xr.scenecore.Entity entity, androidx.xr.scenecore.Dimensions newSize);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Scene implements androidx.xr.runtime.SessionConnector {
     ctor public Scene();
-    method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.runtime.math.IntSize2d> listener);
-    method public void addPerceivedResolutionChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.IntSize2d> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.SpatialCapabilities> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.scenecore.SpatialCapabilities> listener);
     method public void clearSpatialVisibilityChangedListener();
     method public void close();
-    method public void enablePanelDepthTest(boolean enabled);
     method public androidx.xr.scenecore.ActivitySpace getActivitySpace();
     method public androidx.xr.scenecore.Entity getActivitySpaceRoot();
     method public <T extends androidx.xr.scenecore.Entity> java.util.List<T> getEntitiesOfType(Class<? extends T> type);
-    method public androidx.xr.scenecore.Entity? getKeyEntity();
     method public androidx.xr.scenecore.PanelEntity getMainPanelEntity();
     method public androidx.xr.scenecore.PerceptionSpace getPerceptionSpace();
     method public androidx.xr.scenecore.SpatialCapabilities getSpatialCapabilities();
     method public androidx.xr.scenecore.SpatialEnvironment getSpatialEnvironment();
-    method public androidx.xr.scenecore.SpatialModeChangeListener getSpatialModeChangeListener();
     method public androidx.xr.scenecore.SpatialUser getSpatialUser();
     method public void initialize(androidx.xr.runtime.internal.LifecycleManager lifecycleManager, androidx.xr.runtime.internal.JxrPlatformAdapter platformAdapter);
-    method public void removePerceivedResolutionChangedListener(java.util.function.Consumer<androidx.xr.runtime.math.IntSize2d> listener);
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.scenecore.SpatialCapabilities> listener);
-    method public void requestFullSpaceMode();
-    method public void requestHomeSpaceMode();
+    method public void setActivitySpace(androidx.xr.scenecore.ActivitySpace);
+    method public void setActivitySpaceRoot(androidx.xr.scenecore.Entity);
     method public android.os.Bundle setFullSpaceMode(android.os.Bundle bundle);
     method public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle bundle);
-    method public boolean setKeyEntity(androidx.xr.scenecore.Entity? entity);
+    method public void setMainPanelEntity(androidx.xr.scenecore.PanelEntity);
+    method public void setPerceptionSpace(androidx.xr.scenecore.PerceptionSpace);
     method public void setPreferredAspectRatio(android.app.Activity activity, float preferredRatio);
-    method public void setSpatialModeChangeListener(androidx.xr.scenecore.SpatialModeChangeListener);
+    method public void setSpatialCapabilities(androidx.xr.scenecore.SpatialCapabilities);
+    method public void setSpatialEnvironment(androidx.xr.scenecore.SpatialEnvironment);
+    method public void setSpatialUser(androidx.xr.scenecore.SpatialUser);
     method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.SpatialVisibility> listener);
     method public void setSpatialVisibilityChangedListener(java.util.function.Consumer<androidx.xr.scenecore.SpatialVisibility> listener);
     property public androidx.xr.scenecore.ActivitySpace activitySpace;
     property public androidx.xr.scenecore.Entity activitySpaceRoot;
-    property public androidx.xr.scenecore.Entity? keyEntity;
     property public androidx.xr.scenecore.PanelEntity mainPanelEntity;
     property public androidx.xr.scenecore.PerceptionSpace perceptionSpace;
     property public androidx.xr.scenecore.SpatialCapabilities spatialCapabilities;
     property public androidx.xr.scenecore.SpatialEnvironment spatialEnvironment;
-    property public androidx.xr.scenecore.SpatialModeChangeListener spatialModeChangeListener;
     property public androidx.xr.scenecore.SpatialUser spatialUser;
-  }
-
-  public interface ScenePose {
-    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
-    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
-    method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.HitTestResult> hitTestAsync(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter);
-    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.ScenePose destination);
-    property public abstract androidx.xr.runtime.math.Pose activitySpacePose;
-  }
-
-  public static final class ScenePose.HitTestFilter {
-    property public static int OTHER_SCENES;
-    property public static int SELF_SCENE;
-    field public static final androidx.xr.scenecore.ScenePose.HitTestFilter INSTANCE;
-    field public static final int OTHER_SCENES = 2; // 0x2
-    field public static final int SELF_SCENE = 1; // 0x1
+    field public androidx.xr.scenecore.ActivitySpace activitySpace;
+    field public androidx.xr.scenecore.Entity activitySpaceRoot;
+    field public androidx.xr.scenecore.PanelEntity mainPanelEntity;
+    field public androidx.xr.scenecore.PerceptionSpace perceptionSpace;
+    field public androidx.xr.scenecore.SpatialCapabilities spatialCapabilities;
+    field public androidx.xr.scenecore.SpatialEnvironment spatialEnvironment;
+    field public androidx.xr.scenecore.SpatialUser spatialUser;
   }
 
   public final class SessionExt {
@@ -684,17 +618,14 @@ package androidx.xr.scenecore {
     field public static final String TAG = "SoundFieldAttributes";
   }
 
-  public final class Space {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Space {
     property public static int ACTIVITY;
     property public static int PARENT;
-    property @RestrictTo({androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX}) public static int REAL_WORLD;
+    property public static int REAL_WORLD;
     field public static final int ACTIVITY = 1; // 0x1
     field public static final androidx.xr.scenecore.Space INSTANCE;
     field public static final int PARENT = 0; // 0x0
-    field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final int REAL_WORLD = 2; // 0x2
-  }
-
-  @IntDef({androidx.xr.scenecore.Space.PARENT, androidx.xr.scenecore.Space.ACTIVITY, androidx.xr.scenecore.Space.REAL_WORLD}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) internal @interface SpaceValue {
+    field public static final int REAL_WORLD = 2; // 0x2
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialAudioTrack {
@@ -745,37 +676,70 @@ package androidx.xr.scenecore {
     property public static int SPATIAL_CAPABILITY_UI;
   }
 
-  public final class SpatialEnvironment {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialEnvironment {
     ctor public SpatialEnvironment(androidx.xr.runtime.internal.JxrPlatformAdapter runtime);
-    method public void addOnPassthroughOpacityChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Float> listener);
     method public void addOnPassthroughOpacityChangedListener(java.util.function.Consumer<java.lang.Float> listener);
-    method public void addOnSpatialEnvironmentChangedListener(java.util.concurrent.Executor executor, java.util.function.Consumer<java.lang.Boolean> listener);
     method public void addOnSpatialEnvironmentChangedListener(java.util.function.Consumer<java.lang.Boolean> listener);
     method public float getCurrentPassthroughOpacity();
-    method public float getPreferredPassthroughOpacity();
-    method public androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference? getPreferredSpatialEnvironment();
-    method public boolean isPreferredSpatialEnvironmentActive();
+    method @Deprecated public androidx.xr.scenecore.SpatialEnvironment.PassthroughMode getPassthroughMode();
+    method @Deprecated public float getPassthroughOpacity();
+    method public Float? getPassthroughOpacityPreference();
+    method public androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference? getSpatialEnvironmentPreference();
+    method public boolean isSpatialEnvironmentPreferenceActive();
     method public void removeOnPassthroughOpacityChangedListener(java.util.function.Consumer<java.lang.Float> listener);
     method public void removeOnSpatialEnvironmentChangedListener(java.util.function.Consumer<java.lang.Boolean> listener);
-    method public void setPreferredPassthroughOpacity(float);
-    method public void setPreferredSpatialEnvironment(androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference?);
-    property public float currentPassthroughOpacity;
-    property public boolean isPreferredSpatialEnvironmentActive;
-    property public float preferredPassthroughOpacity;
-    property public androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference? preferredSpatialEnvironment;
-    field public static final androidx.xr.scenecore.SpatialEnvironment.Companion Companion;
-    field public static final float NO_PASSTHROUGH_OPACITY_PREFERENCE = (-1.0f/0.0f);
+    method public void requestFullSpaceMode();
+    method public void requestHomeSpaceMode();
+    method @Deprecated public void setGeometry(androidx.xr.scenecore.GltfModel? gltfModel);
+    method @Deprecated public void setPassthrough(androidx.xr.scenecore.SpatialEnvironment.PassthroughMode passthroughMode);
+    method @Deprecated public void setPassthroughOpacity(float passthroughOpacity);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.xr.scenecore.SpatialEnvironment.SetPassthroughOpacityPreferenceResult setPassthroughOpacityPreference(Float? passthroughOpacityPreference);
+    method @Deprecated public void setSkybox(androidx.xr.scenecore.ExrImage? exrImage);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.xr.scenecore.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult setSpatialEnvironmentPreference(androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference? environmentPreference);
   }
 
-  public static final class SpatialEnvironment.Companion {
-    property public static float NO_PASSTHROUGH_OPACITY_PREFERENCE;
+  @Deprecated public static final class SpatialEnvironment.PassthroughMode {
+    method @Deprecated public int getValue();
+    property @Deprecated public int value;
+    field @Deprecated public static final androidx.xr.scenecore.SpatialEnvironment.PassthroughMode.Companion Companion;
+    field @Deprecated public static final androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Disabled;
+    field @Deprecated public static final androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Enabled;
+    field @Deprecated public static final androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Uninitialized;
+  }
+
+  @Deprecated public static final class SpatialEnvironment.PassthroughMode.Companion {
+    property @Deprecated public androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Disabled;
+    property @Deprecated public androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Enabled;
+    property @Deprecated public androidx.xr.scenecore.SpatialEnvironment.PassthroughMode Uninitialized;
+  }
+
+  public static final class SpatialEnvironment.SetPassthroughOpacityPreferenceChangeApplied extends androidx.xr.scenecore.SpatialEnvironment.SetPassthroughOpacityPreferenceResult {
+    ctor public SpatialEnvironment.SetPassthroughOpacityPreferenceChangeApplied();
+  }
+
+  public static final class SpatialEnvironment.SetPassthroughOpacityPreferenceChangePending extends androidx.xr.scenecore.SpatialEnvironment.SetPassthroughOpacityPreferenceResult {
+    ctor public SpatialEnvironment.SetPassthroughOpacityPreferenceChangePending();
+  }
+
+  public abstract static sealed class SpatialEnvironment.SetPassthroughOpacityPreferenceResult {
+  }
+
+  public static final class SpatialEnvironment.SetSpatialEnvironmentPreferenceChangeApplied extends androidx.xr.scenecore.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult {
+    ctor public SpatialEnvironment.SetSpatialEnvironmentPreferenceChangeApplied();
+  }
+
+  public static final class SpatialEnvironment.SetSpatialEnvironmentPreferenceChangePending extends androidx.xr.scenecore.SpatialEnvironment.SetSpatialEnvironmentPreferenceResult {
+    ctor public SpatialEnvironment.SetSpatialEnvironmentPreferenceChangePending();
+  }
+
+  public abstract static sealed class SpatialEnvironment.SetSpatialEnvironmentPreferenceResult {
   }
 
   public static final class SpatialEnvironment.SpatialEnvironmentPreference {
     ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry);
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) internal SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, androidx.xr.scenecore.Material? geometryMaterial);
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) internal SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, androidx.xr.scenecore.Material? geometryMaterial, optional String? geometryMeshName);
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) internal SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, androidx.xr.scenecore.Material? geometryMaterial, optional String? geometryMeshName, optional String? geometryAnimationName);
+    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, optional androidx.xr.scenecore.Material? geometryMaterial);
+    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, optional androidx.xr.scenecore.Material? geometryMaterial, optional String? geometryMeshName);
+    ctor public SpatialEnvironment.SpatialEnvironmentPreference(androidx.xr.scenecore.ExrImage? skybox, androidx.xr.scenecore.GltfModel? geometry, optional androidx.xr.scenecore.Material? geometryMaterial, optional String? geometryMeshName, optional String? geometryAnimationName);
     method public androidx.xr.scenecore.GltfModel? getGeometry();
     method public androidx.xr.scenecore.ExrImage? getSkybox();
     property public androidx.xr.scenecore.GltfModel? geometry;
@@ -794,37 +758,6 @@ package androidx.xr.scenecore {
     method public void setSoundFieldAttributes(androidx.xr.runtime.Session session, android.media.MediaPlayer mediaPlayer, androidx.xr.scenecore.SoundFieldAttributes attributes);
   }
 
-  public fun interface SpatialModeChangeListener {
-    method public void onSpatialModeChanged(androidx.xr.runtime.math.Pose recommendedPose, float recommendedScale);
-  }
-
-  public final class SpatialPointerComponent implements androidx.xr.scenecore.Component {
-    method public static androidx.xr.scenecore.SpatialPointerComponent create(androidx.xr.runtime.Session session);
-    method public androidx.xr.scenecore.SpatialPointerIcon getSpatialPointerIcon();
-    method public boolean onAttach(androidx.xr.scenecore.Entity entity);
-    method public void onDetach(androidx.xr.scenecore.Entity entity);
-    method public void setSpatialPointerIcon(androidx.xr.scenecore.SpatialPointerIcon);
-    property public androidx.xr.scenecore.SpatialPointerIcon spatialPointerIcon;
-    field public static final androidx.xr.scenecore.SpatialPointerComponent.Companion Companion;
-  }
-
-  public static final class SpatialPointerComponent.Companion {
-    method public androidx.xr.scenecore.SpatialPointerComponent create(androidx.xr.runtime.Session session);
-  }
-
-  public final class SpatialPointerIcon {
-    field public static final androidx.xr.scenecore.SpatialPointerIcon CIRCLE;
-    field public static final androidx.xr.scenecore.SpatialPointerIcon.Companion Companion;
-    field public static final androidx.xr.scenecore.SpatialPointerIcon DEFAULT;
-    field public static final androidx.xr.scenecore.SpatialPointerIcon NONE;
-  }
-
-  public static final class SpatialPointerIcon.Companion {
-    property public androidx.xr.scenecore.SpatialPointerIcon CIRCLE;
-    property public androidx.xr.scenecore.SpatialPointerIcon DEFAULT;
-    property public androidx.xr.scenecore.SpatialPointerIcon NONE;
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialSoundPool {
     method public static int getSpatialSourceType(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int streamId);
     method public static int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.PointSourceParams params, float volume, int priority, int loop, float rate);
@@ -838,11 +771,12 @@ package androidx.xr.scenecore {
     method public int play(androidx.xr.runtime.Session session, android.media.SoundPool soundPool, int soundID, androidx.xr.scenecore.SoundFieldAttributes attributes, float volume, int priority, int loop, float rate);
   }
 
-  public final class SpatialUser {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SpatialUser {
     ctor public SpatialUser(androidx.xr.runtime.internal.LifecycleManager lifecycleManager, androidx.xr.runtime.internal.JxrPlatformAdapter runtime);
-    method public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> getCameraViews();
+    method public androidx.xr.scenecore.CameraView? getCameraView(androidx.xr.scenecore.CameraView.CameraType cameraType);
+    method public java.util.List<androidx.xr.scenecore.CameraView> getCameraViews();
     method public androidx.xr.scenecore.Head? getHead();
-    property public java.util.Map<androidx.xr.scenecore.CameraView.CameraType,androidx.xr.scenecore.CameraView> cameraViews;
+    method public void setHead(androidx.xr.scenecore.Head?);
     property public androidx.xr.scenecore.Head? head;
   }
 
@@ -890,15 +824,15 @@ package androidx.xr.scenecore {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SubspaceNodeEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.SubspaceNodeEntity> {
-    method public static androidx.xr.scenecore.SubspaceNodeEntity create(androidx.xr.runtime.Session session, com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.runtime.math.FloatSize3d size);
-    method public androidx.xr.runtime.math.FloatSize3d getSize();
-    method public void setSize(androidx.xr.runtime.math.FloatSize3d);
-    property public androidx.xr.runtime.math.FloatSize3d size;
+    method public static androidx.xr.scenecore.SubspaceNodeEntity create(androidx.xr.runtime.Session session, com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.scenecore.Dimensions size);
+    method public androidx.xr.scenecore.Dimensions getSize();
+    method public void setSize(androidx.xr.scenecore.Dimensions);
+    property public androidx.xr.scenecore.Dimensions size;
     field public static final androidx.xr.scenecore.SubspaceNodeEntity.Companion Companion;
   }
 
   public static final class SubspaceNodeEntity.Companion {
-    method public androidx.xr.scenecore.SubspaceNodeEntity create(androidx.xr.runtime.Session session, com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.runtime.math.FloatSize3d size);
+    method public androidx.xr.scenecore.SubspaceNodeEntity create(androidx.xr.runtime.Session session, com.google.androidxr.splitengine.SubspaceNode subspaceNode, androidx.xr.scenecore.Dimensions size);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SurfaceEntity extends androidx.xr.scenecore.BaseEntity<androidx.xr.runtime.internal.SurfaceEntity> {
@@ -906,30 +840,23 @@ package androidx.xr.scenecore {
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose);
     method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape);
-    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel);
-    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel, optional androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata);
-    method @MainThread public static androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel, optional androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata, optional int superSampling);
     method public androidx.xr.scenecore.Texture? getAuxiliaryAlphaMaskTexture();
     method public androidx.xr.scenecore.SurfaceEntity.CanvasShape getCanvasShape();
-    method public androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? getContentColorMetadata();
-    method public androidx.xr.runtime.math.FloatSize3d getDimensions();
+    method public androidx.xr.scenecore.Dimensions getDimensions();
     method public float getFeatherRadiusX();
     method public float getFeatherRadiusY();
-    method public androidx.xr.scenecore.PerceivedResolutionResult getPerceivedResolution();
     method public androidx.xr.scenecore.Texture? getPrimaryAlphaMaskTexture();
     method public int getStereoMode();
     method @MainThread public android.view.Surface getSurface();
     method @MainThread public void setAuxiliaryAlphaMaskTexture(androidx.xr.scenecore.Texture?);
     method @MainThread public void setCanvasShape(androidx.xr.scenecore.SurfaceEntity.CanvasShape);
-    method @MainThread public void setContentColorMetadata(androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata?);
     method @MainThread public void setFeatherRadiusX(float);
     method @MainThread public void setFeatherRadiusY(float);
     method @MainThread public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.Texture?);
     method @MainThread public void setStereoMode(int);
     property public androidx.xr.scenecore.Texture? auxiliaryAlphaMaskTexture;
     property public androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape;
-    property public androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata;
-    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    property public androidx.xr.scenecore.Dimensions dimensions;
     property public float featherRadiusX;
     property public float featherRadiusY;
     property public androidx.xr.scenecore.Texture? primaryAlphaMaskTexture;
@@ -938,15 +865,15 @@ package androidx.xr.scenecore {
   }
 
   public abstract static class SurfaceEntity.CanvasShape {
-    method public androidx.xr.runtime.math.FloatSize3d getDimensions();
-    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    method public androidx.xr.scenecore.Dimensions getDimensions();
+    property public androidx.xr.scenecore.Dimensions dimensions;
   }
 
   public static final class SurfaceEntity.CanvasShape.Quad extends androidx.xr.scenecore.SurfaceEntity.CanvasShape {
     ctor public SurfaceEntity.CanvasShape.Quad(float width, float height);
     method public float getHeight();
     method public float getWidth();
-    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    property public androidx.xr.scenecore.Dimensions dimensions;
     property public float height;
     property public float width;
   }
@@ -954,14 +881,14 @@ package androidx.xr.scenecore {
   public static final class SurfaceEntity.CanvasShape.Vr180Hemisphere extends androidx.xr.scenecore.SurfaceEntity.CanvasShape {
     ctor public SurfaceEntity.CanvasShape.Vr180Hemisphere(float radius);
     method public float getRadius();
-    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    property public androidx.xr.scenecore.Dimensions dimensions;
     property public float radius;
   }
 
   public static final class SurfaceEntity.CanvasShape.Vr360Sphere extends androidx.xr.scenecore.SurfaceEntity.CanvasShape {
     ctor public SurfaceEntity.CanvasShape.Vr360Sphere(float radius);
     method public float getRadius();
-    property public androidx.xr.runtime.math.FloatSize3d dimensions;
+    property public androidx.xr.scenecore.Dimensions dimensions;
     property public float radius;
   }
 
@@ -970,78 +897,6 @@ package androidx.xr.scenecore {
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose);
     method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape);
-    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel);
-    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel, optional androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata);
-    method @MainThread public androidx.xr.scenecore.SurfaceEntity create(androidx.xr.runtime.Session session, optional int stereoMode, optional androidx.xr.runtime.math.Pose pose, optional androidx.xr.scenecore.SurfaceEntity.CanvasShape canvasShape, optional int contentSecurityLevel, optional androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata, optional int superSampling);
-  }
-
-  public static final class SurfaceEntity.ContentColorMetadata {
-    ctor public SurfaceEntity.ContentColorMetadata();
-    ctor public SurfaceEntity.ContentColorMetadata(optional int colorSpace, optional int colorTransfer, optional int colorRange, optional int maxCLL);
-    method public int getColorRange();
-    method public int getColorSpace();
-    method public int getColorTransfer();
-    method public int getMaxCLL();
-    property public int colorRange;
-    property public int colorSpace;
-    property public int colorTransfer;
-    property public int maxCLL;
-    field public static final androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata.Companion Companion;
-    field public static final int maxCLLUnknown = 0; // 0x0
-  }
-
-  public static final class SurfaceEntity.ContentColorMetadata.ColorRange {
-    property public static int FULL;
-    property public static int LIMITED;
-    field public static final int FULL = 1; // 0x1
-    field public static final androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata.ColorRange INSTANCE;
-    field public static final int LIMITED = 2; // 0x2
-  }
-
-  public static final class SurfaceEntity.ContentColorMetadata.ColorSpace {
-    property public static int ADOBE_RGB;
-    property public static int BT2020;
-    property public static int BT601_525;
-    property public static int BT601_PAL;
-    property public static int BT709;
-    property public static int DCI_P3;
-    property public static int DISPLAY_P3;
-    field public static final int ADOBE_RGB = 243; // 0xf3
-    field public static final int BT2020 = 6; // 0x6
-    field public static final int BT601_525 = 240; // 0xf0
-    field public static final int BT601_PAL = 2; // 0x2
-    field public static final int BT709 = 1; // 0x1
-    field public static final int DCI_P3 = 242; // 0xf2
-    field public static final int DISPLAY_P3 = 241; // 0xf1
-    field public static final androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata.ColorSpace INSTANCE;
-  }
-
-  public static final class SurfaceEntity.ContentColorMetadata.ColorTransfer {
-    property public static int GAMMA_2_2;
-    property public static int HLG;
-    property public static int LINEAR;
-    property public static int SDR;
-    property public static int SRGB;
-    property public static int ST2084;
-    field public static final int GAMMA_2_2 = 10; // 0xa
-    field public static final int HLG = 7; // 0x7
-    field public static final androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata.ColorTransfer INSTANCE;
-    field public static final int LINEAR = 1; // 0x1
-    field public static final int SDR = 3; // 0x3
-    field public static final int SRGB = 2; // 0x2
-    field public static final int ST2084 = 6; // 0x6
-  }
-
-  public static final class SurfaceEntity.ContentColorMetadata.Companion {
-    property public static int maxCLLUnknown;
-  }
-
-  public static final class SurfaceEntity.ContentSecurityLevel {
-    property public static int NONE;
-    property public static int PROTECTED;
-    field public static final androidx.xr.scenecore.SurfaceEntity.ContentSecurityLevel INSTANCE;
-    field public static final int NONE = 0; // 0x0
-    field public static final int PROTECTED = 1; // 0x1
   }
 
   public static final class SurfaceEntity.StereoMode {
@@ -1056,14 +911,6 @@ package androidx.xr.scenecore {
     field public static final int MULTIVIEW_RIGHT_PRIMARY = 5; // 0x5
     field public static final int SIDE_BY_SIDE = 2; // 0x2
     field public static final int TOP_BOTTOM = 1; // 0x1
-  }
-
-  public static final class SurfaceEntity.SuperSampling {
-    property public static int DEFAULT;
-    property public static int NONE;
-    field public static final int DEFAULT = 1; // 0x1
-    field public static final androidx.xr.scenecore.SurfaceEntity.SuperSampling INSTANCE;
-    field public static final int NONE = 0; // 0x0
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class Texture {
@@ -1189,7 +1036,7 @@ package androidx.xr.scenecore {
     method @MainThread public void setNormalSpeed(float normalSpeed);
     method @MainThread public void setNormalTiling(float normalTiling);
     method @MainThread public void setNormalZ(float normalZ);
-    method @MainThread public void setReflectionMap(androidx.xr.scenecore.CubeMapTexture reflectionMap);
+    method @MainThread public void setReflectionCube(androidx.xr.scenecore.CubeMapTexture reflectionCube);
     field public static final androidx.xr.scenecore.WaterMaterial.Companion Companion;
   }
 
@@ -1199,14 +1046,55 @@ package androidx.xr.scenecore {
 
 }
 
-package androidx.xr.scenecore.impl {
+package @RequiresApi(34) androidx.xr.scenecore.common {
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseActivityPose implements androidx.xr.runtime.internal.ActivityPose {
+    ctor public BaseActivityPose();
+    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
+    method public androidx.xr.runtime.math.Pose getPoseInActivitySpace();
+    method public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.HitTestResult!> hitTest(androidx.xr.runtime.math.Vector3, androidx.xr.runtime.math.Vector3, @androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue int);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.ActivityPose);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class BaseEntity extends androidx.xr.scenecore.common.BaseActivityPose implements androidx.xr.runtime.internal.Entity {
+    ctor public BaseEntity();
+    method public void addChild(androidx.xr.runtime.internal.Entity);
+    method protected void addChildInternal(androidx.xr.runtime.internal.Entity);
+    method public void addChildren(java.util.List<? extends androidx.xr.runtime.internal.Entity!>);
+    method public boolean addComponent(androidx.xr.runtime.internal.Component);
+    method public void dispose();
+    method public float getAlpha(@androidx.xr.runtime.internal.SpaceValue int);
+    method public java.util.List<androidx.xr.runtime.internal.Entity!> getChildren();
+    method public java.util.List<androidx.xr.runtime.internal.Component!> getComponents();
+    method public <T extends androidx.xr.runtime.internal.Component> java.util.List<T!> getComponentsOfType(Class<? extends T!>);
+    method public String getContentDescription();
+    method public androidx.xr.runtime.internal.Entity? getParent();
+    method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.runtime.internal.SpaceValue int);
+    method public androidx.xr.runtime.math.Vector3 getScale(@androidx.xr.runtime.internal.SpaceValue int);
+    method public boolean isHidden(boolean);
+    method public void removeAllComponents();
+    method protected void removeChildInternal(androidx.xr.runtime.internal.Entity);
+    method public void removeComponent(androidx.xr.runtime.internal.Component);
+    method public void setAlpha(float, @androidx.xr.runtime.internal.SpaceValue int);
+    method public void setContentDescription(String);
+    method public void setHidden(boolean);
+    method public void setParent(androidx.xr.runtime.internal.Entity?);
+    method public void setPose(androidx.xr.runtime.math.Pose, @androidx.xr.runtime.internal.SpaceValue int);
+    method public void setScale(androidx.xr.runtime.math.Vector3, @androidx.xr.runtime.internal.SpaceValue int);
+    method protected final void setScaleInternal(androidx.xr.runtime.math.Vector3);
+  }
+
+}
+
+package @RequiresApi(34) androidx.xr.scenecore.impl {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class JxrPlatformAdapterAxr implements androidx.xr.runtime.internal.JxrPlatformAdapter {
-    method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor, java.util.function.Consumer<androidx.xr.runtime.internal.PixelDimensions!>);
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor, java.util.function.Consumer<androidx.xr.runtime.internal.SpatialCapabilities!>);
     method public androidx.xr.runtime.internal.TextureResource? borrowReflectionTexture();
     method public void clearSpatialVisibilityChangedListener();
-    method public static androidx.xr.scenecore.impl.JxrPlatformAdapterAxr create(android.app.Activity, boolean, java.util.concurrent.ScheduledExecutorService);
+    method public static androidx.xr.scenecore.impl.JxrPlatformAdapterAxr create(android.app.Activity, java.util.concurrent.ScheduledExecutorService);
     method public static androidx.xr.scenecore.impl.JxrPlatformAdapterAxr create(android.app.Activity, java.util.concurrent.ScheduledExecutorService, boolean);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.impl.JxrPlatformAdapterAxr create(android.app.Activity, java.util.concurrent.ScheduledExecutorService, com.android.extensions.xr.node.Node, com.android.extensions.xr.node.Node);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.scenecore.impl.JxrPlatformAdapterAxr create(android.app.Activity, java.util.concurrent.ScheduledExecutorService, com.android.extensions.xr.XrExtensions, com.google.ar.imp.apibindings.ImpressApi?, androidx.xr.scenecore.impl.perception.PerceptionLibrary, com.google.androidxr.splitengine.SplitEngineSubspaceManager?, com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer?);
@@ -1214,10 +1102,9 @@ package androidx.xr.scenecore.impl {
     method public androidx.xr.runtime.internal.AnchorEntity createAnchorEntity(androidx.xr.runtime.internal.Anchor);
     method public androidx.xr.runtime.internal.AnchorEntity createAnchorEntity(androidx.xr.runtime.internal.Dimensions, androidx.xr.runtime.internal.PlaneType, androidx.xr.runtime.internal.PlaneSemantic, java.time.Duration);
     method public androidx.xr.runtime.internal.AnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.runtime.internal.PlaneType!>, java.util.Set<androidx.xr.runtime.internal.PlaneSemantic!>);
+    method public androidx.xr.runtime.internal.Entity createEntity(androidx.xr.runtime.math.Pose, String, androidx.xr.runtime.internal.Entity);
     method public androidx.xr.runtime.internal.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.GltfModelResource, androidx.xr.runtime.internal.Entity?);
-    method public androidx.xr.runtime.internal.Entity createGroupEntity(androidx.xr.runtime.math.Pose, String, androidx.xr.runtime.internal.Entity);
     method public androidx.xr.runtime.internal.InteractableComponent createInteractableComponent(java.util.concurrent.Executor, androidx.xr.runtime.internal.InputEventListener);
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource!>? createKhronosPbrMaterial(androidx.xr.runtime.internal.KhronosPbrMaterialSpec);
     method public androidx.xr.runtime.internal.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose);
     method public androidx.xr.runtime.internal.MovableComponent createMovableComponent(boolean, boolean, java.util.Set<androidx.xr.runtime.internal.AnchorPlacement!>, boolean);
     method public androidx.xr.runtime.internal.PanelEntity createPanelEntity(android.content.Context, androidx.xr.runtime.math.Pose, android.view.View, androidx.xr.runtime.internal.Dimensions, String, androidx.xr.runtime.internal.Entity);
@@ -1225,15 +1112,12 @@ package androidx.xr.scenecore.impl {
     method public androidx.xr.runtime.internal.AnchorEntity createPersistedAnchorEntity(java.util.UUID, java.time.Duration);
     method public androidx.xr.runtime.internal.PointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor, androidx.xr.runtime.internal.PointerCaptureComponent.StateListener, androidx.xr.runtime.internal.InputEventListener);
     method public androidx.xr.runtime.internal.ResizableComponent createResizableComponent(androidx.xr.runtime.internal.Dimensions, androidx.xr.runtime.internal.Dimensions);
-    method public androidx.xr.runtime.internal.SpatialPointerComponent createSpatialPointerComponent();
     method public androidx.xr.scenecore.impl.SubspaceNodeEntityImpl createSubspaceNodeEntity(com.google.androidxr.splitengine.SubspaceNode, androidx.xr.runtime.internal.Dimensions);
-    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(@androidx.xr.runtime.internal.SurfaceEntity.StereoMode int, androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape, @androidx.xr.runtime.internal.SurfaceEntity.ContentSecurityLevel int, @androidx.xr.runtime.internal.SurfaceEntity.SuperSampling int, androidx.xr.runtime.internal.Entity);
+    method public androidx.xr.runtime.internal.SurfaceEntity createSurfaceEntity(@androidx.xr.runtime.internal.SurfaceEntity.StereoMode int, androidx.xr.runtime.internal.SurfaceEntity.CanvasShape, androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.Entity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.MaterialResource!>? createWaterMaterial(boolean);
-    method public void destroyKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource);
     method public void destroyTexture(androidx.xr.runtime.internal.TextureResource);
     method public void destroyWaterMaterial(androidx.xr.runtime.internal.MaterialResource);
     method public void dispose();
-    method public void enablePanelDepthTest(boolean);
     method public androidx.xr.runtime.internal.ActivitySpace getActivitySpace();
     method public androidx.xr.runtime.internal.Entity getActivitySpaceRootImpl();
     method public androidx.xr.runtime.internal.AudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
@@ -1249,67 +1133,35 @@ package androidx.xr.scenecore.impl {
     method public androidx.xr.runtime.internal.SoundPoolExtensionsWrapper getSoundPoolExtensionsWrapper();
     method public androidx.xr.runtime.internal.SpatialCapabilities getSpatialCapabilities();
     method public androidx.xr.runtime.internal.SpatialEnvironment getSpatialEnvironment();
-    method public androidx.xr.runtime.internal.SpatialModeChangeListener getSpatialModeChangeListener();
     method public androidx.xr.scenecore.impl.perception.ViewProjections? getStereoViewsInOpenXrUnboundedSpace();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource!>? loadExrImageByAssetName(String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.ExrImageResource!>? loadExrImageByByteArray(byte[], String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource!>? loadGltfByAssetName(String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.GltfModelResource!>? loadGltfByByteArray(byte[], String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.TextureResource!>? loadTexture(String, androidx.xr.runtime.internal.TextureSampler);
-    method public void removePerceivedResolutionChangedListener(java.util.function.Consumer<androidx.xr.runtime.internal.PixelDimensions!>);
     method public void removeSpatialCapabilitiesChangedListener(java.util.function.Consumer<androidx.xr.runtime.internal.SpatialCapabilities!>);
     method public void requestFullSpaceMode();
     method public void requestHomeSpaceMode();
-    method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setAlphaMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setAmbientOcclusionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setAmbientOcclusionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setAmbientOcclusionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
-    method public void setBaseColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector4);
-    method public void setBaseColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setBaseColorUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
-    method public void setClearcoatFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float, float, float);
-    method public void setClearcoatNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setClearcoatRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setClearcoatTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setEmissiveFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector3);
-    method public void setEmissiveTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setEmissiveUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
+    method public void setAlphaMap(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method public void setAlphaStepMultiplier(androidx.xr.runtime.internal.MaterialResource, float);
     method public android.os.Bundle setFullSpaceMode(android.os.Bundle);
     method public android.os.Bundle setFullSpaceModeWithEnvironmentInherited(android.os.Bundle);
-    method public void setIndexOfRefractionOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setMetallicFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setMetallicRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setMetallicRoughnessUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
-    method public void setNormalBoundaryOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setNormalFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setNormalMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setNormalSpeedOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setNormalTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setNormalTilingOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setNormalUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
-    method public void setNormalZOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, float);
+    method public void setNormalBoundary(androidx.xr.runtime.internal.MaterialResource, float);
+    method public void setNormalMap(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
+    method public void setNormalSpeed(androidx.xr.runtime.internal.MaterialResource, float);
+    method public void setNormalTiling(androidx.xr.runtime.internal.MaterialResource, float);
+    method public void setNormalZ(androidx.xr.runtime.internal.MaterialResource, float);
     method public void setPreferredAspectRatio(android.app.Activity, float);
-    method public void setReflectionMapOnWaterMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setSheenColorFactorsOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Vector3);
-    method public void setSheenColorTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setSheenRoughnessFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setSheenRoughnessTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setSpatialModeChangeListener(androidx.xr.runtime.internal.SpatialModeChangeListener);
+    method public void setReflectionCube(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
     method public void setSpatialVisibilityChangedListener(java.util.concurrent.Executor, java.util.function.Consumer<androidx.xr.runtime.internal.SpatialVisibility!>);
     method public void setSplitEngineSubspaceManager(com.google.androidxr.splitengine.SplitEngineSubspaceManager?);
-    method public void setTransmissionFactorOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, float);
-    method public void setTransmissionTextureOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.internal.TextureResource);
-    method public void setTransmissionUvTransformOnKhronosPbrMaterial(androidx.xr.runtime.internal.MaterialResource, androidx.xr.runtime.math.Matrix3);
     method public void startRenderer();
     method public void stopRenderer();
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class JxrPlatformAdapterFactoryAxr implements androidx.xr.runtime.internal.JxrPlatformAdapterFactory {
     ctor public JxrPlatformAdapterFactoryAxr();
-    method public androidx.xr.scenecore.impl.JxrPlatformAdapterAxr createPlatformAdapter(android.app.Activity activity, boolean unscaledGravityAlignedActivitySpace);
+    method public androidx.xr.scenecore.impl.JxrPlatformAdapterAxr createPlatformAdapter(android.app.Activity activity);
     method public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
   }
@@ -1321,44 +1173,17 @@ package androidx.xr.scenecore.impl {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class MediaUtils {
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SubspaceNodeEntityImpl implements androidx.xr.runtime.internal.ActivityPose androidx.xr.runtime.internal.Entity androidx.xr.runtime.internal.SubspaceNodeEntity {
-    method public void addChild(androidx.xr.runtime.internal.Entity);
-    method public void addChildren(java.util.List<? extends androidx.xr.runtime.internal.Entity!>);
-    method public boolean addComponent(androidx.xr.runtime.internal.Component);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SubspaceNodeEntityImpl extends androidx.xr.scenecore.common.BaseEntity implements androidx.xr.runtime.internal.Entity androidx.xr.runtime.internal.SubspaceNodeEntity {
     method public void addInputEventListener(java.util.concurrent.Executor, androidx.xr.runtime.internal.InputEventListener);
     method public void addReformEventConsumer(com.android.extensions.xr.function.Consumer<com.android.extensions.xr.node.ReformEvent!>!, java.util.concurrent.Executor!);
-    method public void dispose();
-    method public androidx.xr.runtime.math.Pose getActivitySpacePose();
-    method public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
-    method public float getAlpha(@androidx.xr.runtime.internal.SpaceValue int);
-    method public java.util.List<androidx.xr.runtime.internal.Entity!> getChildren();
-    method public java.util.List<androidx.xr.runtime.internal.Component!> getComponents();
-    method public <T extends androidx.xr.runtime.internal.Component> java.util.List<T!> getComponentsOfType(Class<? extends T!>);
-    method public String getContentDescription();
     method public com.android.extensions.xr.node.Node! getNode();
-    method public androidx.xr.runtime.internal.Entity? getParent();
-    method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.runtime.internal.SpaceValue int);
-    method public androidx.xr.runtime.math.Pose! getPoseInActivitySpace();
     method public com.android.extensions.xr.node.ReformOptions! getReformOptions();
-    method public androidx.xr.runtime.math.Vector3 getScale(@androidx.xr.runtime.internal.SpaceValue int);
     method public androidx.xr.runtime.internal.Dimensions getSize();
-    method public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.runtime.internal.HitTestResult!> hitTest(androidx.xr.runtime.math.Vector3, androidx.xr.runtime.math.Vector3, @androidx.xr.runtime.internal.ActivityPose.HitTestFilterValue int);
-    method public boolean isHidden(boolean);
-    method public void removeAllComponents();
-    method public void removeComponent(androidx.xr.runtime.internal.Component);
     method public void removeInputEventListener(androidx.xr.runtime.internal.InputEventListener);
     method public void removeReformEventConsumer(com.android.extensions.xr.function.Consumer<com.android.extensions.xr.node.ReformEvent!>!);
     method public boolean requestPointerCapture(java.util.concurrent.Executor!, androidx.xr.runtime.internal.InputEventListener!, androidx.xr.runtime.internal.PointerCaptureComponent.StateListener!);
-    method public void setAlpha(float, @androidx.xr.runtime.internal.SpaceValue int);
-    method public void setContentDescription(String);
-    method public void setHidden(boolean);
-    method public void setParent(androidx.xr.runtime.internal.Entity!);
-    method public void setPose(androidx.xr.runtime.math.Pose, @androidx.xr.runtime.internal.SpaceValue int);
-    method public void setScale(androidx.xr.runtime.math.Vector3, @androidx.xr.runtime.internal.SpaceValue int);
     method public void setSize(androidx.xr.runtime.internal.Dimensions);
     method public void stopPointerCapture();
-    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose, androidx.xr.runtime.internal.ActivityPose);
     method public void updateReformOptions();
   }
 

@@ -49,7 +49,9 @@ import org.junit.runners.model.Statement
  *
  * @property active true to activate this rule.
  */
-public class CameraPipeConfigTestRule(public val active: Boolean) : TestRule {
+public class CameraPipeConfigTestRule(
+    public val active: Boolean,
+) : TestRule {
 
     override fun apply(base: Statement, description: Description): Statement =
         object : Statement() {

@@ -210,7 +210,12 @@ class EditorInfoTest {
     @Test
     fun test_fill_editor_info_action_search() {
         val info = EditorInfo()
-        info.update(ImeOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Search))
+        info.update(
+            ImeOptions(
+                keyboardType = KeyboardType.Ascii,
+                imeAction = ImeAction.Search,
+            )
+        )
 
         assertThat((InputType.TYPE_CLASS_TEXT and info.inputType) != 0).isTrue()
         assertThat((EditorInfo.IME_FLAG_FORCE_ASCII and info.imeOptions) != 0).isTrue()
@@ -247,7 +252,7 @@ class EditorInfoTest {
             ImeOptions(
                 singleLine = false,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -262,7 +267,7 @@ class EditorInfoTest {
             ImeOptions(
                 singleLine = false,
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Default,
+                imeAction = ImeAction.Default
             )
         )
 
@@ -277,7 +282,7 @@ class EditorInfoTest {
             ImeOptions(
                 singleLine = true,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -292,7 +297,7 @@ class EditorInfoTest {
             ImeOptions(
                 singleLine = true,
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Default,
+                imeAction = ImeAction.Default
             )
         )
 
@@ -307,7 +312,7 @@ class EditorInfoTest {
             ImeOptions(
                 singleLine = false,
                 keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -322,7 +327,7 @@ class EditorInfoTest {
             ImeOptions(
                 capitalization = KeyboardCapitalization.None,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -338,7 +343,7 @@ class EditorInfoTest {
             ImeOptions(
                 capitalization = KeyboardCapitalization.Characters,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -354,7 +359,7 @@ class EditorInfoTest {
             ImeOptions(
                 capitalization = KeyboardCapitalization.Words,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -402,7 +407,7 @@ class EditorInfoTest {
             ImeOptions(
                 autoCorrect = true,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -416,7 +421,7 @@ class EditorInfoTest {
             ImeOptions(
                 autoCorrect = false,
                 keyboardType = KeyboardType.Ascii,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 
@@ -430,7 +435,7 @@ class EditorInfoTest {
             ImeOptions(
                 autoCorrect = true,
                 keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Done
             )
         )
 

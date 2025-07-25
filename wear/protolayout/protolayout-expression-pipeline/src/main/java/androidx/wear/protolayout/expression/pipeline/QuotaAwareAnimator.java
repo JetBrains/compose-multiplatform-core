@@ -116,9 +116,6 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
     void addUpdateCallback(@NonNull UpdateCallback updateCallback) {
         mAnimator.addUpdateListener(
                 animation -> {
-                    if (animation.isPaused()) {
-                        return;
-                    }
                     mLastAnimatedValue = animation.getAnimatedValue();
                     updateCallback.onUpdate(mLastAnimatedValue);
                 });
@@ -422,12 +419,11 @@ class QuotaAwareAnimator implements DynamicTypeAnimator {
             } else {
                 mIsReverse = false;
             }
+
             if ((mAlwaysPauseWhenRepeatForward || mForwardRepeatDelay > 0) && !mIsReverse) {
-                ((ValueAnimator)animation).setCurrentFraction(0F);
                 animation.pause();
                 mHandler.postDelayed(mResumeRepeatRunnable, mForwardRepeatDelay);
             } else if (mReverseRepeatDelay > 0 && mIsReverse) {
-                ((ValueAnimator)animation).setCurrentFraction(1F);
                 animation.pause();
                 mHandler.postDelayed(mResumeRepeatRunnable, mReverseRepeatDelay);
             }

@@ -73,8 +73,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
 
     // Management of observer callbacks.
     @GuardedBy("mObserverCallbacksLocked")
-    private final Map<String, Map<ObserverCallback,
-            android.app.appsearch.observer.ObserverCallback>>
+    private final Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
             mObserverCallbacksLocked = new ArrayMap<>();
 
     GlobalSearchSessionImpl(
@@ -177,12 +176,8 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
         }
 
         synchronized (mObserverCallbacksLocked) {
-            Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
-                    observersForPackage = mObserverCallbacksLocked.get(targetPackageName);
-            android.app.appsearch.observer.ObserverCallback frameworkCallback = null;
-            if (observersForPackage != null) {
-                frameworkCallback = observersForPackage.get(observer);
-            }
+            android.app.appsearch.observer.ObserverCallback frameworkCallback =
+                    mObserverCallbacksLocked.get(observer);
             if (frameworkCallback == null) {
                 // No stub is associated with this package and observer, so we must create one.
                 frameworkCallback = new android.app.appsearch.observer.ObserverCallback() {
@@ -221,11 +216,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
             // Now that registration has succeeded, save this stub into our in-memory cache. This
             // isn't done when errors occur because the user may not call removeObserver if
             // addObserver threw.
-            if (observersForPackage == null) {
-                observersForPackage = new ArrayMap<>();
-                mObserverCallbacksLocked.put(targetPackageName, observersForPackage);
-            }
-            observersForPackage.put(observer, frameworkCallback);
+            mObserverCallbacksLocked.put(observer, frameworkCallback);
         }
     }
 
@@ -245,12 +236,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
 
         android.app.appsearch.observer.ObserverCallback frameworkCallback;
         synchronized (mObserverCallbacksLocked) {
-            Map<ObserverCallback, android.app.appsearch.observer.ObserverCallback>
-                    observersForPackage = mObserverCallbacksLocked.get(targetPackageName);
-            if (observersForPackage == null) {
-                return; // No observers registered for this package. Nothing to do.
-            }
-            frameworkCallback = observersForPackage.get(observer);
+            frameworkCallback = mObserverCallbacksLocked.get(observer);
             if (frameworkCallback == null) {
                 return;  // No such observer registered. Nothing to do.
             }
@@ -263,10 +249,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
             }
 
             // Only remove from the in-memory map once removal from the service side succeeds
-            observersForPackage.remove(observer);
-            if (observersForPackage.isEmpty()) {
-                mObserverCallbacksLocked.remove(targetPackageName);
-            }
+            mObserverCallbacksLocked.remove(observer);
         }
     }
 

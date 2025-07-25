@@ -9,6 +9,7 @@ class SerializableWithProxyType(
     val localDateTime: LocalDateTime,
     val localDateTimeList: List<LocalDateTime>,
     val localDateTimeNullable: LocalDateTime?,
+    val androidUri: Uri,
     val androidUriList: List<Uri>,
     val androidUriNullable: List<Uri>?
 )

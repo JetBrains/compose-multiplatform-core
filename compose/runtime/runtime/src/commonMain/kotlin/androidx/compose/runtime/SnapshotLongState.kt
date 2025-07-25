@@ -54,7 +54,7 @@ import kotlin.reflect.KProperty
  * @see mutableDoubleStateOf
  */
 @StateFactoryMarker
-public fun mutableLongStateOf(value: Long): MutableLongState = createSnapshotMutableLongState(value)
+fun mutableLongStateOf(value: Long): MutableLongState = createSnapshotMutableLongState(value)
 
 /**
  * A value holder where reads to the [longValue] property during the execution of a [Composable]
@@ -65,18 +65,17 @@ public fun mutableLongStateOf(value: Long): MutableLongState = createSnapshotMut
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface LongState : State<Long> {
+interface LongState : State<Long> {
     @get:AutoboxingStateValueProperty("longValue")
     override val value: Long
         @Suppress("AutoBoxing") get() = longValue
 
-    public val longValue: Long
+    val longValue: Long
 }
 
 /** Permits property delegation of `val`s using `by` for [LongState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun LongState.getValue(thisObj: Any?, property: KProperty<*>): Long =
-    longValue
+inline operator fun LongState.getValue(thisObj: Any?, property: KProperty<*>): Long = longValue
 
 /**
  * A value holder where reads to the [longValue] property during the execution of a [Composable]
@@ -90,7 +89,7 @@ public inline operator fun LongState.getValue(thisObj: Any?, property: KProperty
  */
 @Stable
 @JvmDefaultWithCompatibility
-public interface MutableLongState : LongState, MutableState<Long> {
+interface MutableLongState : LongState, MutableState<Long> {
     @get:AutoboxingStateValueProperty("longValue")
     @set:AutoboxingStateValueProperty("longValue")
     override var value: Long
@@ -104,11 +103,7 @@ public interface MutableLongState : LongState, MutableState<Long> {
 
 /** Permits property delegation of `var`s using `by` for [MutableLongState]. */
 @Suppress("NOTHING_TO_INLINE")
-public inline operator fun MutableLongState.setValue(
-    thisObj: Any?,
-    property: KProperty<*>,
-    value: Long,
-) {
+inline operator fun MutableLongState.setValue(thisObj: Any?, property: KProperty<*>, value: Long) {
     longValue = value
 }
 
@@ -163,7 +158,7 @@ internal open class SnapshotMutableLongStateImpl(value: Long) :
     override fun mergeRecords(
         previous: StateRecord,
         current: StateRecord,
-        applied: StateRecord,
+        applied: StateRecord
     ): StateRecord? {
         val currentRecord = current as LongStateStateRecord
         val appliedRecord = applied as LongStateStateRecord

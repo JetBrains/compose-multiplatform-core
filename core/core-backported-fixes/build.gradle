@@ -36,6 +36,8 @@ dependencies {
     testImplementation(libs.kotlinStdlib)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    testImplementation('org.robolectric:shadows-framework:4.14')
 }
 
 
@@ -49,5 +51,4 @@ androidx {
     mavenVersion = LibraryVersions.CORE_BACKPORTED_FIXES
     inceptionYear = "2024"
     description = "This library makes it easy for developers to use check if a known critical issue is fixed on a device."
-    enableRobolectric()
 }

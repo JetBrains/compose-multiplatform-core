@@ -50,11 +50,13 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class XTypeElementTest(private val isPreCompiled: Boolean) {
+class XTypeElementTest(
+    private val isPreCompiled: Boolean,
+) {
     private fun runTest(
         sources: List<Source>,
         kotlincArgs: List<String> = emptyList(),
-        handler: (XTestInvocation) -> Unit,
+        handler: (XTestInvocation) -> Unit
     ) {
         if (isPreCompiled) {
             val compiled = compileFiles(sources)
@@ -72,7 +74,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 sources = newSources,
                 handler = handler,
                 classpath = compiled,
-                kotlincArguments = kotlincArgs,
+                kotlincArguments = kotlincArgs
             )
         } else {
             runProcessorTest(sources = sources, handler = handler, kotlincArguments = kotlincArgs)
@@ -87,7 +89,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 """
             class TopLevel
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val src2 =
             Source.kotlin(
@@ -96,7 +98,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             package foo.bar
             class InFooBar
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val src3 =
             Source.java(
@@ -107,7 +109,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 public static class Nested {
                 }
             }
-            """,
+            """
             )
         runTest(sources = listOf(src1, src2, src3)) { invocation ->
             invocation.processingEnv.requireTypeElement("TopLevel").let {
@@ -173,7 +175,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             interface MyInterface
             interface AnotherInterface : MyInterface
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             invocation.processingEnv.requireTypeElement("foo.bar.Baz").let {
@@ -184,7 +186,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 assertThat(it.type.superTypes.map(XType::asTypeName))
                     .containsExactly(
                         invocation.processingEnv.requireType("foo.bar.AbstractClass").asTypeName(),
-                        invocation.processingEnv.requireType("foo.bar.MyInterface").asTypeName(),
+                        invocation.processingEnv.requireType("foo.bar.MyInterface").asTypeName()
                     )
                 assertThat(it.type.asTypeName())
                     .isEqualTo(invocation.processingEnv.requireType("foo.bar.Baz").asTypeName())
@@ -225,7 +227,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 assertThat(it.type.superTypes.map(XType::asTypeName))
                     .containsExactly(
                         invocation.processingEnv.requireType("java.lang.Object").asTypeName(),
-                        invocation.processingEnv.requireType("foo.bar.MyInterface").asTypeName(),
+                        invocation.processingEnv.requireType("foo.bar.MyInterface").asTypeName()
                     )
                 assertThat(it.isInterface()).isTrue()
                 assertThat(it.type.asTypeName())
@@ -251,7 +253,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     class KotlinClassWithInterface : KotlinInterface
                     interface KotlinInterface
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     ),
                     Source.java(
                         "foo.bar.JavaClass",
@@ -261,8 +263,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     class JavaClassWithInterface implements JavaInterface {}
                     interface JavaInterface {}
                     """
-                            .trimIndent(),
-                    ),
+                            .trimIndent()
+                    )
                 )
         ) { invocation ->
             invocation.processingEnv.requireTypeElement("foo.bar.KotlinClass").let {
@@ -295,8 +297,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     abstract class MyBaseClass
                     interface MyBaseInterface
                     """
-                            .trimIndent(),
-                    )
+                            .trimIndent()
+                    ),
                 )
         ) { invocation ->
             invocation.processingEnv.requireTypeElement("foo.bar.MyClass").let { myClass ->
@@ -335,7 +337,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             abstract class AbstractClass
             interface MyInterface<E>
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             invocation.processingEnv.requireTypeElement("foo.bar.Baz").let {
@@ -369,7 +371,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 class Inner
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             invocation.processingEnv.requireTypeElement("foo.bar.Outer").let {
@@ -411,7 +413,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                fun foo()
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val javaSrc =
             Source.java(
@@ -422,7 +424,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 public static class NestedJavaClass {}
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val javaAnnotationSrc =
             Source.java(
@@ -431,7 +433,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             public @interface JavaAnnotation {
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(kotlinSrc, javaSrc, javaAnnotationSrc)) { invocation ->
             fun getModifiers(element: XTypeElement): Set<String> {
@@ -510,7 +512,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             interface KotlinInterface
             annotation class KotlinAnnotation
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val javaSrc =
             Source.java(
@@ -520,7 +522,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             interface JavaInterface {}
             @interface JavaAnnotation {}
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(kotlinSrc, javaSrc)) { invocation ->
             invocation.processingEnv.requireTypeElement("KotlinClass").let {
@@ -568,7 +570,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 val subClassProp : String = "abc"
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val baseClass = invocation.processingEnv.requireTypeElement("BaseClass")
@@ -609,7 +611,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 override val value : MutableList<Int>
             ) : BaseClass(value)
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val baseClass = invocation.processingEnv.requireTypeElement("BaseClass")
@@ -663,9 +665,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                            .trimIndent(),
+                            .trimIndent()
                     )
-                )
+                ),
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val declaredFields =
@@ -710,9 +712,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                            .trimIndent(),
+                            .trimIndent()
                     )
-                )
+                ),
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             val declaredFields = subject.getDeclaredFields().map { it.name } - listOf("Companion")
@@ -737,9 +739,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 var y:String = "abc"
             }
             """
-                            .trimIndent(),
+                            .trimIndent()
                     )
-                )
+                ),
         ) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("test.Subject")
             assertWithMessage(subject.fallbackLocationText)
@@ -768,7 +770,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                   @MyAnnotation get
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("MyInterface")
@@ -799,7 +801,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 var nonAbstractVar: Int = 0
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("MyAbstractClass")
@@ -809,7 +811,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "getAbstractVar",
                     "setAbstractVar",
                     "getNonAbstractVar",
-                    "setNonAbstractVar",
+                    "setNonAbstractVar"
                 )
             element.getMethodByJvmName("getAbstractVar").let {
                 assertThat(it.isAbstract()).isTrue()
@@ -843,7 +845,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         int getImmutable() {return 3;}
                     }
                     """
-                        .trimIndent(),
+                        .trimIndent()
                 ),
                 Source.kotlin(
                     "KotlinSubject.kt",
@@ -854,9 +856,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         val immutable:Int = 0
                     }
                     """
-                        .trimIndent(),
-                ),
-            )
+                        .trimIndent()
+                )
+            ),
         ) { invocation ->
             listOf("JavaSubject", "KotlinSubject")
                 .map { invocation.processingEnv.requireTypeElement(it) }
@@ -920,7 +922,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
               val myLazy by lazy { "wow" }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) {
             val subject = it.processingEnv.requireTypeElement("Subject")
@@ -967,7 +969,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("Base")
@@ -983,7 +985,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         "staticBaseFun",
                         "getName",
                         "suspendFun2",
-                        "extFun",
+                        "extFun"
                     )
             // Member ordering in companion objects cannot be restored in KSP2:
             // https://github.com/google/ksp/issues/1898
@@ -1036,9 +1038,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 abstract override fun parent(t: String)
             }
             """
-                            .trimIndent(),
+                            .trimIndent()
                     )
-                )
+                ),
         ) { invocation ->
             invocation.processingEnv.requireTypeElement("test.Subject1").let { subject ->
                 assertWithMessage(subject.qualifiedName)
@@ -1094,7 +1096,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("DerivedInterface")
@@ -1105,7 +1107,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "getAll",
                     "getAllSuppressWildcards",
                     "putAll",
-                    "getAllWithDefault",
+                    "getAllWithDefault"
                 )
         }
     }
@@ -1129,7 +1131,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("DerivedClass")
@@ -1158,7 +1160,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 abstract suspend fun getAll(param: String): List<Foo>
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val base = invocation.processingEnv.requireTypeElement("DerivedClass")
@@ -1188,7 +1190,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 fun child(): ChildInterface
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
 
         runTest(sources = listOf(src)) { invocation ->
@@ -1220,7 +1222,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     void foo_Public();
                 }
                 """
-                        .trimIndent(),
+                        .trimIndent()
                 ),
                 Source.java(
                     "foo.parent.FooParent",
@@ -1233,7 +1235,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     void fooParent_PackagePrivate() {}
                 }
                 """
-                        .trimIndent(),
+                        .trimIndent()
                 ),
                 Source.java(
                     "foo.child.FooChild",
@@ -1246,7 +1248,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     void fooChild_PackagePrivate() {}
                 }
                 """
-                        .trimIndent(),
+                        .trimIndent()
                 ),
             )
         runTest(sources = srcs) { invocation ->
@@ -1260,7 +1262,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         "fooChild_Public():void",
                         "fooChild_Protected():void",
                         "fooChild_Private():void",
-                        "fooChild_PackagePrivate():void",
+                        "fooChild_PackagePrivate():void"
                     )
             }
         }
@@ -1304,7 +1306,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val objectMethodNames = invocation.objectMethodNames()
@@ -1317,7 +1319,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "interfaceMethod",
                     "subMethod",
                     "privateSubMethod",
-                    "subCompanionMethod",
+                    "subCompanionMethod"
                 )
         }
     }
@@ -1357,7 +1359,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     }
                 }
             """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -1391,7 +1393,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 private var subInvisibleMutable:Int = TODO()
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val objectMethodNames = invocation.objectMethodNames()
@@ -1439,7 +1441,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             }
             class SubClass : CompanionSubject()
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val objectMethodNames =
@@ -1451,7 +1453,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "immutableStatic",
                     "companionProp",
                     "companionProp_getterJvmStatic",
-                    "companionProp_setterJvmStatic",
+                    "companionProp_setterJvmStatic"
                 )
             val expectedMethodNames =
                 listOf(
@@ -1460,7 +1462,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "getImmutableStatic",
                     "getCompanionProp_getterJvmStatic",
                     "setCompanionProp_setterJvmStatic",
-                    "companionMethodWithJvmStatic",
+                    "companionMethodWithJvmStatic"
                 )
             assertThat(subject.getDeclaredMethods().jvmNames())
                 .containsExactlyElementsIn(expectedMethodNames)
@@ -1513,7 +1515,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 var y:Int
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             invocation.processingEnv.requireTypeElement("JustGetter").let { base ->
@@ -1555,7 +1557,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             abstract class AbstractExplicit(x:Int)
             annotation class AnnotationClass
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val subjects =
@@ -1569,7 +1571,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "SubWith3Constructors",
                     "AbstractNoExplicit",
                     "AbstractExplicit",
-                    "AnnotationClass",
+                    "AnnotationClass"
                 )
             val constructorCounts =
                 subjects.map {
@@ -1586,7 +1588,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "SubWith3Constructors" to 3,
                     "AbstractNoExplicit" to 1,
                     "AbstractExplicit" to 1,
-                    "AnnotationClass" to 0,
+                    "AnnotationClass" to 0
                 )
 
             val primaryConstructorParameterNames =
@@ -1609,7 +1611,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "SubWith3Constructors" to emptyList<String>(),
                     "AbstractNoExplicit" to emptyList<String>(),
                     "AbstractExplicit" to listOf("x"),
-                    "AnnotationClass" to null,
+                    "AnnotationClass" to null
                 )
         }
     }
@@ -1624,7 +1626,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             class NoDefaultArgs @JvmOverloads constructor(x:Int, y: Double, z: Long) {}
             class AllDefaultArgs @JvmOverloads constructor(x:Int = 1, y: Double = 0.0, z: Long = 1) {}
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val defaultArgsConstructors =
@@ -1645,7 +1647,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     .containsExactly(
                         "DefaultArgs(int,double,long)",
                         "DefaultArgs(int,double)",
-                        "DefaultArgs(double)",
+                        "DefaultArgs(double)"
                     )
                     .inOrder()
                 assertThat(noDefaultArgsConstructors)
@@ -1656,7 +1658,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         "AllDefaultArgs(int,double,long)",
                         "AllDefaultArgs(int,double)",
                         "AllDefaultArgs(int)",
-                        "AllDefaultArgs()",
+                        "AllDefaultArgs()"
                     )
                     .inOrder()
             } else {
@@ -1747,7 +1749,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             // Shouldn't synthesize no-arg for annotation classes
             annotation class AnnotationClass(val x: String = "")
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val subjects =
@@ -1758,7 +1760,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "AlreadyHasSecondaryNoArgsCtor",
                     "DefaultArgsSecondary",
                     "CantHaveNoArgsCtor",
-                    "AnnotationClass",
+                    "AnnotationClass"
                 )
             val constructorCounts =
                 subjects.associateWith {
@@ -1811,7 +1813,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 fun jvmDefault() {}
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val subject = invocation.processingEnv.requireTypeElement("MyInterface")
@@ -1860,7 +1862,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 AbstractExplicit(int x) {}
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val subjects =
@@ -1873,7 +1875,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "Sub",
                     "SubWith3Constructors",
                     "AbstractNoExplicit",
-                    "AbstractExplicit",
+                    "AbstractExplicit"
                 )
             val constructorCounts =
                 subjects.map {
@@ -1889,7 +1891,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "Sub" to 1,
                     "SubWith3Constructors" to 3,
                     "AbstractNoExplicit" to 1,
-                    "AbstractExplicit" to 1,
+                    "AbstractExplicit" to 1
                 )
 
             subjects.forEach {
@@ -1916,7 +1918,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         fun enumMethod(): Unit {}
                     }
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     ),
                     Source.java(
                         "test.JavaEnum",
@@ -1934,59 +1936,86 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         void enumMethod() {}
                     }
                     """
-                            .trimIndent(),
-                    ),
-                )
+                            .trimIndent()
+                    )
+                ),
         ) { invocation ->
-            listOf("test.KotlinEnum", "test.JavaEnum").forEach { qName ->
-                val typeElement = invocation.processingEnv.requireTypeElement(qName)
-                assertWithMessage("$qName is enum").that(typeElement.isEnum()).isTrue()
-                assertWithMessage("$qName does not report enum constants in methods")
-                    .that(typeElement.getDeclaredMethods().map { it.jvmName })
-                    .run {
-                        contains("enumMethod")
-                        containsNoneOf("VAL1", "VAL2")
-                    }
-                assertWithMessage("$qName can return enum constants")
-                    .that((typeElement as XEnumTypeElement).entries.map { it.name })
-                    .containsExactly("VAL1", "VAL2")
-                assertWithMessage("$qName  does not report enum constants in fields")
-                    .that(typeElement.getAllFieldNames())
-                    .run {
-                        contains("x")
-                        containsNoneOf("VAL1", "VAL2")
-                    }
-                assertWithMessage("$qName does not report enum constants in declared fields")
-                    .that(typeElement.getDeclaredFields().map { it.name })
-                    .containsExactly("x")
-                assertWithMessage("$qName enum entries are XEnumEntry")
-                    .that(typeElement.getEnclosedElements().filter { it.isEnumEntry() })
-                    .hasSize(2)
-                assertWithMessage("$qName  enum entries are not type elements")
-                    .that(typeElement.getEnclosedElements().filter { it.isTypeElement() })
-                    .isEmpty()
-                // TODO(kuanyingchou): https://github.com/google/ksp/issues/1761
-                val parent = typeElement.superClass!!.typeElement!!
-                if (qName == "test.KotlinEnum" && !isPreCompiled && invocation.isKsp) {
-                    if (invocation.isKsp && (invocation.processingEnv as KspProcessingEnv).isKsp2) {
-                        assertThat(parent.asClassName()).isEqualTo(XTypeName.ENUM)
-                    } else {
-                        assertThat(parent.asClassName()).isEqualTo(Any::class.asClassName())
-                    }
-                } else {
-                    assertThat(parent.asClassName()).isEqualTo(Enum::class.asClassName())
-                }
-                // TODO(kuanyingchou): make this more consistent.
-                val methodNames = typeElement.getDeclaredMethods().map { it.jvmName }
-                if (qName == "test.KotlinEnum") {
-                    if (invocation.isKsp) {
+            listOf(
+                    "test.KotlinEnum",
+                    "test.JavaEnum",
+                )
+                .forEach { qName ->
+                    val typeElement = invocation.processingEnv.requireTypeElement(qName)
+                    assertWithMessage("$qName is enum").that(typeElement.isEnum()).isTrue()
+                    assertWithMessage("$qName does not report enum constants in methods")
+                        .that(typeElement.getDeclaredMethods().map { it.jvmName })
+                        .run {
+                            contains("enumMethod")
+                            containsNoneOf("VAL1", "VAL2")
+                        }
+                    assertWithMessage("$qName can return enum constants")
+                        .that((typeElement as XEnumTypeElement).entries.map { it.name })
+                        .containsExactly("VAL1", "VAL2")
+                    assertWithMessage("$qName  does not report enum constants in fields")
+                        .that(typeElement.getAllFieldNames())
+                        .run {
+                            contains("x")
+                            containsNoneOf("VAL1", "VAL2")
+                        }
+                    assertWithMessage("$qName does not report enum constants in declared fields")
+                        .that(typeElement.getDeclaredFields().map { it.name })
+                        .containsExactly("x")
+                    assertWithMessage("$qName enum entries are XEnumEntry")
+                        .that(typeElement.getEnclosedElements().filter { it.isEnumEntry() })
+                        .hasSize(2)
+                    assertWithMessage("$qName  enum entries are not type elements")
+                        .that(typeElement.getEnclosedElements().filter { it.isTypeElement() })
+                        .isEmpty()
+                    // TODO(kuanyingchou): https://github.com/google/ksp/issues/1761
+                    val parent = typeElement.superClass!!.typeElement!!
+                    if (qName == "test.KotlinEnum" && !isPreCompiled && invocation.isKsp) {
                         if (
-                            isPreCompiled || (invocation.processingEnv as KspProcessingEnv).isKsp2
+                            invocation.isKsp &&
+                                (invocation.processingEnv as KspProcessingEnv).isKsp2
                         ) {
-                            assertThat(methodNames)
-                                .containsExactly("enumMethod", "values", "valueOf")
+                            assertThat(parent.asClassName()).isEqualTo(XTypeName.ENUM)
                         } else {
-                            assertThat(methodNames).containsExactly("enumMethod")
+                            assertThat(parent.asClassName()).isEqualTo(Any::class.asClassName())
+                        }
+                    } else {
+                        assertThat(parent.asClassName()).isEqualTo(Enum::class.asClassName())
+                    }
+                    // TODO(kuanyingchou): make this more consistent.
+                    val methodNames = typeElement.getDeclaredMethods().map { it.jvmName }
+                    if (qName == "test.KotlinEnum") {
+                        if (invocation.isKsp) {
+                            if (
+                                isPreCompiled ||
+                                    (invocation.processingEnv as KspProcessingEnv).isKsp2
+                            ) {
+                                assertThat(methodNames)
+                                    .containsExactly(
+                                        "enumMethod",
+                                        "values",
+                                        "valueOf",
+                                    )
+                            } else {
+                                assertThat(methodNames)
+                                    .containsExactly(
+                                        "enumMethod",
+                                    )
+                            }
+                        } else {
+                            assertThat(methodNames)
+                                .containsExactly(
+                                    "values",
+                                    "valueOf",
+                                    "enumMethod",
+                                    // `entries` became stable in Kotlin 1.9.0 but somehow only
+                                    // appears
+                                    // in KAPT. We can't find an `entries` property in KSP yet.
+                                    "getEntries"
+                                )
                         }
                     } else {
                         assertThat(methodNames)
@@ -1994,16 +2023,9 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                                 "values",
                                 "valueOf",
                                 "enumMethod",
-                                // `entries` became stable in Kotlin 1.9.0 but somehow only
-                                // appears
-                                // in KAPT. We can't find an `entries` property in KSP yet.
-                                "getEntries",
                             )
                     }
-                } else {
-                    assertThat(methodNames).containsExactly("values", "valueOf", "enumMethod")
                 }
-            }
         }
     }
 
@@ -2025,7 +2047,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val topLevelClass = invocation.processingEnv.requireTypeElement("TopLevelClass")
@@ -2057,7 +2079,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 }
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(sources = listOf(src)) { invocation ->
             val topLevelClass = invocation.processingEnv.requireTypeElement("TopLevelClass")
@@ -2085,7 +2107,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 object NestedObject
             }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         runTest(listOf(kotlinSrc)) { invocation ->
             val kotlinClass = invocation.processingEnv.requireTypeElement("foo.bar.KotlinClass")
@@ -2115,7 +2137,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     class Foo
                     class Bar
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2135,8 +2157,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     parameterTypes =
                         arrayOf(
                             XTypeName.getTypeVariableName("T1"),
-                            XTypeName.getTypeVariableName("T2"),
-                        ),
+                            XTypeName.getTypeVariableName("T2")
+                        )
                 )
                 checkMethodType(
                     methodType = method.executableType,
@@ -2144,8 +2166,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     parameterTypes =
                         arrayOf(
                             XTypeName.getTypeVariableName("T1"),
-                            XTypeName.getTypeVariableName("T2"),
-                        ),
+                            XTypeName.getTypeVariableName("T2")
+                        )
                 )
                 checkMethodType(
                     methodType = method.asMemberOf(abstractClass.type),
@@ -2153,13 +2175,13 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     parameterTypes =
                         arrayOf(
                             XTypeName.getTypeVariableName("T1"),
-                            XTypeName.getTypeVariableName("T2"),
-                        ),
+                            XTypeName.getTypeVariableName("T2")
+                        )
                 )
                 checkMethodType(
                     methodType = method.asMemberOf(concreteClass.type),
                     returnType = barType.asTypeName(),
-                    parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName()),
+                    parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName())
                 )
             }
 
@@ -2189,7 +2211,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     class Foo
                     class Bar
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2212,8 +2234,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 parameterTypes =
                     arrayOf(
                         XTypeName.getTypeVariableName("T1"),
-                        XTypeName.getTypeVariableName("T2"),
-                    ),
+                        XTypeName.getTypeVariableName("T2")
+                    )
             )
             checkMethodType(
                 methodType = abstractClassMethod.executableType,
@@ -2221,8 +2243,8 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 parameterTypes =
                     arrayOf(
                         XTypeName.getTypeVariableName("T1"),
-                        XTypeName.getTypeVariableName("T2"),
-                    ),
+                        XTypeName.getTypeVariableName("T2")
+                    )
             )
             checkMethodType(
                 methodType = abstractClassMethod.asMemberOf(abstractClass.type),
@@ -2231,12 +2253,12 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     arrayOf(
                         XTypeName.getTypeVariableName("T1"),
                         XTypeName.getTypeVariableName("T2"),
-                    ),
+                    )
             )
             checkMethodType(
                 methodType = abstractClassMethod.asMemberOf(concreteClass.type),
                 returnType = barType.asTypeName(),
-                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName()),
+                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName())
             )
 
             // Check the concrete method and method type
@@ -2245,17 +2267,17 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 name = "method",
                 enclosingElement = concreteClass,
                 returnType = barType.asTypeName(),
-                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName()),
+                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName())
             )
             checkMethodType(
                 methodType = concreteClassMethod.executableType,
                 returnType = barType.asTypeName(),
-                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName()),
+                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName())
             )
             checkMethodType(
                 methodType = concreteClassMethod.asMemberOf(concreteClass.type),
                 returnType = barType.asTypeName(),
-                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName()),
+                parameterTypes = arrayOf(fooType.asTypeName(), barType.asTypeName())
             )
         }
     }
@@ -2265,7 +2287,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
         name: String,
         enclosingElement: XTypeElement,
         returnType: XTypeName,
-        parameterTypes: Array<XTypeName>,
+        parameterTypes: Array<XTypeName>
     ) {
         assertThat(method.name).isEqualTo(name)
         assertThat(method.enclosingElement).isEqualTo(enclosingElement)
@@ -2278,7 +2300,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
     private fun checkMethodType(
         methodType: XMethodType,
         returnType: XTypeName,
-        parameterTypes: Array<XTypeName>,
+        parameterTypes: Array<XTypeName>
     ) {
         assertThat(methodType.returnType.asTypeName()).isEqualTo(returnType)
         assertThat(methodType.parameterTypes.map { it.asTypeName() })
@@ -2299,7 +2321,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     abstract class AbstractClass<T>(t: T)
                     class Foo
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2309,7 +2331,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
 
             fun checkConstructorParameters(
                 typeElement: XTypeElement,
-                expectedParameters: Array<XTypeName>,
+                expectedParameters: Array<XTypeName>
             ) {
                 assertThat(typeElement.getConstructors()).hasSize(1)
                 val constructor = typeElement.getConstructors()[0]
@@ -2320,11 +2342,11 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
 
             checkConstructorParameters(
                 typeElement = abstractClass,
-                expectedParameters = arrayOf(XTypeName.getTypeVariableName("T")),
+                expectedParameters = arrayOf(XTypeName.getTypeVariableName("T"))
             )
             checkConstructorParameters(
                 typeElement = concreteClass,
-                expectedParameters = arrayOf(fooType.asTypeName()),
+                expectedParameters = arrayOf(fooType.asTypeName())
             )
         }
     }
@@ -2344,7 +2366,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     }
                     class Foo
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2398,7 +2420,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                       lateinit var lateinitVarField: String
                     }
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2456,7 +2478,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     interface Bar
                     interface Baz
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2469,7 +2491,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     "method(Ltest/Bar;)Ltest/Baz;",
                     "method(Ltest/Baz;)Ltest/Bar;",
                     "method(Ltest/Baz;Ljava/lang/Object;)V",
-                    "method(Ltest/Baz;Ltest/Baz;)Ltest/Bar;",
+                    "method(Ltest/Baz;Ltest/Baz;)Ltest/Bar;"
                 )
                 .inOrder()
         }
@@ -2496,7 +2518,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     interface Bar
                     interface Baz
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2541,7 +2563,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                     package test;
                     class MyClass${'$'}Foo {}
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2575,7 +2597,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                         var var5: String = TODO()
                     }
                     """
-                            .trimIndent(),
+                            .trimIndent()
                     )
                 )
         ) { invocation ->
@@ -2625,7 +2647,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
                 """
             public record JavaRecord(String name) { }
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val kotlinSrc =
             Source.kotlin(
@@ -2634,7 +2656,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             @JvmRecord
             data class KotlinRecord(val name: String)
             """
-                    .trimIndent(),
+                    .trimIndent()
             )
         val handler: (XTestInvocation) -> Unit = {
             val javaElement = it.processingEnv.requireTypeElement("JavaRecord")
@@ -2649,25 +2671,25 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             val compiled =
                 compileFiles(
                     sources = listOf(javaSrc, kotlinSrc),
-                    kotlincArguments = listOf("-jvm-target=16"),
+                    kotlincArguments = listOf("-jvm-target=16")
                 )
             runJavaProcessorTest(
                 sources = listOf(Source.java("PlaceholderJava", "public class PlaceholderJava {}")),
                 classpath = compiled,
-                handler = handler,
+                handler = handler
             )
             runKspTest(
                 sources = listOf(Source.kotlin("placeholder.kt", "class PlaceholderKotlin")),
                 kotlincArguments = listOf("-jvm-target=16"),
                 classpath = compiled,
-                handler = handler,
+                handler = handler
             )
         } else {
             runJavaProcessorTest(sources = listOf(javaSrc), handler = handler)
             runKspTest(
                 sources = listOf(javaSrc, kotlinSrc),
                 kotlincArguments = listOf("-jvm-target=16"),
-                handler = handler,
+                handler = handler
             )
         }
     }

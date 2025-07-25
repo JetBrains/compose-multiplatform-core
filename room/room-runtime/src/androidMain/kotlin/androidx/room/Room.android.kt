@@ -19,12 +19,12 @@ import android.content.Context
 import androidx.room.util.findAndInstantiateDatabaseImpl
 
 /** Entry point for building and initializing a [RoomDatabase]. */
-public actual object Room {
+actual object Room {
 
     internal const val LOG_TAG = "ROOM"
 
     /** The master table name where Room keeps its metadata information. */
-    public actual const val MASTER_TABLE_NAME: String = RoomMasterTable.TABLE_NAME
+    actual const val MASTER_TABLE_NAME = RoomMasterTable.TABLE_NAME
 
     /**
      * Creates a RoomDatabase.Builder for an in memory database. Information stored in an in memory
@@ -38,9 +38,9 @@ public actual object Room {
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
     @JvmStatic
-    public fun <T : RoomDatabase> inMemoryDatabaseBuilder(
+    fun <T : RoomDatabase> inMemoryDatabaseBuilder(
         context: Context,
-        klass: Class<T>,
+        klass: Class<T>
     ): RoomDatabase.Builder<T> {
         return RoomDatabase.Builder(context, klass, null)
     }
@@ -57,9 +57,9 @@ public actual object Room {
      * @param T The type of the database class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
-    public inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
+    inline fun <reified T : RoomDatabase> inMemoryDatabaseBuilder(
         context: Context,
-        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) },
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
     ): RoomDatabase.Builder<T> {
         return RoomDatabase.Builder(T::class, null, factory, context)
     }
@@ -76,10 +76,10 @@ public actual object Room {
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
     @JvmStatic
-    public fun <T : RoomDatabase> databaseBuilder(
+    fun <T : RoomDatabase> databaseBuilder(
         context: Context,
         klass: Class<T>,
-        name: String?,
+        name: String?
     ): RoomDatabase.Builder<T> {
         require(!name.isNullOrBlank()) {
             "Cannot build a database with null or empty name." +
@@ -106,10 +106,10 @@ public actual object Room {
      * @param T The type of the database class.
      * @return A `RoomDatabaseBuilder<T>` which you can use to create the database.
      */
-    public inline fun <reified T : RoomDatabase> databaseBuilder(
+    inline fun <reified T : RoomDatabase> databaseBuilder(
         context: Context,
         name: String,
-        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) },
+        noinline factory: () -> T = { findAndInstantiateDatabaseImpl(T::class.java) }
     ): RoomDatabase.Builder<T> {
         require(name.isNotBlank()) {
             "Cannot build a database with empty name." +

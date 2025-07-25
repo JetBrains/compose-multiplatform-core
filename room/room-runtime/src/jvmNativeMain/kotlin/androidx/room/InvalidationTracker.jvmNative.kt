@@ -30,13 +30,13 @@ import kotlinx.coroutines.flow.Flow
  * starts being collected, if a database operation changes one of the tables that the [Flow] was
  * created from, then such table is considered 'invalidated' and the [Flow] will emit a new value.
  */
-public actual class InvalidationTracker
+actual class InvalidationTracker
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 actual constructor(
     private val database: RoomDatabase,
     shadowTablesMap: Map<String, String>,
     viewTables: Map<String, @JvmSuppressWildcards Set<String>>,
-    vararg tableNames: String,
+    vararg tableNames: String
 ) {
     private val implementation =
         TriggerBasedInvalidationTracker(
@@ -45,7 +45,7 @@ actual constructor(
             viewTables = viewTables,
             tableNames = tableNames,
             useTempTable = true,
-            onInvalidatedTablesIds = {},
+            onInvalidatedTablesIds = {}
         )
 
     /** Internal function to initialize table tracking. Invoked by generated code. */
@@ -79,10 +79,7 @@ actual constructor(
      *   `true`.
      */
     @JvmOverloads
-    public actual fun createFlow(
-        vararg tables: String,
-        emitInitialState: Boolean,
-    ): Flow<Set<String>> {
+    actual fun createFlow(vararg tables: String, emitInitialState: Boolean): Flow<Set<String>> {
         val (resolvedTableNames, tableIds) = implementation.validateTableNames(tables)
         return implementation.createFlow(resolvedTableNames, tableIds, emitInitialState)
     }
@@ -109,7 +106,7 @@ actual constructor(
      * via another connection or through [RoomDatabase.useConnection] you might need to invoke this
      * function to trigger invalidation.
      */
-    public actual fun refreshAsync() {
+    actual fun refreshAsync() {
         implementation.refreshInvalidationAsync()
     }
 
@@ -121,7 +118,7 @@ actual constructor(
      * invalidations, if so causing this function to return true.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public actual suspend fun refresh(vararg tables: String): Boolean {
+    actual suspend fun refresh(vararg tables: String): Boolean {
         return implementation.refreshInvalidation(tables)
     }
 

@@ -22,6 +22,8 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.xr.runtime.internal.AnchorEntity;
 import androidx.xr.runtime.internal.AnchorPlacement;
 import androidx.xr.runtime.internal.Dimensions;
@@ -48,9 +50,6 @@ import com.android.extensions.xr.node.ReformOptions;
 import com.android.extensions.xr.node.Vec3;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -451,7 +450,8 @@ class MovableComponentImpl implements MovableComponent {
 
     // Gets the anchor placement settings for the given plane data, if it is null the entity should
     // not be anchored to this plane.
-    private @Nullable AnchorPlacementImpl getAnchorPlacementIfAnchorable(PlaneData planeData) {
+    @Nullable
+    private AnchorPlacementImpl getAnchorPlacementIfAnchorable(PlaneData planeData) {
         if (!mUserAnchorable || !mSystemMovable) {
             return null;
         }
@@ -532,7 +532,8 @@ class MovableComponentImpl implements MovableComponent {
         return Pair.create(poseToAnchor, anchorEntity);
     }
 
-    private @Nullable Pose updatePoseForPlane(PlaneData planeData, Pose proposedPoseInOpenXr) {
+    @Nullable
+    private Pose updatePoseForPlane(PlaneData planeData, Pose proposedPoseInOpenXr) {
         // Get the pose as related to the center of the plane.
 
         Pose centerPose = RuntimeUtils.fromPerceptionPose(planeData.centerPose);

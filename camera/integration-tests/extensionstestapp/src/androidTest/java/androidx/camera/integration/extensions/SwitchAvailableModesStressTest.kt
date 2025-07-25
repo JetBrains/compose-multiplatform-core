@@ -35,7 +35,6 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
-import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.StressTestRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso
@@ -65,7 +64,7 @@ import org.junit.runners.Parameterized
 class SwitchAvailableModesStressTest(
     private val configName: String,
     private val cameraXConfig: CameraXConfig,
-    private val cameraId: String,
+    private val cameraId: String
 ) {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
@@ -100,7 +99,7 @@ class SwitchAvailableModesStressTest(
                     arrayOf(
                         CAMERA_PIPE_IMPLEMENTATION_OPTION,
                         CameraPipeConfig.defaultConfig(),
-                        cameraId,
+                        cameraId
                     ),
                 )
             }
@@ -113,7 +112,6 @@ class SwitchAvailableModesStressTest(
     fun setup() {
         assumeTrue(CameraUtil.deviceHasCamera())
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
-        assumePcsSupportedForImageCapture(context)
 
         ProcessCameraProvider.configureInstance(cameraXConfig)
         val cameraProvider =

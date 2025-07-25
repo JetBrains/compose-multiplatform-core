@@ -61,6 +61,8 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.FileTree
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
@@ -105,7 +107,6 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             when (plugin) {
                 is LibraryPlugin -> {
                     val libraryExtension = project.extensions.getByType<LibraryExtension>()
-                    @Suppress("deprecation") // TODO(aurimas): migrate to new API
                     libraryExtension.compileSdk =
                         project.defaultAndroidConfig.latestStableCompileSdk
                     libraryExtension.buildToolsVersion =
@@ -137,7 +138,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 project,
                 "unzipSampleSourcesDeprecated",
                 unzippedDeprecatedSamplesSources,
-                samplesSourcesConfiguration,
+                samplesSourcesConfiguration
             )
         val unzippedKmpSamplesSourcesDirectory =
             project.layout.buildDirectory.dir("unzippedMultiplatformSampleSources")
@@ -155,7 +156,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 project,
                 unzippedJvmSourcesDirectory,
                 unzippedJvmSamplesSourcesDirectory,
-                docsSourcesConfiguration,
+                docsSourcesConfiguration
             )
         val configureMultiplatformSourcesTask =
             configureMultiplatformInputsTasks(
@@ -163,7 +164,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 unzippedMultiplatformSourcesDirectory,
                 unzippedKmpSamplesSourcesDirectory,
                 multiplatformDocsSourcesConfiguration,
-                mergedProjectMetadata,
+                mergedProjectMetadata
             )
 
         configureDackka(
@@ -181,7 +182,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             buildOnServer = buildOnServer,
             docsConfiguration = docsSourcesConfiguration,
             multiplatformDocsConfiguration = multiplatformDocsSourcesConfiguration,
-            mergedProjectMetadata = mergedProjectMetadata,
+            mergedProjectMetadata = mergedProjectMetadata
         )
 
         project.configureTaskTimeouts()
@@ -196,7 +197,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         project: Project,
         taskName: String,
         destinationDirectory: Provider<Directory>,
-        docsConfiguration: Configuration,
+        docsConfiguration: Configuration
     ): TaskProvider<Sync> {
         return project.tasks.register(taskName, Sync::class.java) { task ->
             val sources = docsConfiguration.incoming.artifactView {}.files
@@ -236,7 +237,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         project: Project,
         sourcesDestinationDirectory: Provider<Directory>,
         samplesDestinationDirectory: Provider<Directory>,
-        docsConfiguration: Configuration,
+        docsConfiguration: Configuration
     ): Pair<TaskProvider<Sync>, TaskProvider<Sync>> {
         val pairProvider =
             docsConfiguration.incoming
@@ -250,13 +251,20 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             // Store archiveOperations into a local variable to prevent access to the plugin
             // during the task execution, as that breaks configuration caching.
             val localVar = archiveOperations
+            val tempDir = project.layout.buildDirectory.dir("tmp/JvmSources").get().asFile
+            // Get rid of stale files in the directory
+            tempDir.deleteRecursively()
             task.into(sourcesDestinationDirectory)
             task.from(
                 pairProvider
                     .map { it.first }
                     .map {
                         it.map { jar ->
-                            localVar.zipTree(jar).matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                            localVar
+                                .zipTree(jar)
+                                .matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                                .rewriteImageTagsAndCopy(tempDir)
+                            tempDir
                         }
                     }
             )
@@ -268,15 +276,20 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 // Store archiveOperations into a local variable to prevent access to the plugin
                 // during the task execution, as that breaks configuration caching.
                 val localVar = archiveOperations
+                val tempDir = project.layout.buildDirectory.dir("tmp/SampleSources").get().asFile
+                // Get rid of stale files in the directory
+                tempDir.deleteRecursively()
                 task.into(samplesDestinationDirectory)
                 task.from(
                     pairProvider
                         .map { it.second }
                         .map {
                             it.map { jar ->
-                                localVar.zipTree(jar).matching {
-                                    it.exclude("**/META-INF/MANIFEST.MF")
-                                }
+                                localVar
+                                    .zipTree(jar)
+                                    .matching { it.exclude("**/META-INF/MANIFEST.MF") }
+                                    .rewriteImageTagsAndCopy(tempDir)
+                                tempDir
                             }
                         }
                 )
@@ -295,7 +308,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         unzippedMultiplatformSourcesDirectory: Provider<Directory>,
         unzippedMultiplatformSamplesDirectory: Provider<Directory>,
         multiplatformDocsSourcesConfiguration: Configuration,
-        mergedProjectMetadata: Provider<RegularFile>,
+        mergedProjectMetadata: Provider<RegularFile>
     ): TaskProvider<MergeMultiplatformMetadataTask> {
         val tempMultiplatformMetadataDirectory =
             project.layout.buildDirectory.dir("tmp/multiplatformMetadataFiles")
@@ -303,7 +316,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         val unzipMultiplatformSources =
             project.tasks.register(
                 "unzipMultiplatformSources",
-                UnzipMultiplatformSourcesTask::class.java,
+                UnzipMultiplatformSourcesTask::class.java
             ) {
                 it.inputJars.set(
                     multiplatformDocsSourcesConfiguration.incoming.artifactView {}.files
@@ -315,7 +328,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         // merge all the metadata files from the individual project dirs
         return project.tasks.register(
             "mergeMultiplatformMetadata",
-            MergeMultiplatformMetadataTask::class.java,
+            MergeMultiplatformMetadataTask::class.java
         ) {
             it.mergedProjectMetadata.set(mergedProjectMetadata)
             it.inputDirectory.set(unzipMultiplatformSources.flatMap { it.metadataOutput })
@@ -365,19 +378,19 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
             attributes {
                 it.attribute(
                     Usage.USAGE_ATTRIBUTE,
-                    project.objects.named<Usage>(Usage.JAVA_RUNTIME),
+                    project.objects.named<Usage>(Usage.JAVA_RUNTIME)
                 )
                 it.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.DOCUMENTATION),
+                    project.objects.named<Category>(Category.DOCUMENTATION)
                 )
                 it.attribute(
                     DocsType.DOCS_TYPE_ATTRIBUTE,
-                    project.objects.named<DocsType>(DocsType.SOURCES),
+                    project.objects.named<DocsType>(DocsType.SOURCES)
                 )
                 it.attribute(
                     LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    project.objects.named<LibraryElements>(LibraryElements.JAR),
+                    project.objects.named<LibraryElements>(LibraryElements.JAR)
                 )
             }
         }
@@ -394,15 +407,15 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     it.attribute(Usage.USAGE_ATTRIBUTE, project.multiplatformUsage)
                     it.attribute(
                         Category.CATEGORY_ATTRIBUTE,
-                        project.objects.named<Category>(Category.DOCUMENTATION),
+                        project.objects.named<Category>(Category.DOCUMENTATION)
                     )
                     it.attribute(
                         DocsType.DOCS_TYPE_ATTRIBUTE,
-                        project.objects.named<DocsType>(DocsType.SOURCES),
+                        project.objects.named<DocsType>(DocsType.SOURCES)
                     )
                     it.attribute(
                         LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                        project.objects.named<LibraryElements>(LibraryElements.JAR),
+                        project.objects.named<LibraryElements>(LibraryElements.JAR)
                     )
                 }
                 configuration.extendsFrom(multiplatformDocsConfiguration)
@@ -421,11 +434,11 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.versionMetadataUsage)
                 it.attributes.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.DOCUMENTATION),
+                    project.objects.named<Category>(Category.DOCUMENTATION)
                 )
                 it.attributes.attribute(
                     Bundling.BUNDLING_ATTRIBUTE,
-                    project.objects.named<Bundling>(Bundling.EXTERNAL),
+                    project.objects.named<Bundling>(Bundling.EXTERNAL)
                 )
 
                 it.extendsFrom(docsConfiguration, multiplatformDocsConfiguration)
@@ -437,18 +450,18 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named<Usage>(usage))
                 it.attribute(
                     Category.CATEGORY_ATTRIBUTE,
-                    project.objects.named<Category>(Category.LIBRARY),
+                    project.objects.named<Category>(Category.LIBRARY)
                 )
                 it.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named<BuildTypeAttr>("release"),
+                    project.objects.named<BuildTypeAttr>("release")
                 )
             }
             extendsFrom(
                 docsConfiguration,
                 samplesConfiguration,
                 stubsConfiguration,
-                docsWithoutApiSinceConfiguration,
+                docsWithoutApiSinceConfiguration
             )
         }
 
@@ -478,7 +491,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                 .artifactView {
                     it.attributes.attribute(
                         Attribute.of("artifactType", String::class.java),
-                        "android-classes",
+                        "android-classes"
                     )
                 }
                 .files +
@@ -486,7 +499,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
                     .artifactView {
                         it.attributes.attribute(
                             Attribute.of("artifactType", String::class.java),
-                            "android-classes",
+                            "android-classes"
                         )
                     }
                     .files
@@ -507,7 +520,7 @@ abstract class AndroidXDocsImplPlugin : Plugin<Project> {
         buildOnServer: TaskProvider<*>,
         docsConfiguration: Configuration,
         multiplatformDocsConfiguration: Configuration,
-        mergedProjectMetadata: Provider<RegularFile>,
+        mergedProjectMetadata: Provider<RegularFile>
     ) {
         val generatedDocsDir = project.layout.buildDirectory.dir("docs")
 
@@ -687,7 +700,9 @@ open class DocsBuildOnServer : DefaultTask() {
 
     @[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
     fun getRequiredFiles(): List<File> {
-        return listOf(File(distributionDirectory, "docs-$docsType-$buildId.zip"))
+        return listOf(
+            File(distributionDirectory, "docs-$docsType-$buildId.zip"),
+        )
     }
 
     @TaskAction
@@ -746,12 +761,16 @@ private val hiddenPackages =
         "androidx.preference.internal",
         "androidx.wear.internal.widget.drawer",
         "androidx.webkit.internal",
-        "androidx.work.impl.*",
+        "androidx.work.impl.*"
     )
 
 // Set of packages to exclude from Java refdoc generation
 private val hiddenPackagesJava =
-    setOf("androidx.*compose.*", "androidx.*glance.*", "androidx\\.tv\\..*")
+    setOf(
+        "androidx.*compose.*",
+        "androidx.*glance.*",
+        "androidx\\.tv\\..*",
+    )
 
 // List of annotations which should not be displayed in the docs
 private val hiddenAnnotations: List<String> =
@@ -778,9 +797,7 @@ private val hiddenAnnotations: List<String> =
         // This annotation is intended to target the compiler and is general not useful for devs.
         "java.lang.Override",
         // This annotation is used by the room processor and isn't useful for developers
-        "androidx.room.Ignore",
-        // This is an internal annotation only used by the kotlin compiler.
-        "kotlin.ExtensionFunctionType",
+        "androidx.room.Ignore"
     )
 
 val validNullabilityAnnotations =
@@ -796,7 +813,7 @@ val validNullabilityAnnotations =
     )
 
 // Annotations which should not be displayed in the Kotlin docs, in addition to hiddenAnnotations
-private val hiddenAnnotationsKotlin: List<String> = emptyList()
+private val hiddenAnnotationsKotlin: List<String> = listOf("kotlin.ExtensionFunctionType")
 
 // Annotations which should not be displayed in the Java docs, in addition to hiddenAnnotations
 private val hiddenAnnotationsJava: List<String> = emptyList()
@@ -815,7 +832,7 @@ data class ProjectStructureMetadata(var sourceSets: List<SourceSetMetadata>)
 data class SourceSetMetadata(
     val name: String,
     val analysisPlatform: String,
-    var dependencies: List<String>,
+    var dependencies: List<String>
 )
 
 @CacheableTask
@@ -833,8 +850,18 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
 
     @get:Inject abstract val archiveOperations: ArchiveOperations
 
+    @get:Inject abstract val projectLayout: ProjectLayout
+
     @TaskAction
     fun execute() {
+        val tempSourcesDir =
+            projectLayout.buildDirectory.dir("tmp/MultiplatformSources").get().asFile
+        val tempSamplesDir =
+            projectLayout.buildDirectory.dir("tmp/MultiplatformSamples").get().asFile
+        // Get rid of stale files in the directories
+        tempSourcesDir.deleteRecursively()
+        tempSamplesDir.deleteRecursively()
+
         val (sources, samples) =
             inputJars
                 .get()
@@ -844,32 +871,25 @@ abstract class UnzipMultiplatformSourcesTask() : DefaultTask() {
                 // jars. We want to handle sample jars separately, so filter by the name.
                 .partition { name -> "samples" !in name }
 
+        sources.values.forEach { fileTree ->
+            fileTree.matching { it.exclude("META-INF/*") }.rewriteImageTagsAndCopy(tempSourcesDir)
+        }
         fileSystemOperations.sync {
             it.duplicatesStrategy = DuplicatesStrategy.FAIL
-            it.from(sources.values)
+            it.from(tempSourcesDir)
             it.into(sourceOutput)
             it.exclude("META-INF/*")
-            // TODO(b/418945918): Remove when the files below are deduped:
-            // benchmark/benchmark-traceprocessor/src/androidMain/kotlin/perfetto/protos/package-info.java
-            // tracing/tracing-driver-wire/src/androidMain/kotlin/perfetto/protos/package-info.java
-            var seenPath = false
-            it.eachFile { file ->
-                val relPath = file.relativePath.pathString
-                if (relPath == "androidMain/perfetto/protos/package-info.java") {
-                    if (seenPath) {
-                        file.exclude()
-                    }
-                    seenPath = true
-                }
-            }
         }
 
+        samples.values.forEach { fileTree ->
+            fileTree.matching { it.exclude("META-INF/*") }.rewriteImageTagsAndCopy(tempSamplesDir)
+        }
         fileSystemOperations.sync {
             // Some libraries share samples, e.g. paging. This can be an issue if and only if the
             // consumer libraries have pinned samples version or are not in an atomic group.
             // We don't have anything matching this case now, but should enforce better. b/334825580
             it.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            it.from(samples.values)
+            it.from(tempSamplesDir)
             it.into(samplesOutput)
             it.exclude("META-INF/*")
         }
@@ -948,23 +968,68 @@ private fun Project.getExtraCommonDependencies(): FileCollection =
             File(
                 getPrebuiltsExternalPath(),
                 "org/jetbrains/kotlinx/kotlinx-coroutines-core/1.6.4/" +
-                    "kotlinx-coroutines-core-1.6.4.jar",
+                    "kotlinx-coroutines-core-1.6.4.jar"
             ),
             File(
                 getPrebuiltsExternalPath(),
-                "org/jetbrains/kotlinx/atomicfu/0.17.0/atomicfu-0.17.0.jar",
+                "org/jetbrains/kotlinx/atomicfu/0.17.0/atomicfu-0.17.0.jar"
             ),
             File(getPrebuiltsExternalPath(), "com/squareup/okio/okio-jvm/3.1.0/okio-jvm-3.1.0.jar"),
             // TODO(b/409256436): Remove when KMP classes (.knm) in Kotlin 2.1 can be loaded
             File(
                 getPrebuiltsExternalPath(),
-                "org/jetbrains/kotlin/kotlin-stdlib/2.0.20/kotlin-stdlib-2.0.20-common.jar",
-            ),
+                "org/jetbrains/kotlin/kotlin-stdlib/2.0.20/kotlin-stdlib-2.0.20-common.jar"
+            )
         ) +
             PLATFORMS.map {
                 File(
                     getPrebuiltsExternalPath(),
-                    "com/squareup/okio/okio-$it/3.1.0/okio-$it-3.1.0.klib",
+                    "com/squareup/okio/okio-$it/3.1.0/okio-$it-3.1.0.klib"
                 )
             }
     )
+
+private fun FileTree.rewriteImageTagsAndCopy(destinationDir: File) {
+    visit { fileDetails ->
+        if (!fileDetails.isDirectory) {
+            val targetFile = File(destinationDir, fileDetails.relativePath.pathString)
+            targetFile.parentFile.mkdirs()
+
+            if (fileDetails.file.extension == "kt") {
+                val content = fileDetails.file.readText()
+                val updatedContent = rewriteLinks(content)
+                targetFile.writeText(updatedContent)
+            } else {
+                fileDetails.file.copyTo(targetFile, overwrite = true)
+            }
+        }
+    }
+}
+
+/**
+ * Rewrites multi-line markdown links ![]()to a single-line format. Work-around for b/350055200.
+ *
+ * Example transformation:
+ * ```
+ * Original: ![Example
+ *           Image](http://example.com/image.png)
+ * Result:   ![Example Image](http://example.com/image.png)
+ * ```
+ */
+internal fun rewriteLinks(content: String): String =
+    markdownLinksRegex.replace(content) { matchResult ->
+        val exclamationMark = matchResult.groupValues[1]
+        val linkText = matchResult.groupValues[2].replace("\n", " ").replace(" * ", "").trim()
+        val url = matchResult.groupValues[3].trim()
+        "$exclamationMark[$linkText]($url)"
+    }
+
+/**
+ * Regular expression to match markdown link syntax, supporting both standard links and image links.
+ *
+ * The pattern matches:
+ * - Optional `!` at the beginning for image links.
+ * - Link text enclosed in square brackets `[ ... ]`, allowing for whitespace around the text.
+ * - URL in parentheses `( ... )`, allowing for whitespace around the URL.
+ */
+private val markdownLinksRegex = Regex("""(!?)\[\s*([^\[\]]+?)\s*]\(\s*([^(]+?)\s*\)""")

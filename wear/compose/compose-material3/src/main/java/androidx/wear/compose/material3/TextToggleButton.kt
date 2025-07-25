@@ -106,7 +106,7 @@ public fun TextToggleButton(
             onPressAnimationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
             onReleaseAnimationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
             checked = checked,
-            interactionSource = interactionSource,
+            interactionSource = interactionSource
         )
 
     ToggleButton(
@@ -126,8 +126,8 @@ public fun TextToggleButton(
             provideScopeContent(
                 colors.contentColor(enabled = enabled, checked = checked),
                 TextToggleButtonTokens.ContentDefaultFont.value,
-                content,
-            ),
+                content
+            )
     )
 }
 
@@ -188,7 +188,9 @@ public object TextToggleButtonDefaults {
      * @param shape The normal shape of the TextToggleButton.
      */
     @Composable
-    public fun shapes(shape: Shape): TextToggleButtonShapes =
+    public fun shapes(
+        shape: Shape,
+    ): TextToggleButtonShapes =
         MaterialTheme.shapes.defaultTextToggleButtonShapes.copy(uncheckedShape = shape)
 
     /**
@@ -222,7 +224,7 @@ public object TextToggleButtonDefaults {
     ): TextToggleButtonShapes =
         MaterialTheme.shapes.defaultTextToggleButtonAnimatedShapes.copy(
             uncheckedShape = shape,
-            uncheckedPressedShape = pressedShape,
+            uncheckedPressedShape = pressedShape
         )
 
     /**
@@ -252,7 +254,7 @@ public object TextToggleButtonDefaults {
     @Composable
     public fun variantAnimatedShapes(
         uncheckedShape: CornerBasedShape? = null,
-        checkedShape: CornerBasedShape? = null,
+        checkedShape: CornerBasedShape? = null
     ): TextToggleButtonShapes =
         MaterialTheme.shapes.defaultTextToggleButtonVariantAnimatedShapes.copy(
             uncheckedShape = uncheckedShape,
@@ -260,7 +262,7 @@ public object TextToggleButtonDefaults {
             uncheckedPressedShape =
                 uncheckedShape?.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction),
             checkedPressedShape =
-                checkedShape?.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction),
+                checkedShape?.fractionalRoundedCornerShape(PressedShapeCornerSizeFraction)
         )
 
     /**
@@ -333,7 +335,7 @@ public object TextToggleButtonDefaults {
             return defaultTextToggleButtonAnimatedShapesCached
                 ?: TextToggleButtonShapes(
                         uncheckedShape = shape,
-                        uncheckedPressedShape = pressedShape,
+                        uncheckedPressedShape = pressedShape
                     )
                     .also { defaultTextToggleButtonAnimatedShapesCached = it }
         }
@@ -350,7 +352,7 @@ public object TextToggleButtonDefaults {
                         checkedPressedShape =
                             checkedShape.fractionalRoundedCornerShape(
                                 PressedShapeCornerSizeFraction
-                            ),
+                            )
                     )
                     .also { defaultTextToggleButtonVariantAnimatedShapesCached = it }
         }
@@ -490,7 +492,7 @@ public class TextToggleButtonColors(
             uncheckedColor = uncheckedContainerColor,
             disabledCheckedColor = disabledCheckedContainerColor,
             disabledUncheckedColor = disabledUncheckedContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC,
+            animationSpec = COLOR_ANIMATION_SPEC
         )
 
     /**
@@ -508,7 +510,7 @@ public class TextToggleButtonColors(
             uncheckedColor = uncheckedContentColor,
             disabledCheckedColor = disabledCheckedContentColor,
             disabledUncheckedColor = disabledUncheckedContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC,
+            animationSpec = COLOR_ANIMATION_SPEC
         )
 
     override fun equals(other: Any?): Boolean {
@@ -561,7 +563,7 @@ public class TextToggleButtonShapes(
     public val uncheckedShape: Shape,
     public val checkedShape: Shape = uncheckedShape,
     public val uncheckedPressedShape: Shape = uncheckedShape,
-    public val checkedPressedShape: Shape = uncheckedPressedShape,
+    public val checkedPressedShape: Shape = uncheckedPressedShape
 ) {
     public fun copy(
         uncheckedShape: Shape? = this.uncheckedShape,
@@ -573,7 +575,7 @@ public class TextToggleButtonShapes(
             uncheckedShape = uncheckedShape ?: this.uncheckedShape,
             checkedShape = checkedShape ?: this.checkedShape,
             uncheckedPressedShape = uncheckedPressedShape ?: this.uncheckedPressedShape,
-            checkedPressedShape = checkedPressedShape ?: this.checkedPressedShape,
+            checkedPressedShape = checkedPressedShape ?: this.checkedPressedShape
         )
 
     override fun equals(other: Any?): Boolean {

@@ -81,7 +81,7 @@ public class ResolutionsMerger {
 
     ResolutionsMerger(@NonNull CameraInternal cameraInternal,
             @NonNull Set<UseCaseConfig<?>> childrenConfigs) {
-        this(rectToSize(cameraInternal.getCameraInfoInternal().getSensorRect()),
+        this(rectToSize(cameraInternal.getCameraControlInternal().getSensorRect()),
                 cameraInternal.getCameraInfoInternal(), childrenConfigs);
     }
 

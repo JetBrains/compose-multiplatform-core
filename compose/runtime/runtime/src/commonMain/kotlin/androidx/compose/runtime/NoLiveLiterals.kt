@@ -25,7 +25,7 @@ package androidx.compose.runtime
     AnnotationTarget.PROPERTY,
     AnnotationTarget.FUNCTION,
     AnnotationTarget.CLASS,
-    AnnotationTarget.FILE,
+    AnnotationTarget.FILE
 )
 @Retention(AnnotationRetention.SOURCE)
-public annotation class NoLiveLiterals
+annotation class NoLiveLiterals

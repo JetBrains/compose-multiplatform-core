@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore.impl;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Binder;
@@ -29,8 +28,7 @@ import android.widget.FrameLayout;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.ViewTreeLifecycleOwner;
+import androidx.annotation.NonNull;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
 import androidx.xr.runtime.internal.PixelDimensions;
@@ -38,8 +36,6 @@ import androidx.xr.runtime.internal.PixelDimensions;
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,7 +47,6 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * <p>This entity shows 2D view on spatial panel.
  */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
     private static final String TAG = "PanelEntity";
     private final SurfaceControlViewHost mSurfaceControlViewHost;
@@ -66,12 +61,10 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
             @NonNull String name,
             ScheduledExecutorService executor) {
         super(node, extensions, entityManager, executor);
-
-        View reparentedView = maybeReparentView(view, name, context);
         mSurfaceControlViewHost =
                 new SurfaceControlViewHost(
                         context, Objects.requireNonNull(context.getDisplay()), new Binder());
-        setupSurfaceControlViewHostAndCornerRadius(reparentedView, surfaceDimensionsPx, name);
+        setupSurfaceControlViewHostAndCornerRadius(view, surfaceDimensionsPx, name);
         setDefaultOnBackInvokedCallback(view);
     }
 
@@ -118,10 +111,6 @@ final class PanelEntityImpl extends BasePanelEntity implements PanelEntity {
         }
         try {
             FrameLayout frameLayout = new FrameLayout(context);
-            LifecycleOwner contentLifecycleOwner = ViewTreeLifecycleOwner.get(contentView);
-            if (contentLifecycleOwner != null) {
-                ViewTreeLifecycleOwner.set(frameLayout, contentLifecycleOwner);
-            }
             frameLayout.setLayoutParams(
                     new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
             frameLayout.addView(contentView);

@@ -67,9 +67,9 @@ class BasicVendorExtenderTest {
                 supportedSizes =
                     listOf(
                         android.util.Pair(ImageFormat.YUV_420_888, arrayOf(yuvSize)),
-                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize)),
+                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize))
                     ),
-                captureProcessorImpl = FakeCaptureProcessorImpl(),
+                captureProcessorImpl = FakeCaptureProcessorImpl()
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -84,7 +84,7 @@ class BasicVendorExtenderTest {
         val fakeImageCaptureExtenderImpl =
             FakeImageCaptureExtenderImpl(
                 supportedSizes = listOf(android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize))),
-                captureProcessorImpl = FakeCaptureProcessorImpl(),
+                captureProcessorImpl = FakeCaptureProcessorImpl()
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -101,9 +101,9 @@ class BasicVendorExtenderTest {
                 supportedSizes =
                     listOf(
                         android.util.Pair(ImageFormat.YUV_420_888, arrayOf(yuvSize)),
-                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize)),
+                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize))
                     ),
-                captureProcessorImpl = FakeCaptureProcessorImpl(),
+                captureProcessorImpl = FakeCaptureProcessorImpl()
             )
         ExtensionsTestUtil.setTestApiVersion("1.0.0")
         val basicVendorExtender =
@@ -113,7 +113,7 @@ class BasicVendorExtenderTest {
         assertContainsOnlySizes(
             supportedSizes,
             ImageFormat.YUV_420_888,
-            arrayOf(streamConfigurationYuvSize),
+            arrayOf(streamConfigurationYuvSize)
         )
     }
 
@@ -124,8 +124,8 @@ class BasicVendorExtenderTest {
                 supportedSizes =
                     listOf(
                         android.util.Pair(ImageFormat.YUV_420_888, arrayOf(yuvSize)),
-                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize)),
-                    )
+                        android.util.Pair(ImageFormat.JPEG, arrayOf(jpegSize))
+                    ),
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -140,7 +140,7 @@ class BasicVendorExtenderTest {
         val fakeImageCaptureExtenderImpl =
             FakeImageCaptureExtenderImpl(
                 supportedSizes = null,
-                captureProcessorImpl = FakeCaptureProcessorImpl(),
+                captureProcessorImpl = FakeCaptureProcessorImpl()
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -150,13 +150,16 @@ class BasicVendorExtenderTest {
         assertContainsOnlySizes(
             supportedSizes,
             ImageFormat.YUV_420_888,
-            arrayOf(streamConfigurationYuvSize),
+            arrayOf(streamConfigurationYuvSize)
         )
     }
 
     @Test
     fun captureOutputResolutions_returnJpegSizesFromStreamConfiguration_whenOemReturnsNull() {
-        val fakeImageCaptureExtenderImpl = FakeImageCaptureExtenderImpl(supportedSizes = null)
+        val fakeImageCaptureExtenderImpl =
+            FakeImageCaptureExtenderImpl(
+                supportedSizes = null,
+            )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
             BasicVendorExtender(fakeImageCaptureExtenderImpl, FakePreviewExtenderImpl())
@@ -165,7 +168,7 @@ class BasicVendorExtenderTest {
         assertContainsOnlySizes(
             supportedSizes,
             ImageFormat.JPEG,
-            arrayOf(streamConfigurationJpegSize),
+            arrayOf(streamConfigurationJpegSize)
         )
     }
 
@@ -176,8 +179,8 @@ class BasicVendorExtenderTest {
                 supportedSizes =
                     listOf(
                         android.util.Pair(ImageFormat.YUV_420_888, arrayOf(yuvSize)),
-                        android.util.Pair(ImageFormat.PRIVATE, arrayOf(privateSize)),
-                    )
+                        android.util.Pair(ImageFormat.PRIVATE, arrayOf(privateSize))
+                    ),
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -213,7 +216,7 @@ class BasicVendorExtenderTest {
         assertContainsOnlySizes(
             supportedSizes,
             ImageFormat.PRIVATE,
-            arrayOf(streamConfigurationPrivateSize),
+            arrayOf(streamConfigurationPrivateSize)
         )
     }
 
@@ -222,7 +225,7 @@ class BasicVendorExtenderTest {
         val fakePreviewExtenderImpl =
             FakePreviewExtenderImpl(
                 supportedSizes = null,
-                processorType = PreviewExtenderImpl.ProcessorType.PROCESSOR_TYPE_IMAGE_PROCESSOR,
+                processorType = PreviewExtenderImpl.ProcessorType.PROCESSOR_TYPE_IMAGE_PROCESSOR
             )
         ExtensionsTestUtil.setTestApiVersion("1.1.0")
         val basicVendorExtender =
@@ -232,7 +235,7 @@ class BasicVendorExtenderTest {
         assertContainsOnlySizes(
             supportedSizes,
             ImageFormat.PRIVATE,
-            arrayOf(streamConfigurationYuvSize),
+            arrayOf(streamConfigurationYuvSize)
         )
     }
 
@@ -259,7 +262,7 @@ class BasicVendorExtenderTest {
     private fun assertContainsOnlySizes(
         list: List<android.util.Pair<Int, Array<Size>>>,
         format: Int,
-        sizes: Array<Size>,
+        sizes: Array<Size>
     ) {
         assertThat(list.size).isEqualTo(1)
         assertThat(list[0].first).isEqualTo(format)

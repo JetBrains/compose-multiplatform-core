@@ -17,11 +17,11 @@
 package androidx.compose.runtime
 
 @MustBeDocumented
-@Retention(AnnotationRetention.BINARY)
+@Retention(AnnotationRetention.SOURCE)
 @Target(
     AnnotationTarget.FUNCTION,
     AnnotationTarget.CONSTRUCTOR,
     AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
+    AnnotationTarget.PROPERTY_SETTER
 )
-public expect annotation class TestOnly()
+expect annotation class TestOnly()

@@ -22,25 +22,20 @@ import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.util.TypedValue;
 
-import androidx.core.util.TypedValueCompat;
-import androidx.xr.runtime.internal.CameraViewActivityPose;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.xr.runtime.internal.Dimensions;
 import androidx.xr.runtime.internal.PanelEntity;
-import androidx.xr.runtime.internal.PerceivedResolutionResult;
 import androidx.xr.runtime.internal.PixelDimensions;
-import androidx.xr.runtime.internal.Space;
 import androidx.xr.runtime.math.Vector3;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.concurrent.ScheduledExecutorService;
 
 /** BasePanelEntity provides implementations of capabilities common to PanelEntities. */
-@SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     private static final float DEFAULT_CORNER_RADIUS_DP = 32.0f;
     protected PixelDimensions mPixelDimensions;
@@ -60,15 +55,17 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
                 .defaultPixelsPerMeter(Resources.getSystem().getDisplayMetrics().density);
     }
 
+    @SuppressLint("ObsoleteSdkInt")
+    @RequiresApi(34)
     protected float getDefaultCornerRadiusInMeters() {
         // Get the width and height of the panel in DP.
         float widthDp =
-                TypedValueCompat.deriveDimension(
+                TypedValue.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.width,
                         Resources.getSystem().getDisplayMetrics());
         float heightDp =
-                TypedValueCompat.deriveDimension(
+                TypedValue.deriveDimension(
                         TypedValue.COMPLEX_UNIT_DIP,
                         mPixelDimensions.height,
                         Resources.getSystem().getDisplayMetrics());
@@ -85,14 +82,30 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
 
         // Convert the updated corner radius to pixels.
         float radiusPixels =
-                TypedValueCompat.dpToPx(radiusDp, Resources.getSystem().getDisplayMetrics());
+                TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        radiusDp,
+                        Resources.getSystem().getDisplayMetrics());
 
         // Convert the pixel radius to meters.
         return radiusPixels / getDefaultPixelDensity();
     }
 
+    @NonNull
     @Override
-    public @NonNull Dimensions getSize() {
+    @Deprecated
+    public Vector3 getPixelDensity() {
+        Vector3 scale = getWorldSpaceScale();
+        float defaultPixelDensity = getDefaultPixelDensity();
+        return new Vector3(
+                defaultPixelDensity / scale.getX(),
+                defaultPixelDensity / scale.getY(),
+                defaultPixelDensity / scale.getZ());
+    }
+
+    @NonNull
+    @Override
+    public Dimensions getSize() {
         float pixelDensity = getDefaultPixelDensity();
         return new Dimensions(
                 mPixelDimensions.width / pixelDensity, mPixelDimensions.height / pixelDensity, 0);
@@ -107,38 +120,15 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
                         (int) (dimensions.height * pixelDensity)));
     }
 
+    @NonNull
     @Override
-    public @NonNull PixelDimensions getSizeInPixels() {
+    public PixelDimensions getSizeInPixels() {
         return mPixelDimensions;
     }
 
     @Override
     public void setSizeInPixels(@NonNull PixelDimensions dimensions) {
         mPixelDimensions = dimensions;
-    }
-
-    @Override
-    public @NonNull PerceivedResolutionResult getPerceivedResolution() {
-        // Get the Camera View with which to compute Perceived Resolution
-        CameraViewActivityPose cameraView =
-                PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
-        if (cameraView == null) {
-            return new PerceivedResolutionResult.InvalidCameraView();
-        }
-
-        // Compute the width, height, and distance to camera, of the panel in activity space units
-        float panelWidthInActivitySpace = getSize().width * getScale(Space.ACTIVITY).getX();
-        float panelHeightInActivitySpace = getSize().height * getScale(Space.ACTIVITY).getY();
-        Vector3 cameraPositionInActivitySpace = cameraView.getActivitySpacePose().getTranslation();
-        float PanelDistanceToCameraInActivitySpace =
-                Vector3.distance(
-                        cameraPositionInActivitySpace, getPose(Space.ACTIVITY).getTranslation());
-
-        return PerceivedResolutionUtils.getPerceivedResolutionOfPanel(
-                cameraView,
-                panelWidthInActivitySpace,
-                panelHeightInActivitySpace,
-                PanelDistanceToCameraInActivitySpace);
     }
 
     @Override

@@ -71,7 +71,7 @@ class ToggleButtonBehaviourTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -86,7 +86,7 @@ class ToggleButtonBehaviourTest {
                 onCheckedChange = {},
                 enabled = true,
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -101,7 +101,7 @@ class ToggleButtonBehaviourTest {
                 onCheckedChange = {},
                 enabled = false,
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -115,7 +115,7 @@ class ToggleButtonBehaviourTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -130,7 +130,7 @@ class ToggleButtonBehaviourTest {
                 onCheckedChange = {},
                 content = { TestImage() },
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -145,7 +145,7 @@ class ToggleButtonBehaviourTest {
                 onCheckedChange = {},
                 content = { TestImage() },
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -159,7 +159,7 @@ class ToggleButtonBehaviourTest {
                 checked = true,
                 onCheckedChange = {},
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -173,7 +173,7 @@ class ToggleButtonBehaviourTest {
                 checked = false,
                 onCheckedChange = {},
                 content = { TestImage() },
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -189,7 +189,7 @@ class ToggleButtonBehaviourTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -205,7 +205,7 @@ class ToggleButtonBehaviourTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = true,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -221,7 +221,7 @@ class ToggleButtonBehaviourTest {
                 checked = checked,
                 onCheckedChange = onCheckedChange,
                 enabled = false,
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -235,7 +235,7 @@ class ToggleButtonBehaviourTest {
                 content = { TestImage() },
                 checked = false,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -253,7 +253,7 @@ class ToggleButtonBehaviourTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -266,7 +266,7 @@ class ToggleButtonBehaviourTest {
                 checked = true,
                 enabled = true,
                 onCheckedChange = {},
-                modifier = Modifier.testTag(TEST_TAG),
+                modifier = Modifier.testTag(TEST_TAG)
             )
         }
 
@@ -278,7 +278,7 @@ class ToggleButtonBehaviourTest {
                 onCheckedChange = {},
                 enabled = true,
                 colors = ToggleButtonDefaults.toggleButtonColors(),
-                modifier = modifier,
+                modifier = modifier
             ) {}
         }
     }
@@ -294,7 +294,7 @@ class ToggleButtonBehaviourTest {
                 enabled = true,
                 colors = ToggleButtonDefaults.toggleButtonColors(),
                 shape = shape,
-                modifier = modifier,
+                modifier = modifier
             ) {}
         }
     }
@@ -304,7 +304,11 @@ class ToggleButtonBehaviourTest {
         val textContent = "abc"
 
         rule.setContentWithTheme {
-            ToggleButton(content = { Text(textContent) }, checked = true, onCheckedChange = {})
+            ToggleButton(
+                content = { Text(textContent) },
+                checked = true,
+                onCheckedChange = {},
+            )
         }
 
         rule.onNodeWithText(textContent).assertExists()
@@ -317,7 +321,11 @@ class ToggleButtonSizeTest {
     @Test
     fun gives_default_correct_tapsize() {
         rule.verifyTapSize(TapSize.Default) {
-            ToggleButton(content = { Text("abc") }, checked = true, onCheckedChange = {})
+            ToggleButton(
+                content = { Text("abc") },
+                checked = true,
+                onCheckedChange = {},
+            )
         }
     }
 
@@ -328,7 +336,7 @@ class ToggleButtonSizeTest {
                 content = { TestImage() },
                 checked = true,
                 onCheckedChange = {},
-                modifier = Modifier.size(ToggleButtonDefaults.SmallToggleButtonSize),
+                modifier = Modifier.size(ToggleButtonDefaults.SmallToggleButtonSize)
             )
         }
     }
@@ -344,7 +352,7 @@ class ToggleButtonColorTest {
             Status.Enabled,
             checked = true,
             { MaterialTheme.colors.primary },
-            { MaterialTheme.colors.onPrimary },
+            { MaterialTheme.colors.onPrimary }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -354,7 +362,7 @@ class ToggleButtonColorTest {
             Status.Enabled,
             checked = false,
             { MaterialTheme.colors.surface },
-            { MaterialTheme.colors.onSurface },
+            { MaterialTheme.colors.onSurface }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -375,7 +383,7 @@ class ToggleButtonColorTest {
             Status.Disabled,
             checked = false,
             { MaterialTheme.colors.surface },
-            { MaterialTheme.colors.onSurface },
+            { MaterialTheme.colors.onSurface }
         )
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
@@ -392,7 +400,7 @@ class ToggleButtonColorTest {
                     colors =
                         ToggleButtonDefaults.toggleButtonColors(checkedBackgroundColor = override),
                     content = {},
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -414,7 +422,7 @@ class ToggleButtonColorTest {
                     colors =
                         ToggleButtonDefaults.toggleButtonColors(checkedContentColor = override),
                     content = { actualContentColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -438,7 +446,7 @@ class ToggleButtonColorTest {
                             uncheckedBackgroundColor = override
                         ),
                     content = {},
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -460,7 +468,7 @@ class ToggleButtonColorTest {
                     colors =
                         ToggleButtonDefaults.toggleButtonColors(uncheckedContentColor = override),
                     content = { actualContentColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -484,7 +492,7 @@ class ToggleButtonColorTest {
                             disabledCheckedBackgroundColor = override
                         ),
                     content = {},
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -508,7 +516,7 @@ class ToggleButtonColorTest {
                             disabledCheckedContentColor = override
                         ),
                     content = { actualContentColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -532,7 +540,7 @@ class ToggleButtonColorTest {
                             disabledUncheckedBackgroundColor = override
                         ),
                     content = {},
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -556,7 +564,7 @@ class ToggleButtonColorTest {
                             disabledUncheckedContentColor = override
                         ),
                     content = { actualContentColor = LocalContentColor.current },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -590,7 +598,7 @@ class ToggleButtonColorTest {
                         actualContent = LocalContentColor.current
                         actualDisabledAlpha = ContentAlpha.disabled
                     },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -616,7 +624,7 @@ class ToggleButtonColorTest {
                         expectedBackground
                             .copy(alpha = actualDisabledAlpha)
                             .compositeOver(testBackgroundColor),
-                        50.0f,
+                        50.0f
                     )
             }
         }
@@ -636,7 +644,7 @@ class ToggleButtonRoleTest {
                     onCheckedChange = {},
                     enabled = false,
                     content = { TestImage() },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -656,7 +664,7 @@ class ToggleButtonRoleTest {
                     role = role,
                     enabled = false,
                     content = { TestImage() },
-                    modifier = Modifier.testTag(TEST_TAG),
+                    modifier = Modifier.testTag(TEST_TAG)
                 )
             }
         }
@@ -673,7 +681,7 @@ class ToggleButtonRoleTest {
 
 private fun ComposeContentTestRule.verifyTapSize(
     expected: TapSize,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     setContentWithThemeForSizeAssertions { content() }
         .assertHeightIsEqualTo(expected.size)
@@ -684,7 +692,7 @@ private fun ComposeContentTestRule.verifyTapSize(
 private fun ComposeContentTestRule.isCircular(
     layoutDirection: LayoutDirection,
     padding: Dp = 0.dp,
-    content: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
     var background = Color.Transparent
     var surface = Color.Transparent
@@ -704,14 +712,14 @@ private fun ComposeContentTestRule.isCircular(
             horizontalPadding = padding,
             verticalPadding = padding,
             backgroundColor = surface,
-            shapeColor = background,
+            shapeColor = background
         )
 }
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 private fun ComposeContentTestRule.isShape(
     expectedShape: Shape,
-    content: @Composable (Modifier) -> Unit,
+    content: @Composable (Modifier) -> Unit
 ) {
     var background = Color.Transparent
     var buttonColor = Color.Transparent
@@ -733,6 +741,6 @@ private fun ComposeContentTestRule.isShape(
             verticalPadding = 0.dp,
             shapeColor = buttonColor,
             backgroundColor = background,
-            shape = expectedShape,
+            shape = expectedShape
         )
 }

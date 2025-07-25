@@ -23,7 +23,6 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
-import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BloodGlucoseRecord
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.BodyTemperatureMeasurementLocation
@@ -65,7 +64,6 @@ import androidx.health.connect.client.records.SexualActivityRecord
 import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
-import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 
 internal val SDK_TO_PLATFORM_CERVICAL_MUCUS_APPEARANCE: Map<Int, Int> =
@@ -76,7 +74,8 @@ internal val SDK_TO_PLATFORM_CERVICAL_MUCUS_APPEARANCE: Map<Int, Int> =
         CervicalMucusRecord.APPEARANCE_STICKY to PlatformCervicalMucusAppearance.APPEARANCE_STICKY,
         CervicalMucusRecord.APPEARANCE_CREAMY to PlatformCervicalMucusAppearance.APPEARANCE_CREAMY,
         CervicalMucusRecord.APPEARANCE_WATERY to PlatformCervicalMucusAppearance.APPEARANCE_WATERY,
-        CervicalMucusRecord.APPEARANCE_UNUSUAL to PlatformCervicalMucusAppearance.APPEARANCE_UNUSUAL,
+        CervicalMucusRecord.APPEARANCE_UNUSUAL to
+            PlatformCervicalMucusAppearance.APPEARANCE_UNUSUAL,
     )
 
 internal val PLATFORM_TO_SDK_CERVICAL_MUCUS_APPEARANCE =
@@ -415,7 +414,7 @@ internal val SDK_TO_PLATFORM_SLEEP_STAGE_TYPE: Map<Int, Int> =
         SleepSessionRecord.STAGE_TYPE_LIGHT to PlatformSleepStageType.STAGE_TYPE_SLEEPING_LIGHT,
         SleepSessionRecord.STAGE_TYPE_DEEP to PlatformSleepStageType.STAGE_TYPE_SLEEPING_DEEP,
         SleepSessionRecord.STAGE_TYPE_REM to PlatformSleepStageType.STAGE_TYPE_SLEEPING_REM,
-        SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED to PlatformSleepStageType.STAGE_TYPE_AWAKE_IN_BED,
+        SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED to PlatformSleepStageType.STAGE_TYPE_AWAKE_IN_BED
     )
 
 internal val PLATFORM_TO_SDK_SLEEP_STAGE_TYPE = SDK_TO_PLATFORM_SLEEP_STAGE_TYPE.reversed()
@@ -561,22 +560,6 @@ internal val SDK_TO_PLATFORM_EXERCISE_SEGMENT_TYPE: Map<Int, Int> =
 internal val PLATFORM_TO_SDK_EXERCISE_SEGMENT_TYPE =
     SDK_TO_PLATFORM_EXERCISE_SEGMENT_TYPE.reversed()
 
-internal val SDK_TO_PLATFORM_ACTIVITY_INTENSITY_TYPE: Map<Int, Int> =
-    mapOf(
-        ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE to
-            PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE,
-        ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_VIGOROUS to
-            PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_VIGOROUS,
-    )
-
-internal fun Int.toPlatformActivityIntensityType(): Int {
-    return SDK_TO_PLATFORM_ACTIVITY_INTENSITY_TYPE[this]
-        ?: PlatformActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE
-}
-
-internal val PLATFORM_TO_SDK_ACTIVITY_INTENSITY_TYPE: Map<Int, Int> =
-    SDK_TO_PLATFORM_ACTIVITY_INTENSITY_TYPE.reversed()
-
 @OptIn(ExperimentalMindfulnessSessionApi::class)
 internal val SDK_TO_PLATFORM_MINDFULNESS_SESSION_TYPE: Map<Int, Int> =
     mapOf(
@@ -607,7 +590,7 @@ internal val SDK_TO_PLATFORM_RECORDING_METHOD: Map<Int, Int> =
             PlatformMetadata.RECORDING_METHOD_ACTIVELY_RECORDED,
         Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED to
             PlatformMetadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
-        Metadata.RECORDING_METHOD_MANUAL_ENTRY to PlatformMetadata.RECORDING_METHOD_MANUAL_ENTRY,
+        Metadata.RECORDING_METHOD_MANUAL_ENTRY to PlatformMetadata.RECORDING_METHOD_MANUAL_ENTRY
     )
 
 @OptIn(ExperimentalPersonalHealthRecordApi::class)
@@ -630,7 +613,7 @@ internal val SDK_TO_PLATFORM_FHIR_RESOURCE_TYPE: Map<Int, Int> =
             PlatformFhirResource.FHIR_RESOURCE_TYPE_PRACTITIONER_ROLE,
         FHIR_RESOURCE_TYPE_ENCOUNTER to PlatformFhirResource.FHIR_RESOURCE_TYPE_ENCOUNTER,
         FHIR_RESOURCE_TYPE_LOCATION to PlatformFhirResource.FHIR_RESOURCE_TYPE_LOCATION,
-        FHIR_RESOURCE_TYPE_ORGANIZATION to PlatformFhirResource.FHIR_RESOURCE_TYPE_ORGANIZATION,
+        FHIR_RESOURCE_TYPE_ORGANIZATION to PlatformFhirResource.FHIR_RESOURCE_TYPE_ORGANIZATION
     )
 
 internal val PLATFORM_TO_SDK_FHIR_RESOURCE_TYPE: Map<Int, Int> =
@@ -659,23 +642,8 @@ internal val SDK_TO_PLATFORM_MEDICAL_RESOURCE_TYPE: Map<Int, Int> =
         MEDICAL_RESOURCE_TYPE_VACCINES to PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VACCINES,
         MEDICAL_RESOURCE_TYPE_VISITS to PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VISITS,
         MEDICAL_RESOURCE_TYPE_VITAL_SIGNS to
-            PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VITAL_SIGNS,
+            PlatformMedicalResource.MEDICAL_RESOURCE_TYPE_VITAL_SIGNS
     )
-
-internal val SDK_TO_PLATFORM_DEVICE_TYPE: Map<Int, Int> =
-    mapOf(
-        Device.TYPE_UNKNOWN to PlatformDevice.DEVICE_TYPE_UNKNOWN,
-        Device.TYPE_WATCH to PlatformDevice.DEVICE_TYPE_WATCH,
-        Device.TYPE_PHONE to PlatformDevice.DEVICE_TYPE_PHONE,
-        Device.TYPE_SCALE to PlatformDevice.DEVICE_TYPE_SCALE,
-        Device.TYPE_RING to PlatformDevice.DEVICE_TYPE_RING,
-        Device.TYPE_HEAD_MOUNTED to PlatformDevice.DEVICE_TYPE_HEAD_MOUNTED,
-        Device.TYPE_FITNESS_BAND to PlatformDevice.DEVICE_TYPE_FITNESS_BAND,
-        Device.TYPE_CHEST_STRAP to PlatformDevice.DEVICE_TYPE_CHEST_STRAP,
-        Device.TYPE_SMART_DISPLAY to PlatformDevice.DEVICE_TYPE_SMART_DISPLAY,
-    )
-
-internal val PLATFORM_TO_SDK_DEVICE_TYPE: Map<Int, Int> = SDK_TO_PLATFORM_DEVICE_TYPE.reversed()
 
 internal val PLATFORM_TO_SDK_MEDICAL_RESOURCE_TYPE: Map<Int, Int> =
     SDK_TO_PLATFORM_MEDICAL_RESOURCE_TYPE.reversed()
@@ -813,11 +781,6 @@ internal fun Int.toSdkMenstruationFlow(): Int {
     return PLATFORM_TO_SDK_MENSTRUATION_FLOW_TYPE[this] ?: MenstruationFlowRecord.FLOW_UNKNOWN
 }
 
-internal fun Int.toSdkActivityIntensityType(): Int {
-    return PLATFORM_TO_SDK_ACTIVITY_INTENSITY_TYPE[this]
-        ?: ActivityIntensityRecord.ACTIVITY_INTENSITY_TYPE_MODERATE
-}
-
 @OptIn(ExperimentalMindfulnessSessionApi::class)
 internal fun Int.toSdkMindfulnessSessionType(): Int {
     return PLATFORM_TO_SDK_MINDFULNESS_SESSION_TYPE[this]
@@ -885,12 +848,4 @@ internal fun Int.toSdkFhirResourceType(): Int {
 internal fun Int.toSdkMedicalResourceType(): Int {
     return PLATFORM_TO_SDK_MEDICAL_RESOURCE_TYPE[this]
         ?: throw IllegalArgumentException("Platform => SDK: Invalid medical resource type.")
-}
-
-internal fun Int.toSdkDevice(): Int {
-    return PLATFORM_TO_SDK_DEVICE_TYPE[this] ?: Device.TYPE_UNKNOWN
-}
-
-internal fun Int.toPlatformDevice(): Int {
-    return SDK_TO_PLATFORM_DEVICE_TYPE[this] ?: PlatformDevice.DEVICE_TYPE_UNKNOWN
 }

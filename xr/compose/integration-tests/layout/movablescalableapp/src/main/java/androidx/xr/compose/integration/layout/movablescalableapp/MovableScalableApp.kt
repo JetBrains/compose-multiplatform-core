@@ -69,7 +69,7 @@ class MovableScalableApp : ComponentActivity() {
                     .movable(
                         enabled = true,
                         scaleWithDistance = true,
-                        onMove = { poseChangeEvent ->
+                        onPoseChange = { poseChangeEvent ->
                             with(density) {
                                 zOffset = poseChangeEvent.pose.translation.z.toDp()
                                 heightOfScalablePanel = poseChangeEvent.size.height.toDp()

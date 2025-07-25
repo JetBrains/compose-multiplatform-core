@@ -29,10 +29,8 @@ import androidx.work.impl.utils.taskexecutor.TaskExecutor
  * @param T the constraint data type observed by this tracker
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class BroadcastReceiverConstraintTracker<T>(
-    context: Context,
-    taskExecutor: TaskExecutor,
-) : ConstraintTracker<T>(context, taskExecutor) {
+abstract class BroadcastReceiverConstraintTracker<T>(context: Context, taskExecutor: TaskExecutor) :
+    ConstraintTracker<T>(context, taskExecutor) {
     private val broadcastReceiver: BroadcastReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -46,10 +44,10 @@ public abstract class BroadcastReceiverConstraintTracker<T>(
      *
      * @param intent The [Intent] being received.
      */
-    public abstract fun onBroadcastReceive(intent: Intent)
+    abstract fun onBroadcastReceive(intent: Intent)
 
     /** @return The [IntentFilter] associated with this tracker. */
-    public abstract val intentFilter: IntentFilter
+    abstract val intentFilter: IntentFilter
 
     override fun startTracking() {
         Logger.get().debug(TAG, "${javaClass.simpleName}: registering receiver")

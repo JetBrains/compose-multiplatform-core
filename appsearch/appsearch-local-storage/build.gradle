@@ -92,8 +92,7 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.dexmakerMockito)
+    androidTestImplementation(libs.mockitoAndroid)
     androidTestImplementation(libs.junit)
 }
 

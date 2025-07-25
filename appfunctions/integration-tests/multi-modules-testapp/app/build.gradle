@@ -27,7 +27,6 @@ android {
         minSdk = 33
         ksp {
             arg("appfunctions:aggregateAppFunctions", "true")
-            arg("appfunctions:generateMetadataFromSchema", "true")
         }
     }
     buildTypes {
@@ -44,8 +43,9 @@ android {
 dependencies {
     androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(project(":appfunctions:appfunctions"))
-    androidTestImplementation(project(":appfunctions:appfunctions-service"))
+    androidTestImplementation(project(":appfunctions:appfunctions-common"))
+    androidTestImplementation(project(":appfunctions:appfunctions-runtime"))
+    androidTestImplementation(project(":appfunctions:appfunctions-schemas"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
@@ -53,8 +53,8 @@ dependencies {
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.kotlinTest)
-    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-rc01")
-    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
+    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-beta01")
+    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-beta01")
     androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
     androidTestImplementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
    kspAndroidTest(project(":appfunctions:appfunctions-compiler"))

@@ -41,7 +41,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
@@ -70,12 +69,6 @@ abstract class StableAidlCompile : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val importDirs: ListProperty<Directory>
-
-    /** Directory containing shadows of framework AIDL sources available as imports. */
-    @get:Optional
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val shadowFrameworkDir: DirectoryProperty
 
     /**
      * List of file system locations containing AIDL sources available as imports from dependencies.
@@ -134,8 +127,7 @@ abstract class StableAidlCompile : DefaultTask() {
             FileUtils.cleanOutputDir(parcelableDir.asFile)
         }
 
-        val projectImportList =
-            sourceDirs.get().plus(importDirs.get()).plusNotNull(shadowFrameworkDir.orNull)
+        val fullImportList = sourceDirs.get() + importDirs.get()
         val sourceDirsAsFiles = sourceDirs.get().map { it.asFile }
 
         // When using AIDL from build tools version 33 and later, pass the variant's minimum SDK
@@ -156,8 +148,8 @@ abstract class StableAidlCompile : DefaultTask() {
             parcelableDir?.asFile,
             extraArgsWithSdk,
             sourceDirsAsFiles,
-            projectImportList,
-            dependencyImportDirs.get().map { it.asFile },
+            fullImportList,
+            dependencyImportDirs.get().map { it.asFile }
         )
     }
 
@@ -216,7 +208,7 @@ abstract class StableAidlCompile : DefaultTask() {
                     parameters.packagedOutputDir.orNull?.asFile,
                     depFileProcessor,
                     request.root.toPath(),
-                    request.file.toPath(),
+                    request.file.toPath()
                 )
             }
         }
@@ -233,7 +225,7 @@ abstract class StableAidlCompile : DefaultTask() {
             extraArgs: List<String>,
             sourceFolders: Collection<File>,
             projectImportList: Collection<Directory>,
-            dependencyImportList: Collection<File>,
+            dependencyImportList: Collection<File>
         ) {
             for (dir in sourceFolders) {
                 workerExecutor.noIsolation().submit(StableAidlCompileRunnable::class.java) {

@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.drawscope.DefaultDensity
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.draw
+import androidx.compose.ui.graphics.layer.LayerManager.Companion.isRobolectric
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -53,7 +54,11 @@ import androidx.compose.ui.util.fastRoundToInt
 import org.jetbrains.annotations.TestOnly
 
 @Suppress("NotCloseable")
-actual class GraphicsLayer internal constructor(internal val impl: GraphicsLayerImpl) {
+actual class GraphicsLayer
+internal constructor(
+    internal val impl: GraphicsLayerImpl,
+    private val layerManager: LayerManager?
+) {
     private var density = DefaultDensity
     private var layoutDirection = LayoutDirection.Ltr
     private var drawBlock: DrawScope.() -> Unit = {}
@@ -417,7 +422,7 @@ actual class GraphicsLayer internal constructor(internal val impl: GraphicsLayer
         density: Density,
         layoutDirection: LayoutDirection,
         size: IntSize,
-        block: DrawScope.() -> Unit,
+        block: DrawScope.() -> Unit
     ) {
         this.size = size
         this.density = density
@@ -597,7 +602,7 @@ actual class GraphicsLayer internal constructor(internal val impl: GraphicsLayer
                         updatePathOutline(tmpPath)?.apply { alpha = this@GraphicsLayer.alpha }
                     impl.setOutline(
                         androidOutline,
-                        IntSize(bounds.width().fastRoundToInt(), bounds.height().fastRoundToInt()),
+                        IntSize(bounds.width().fastRoundToInt(), bounds.height().fastRoundToInt())
                     )
                     if (usePathForClip && clip) {
                         impl.clip = false
@@ -688,7 +693,11 @@ actual class GraphicsLayer internal constructor(internal val impl: GraphicsLayer
 
     private fun discardContentIfReleasedAndHaveNoParentLayerUsages() {
         if (isReleased && parentLayerUsages == 0) {
-            discardDisplayList()
+            if (layerManager != null) {
+                layerManager.release(this)
+            } else {
+                discardDisplayList()
+            }
         }
     }
 
@@ -869,7 +878,6 @@ actual class GraphicsLayer internal constructor(internal val impl: GraphicsLayer
     actual suspend fun toImageBitmap(): ImageBitmap = SnapshotImpl.toBitmap(this).asImageBitmap()
 
     companion object {
-        private val isRobolectric = Build.FINGERPRINT.lowercase() == "robolectric"
 
         // See b/340578758, fallback to software rendering for Robolectric tests
         private val SnapshotImpl =
@@ -983,7 +991,7 @@ internal interface GraphicsLayerImpl {
         density: Density,
         layoutDirection: LayoutDirection,
         layer: GraphicsLayer,
-        block: DrawScope.() -> Unit,
+        block: DrawScope.() -> Unit
     )
 
     val hasDisplayList: Boolean

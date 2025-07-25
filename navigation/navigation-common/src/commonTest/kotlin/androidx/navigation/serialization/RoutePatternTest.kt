@@ -16,13 +16,12 @@
 
 package androidx.navigation.serialization
 
-import androidx.kruth.assertThat
+import android.os.Bundle
 import androidx.navigation.CollectionNavType
 import androidx.navigation.NavType
-import androidx.savedstate.SavedState
+import com.google.common.truth.Truth.assertThat
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
-import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
@@ -34,9 +33,13 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 const val PATH_SERIAL_NAME = "www.test.com"
 
+@RunWith(JUnit4::class)
 class RoutePatternTest {
 
     @Test
@@ -211,9 +214,9 @@ class RoutePatternTest {
                 override val name: String
                     get() = "CustomType"
 
-                override fun put(bundle: SavedState, key: String, value: CustomType) {}
+                override fun put(bundle: Bundle, key: String, value: CustomType) {}
 
-                override fun get(bundle: SavedState, key: String): CustomType? = null
+                override fun get(bundle: Bundle, key: String): CustomType? = null
 
                 override fun parseValue(value: String): CustomType = CustomType()
 
@@ -237,9 +240,9 @@ class RoutePatternTest {
                 override val name: String
                     get() = "CustomType"
 
-                override fun put(bundle: SavedState, key: String, value: CustomType) {}
+                override fun put(bundle: Bundle, key: String, value: CustomType) {}
 
-                override fun get(bundle: SavedState, key: String): CustomType? = null
+                override fun get(bundle: Bundle, key: String): CustomType? = null
 
                 override fun parseValue(value: String): CustomType = CustomType(NestedCustomType())
 
@@ -261,9 +264,9 @@ class RoutePatternTest {
                 override val name: String
                     get() = "CustomType"
 
-                override fun put(bundle: SavedState, key: String, value: CustomSerializerClass) {}
+                override fun put(bundle: Bundle, key: String, value: CustomSerializerClass) {}
 
-                override fun get(bundle: SavedState, key: String): CustomSerializerClass? = null
+                override fun get(bundle: Bundle, key: String): CustomSerializerClass? = null
 
                 override fun parseValue(value: String): CustomSerializerClass =
                     CustomSerializerClass(1L)
@@ -288,9 +291,9 @@ class RoutePatternTest {
                 override val name: String
                     get() = "CustomType"
 
-                override fun put(bundle: SavedState, key: String, value: CustomType<TypeParam>) {}
+                override fun put(bundle: Bundle, key: String, value: CustomType<TypeParam>) {}
 
-                override fun get(bundle: SavedState, key: String): CustomType<TypeParam>? = null
+                override fun get(bundle: Bundle, key: String): CustomType<TypeParam>? = null
 
                 override fun parseValue(value: String): CustomType<TypeParam> = CustomType()
 
@@ -316,14 +319,14 @@ class RoutePatternTest {
                     get() = "CustomType"
 
                 override fun put(
-                    bundle: SavedState,
+                    bundle: Bundle,
                     key: String,
-                    value: CustomType<TypeParam<TypeParamNested>>,
+                    value: CustomType<TypeParam<TypeParamNested>>
                 ) {}
 
                 override fun get(
-                    bundle: SavedState,
-                    key: String,
+                    bundle: Bundle,
+                    key: String
                 ): CustomType<TypeParam<TypeParamNested>>? = null
 
                 override fun parseValue(value: String): CustomType<TypeParam<TypeParamNested>> =
@@ -375,9 +378,9 @@ class RoutePatternTest {
                 override val name: String
                     get() = "CustomType"
 
-                override fun put(bundle: SavedState, key: String, value: CustomType) {}
+                override fun put(bundle: Bundle, key: String, value: CustomType) {}
 
-                override fun get(bundle: SavedState, key: String): CustomType? = null
+                override fun get(bundle: Bundle, key: String): CustomType? = null
 
                 override fun parseValue(value: String): CustomType = CustomType()
 
@@ -468,13 +471,13 @@ class RoutePatternTest {
 
         val type =
             object : CollectionNavType<List<CustomType>>(false) {
-                override fun put(bundle: SavedState, key: String, value: List<CustomType>) {}
+                override fun put(bundle: Bundle, key: String, value: List<CustomType>) {}
 
                 override fun serializeAsValues(value: List<CustomType>): List<String> = emptyList()
 
                 override fun emptyCollection(): List<CustomType> = emptyList()
 
-                override fun get(bundle: SavedState, key: String): List<CustomType>? = null
+                override fun get(bundle: Bundle, key: String): List<CustomType>? = null
 
                 override fun parseValue(value: String): List<CustomType> = listOf()
 
@@ -488,7 +491,7 @@ class RoutePatternTest {
 
 private fun <T> assertThatRoutePatternFrom(
     serializer: KSerializer<T>,
-    map: Map<KType, NavType<*>> = emptyMap(),
+    map: Map<KType, NavType<*>> = emptyMap()
 ) = serializer.generateRoutePattern(map)
 
 private fun String.isEqualTo(other: String) {
@@ -533,8 +536,7 @@ internal sealed class SealedClass {
 @Serializable(with = CustomSerializer::class)
 internal open class CustomSerializerClass(val longArg: Long)
 
-//the object class is required here because of https://youtrack.jetbrains.com/issue/KT-71530
-internal object CustomSerializer : KSerializer<CustomSerializerClass> {
+internal class CustomSerializer : KSerializer<CustomSerializerClass> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("Date", PrimitiveKind.LONG)
 

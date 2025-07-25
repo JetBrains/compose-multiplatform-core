@@ -16,7 +16,6 @@
 
 package androidx.ink.geometry
 
-import androidx.ink.nativeloader.UsedByNative
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,14 +23,6 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class MeshFormatTest {
-
-    private fun DefaultMeshFormat() = MeshFormat.wrapNative(nativeDefaultMeshFormat())
-
-    private fun FullMeshFormat() = MeshFormat.wrapNative(nativeFullMeshFormat())
-
-    @UsedByNative private external fun nativeDefaultMeshFormat(): Long
-
-    @UsedByNative private external fun nativeFullMeshFormat(): Long
 
     @Test
     fun isPackedEquivalent_withSameInstance_returnsTrue() {

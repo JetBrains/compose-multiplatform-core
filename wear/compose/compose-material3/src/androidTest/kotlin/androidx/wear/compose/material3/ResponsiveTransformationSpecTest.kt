@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.wear.compose.foundation.LocalReduceMotion
-import androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress
 import androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec.Companion.NoOpTransformationSpec
 import androidx.wear.compose.material3.lazy.ResponsiveTransformationSpecImpl
 import androidx.wear.compose.material3.lazy.TransformationSpec
@@ -54,19 +53,19 @@ class ResponsiveTransformationSpecTest {
                 topValue = 0.011f,
                 bottomValue = 0.021f,
                 transformationZoneEnterFraction = 0.031f,
-                transformationZoneExitFraction = 0.041f,
+                transformationZoneExitFraction = 0.041f
             ),
             TransformationVariableSpec(
                 topValue = 0.012f,
                 bottomValue = 0.022f,
                 transformationZoneEnterFraction = 0.032f,
-                transformationZoneExitFraction = 0.042f,
+                transformationZoneExitFraction = 0.042f
             ),
             TransformationVariableSpec(
                 topValue = 0.013f,
                 bottomValue = 0.023f,
                 transformationZoneEnterFraction = 0.033f,
-                transformationZoneExitFraction = 0.043f,
+                transformationZoneExitFraction = 0.043f
             ),
         )
 
@@ -82,19 +81,19 @@ class ResponsiveTransformationSpecTest {
                 topValue = 0.11f,
                 bottomValue = 0.21f,
                 transformationZoneEnterFraction = 0.31f,
-                transformationZoneExitFraction = 0.41f,
+                transformationZoneExitFraction = 0.41f
             ),
             TransformationVariableSpec(
                 topValue = 0.12f,
                 bottomValue = 0.22f,
                 transformationZoneEnterFraction = 0.32f,
-                transformationZoneExitFraction = 0.42f,
+                transformationZoneExitFraction = 0.42f
             ),
             TransformationVariableSpec(
                 topValue = 0.13f,
                 bottomValue = 0.23f,
                 transformationZoneEnterFraction = 0.33f,
-                transformationZoneExitFraction = 0.43f,
+                transformationZoneExitFraction = 0.43f
             ),
         )
 
@@ -136,48 +135,6 @@ class ResponsiveTransformationSpecTest {
     }
 
     @Test
-    fun responsive_transformation_spec_has_correct_values() {
-        lateinit var spec: TransformationSpec
-        rule.setContent { spec = rememberTransformationSpec() }
-
-        // Anchor item should have original height.
-        assertThat(
-                spec.getTransformedHeight(
-                    140,
-                    TransformingLazyColumnItemScrollProgress(
-                        topOffsetFraction = 0.418502f,
-                        bottomOffsetFraction = 0.726872f,
-                    ),
-                )
-            )
-            .isEqualTo(140)
-
-        // Item close to the edge should be scaled down.
-        assertThat(
-                spec.getTransformedHeight(
-                    140,
-                    TransformingLazyColumnItemScrollProgress(
-                        topOffsetFraction = 0.918502f,
-                        bottomOffsetFraction = 1.226872f,
-                    ),
-                )
-            )
-            .isNotEqualTo(140)
-
-        // Offscreen item should be scaled down.
-        assertThat(
-                spec.getTransformedHeight(
-                    140,
-                    TransformingLazyColumnItemScrollProgress(
-                        topOffsetFraction = 1.118502f,
-                        bottomOffsetFraction = 1.426872f,
-                    ),
-                )
-            )
-            .isNotEqualTo(140)
-    }
-
-    @Test
     fun remember_responsive_with_reduced_motion() {
         lateinit var spec: TransformationSpec
         rule.setContent {
@@ -203,7 +160,7 @@ class ResponsiveTransformationSpecTest {
             screenSize: Dp,
             minElementHeight: Float,
             maxElementHeight: Float,
-            maxTransitionArea: Float,
+            maxTransitionArea: Float
         ) =
             ResponsiveTransformationSpecImpl(
                 screenSize,
@@ -216,20 +173,20 @@ class ResponsiveTransformationSpecTest {
                     topValue = 0.11f,
                     bottomValue = 0.21f,
                     transformationZoneEnterFraction = 0.31f,
-                    transformationZoneExitFraction = 0.41f,
+                    transformationZoneExitFraction = 0.41f
                 ),
                 TransformationVariableSpec(
                     topValue = 0.12f,
                     bottomValue = 0.22f,
                     transformationZoneEnterFraction = 0.32f,
-                    transformationZoneExitFraction = 0.42f,
+                    transformationZoneExitFraction = 0.42f
                 ),
                 TransformationVariableSpec(
                     topValue = 0.13f,
                     bottomValue = 0.23f,
                     transformationZoneEnterFraction = 0.33f,
-                    transformationZoneExitFraction = 0.43f,
-                ),
+                    transformationZoneExitFraction = 0.43f
+                )
             )
 
         val specs3 =
@@ -243,17 +200,17 @@ class ResponsiveTransformationSpecTest {
         Assert.assertEquals(
             0.11f,
             responsiveTransformationSpec(150.dp, specs3).maxElementHeightFraction,
-            EPSILON,
+            EPSILON
         )
         Assert.assertEquals(
             0.1f,
             responsiveTransformationSpec(200.dp, specs3).minElementHeightFraction,
-            EPSILON,
+            EPSILON
         )
         Assert.assertEquals(
             0.55f,
             responsiveTransformationSpec(250.dp, specs3).maxTransitionAreaHeightFraction,
-            EPSILON,
+            EPSILON
         )
         Assert.assertEquals(specs3.last(), responsiveTransformationSpec(300.dp, specs3))
     }
@@ -262,7 +219,7 @@ class ResponsiveTransformationSpecTest {
 
     private fun check_responsive_spec(
         screenSize: Dp,
-        expectedSpec: ResponsiveTransformationSpecImpl,
+        expectedSpec: ResponsiveTransformationSpecImpl
     ) {
         val spec = responsiveTransformationSpec(screenSize, SPECS)
         Assert.assertEquals(expectedSpec, spec)

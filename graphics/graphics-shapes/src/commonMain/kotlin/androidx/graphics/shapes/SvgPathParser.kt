@@ -190,14 +190,28 @@ class SvgPathParser private constructor(startPosition: Point) {
         }
 
         when (command.letter) {
-            'c' -> addCurveWith(command.xy(0, 1), command.xy(2, 3), command.xy(4, 5))
+            'c' ->
+                addCurveWith(
+                    command.xy(0, 1),
+                    command.xy(2, 3),
+                    command.xy(4, 5),
+                )
             's' -> {
                 val c0 =
                     if (previousCommand.isBezierCommand) reflectedPreviousControlPoint else position
 
-                addCurveWith(c0, command.xy(0, 1), command.xy(2, 3))
+                addCurveWith(
+                    c0,
+                    command.xy(0, 1),
+                    command.xy(2, 3),
+                )
             }
-            'q' -> addCurveWith(command.xy(0, 1), command.xy(0, 1), command.xy(2, 3))
+            'q' ->
+                addCurveWith(
+                    command.xy(0, 1),
+                    command.xy(0, 1),
+                    command.xy(2, 3),
+                )
             't' -> {
                 val c0 =
                     if (previousCommand.isQuadraticCurveCommand) reflectedPreviousControlPoint
@@ -237,7 +251,7 @@ class SvgPathParser private constructor(startPosition: Point) {
         val isRelative: Boolean,
         val parameters: FloatArray,
         val paramsCount: Int,
-        val start: Point = Point(0f, 0f),
+        val start: Point = Point(0f, 0f)
     ) {
         companion object Factory {
             private val commandToParamsCount =
@@ -268,7 +282,7 @@ class SvgPathParser private constructor(startPosition: Point) {
                     isRelative,
                     parameters,
                     commandToParamsCount[letter.lowercaseChar()] ?: 0,
-                    if (isRelative) currentPosition else Point(0f, 0f),
+                    if (isRelative) currentPosition else Point(0f, 0f)
                 )
             }
         }
@@ -303,7 +317,7 @@ class SvgPathParser private constructor(startPosition: Point) {
                 isRelative,
                 parameters.sliceArray(index until index + paramsCount),
                 paramsCount,
-                currentPosition,
+                currentPosition
             )
 
         fun asLine(newStart: Point): Command {
@@ -353,7 +367,7 @@ private class ArcConverter {
             b: Float,
             theta: Float,
             isMoreThanHalf: Boolean,
-            isPositiveArc: Boolean,
+            isPositiveArc: Boolean
         ): List<Cubic> {
             /* Convert rotation angle from degrees to radians */
             val thetaD: Double = theta.toDouble() / 180 * PI
@@ -390,7 +404,7 @@ private class ArcConverter {
                     b * adjust,
                     theta,
                     isMoreThanHalf,
-                    isPositiveArc,
+                    isPositiveArc
                 )
             }
             val s = sqrt(disc)
@@ -434,7 +448,7 @@ private class ArcConverter {
                 y0,
                 thetaD.toFloat(),
                 eta0.toFloat(),
-                sweep.toFloat(),
+                sweep.toFloat()
             )
         }
 
@@ -460,7 +474,7 @@ private class ArcConverter {
             e1y: Float,
             theta: Float,
             start: Float,
-            sweep: Float,
+            sweep: Float
         ): List<Cubic> {
             val cubics = mutableListOf<Cubic>()
 

@@ -129,7 +129,7 @@ private constructor(
             if (method.isSuspend) {
                 addParameter(
                     "transactionCallback",
-                    transactionCallback(wrapWithListIfNeeded(method.returnType)),
+                    transactionCallback(wrapWithListIfNeeded(method.returnType))
                 )
             }
         }
@@ -173,7 +173,7 @@ private constructor(
             addMethod("onFailure") {
                 addParameter(
                     "throwableParcel",
-                    AidlTypeSpec(throwableParcelType(), kind = AidlTypeKind.PARCELABLE),
+                    AidlTypeSpec(throwableParcelType(), kind = AidlTypeKind.PARCELABLE)
                 )
             }
         }
@@ -191,16 +191,16 @@ private constructor(
                 AidlTypeSpec(
                     parcelableStackFrameType(),
                     isList = true,
-                    kind = AidlTypeKind.PARCELABLE,
-                ),
+                    kind = AidlTypeKind.PARCELABLE
+                )
             )
             addProperty(
                 "cause",
-                AidlTypeSpec(throwableParcelType(), isList = true, kind = AidlTypeKind.PARCELABLE),
+                AidlTypeSpec(throwableParcelType(), isList = true, kind = AidlTypeKind.PARCELABLE)
             )
             addProperty(
                 "suppressedExceptions",
-                AidlTypeSpec(throwableParcelType(), isList = true, kind = AidlTypeKind.PARCELABLE),
+                AidlTypeSpec(throwableParcelType(), isList = true, kind = AidlTypeKind.PARCELABLE)
             )
             addProperty("isCancellationException", primitive("boolean"))
         }
@@ -231,7 +231,7 @@ private constructor(
         Paths.get(
                 rootPath.toString(),
                 *aidlSource.type.packageName.split(".").toTypedArray(),
-                aidlSource.type.simpleName + ".aidl",
+                aidlSource.type.simpleName + ".aidl"
             )
             .toFile()
 
@@ -257,7 +257,7 @@ private constructor(
     private fun transactionCallback(type: Type) =
         AidlTypeSpec(
             Type(api.getOnlyService().type.packageName, type.transactionCallbackName()),
-            kind = AidlTypeKind.INTERFACE,
+            kind = AidlTypeKind.INTERFACE
         )
 
     private fun getAidlTypeDeclaration(rawType: Type): AidlTypeSpec {
@@ -289,7 +289,6 @@ private constructor(
             List::class.qualifiedName -> getAidlTypeDeclaration(type.typeParameters[0]).listSpec()
             Types.bundle.qualifiedName -> bundleAidlType
             Types.sdkActivityLauncher.qualifiedName -> bundleAidlType
-            Types.sandboxedUiAdapter.qualifiedName -> bundleAidlType
             else ->
                 throw IllegalArgumentException("Unsupported type conversion ${type.qualifiedName}")
         }
@@ -311,7 +310,7 @@ fun Type.transactionCallbackName() =
 internal fun AnnotatedValue.aidlType() =
     AidlTypeSpec(
         Type(type.packageName, "Parcelable${type.simpleName}"),
-        kind = AidlTypeKind.PARCELABLE,
+        kind = AidlTypeKind.PARCELABLE
     )
 
 internal fun AnnotatedInterface.aidlType() =

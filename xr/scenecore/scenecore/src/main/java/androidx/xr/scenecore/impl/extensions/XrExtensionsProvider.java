@@ -19,11 +19,10 @@ package androidx.xr.scenecore.impl.extensions;
 import android.annotation.SuppressLint;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 
 import com.android.extensions.xr.XrExtensions;
-
-import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,7 +38,8 @@ public class XrExtensionsProvider {
      * Returns the OEM implementation of {@link XrExtensions} or returns null if no implementation
      * is found.
      */
-    public static @Nullable XrExtensions getXrExtensions() {
+    @Nullable
+    public static XrExtensions getXrExtensions() {
         try {
             return XrExtensionsInstance.getInstance();
         } catch (NoClassDefFoundError e) {

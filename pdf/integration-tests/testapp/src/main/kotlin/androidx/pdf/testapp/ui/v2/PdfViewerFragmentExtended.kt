@@ -16,8 +16,6 @@
 
 package androidx.pdf.testapp.ui.v2
 
-import android.app.AlertDialog
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -27,8 +25,6 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresExtension
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.OperationCanceledException
-import androidx.pdf.content.ExternalLink
-import androidx.pdf.testapp.ConfigurationProvider
 import androidx.pdf.testapp.R
 import androidx.pdf.testapp.ui.OpCancellationHandler
 import androidx.pdf.viewer.fragment.PdfViewerFragment
@@ -39,22 +35,15 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
  * adds a FloatingActionButton for search functionality and manages its visibility based on the
  * immersive mode state.
  */
-@Suppress("RestrictedApiAndroidX")
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
 class PdfViewerFragmentExtended : PdfViewerFragment() {
     private var hostView: FrameLayout? = null
     private var search: FloatingActionButton? = null
-    private var configProvider: ConfigurationProvider? = null
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is ConfigurationProvider) configProvider = context
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?,
+        savedInstanceState: Bundle?
     ): View? {
         val pdfContainer =
             super.onCreateView(inflater, container, savedInstanceState) as ConstraintLayout
@@ -84,19 +73,6 @@ class PdfViewerFragmentExtended : PdfViewerFragment() {
         when (error) {
             is OperationCanceledException ->
                 (activity as? OpCancellationHandler)?.handleCancelOperation()
-        }
-    }
-
-    override fun onLinkClicked(externalLink: ExternalLink): Boolean {
-        return if (configProvider?.behaviourFlags?.customLinkHandlingEnabled == true) {
-            AlertDialog.Builder(requireContext())
-                .setTitle("Custom Link Handler")
-                .setMessage("Intercepted link:\n${externalLink.uri}")
-                .setPositiveButton("OK", null)
-                .show()
-            true
-        } else {
-            false
         }
     }
 }

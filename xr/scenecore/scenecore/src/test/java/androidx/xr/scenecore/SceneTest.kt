@@ -18,6 +18,7 @@ package androidx.xr.scenecore
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
@@ -31,10 +32,7 @@ import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.internal.PixelDimensions as RtPixelDimensions
 import androidx.xr.runtime.internal.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.runtime.internal.SpatialVisibility as RtSpatialVisibility
-import androidx.xr.runtime.math.FloatSize2d
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
@@ -46,7 +44,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -182,8 +179,8 @@ class SceneTest {
         whenever(mockPlatformAdapter.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mockActivityPanelEntity)
         val panelEntity =
-            PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
-        val activityPanelEntity = ActivityPanelEntity.create(session, IntSize2d(640, 480), "test2")
+            PanelEntity.create(session, TextView(activity), PixelDimensions(720, 480), "test1")
+        val activityPanelEntity = ActivityPanelEntity.create(session, Rect(0, 0, 640, 480), "test2")
 
         assertThat(session.scene.getEntitiesOfType(PanelEntity::class.java))
             .containsAtLeast(panelEntity, activityPanelEntity)
@@ -206,9 +203,9 @@ class SceneTest {
         whenever(mockPlatformAdapter.createAnchorEntity(any(), any(), any(), any()))
             .thenReturn(mockAnchorEntity)
         val panelEntity =
-            PanelEntity.create(session, TextView(activity), IntSize2d(720, 480), "test1")
+            PanelEntity.create(session, TextView(activity), PixelDimensions(720, 480), "test1")
         val anchorEntity =
-            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+            AnchorEntity.create(session, Dimensions(), PlaneType.ANY, PlaneSemantic.ANY)
 
         assertThat(session.scene.getEntitiesOfType(Entity::class.java))
             .containsAtLeast(panelEntity, anchorEntity)
@@ -268,131 +265,5 @@ class SceneTest {
     fun clearSpatialVisibilityChangedListener_callsRuntimeClearSpatialVisibilityChangedListener() {
         session.scene.clearSpatialVisibilityChangedListener()
         verify(mockPlatformAdapter).clearSpatialVisibilityChangedListener()
-    }
-
-    @Test
-    fun addPerceivedResolutionChangedListener_callsRuntimeAddPerceivedResolutionChangedListener() {
-        val listener = Consumer<IntSize2d> {}
-        val executor = directExecutor()
-        session.scene.addPerceivedResolutionChangedListener(executor, listener)
-        verify(mockPlatformAdapter).addPerceivedResolutionChangedListener(eq(executor), any())
-    }
-
-    @Test
-    fun addPerceivedResolutionChangedListener_withNoExecutor_callsRuntimeWithMainThreadExecutor() {
-        val listener = Consumer<IntSize2d> {}
-        session.scene.addPerceivedResolutionChangedListener(listener)
-        verify(mockPlatformAdapter)
-            .addPerceivedResolutionChangedListener(eq(HandlerExecutor.mainThreadExecutor), any())
-    }
-
-    @Test
-    fun removePerceivedResolutionChangedListener_callsRuntimeRemovePerceivedResolutionChangedListener() {
-        val listener = Consumer<IntSize2d> {}
-        // Add the listener first so there's something to remove
-        session.scene.addPerceivedResolutionChangedListener(directExecutor(), listener)
-        val rtListenerCaptor = argumentCaptor<Consumer<RtPixelDimensions>>()
-        verify(mockPlatformAdapter)
-            .addPerceivedResolutionChangedListener(any(), rtListenerCaptor.capture())
-
-        session.scene.removePerceivedResolutionChangedListener(listener)
-        verify(mockPlatformAdapter)
-            .removePerceivedResolutionChangedListener(eq(rtListenerCaptor.firstValue))
-    }
-
-    @Test
-    fun perceivedResolutionChangedListener_isCalledWithConvertedValues() {
-        var receivedDimensions: IntSize2d? = null
-        val listener = Consumer<IntSize2d> { dims -> receivedDimensions = dims }
-        val rtListenerCaptor = argumentCaptor<Consumer<RtPixelDimensions>>()
-        val executor = directExecutor()
-
-        session.scene.addPerceivedResolutionChangedListener(executor, listener)
-        verify(mockPlatformAdapter)
-            .addPerceivedResolutionChangedListener(eq(executor), rtListenerCaptor.capture())
-
-        val rtListener = rtListenerCaptor.firstValue
-
-        val testRtDimensions = RtPixelDimensions(100, 200)
-        rtListener.accept(testRtDimensions)
-
-        assertThat(receivedDimensions).isNotNull()
-        assertThat(receivedDimensions!!.width).isEqualTo(100)
-        assertThat(receivedDimensions.height).isEqualTo(200)
-
-        // Simulate another callback
-        val anotherRtDimensions = RtPixelDimensions(300, 400)
-        rtListener.accept(anotherRtDimensions)
-        assertThat(receivedDimensions.width).isEqualTo(300)
-        assertThat(receivedDimensions.height).isEqualTo(400)
-    }
-
-    @Test
-    fun addMultiplePerceivedResolutionListeners_allAreRegisteredAndCalled() {
-        val listener1 = mock<Consumer<IntSize2d>>()
-        val listener2 = mock<Consumer<IntSize2d>>()
-        val rtListenerCaptor = argumentCaptor<Consumer<RtPixelDimensions>>()
-        val executor = directExecutor()
-
-        session.scene.addPerceivedResolutionChangedListener(executor, listener1)
-        session.scene.addPerceivedResolutionChangedListener(executor, listener2)
-
-        verify(mockPlatformAdapter, times(2))
-            .addPerceivedResolutionChangedListener(eq(executor), rtListenerCaptor.capture())
-
-        val rtListeners = rtListenerCaptor.allValues
-        assertThat(rtListeners).hasSize(2)
-
-        // Simulate callback for the first registered listener only
-        val testRtDimensions1 = RtPixelDimensions(10, 20)
-        rtListeners[0].accept(testRtDimensions1)
-        verify(listener1).accept(IntSize2d(10, 20))
-        verify(listener2, never()).accept(any())
-
-        // Simulate callback for the second registered listener
-        val testRtDimensions2 = RtPixelDimensions(30, 40)
-        rtListeners[1].accept(testRtDimensions2)
-        verify(listener1).accept(IntSize2d(10, 20)) // Still called once
-        verify(listener2).accept(IntSize2d(30, 40))
-    }
-
-    @Test
-    fun sceneInit_setsDefaultSpatialStateChangeHandler() {
-        // Verify that default handler is always set.
-        verify(mockPlatformAdapter).spatialModeChangeListener = any()
-    }
-
-    @Test
-    fun setSpatialStateChangeHandler_callsRuntimeSetSpatialStateChangeHandler() {
-        val mockSpatialModeChangeListener = mock<SpatialModeChangeListener>()
-        session.scene.spatialModeChangeListener = mockSpatialModeChangeListener
-        val captor = argumentCaptor<androidx.xr.runtime.internal.SpatialModeChangeListener>()
-        verify(mockPlatformAdapter).spatialModeChangeListener = captor.capture()
-        val rtSpatialStateChangeHandler = captor.firstValue
-        val pose = Pose.Identity
-        val scale = Vector3(2f, 2f, 2f)
-        rtSpatialStateChangeHandler.onSpatialModeChanged(pose, scale)
-        verify(mockSpatialModeChangeListener).onSpatialModeChanged(pose, scale.x)
-    }
-
-    @Test
-    fun getSpatialCapabilities_invokesAdapterGetSpatialCapabilities() {
-        val expectedCapabilities = SpatialCapabilities(1)
-        whenever(mockPlatformAdapter.spatialCapabilities).thenReturn(RtSpatialCapabilities(1))
-        val actualCapabilities = session.scene.spatialCapabilities
-        verify(mockPlatformAdapter).spatialCapabilities
-        assertThat(actualCapabilities).isEqualTo(expectedCapabilities)
-    }
-
-    @Test
-    fun requestFullSpaceMode_callsThrough() {
-        session.scene.requestFullSpaceMode()
-        verify(mockPlatformAdapter).requestFullSpaceMode()
-    }
-
-    @Test
-    fun requestHomeSpaceMode_callsThrough() {
-        session.scene.requestHomeSpaceMode()
-        verify(mockPlatformAdapter).requestHomeSpaceMode()
     }
 }

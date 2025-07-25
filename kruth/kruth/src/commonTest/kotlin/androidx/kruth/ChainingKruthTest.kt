@@ -42,8 +42,10 @@ class ChainingKruthTest {
         }
     }
 
-    private class ObjectSubject(metadata: FailureMetadata = FailureMetadata(), actual: Any?) :
-        Subject<Any>(actual = actual, metadata = metadata) {
+    private class ObjectSubject(
+        metadata: FailureMetadata = FailureMetadata(),
+        actual: Any?,
+    ) : Subject<Any>(actual = actual, metadata = metadata) {
         companion object {
             val FACTORY: Factory<ObjectSubject, Any> =
                 Factory<ObjectSubject, Any> { metadata, actual -> ObjectSubject(metadata, actual) }

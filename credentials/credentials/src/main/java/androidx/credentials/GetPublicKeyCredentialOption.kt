@@ -96,11 +96,14 @@ private constructor(
             "androidx.credentials.BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION"
 
         @JvmStatic
-        internal fun toRequestDataBundle(requestJson: String, clientDataHash: ByteArray?): Bundle {
+        internal fun toRequestDataBundle(
+            requestJson: String,
+            clientDataHash: ByteArray?,
+        ): Bundle {
             val bundle = Bundle()
             bundle.putString(
                 PublicKeyCredential.BUNDLE_KEY_SUBTYPE,
-                BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION,
+                BUNDLE_VALUE_SUBTYPE_GET_PUBLIC_KEY_CREDENTIAL_OPTION
             )
             bundle.putString(BUNDLE_KEY_REQUEST_JSON, requestJson)
             bundle.putByteArray(BUNDLE_KEY_CLIENT_DATA_HASH, clientDataHash)

@@ -31,7 +31,8 @@ android {
 
 dependencies {
     api(libs.kotlinStdlib)
-    implementation(project(":appfunctions:appfunctions"))
-    implementation(project(":appfunctions:appfunctions-service"))
+    implementation(project(":appfunctions:appfunctions-common"))
+    implementation(project(":appfunctions:appfunctions-runtime"))
+    implementation(project(":appfunctions:appfunctions-schemas"))
     ksp(project(":appfunctions:appfunctions-compiler"))
 }

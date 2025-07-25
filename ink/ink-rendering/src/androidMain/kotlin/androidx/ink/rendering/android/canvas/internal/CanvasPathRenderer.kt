@@ -25,14 +25,14 @@ import androidx.annotation.FloatRange
 import androidx.core.graphics.withMatrix
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
-import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.MutableVec
 import androidx.ink.geometry.PartitionedMesh
 import androidx.ink.geometry.outlinesToPath
 import androidx.ink.geometry.populateMatrix
-import androidx.ink.geometry.populateOutlines
+import androidx.ink.geometry.populatePathFromOutlines
+import androidx.ink.rendering.android.TextureBitmapStore
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
@@ -163,7 +163,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
                 obtainPath(stroke.shape, groupIndex, strokeToScreenTransform),
                 strokeToScreenTransform,
                 stroke.brush.family.coats[groupIndex].paint,
-                stroke.brush.internalColor,
+                stroke.brush.composeColor,
                 stroke.brush.size,
                 scratchFirstInput,
                 scratchLastInput,
@@ -201,7 +201,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
                 obtainPath(inProgressStroke, coatIndex, strokeToScreenTransform),
                 strokeToScreenTransform,
                 brush.family.coats[coatIndex].paint,
-                brush.internalColor,
+                brush.composeColor,
                 brush.size,
                 scratchFirstInput,
                 scratchLastInput,
@@ -336,7 +336,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
         companion object {
             fun create(
                 shape: PartitionedMesh,
-                strokeToScreenTransform: Matrix,
+                strokeToScreenTransform: Matrix
             ): PartitionedMeshPathData {
                 val paths = buildList {
                     for (groupIndex in 0 until shape.getRenderGroupCount()) {
@@ -350,7 +350,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
                 return PartitionedMeshPathData(
                     Matrix(strokeToScreenTransform),
                     paths,
-                    shape.nativePointer,
+                    shape.nativePointer
                 )
             }
         }
@@ -368,7 +368,7 @@ internal class CanvasPathRenderer(textureStore: TextureBitmapStore = TextureBitm
             }
             for (groupIndex in 0 until shape.getRenderGroupCount()) {
                 val path = paths[groupIndex]
-                shape.populateOutlines(groupIndex, path)
+                shape.populatePathFromOutlines(groupIndex, path)
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
                     path.transform(strokeToScreenTransform)
                 }

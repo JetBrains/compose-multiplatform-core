@@ -22,15 +22,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionCreateSuccess
-import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.PanelEntity
+import androidx.xr.scenecore.PixelDimensions
 import androidx.xr.scenecore.scene
-import java.nio.file.Paths
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.time.TimeSource
@@ -52,29 +51,33 @@ class StandaloneActivity : AppCompatActivity() {
             PanelEntity.create(
                 session,
                 panelContentView,
-                IntSize2d(640, 480),
+                PixelDimensions(640, 480),
                 "panel",
                 Pose(Vector3(0f, -0.5f, 0.5f)),
             )
-        panelEntity.parent = session.scene.activitySpace
+        panelEntity.setParent(session.scene.activitySpace)
 
-        lifecycleScope.launch {
-            // Create multiple orbiting dragon models
-            val dragonModel = GltfModel.create(session, Paths.get("models", "Dragon_Evolved.gltf"))
-            createModelSolarSystem(session, dragonModel)
-        }
+        // Create multiple orbiting shark models
+        val sharkModelFuture = GltfModel.create(session, "models/GreatWhiteShark.glb")
+        sharkModelFuture.addListener(
+            {
+                val sharkModel = sharkModelFuture.get()
+                createModelSolarSystem(session, sharkModel)
+            },
+            Runnable::run,
+        )
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunDragon = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 2f, -9f)))
-        sunDragon.parent = session.scene.activitySpace
-        val planetDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 2f, -9f)))
-        planetDragon.parent = sunDragon
-        val moonDragon = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 2f, -9f)))
-        moonDragon.parent = planetDragon
+        val sunShark = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, -3f, -9f)))
+        sunShark.setParent(session.scene.activitySpace)
+        val planetShark = GltfModelEntity.create(session, model, Pose(Vector3(-1f, -3f, -9f)))
+        planetShark.setParent(sunShark)
+        val moonShark = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, -3f, -9f)))
+        moonShark.setParent(planetShark)
 
-        orbitModelAroundParent(planetDragon, 4f, 0f, 20000f)
-        orbitModelAroundParent(moonDragon, 2f, 1.67f, 5000f)
+        orbitModelAroundParent(planetShark, 4f, 0f, 20000f)
+        orbitModelAroundParent(moonShark, 2f, 1.67f, 5000f)
     }
 
     // TODO: b/339450306 - Simply update parent's rotation once math library is added to SceneCore

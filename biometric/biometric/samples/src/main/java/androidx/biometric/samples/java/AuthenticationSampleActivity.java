@@ -22,53 +22,44 @@ import android.util.Log;
 
 import androidx.biometric.AuthenticationRequest;
 import androidx.biometric.AuthenticationRequest.Biometric;
-import androidx.biometric.AuthenticationResult;
-import androidx.biometric.AuthenticationResultCallback;
 import androidx.biometric.AuthenticationResultLauncher;
 import androidx.biometric.PromptContentItemBulletedText;
 import androidx.fragment.app.FragmentActivity;
 
-import org.jspecify.annotations.NonNull;
+import kotlin.Unit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class AuthenticationSampleActivity extends FragmentActivity {
-    private static final String TAG = "AuthSampleActivity";
+    private static final String TAG = "AuthenticationSampleActivity";
 
     private final AuthenticationResultLauncher mAuthResultLauncher =
             registerForAuthenticationResult(
                     this,
-                    new AuthenticationResultCallback() {
-                        @Override
-                        public void onAuthResult(@NonNull AuthenticationResult result) {
-                            if (result.isSuccess()) {
-                                Log.i(TAG, "onAuthenticationSucceeded with type"
-                                        + result.success().getAuthType());
-                            } else if (result.isError()) {
-                                // Handle authentication error, e.g. negative button click, user
-                                // cancellation, etc
-                                Log.i(
-                                        TAG,
-                                        "onAuthenticationError " + result.error().getErrorCode()
-                                                + " "
-                                                + result.error().getErrString()
-                                );
-                            }
-                        }
-
-                        // Handle intermediate authentication failure, this is optional and
-                        // not needed in most cases
-                        @Override
-                        public void onAuthFailure() {
-                            Log.i(TAG, "onAuthenticationFailed, try again");
+                    () -> {
+                        // Handle intermediate authentication failure, this is optional.
+                        Log.i(TAG, "onAuthenticationFailed, try again");
+                        return Unit.INSTANCE;
+                    },
+                    result -> {
+                        if (result.isSuccess()) {
+                            Log.i(TAG, "onAuthenticationSucceeded with type"
+                                    + result.success().getAuthType());
+                        } else if (result.isError()) {
+                            // Handle authentication error, e.g. negative button click, user
+                            // cancellation, etc
+                            Log.i(
+                                    TAG,
+                                    "onAuthenticationError " + result.error().getErrorCode() + " "
+                                            + result.error().getErrString()
+                            );
                         }
                     }
             );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
         String title = "Title";
         String subtitle = "Subtitle";
         AuthenticationRequest.BodyContent bodyContent =

@@ -25,7 +25,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("NewApi")
 @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 5)
-public class MeasurementManagerApi33Ext5Impl(context: Context) :
+class MeasurementManagerApi33Ext5Impl(context: Context) :
     MeasurementManagerImplCommon(
         context.getSystemService(android.adservices.measurement.MeasurementManager::class.java)
     )

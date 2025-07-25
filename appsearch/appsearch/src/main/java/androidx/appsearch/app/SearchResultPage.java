@@ -40,9 +40,6 @@ public class SearchResultPage extends AbstractSafeParcelable {
     public static final Parcelable.@NonNull Creator<SearchResultPage> CREATOR =
             new SearchResultPageCreator();
 
-    /** A value 0 means that there are no more pages in the search results. */
-    public static final long EMPTY_PAGE_TOKEN = 0;
-
     @Field(id = 1, getter = "getNextPageToken")
     private final long mNextPageToken;
     @Field(id = 2, getter = "getResults")
@@ -58,7 +55,7 @@ public class SearchResultPage extends AbstractSafeParcelable {
 
     /** Default constructor for {@link SearchResultPage}. */
     public SearchResultPage() {
-        mNextPageToken = EMPTY_PAGE_TOKEN;
+        mNextPageToken = 0;
         mResults = Collections.emptyList();
     }
 

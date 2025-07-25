@@ -101,7 +101,10 @@ class TimeTextTest {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     startLinearContent = {
-                        Text(modifier = Modifier.testTag(LINEAR_ITEM_TAG), text = "Start content")
+                        Text(
+                            modifier = Modifier.testTag(LINEAR_ITEM_TAG),
+                            text = "Start content",
+                        )
                     },
                     startCurvedContent = {
                         // TODO(220086395): replace back with a curvedText
@@ -111,7 +114,7 @@ class TimeTextTest {
                                 text = "Curved content",
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -126,7 +129,10 @@ class TimeTextTest {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     startLinearContent = {
-                        Text(modifier = Modifier.testTag(LINEAR_ITEM_TAG), text = "Start content")
+                        Text(
+                            modifier = Modifier.testTag(LINEAR_ITEM_TAG),
+                            text = "Start content",
+                        )
                     },
                     startCurvedContent = {
                         // TODO(220086395): replace back with a curvedText
@@ -136,7 +142,7 @@ class TimeTextTest {
                                 text = "Curved content",
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -150,7 +156,10 @@ class TimeTextTest {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
                     endLinearContent = {
-                        Text(modifier = Modifier.testTag(LINEAR_ITEM_TAG), text = "End content")
+                        Text(
+                            modifier = Modifier.testTag(LINEAR_ITEM_TAG),
+                            text = "End content",
+                        )
                     },
                     endCurvedContent = {
                         // TODO(220086395): replace back with a curvedText
@@ -160,7 +169,7 @@ class TimeTextTest {
                                 text = "Curved content",
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -174,7 +183,10 @@ class TimeTextTest {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
                     endLinearContent = {
-                        Text(modifier = Modifier.testTag(LINEAR_ITEM_TAG), text = "Start content")
+                        Text(
+                            modifier = Modifier.testTag(LINEAR_ITEM_TAG),
+                            text = "Start content",
+                        )
                     },
                     endCurvedContent = {
                         // TODO(220086395): replace back with a curvedText
@@ -184,7 +196,7 @@ class TimeTextTest {
                                 text = "Curved content",
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -205,9 +217,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -228,9 +243,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -243,7 +261,11 @@ class TimeTextTest {
         rule.setContentWithTheme {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
-                    startLinearContent = { Text(text = "Start content") },
+                    startLinearContent = {
+                        Text(
+                            text = "Start content",
+                        )
+                    },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -252,9 +274,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -269,7 +294,13 @@ class TimeTextTest {
         rule.setContentWithTheme {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(true)) {
                 TimeText(
-                    startCurvedContent = { curvedComposable { Text(text = "Start content") } },
+                    startCurvedContent = {
+                        curvedComposable {
+                            Text(
+                                text = "Start content",
+                            )
+                        }
+                    },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -278,9 +309,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -294,7 +328,11 @@ class TimeTextTest {
         rule.setContentWithTheme {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
-                    endLinearContent = { Text(text = "End content") },
+                    endLinearContent = {
+                        Text(
+                            text = "End content",
+                        )
+                    },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -303,9 +341,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -329,9 +370,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -345,8 +389,16 @@ class TimeTextTest {
         rule.setContentWithTheme {
             DeviceConfigurationOverride(DeviceConfigurationOverride.RoundScreen(false)) {
                 TimeText(
-                    startLinearContent = { Text(text = "Start content") },
-                    endLinearContent = { Text(text = "End content") },
+                    startLinearContent = {
+                        Text(
+                            text = "Start content",
+                        )
+                    },
+                    endLinearContent = {
+                        Text(
+                            text = "End content",
+                        )
+                    },
                     textLinearSeparator = {
                         TimeTextDefaults.TextSeparator(
                             modifier = Modifier.testTag(LINEAR_SEPARATOR_ITEM_TAG)
@@ -355,9 +407,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -380,9 +435,12 @@ class TimeTextTest {
                     textCurvedSeparator = {
                         // TODO(220086395): replace back with a CurvedTextSeparator
                         curvedComposable {
-                            Text(modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG), text = ".")
+                            Text(
+                                modifier = Modifier.testTag(CURVED_SEPARATOR_ITEM_TAG),
+                                text = ".",
+                            )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -406,7 +464,7 @@ class TimeTextTest {
                             override val currentTime: String
                                 @Composable get() = timeText
                         },
-                    timeTextStyle = testTextStyle,
+                    timeTextStyle = testTextStyle
                 )
             }
         }
@@ -426,7 +484,7 @@ class TimeTextTest {
                 background = Color.Black,
                 fontStyle = FontStyle.Italic,
                 fontSize = 25.sp,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = FontFamily.SansSerif
             )
         rule.setContent {
             MaterialTheme(typography = MaterialTheme.typography.copy(caption1 = testTextStyle)) {

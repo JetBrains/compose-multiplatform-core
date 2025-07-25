@@ -18,7 +18,6 @@
 
 package androidx.compose.foundation.layout
 
-import androidx.collection.mutableFloatListOf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -201,7 +200,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(60.toDp())) {
                     FlowColumn(
                         Modifier.onSizeChanged { width = it.width },
-                        maxItemsInEachColumn = 2,
+                        maxItemsInEachColumn = 2
                     ) {
                         repeat(6) { Box(Modifier.size(20.toDp())) }
                     }
@@ -240,7 +239,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(60.toDp())) {
                     FlowColumn(
                         Modifier.onSizeChanged { width = it.width },
-                        maxItemsInEachColumn = 2,
+                        maxItemsInEachColumn = 2
                     ) {
                         repeat(6) { Box(Modifier.size(20.toDp()).weight(1f, true)) }
                     }
@@ -717,7 +716,7 @@ class FlowRowColumnTest {
                                             shorterHeight.toDp()
                                         } else {
                                             totalRowHeight.toDp()
-                                        },
+                                        }
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -756,7 +755,7 @@ class FlowRowColumnTest {
                                             shorterHeight.toDp()
                                         } else {
                                             totalRowHeight.toDp()
-                                        },
+                                        }
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -794,7 +793,7 @@ class FlowRowColumnTest {
                                             shorterHeight.toDp()
                                         } else {
                                             totalRowHeight.toDp()
-                                        },
+                                        }
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -831,7 +830,7 @@ class FlowRowColumnTest {
                                         } else {
                                             totalColumnWidth.toDp()
                                         },
-                                        20.toDp(),
+                                        20.toDp()
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -870,7 +869,7 @@ class FlowRowColumnTest {
                                         } else {
                                             totalColumnWidth.toDp()
                                         },
-                                        20.toDp(),
+                                        20.toDp()
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -908,7 +907,7 @@ class FlowRowColumnTest {
                                         } else {
                                             totalColumnWidth.toDp()
                                         },
-                                        20.toDp(),
+                                        20.toDp()
                                     )
                                     .onPlaced {
                                         if (index == 4) {
@@ -945,7 +944,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     FlowRow(
                         Modifier.fillMaxWidth(1f),
-                        horizontalArrangement = Arrangement.SpaceAround,
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
                         repeat(5) { index ->
                             Box(
@@ -986,7 +985,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.width(200.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = FlowRowOverflow.Visible,
+                    overflow = FlowRowOverflow.Visible
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1018,7 +1017,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.height(200.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = FlowColumnOverflow.Visible,
+                    overflow = FlowColumnOverflow.Visible
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1050,7 +1049,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.width(200.dp).height(maxHeight.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = FlowRowOverflow.Visible,
+                    overflow = FlowRowOverflow.Visible
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1082,7 +1081,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.height(200.dp).width(maxWidth.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = FlowColumnOverflow.Visible,
+                    overflow = FlowColumnOverflow.Visible
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1114,7 +1113,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.width(200.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = FlowRowOverflow.Clip,
+                    overflow = FlowRowOverflow.Clip
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1146,7 +1145,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.height(200.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     maxLines = maxLines,
-                    overflow = FlowColumnOverflow.Clip,
+                    overflow = FlowColumnOverflow.Clip
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1178,7 +1177,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.width(200.dp).height(maxHeight.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = FlowRowOverflow.Clip,
+                    overflow = FlowRowOverflow.Clip
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1210,7 +1209,7 @@ class FlowRowColumnTest {
                     modifier = Modifier.height(200.dp).width(maxWidth.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.dp),
                     horizontalArrangement = Arrangement.spacedBy(spacing.dp),
-                    overflow = FlowColumnOverflow.Clip,
+                    overflow = FlowColumnOverflow.Clip
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1259,7 +1258,7 @@ class FlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        },
+                        }
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1330,7 +1329,7 @@ class FlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        },
+                        }
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1401,7 +1400,7 @@ class FlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        },
+                        }
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1476,7 +1475,7 @@ class FlowRowColumnTest {
                                         .testTag(seeMoreTag)
                                         .onGloballyPositioned { seeMoreShown = true }
                             )
-                        },
+                        }
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1544,8 +1543,8 @@ class FlowRowColumnTest {
                                 Assert.assertThrows(RuntimeException::class.java) {
                                     totalItems - shownItemCount
                                 }
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { _ -> Box(modifier = Modifier.size(itemSize.dp)) }
                 }
@@ -1577,8 +1576,8 @@ class FlowRowColumnTest {
                                 Assert.assertThrows(RuntimeException::class.java) {
                                     totalItems - shownItemCount
                                 }
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { _ -> Box(modifier = Modifier.size(itemSize.dp)) }
                 }
@@ -1642,8 +1641,8 @@ class FlowRowColumnTest {
                                             .onGloballyPositioned { collapseShown = true }
                                             .onPlaced { collapseShown = true }
                                 )
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1771,8 +1770,8 @@ class FlowRowColumnTest {
                                             .onGloballyPositioned { collapseShown = true }
                                             .onPlaced { collapseShown = true }
                                 )
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -1899,8 +1898,8 @@ class FlowRowColumnTest {
                                             .testTag(collapseTag)
                                             .onGloballyPositioned { collapseShown = true }
                                 )
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -2027,8 +2026,8 @@ class FlowRowColumnTest {
                                             .testTag(collapseTag)
                                             .onGloballyPositioned { collapseShown = true }
                                 )
-                            },
-                        ),
+                            }
+                        )
                 ) {
                     repeat(totalItems) { index ->
                         Box(
@@ -2122,7 +2121,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     FlowColumn(
                         Modifier.fillMaxHeight(1f),
-                        verticalArrangement = Arrangement.SpaceAround,
+                        verticalArrangement = Arrangement.SpaceAround
                     ) {
                         repeat(5) { index ->
                             Box(
@@ -2168,7 +2167,7 @@ class FlowRowColumnTest {
                     FlowRow(
                         Modifier.fillMaxWidth(1f),
                         horizontalArrangement = Arrangement.SpaceAround,
-                        maxItemsInEachRow = 5,
+                        maxItemsInEachRow = 5
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -2213,7 +2212,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.SpaceAround,
-                        maxItemsInEachColumn = 5,
+                        maxItemsInEachColumn = 5
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -2258,7 +2257,7 @@ class FlowRowColumnTest {
                     FlowRow(
                         Modifier.fillMaxWidth(1f),
                         horizontalArrangement = Arrangement.End,
-                        maxItemsInEachRow = 5,
+                        maxItemsInEachRow = 5
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -2300,7 +2299,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.Bottom,
-                        maxItemsInEachColumn = 5,
+                        maxItemsInEachColumn = 5
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -2339,7 +2338,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     FlowRow(
                         horizontalArrangement = Arrangement.Start,
-                        maxItemsInEachRow = maxItemsInMainAxis,
+                        maxItemsInEachRow = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -2399,7 +2398,7 @@ class FlowRowColumnTest {
                                                 seeMoreSize = it.size
                                             }
                                 ) {}
-                            },
+                            }
                     ) {
                         repeat(totalCount) { index ->
                             Box(
@@ -2465,7 +2464,7 @@ class FlowRowColumnTest {
                                                 seeMoreSize = it.size
                                             }
                                 ) {}
-                            },
+                            }
                     ) {
                         repeat(totalCount) { index ->
                             Box(
@@ -2535,14 +2534,14 @@ class FlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse,
+                        minHeightToShowCollapse
                     )
                 Box(Modifier.size(200.dp)) {
                     FlowRow(
                         horizontalArrangement = Arrangement.Start,
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(total) { _ ->
                             Box(
@@ -2702,14 +2701,14 @@ class FlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse,
+                        minHeightToShowCollapse
                     )
                 Box(Modifier.size(200.dp)) {
                     FlowColumn(
                         verticalArrangement = Arrangement.Top,
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(total) { _ ->
                             Box(
@@ -2871,13 +2870,13 @@ class FlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse,
+                        minHeightToShowCollapse
                     )
                 Box(Modifier.width(200.dp).height(maxHeight)) {
                     FlowRow(
                         horizontalArrangement = Arrangement.Start,
                         maxItemsInEachRow = maxItemsInMainAxis,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(total) { _ ->
                             Box(
@@ -3011,7 +3010,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachRow = maxItemsInMainAxis,
+                        maxItemsInEachRow = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -3079,13 +3078,13 @@ class FlowRowColumnTest {
                             )
                         },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse,
+                        minHeightToShowCollapse
                     )
                 Box(Modifier.height(200.dp).width(maxWidth)) {
                     FlowColumn(
                         verticalArrangement = Arrangement.Top,
                         maxItemsInEachColumn = maxItemsInMainAxis,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(total) { _ ->
                             Box(
@@ -3229,7 +3228,7 @@ class FlowRowColumnTest {
                     FlowRow(
                         Modifier.onSizeChanged { heightResult = it.height },
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachRow = 1,
+                        maxItemsInEachRow = 1
                     ) {
                         repeat(noOfItems) { index ->
                             Box(
@@ -3272,7 +3271,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.onSizeChanged { widthResult = it.width },
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachColumn = 1,
+                        maxItemsInEachColumn = 1
                     ) {
                         repeat(noOfItems) { index ->
                             Box(
@@ -3312,7 +3311,7 @@ class FlowRowColumnTest {
                 Box(Modifier.size(200.toDp())) {
                     FlowColumn(
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachColumn = maxItemsInMainAxis,
+                        maxItemsInEachColumn = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -3358,7 +3357,7 @@ class FlowRowColumnTest {
                     FlowRow(
                         Modifier.onSizeChanged { width = it.width },
                         horizontalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachRow = maxItemsInMainAxis,
+                        maxItemsInEachRow = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -3405,7 +3404,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.onSizeChanged { height = it.height },
                         verticalArrangement = Arrangement.spacedBy(spaceAligned.toDp()),
-                        maxItemsInEachColumn = maxItemsInMainAxis,
+                        maxItemsInEachColumn = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -3449,7 +3448,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.fillMaxHeight(1f),
                         verticalArrangement = Arrangement.Top,
-                        maxItemsInEachColumn = maxItemsInMainAxis,
+                        maxItemsInEachColumn = maxItemsInMainAxis
                     ) {
                         repeat(10) { index ->
                             Box(
@@ -3495,7 +3494,7 @@ class FlowRowColumnTest {
                         FlowRow(
                             Modifier.fillMaxWidth(1f),
                             horizontalArrangement = Arrangement.Start,
-                            maxItemsInEachRow = maxItemsInMainAxis,
+                            maxItemsInEachRow = maxItemsInMainAxis
                         ) {
                             repeat(6) { index ->
                                 Box(
@@ -3540,7 +3539,7 @@ class FlowRowColumnTest {
                         FlowColumn(
                             Modifier.fillMaxHeight(1f).fillMaxWidth(1f),
                             verticalArrangement = Arrangement.Top,
-                            maxItemsInEachColumn = maxItemsInMainAxis,
+                            maxItemsInEachColumn = maxItemsInMainAxis
                         ) {
                             repeat(10) { index ->
                                 Box(
@@ -3598,7 +3597,7 @@ class FlowRowColumnTest {
                                 itemsThatCanFit = it.height / eachSize
                             },
                             verticalArrangement = Arrangement.Top,
-                            maxItemsInEachColumn = maxItemsInMainAxis,
+                            maxItemsInEachColumn = maxItemsInMainAxis
                         ) {
                             repeat(10) { index ->
                                 Box(
@@ -3691,7 +3690,7 @@ class FlowRowColumnTest {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
                             horizontalArrangement = Arrangement.Start,
-                            maxItemsInEachRow = 5,
+                            maxItemsInEachRow = 5
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -3721,7 +3720,7 @@ class FlowRowColumnTest {
             seeMoreOrCollapse =
                 FlowRowOverflow.expandOrCollapseIndicator(
                     expandIndicator = { Box(Modifier.size(20.dp)) },
-                    collapseIndicator = { Box(Modifier.size(20.dp)) },
+                    collapseIndicator = { Box(Modifier.size(20.dp)) }
                 )
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.width(200.dp).wrapContentHeight()) {
@@ -3734,7 +3733,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Top),
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -3799,7 +3798,7 @@ class FlowRowColumnTest {
             seeMoreOrCollapse =
                 FlowColumnOverflow.expandOrCollapseIndicator(
                     expandIndicator = { Box(Modifier.size(20.dp)) },
-                    collapseIndicator = { Box(Modifier.size(20.dp)) {} },
+                    collapseIndicator = { Box(Modifier.size(20.dp)) {} }
                 )
             CompositionLocalProvider(LocalDensity provides NoOpDensity) {
                 Box(Modifier.height(200.dp).wrapContentWidth()) {
@@ -3812,7 +3811,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Start),
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -3883,7 +3882,7 @@ class FlowRowColumnTest {
                         expandIndicator = { Box(Modifier.size(20.dp)) },
                         collapseIndicator = { Box(Modifier.size(20.dp)) {} },
                         minLinesToShowCollapse,
-                        minHeightToShowCollapse,
+                        minHeightToShowCollapse
                     )
                 var overflow by remember { overflowState }
                 Box(Modifier.width(200.dp).wrapContentHeight()) {
@@ -3896,7 +3895,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Top),
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -3962,7 +3961,7 @@ class FlowRowColumnTest {
                             horizontalArrangement = Arrangement.Start,
                             maxItemsInEachRow = 6,
                             maxLines = maxLines,
-                            overflow = FlowRowOverflow.Clip,
+                            overflow = FlowRowOverflow.Clip
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4012,7 +4011,7 @@ class FlowRowColumnTest {
                         expandIndicator = { Box(Modifier.size(20.dp)) },
                         collapseIndicator = { Box(Modifier.size(20.dp)) {} },
                         minLinesToShowCollapse,
-                        minWidthToShowCollapse,
+                        minWidthToShowCollapse
                     )
                 var overflow by remember { overflowState }
                 Box(Modifier.height(200.dp).wrapContentWidth()) {
@@ -4025,7 +4024,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Start),
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -4091,7 +4090,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         maxItemsInEachRow = 6,
                         maxLines = maxLines,
-                        overflow = FlowRowOverflow.Clip,
+                        overflow = FlowRowOverflow.Clip
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4130,7 +4129,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.Start,
                         maxItemsInEachRow = 6,
                         maxLines = maxLines,
-                        overflow = FlowRowOverflow.expandIndicator { Box(Modifier.size(20.dp)) },
+                        overflow = FlowRowOverflow.expandIndicator { Box(Modifier.size(20.dp)) }
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4169,7 +4168,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.Top,
                         maxItemsInEachColumn = 6,
                         maxLines = maxLines,
-                        overflow = FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) },
+                        overflow = FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) }
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4208,7 +4207,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
                         maxItemsInEachRow = 6,
                         maxLines = maxLines,
-                        overflow = FlowRowOverflow.expandIndicator { Box(Modifier.size(20.dp)) },
+                        overflow = FlowRowOverflow.expandIndicator { Box(Modifier.size(20.dp)) }
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4247,7 +4246,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.spacedBy(20.dp),
                         maxItemsInEachColumn = 6,
                         maxLines = maxLines,
-                        overflow = FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) },
+                        overflow = FlowColumnOverflow.expandIndicator { Box(Modifier.size(20.dp)) }
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4282,7 +4281,7 @@ class FlowRowColumnTest {
             var maxLines by remember { maxLinesState }
             CompositionLocalProvider(
                 LocalLayoutDirection provides LayoutDirection.Rtl,
-                LocalDensity provides NoOpDensity,
+                LocalDensity provides NoOpDensity
             ) {
                 with(LocalDensity.current) {
                     Box(Modifier.width(200.dp).wrapContentHeight()) {
@@ -4298,8 +4297,8 @@ class FlowRowColumnTest {
                                 FlowRowOverflow.expandOrCollapseIndicator(
                                     expandIndicator = { Box(Modifier.size(20.dp)) },
                                     collapseIndicator = { Box(Modifier.size(20.dp)) },
-                                    minRowsToShowCollapse = 2,
-                                ),
+                                    minRowsToShowCollapse = 2
+                                )
                         ) {
                             repeat(6) { Box(Modifier.size(20.dp)) }
                         }
@@ -4341,7 +4340,7 @@ class FlowRowColumnTest {
             var maxLines by remember { maxLinesState }
             CompositionLocalProvider(
                 LocalLayoutDirection provides LayoutDirection.Rtl,
-                LocalDensity provides NoOpDensity,
+                LocalDensity provides NoOpDensity
             ) {
                 Box(Modifier.height(200.dp).wrapContentWidth()) {
                     FlowColumn(
@@ -4356,8 +4355,8 @@ class FlowRowColumnTest {
                             FlowColumnOverflow.expandOrCollapseIndicator(
                                 expandIndicator = { Box(Modifier.size(20.dp)) },
                                 collapseIndicator = { Box(Modifier.size(20.dp)) {} },
-                                minColumnsToShowCollapse = 2,
-                            ),
+                                minColumnsToShowCollapse = 2
+                            )
                     ) {
                         repeat(6) { Box(Modifier.size(20.dp)) }
                     }
@@ -4400,7 +4399,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowColumn(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
-                            maxItemsInEachColumn = 6,
+                            maxItemsInEachColumn = 6
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4423,7 +4422,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowColumn(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4468,7 +4467,7 @@ class FlowRowColumnTest {
                 with(LocalDensity.current) {
                     Box(Modifier.size(200.toDp())) {
                         FlowColumn(
-                            Modifier.width(IntrinsicSize.Max).onSizeChanged { width = it.width }
+                            Modifier.width(IntrinsicSize.Max).onSizeChanged { width = it.width },
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4492,7 +4491,7 @@ class FlowRowColumnTest {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
                             horizontalArrangement = Arrangement.spacedBy(20.toDp()),
-                            maxItemsInEachRow = 5,
+                            maxItemsInEachRow = 5
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4539,7 +4538,7 @@ class FlowRowColumnTest {
                         FlowColumn(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
                             horizontalArrangement = Arrangement.spacedBy(20.toDp()),
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4563,7 +4562,7 @@ class FlowRowColumnTest {
                         FlowColumn(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
                             horizontalArrangement = Arrangement.spacedBy(20.toDp()),
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(5) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4636,7 +4635,7 @@ class FlowRowColumnTest {
                                 width = it.width
                                 height = it.height
                             },
-                            maxItemsInEachRow = 5,
+                            maxItemsInEachRow = 5
                         ) {
                             repeat(6) { index ->
                                 Box(
@@ -4669,7 +4668,7 @@ class FlowRowColumnTest {
                                 width = it.width
                                 height = it.height
                             },
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(6) { index ->
                                 Box(
@@ -4703,7 +4702,7 @@ class FlowRowColumnTest {
                                 height = it.height
                             },
                             horizontalArrangement = Arrangement.spacedBy(10.toDp()),
-                            maxItemsInEachRow = 5,
+                            maxItemsInEachRow = 5
                         ) {
                             repeat(6) { index ->
                                 Box(
@@ -4737,7 +4736,7 @@ class FlowRowColumnTest {
                                 height = it.height
                             },
                             verticalArrangement = Arrangement.spacedBy(10.toDp()),
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(6) { index ->
                                 Box(
@@ -4766,7 +4765,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
-                            maxItemsInEachRow = 2,
+                            maxItemsInEachRow = 2
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4789,7 +4788,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Min).onSizeChanged { width = it.width },
-                            maxItemsInEachRow = 2,
+                            maxItemsInEachRow = 2
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4812,7 +4811,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Max).onSizeChanged { width = it.width },
-                            maxItemsInEachRow = 2,
+                            maxItemsInEachRow = 2
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4835,7 +4834,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowColumn(
                             Modifier.width(IntrinsicSize.Max).onSizeChanged { width = it.width },
-                            maxItemsInEachColumn = 2,
+                            maxItemsInEachColumn = 2
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4862,7 +4861,7 @@ class FlowRowColumnTest {
                                 width = it.width
                                 height = it.height
                             },
-                            maxItemsInEachRow = 2,
+                            maxItemsInEachRow = 2
                         ) {
                             repeat(10) { index ->
                                 Box(
@@ -4895,7 +4894,7 @@ class FlowRowColumnTest {
                                 width = it.width
                                 height = it.height
                             },
-                            maxItemsInEachColumn = 2,
+                            maxItemsInEachColumn = 2
                         ) {
                             repeat(10) { index ->
                                 Box(
@@ -4923,7 +4922,7 @@ class FlowRowColumnTest {
                 with(LocalDensity.current) {
                     Box(Modifier.size(200.toDp())) {
                         FlowRow(
-                            Modifier.height(IntrinsicSize.Min).onSizeChanged { height = it.height }
+                            Modifier.height(IntrinsicSize.Min).onSizeChanged { height = it.height },
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -4966,7 +4965,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Top),
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -5044,7 +5043,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Start),
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onGloballyPositioned { itemShown = index + 1 })
@@ -5104,7 +5103,7 @@ class FlowRowColumnTest {
                         FlowRow(
                             Modifier.width(IntrinsicSize.Min)
                                 .height(IntrinsicSize.Max)
-                                .onSizeChanged { height = it.height }
+                                .onSizeChanged { height = it.height },
                         ) {
                             repeat(5) { Box(Modifier.size(20.toDp())) }
                         }
@@ -5147,7 +5146,7 @@ class FlowRowColumnTest {
                         verticalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Top),
                         maxItemsInEachRow = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -5225,7 +5224,7 @@ class FlowRowColumnTest {
                         horizontalArrangement = Arrangement.spacedBy(spacedBy.dp, Alignment.Start),
                         maxItemsInEachColumn = maxItemsInMainAxis,
                         maxLines = maxLines,
-                        overflow = overflow,
+                        overflow = overflow
                     ) {
                         repeat(6) { index ->
                             Box(Modifier.size(20.dp).onPlaced { itemShown = index + 1 })
@@ -5310,7 +5309,7 @@ class FlowRowColumnTest {
                         FlowRow(
                             Modifier.height(IntrinsicSize.Min).onSizeChanged { height = it.height },
                             verticalArrangement = Arrangement.spacedBy(20.toDp()),
-                            maxItemsInEachRow = 1,
+                            maxItemsInEachRow = 1
                         ) {
                             repeat(2) { Box(Modifier.size(20.toDp())) }
                         }
@@ -5356,7 +5355,7 @@ class FlowRowColumnTest {
                     Box(Modifier.size(200.toDp())) {
                         FlowColumn(
                             Modifier.height(IntrinsicSize.Min).onSizeChanged { height = it.height },
-                            maxItemsInEachColumn = 5,
+                            maxItemsInEachColumn = 5
                         ) {
                             repeat(6) { Box(Modifier.size(20.toDp())) }
                         }
@@ -5426,7 +5425,7 @@ class FlowRowColumnTest {
                     FlowRow(
                         Modifier.fillMaxWidth(1f).onSizeChanged { width = it.width },
                         verticalArrangement = Arrangement.spacedBy(20.dp),
-                        overflow = FlowRowOverflow.Clip,
+                        overflow = FlowRowOverflow.Clip
                     ) {
                         repeat(2) { index ->
                             Layout(
@@ -5466,14 +5465,14 @@ class FlowRowColumnTest {
                     {},
                     {},
                     minLinesToShowCollapseState,
-                    minHeightToShowCollapseState,
+                    minHeightToShowCollapseState
                 )
             seeMoreTwo =
                 FlowRowOverflow.expandOrCollapseIndicator(
                     {},
                     {},
                     minLinesToShowCollapseState,
-                    minHeightToShowCollapseState,
+                    minHeightToShowCollapseState
                 )
             var overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
             var maxLines by remember { maxLinesState }
@@ -5484,7 +5483,7 @@ class FlowRowColumnTest {
                     itemVerticalAlignment = Alignment.Top,
                     maxItemsInMainAxis = maxItemsInMainAxis,
                     maxLines = maxLines,
-                    overflowState = overflowState,
+                    overflowState = overflowState
                 )
         }
 
@@ -5517,7 +5516,7 @@ class FlowRowColumnTest {
                     itemVerticalAlignment = Alignment.Top,
                     maxItemsInMainAxis = maxItemsInMainAxis,
                     maxLines = maxLines,
-                    overflowState = FlowRowOverflow.expandIndicator {}.createOverflowState(),
+                    overflowState = FlowRowOverflow.expandIndicator {}.createOverflowState()
                 )
 
             measurePolicy =
@@ -5527,7 +5526,7 @@ class FlowRowColumnTest {
                     itemVerticalAlignment = Alignment.Top,
                     maxItemsInMainAxis = maxItemsInMainAxis,
                     maxLines = maxLines,
-                    overflowState = FlowRowOverflow.expandIndicator {}.createOverflowState(),
+                    overflowState = FlowRowOverflow.expandIndicator {}.createOverflowState()
                 )
         }
 
@@ -5555,14 +5554,14 @@ class FlowRowColumnTest {
                     {},
                     {},
                     minLinesToShowCollapseState,
-                    minWidthToShowCollapseState,
+                    minWidthToShowCollapseState
                 )
             seeMoreTwo =
                 FlowColumnOverflow.expandOrCollapseIndicator(
                     {},
                     {},
                     minLinesToShowCollapseState,
-                    minWidthToShowCollapseState,
+                    minWidthToShowCollapseState
                 )
             var overflowState = remember(overflow.value) { overflow.value.createOverflowState() }
             var maxLines by remember { maxLinesState }
@@ -5573,7 +5572,7 @@ class FlowRowColumnTest {
                     itemHorizontalAlignment = Alignment.Start,
                     maxItemsInMainAxis = maxItemsInMainAxis,
                     maxLines = maxLines,
-                    overflowState = overflowState,
+                    overflowState = overflowState
                 )
         }
 
@@ -5601,7 +5600,7 @@ class FlowRowColumnTest {
                     FlowColumn(
                         Modifier.fillMaxHeight(1f).onSizeChanged { height = it.height },
                         horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        overflow = FlowColumnOverflow.Clip,
+                        overflow = FlowColumnOverflow.Clip
                     ) {
                         repeat(2) { index ->
                             Layout(
@@ -5620,80 +5619,6 @@ class FlowRowColumnTest {
         rule.waitForIdle()
         Truth.assertThat(height).isEqualTo(200)
         Truth.assertThat(noOfItemsPlaced).isEqualTo(0)
-    }
-
-    @Test
-    fun testFlowColumn_crossAxisPositioning_withWeightAndAspectRatio() {
-        val positionsInParentX = mutableFloatListOf()
-
-        rule.setContent {
-            with(LocalDensity.current) {
-                Box(Modifier.height(50.toDp())) {
-                    FlowColumn(
-                        maxItemsInEachColumn = 2,
-                        horizontalArrangement = Arrangement.spacedBy(10.toDp()),
-                    ) {
-                        repeat(5) { index ->
-                            Box(
-                                Modifier.weight(1f).aspectRatio(1f, true).onPlaced {
-                                    positionsInParentX.add(it.positionInParent().x)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        // Cross axis offset for first column
-        Truth.assertThat(positionsInParentX[0]).isEqualTo(0)
-        Truth.assertThat(positionsInParentX[1]).isEqualTo(0)
-
-        // Cross axis offset for second column
-        Truth.assertThat(positionsInParentX[2]).isEqualTo(35)
-        Truth.assertThat(positionsInParentX[3]).isEqualTo(35)
-
-        // Cross axis offset for third column
-        Truth.assertThat(positionsInParentX[4]).isEqualTo(70)
-    }
-
-    @Test
-    fun testFlowRow_crossAxisPositioning_withWeightAndAspectRatio() {
-        val positionsInParentY = mutableFloatListOf()
-
-        rule.setContent {
-            with(LocalDensity.current) {
-                Box(Modifier.width(50.toDp())) {
-                    FlowRow(
-                        maxItemsInEachRow = 2,
-                        verticalArrangement = Arrangement.spacedBy(10.toDp()),
-                    ) {
-                        repeat(5) { index ->
-                            Box(
-                                Modifier.weight(1f).aspectRatio(1f, true).onPlaced {
-                                    positionsInParentY.add(it.positionInParent().y)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        rule.waitForIdle()
-
-        // Cross axis offset for first column
-        Truth.assertThat(positionsInParentY[0]).isEqualTo(0)
-        Truth.assertThat(positionsInParentY[1]).isEqualTo(0)
-
-        // Cross axis offset for second column
-        Truth.assertThat(positionsInParentY[2]).isEqualTo(35)
-        Truth.assertThat(positionsInParentY[3]).isEqualTo(35)
-
-        // Cross axis offset for third column
-        Truth.assertThat(positionsInParentY[4]).isEqualTo(70)
     }
 }
 

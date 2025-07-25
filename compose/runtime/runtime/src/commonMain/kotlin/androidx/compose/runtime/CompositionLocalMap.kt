@@ -23,7 +23,7 @@ import androidx.compose.runtime.internal.persistentCompositionLocalHashMapOf
  * A read-only, immutable snapshot of the [CompositionLocals][CompositionLocal] that are set at a
  * specific position in the composition hierarchy.
  */
-public sealed interface CompositionLocalMap {
+sealed interface CompositionLocalMap {
     /**
      * Returns the value of the provided [composition local][key] at the position in the composition
      * hierarchy represented by this [CompositionLocalMap] instance. If the provided [key] is not
@@ -38,11 +38,11 @@ public sealed interface CompositionLocalMap {
      * reassigned, the entire composition hierarchy is recomposed and a new CompositionLocalMap is
      * created with the updated value of the static CompositionLocal.
      */
-    public operator fun <T> get(key: CompositionLocal<T>): T
+    operator fun <T> get(key: CompositionLocal<T>): T
 
-    public companion object {
+    companion object {
         /** An empty [CompositionLocalMap] instance which contains no keys or values. */
-        public val Empty: CompositionLocalMap = persistentCompositionLocalHashMapOf()
+        val Empty: CompositionLocalMap = persistentCompositionLocalHashMapOf()
     }
 }
 
@@ -58,7 +58,7 @@ internal interface PersistentCompositionLocalMap :
 
     fun putValue(
         key: CompositionLocal<Any?>,
-        value: ValueHolder<Any?>,
+        value: ValueHolder<Any?>
     ): PersistentCompositionLocalMap
 
     override val <T> CompositionLocal<T>.currentValue: T

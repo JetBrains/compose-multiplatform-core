@@ -19,4 +19,4 @@ package androidx.fragment.app
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.FUNCTION)
 @RequiresOptIn(level = RequiresOptIn.Level.WARNING)
-public annotation class PredictiveBackControl
+annotation class PredictiveBackControl

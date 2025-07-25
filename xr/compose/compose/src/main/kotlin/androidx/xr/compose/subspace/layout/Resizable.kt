@@ -30,7 +30,7 @@ import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.toDimensionsInMeters
 import androidx.xr.compose.unit.toIntVolumeSize
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.scenecore.Dimensions
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ResizableComponent
 import androidx.xr.scenecore.ResizeListener
@@ -181,7 +181,7 @@ internal class ResizableNode(
     }
 
     /** Returns 0.0f if the aspect ratio of x to y is not well defined. */
-    private fun getAspectRatioY(size: FloatSize3d): Float {
+    private fun getAspectRatioY(size: Dimensions): Float {
         if (size.width == 0f || size.height == 0f) return 0.0f
         return size.width / size.height
     }
@@ -195,10 +195,11 @@ internal class ResizableNode(
             coreEntity.removeComponent(component)
             isComponentAttached = false
             userSize = null
+            requestRelayout()
         }
     }
 
-    override fun onResizeStart(entity: Entity, originalSize: FloatSize3d) {
+    override fun onResizeStart(entity: Entity, originalSize: Dimensions) {
         component.fixedAspectRatio =
             if (maintainAspectRatio) getAspectRatioY(originalSize) else 0.0f
     }
@@ -207,7 +208,7 @@ internal class ResizableNode(
      * During a resize, the size of the entity does not change, only its reform window. We do not
      * need to respond to every event, e.g., onResizeUpdate, like we do for Movable.
      */
-    override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
+    override fun onResizeEnd(entity: Entity, finalSize: Dimensions) {
         resizeListener(finalSize)
     }
 
@@ -215,7 +216,7 @@ internal class ResizableNode(
      * Called every time there is an onResizeEnd event in SceneCore, if this CoreEntity is
      * resizable.
      */
-    private fun resizeListener(newSize: FloatSize3d) {
+    private fun resizeListener(newSize: Dimensions) {
         if (onSizeChange?.invoke(newSize.toIntVolumeSize(density)) == true) {
             // We're done, the user app will handle the event.
             return
