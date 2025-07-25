@@ -224,6 +224,9 @@ internal class ComposeSceneMediator(
         set(value) {
             if (!disposed) {
                 scene.size = value
+                if (value != null) {
+                    windowInsets.sceneSize.value = value
+                }
             }
         }
 
@@ -305,7 +308,7 @@ internal class ComposeSceneMediator(
     private val windowInsets = UIKitWindowInsets()
 
     fun updateInterfaceOrientation(interfaceOrientation: InterfaceOrientation) {
-        windowInsets.updateInterfaceOrientation(interfaceOrientation)
+        windowInsets.interfaceOrientation.value = interfaceOrientation
     }
 
     /**
@@ -340,7 +343,7 @@ internal class ComposeSceneMediator(
                 val heightPx = with(density) { height.roundToPx() }
                 if (windowInsets.keyboardOverlapHeight.value != heightPx) {
                     animateKeyboardOffsetChanges = false
-                    windowInsets.updateKeyboardOverlapHeight(height, density)
+                    windowInsets.keyboardOverlapHeight.value = heightPx
                 }
             }
         )
@@ -549,20 +552,16 @@ internal class ComposeSceneMediator(
             try {
                 if (initialSize != currentViewSize) {
                     withAnimationProgress(duration) { progress ->
-                        windowInsets.updateLayoutMargins(
-                            lerp(
-                                start = initialLayoutMargins,
-                                stop = _overlayView.layoutMargins.toPlatformInsets(density),
-                                fraction = progress
-                            )
+                        windowInsets.layoutMargins.value = lerp(
+                            start = initialLayoutMargins,
+                            stop = _overlayView.layoutMargins.toPlatformInsets(density),
+                            fraction = progress
                         )
-                        windowInsets.updateSafeAreaInsets(
-                            lerp(
+                        windowInsets.safeAreaInsets.value = lerp(
                                 start = initialSafeAreaInsets,
                                 stop = _overlayView.safeAreaInsets.toPlatformInsets(density),
                                 fraction = progress
                             )
-                        )
                         size = lerp(
                             start = initialSize,
                             stop = currentViewSize,
@@ -644,10 +643,9 @@ internal class ComposeSceneMediator(
         if (isLayoutTransitionAnimating) {
             return
         }
-        windowInsets.updateLayoutMargins(_overlayView.layoutMargins.toPlatformInsets(density))
-        windowInsets.updateSafeAreaInsets(_overlayView.safeAreaInsets.toPlatformInsets(density))
+        windowInsets.layoutMargins.value = _overlayView.layoutMargins.toPlatformInsets(density)
+        windowInsets.safeAreaInsets.value = _overlayView.safeAreaInsets.toPlatformInsets(density)
         size = currentViewSize.roundToIntSize()
-        size?.let { windowInsets.updateSceneSize(it) }
     }
 
     private val currentViewSize: Size get() {

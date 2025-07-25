@@ -25,14 +25,10 @@ import androidx.compose.ui.unit.IntSize
 
 internal class UIKitWindowInsets: PlatformWindowInsets {
     var layoutMargins = mutableStateOf(PlatformInsets.Zero)
-        private set
     var safeAreaInsets = mutableStateOf(PlatformInsets.Zero)
-        private set
     var keyboardOverlapHeight = mutableStateOf(0)
-        private set
-
-    private var sceneSize = mutableStateOf(IntSize.Zero)
-    private var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
+    var interfaceOrientation = mutableStateOf(InterfaceOrientation.Portrait)
+    var sceneSize = mutableStateOf(IntSize.Zero)
 
     override val displayCutouts: List<Rect>
         get() {
@@ -90,24 +86,4 @@ internal class UIKitWindowInsets: PlatformWindowInsets {
     override val systemGestures: PlatformInsets get() = layoutMargins.value
     override val tappableElement: PlatformInsets get() = PlatformInsets(top = safeAreaInsets.value.top)
     override val waterfall: PlatformInsets get() = PlatformInsets.Zero
-
-    fun updateInterfaceOrientation(orientation: InterfaceOrientation) {
-        interfaceOrientation.value = orientation
-    }
-
-    fun updateKeyboardOverlapHeight(height: Dp, density: Density) {
-        keyboardOverlapHeight.value = with(density) { height.roundToPx() }
-    }
-
-    fun updateLayoutMargins(layoutMargins: PlatformInsets) {
-        this.layoutMargins.value = layoutMargins
-    }
-
-    fun updateSafeAreaInsets(safeAreaInsets: PlatformInsets) {
-        this.safeAreaInsets.value = safeAreaInsets
-    }
-
-    fun updateSceneSize(size: IntSize) {
-        sceneSize.value = size
-    }
 }
