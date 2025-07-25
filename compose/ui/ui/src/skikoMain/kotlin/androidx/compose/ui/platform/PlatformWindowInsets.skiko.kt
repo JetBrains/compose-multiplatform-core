@@ -59,28 +59,28 @@ interface PlatformWindowInsets {
 }
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeDrawing: PlatformInsets get() = PlatformInsets(
-    left = maxOf(statusBars.left, navigationBars.left, captionBar.left, displayCutout.left, ime.left, systemBars.left, tappableElement.left),
-    top = maxOf(statusBars.top, navigationBars.top, captionBar.top, displayCutout.top, ime.top, systemBars.top, tappableElement.top),
-    right = maxOf(statusBars.right, navigationBars.right, captionBar.right, displayCutout.right, ime.right, systemBars.right, tappableElement.right),
-    bottom = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, displayCutout.bottom, ime.bottom, systemBars.bottom, tappableElement.bottom)
-)
+val PlatformWindowInsets.safeDrawing: PlatformInsets get() = object : PlatformInsets {
+    override val left: Int get() = maxOf(statusBars.left, navigationBars.left, captionBar.left, displayCutout.left, ime.left, systemBars.left, tappableElement.left)
+    override val top: Int get() = maxOf(statusBars.top, navigationBars.top, captionBar.top, displayCutout.top, ime.top, systemBars.top, tappableElement.top)
+    override val right: Int get() = maxOf(statusBars.right, navigationBars.right, captionBar.right, displayCutout.right, ime.right, systemBars.right, tappableElement.right)
+    override val bottom: Int get() = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, displayCutout.bottom, ime.bottom, systemBars.bottom, tappableElement.bottom)
+}
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeGestures: PlatformInsets get() = PlatformInsets(
-    left = maxOf(mandatorySystemGestures.left, systemGestures.left, tappableElement.left, waterfall.left),
-    top = maxOf(mandatorySystemGestures.top, systemGestures.top, tappableElement.top, waterfall.top),
-    right = maxOf(mandatorySystemGestures.right, systemGestures.right, tappableElement.right, waterfall.right),
-    bottom = maxOf(mandatorySystemGestures.bottom, systemGestures.bottom, tappableElement.bottom, waterfall.bottom)
-)
+val PlatformWindowInsets.safeGestures: PlatformInsets get() = object : PlatformInsets {
+    override val left: Int get() = maxOf(mandatorySystemGestures.left, systemGestures.left, tappableElement.left, waterfall.left)
+    override val top: Int get() = maxOf(mandatorySystemGestures.top, systemGestures.top, tappableElement.top, waterfall.top)
+    override val right: Int get() = maxOf(mandatorySystemGestures.right, systemGestures.right, tappableElement.right, waterfall.right)
+    override val bottom: Int get() = maxOf(mandatorySystemGestures.bottom, systemGestures.bottom, tappableElement.bottom, waterfall.bottom)
+}
 
 @InternalComposeUiApi
-val PlatformWindowInsets.safeContent: PlatformInsets get() = PlatformInsets(
-    left = maxOf(statusBars.left, navigationBars.left, captionBar.left, ime.left, systemGestures.left, mandatorySystemGestures.left, tappableElement.left, displayCutout.left, waterfall.left),
-    top = maxOf(statusBars.top, navigationBars.top, captionBar.top, ime.top, systemGestures.top, mandatorySystemGestures.top, tappableElement.top, displayCutout.top, waterfall.top),
-    right = maxOf(statusBars.right, navigationBars.right, captionBar.right, ime.right, systemGestures.right, mandatorySystemGestures.right, tappableElement.right, displayCutout.right, waterfall.right),
-    bottom = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, ime.bottom, systemGestures.bottom, mandatorySystemGestures.bottom, tappableElement.bottom, displayCutout.bottom, waterfall.bottom)
-)
+val PlatformWindowInsets.safeContent: PlatformInsets get() = object : PlatformInsets {
+    override val left: Int get() = maxOf(statusBars.left, navigationBars.left, captionBar.left, ime.left, systemGestures.left, mandatorySystemGestures.left, tappableElement.left, displayCutout.left, waterfall.left)
+    override val top: Int get() = maxOf(statusBars.top, navigationBars.top, captionBar.top, ime.top, systemGestures.top, mandatorySystemGestures.top, tappableElement.top, displayCutout.top, waterfall.top)
+    override val right: Int get() = maxOf(statusBars.right, navigationBars.right, captionBar.right, ime.right, systemGestures.right, mandatorySystemGestures.right, tappableElement.right, displayCutout.right, waterfall.right)
+    override val bottom: Int get() = maxOf(statusBars.bottom, navigationBars.bottom, captionBar.bottom, ime.bottom, systemGestures.bottom, mandatorySystemGestures.bottom, tappableElement.bottom, displayCutout.bottom, waterfall.bottom)
+}
 
 /**
  * This class represents platform insets.
