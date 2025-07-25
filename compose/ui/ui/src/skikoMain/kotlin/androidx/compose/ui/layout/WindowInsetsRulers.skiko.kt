@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.layout
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.CaptionBar
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.DisplayCutout
@@ -28,12 +29,23 @@ import androidx.compose.ui.layout.WindowInsetsRulers.Companion.TappableElement
 import androidx.compose.ui.layout.WindowInsetsRulers.Companion.Waterfall
 import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.NodeCoordinator
+import androidx.compose.ui.node.Nodes
 import androidx.compose.ui.node.TraversableNode
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.unit.Constraints
 
 internal actual fun findDisplayCutouts(placementScope: Placeable.PlacementScope): List<RectRulers> {
+    var node = placementScope.coordinates?.findRootCoordinates() as? NodeCoordinator
+    while (node != null) {
+        node.visitNodes(Nodes.Traversable) { traversableNode ->
+            if (traversableNode.traverseKey === RulerKey) {
+                return (traversableNode as RulerProviderModifierNode).displayCutoutRulers
+            }
+        }
+        node = node.wrapped
+    }
     return emptyList()
 }
 
@@ -64,6 +76,8 @@ internal class RulerProviderModifierNode(
     windowInsetsManager: PlatformWindowInsets,
 ) : Modifier.Node(), LayoutModifierNode, TraversableNode {
 
+    val displayCutoutRulers = mutableStateListOf<RectRulers>()
+
     val rulerLambda: RulerScope.() -> Unit = {
         val (width, height) = coordinates.size
 
@@ -76,6 +90,26 @@ internal class RulerProviderModifierNode(
         provideInsetsValues(SystemGestures, windowInsetsManager.systemGestures, width, height)
         provideInsetsValues(TappableElement, windowInsetsManager.tappableElement, width, height)
         provideInsetsValues(Waterfall, windowInsetsManager.waterfall, width, height)
+
+        val displayCutouts = windowInsetsManager.displayCutouts
+
+        if (displayCutouts.isEmpty()) {
+            displayCutoutRulers.clear()
+        } else if (displayCutouts.size < displayCutoutRulers.size){
+            displayCutoutRulers.removeRange(displayCutouts.size, displayCutoutRulers.size)
+        } else {
+            repeat(displayCutouts.size - displayCutoutRulers.size) {
+                displayCutoutRulers += RectRulers("display cutout rest ${displayCutoutRulers.size}")
+            }
+        }
+
+        displayCutouts.forEachIndexed { index, rect ->
+            val rulers = displayCutoutRulers[index]
+            rulers.left provides rect.left
+            rulers.top provides rect.top
+            rulers.right provides rect.right
+            rulers.bottom provides rect.bottom
+        }
     }
 
     private fun RulerScope.provideInsetsValues(

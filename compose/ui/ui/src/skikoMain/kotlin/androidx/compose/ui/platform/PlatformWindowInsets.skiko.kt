@@ -16,6 +16,7 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -23,7 +24,29 @@ import kotlin.jvm.JvmInline
 
 @InternalComposeUiApi
 interface PlatformWindowInsets {
+    /**
+     * Returns a list of [Rect] objects representing the bounds of display cutouts (such as notches,
+     * camera holes, or other areas that intrude into the screen).
+     *
+     * This property provides the actual geometric bounds of the cutouts themselves, while
+     * [displayCutout] provides the safe insets that content should observe to avoid these cutouts.
+     *
+     * Different platforms may represent cutouts differently:
+     * - On platforms with a notch (like iOS), this typically includes a rectangle at the top of the screen
+     * - On platforms with camera holes, this includes circles or rounded rectangles where cameras or sensors are located
+     * - On platforms with curved edges or "waterfall" displays, this may include areas along the edges
+     *
+     * The coordinates of these rectangles are relative to the containing window or scene.
+     * An empty list is returned when there are no display cutouts.
+     */
+    val displayCutouts: List<Rect> get() = emptyList()
     val captionBar: PlatformInsets get() = PlatformInsets.Zero
+    /**
+     * Represents the safe inset areas that content should observe to avoid all display cutouts.
+     *
+     * Unlike [displayCutouts] which provides the actual geometric bounds of cutouts, this property
+     * provides aggregated inset values for all sides of the screen to avoid any cutouts.
+     */
     val displayCutout: PlatformInsets get() = PlatformInsets.Zero
     val ime: PlatformInsets get() = PlatformInsets.Zero
     val mandatorySystemGestures: PlatformInsets get() = PlatformInsets.Zero

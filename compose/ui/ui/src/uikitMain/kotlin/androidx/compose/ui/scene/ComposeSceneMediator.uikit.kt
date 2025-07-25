@@ -647,6 +647,7 @@ internal class ComposeSceneMediator(
         windowInsets.updateLayoutMargins(_overlayView.layoutMargins.toPlatformInsets(density))
         windowInsets.updateSafeAreaInsets(_overlayView.safeAreaInsets.toPlatformInsets(density))
         size = currentViewSize.roundToIntSize()
+        size?.let { windowInsets.updateSceneSize(it) }
     }
 
     private val currentViewSize: Size get() {
