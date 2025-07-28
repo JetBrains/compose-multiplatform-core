@@ -54,6 +54,7 @@ import platform.UIKit.UIScreen
 import platform.UIKit.UITouch
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.UIWindowScene
 import platform.UIKit.endEditing
 import platform.UIKit.systemBackgroundColor
 import platform.darwin.NSObject
@@ -292,6 +293,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
 
         _window = UIWindow(frame = UIScreen.mainScreen.bounds)
         _window?.backgroundColor = UIColor.systemBackgroundColor
+        _window?.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
 
         _window?.rootViewController = viewController
         _window?.makeKeyAndVisible()
@@ -305,6 +307,7 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
+        window.windowScene = UIApplication.sharedApplication().connectedScenes.first() as? UIWindowScene
         dispatch_async(dispatch_get_main_queue()) {
             window.resignKeyWindow()
         }
