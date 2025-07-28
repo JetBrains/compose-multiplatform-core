@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,5 +18,10 @@ package androidx.kruth
 
 import kotlin.reflect.KClass
 
+<<<<<<<< HEAD:kruth/kruth/src/nativeMain/kotlin/androidx/kruth/KClassExt.native.kt
 internal actual val KClass<*>.qName: String?
     get() = qualifiedName
+========
+internal actual val KClass<*>?.canonicalName: String?
+    get() = this?.qualifiedName
+>>>>>>>> v1.9.0+dev2718:lifecycle/lifecycle-viewmodel/src/nativeMain/kotlin/androidx/lifecycle/viewmodel/internal/CanonicalName.native.kt

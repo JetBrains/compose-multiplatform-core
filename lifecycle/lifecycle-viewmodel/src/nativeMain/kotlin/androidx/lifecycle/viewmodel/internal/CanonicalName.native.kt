@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.lifecycle.viewmodel.internal
+package androidx.kruth
 
 import kotlin.reflect.KClass
 
+<<<<<<<< HEAD:kruth/kruth/src/nativeMain/kotlin/androidx/kruth/KClassExt.native.kt
+internal actual val KClass<*>.qName: String?
+    get() = qualifiedName
+========
 internal actual val KClass<*>?.canonicalName: String?
     get() = this?.qualifiedName
+>>>>>>>> v1.9.0+dev2718:lifecycle/lifecycle-viewmodel/src/nativeMain/kotlin/androidx/lifecycle/viewmodel/internal/CanonicalName.native.kt
