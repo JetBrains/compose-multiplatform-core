@@ -21,6 +21,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingViewController
 import androidx.compose.ui.test.utils.center
+import androidx.compose.ui.test.utils.getTouchesEvent
 import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
@@ -56,6 +57,8 @@ import platform.UIKit.UIWindow
 import platform.UIKit.endEditing
 import platform.UIKit.systemBackgroundColor
 import platform.darwin.NSObject
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 
 /**
  * Sets up the test environment for iOS instrumented tests, runs the given [test][testBlock]
@@ -125,6 +128,7 @@ internal class UIKitInstrumentedTest {
         waitForIdle()
 
         appDelegate.cleanUp()
+        delay(1)
     }
 
     private val isIdle: Boolean
@@ -177,7 +181,15 @@ internal class UIKitInstrumentedTest {
             toView = appDelegate.window()
         )
 
-        return appDelegate.window()!!.touchDown(positionOnWindow.asDpOffset())
+        val window = appDelegate.window()!!
+            .windowScene!!
+            .windows
+            .findLast {
+                it as UIWindow
+                it.hitTest(position.toCGPoint(), it.getTouchesEvent()) != null
+            } as UIWindow
+
+        return window.touchDown(positionOnWindow.asDpOffset())
     }
 
     /**
@@ -293,5 +305,8 @@ internal class MockAppDelegate: NSObject(), UIApplicationDelegateProtocol {
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
+        dispatch_async(dispatch_get_main_queue()) {
+            window.resignKeyWindow()
+        }
     }
 }

@@ -33,6 +33,27 @@ import platform.UIKit.UIView
 
 class TextFieldFocusOrderTest {
     @Test
+    fun testModalTextFieldsFocusOnDialogAppear() = runUIKitInstrumentedTest {
+        val showDialog = mutableStateOf(true)
+        val dialogFocusRequester = FocusRequester()
+
+        setContent {
+            TextField("Text 0", {})
+
+            if (showDialog.value) {
+                Dialog({}) {
+                    TextField("Text 1", {}, modifier = Modifier.focusRequester(dialogFocusRequester))
+                }
+                LaunchedEffect(Unit) {
+                    dialogFocusRequester.requestFocus()
+                }
+            }
+        }
+
+        assertEquals("Text 1", findFocusedUITextInput()?.text)
+    }
+
+    @Test
     fun testModalTextFieldsRefocus() = runUIKitInstrumentedTest {
         val showDialog1 = mutableStateOf(false)
         val showDialog2 = mutableStateOf(false)
@@ -141,7 +162,7 @@ class TextFieldFocusOrderTest {
     }
 
     private fun UIKitInstrumentedTest.findFocusedUITextInput(): UITextInputProtocol? {
-        val window = hostingViewController.view.window ?: return null
+        val windowScene = hostingViewController.view.window?.windowScene ?: return null
 
         fun findFirstResponder(view: UIView): UIView? {
             if (view.isFirstResponder) {
@@ -153,6 +174,8 @@ class TextFieldFocusOrderTest {
             return null
         }
 
-        return findFirstResponder(view = window) as? UITextInputProtocol
+        return windowScene.windows.reversed().firstNotNullOfOrNull {
+            findFirstResponder(view = it as UIView)
+        } as? UITextInputProtocol
     }
 }

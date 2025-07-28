@@ -22,6 +22,7 @@ import androidx.compose.test.utils.setPhase
 import androidx.compose.test.utils.touchAtPoint
 import androidx.compose.ui.unit.DpOffset
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.UIKit.UIEvent
 import platform.UIKit.UITouch
 import platform.UIKit.UITouchPhase
 import platform.UIKit.UIWindow
@@ -36,6 +37,10 @@ internal fun UIWindow.touchDown(location: DpOffset): UITouch {
     ).also {
         it.send()
     }
+}
+
+internal fun UIWindow.getTouchesEvent(): UIEvent {
+    return UITouch.getTouchesEvent()
 }
 
 @OptIn(ExperimentalForeignApi::class)

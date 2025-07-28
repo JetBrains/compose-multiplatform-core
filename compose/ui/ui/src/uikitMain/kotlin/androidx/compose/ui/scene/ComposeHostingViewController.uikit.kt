@@ -64,7 +64,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
-import kotlin.test.assertNotNull
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -85,7 +84,6 @@ import platform.UIKit.UIStatusBarStyle
 import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceLayoutDirection
 import platform.UIKit.UIUserInterfaceStyle
-import platform.UIKit.UIView
 import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
 import platform.UIKit.UIWindow
 import platform.darwin.dispatch_async
@@ -109,9 +107,8 @@ internal class ComposeHostingViewController(
     val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
     private var mediator: ComposeSceneMediator? = null
     private val windowContext = PlatformWindowContext()
-    private var layers: UIKitComposeSceneLayersHolder? = null
+    private var layersHolder: ComposeLayersHolder? = null
     private val layoutDirection get() = getLayoutDirection()
-    private var hasViewAppeared: Boolean = false
     private val motionDurationScale = MotionDurationScaleImpl()
     private var applicationActiveStateListener: ApplicationActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
@@ -126,7 +123,7 @@ internal class ComposeHostingViewController(
     )
 
     fun hasInvalidations(): Boolean {
-        return mediator?.hasInvalidations == true || layers?.hasInvalidations == true
+        return mediator?.hasInvalidations == true || layersHolder?.layersViewController?.hasInvalidations == true
     }
 
     /*
@@ -211,7 +208,7 @@ internal class ComposeHostingViewController(
 
         updateInterfaceOrientationState()
 
-        layers?.containerView = layersContainerView()
+        layersHolder?.layersViewController?.referenceWindow = view.window
         windowContext.setWindowContainer(windowContainer)
         updateMotionSpeed()
     }
@@ -230,12 +227,15 @@ internal class ComposeHostingViewController(
 
         updateInterfaceOrientationState()
 
-        if (mediator?.hasInteropViews == true || layers?.hasInteropViews == true) {
+        val duration = withTransitionCoordinator.transitionDuration.toDuration(DurationUnit.SECONDS)
+        if (duration == Duration.ZERO) return
+
+        if (mediator?.hasInteropViews == true) {
             // Heavy interop views may slow down the animation of per-frame screen rotation.
             // For these cases, a cross-fade transition will be used instead.
             crossFadeSizeTransition(withTransitionCoordinator)
         } else {
-            animateSizeTransition(withTransitionCoordinator)
+            animateSizeTransition(withTransitionCoordinator, duration)
         }
     }
 
@@ -249,23 +249,19 @@ internal class ComposeHostingViewController(
     @Suppress("DEPRECATION")
     override fun viewDidAppear(animated: Boolean) {
         super.viewDidAppear(animated)
-        hasViewAppeared = true
+
         mediator?.sceneDidAppear()
-        layers?.viewDidAppear()
         configuration.delegate.viewDidAppear(animated)
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
         backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
-        layers?.containerView = layersContainerView()
     }
 
     @Suppress("DEPRECATION")
     override fun viewWillDisappear(animated: Boolean) {
         super.viewWillDisappear(animated)
-        hasViewAppeared = false
         mediator?.sceneWillDisappear()
-        layers?.viewWillDisappear()
         configuration.delegate.viewWillDisappear(animated)
 
         backGestureDispatcher.onDidMoveToWindow(null, rootView)
@@ -299,10 +295,13 @@ internal class ComposeHostingViewController(
             }
         )
         metalView.canBeOpaque = configuration.opaque
-
-        val layers = UIKitComposeSceneLayersHolder(windowContext, configuration.parallelRendering)
-        layers.containerView = layersContainerView()
-        this.layers = layers
+        val holder = ComposeLayersHolder(
+            useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
+            context = composeCoroutineContext,
+            getWindow = { view.window }
+        ).also {
+            layersHolder = it
+        }
 
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
@@ -311,7 +310,7 @@ internal class ComposeHostingViewController(
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->
-                createComposeScene(invalidate, context, layers.metalView)
+                createComposeScene(invalidate, context, holder)
             },
             backGestureDispatcher = backGestureDispatcher
         ).also { mediator ->
@@ -355,8 +354,8 @@ internal class ComposeHostingViewController(
         applicationActiveStateListener?.dispose()
         applicationActiveStateListener = null
 
-        layers?.dispose(hasViewAppeared)
-        layers = null
+        layersHolder?.disposeIfNeeded()
+        layersHolder = null
     }
 
     @OptIn(NativeRuntimeApi::class)
@@ -365,23 +364,8 @@ internal class ComposeHostingViewController(
         super.didReceiveMemoryWarning()
     }
 
-    // The Layers view is a full screen overlay of the current content. To do this, the layers
-    // container view should be placed as close as possible to the current UIWindow.
-    // If another view controller is presented modaly, UIWindow changes accessibility elements,
-    // so the layers view can't be accessed by the iOS accessibility engine.
-    // Find the next view in the hierarchy. This view is unique to the root and each modal
-    // view controller.
-    private fun layersContainerView(): UIView? {
-        val window = view.window ?: return null
-        var iteratingView = view.superview
-        while (iteratingView != null && iteratingView.superview != window) {
-            iteratingView = iteratingView.superview
-        }
-        return iteratingView
-    }
-
     /**
-     * Animates the layout transition of root view as well as all layers.
+     * Animates the layout transition of root view.
      * The animation consists of the following steps
      * - Before the actual animation starts, all initial parameters should be stored in the
      * corresponding lambdas. See [ComposeSceneMediator.prepareAndGetSizeTransitionAnimation].
@@ -397,11 +381,9 @@ internal class ComposeHostingViewController(
      * @param transitionCoordinator The coordinator that mediates the transition animations.
      */
     private fun animateSizeTransition(
-        transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
+        transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol,
+        duration: Duration
     ) {
-        val duration = transitionCoordinator.transitionDuration.toDuration(DurationUnit.SECONDS)
-        if (duration == Duration.ZERO) return
-
         val displayLinkListener = DisplayLinkListener()
         val sizeTransitionScope = CoroutineScope(
             composeCoroutineContext + displayLinkListener.frameClock
@@ -409,7 +391,6 @@ internal class ComposeHostingViewController(
         displayLinkListener.start()
 
         val animations = mediator?.prepareAndGetSizeTransitionAnimation()
-        layers?.animateSizeTransition(sizeTransitionScope, duration)
         rootView.animateSizeTransition(sizeTransitionScope) {
             animations?.invoke(duration)
         }
@@ -426,17 +407,12 @@ internal class ComposeHostingViewController(
     private fun crossFadeSizeTransition(
         transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
     ) {
-        val duration = transitionCoordinator.transitionDuration.toDuration(DurationUnit.SECONDS)
-        if (duration == Duration.ZERO) return
-
         val transitionScope = CoroutineScope(composeCoroutineContext)
         val viewAnimationClosure = rootView.animateCrossFadeTransition(transitionScope)
-        val layersAnimationClosure = layers?.animateCrossFadeTransition(transitionScope)
 
         transitionCoordinator.animateAlongsideTransition(
             animation = {
                 viewAnimationClosure()
-                layersAnimationClosure?.invoke()
             },
             completion = {
                 transitionScope.cancel()
@@ -446,7 +422,7 @@ internal class ComposeHostingViewController(
 
     private fun createComposeSceneContext(
         platformContext: PlatformContext,
-        metalView: MetalView
+        layersHolder: ComposeLayersHolder
     ): ComposeSceneContext {
         return object : ComposeSceneContext {
             override val platformContext: PlatformContext = platformContext
@@ -458,22 +434,25 @@ internal class ComposeHostingViewController(
                 compositionContext: CompositionContext
             ): ComposeSceneLayer {
                 val layer = UIKitComposeSceneLayer(
-                    onClosed = ::detachLayer,
-                    createComposeSceneContext = { createComposeSceneContext(it, metalView) },
+                    onClosed = {
+                        layersHolder.getLayersViewController().detach(it)
+                        onAccessibilityChanged()
+                    },
+                    createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
-                    metalView = metalView,
+                    layersViewController = layersHolder.getLayersViewController(),
                     initDensity = density,
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList else null,
-                    windowContext = windowContext,
                     compositionContext = compositionContext,
                     coroutineContext = composeCoroutineContext,
                     enableBackGesture = configuration.enableBackGesture,
                 )
 
-                attachLayer(layer)
+                layersHolder.getLayersViewController().attach(layer)
+                onAccessibilityChanged()
 
                 return layer
             }
@@ -483,14 +462,14 @@ internal class ComposeHostingViewController(
     private fun createComposeScene(
         invalidate: () -> Unit,
         platformContext: PlatformContext,
-        metalView: MetalView
+        layersHolder: ComposeLayersHolder
     ): ComposeScene = PlatformLayersComposeScene(
         density = view.density,
         layoutDirection = layoutDirection,
         coroutineContext = composeCoroutineContext,
         composeSceneContext = createComposeSceneContext(
             platformContext = platformContext,
-            metalView = metalView
+            layersHolder = layersHolder
         ),
         invalidate = invalidate,
     )
@@ -501,25 +480,13 @@ internal class ComposeHostingViewController(
      */
     private fun onAccessibilityChanged() {
         var isAccessibilityEnabled = true
-        layers?.withLayers {
+        layersHolder?.layersViewController?.withLayers {
             it.fastForEachReversed { layer ->
                 layer.isAccessibilityEnabled = isAccessibilityEnabled
                 isAccessibilityEnabled = isAccessibilityEnabled && !layer.focusable
             }
         }
         mediator?.isAccessibilityEnabled = isAccessibilityEnabled
-    }
-
-    private fun attachLayer(layer: UIKitComposeSceneLayer) {
-        assertNotNull(layers) { "Attempt to attach layers for disposed scene" }
-        layers?.attach(layer, hasViewAppeared)
-        onAccessibilityChanged()
-    }
-
-    private fun detachLayer(layer: UIKitComposeSceneLayer) {
-        assertNotNull(layers) { "Attempt to detach layers for disposed scene" }
-        layers?.detach(layer, hasViewAppeared)
-        onAccessibilityChanged()
     }
 
     @Composable
@@ -569,4 +536,28 @@ private fun getLayoutDirection() =
 
 private class MotionDurationScaleImpl: MotionDurationScale {
     override var scaleFactor by mutableStateOf(1f)
+}
+
+private class ComposeLayersHolder(
+    private val useSeparateRenderThreadWhenPossible: Boolean,
+    private val context: CoroutineContext,
+    private val getWindow: () -> UIWindow?
+) {
+    var layersViewController: ComposeLayersViewController? = null
+        private set
+    fun getLayersViewController(): ComposeLayersViewController {
+        return layersViewController ?: run {
+            val layers = ComposeLayersViewController(
+                useSeparateRenderThreadWhenPossible = useSeparateRenderThreadWhenPossible,
+                context = context
+            )
+            layers.referenceWindow = getWindow()
+            layersViewController = layers
+            layers
+        }
+    }
+    fun disposeIfNeeded() {
+        layersViewController?.dispose()
+        layersViewController = null
+    }
 }
