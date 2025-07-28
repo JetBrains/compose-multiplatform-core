@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.test.utils
 
+import androidx.compose.test.utils.getTouchesEvent
 import androidx.compose.test.utils.send
 import androidx.compose.test.utils.setLocationInWindow
 import androidx.compose.test.utils.setPhase
